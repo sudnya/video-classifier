@@ -1,0 +1,18 @@
+################################################################################
+# A list of videos of people performing sign language
+################################################################################
+
+
+###################
+# Unlabeled Video #
+###################
+/mnt/Data/summer2013/gestures/Sign Language 101- Greetings and Useful Words.mp4
+
+
+#################
+# Labeled Video #
+#################
+# /mnt/Data/summer2013/gestures/reference.dat
+
+
+
