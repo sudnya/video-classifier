@@ -4,7 +4,7 @@
 */
 
 #include <minerva/classifiers/interface/Classifier.h>
-#include <minerva/util/interface/Debug.h>
+#include <minerva/util/interface/debug.h>
 
 #include <algorithm>
 #include <cassert>

@@ -7,6 +7,8 @@
 // Minerva Includes
 #include <minerva/video/interface/ImageVector.h>
 
+#include <minerva/neuralnetwork/interface/NeuralNetwork.h>
+
 #include <minerva/util/interface/debug.h>
 
 namespace minerva
@@ -92,11 +94,27 @@ ImageVector::Matrix ImageVector::convertToMatrix(size_t sampleCount) const
 	return matrix;
 }
 
-ImageVector::Matrix ImageVector::getReference() const
+ImageVector::Matrix ImageVector::getReference(
+	const NeuralNetwork& neuralNetwork) const
 {
-	Matrix matrix;
+	Matrix matrix(neuralNetwork.getOutputCount(), size());
 	
-	assertM(false, "Not implemented.");
+	for(unsigned int imageId = 0; imageId != size(); ++imageId)
+	{
+		for(unsigned int outputNeuron = 0;
+			outputNeuron != neuralNetwork.getOutputCount(); ++outputNeuron)
+		{
+			if((*this)[imageId].label() ==
+				neuralNetwork.getLabelForOutputNeuron(outputNeuron))
+			{
+				matrix(outputNeuron, imageId) = 1.0f;
+			}
+			else
+			{
+				matrix(outputNeuron, imageId) = 0.0f;
+			}
+		}
+	}
 	
 	return matrix;
 }

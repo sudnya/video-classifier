@@ -9,6 +9,9 @@
 // Minerva Includes
 #include <minerva/matrix/interface/Vector.h>
 
+// Standard Library Includes
+#include <string>
+
 // Forward Declarations
 namespace minerva { namespace matrix { class MatrixImplementation; } }
 

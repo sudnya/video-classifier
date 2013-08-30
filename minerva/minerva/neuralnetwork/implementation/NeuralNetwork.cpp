@@ -71,7 +71,7 @@ NeuralNetwork::Matrix NeuralNetwork::runInputs(const Matrix& m)
     return temp;
 }
 
-std::string NeuralNetwork::getLabelForOutputNeuron(unsigned int i)
+std::string NeuralNetwork::getLabelForOutputNeuron(unsigned int i) const
 {
     auto label = m_labels.find(i);
     
