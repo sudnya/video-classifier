@@ -22,16 +22,16 @@ namespace minerva
 namespace video
 {
 
-Image::Image(const std::string& path)
-: _path(path), _loaded(false), _invalidToLoad(false), _x(0), _y(0),
-	_colorComponents(0), _pixelSize(0)
+Image::Image(const std::string& path, const std::string& label)
+: _path(path), _label(label), _loaded(false), _invalidToLoad(false), _x(0),
+	_y(0), _colorComponents(0), _pixelSize(0)
 {
 	_loadImageHeader();
 }
 
 Image::Image(size_t x, size_t y, size_t c, size_t p, const std::string& path,
-	const ByteVector& d)
-: _path(path), _loaded(true), _invalidToLoad(true), _x(x), _y(y),
+	const ByteVector& d, const std::string& l)
+: _path(path), _label(l), _loaded(true), _invalidToLoad(true), _x(x), _y(y),
 	_colorComponents(c), _pixelSize(p), _pixels(d)
 {
 	_pixels.resize(totalSize() * pixelSize());
@@ -67,6 +67,11 @@ const std::string& Image::path() const
 	return _path;
 }
 
+const std::string& Image::label() const
+{
+	return _label;
+}
+
 bool Image::loaded() const
 {
 	return _loaded;
@@ -93,6 +98,11 @@ void Image::setPath(const std::string& path)
 	}
 	
 	_path = path;
+}
+
+void Image::setLabel(const std::string& label)
+{
+	_label = label;
 }
 
 float Image::range() const

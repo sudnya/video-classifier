@@ -160,7 +160,13 @@ void ClassifierEngine::closeModel()
 }
 
 static bool isComment(const std::string& line);
+static bool isLabeled(const std::string& line);
 static std::string removeWhitespace(const std::string& line);
+static void parseSinglePath(ImageVector& images, VideoVector& videos,
+	const std::string& line, const std::string& databaseDirectory);
+static void parseLabeledPath(ImageVector& images, VideoVector& videos,
+	const std::string& line, const std::string& databaseDirectory);
+static void consolidateLabels(ImageVector& images, VideoVector& videos);
 
 static void parseImageDatabase(ImageVector& images, VideoVector& videos,
 	const std::string& path)
@@ -189,26 +195,129 @@ static void parseImageDatabase(ImageVector& images, VideoVector& videos,
 		
 		if(isComment(line)) continue;
 
-		auto filePath = util::getRelativePath(databaseDirectory, line);
-		
-		if(Image::isPathAnImage(line))
+		if(isLabeled(line))
 		{
-			util::log("ClassifierEngine") << "  found image '" << filePath
-				<< "'\n";
-
-			images.push_back(Image(filePath));
-		}
-		else if(Video::isPathAVideo(line))
-		{
-			util::log("ClassifierEngine") << "  found video '" << filePath
-				<< "'\n";
-
-			videos.push_back(Video(filePath));
+			parseLabeledPath(images, videos, line, databaseDirectory);
 		}
 		else
 		{
-			throw std::runtime_error("Path '" + line +
-				"' is not an image or video.");
+			parseSinglePath(images, videos, line, databaseDirectory);
+		}
+
+		consolidateLabels(images, videos);
+
+	}
+}
+
+static void parseSinglePath(ImageVector& images, VideoVector& videos,
+	const std::string& line, const std::string& databaseDirectory)
+{
+	auto filePath = util::getRelativePath(databaseDirectory, line);
+		
+	if(Image::isPathAnImage(filePath))
+	{
+		util::log("ClassifierEngine") << "  found image '" << filePath
+			<< "'\n";
+
+		images.push_back(Image(filePath));
+	}
+	else if(Video::isPathAVideo(filePath))
+	{
+		util::log("ClassifierEngine") << "  found video '" << filePath
+			<< "'\n";
+
+		videos.push_back(Video(filePath));
+	}
+	else
+	{
+		throw std::runtime_error("Path '" + filePath +
+			"' is not an image or video.");
+	}
+}
+
+static unsigned int parseInteger(const std::string s);
+
+static void parseLabeledPath(ImageVector& images, VideoVector& videos,
+	const std::string& line, const std::string& databaseDirectory)
+{
+	auto components = util::split(line, ",");
+	
+	if(components.size() < 2)
+	{
+		throw std::runtime_error("Malformed labeled image/video statement '" +
+			line + "', should be (paht, label) or "
+			"(path, label, startFrame, endFrame).");
+	}
+	
+	auto filePath = util::getRelativePath(databaseDirectory, components[0]);
+	
+	auto label = components[1];
+	
+	if(Image::isPathAnImage(line))
+	{
+		util::log("ClassifierEngine") << "  found image '" << filePath
+			<< "'\n";
+
+		images.push_back(Image(filePath, label));
+	}
+	else if(Video::isPathAVideo(line))
+	{
+		util::log("ClassifierEngine") << "  found video '" << filePath
+			<< "'\n";
+		
+		if(components.size() < 2)
+		{
+			throw std::runtime_error("Malformed labeled video statement '" +
+				line + "', should be (path, label, startFrame, endFrame).");
+		}
+		
+		unsigned int startFrame = parseInteger(components[2]);
+		unsigned int endFrame   = parseInteger(components[3]);
+	
+		videos.push_back(Video(filePath, label, startFrame, endFrame));
+	}
+	else
+	{
+		throw std::runtime_error("Path '" + filePath +
+			"' is not an image or video.");
+	}
+}
+
+static unsigned int parseInteger(const std::string s)
+{
+	std::stringstream stream;
+	
+	stream << s;
+	
+	unsigned int value = 0;
+	
+	stream >> value;
+	
+	return value;
+}
+
+static void consolidateLabels(ImageVector& images, VideoVector& videos)
+{
+	typedef std::map<std::string, Video> VideoMap;
+	
+	VideoMap pathsToVideos;
+	
+	for(auto& video : videos)
+	{
+		auto existingVideo = pathsToVideos.find(video.path());
+		
+		if(existingVideo == pathsToVideos.end())
+		{
+			pathsToVideos.insert(std::make_pair(video.path(), video));
+		}
+		else
+		{
+			auto labels = video.getLabels();
+		
+			for(auto& label : labels)
+			{
+				existingVideo->second.addLabel(label);
+			}
 		}
 	}
 }
@@ -223,6 +332,11 @@ static bool isComment(const std::string& line)
 	}
 	
 	return comment.front() == '#';
+}
+
+static bool isLabeled(const std::string& line)
+{
+	return line.find(",") != std::string::npos;
 }
 
 static bool isWhitespace(char c);

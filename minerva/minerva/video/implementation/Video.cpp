@@ -28,13 +28,22 @@ Video::Video(const std::string& p)
 
 }
 
+Video::Video(const std::string& path, const std::string& label,
+	unsigned int beginFrame, unsigned int endFrame)
+: _path(path), _frame(0), _labels(1, Label(label, beginFrame, endFrame)),
+	_library(nullptr), _stream(nullptr)
+{
+	
+}
+
 Video::~Video()
 {
 	invalidateCache();
 }
 
 Video::Video(const Video& v)
-: _path(v._path), _frame(v._frame), _library(nullptr), _stream(nullptr)
+: _path(v._path), _frame(v._frame), _labels(v._labels), _library(nullptr),
+	_stream(nullptr)
 {
 
 }
@@ -43,8 +52,9 @@ Video& Video::operator=(const Video& v)
 {
 	invalidateCache();
 	
-	_path  = v._path;
-	_frame = v._frame;
+	_path   = v._path;
+	_frame  = v._frame;
+	_labels = v._labels;
 	
 	return *this;
 }
@@ -107,6 +117,8 @@ ImageVector Video::getNextFrames(unsigned int frames)
         
         if(!_stream->getNextFrame(image)) break;
 		
+		image.setLabel(_getLabelForCurrentFrame());
+		
         images.push_back(image);
 
 		std::stringstream name;
@@ -126,6 +138,21 @@ bool Video::finished()
 	load();
 	
 	return _stream->finished();
+}
+
+Video::LabelVector Video::getLabels() const
+{
+	return _labels;
+}
+
+void Video::addLabel(const Label& l)
+{
+	_labels.push_back(l);
+}
+
+const std::string& Video::path() const
+{
+	return _path;
 }
 
 bool Video::isPathAVideo(const std::string& path)
@@ -150,6 +177,26 @@ void Video::_seek(unsigned int frame)
         _stream->getNextFrame(i);
 		++_frame;
 	}
+}
+
+std::string Video::_getLabelForCurrentFrame() const
+{
+	std::string labelName = "unknown";
+	
+	for(auto& label : _labels)
+	{
+		if(label.beginFrame >= _frame || label.endFrame <= _frame) continue;
+		
+		return label.name;
+	}
+	
+	return labelName;
+}
+
+Video::Label::Label(const std::string& n, unsigned int b, unsigned int e)
+: name(n), beginFrame(b), endFrame(e)
+{
+	
 }
 
 }

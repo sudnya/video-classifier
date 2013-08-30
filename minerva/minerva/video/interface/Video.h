@@ -25,7 +25,25 @@ class VideoStream;
 class Video
 {
 public:
-	Video(const std::string& path = "");
+	class Label
+	{
+	public:
+		Label(const std::string& name, unsigned int beginFrame,
+			unsigned int endFrame);
+	
+	public:
+		std::string  name;
+		unsigned int beginFrame;
+		unsigned int endFrame;
+	
+	};
+
+	typedef std::vector<Label> LabelVector;
+
+public:
+	explicit Video(const std::string& path = "");
+	Video(const std::string& path, const std::string& label,
+		unsigned int beginFrame, unsigned int endFrame);
 	~Video();
 
 public:
@@ -44,14 +62,28 @@ public:
 	bool finished();
 
 public:
+	LabelVector getLabels() const;
+	
+	void addLabel(const Label& l);
+
+public:
+	const std::string& path() const;
+
+public:
 	static bool isPathAVideo(const std::string& path);
 
 private:
 	void _seek(unsigned int frame);
 
 private:
+	std::string _getLabelForCurrentFrame() const;
+
+private:
 	std::string   _path;
 	unsigned int  _frame;
+
+private:
+	LabelVector _labels;
 
 private:
 	VideoLibrary* _library;

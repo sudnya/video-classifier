@@ -24,9 +24,10 @@ public:
 	typedef std::vector<float>   FloatVector;
 
 public:
-	Image(const std::string& path);
-	Image(size_t x = 0, size_t y = 0, size_t colorComponents = 0, size_t pixelSize = 0,
-		const std::string& path = "", const ByteVector& data = ByteVector());
+	Image(const std::string& path, const std::string& label = "");
+	Image(size_t x = 0, size_t y = 0, size_t colorComponents = 0,
+		size_t pixelSize = 0, const std::string& path = "",
+		const ByteVector& data = ByteVector(), const std::string& label = "");
 
 public:
 	size_t x() const;
@@ -36,7 +37,8 @@ public:
 	size_t pixelSize() const;
 	size_t totalSize() const;
 
-	const std::string& path() const;
+	const std::string& path()  const;
+	const std::string& label() const;
 
 public:
     float range() const;
@@ -47,6 +49,7 @@ public:
 
 public:
 	void setPath(const std::string& path);
+	void setLabel(const std::string& label);
 	void invalidateCache();
 	
 public:
@@ -72,9 +75,10 @@ private:
 	void _loadImageHeader();
 	
 private:
-	std::string  _path;
-	bool         _loaded;
-	bool         _invalidToLoad;
+	std::string _path;
+	std::string _label;
+	bool        _loaded;
+	bool        _invalidToLoad;
 
 private:
 	size_t _x;

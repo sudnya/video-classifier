@@ -14,6 +14,9 @@
 // Standard Library Includes
 #include <vector>
 
+// Forward Declarations
+namespace minerva { namespace neuralnetwork { class NeuralNetwork; } }
+
 namespace minerva
 {
 
@@ -26,6 +29,8 @@ public:
 	typedef std::vector<Image>              BaseImageVector;
 	typedef BaseImageVector::iterator       iterator;
 	typedef BaseImageVector::const_iterator const_iterator;
+
+	typedef neuralnetwork::NeuralNetwork NeuralNetwork;
 
 	typedef matrix::Matrix Matrix;
 
@@ -56,7 +61,7 @@ public:
 
 public:
 	Matrix convertToMatrix(size_t sampleCount) const;
-    Matrix getReference() const;
+    Matrix getReference(const NeuralNetwork& network) const;
 
 private:
 	size_t _getSampledImageSize() const;
