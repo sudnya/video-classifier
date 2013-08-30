@@ -9,6 +9,7 @@
 #include <minerva/model/interface/ClassificationModel.h>
 #include <minerva/neuralnetwork/interface/NeuralNetwork.h>
 #include <minerva/util/interface/Knobs.h>
+#include <minerva/util/interface/debug.h>
 
 typedef minerva::neuralnetwork::NeuralNetwork NeuralNetwork;
 typedef minerva::neuralnetwork::Layer Layer;
@@ -28,6 +29,10 @@ static NeuralNetwork buildNeuralNetwork(const std::string& name, unsigned inputS
     unsigned currentSize = inputSize;
     unsigned reductionFactor = 2;
 
+    util::log("ClassificationModelBuilder") << " Building a neural network named '" << name << "' with input size = "
+        << inputSize << "\n";
+
+
     for(unsigned layer = 0; layer != numberOfLayers; ++layer)
     {
         std::stringstream knobName;
@@ -46,6 +51,8 @@ static NeuralNetwork buildNeuralNetwork(const std::string& name, unsigned inputS
 
 	neuralNetwork.initializeRandomly();
     outputSize = currentSize;
+    
+    util::log("ClassificationModelBuilder") << " Output size for '" << name << "' will be " << outputSize << "\n";
 
     return neuralNetwork;
 }
@@ -62,6 +69,7 @@ ClassificationModel* ClassificationModelBuilder::create(const std::string& path)
     unsigned networkInputSize = x * y;
     unsigned nextNetworkInputSize = 0;
 
+    util::log("ClassificationModelBuilder") << "Creating ...\n";
     model->setNeuralNetwork("FeatureSelector", buildNeuralNetwork("FeatureSelector", networkInputSize, nextNetworkInputSize));
     model->setNeuralNetwork("Classifier",      buildNeuralNetwork("Classifier", nextNetworkInputSize, nextNetworkInputSize));
 

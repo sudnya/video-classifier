@@ -15,6 +15,11 @@ namespace minerva
 namespace neuralnetwork
 {
 
+bool BackPropData::gradientChecking(const BackPropData::MatrixVector cost, float epsilon)
+{
+    return false;
+}
+
 BackPropData::Matrix BackPropData::getCost()
 {
     //J(theta) = -1/m (sum over i, sum over k yi,k * log (h(xl)k) + (1-yik)*log(1-h(xi)k) + regularization term lambda/2m sum over l,i,j thetai,j,i^2
@@ -52,9 +57,6 @@ BackPropData::MatrixVector BackPropData::getCostDerivative()
     //get deltas in a vector
     auto deltas = getDeltas(activations);
     
-    util::log("BackPropData") << "Computing cost function derivatives...\n";
-    
-    
     MatrixVector partialDerivative;
     //derivative of layer = activation[i] * delta[i+1] - for same layer
     for (auto i = deltas.begin(), j = activations.begin(); i != deltas.end() && j != activations.end(); ++i, ++j)
@@ -64,9 +66,14 @@ BackPropData::MatrixVector BackPropData::getCostDerivative()
     
 		util::log("BackPropData") << " computed derivative for layer " << std::distance(deltas.begin(), i) << " (" << partialDerivative.back().rows()
 		        << " rows, " << partialDerivative.back().columns() << " columns).\n";
+        util::log("BackPropData") << " PD contains " << i->toString() << "\n";
     
     }//this loop ends after all activations are done. and we don't need the last delta (ref-output anyway)
-
+    
+    util::log("BackPropData") << "Computing gradient checking\n";
+    float epsilon = 0.0001f;
+    bool isInRange = gradientChecking(deltas, epsilon);
+    assertM(isInRange, "Gradient checking indicates gradient descent is wrong\n");
     return partialDerivative;
 }
 
@@ -101,8 +108,10 @@ BackPropData::MatrixVector BackPropData::getDeltas(const MatrixVector& activatio
 
     std::reverse(deltas.begin(), deltas.end());
     for (auto& delta : deltas)
+    {
         util::log("BackPropData") << " added delta of size ( " << delta.rows() << " ) rows and ( " << delta.columns() << " )\n" ;
-
+        util::log("BackPropData") << " delta contains " << delta.toString() << "\n";
+    }
     return deltas;
 }
 

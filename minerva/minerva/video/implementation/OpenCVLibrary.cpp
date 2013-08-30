@@ -117,11 +117,15 @@ void OpenCVLibrary::Interface::load()
 	if(loaded()) return;
 	
     #ifdef __APPLE__
-	_library = dlopen("libopencv_legacy.2.4.5.dylib", RTLD_LAZY);
+    const char* libraryName = "libopencv_legacy.dylib";
     #else
-	_library = dlopen("libopencv_legacy.so", RTLD_LAZY);
+    const char* libraryName = "libopencv_legacy.so";
     #endif
-	
+
+	_library = dlopen(libraryName, RTLD_LAZY);
+
+    util::log("OpenCVLibrary") << "Loading library '" << libraryName << "'\n";
+
     if(!loaded())
 	{
 		return;

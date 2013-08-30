@@ -32,7 +32,10 @@ void NeuralNetwork::backPropagate(const Matrix& inputMatrix, const Matrix& refer
 {
     //create a backpropagate-data class
     //given the neural network, inputs & reference outputs 
-    
+    util::log("NeuralNetwork") << "Running back propagation on input matrix (" << inputMatrix.rows() << ") rows, ("
+       << inputMatrix.columns() << ") columns. Using reference output of (" << referenceOutput.rows() << ") rows, ("
+       << referenceOutput.columns() << ") columns. \n";
+
     Matrix reference = referenceOutput;
 
     BackPropData data(this, inputMatrix, referenceOutput);

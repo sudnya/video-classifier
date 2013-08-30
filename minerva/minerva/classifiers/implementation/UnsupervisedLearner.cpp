@@ -38,7 +38,7 @@ void UnsupervisedLearner::learn(const ImageVector& images)
 {
     /* using the feature NN & training images emit a NN for classifiers */
     auto matrix = images.convertToMatrix(m_featureSelector.getInputCount());
-
+    m_featureSelector.runInputs(matrix);
 	m_featureSelector.backPropagate(matrix, matrix);
 }
 

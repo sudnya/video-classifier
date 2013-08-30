@@ -67,6 +67,7 @@ Layer::Matrix Layer::runReverse(const Matrix& m)
         Matrix temp = m.slice(inputPixPos, 0, m.rows(), sparseMatrixT.rows());
         inputPixPos += sparseMatrixT.rows();
         Matrix output = temp.multiply(sparseMatrixT).sigmoid();
+        util::log("Layer") << "  output: " << output.toString() << "\n";
         finalOutput = finalOutput.append(output);
     }
     
