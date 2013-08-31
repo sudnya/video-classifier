@@ -29,7 +29,7 @@ public:
 	typedef FloatVector::const_iterator const_iterator;
 
 public:
-	Matrix(size_t rows = 0, size_t colums = 0,
+	explicit Matrix(size_t rows = 0, size_t colums = 0,
 		const FloatVector& data = FloatVector());
 
 public:
@@ -72,6 +72,7 @@ public:
 	Matrix add(float f) const;
 
 	Matrix subtract(const Matrix& m) const;
+	Matrix subtract(float f) const;
 
 	Matrix log() const;
 	Matrix negate() const;
@@ -92,7 +93,10 @@ public:
     void sigmoidSelf();
 
 	void transposeSelf();
-	
+
+public:
+    float reduceSum() const;
+
 public:
 	void* data();
 	const void* data() const;

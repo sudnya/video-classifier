@@ -27,7 +27,7 @@ void Layer::initializeRandomly()
     }
 }
 
-Layer::Matrix Layer::runInputs(const Matrix& m)
+Layer::Matrix Layer::runInputs(const Matrix& m) const
 {
     util::log("Layer") << " Running forward propagation on matrix (" << m.rows()
             << " rows, " << m.columns() << " columns).\n";
@@ -51,7 +51,7 @@ Layer::Matrix Layer::runInputs(const Matrix& m)
     return finalOutput;
 }
 
-Layer::Matrix Layer::runReverse(const Matrix& m)
+Layer::Matrix Layer::runReverse(const Matrix& m) const
 {
     util::log("Layer") << " Running reverse propagation on matrix (" << m.rows()
             << " rows, " << m.columns() << " columns).\n";

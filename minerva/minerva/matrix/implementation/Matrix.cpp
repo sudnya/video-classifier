@@ -136,7 +136,7 @@ Matrix Matrix::multiply(float f) const
 	// TODO: faster
 	for(auto& value : result._data)
 	{
-		value += f;
+		value *= f;
 	}
 	
 	return result;
@@ -241,6 +241,19 @@ Matrix Matrix::subtract(const Matrix& m) const
 	for(auto value = m.begin(); value != m.end(); ++value, ++rValue)
 	{
 		*rValue -= *value;
+	}
+	
+	return result;
+}
+
+Matrix Matrix::subtract(float f) const
+{
+	Matrix result(*this);
+	
+	// TODO: faster
+	for(auto& value : result._data)
+	{
+		value -= f;
 	}
 	
 	return result;
@@ -378,7 +391,7 @@ void Matrix::logSelf()
 
 static float sigmoid(float v)
 {
-    return 1.0f / (1 + std::exp(-v)); 
+    return 1.0f / (1.0f + std::exp(-v)); 
 }
 
 void Matrix::sigmoidSelf()
@@ -391,7 +404,20 @@ void Matrix::sigmoidSelf()
 
 void Matrix::transposeSelf()
 {
+    // TODO: in place
 	*this = transpose();
+}
+
+float Matrix::reduceSum() const
+{
+    float sum = 0.0f;
+
+    for(auto& f : _data)
+    {
+        sum += f;
+    }
+
+    return sum;
 }
 
 void* Matrix::data()

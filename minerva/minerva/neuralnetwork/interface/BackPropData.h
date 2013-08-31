@@ -26,7 +26,6 @@ class BackPropData
         {
         }
     public:
-        Matrix getCost();
         MatrixVector getCostDerivative();
         bool testDerivative();
         NeuralNetwork* getNeuralNetworkPtr();
@@ -35,7 +34,6 @@ class BackPropData
         MatrixVector getDeltas(const MatrixVector& m) const;
         MatrixVector getActivations() const;
         Matrix sigmoidDerivative(const Matrix& m) const;
-        bool gradientChecking(const MatrixVector cost, float epsilon);
     private:
         NeuralNetwork* m_neuralNetworkPtr;
         Matrix m_input;

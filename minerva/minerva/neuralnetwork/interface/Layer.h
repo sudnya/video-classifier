@@ -33,8 +33,8 @@ class Layer
         }
 
         void initializeRandomly();
-        Matrix runInputs(const Matrix& m);
-        Matrix runReverse(const Matrix& m);
+        Matrix runInputs(const Matrix& m) const;
+        Matrix runReverse(const Matrix& m) const;
  
  	public:
  		void transpose();
