@@ -35,6 +35,11 @@ size_t LearnerEngine::getInputFeatureCount() const
 	
 	return learner.getInputFeatureCount();
 }
+	
+bool LearnerEngine::requiresLabeledData() const
+{
+	return true;
+}
 
 }
 

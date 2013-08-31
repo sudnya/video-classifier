@@ -36,8 +36,6 @@ void NeuralNetwork::backPropagate(const Matrix& inputMatrix, const Matrix& refer
        << inputMatrix.columns() << ") columns. Using reference output of (" << referenceOutput.rows() << ") rows, ("
        << referenceOutput.columns() << ") columns. \n";
 
-    Matrix reference = referenceOutput;
-
     BackPropData data(this, inputMatrix, referenceOutput);
     //should we worry about comparing costs here?
     //data.computeCost();
@@ -88,6 +86,13 @@ std::string NeuralNetwork::getLabelForOutputNeuron(unsigned int i) const
     }
     
     return label->second;
+}
+
+void NeuralNetwork::setLabelForOutputNeuron(unsigned int idx, const std::string& label)
+{
+	assert(idx < getOutputCount());
+
+    m_labels[idx] = label;
 }
 
 void NeuralNetwork::addLayer(const Layer& L)

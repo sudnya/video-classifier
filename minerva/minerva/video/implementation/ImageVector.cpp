@@ -97,24 +97,36 @@ ImageVector::Matrix ImageVector::convertToMatrix(size_t sampleCount) const
 ImageVector::Matrix ImageVector::getReference(
 	const NeuralNetwork& neuralNetwork) const
 {
-	Matrix matrix(neuralNetwork.getOutputCount(), size());
+	Matrix matrix(size(), neuralNetwork.getOutputCount());
+	
+	util::log("ImageVector") << "Generating reference image:\n";
 	
 	for(unsigned int imageId = 0; imageId != size(); ++imageId)
 	{
+		util::log("ImageVector") << " For image" << imageId << " with label '"
+			<< (*this)[imageId].label() << "'\n";
+		
 		for(unsigned int outputNeuron = 0;
 			outputNeuron != neuralNetwork.getOutputCount(); ++outputNeuron)
 		{
+			util::log("ImageVector") << "  For output neuron" << outputNeuron
+				<< " with label '"
+				<< neuralNetwork.getLabelForOutputNeuron(outputNeuron) << "'\n";
+		
 			if((*this)[imageId].label() ==
 				neuralNetwork.getLabelForOutputNeuron(outputNeuron))
 			{
-				matrix(outputNeuron, imageId) = 1.0f;
+				matrix(imageId, outputNeuron) = 1.0f;
 			}
 			else
 			{
-				matrix(outputNeuron, imageId) = 0.0f;
+				matrix(imageId, outputNeuron) = 0.0f;
 			}
 		}
 	}
+	
+	util::log("ImageVector") << " Generated matrix: " << matrix.toString()
+		<< "\n";
 	
 	return matrix;
 }

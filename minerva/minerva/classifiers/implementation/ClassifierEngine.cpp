@@ -52,7 +52,7 @@ typedef video::Video	   Video;
 typedef video::VideoVector VideoVector;
 
 static void parseImageDatabase(ImageVector& images, VideoVector& video,
-	const std::string& path);
+	const std::string& path, bool requiresLabeledData);
 
 void ClassifierEngine::runOnPaths(const StringVector& paths)
 {
@@ -84,7 +84,7 @@ void ClassifierEngine::runOnPaths(const StringVector& paths)
 		}
 		else
 		{
-			parseImageDatabase(images, videos, path);
+			parseImageDatabase(images, videos, path, requiresLabeledData());
 		}
 	}
 	
@@ -158,6 +158,11 @@ void ClassifierEngine::closeModel()
 {
 	// intentionally blank
 }
+	
+bool ClassifierEngine::requiresLabeledData() const
+{
+	return false;
+}
 
 static bool isComment(const std::string& line);
 static bool isLabeled(const std::string& line);
@@ -169,7 +174,7 @@ static void parseLabeledPath(ImageVector& images, VideoVector& videos,
 static void consolidateLabels(ImageVector& images, VideoVector& videos);
 
 static void parseImageDatabase(ImageVector& images, VideoVector& videos,
-	const std::string& path)
+	const std::string& path, bool requiresLabeledData)
 {
 	util::log("ClassifierEngine") << " scanning image database '"
 		<< path << "'\n";
@@ -199,9 +204,14 @@ static void parseImageDatabase(ImageVector& images, VideoVector& videos,
 		{
 			parseLabeledPath(images, videos, line, databaseDirectory);
 		}
-		else
+		else if(!requiresLabeledData)
 		{
 			parseSinglePath(images, videos, line, databaseDirectory);
+		}
+		else
+		{
+			util::log("ClassifierEngine") << "  skipped unlabeled data '"
+				<< line	<< "'\n";
 		}
 
 		consolidateLabels(images, videos);
@@ -213,12 +223,12 @@ static void parseSinglePath(ImageVector& images, VideoVector& videos,
 	const std::string& line, const std::string& databaseDirectory)
 {
 	auto filePath = util::getRelativePath(databaseDirectory, line);
-		
+	
 	if(Image::isPathAnImage(filePath))
 	{
 		util::log("ClassifierEngine") << "  found image '" << filePath
 			<< "'\n";
-
+		
 		images.push_back(Image(filePath));
 	}
 	else if(Video::isPathAVideo(filePath))
@@ -245,27 +255,33 @@ static void parseLabeledPath(ImageVector& images, VideoVector& videos,
 	if(components.size() < 2)
 	{
 		throw std::runtime_error("Malformed labeled image/video statement '" +
-			line + "', should be (paht, label) or "
+			line + "', should be (path, label) or "
 			"(path, label, startFrame, endFrame).");
 	}
 	
 	auto filePath = util::getRelativePath(databaseDirectory, components[0]);
 	
-	auto label = components[1];
+	auto label = removeWhitespace(components[1]);
 	
-	if(Image::isPathAnImage(line))
+	if(Image::isPathAnImage(filePath))
 	{
-		util::log("ClassifierEngine") << "  found image '" << filePath
+		util::log("ClassifierEngine") << "  found labeled image '" << filePath
 			<< "'\n";
+
+		if(components.size() != 2)
+		{
+			throw std::runtime_error("Malformed labeled image statement '" +
+				line + "', should be (path, label).");
+		}
 
 		images.push_back(Image(filePath, label));
 	}
-	else if(Video::isPathAVideo(line))
+	else if(Video::isPathAVideo(filePath))
 	{
-		util::log("ClassifierEngine") << "  found video '" << filePath
+		util::log("ClassifierEngine") << "  found labeled video '" << filePath
 			<< "'\n";
 		
-		if(components.size() < 2)
+		if(components.size() != 4)
 		{
 			throw std::runtime_error("Malformed labeled video statement '" +
 				line + "', should be (path, label, startFrame, endFrame).");

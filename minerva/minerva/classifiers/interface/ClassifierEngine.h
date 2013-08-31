@@ -49,6 +49,8 @@ public:
 protected:
 	virtual void registerModel();
 	virtual void closeModel();
+	
+	virtual bool requiresLabeledData() const;
 
 protected:
 

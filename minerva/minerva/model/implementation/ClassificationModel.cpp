@@ -142,6 +142,22 @@ void ClassificationModel::save() const
 			stream << "\t\t\t\t}";
 		}	
 		
+		stream << "],\n";
+		
+		stream << "\t\t\t\"output-names\": [\n";
+		
+		for(unsigned int output = 0;
+			output != network->second.getOutputCount(); ++output)
+		{
+			if(output != 0)
+			{
+				stream << ",\n";
+			}
+
+			stream << "\t\t\t\t\"" << 
+				network->second.getLabelForOutputNeuron(output) << "\"";
+		}	
+		
 		stream << "]\n";
 		
 		stream << "\t\t}";
@@ -266,6 +282,19 @@ void ClassificationModel::load()
 					stream.read((char*)matrix.data(), rows * columns);
 				}
 			}
+			
+			util::json::Visitor outputsVisitor(networkVisitor["output-names"]);	
+			
+			for(auto outputObject = outputsVisitor.begin_array();
+				outputObject != outputsVisitor.end_array(); ++outputObject)
+			{
+				util::json::Visitor outputVisitor(*outputObject);
+				
+				network->second.setLabelForOutputNeuron(
+					std::distance(outputsVisitor.begin_array(), outputObject),
+					outputVisitor);
+			}
+			
 		}
 	}
 	catch(...)

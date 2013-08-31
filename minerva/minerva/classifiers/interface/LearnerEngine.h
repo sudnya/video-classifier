@@ -23,7 +23,8 @@ public:
 protected:
 	virtual void runOnImageBatch(const ImageVector& images);
 	virtual size_t getInputFeatureCount() const;
-
+	
+	virtual bool requiresLabeledData() const;
 };
 
 }

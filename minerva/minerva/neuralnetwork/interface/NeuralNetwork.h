@@ -40,7 +40,10 @@ class NeuralNetwork
         void backPropagate(const Matrix& input, const Matrix& reference);
         
         Matrix runInputs(const Matrix& m);
+        
+    public:
         std::string getLabelForOutputNeuron(unsigned int idx) const;
+        void setLabelForOutputNeuron(unsigned int idx, const std::string& label);
 
 	public:
 		void mirror();
