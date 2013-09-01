@@ -12,28 +12,23 @@ namespace classifiers
 
 void Learner::learnAndTrain(const ImageVector& images)
 {
-    loadFeatureSelector();
-    loadClassifier();
     trainClassifier(images);
-    writeClassifier();
 }
 
-unsigned Learner::getInputFeatureCount()
+size_t Learner::getInputFeatureCount() const
 {
-    loadFeatureSelector();
-    
     return m_featureSelectorNetwork.getInputCount();
 }
 
 void Learner::loadFeatureSelector()
 {
     /* read from the feature file into memory/variable */
-    m_featureSelectorNetwork = m_classificationModel.getNeuralNetwork("FeatureSelector");
+    m_featureSelectorNetwork = m_classificationModel->getNeuralNetwork("FeatureSelector");
 }
 
 void Learner::loadClassifier()
 {
-    m_classifierNetwork = m_classificationModel.getNeuralNetwork("Classifier");
+    m_classifierNetwork = m_classificationModel->getNeuralNetwork("Classifier");
 }
 
 void Learner::trainClassifier(const ImageVector& images)
@@ -50,7 +45,7 @@ void Learner::trainClassifier(const ImageVector& images)
 void Learner::writeClassifier()
 {
     /* write out m_classifiers to disk */
-    m_classificationModel.setNeuralNetwork("Classifier", m_classifierNetwork);
+    m_classificationModel->setNeuralNetwork("Classifier", m_classifierNetwork);
 }
 
 } //end classifiers

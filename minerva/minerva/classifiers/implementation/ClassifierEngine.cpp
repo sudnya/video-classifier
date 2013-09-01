@@ -91,6 +91,9 @@ void ClassifierEngine::runOnPaths(const StringVector& paths)
 	unsigned int maxBatchSize = util::KnobDatabase::getKnobValue<unsigned int>(
 		"ClassifierEngine::ImageBatchSize", 10);
 	
+    unsigned int maxVideoFrames = util::KnobDatabase::getKnobValue<unsigned int>(
+		"ClassifierEngine::MaximumVideoFrames", 50);
+	
 	util::log("ClassifierEngine") << "Running image batches\n";
 
 	// Run images first
@@ -116,14 +119,20 @@ void ClassifierEngine::runOnPaths(const StringVector& paths)
 			<< " images\n";
 		
 		runOnImageBatch(batch);
-	}
+		
+		if(maxVideoFrames <= batch.size())
+		{
+			break;
+		}
 	
-    unsigned int maxVideoFrames = util::KnobDatabase::getKnobValue<unsigned int>(
-		"ClassifierEngine::MaximumVideoFrames", 50);
+		maxVideoFrames -= batch.size();
+	}
 	
 	// Run videos next
 	for(auto& video : videos)
 	{
+		bool hitFrameLimit = false;
+
 		while(!video.finished())
 		{
 			auto batch = video.getNextFrames(maxBatchSize);
@@ -132,11 +141,17 @@ void ClassifierEngine::runOnPaths(const StringVector& paths)
 
             if(maxVideoFrames <= batch.size())
             {
+				hitFrameLimit = true;
                 break;
             }
 		
             maxVideoFrames -= batch.size();
         }
+		
+		if(hitFrameLimit)
+		{
+			break;
+		}
 	}	
 	
 	// close
@@ -335,6 +350,13 @@ static void consolidateLabels(ImageVector& images, VideoVector& videos)
 				existingVideo->second.addLabel(label);
 			}
 		}
+	}
+
+	videos.clear();
+
+	for(auto& pathAndVideo : pathsToVideos)
+	{
+		videos.push_back(pathAndVideo.second);
 	}
 }
 

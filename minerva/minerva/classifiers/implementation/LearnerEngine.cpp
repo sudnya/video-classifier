@@ -8,6 +8,9 @@
 #include <minerva/classifiers/interface/LearnerEngine.h>
 #include <minerva/classifiers/interface/Learner.h>
 
+// Standard Library Includes
+#include <cassert>
+
 namespace minerva
 {
 
@@ -15,25 +18,41 @@ namespace classifiers
 {
 
 LearnerEngine::LearnerEngine()
+: _learner(nullptr)
 {
 
+}
+
+LearnerEngine::~LearnerEngine()
+{
+	delete _learner;
+}
+
+void LearnerEngine::registerModel()
+{
+	assert(_learner == nullptr);
+
+	_learner = new Learner(_model);
+
+	_learner->loadFeatureSelector();
+	_learner->loadClassifier();
+}
+
+void LearnerEngine::closeModel()
+{
+	_learner->writeClassifier();
+
+	_model->save();
 }
 	
 void LearnerEngine::runOnImageBatch(const ImageVector& images)
 {
-	Learner learner(*_model);
-	
-	learner.learnAndTrain(images);
-	
-	// TODO save the model
-	_model->save();
+	_learner->learnAndTrain(images);
 }
 
 size_t LearnerEngine::getInputFeatureCount() const
 {
-	Learner learner(*_model);
-	
-	return learner.getInputFeatureCount();
+	return _learner->getInputFeatureCount();
 }
 	
 bool LearnerEngine::requiresLabeledData() const

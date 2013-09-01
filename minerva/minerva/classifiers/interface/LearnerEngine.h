@@ -9,6 +9,9 @@
 // Minerva Includes
 #include <minerva/classifiers/interface/ClassifierEngine.h>
 
+// Forward Declarations
+namespace minerva { namespace classifiers { class Learner; } }
+
 namespace minerva
 {
 
@@ -19,12 +22,26 @@ class LearnerEngine : public ClassifierEngine
 {
 public:
 	LearnerEngine();
+	virtual ~LearnerEngine();
+
+public:
+	LearnerEngine(const LearnerEngine&) = delete;
+	LearnerEngine& operator=(const LearnerEngine&) = delete;
 	
-protected:
+private:
+	virtual void registerModel();
+	virtual void closeModel();
+
+private:
 	virtual void runOnImageBatch(const ImageVector& images);
 	virtual size_t getInputFeatureCount() const;
 	
 	virtual bool requiresLabeledData() const;
+
+private:
+	Learner* _learner;
+
+
 };
 
 }

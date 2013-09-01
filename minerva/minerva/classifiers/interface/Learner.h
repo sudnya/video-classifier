@@ -21,22 +21,24 @@ class Learner
         typedef minerva::video::ImageVector ImageVector;
 
     public:
-        Learner(const ClassificationModel& model) : m_classificationModel(model)
+        Learner(ClassificationModel* model) : m_classificationModel(model)
         {
         }
 
         void learnAndTrain(const ImageVector& images);
 
-        unsigned getInputFeatureCount();
-
-    private:
+        size_t getInputFeatureCount() const;
+	
+    public:
         void loadFeatureSelector();
         void loadClassifier();
-        void trainClassifier(const ImageVector& images);
         void writeClassifier();
+    
+	private:
+        void trainClassifier(const ImageVector& images);
 
     private:
-        ClassificationModel m_classificationModel;
+        ClassificationModel* m_classificationModel;
 
         /* The neural network as a result of unsupervised learning is read from the disk */
         NeuralNetwork m_featureSelectorNetwork;
@@ -50,3 +52,5 @@ class Learner
 
 } //end classifiers
 } //end minerva
+
+

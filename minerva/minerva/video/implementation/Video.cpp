@@ -185,7 +185,7 @@ std::string Video::_getLabelForCurrentFrame() const
 	
 	for(auto& label : _labels)
 	{
-		if(label.beginFrame >= _frame || label.endFrame <= _frame) continue;
+		if(label.beginFrame > _frame || label.endFrame < _frame) continue;
 		
 		return label.name;
 	}
