@@ -11,6 +11,7 @@
 #include <minerva/video/interface/VideoStream.h>
 
 #include <minerva/util/interface/paths.h>
+#include <minerva/util/interface/debug.h>
 
 // Standard Library Includes
 #include <stdexcept>
@@ -124,6 +125,9 @@ ImageVector Video::getNextFrames(unsigned int frames)
 		std::stringstream name;
 		
 		name << images.back().path() << "-frame-" << _frame;
+	
+		util::log("Video") << "Getting next frame " << _frame << " from video "
+			<< path() << "\n";
 	
 		images.back().setPath(name.str());
 

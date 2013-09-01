@@ -72,9 +72,6 @@ bool OpenCVVideoLibrary::OpenCVVideoStream::getNextFrame(Image& frame)
 		throw std::runtime_error("Failed to retrieve frame from video stream.");
 	}
 	
-	util::log("OpenCVVideoLibrary") << "Getting next frame from video stream '"
-		<< _path << "'\n";
-	
 	int pixelSize = (image->depth % 32) / 8;
 	
 	Image::ByteVector data(image->height * image->width *

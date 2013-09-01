@@ -41,9 +41,9 @@ void UnsupervisedLearner::learn(const ImageVector& images)
     /* using the feature NN & training images emit a NN for classifiers */
     auto matrix = images.convertToMatrix(m_featureSelector.getInputCount());
     
-    util::log("UnsupervisedLearner") << "Training feature selector matrix with input: " << matrix.toString() << "\n";
+    util::log("UnsupervisedLearner") << "Training feature selector matrix with input: " << matrix.sigmoid().toString() << "\n";
 
-    m_featureSelector.backPropagate(matrix, matrix);
+    m_featureSelector.backPropagate(matrix, matrix.sigmoid());
 }
 
 void UnsupervisedLearner::writeFeaturesNeuralNetwork()

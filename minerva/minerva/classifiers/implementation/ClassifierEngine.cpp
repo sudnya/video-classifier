@@ -18,6 +18,9 @@
 // Standard Library Includes
 #include <stdexcept>
 #include <fstream>
+#include <random>
+#include <cstdlib>
+#include <algorithm>
 
 namespace minerva
 {
@@ -129,36 +132,47 @@ void ClassifierEngine::runOnPaths(const StringVector& paths)
 	}
 	
 	// Run videos next
-	for(auto& video : videos)
+	bool allFinished = false;
+
+	while(!allFinished)
 	{
+		allFinished = true;
+		
 		bool hitFrameLimit = false;
 
-		while(!video.finished())
+		for(auto& video : videos)
 		{
+			if(video.finished())
+			{
+				continue;
+			}
+
 			auto batch = video.getNextFrames(maxBatchSize);
 	
 			// TODO fix this
 			if(batch.empty())
 			{
-				break;
+				continue;
 			}
 	
+			allFinished = false;
+
 			runOnImageBatch(batch);
 
-            if(maxVideoFrames <= batch.size())
-            {
+			if(maxVideoFrames <= batch.size())
+			{
 				hitFrameLimit = true;
-                break;
-            }
+				break;
+			}
 
-            maxVideoFrames -= batch.size();
-        }
-		
+			maxVideoFrames -= batch.size();
+		}
+
 		if(hitFrameLimit)
 		{
 			break;
 		}
-	}	
+	}
 	
 	// close
 	closeModel();
@@ -235,9 +249,9 @@ static void parseImageDatabase(ImageVector& images, VideoVector& videos,
 				<< line	<< "'\n";
 		}
 
-		consolidateLabels(images, videos);
-
 	}
+	
+	consolidateLabels(images, videos);
 }
 
 static void parseSinglePath(ImageVector& images, VideoVector& videos,
@@ -364,6 +378,10 @@ static void consolidateLabels(ImageVector& images, VideoVector& videos)
 	{
 		videos.push_back(pathAndVideo.second);
 	}
+
+	// Randomly shuffle videos
+	std::shuffle(videos.begin(), videos.end(),
+		std::default_random_engine(std::time(0)));
 }
 
 static bool isComment(const std::string& line)

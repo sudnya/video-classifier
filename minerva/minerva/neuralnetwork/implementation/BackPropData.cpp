@@ -120,9 +120,9 @@ BackPropData::MatrixVector BackPropData::getCostDerivative()
         //there will be one less delta than activation
         partialDerivative.push_back((((*i).transpose()).multiply(*j)).transpose());
     
-		//util::log("BackPropData") << " computed derivative for layer " << std::distance(deltas.begin(), i) << " (" << partialDerivative.back().rows()
-		//        << " rows, " << partialDerivative.back().columns() << " columns).\n";
-        //util::log("BackPropData") << " PD contains " << partialDerivative.back().toString() << "\n";
+	//	util::log("BackPropData") << " computed derivative for layer " << std::distance(deltas.begin(), i) << " (" << partialDerivative.back().rows()
+	//	       << " rows, " << partialDerivative.back().columns() << " columns).\n";
+    //    util::log("BackPropData") << " PD contains " << partialDerivative.back().toString() << "\n";
     
     }//this loop ends after all activations are done. and we don't need the last delta (ref-output anyway)
     

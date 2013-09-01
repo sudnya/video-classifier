@@ -146,7 +146,7 @@ Image::FloatVector Image::getSampledData(size_t sampleCount) const
 			position = imageSize - 1;
 		}
 		
-		samples.push_back((getComponentAt(position) / range()) );
+		samples.push_back((getComponentAt(position) / range()) - 0.5f);
 	}
 
 	return samples;

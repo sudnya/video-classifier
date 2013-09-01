@@ -2,10 +2,13 @@
  * Date  : 08/11/2013
  * The implementation of the layer class 
  */
-#include <random>
+
+#include <minerva/neuralnetwork/interface/Layer.h>
 
 #include <minerva/util/interface/debug.h>
-#include <minerva/neuralnetwork/interface/Layer.h>
+#include <minerva/util/interface/Knobs.h>
+
+#include <random>
 
 namespace minerva
 {
@@ -14,8 +17,10 @@ namespace neuralnetwork
 
 void Layer::initializeRandomly()
 {
+	float epsilon = util::KnobDatabase::getKnobValue("Layer::RandomInitializationEpsilon", 0.0001f);
+
     std::default_random_engine generator;
-    std::uniform_real_distribution<float> distribution(-0.05f, 0.05f);
+    std::uniform_real_distribution<float> distribution(-epsilon, epsilon);
     
     for (auto i = begin(); i != end(); ++i)
     {
@@ -66,7 +71,7 @@ Layer::Matrix Layer::runReverse(const Matrix& m) const
     
         Matrix temp = m.slice(inputPixPos, 0, m.rows(), sparseMatrixT.rows());
         inputPixPos += sparseMatrixT.rows();
-        Matrix output = temp.multiply(sparseMatrixT);
+        Matrix output = temp.multiply(sparseMatrixT).sigmoid();
     //    util::log("Layer") << "  output: " << output.toString() << "\n";
         finalOutput = finalOutput.append(output);
     }
