@@ -40,7 +40,7 @@ void GradientDescentSolver::solve()
         // change the neuron value for each matrix in this layer
         for (auto layerWeight = layer->begin(); layerWeight != layer->end(); ++layerWeight)
         {
-            (*layerWeight) = (*layerWeight).add(deriv->multiply(learningRate));
+            (*layerWeight) = (*layerWeight).subtract(deriv->multiply(learningRate));
         }
     }
 }

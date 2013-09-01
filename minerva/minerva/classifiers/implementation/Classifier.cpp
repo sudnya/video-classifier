@@ -51,7 +51,12 @@ Classifier::Matrix Classifier::detectGestures(const ImageVector& images)
 
     assert(matrix.columns() == m_featureSelectorNetwork.getInputCount());
 
+    util::log("Classifier") << "Input image data " << matrix.toString();
+    
     auto featureMatrix = m_featureSelectorNetwork.runInputs(matrix);
+    
+    util::log("Classifier") << "Feature selector produced " << featureMatrix.toString();
+    
     auto gestureMatrix = m_classifierNetwork.runInputs(featureMatrix);
 
     return gestureMatrix;    

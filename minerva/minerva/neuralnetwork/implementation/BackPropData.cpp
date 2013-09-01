@@ -120,9 +120,9 @@ BackPropData::MatrixVector BackPropData::getCostDerivative()
         //there will be one less delta than activation
         partialDerivative.push_back((((*i).transpose()).multiply(*j)).transpose());
     
-		util::log("BackPropData") << " computed derivative for layer " << std::distance(deltas.begin(), i) << " (" << partialDerivative.back().rows()
-		        << " rows, " << partialDerivative.back().columns() << " columns).\n";
-        util::log("BackPropData") << " PD contains " << i->toString() << "\n";
+		//util::log("BackPropData") << " computed derivative for layer " << std::distance(deltas.begin(), i) << " (" << partialDerivative.back().rows()
+		//        << " rows, " << partialDerivative.back().columns() << " columns).\n";
+        //util::log("BackPropData") << " PD contains " << partialDerivative.back().toString() << "\n";
     
     }//this loop ends after all activations are done. and we don't need the last delta (ref-output anyway)
     
@@ -156,7 +156,7 @@ BackPropData::MatrixVector BackPropData::getDeltas(const MatrixVector& activatio
 	    deltas.push_back(delta);
         
         unsigned int layerNumber = std::distance(activations.begin(), --(i.base()));
-        util::log ("BackPropData") << " Layer number: " << layerNumber << "\n";
+        //util::log ("BackPropData") << " Layer number: " << layerNumber << "\n";
         auto& layer = (*m_neuralNetworkPtr)[layerNumber];
 
         auto activationDerivativeOfCurrentLayer = sigmoidDerivative(*i);
@@ -168,11 +168,11 @@ BackPropData::MatrixVector BackPropData::getDeltas(const MatrixVector& activatio
     }
 
     std::reverse(deltas.begin(), deltas.end());
-    for (auto& delta : deltas)
-    {
-        util::log("BackPropData") << " added delta of size ( " << delta.rows() << " ) rows and ( " << delta.columns() << " )\n" ;
-        util::log("BackPropData") << " delta contains " << delta.toString() << "\n";
-    }
+    //for (auto& delta : deltas)
+    //{
+    //    util::log("BackPropData") << " added delta of size ( " << delta.rows() << " ) rows and ( " << delta.columns() << " )\n" ;
+    //    util::log("BackPropData") << " delta contains " << delta.toString() << "\n";
+    //}
     return deltas;
 }
 
@@ -183,24 +183,27 @@ BackPropData::MatrixVector BackPropData::getActivations() const
 
 	auto temp = m_input;
 	activations.push_back(temp);
-    util::log("BackPropData") << " added activation of size ( " << activations.back().rows() << " ) rows and ( " << activations.back().columns() << " )\n" ;
+    //util::log("BackPropData") << " added activation of size ( " << activations.back().rows() << " ) rows and ( " << activations.back().columns() << " )\n" ;
 
 	for (auto i = m_neuralNetworkPtr->begin();
 		i != m_neuralNetworkPtr->end(); ++i)
     {
 
         activations.push_back((*i).runInputs(temp));
-        util::log("BackPropData") << " added activation of size ( " << activations.back().rows() << " ) rows and ( " << activations.back().columns() << " )\n" ;
+        //util::log("BackPropData") << " added activation of size ( " << activations.back().rows() << " ) rows and ( " << activations.back().columns() << " )\n" ;
         temp = activations.back();
     }
+
+    util::log("BackPropData") << " intermediate stage ( " << activations[activations.size() / 2].toString() << "\n";
+    util::log("BackPropData") << " final output ( " << activations.back().toString() << "\n";
 
     return activations;
 }
 
-static float sigmoid(float v)
-{
-	return 1.0f / (1.0f + std::exp(-v));
-}
+//static float sigmoid(float v)
+//{
+//	return 1.0f / (1.0f + std::exp(-v));
+//}
 
 BackPropData::Matrix BackPropData::sigmoidDerivative(const Matrix& m) const
 {
@@ -211,7 +214,8 @@ BackPropData::Matrix BackPropData::sigmoidDerivative(const Matrix& m) const
 
 	for(auto& element : temp)
 	{
-		element = sigmoid(element) * (1.0f - sigmoid(element));
+	//	element = sigmoid(element) * (1.0f - sigmoid(element));
+		element = element * (1.0f - element);
 	}
 	
 	return temp;

@@ -119,7 +119,7 @@ void ClassifierEngine::runOnPaths(const StringVector& paths)
 	}
 	
     unsigned int maxVideoFrames = util::KnobDatabase::getKnobValue<unsigned int>(
-		"ClassifierEngine::MaximumVideoFrames", 500);
+		"ClassifierEngine::MaximumVideoFrames", 50);
 	
 	// Run videos next
 	for(auto& video : videos)

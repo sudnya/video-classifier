@@ -41,20 +41,20 @@ Layer::Matrix Layer::runInputs(const Matrix& m) const
         Matrix temp = m.slice(inputPixPos, 0, m.rows(), (*i).rows());
         inputPixPos += (*i).rows();
         Matrix output = temp.multiply((*i)).sigmoid();
-        util::log("Layer") << "  output: " << output.toString() << "\n";
+      //  util::log("Layer") << "  output: " << output.toString() << "\n";
         finalOutput = finalOutput.append(output);
     }
     
-    util::log("Layer") << "  layer output is a matrix (" << finalOutput.rows()
-            << " rows, " << finalOutput.columns() << " columns).\n";
+    //util::log("Layer") << "  layer output is a matrix (" << finalOutput.rows()
+    //        << " rows, " << finalOutput.columns() << " columns).\n";
     
     return finalOutput;
 }
 
 Layer::Matrix Layer::runReverse(const Matrix& m) const
 {
-    util::log("Layer") << " Running reverse propagation on matrix (" << m.rows()
-            << " rows, " << m.columns() << " columns).\n";
+    //util::log("Layer") << " Running reverse propagation on matrix (" << m.rows()
+    //        << " rows, " << m.columns() << " columns).\n";
     
     unsigned int inputPixPos = 0;
     Matrix finalOutput;
@@ -66,13 +66,13 @@ Layer::Matrix Layer::runReverse(const Matrix& m) const
     
         Matrix temp = m.slice(inputPixPos, 0, m.rows(), sparseMatrixT.rows());
         inputPixPos += sparseMatrixT.rows();
-        Matrix output = temp.multiply(sparseMatrixT).sigmoid();
-        util::log("Layer") << "  output: " << output.toString() << "\n";
+        Matrix output = temp.multiply(sparseMatrixT);
+    //    util::log("Layer") << "  output: " << output.toString() << "\n";
         finalOutput = finalOutput.append(output);
     }
     
-    util::log("Layer") << "  layer output is a matrix (" << finalOutput.rows()
-            << " rows, " << finalOutput.columns() << " columns).\n";
+    //util::log("Layer") << "  layer output is a matrix (" << finalOutput.rows()
+    //        << " rows, " << finalOutput.columns() << " columns).\n";
     
     return finalOutput;
 }

@@ -131,7 +131,10 @@ void NeuralNetwork::mirror()
 		addLayer((*this)[index]);
 		
 		back().transpose();
-	}
+
+        // should be pseudo inverse
+	    back().initializeRandomly();
+    }
 }
 
 void NeuralNetwork::cutOffSecondHalf()
