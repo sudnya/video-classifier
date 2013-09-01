@@ -11,8 +11,8 @@
 #include <minerva/util/interface/Knobs.h>
 #include <minerva/util/interface/debug.h>
 
-typedef minerva::neuralnetwork::NeuralNetwork NeuralNetwork;
-typedef minerva::neuralnetwork::Layer Layer;
+// Standard Library Includes
+#include <cmath>
 
 namespace minerva
 {
@@ -20,15 +20,23 @@ namespace minerva
 namespace model
 {
 
-static NeuralNetwork buildNeuralNetwork(const std::string& name, unsigned inputSize, unsigned& outputSize)
+typedef minerva::neuralnetwork::NeuralNetwork NeuralNetwork;
+typedef minerva::neuralnetwork::Layer Layer;
+
+static unsigned logBase(unsigned base, unsigned value)
+{
+	return std::ceil(std::log((double)value) / std::log((double)base));
+}
+
+static NeuralNetwork buildNeuralNetwork(const std::string& name, unsigned inputSize, unsigned outputSize)
 {
 	NeuralNetwork neuralNetwork;
 	
 	unsigned numberOfLayers = util::KnobDatabase::getKnobValue(name + "::NeuralNetwork::Layers", 3);
-	
-	unsigned currentSize = inputSize;
-	unsigned reductionFactor = 2;
 
+	unsigned currentSize     = inputSize;
+	unsigned reductionFactor = logBase(numberOfLayers, inputSize / outputSize);
+	
 	util::log("ClassificationModelBuilder") << " Building a neural network named '" << name << "' with input size = "
 		<< inputSize << "\n";
 
@@ -42,14 +50,20 @@ static NeuralNetwork buildNeuralNetwork(const std::string& name, unsigned inputS
 		unsigned blocks	 = util::KnobDatabase::getKnobValue(knobName.str() + "::Blocks",	   1);
 		size_t blockInputs  = util::KnobDatabase::getKnobValue(knobName.str() + "::BlockInputs",  currentSize);
 		size_t blockOutputs = util::KnobDatabase::getKnobValue(knobName.str() + "::BlockOutputs", currentSize/reductionFactor);
-		Layer L(blocks, blockInputs, blockOutputs);
-		neuralNetwork.addLayer(L);
+		
+		if(layer + 1 == numberOfLayers || blockOutputs < outputSize)
+		{
+			blockOutputs = outputSize;
+		}
+		
+		neuralNetwork.addLayer(Layer(blocks, blockInputs, blockOutputs));
+		util::log("ClassificationModelBuilder") << " added layer with input size = "
+			<< blockInputs << " and output size " << blockOutputs << "\n";
 
-		currentSize = currentSize / reductionFactor;
+		currentSize = blockOutputs;
 	}
 
 	neuralNetwork.initializeRandomly();
-	outputSize = currentSize;
 	
 	util::log("ClassificationModelBuilder") << " Output size for '" << name << "' will be " << outputSize << "\n";
 	
@@ -58,7 +72,6 @@ static NeuralNetwork buildNeuralNetwork(const std::string& name, unsigned inputS
 		"freganiente", "ok", "cosatifarei", "basta", "prendere", "noncenepiu",
 		"fame", "tantotempo", "buonissimo", "messidaccordo", "sonostufo"};
 	const unsigned int labelCount = 20;
-	
 	
 	for(unsigned int output = 0; output != outputSize; ++output)
 	{
@@ -88,18 +101,24 @@ static NeuralNetwork buildNeuralNetwork(const std::string& name, unsigned inputS
 ClassificationModel* ClassificationModelBuilder::create(const std::string& path)
 {
 	auto model = new ClassificationModel(path);
-	unsigned x,y;
-	x = util::KnobDatabase::getKnobValue("ResolutionX", 32);
-	y = util::KnobDatabase::getKnobValue("ResolutionY", 32);
+	
+	unsigned x = util::KnobDatabase::getKnobValue("ResolutionX", 32);
+	unsigned y = util::KnobDatabase::getKnobValue("ResolutionY", 32);
+	
 	model->setInputImageResolution(x,y);
 
-	// TODO: add more knobs
-	unsigned networkInputSize = x * y;
-	unsigned nextNetworkInputSize = 0;
+	unsigned featureSelectorInputSize  = x * y;
+	unsigned featureSelectorOutputSize =
+util::KnobDatabase::getKnobValue("FeatureSelector::NeuralNetwor::Outputs", 128);
+	unsigned classifierInputSize       = featureSelectorOutputSize;
+	unsigned classifierOutputSize      = util::KnobDatabase::getKnobValue("Classifier::NeuralNetwork::Outputs", 20);
 
 	util::log("ClassificationModelBuilder") << "Creating ...\n";
-	model->setNeuralNetwork("FeatureSelector", buildNeuralNetwork("FeatureSelector", networkInputSize, nextNetworkInputSize));
-	model->setNeuralNetwork("Classifier",      buildNeuralNetwork("Classifier", nextNetworkInputSize, nextNetworkInputSize));
+	model->setNeuralNetwork("FeatureSelector",
+		buildNeuralNetwork("FeatureSelector", featureSelectorInputSize,
+		featureSelectorOutputSize));
+	model->setNeuralNetwork("Classifier", buildNeuralNetwork("Classifier",
+		classifierInputSize, classifierOutputSize));
 
 	return model;
 }

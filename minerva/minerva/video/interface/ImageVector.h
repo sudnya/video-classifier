@@ -54,7 +54,8 @@ public:
 	const Image& back() const;
 
 public:
-	size_t size() const;
+	size_t size()  const;
+	bool   empty() const;
 
 public:
 	void push_back(const Image& image);

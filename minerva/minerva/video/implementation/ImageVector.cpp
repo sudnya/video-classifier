@@ -73,6 +73,11 @@ size_t ImageVector::size() const
 	return _images.size();
 }
 
+bool ImageVector::empty() const
+{
+	return _images.empty();
+}
+
 void ImageVector::push_back(const Image& image)
 {
 	_images.push_back(image);

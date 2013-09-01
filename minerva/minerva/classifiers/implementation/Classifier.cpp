@@ -74,18 +74,12 @@ GestureVector Classifier::pickMostLikelyGesture(const Matrix& likelyGestures)
     unsigned int totalRows = likelyGestures.rows();
 
     util::log("Classifier") << "Finding gestures for each image\n";
+	util::log("Classifier") << " (images X neuron outputs) " << likelyGestures.toString();
 
     for (unsigned i = 0; i < totalRows; ++i)
     {
         auto gestureNeurons = likelyGestures.getRow(i);
         
-        util::log("Classifier") << " for image " << i << "\n";
-        
-        for(auto neuronOutput = gestureNeurons.begin(); neuronOutput != gestureNeurons.end(); ++neuronOutput)
-        {
-            util::log("Classifier") << "   neuron " << std::distance(gestureNeurons.begin(), neuronOutput) << " : " << *neuronOutput << "\n";
-        }
-
         auto maxNeuron = max_element(gestureNeurons.begin(), gestureNeurons.end());
         std::string name = m_classifierNetwork.getLabelForOutputNeuron(std::distance(gestureNeurons.begin(),maxNeuron));
         gestureList.push_back(name);

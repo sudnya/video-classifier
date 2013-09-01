@@ -136,7 +136,13 @@ void ClassifierEngine::runOnPaths(const StringVector& paths)
 		while(!video.finished())
 		{
 			auto batch = video.getNextFrames(maxBatchSize);
-		
+	
+			// TODO fix this
+			if(batch.empty())
+			{
+				break;
+			}
+	
 			runOnImageBatch(batch);
 
             if(maxVideoFrames <= batch.size())
@@ -144,7 +150,7 @@ void ClassifierEngine::runOnPaths(const StringVector& paths)
 				hitFrameLimit = true;
                 break;
             }
-		
+
             maxVideoFrames -= batch.size();
         }
 		
