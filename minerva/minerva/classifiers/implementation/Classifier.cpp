@@ -47,7 +47,7 @@ Classifier::Matrix Classifier::detectGestures(const ImageVector& images)
     assert(m_classifierNetwork.getInputCount() == m_featureSelectorNetwork.getOutputCount());
     
     /* run classification using features, classifier network to emit gesture */
-    auto matrix = images.convertToMatrix(m_featureSelectorNetwork.getInputCount());
+    auto matrix = images.convertToMatrix(m_featureSelectorNetwork.getInputCount()).sigmoid();
 
     assert(matrix.columns() == m_featureSelectorNetwork.getInputCount());
 
@@ -80,7 +80,7 @@ GestureVector Classifier::pickMostLikelyGesture(const Matrix& likelyGestures)
     {
         auto gestureNeurons = likelyGestures.getRow(i);
         
-        auto maxNeuron = max_element(gestureNeurons.begin(), gestureNeurons.end());
+        auto maxNeuron = std::max_element(gestureNeurons.begin(), gestureNeurons.end());
         std::string name = m_classifierNetwork.getLabelForOutputNeuron(std::distance(gestureNeurons.begin(),maxNeuron));
         gestureList.push_back(name);
     }

@@ -54,7 +54,9 @@ static float computeCost(const Layer& layer, const Matrix& layerInput, const Mat
     auto cost = sum.multiply(-1.0f/m);
 
     //TODO Normalize this with lambda!
+    util::log("BackPropData") << "  1 " << cost.toString() << "\n";
     float costSum = cost.reduceSum();
+    util::log("BackPropData") << "  2 " << costSum << "\n";
 
     return costSum;
 }
@@ -95,7 +97,7 @@ static bool gradientChecking(const Matrix& partialDerivatives, const Layer& laye
 
         util::log("BackPropData") << " gradient of weight " << std::distance(layerWeights.begin(), weight) << " out of " << layerWeights.size() 
             << " weights is " << derivative << ", compared to computed " << *partialDerivative << "\n";
-    
+    	
          if (std::abs(derivative - *partialDerivative) > epsilon)
          {
             return false;
@@ -118,11 +120,13 @@ BackPropData::MatrixVector BackPropData::getCostDerivative()
     for (auto i = deltas.begin(), j = activations.begin(); i != deltas.end() && j != activations.end(); ++i, ++j)
     {
         //there will be one less delta than activation
-        partialDerivative.push_back((((*i).transpose()).multiply(*j)).transpose());
+        auto unnormalizedPartialDerivative = (((*i).transpose()).multiply(*j)).transpose();
+        
+        partialDerivative.push_back(unnormalizedPartialDerivative.multiply(1.0f/(*j).rows()));
     
-	//	util::log("BackPropData") << " computed derivative for layer " << std::distance(deltas.begin(), i) << " (" << partialDerivative.back().rows()
-	//	       << " rows, " << partialDerivative.back().columns() << " columns).\n";
-    //    util::log("BackPropData") << " PD contains " << partialDerivative.back().toString() << "\n";
+		util::log("BackPropData") << " computed derivative for layer " << std::distance(deltas.begin(), i) << " (" << partialDerivative.back().rows()
+		       << " rows, " << partialDerivative.back().columns() << " columns).\n";
+        util::log("BackPropData") << " PD contains " << partialDerivative.back().toString() << "\n";
     
     }//this loop ends after all activations are done. and we don't need the last delta (ref-output anyway)
     
@@ -130,7 +134,7 @@ BackPropData::MatrixVector BackPropData::getCostDerivative()
     
     if (performGradientChecking)
     { 
-        float epsilon = util::KnobDatabase::getKnobValue("NeuralNetwork::GradientCheckingEpsilon", 0.01f);
+        float epsilon = util::KnobDatabase::getKnobValue("NeuralNetwork::GradientCheckingEpsilon", 0.05f);
         bool isInRange = gradientChecking(partialDerivative.back(), m_neuralNetworkPtr->back(), *(++activations.rbegin()), m_referenceOutput, epsilon);
         assertM(isInRange, "Gradient checking indicates gradient descent is wrong\n");
     }
@@ -156,10 +160,10 @@ BackPropData::MatrixVector BackPropData::getDeltas(const MatrixVector& activatio
 	    deltas.push_back(delta);
         
         unsigned int layerNumber = std::distance(activations.begin(), --(i.base()));
-        //util::log ("BackPropData") << " Layer number: " << layerNumber << "\n";
         auto& layer = (*m_neuralNetworkPtr)[layerNumber];
 
         auto activationDerivativeOfCurrentLayer = sigmoidDerivative(*i);
+        util::log ("BackPropData") << " Layer number: " << layerNumber << " delta " << activationDerivativeOfCurrentLayer.toString() << "\n";
         auto deltaPropagatedReverse = layer.runReverse(delta);
         
         delta = deltaPropagatedReverse.elementMultiply(activationDerivativeOfCurrentLayer);
@@ -212,7 +216,7 @@ BackPropData::Matrix BackPropData::sigmoidDerivative(const Matrix& m) const
 
 	Matrix temp = m;
 
-	for(auto& element : temp)
+	for(auto element : temp)
 	{
 	//	element = sigmoid(element) * (1.0f - sigmoid(element));
 		element = element * (1.0f - element);

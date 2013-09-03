@@ -34,7 +34,7 @@ void Learner::loadClassifier()
 void Learner::trainClassifier(const ImageVector& images)
 {
     /* using the feature NN & training images emit a NN for classifiers */
-    auto matrix           = images.convertToMatrix(m_featureSelectorNetwork.getInputCount());
+    auto matrix           = images.convertToMatrix(m_featureSelectorNetwork.getInputCount()).sigmoid();
     auto featureMatrix    = m_featureSelectorNetwork.runInputs(matrix);
 
     // TODO: optimize weights using back propagation as tool

@@ -17,7 +17,7 @@ namespace neuralnetwork
 
 void Layer::initializeRandomly()
 {
-	float epsilon = util::KnobDatabase::getKnobValue("Layer::RandomInitializationEpsilon", 0.0001f);
+	float epsilon = util::KnobDatabase::getKnobValue("Layer::RandomInitializationEpsilon", 1.0f);
 
     std::default_random_engine generator;
     std::uniform_real_distribution<float> distribution(-epsilon, epsilon);
@@ -71,7 +71,7 @@ Layer::Matrix Layer::runReverse(const Matrix& m) const
     
         Matrix temp = m.slice(inputPixPos, 0, m.rows(), sparseMatrixT.rows());
         inputPixPos += sparseMatrixT.rows();
-        Matrix output = temp.multiply(sparseMatrixT).sigmoid();
+        Matrix output = temp.multiply(sparseMatrixT);
     //    util::log("Layer") << "  output: " << output.toString() << "\n";
         finalOutput = finalOutput.append(output);
     }

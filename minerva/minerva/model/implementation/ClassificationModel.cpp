@@ -181,7 +181,9 @@ void ClassificationModel::save() const
 		stream.write((const char*)&rows,    sizeof(uint64_t));
 		stream.write((const char*)&columns, sizeof(uint64_t));
 
-		stream.write((const char*)matrix.second->data(), matrix.second->size());
+		auto data = matrix.second->data();
+
+		stream.write((const char*)data.data(), matrix.second->size());
 		
 		tar.addFile(matrix.first, stream);
 	}
@@ -279,7 +281,11 @@ void ClassificationModel::load()
 					
 					matrix.resize(rows, columns);
 					
-					stream.read((char*)matrix.data(), rows * columns);
+					matrix::Matrix::FloatVector data(rows * columns);
+					
+					stream.read((char*)data.data(), rows * columns);
+				
+					matrix.setDataRowMajor(data);
 				}
 			}
 			
@@ -304,6 +310,8 @@ void ClassificationModel::load()
 	
 		throw;
 	}
+	
+	delete headerObject;
 }
 
 }

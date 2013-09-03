@@ -90,11 +90,19 @@ ImageVector::Matrix ImageVector::convertToMatrix(size_t sampleCount) const
 	
 	Matrix matrix(rows, columns);
 	
-    size_t row = 0;
+	Matrix::FloatVector data(rows * columns);
+	
+    size_t offset = 0;
 	for(auto& image : _images)
 	{
-		matrix.setRowData(row++, image.getSampledData(columns));
+		auto samples = image.getSampledData(columns);
+		
+		std::copy(samples.begin(), samples.end(), data.begin() + offset);
+		
+		offset += columns;
 	}
+	
+	matrix.setDataRowMajor(data);
 	
 	return matrix;
 }

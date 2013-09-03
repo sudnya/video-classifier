@@ -261,15 +261,15 @@ static void parseSinglePath(ImageVector& images, VideoVector& videos,
 	
 	if(Image::isPathAnImage(filePath))
 	{
-		util::log("ClassifierEngine") << "  found image '" << filePath
-			<< "'\n";
+		//util::log("ClassifierEngine") << "  found image '" << filePath
+		//	<< "'\n";
 		
 		images.push_back(Image(filePath));
 	}
 	else if(Video::isPathAVideo(filePath))
 	{
-		util::log("ClassifierEngine") << "  found video '" << filePath
-			<< "'\n";
+		//util::log("ClassifierEngine") << "  found video '" << filePath
+		//	<< "'\n";
 
 		videos.push_back(Video(filePath));
 	}
@@ -300,8 +300,8 @@ static void parseLabeledPath(ImageVector& images, VideoVector& videos,
 	
 	if(Image::isPathAnImage(filePath))
 	{
-		util::log("ClassifierEngine") << "  found labeled image '" << filePath
-			<< "'\n";
+		//util::log("ClassifierEngine") << "  found labeled image '" << filePath
+		//	<< "'\n";
 
 		if(components.size() != 2)
 		{
@@ -313,8 +313,8 @@ static void parseLabeledPath(ImageVector& images, VideoVector& videos,
 	}
 	else if(Video::isPathAVideo(filePath))
 	{
-		util::log("ClassifierEngine") << "  found labeled video '" << filePath
-			<< "'\n";
+		//util::log("ClassifierEngine") << "  found labeled video '" << filePath
+		//	<< "'\n";
 		
 		if(components.size() != 4)
 		{

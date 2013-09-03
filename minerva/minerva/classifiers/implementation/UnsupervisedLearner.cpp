@@ -39,11 +39,11 @@ void UnsupervisedLearner::loadFeatureSelector()
 void UnsupervisedLearner::learn(const ImageVector& images)
 {
     /* using the feature NN & training images emit a NN for classifiers */
-    auto matrix = images.convertToMatrix(m_featureSelector.getInputCount());
+    auto matrix = images.convertToMatrix(m_featureSelector.getInputCount()).sigmoid();
     
-    util::log("UnsupervisedLearner") << "Training feature selector matrix with input: " << matrix.sigmoid().toString() << "\n";
+    util::log("UnsupervisedLearner") << "Training feature selector matrix with input: " << matrix.toString() << "\n";
 
-    m_featureSelector.backPropagate(matrix, matrix.sigmoid());
+    m_featureSelector.backPropagate(matrix, matrix);
 }
 
 void UnsupervisedLearner::writeFeaturesNeuralNetwork()
