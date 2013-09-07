@@ -9,6 +9,7 @@
 #include <minerva/util/interface/Knobs.h>
 
 #include <random>
+#include <cstdlib>
 
 namespace minerva
 {
@@ -32,7 +33,7 @@ void Layer::initializeRandomly()
 	float epsilon = util::KnobDatabase::getKnobValue(
 		"Layer::RandomInitializationEpsilon", 0.25f * getInputCount());
 
-    std::default_random_engine generator;
+    std::default_random_engine generator(std::time(0));
     std::uniform_real_distribution<float> distribution(-epsilon, epsilon);
     
     for (auto i = begin(); i != end(); ++i)
