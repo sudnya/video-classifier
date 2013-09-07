@@ -8,6 +8,7 @@
 #include <minerva/util/interface/ArgumentParser.h>
 
 #include <random>
+#include <cstdlib>
 
 namespace minerva
 {
@@ -165,7 +166,7 @@ float classify(const neuralnetwork::NeuralNetwork& ann, unsigned iterations, std
     return accuracy;
 }
 
-void runTest(unsigned iterations)
+void runTest(unsigned iterations, bool seed)
 {
     
     // Create neural network
@@ -174,7 +175,7 @@ void runTest(unsigned iterations)
 
     // Train network against reference XOR function
 
-    std::default_random_engine generator;
+    std::default_random_engine generator(seed ? std::time(0) : 0);
     
     trainNeuralNetwork(ann, iterations, generator);
 
@@ -215,19 +216,22 @@ int main(int argc, char** argv)
     minerva::util::ArgumentParser parser(argc, argv);
     
     bool verbose = false;
+    bool seed = false;
     std::string loggingEnabledModules;
 	
 	unsigned iterations = 0;
 
     parser.description("The Minerva image classifier.");
 
-    parser.parse("-v", "--verbose", verbose, false,
-        "Print out log messages during execution");
     parser.parse("-I", "--iterations", iterations, 1000,
         "The number of iterations to train for");
     parser.parse("-L", "--log-module", loggingEnabledModules, "",
 		"Print out log messages during execution for specified modules "
 		"(comma-separated list of modules, e.g. NeuralNetwork, Layer, ...).");
+    parser.parse("-s", "--seed", seed, false,
+        "Seed with time.");
+    parser.parse("-v", "--verbose", verbose, false,
+        "Print out log messages during execution");
 	parser.parse();
 
     if(verbose)
@@ -243,7 +247,7 @@ int main(int argc, char** argv)
     
     try
     {
-        minerva::classifiers::runTest(iterations);
+        minerva::classifiers::runTest(iterations, seed);
     }
     catch(const std::exception& e)
     {
