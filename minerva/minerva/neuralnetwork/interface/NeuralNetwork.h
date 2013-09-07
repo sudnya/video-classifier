@@ -39,7 +39,7 @@ class NeuralNetwork
         void initializeRandomly();
         void backPropagate(const Matrix& input, const Matrix& reference);
         
-        Matrix runInputs(const Matrix& m);
+        Matrix runInputs(const Matrix& m) const;
         
     public:
         std::string getLabelForOutputNeuron(unsigned int idx) const;

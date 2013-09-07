@@ -46,6 +46,8 @@ tools = []
 
 tools.append(env.Program('minerva-classifier', \
 	['minerva/tools/minerva-classifier.cpp'], LIBS=minerva_libs))
+tools.append(env.Program('test-classifier', \
+	['minerva/classifiers/test/test-classifier.cpp'], LIBS=minerva_libs))
 
 for tool in tools:
 	env.Depends(tool, libminerva)

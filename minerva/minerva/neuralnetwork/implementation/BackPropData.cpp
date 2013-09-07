@@ -24,7 +24,7 @@ static bool isInMargin(const Matrix& ref, const Matrix& output, float epsilon)
     
     for (auto value = differenceMat.begin(); value != differenceMat.end(); ++value)
     {
-        if (std::abs(*value) > epsilon)
+        if (std::fabs(*value) > epsilon)
             return false;
     }
 
@@ -124,9 +124,9 @@ BackPropData::MatrixVector BackPropData::getCostDerivative()
         
         partialDerivative.push_back(unnormalizedPartialDerivative.multiply(1.0f/(*j).rows()));
     
-	//	util::log("BackPropData") << " computed derivative for layer " << std::distance(deltas.begin(), i) << " (" << partialDerivative.back().rows()
-	//	       << " rows, " << partialDerivative.back().columns() << " columns).\n";
-    //    util::log("BackPropData") << " PD contains " << partialDerivative.back().toString() << "\n";
+		util::log("BackPropData") << " computed derivative for layer " << std::distance(deltas.begin(), i) << " (" << partialDerivative.back().rows()
+		       << " rows, " << partialDerivative.back().columns() << " columns).\n";
+        util::log("BackPropData") << " PD contains " << partialDerivative.back().toString() << "\n";
     
     }//this loop ends after all activations are done. and we don't need the last delta (ref-output anyway)
     
@@ -146,6 +146,40 @@ BackPropData::NeuralNetwork* BackPropData::getNeuralNetworkPtr()
 {
     return m_neuralNetworkPtr;
 }
+
+BackPropData::FloatVector BackPropData::getFlattenedWeights()
+{
+    assertM(false, "Not implemented.");
+
+    return FloatVector();
+}
+
+BackPropData::FloatVector BackPropData::getFlattenedCostDerivative()
+{
+    assertM(false, "Not implemented.");
+
+    return FloatVector();
+}
+
+void BackPropData::setFlattenedWeights(const FloatVector& weights)
+{
+    assertM(false, "Not implemented.");
+}
+
+float BackPropData::computeCostForNewFlattenedWeights(const FloatVector& weights) const
+{
+    assertM(false, "Not implemented.");
+
+    return 0.0f;
+}
+
+BackPropData::FloatVector BackPropData::computePartialDerivativesForNewFlattenedWeights(const FloatVector& weights) const
+{
+    assertM(false, "Not implemented.");
+
+    return FloatVector();
+}
+
 
 BackPropData::MatrixVector BackPropData::getDeltas(const MatrixVector& activations) const
 {

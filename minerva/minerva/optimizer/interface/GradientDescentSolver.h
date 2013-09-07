@@ -21,7 +21,6 @@ class GradientDescentSolver : public Solver
     }
         void solve();
 
-
 };
 
 }

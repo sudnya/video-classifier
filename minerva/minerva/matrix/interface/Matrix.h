@@ -218,6 +218,7 @@ public:
 	
 	public:
 		difference_type operator-(const const_iterator&) const;
+		difference_type operator-(const Matrix::iterator&) const;
 
 	public:
 		operator const_iterator() const;
@@ -226,6 +227,10 @@ public:
 		bool operator!=(const const_iterator& ) const;
 		bool operator==(const const_iterator& ) const;
 		bool operator<(const const_iterator& ) const;
+		
+        bool operator!=(const Matrix::iterator& ) const;
+		bool operator==(const Matrix::iterator& ) const;
+		bool operator<(const Matrix::iterator& ) const;
 
 	private:
 		Matrix* _matrix;
@@ -256,11 +261,16 @@ public:
 	
 	public:
 		difference_type operator-(const const_iterator&) const;
+		difference_type operator-(const Matrix::iterator&) const;
 	
 	public:
 		bool operator!=(const const_iterator& ) const;
 		bool operator==(const const_iterator& ) const;
 		bool operator<(const const_iterator& ) const;
+		
+        bool operator!=(const Matrix::iterator& ) const;
+		bool operator==(const Matrix::iterator& ) const;
+		bool operator<(const Matrix::iterator& ) const;
 
 	private:
 		const Matrix* _matrix;

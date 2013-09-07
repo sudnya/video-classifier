@@ -537,6 +537,11 @@ iterator::difference_type iterator::operator-(const const_iterator& i) const
 	return _position - i._position;
 }
 
+iterator::difference_type iterator::operator-(const Matrix::iterator& i) const
+{
+	return _position - i._position;
+}
+
 iterator::operator const_iterator() const
 {
 	return const_iterator(_matrix, _position);
@@ -553,6 +558,25 @@ bool iterator::operator==(const const_iterator& i) const
 }
 
 bool iterator::operator<(const const_iterator& i) const
+{
+	if(_matrix < i._matrix) return true;
+	
+	if(_matrix > i._matrix) return false;
+	
+	return _position < i._position;
+}
+
+bool iterator::operator!=(const Matrix::iterator& i) const
+{
+	return !(*this == i);
+}
+
+bool iterator::operator==(const Matrix::iterator& i) const
+{
+	return i._matrix == _matrix && i._position == _position;
+}
+
+bool iterator::operator<(const Matrix::iterator& i) const
 {
 	if(_matrix < i._matrix) return true;
 	
@@ -627,6 +651,12 @@ const_iterator::difference_type const_iterator::operator-(
 	return _position - i._position;
 }
 
+const_iterator::difference_type const_iterator::operator-(
+    const Matrix::iterator& i) const
+{
+	return _position - i._position;
+}
+
 bool const_iterator::operator!=(const const_iterator& i) const
 {
 	return !(*this == i);
@@ -638,6 +668,25 @@ bool const_iterator::operator==(const const_iterator& i) const
 }
 
 bool const_iterator::operator<(const const_iterator& i) const
+{
+	if(_matrix < i._matrix) return true;
+	
+	if(_matrix > i._matrix) return false;
+	
+	return _position < i._position;
+}
+
+bool const_iterator::operator!=(const Matrix::iterator& i) const
+{
+	return !(*this == i);
+}
+
+bool const_iterator::operator==(const Matrix::iterator& i) const
+{
+	return i._matrix == _matrix && i._position == _position;
+}
+
+bool const_iterator::operator<(const Matrix::iterator& i) const
 {
 	if(_matrix < i._matrix) return true;
 	

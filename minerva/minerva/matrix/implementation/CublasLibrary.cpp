@@ -106,7 +106,8 @@ void CublasLibrary::Interface::load()
 	if(loaded()) return;
 	
     #ifdef __APPLE__
-    const char* libraryName = "libcublas.dylib";
+    //const char* libraryName = "libcublas.dylib";
+    const char* libraryName = "libcublas-optimized.dylib";
     #else
     const char* libraryName = "libcublas.so";
     #endif

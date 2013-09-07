@@ -80,7 +80,7 @@ void AtlasLibrary::Interface::load()
 	if(loaded()) return;
 	
     #ifdef __APPLE__
-    const char* libraryName = "libcblas.3.dylib";
+    const char* libraryName = "libcblas.dylib";
     #else
     const char* libraryName = "libcblas.so.3";
     #endif

@@ -23,7 +23,7 @@ namespace optimizer
 void GradientDescentSolver::solve()
 {
     util::log("GradientDescentSolver") << " Solve\n";
-	float learningRate = util::KnobDatabase::getKnobValue<float>("GradientDescentSolver::LearningRate", 0.01f);
+	float learningRate = util::KnobDatabase::getKnobValue<float>("GradientDescentSolver::LearningRate", 0.3f);
 
     // doing batch descent, so dont need cost
     MatrixVector partialDerivatives = m_backPropDataPtr->getCostDerivative();

@@ -17,7 +17,7 @@ namespace neuralnetwork
 
 void Layer::initializeRandomly()
 {
-	float epsilon = util::KnobDatabase::getKnobValue("Layer::RandomInitializationEpsilon", 0.001f);
+	float epsilon = util::KnobDatabase::getKnobValue("Layer::RandomInitializationEpsilon", 0.25f * getInputCount());
 
     std::default_random_engine generator;
     std::uniform_real_distribution<float> distribution(-epsilon, epsilon);
@@ -34,8 +34,8 @@ void Layer::initializeRandomly()
 
 Layer::Matrix Layer::runInputs(const Matrix& m) const
 {
-    util::log("Layer") << " Running forward propagation on matrix (" << m.rows()
-            << " rows, " << m.columns() << " columns).\n";
+    //util::log("Layer") << " Running forward propagation on matrix (" << m.rows()
+    //        << " rows, " << m.columns() << " columns).\n";
     
     unsigned int inputPixPos = 0;
     Matrix finalOutput;

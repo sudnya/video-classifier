@@ -57,10 +57,10 @@ void NeuralNetwork::backPropagate(const Matrix& inputMatrix, const Matrix& refer
     delete solver;
 }
 
-NeuralNetwork::Matrix NeuralNetwork::runInputs(const Matrix& m)
+NeuralNetwork::Matrix NeuralNetwork::runInputs(const Matrix& m) const
 {
-    util::log("NeuralNetwork") << "Running forward propagation on matrix (" << m.rows()
-            << " rows, " << m.columns() << " columns).\n";
+    //util::log("NeuralNetwork") << "Running forward propagation on matrix (" << m.rows()
+    //        << " rows, " << m.columns() << " columns).\n";
     
     Matrix temp = m;
 

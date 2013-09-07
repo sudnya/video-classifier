@@ -20,6 +20,7 @@ class BackPropData
     public:
         typedef minerva::neuralnetwork::NeuralNetwork NeuralNetwork;
         typedef minerva::matrix::Matrix Matrix;
+        typedef minerva::matrix::Matrix::FloatVector FloatVector;
         typedef std::vector<minerva::matrix::Matrix> MatrixVector;
     public:
         BackPropData(NeuralNetwork* ann, Matrix input, Matrix ref) : m_neuralNetworkPtr(ann), m_input(input), m_referenceOutput(ref)
@@ -27,8 +28,17 @@ class BackPropData
         }
     public:
         MatrixVector getCostDerivative();
-        bool testDerivative();
         NeuralNetwork* getNeuralNetworkPtr();
+
+    public:
+        FloatVector getFlattenedWeights();
+        FloatVector getFlattenedCostDerivative();
+        void   setFlattenedWeights(const FloatVector& weights);
+        float  computeCostForNewFlattenedWeights(const FloatVector& weights) const;
+        FloatVector computePartialDerivativesForNewFlattenedWeights(const FloatVector& weights) const;
+
+    private:
+        bool testDerivative();
 
     private:
         MatrixVector getDeltas(const MatrixVector& m) const;
@@ -43,3 +53,4 @@ class BackPropData
 
 }
 }
+
