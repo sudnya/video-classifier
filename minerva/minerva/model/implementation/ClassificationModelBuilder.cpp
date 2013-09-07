@@ -32,7 +32,7 @@ static NeuralNetwork buildNeuralNetwork(const std::string& name, unsigned inputS
 {
 	NeuralNetwork neuralNetwork;
 	
-	unsigned numberOfLayers = util::KnobDatabase::getKnobValue(name + "::NeuralNetwork::Layers", 2);
+	unsigned numberOfLayers = util::KnobDatabase::getKnobValue(name + "::NeuralNetwork::Layers", 3);
 
 	unsigned currentSize     = inputSize;
 	unsigned reductionFactor = std::max(1U, logBase(numberOfLayers, inputSize / outputSize));
@@ -109,7 +109,7 @@ ClassificationModel* ClassificationModelBuilder::create(const std::string& path)
 
 	unsigned featureSelectorInputSize  = x * y;
 	unsigned featureSelectorOutputSize =
-util::KnobDatabase::getKnobValue("FeatureSelector::NeuralNetwor::Outputs", 32);
+util::KnobDatabase::getKnobValue("FeatureSelector::NeuralNetwor::Outputs", 128);
 	unsigned classifierInputSize       = featureSelectorOutputSize;
 	unsigned classifierOutputSize      = util::KnobDatabase::getKnobValue("Classifier::NeuralNetwork::Outputs", 20);
 

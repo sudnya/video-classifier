@@ -97,7 +97,7 @@ static bool gradientChecking(const Matrix& partialDerivatives, const Layer& laye
 
         util::log("BackPropData") << " gradient of weight " << std::distance(layerWeights.begin(), weight) << " out of " << layerWeights.size() 
             << " weights is " << derivative << ", compared to computed " << *partialDerivative << "\n";
-    	
+    
          if (std::abs(derivative - *partialDerivative) > epsilon)
          {
             return false;
@@ -124,9 +124,9 @@ BackPropData::MatrixVector BackPropData::getCostDerivative()
         
         partialDerivative.push_back(unnormalizedPartialDerivative.multiply(1.0f/(*j).rows()));
     
-		util::log("BackPropData") << " computed derivative for layer " << std::distance(deltas.begin(), i) << " (" << partialDerivative.back().rows()
-		       << " rows, " << partialDerivative.back().columns() << " columns).\n";
-        util::log("BackPropData") << " PD contains " << partialDerivative.back().toString() << "\n";
+	//	util::log("BackPropData") << " computed derivative for layer " << std::distance(deltas.begin(), i) << " (" << partialDerivative.back().rows()
+	//	       << " rows, " << partialDerivative.back().columns() << " columns).\n";
+    //    util::log("BackPropData") << " PD contains " << partialDerivative.back().toString() << "\n";
     
     }//this loop ends after all activations are done. and we don't need the last delta (ref-output anyway)
     
@@ -160,10 +160,10 @@ BackPropData::MatrixVector BackPropData::getDeltas(const MatrixVector& activatio
 	    deltas.push_back(delta);
         
         unsigned int layerNumber = std::distance(activations.begin(), --(i.base()));
+        //util::log ("BackPropData") << " Layer number: " << layerNumber << "\n";
         auto& layer = (*m_neuralNetworkPtr)[layerNumber];
 
         auto activationDerivativeOfCurrentLayer = sigmoidDerivative(*i);
-        util::log ("BackPropData") << " Layer number: " << layerNumber << " delta " << activationDerivativeOfCurrentLayer.toString() << "\n";
         auto deltaPropagatedReverse = layer.runReverse(delta);
         
         delta = deltaPropagatedReverse.elementMultiply(activationDerivativeOfCurrentLayer);

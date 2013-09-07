@@ -17,7 +17,7 @@ namespace neuralnetwork
 
 void Layer::initializeRandomly()
 {
-	float epsilon = util::KnobDatabase::getKnobValue("Layer::RandomInitializationEpsilon", 1.0f);
+	float epsilon = util::KnobDatabase::getKnobValue("Layer::RandomInitializationEpsilon", 0.001f);
 
     std::default_random_engine generator;
     std::uniform_real_distribution<float> distribution(-epsilon, epsilon);
