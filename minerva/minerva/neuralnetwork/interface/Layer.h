@@ -22,15 +22,8 @@ class Layer
 
 
     public:
-        Layer(unsigned totalBlocks = 0, size_t blockInput = 0, size_t blockOutput = 0)
-        {
-            m_sparseMatrix.resize(totalBlocks);
-            for (auto i = m_sparseMatrix.begin(); i != m_sparseMatrix.end(); ++i)
-            {
-                //note that input is actually columns, and output is rows (since we take transpose of blocks to multiply)
-                (*i).resize(blockInput, blockOutput);
-            }
-        }
+        Layer(unsigned totalBlocks = 0, size_t blockInput = 0,
+        	size_t blockOutput = 0);
 
         void initializeRandomly();
         Matrix runInputs(const Matrix& m) const;

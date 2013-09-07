@@ -25,7 +25,8 @@ public:
 	virtual void resize(size_t rows, size_t columns);
 
 public:
-	virtual Value* append(const Value* m) const;
+	virtual Value* appendColumns(const Value* m) const;
+	virtual Value* appendRows(const Value* m) const;
 	virtual Value* transpose() const;
  
 public: 

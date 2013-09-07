@@ -104,8 +104,8 @@ static void checkInputs(const std::string& inputFileNames,
 {
 	unsigned int count = 0;
 	
-	if(shouldClassify)	  count += 1;
-	if(shouldTrain)		 count += 1;
+	if(shouldClassify)      count += 1;
+	if(shouldTrain)         count += 1;
 	if(shouldLearnFeatures) count += 1;
 	
 	if(count == 0)

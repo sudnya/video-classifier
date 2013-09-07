@@ -240,13 +240,22 @@ Matrix Matrix::transpose() const
 	return Matrix(_matrix->transpose());
 }
 
-Matrix Matrix::append(const Matrix& m) const
+Matrix Matrix::appendColumns(const Matrix& m) const
 {
 	assert(_matrix != nullptr);
 	
 	assert(empty() || (rows() == m.rows()));
 
-	return Matrix(_matrix->append(m._matrix));
+	return Matrix(_matrix->appendColumns(m._matrix));
+}
+
+Matrix Matrix::appendRows(const Matrix& m) const
+{
+	assert(_matrix != nullptr);
+	
+	assert(empty() || (columns() == m.columns()));
+
+	return Matrix(_matrix->appendRows(m._matrix));
 }
 
 Matrix Matrix::log() const

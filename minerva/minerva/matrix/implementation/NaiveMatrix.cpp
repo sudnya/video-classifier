@@ -34,7 +34,7 @@ void NaiveMatrix::resize(size_t rows, size_t columns)
 	_columns = columns;
 }
 
-Value* NaiveMatrix::append(const Value* matrix) const
+Value* NaiveMatrix::appendColumns(const Value* matrix) const
 {
 	auto m = dynamic_cast<const NaiveMatrix*>(matrix);	
 	assert(m != nullptr);
@@ -65,6 +65,30 @@ Value* NaiveMatrix::append(const Value* matrix) const
 		std::memcpy(&(*result)._data[newPosition], &m->_data[appendedPosition],
 			m->columns() * sizeof(float));
 	}
+	
+	return result;
+}
+
+Value* NaiveMatrix::appendRows(const Value* matrix) const
+{
+	auto m = dynamic_cast<const NaiveMatrix*>(matrix);	
+	assert(m != nullptr);
+
+	assert(empty() || (columns() == m->columns()));
+
+    size_t resultColumns = columns();
+
+    if(empty())
+    {
+        resultColumns = m->columns();
+    }
+
+	NaiveMatrix* result = new NaiveMatrix(rows() + m->rows(), resultColumns);
+	
+	// Copy rows from the original and appended matrices
+	std::memcpy(&result->_data[0], &_data[0], size() * sizeof(float));
+	std::memcpy(&result->_data[size()], &m->_data[0],
+		m->size() * sizeof(float));
 	
 	return result;
 }

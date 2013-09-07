@@ -66,7 +66,8 @@ public:
 	Matrix getRow(size_t number) const;
 	
 public:
-	Matrix append(const Matrix& m) const;
+	Matrix appendColumns(const Matrix& m) const;
+	Matrix appendRows(const Matrix& m) const;
 	void resize(size_t rows, size_t columns);
 	
 public:

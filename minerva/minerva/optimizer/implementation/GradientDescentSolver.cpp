@@ -10,15 +10,16 @@
 #include <minerva/util/interface/Knobs.h>
 #include <minerva/util/interface/debug.h>
 
-typedef minerva::matrix::Matrix Matrix;
-
-typedef std::vector<Matrix> MatrixVector;
-
-
 namespace minerva
 {
 namespace optimizer
 {
+
+typedef minerva::matrix::Matrix Matrix;
+typedef Matrix::FloatVector FloatVector;
+typedef std::vector<Matrix> MatrixVector;
+
+
 
 void GradientDescentSolver::solve()
 {
@@ -40,7 +41,12 @@ void GradientDescentSolver::solve()
         // change the neuron value for each matrix in this layer
         for (auto layerWeight = layer->begin(); layerWeight != layer->end(); ++layerWeight)
         {
-            (*layerWeight) = (*layerWeight).subtract(deriv->multiply(learningRate));
+            auto weightUpdates = deriv->multiply(learningRate);
+            
+            // Don't change the bias weights
+            auto weightAndBiasUpdates = weightUpdates.appendRows(Matrix(1, weightUpdates.columns(), FloatVector(weightUpdates.columns(), 0.0f)));
+        
+            (*layerWeight) = (*layerWeight).subtract(weightAndBiasUpdates);
         }
     }
 }

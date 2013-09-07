@@ -15,6 +15,18 @@ namespace minerva
 namespace neuralnetwork
 {
 
+typedef minerva::matrix::Matrix::FloatVector FloatVector;
+
+Layer::Layer(unsigned totalBlocks, size_t blockInput, size_t blockOutput)
+{
+    m_sparseMatrix.resize(totalBlocks);
+    for (auto i = m_sparseMatrix.begin(); i != m_sparseMatrix.end(); ++i)
+    {
+		// The +1 is for the bias layer
+        (*i).resize(blockInput + 1, blockOutput);
+    }
+}
+
 void Layer::initializeRandomly()
 {
 	float epsilon = util::KnobDatabase::getKnobValue(
@@ -45,11 +57,20 @@ Layer::Matrix Layer::runInputs(const Matrix& m) const
     // slice input Matrix into chunks multipliable to matrix blocks
     for (auto i = m_sparseMatrix.begin(); i != m_sparseMatrix.end(); ++i)
     {
-        Matrix temp = m.slice(inputPixPos, 0, m.rows(), (*i).rows());
-        inputPixPos += (*i).rows();
+    	// Extract the input
+        Matrix temp = m.slice(inputPixPos, 0, m.rows(), (*i).rows() - 1);
+
+		// add the bias
+		temp = temp.appendColumns(Matrix(temp.rows(), 1,
+			FloatVector(temp.columns(), 1.0f)));
+
+		// The -1 corrects for the bias, which does not exist in the input
+        inputPixPos += (*i).rows() - 1;
+
         Matrix output = temp.multiply((*i)).sigmoid();
         util::log("Layer") << "  output: " << output.toString() << "\n";
-        finalOutput = finalOutput.append(output);
+       
+        finalOutput = finalOutput.appendColumns(output);
     }
     
     util::log("Layer") << "  layer output is a matrix (" << finalOutput.rows()
@@ -74,8 +95,12 @@ Layer::Matrix Layer::runReverse(const Matrix& m) const
         Matrix temp = m.slice(inputPixPos, 0, m.rows(), sparseMatrixT.rows());
         inputPixPos += sparseMatrixT.rows();
         Matrix output = temp.multiply(sparseMatrixT);
+        
+        // drop the final row corresponding to the bias
+        output = output.slice(0, 0, output.rows(), output.columns() - 1);
+        
         util::log("Layer") << "  output: " << output.toString() << "\n";
-        finalOutput = finalOutput.append(output);
+        finalOutput = finalOutput.appendColumns(output);
     }
     
     util::log("Layer") << "  layer output is a matrix (" << finalOutput.rows()
@@ -101,7 +126,7 @@ unsigned Layer::getInputCount() const
     
     for(auto& matrix : *this)
     {
-        count += matrix.rows();
+        count += matrix.rows() - 1;
     }
 
     return count;

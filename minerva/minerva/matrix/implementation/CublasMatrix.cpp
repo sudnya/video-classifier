@@ -35,7 +35,7 @@ void CublasMatrix::resize(size_t rows, size_t columns)
 	_columns = columns;
 }
 
-Value* CublasMatrix::append(const Value* matrix) const
+Value* CublasMatrix::appendColumns(const Value* matrix) const
 {
 	auto m = dynamic_cast<const CublasMatrix*>(matrix);	
 	assert(m != nullptr);
@@ -67,6 +67,30 @@ Value* CublasMatrix::append(const Value* matrix) const
 		std::memcpy(&(*result)._data[newPosition], &m->_data[appendedPosition],
 			m->columns() * sizeof(float));
 	}
+	
+	return result;
+}
+
+Value* CublasMatrix::appendRows(const Value* matrix) const
+{
+	auto m = dynamic_cast<const CublasMatrix*>(matrix);	
+	assert(m != nullptr);
+
+	assert(empty() || (columns() == m->columns()));
+
+    size_t resultColumns = columns();
+
+    if(empty())
+    {
+        resultColumns = m->columns();
+    }
+
+	CublasMatrix* result = new CublasMatrix(rows() + m->rows(), resultColumns);
+	
+	// Copy rows from the original and appended matrices
+	std::memcpy(&result->_data[0], &_data[0], size() * sizeof(float));
+	std::memcpy(&result->_data[size()], &m->_data[0],
+		m->size() * sizeof(float));
 	
 	return result;
 }
