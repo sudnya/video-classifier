@@ -17,6 +17,7 @@
 
 // Standard Library Includes
 #include <memory>
+#include <unordered_set>
 
 
 #ifdef HAVE_CONFIG_H
@@ -80,7 +81,18 @@ namespace util
 		LogDatabase();
 		
 	public:
+		typedef std::unordered_set<std::string> StringSet;	
+	
+	public:
 		bool enableAll;
+		StringSet enabledLogs;
+
+
+	public:
+		bool isEnabled(const std::string& logName) const
+		{
+			return enableAll || (enabledLogs.count(logName) != 0);
+		}
 	};
 	
 	LogDatabase::LogDatabase()
@@ -95,6 +107,11 @@ namespace util
 	{
 		logDatabase.enableAll = true;
 	}
+	
+	void enableLog(const std::string& name)
+	{
+		logDatabase.enabledLogs.insert(name);
+	}
     
     #ifdef __APPLE__
     static NullStream* nullstream = new NullStream;
@@ -104,7 +121,7 @@ namespace util
 
 	std::ostream& _getStream(const std::string& name)
 	{
-		if(logDatabase.enableAll)
+		if(logDatabase.isEnabled(name))
 		{
 			std::cout << "(" << _debugTime() << "): " << name << ": ";
 			

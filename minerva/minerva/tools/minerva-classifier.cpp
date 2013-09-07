@@ -84,7 +84,7 @@ static void setOptions(const std::string& options)
 {
 	auto individualOptions = util::split(options, ",");
 	
-	for (auto& option : individualOptions)
+	for(auto& option : individualOptions)
 	{
 		auto keyAndValue = util::split(option, "=");
 		
@@ -104,8 +104,8 @@ static void checkInputs(const std::string& inputFileNames,
 {
 	unsigned int count = 0;
 	
-	if(shouldClassify)      count += 1;
-	if(shouldTrain)         count += 1;
+	if(shouldClassify)	  count += 1;
+	if(shouldTrain)		 count += 1;
 	if(shouldLearnFeatures) count += 1;
 	
 	if(count == 0)
@@ -141,6 +141,16 @@ static StringVector getPaths(const std::string& pathlist)
 	return util::split(pathlist, ",");
 }
 
+static void enableSpecificLogs(const std::string& modules)
+{
+	auto individualModules = util::split(modules, ",");
+	
+	for(auto& module : individualModules)
+	{
+		util::enableLog(module);
+	}
+}
+
 }
 
 int main(int argc, char** argv)
@@ -151,11 +161,13 @@ int main(int argc, char** argv)
 	std::string modelFileName;
 	std::string options;
 
-	bool shouldClassify      = false;
-	bool shouldTrain         = false;
+	bool shouldClassify	  = false;
+	bool shouldTrain		 = false;
 	bool shouldLearnFeatures = false;
-	bool createNewModel      = false;
+	bool createNewModel	  = false;
 
+	std::string loggingEnabledModules;
+	
 	bool verbose = false;
 
 	parser.description("The Minerva image classifier.");
@@ -179,28 +191,34 @@ int main(int argc, char** argv)
 
 	parser.parse("-v", "--verbose", verbose, false,
 		"Print out log messages during execution");
+	parser.parse("-L", "--log-module", loggingEnabledModules, "",
+		"Print out log messages during execution for specified modules "
+		"(comma-separated list of modules, e.g. NeuralNetwork, Layer, ...).");
 	parser.parse();
 
 	if(verbose)
 	{
 		minerva::util::enableAllLogs();
 	}
+	else
+	{
+		minerva::enableSpecificLogs(loggingEnabledModules);
+	}
 
-    try
-    {
-
-        minerva::setOptions(options);
-        
-        if(createNewModel)
-        {
-            minerva::createNewModel(modelFileName);
-        }
-        else
-        {
-            minerva::runClassifier(inputFileNames, modelFileName, shouldClassify,
-                shouldTrain, shouldLearnFeatures);
-        }
-    }
+	try
+	{
+		minerva::setOptions(options);
+		
+		if(createNewModel)
+		{
+			minerva::createNewModel(modelFileName);
+		}
+		else
+		{
+			minerva::runClassifier(inputFileNames, modelFileName,
+				shouldClassify, shouldTrain, shouldLearnFeatures);
+		}
+	}
 	catch(const std::exception& e)
 	{
 		std::cout << "Minerva Classifier Failed:\n";

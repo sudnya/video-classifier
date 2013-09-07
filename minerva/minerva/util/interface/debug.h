@@ -138,6 +138,7 @@ namespace util
 	#endif
 	
 	extern void enableAllLogs();
+	extern void enableLog(const std::string& logName);
 	
 }
 

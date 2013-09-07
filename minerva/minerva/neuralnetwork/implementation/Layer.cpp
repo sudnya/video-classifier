@@ -17,7 +17,8 @@ namespace neuralnetwork
 
 void Layer::initializeRandomly()
 {
-	float epsilon = util::KnobDatabase::getKnobValue("Layer::RandomInitializationEpsilon", 0.25f * getInputCount());
+	float epsilon = util::KnobDatabase::getKnobValue(
+		"Layer::RandomInitializationEpsilon", 0.25f * getInputCount());
 
     std::default_random_engine generator;
     std::uniform_real_distribution<float> distribution(-epsilon, epsilon);
@@ -34,11 +35,12 @@ void Layer::initializeRandomly()
 
 Layer::Matrix Layer::runInputs(const Matrix& m) const
 {
-    //util::log("Layer") << " Running forward propagation on matrix (" << m.rows()
-    //        << " rows, " << m.columns() << " columns).\n";
+    util::log("Layer") << " Running forward propagation on matrix (" << m.rows()
+            << " rows, " << m.columns() << " columns).\n";
     
     unsigned int inputPixPos = 0;
     Matrix finalOutput;
+    
     // sparse multiply
     // slice input Matrix into chunks multipliable to matrix blocks
     for (auto i = m_sparseMatrix.begin(); i != m_sparseMatrix.end(); ++i)
@@ -46,20 +48,20 @@ Layer::Matrix Layer::runInputs(const Matrix& m) const
         Matrix temp = m.slice(inputPixPos, 0, m.rows(), (*i).rows());
         inputPixPos += (*i).rows();
         Matrix output = temp.multiply((*i)).sigmoid();
-      //  util::log("Layer") << "  output: " << output.toString() << "\n";
+        util::log("Layer") << "  output: " << output.toString() << "\n";
         finalOutput = finalOutput.append(output);
     }
     
-    //util::log("Layer") << "  layer output is a matrix (" << finalOutput.rows()
-    //        << " rows, " << finalOutput.columns() << " columns).\n";
+    util::log("Layer") << "  layer output is a matrix (" << finalOutput.rows()
+            << " rows, " << finalOutput.columns() << " columns).\n";
     
     return finalOutput;
 }
 
 Layer::Matrix Layer::runReverse(const Matrix& m) const
 {
-    //util::log("Layer") << " Running reverse propagation on matrix (" << m.rows()
-    //        << " rows, " << m.columns() << " columns).\n";
+    util::log("Layer") << " Running reverse propagation on matrix (" << m.rows()
+            << " rows, " << m.columns() << " columns).\n";
     
     unsigned int inputPixPos = 0;
     Matrix finalOutput;
@@ -72,12 +74,12 @@ Layer::Matrix Layer::runReverse(const Matrix& m) const
         Matrix temp = m.slice(inputPixPos, 0, m.rows(), sparseMatrixT.rows());
         inputPixPos += sparseMatrixT.rows();
         Matrix output = temp.multiply(sparseMatrixT);
-    //    util::log("Layer") << "  output: " << output.toString() << "\n";
+        util::log("Layer") << "  output: " << output.toString() << "\n";
         finalOutput = finalOutput.append(output);
     }
     
-    //util::log("Layer") << "  layer output is a matrix (" << finalOutput.rows()
-    //        << " rows, " << finalOutput.columns() << " columns).\n";
+    util::log("Layer") << "  layer output is a matrix (" << finalOutput.rows()
+            << " rows, " << finalOutput.columns() << " columns).\n";
     
     return finalOutput;
 }
@@ -176,6 +178,7 @@ bool Layer::empty() const
 }
 
 }
+
 }
 
 

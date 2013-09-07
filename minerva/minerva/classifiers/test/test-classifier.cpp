@@ -197,6 +197,15 @@ void runTest(unsigned iterations)
     }
 }
 
+static void enableSpecificLogs(const std::string& modules)
+{
+	auto individualModules = util::split(modules, ",");
+	
+	for(auto& module : individualModules)
+	{
+		util::enableLog(module);
+	}
+}
 
 }
 }
@@ -206,7 +215,9 @@ int main(int argc, char** argv)
     minerva::util::ArgumentParser parser(argc, argv);
     
     bool verbose = false;
-    unsigned iterations = 0;
+    std::string loggingEnabledModules;
+	
+	unsigned iterations = 0;
 
     parser.description("The Minerva image classifier.");
 
@@ -214,12 +225,19 @@ int main(int argc, char** argv)
         "Print out log messages during execution");
     parser.parse("-I", "--iterations", iterations, 1000,
         "The number of iterations to train for");
-    parser.parse();
+    parser.parse("-L", "--log-module", loggingEnabledModules, "",
+		"Print out log messages during execution for specified modules "
+		"(comma-separated list of modules, e.g. NeuralNetwork, Layer, ...).");
+	parser.parse();
 
     if(verbose)
-    {
-        minerva::util::enableAllLogs();
-    }
+	{
+		minerva::util::enableAllLogs();
+	}
+	else
+	{
+		minerva::classifiers::enableSpecificLogs(loggingEnabledModules);
+	}
     
     minerva::util::log("TestClassifier") << "Test begings\n";
     
