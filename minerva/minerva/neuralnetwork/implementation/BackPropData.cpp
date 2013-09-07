@@ -116,13 +116,21 @@ BackPropData::MatrixVector BackPropData::getCostDerivative()
     
     MatrixVector partialDerivative;
     
+    float lambda = util::KnobDatabase::getKnobValue("BackPropData::Lambda", 0.00f);
+
     //derivative of layer = activation[i] * delta[i+1] - for same layer
-    for (auto i = deltas.begin(), j = activations.begin(); i != deltas.end() && j != activations.end(); ++i, ++j)
+    auto layer = m_neuralNetworkPtr->begin();
+    for (auto i = deltas.begin(), j = activations.begin(); i != deltas.end() && j != activations.end(); ++i, ++j, ++layer)
     {
         //there will be one less delta than activation
         auto unnormalizedPartialDerivative = (((*i).transpose()).multiply(*j)).transpose();
+        auto normalizedPartialDerivative = unnormalizedPartialDerivative.multiply(1.0f/(*j).rows());
         
-        partialDerivative.push_back(unnormalizedPartialDerivative.multiply(1.0f/(*j).rows()));
+        auto weights = layer->back().slice(0, 0, layer->back().rows() - 1, layer->back().columns());
+
+        auto lambdaTerm = weights.multiply(lambda/(*j).rows());
+        
+        partialDerivative.push_back(lambdaTerm.add(normalizedPartialDerivative));
     
 		util::log("BackPropData") << " computed derivative for layer " << std::distance(deltas.begin(), i) << " (" << partialDerivative.back().rows()
 		       << " rows, " << partialDerivative.back().columns() << " columns).\n";
