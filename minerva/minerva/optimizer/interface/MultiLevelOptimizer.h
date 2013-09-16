@@ -8,6 +8,7 @@
 #pragma once
 
 #include <minerva/neuralnetwork/interface/BackPropData.h>
+#include <random>
 
 namespace minerva
 {
@@ -17,23 +18,23 @@ class MultiLevelOptimizer : public Solver
 {
     public:
         typedef minerva::neuralnetwork::BackPropData BackPropData;
-        typedef minerva::matrix::Matrix::FloatVector FloatVector;
+        typedef minerva::matrix::Matrix Matrix;
         
     public:
-        MultiLevelOptimizer(BackPropData* d) : Solver(d)
-        {
-        }
+        MultiLevelOptimizer(BackPropData* d);
         void solve();
     
     private:
-        FloatVector localSearch(const FloatVector& startingWeights, float learningRate);
-        FloatVector simulatedAnnealing(const FloatVector& initialWeights, float maximumDistance);
-        float estimateMaximumDistanceToExplore(float learningRate);
-        float estimateOptimalLearningRate(FloatVector initialWeights); 
+        Matrix localSearch(const Matrix& startingWeights, float learningRate, unsigned maxIterations);
+        Matrix simulatedAnnealing(const Matrix& initialWeights, float learningRate, float maximumDistance);
+        float estimateMaximumDistanceToExplore(float learningRate, unsigned maxIterations);
+        float estimateOptimalLearningRate(const Matrix& initialWeights, unsigned maxIterations); 
 
         void greedy();
         void addToTabuList();
 
+	private:
+		std::default_random_engine generator;
 
 };
 

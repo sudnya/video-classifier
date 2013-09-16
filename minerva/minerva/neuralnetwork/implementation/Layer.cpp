@@ -28,10 +28,9 @@ Layer::Layer(unsigned totalBlocks, size_t blockInput, size_t blockOutput)
     }
 }
 
-void Layer::initializeRandomly()
+void Layer::initializeRandomly(float e)
 {
-	float epsilon = util::KnobDatabase::getKnobValue(
-		"Layer::RandomInitializationEpsilon", 0.25f * getInputCount());
+	float epsilon = util::KnobDatabase::getKnobValue("Layer::RandomInitializationEpsilon", e);
 
     std::default_random_engine generator(std::time(0));
     std::uniform_real_distribution<float> distribution(-epsilon, epsilon);
@@ -127,10 +126,10 @@ unsigned Layer::getInputCount() const
     
     for(auto& matrix : *this)
     {
-        count += matrix.rows() - 1;
+        count += matrix.rows();
     }
 
-    return count;
+    return count - 1;
 }
 
 unsigned Layer::getOutputCount() const
@@ -146,6 +145,63 @@ unsigned Layer::getOutputCount() const
     }
 
     return count;
+}
+
+size_t Layer::totalWeights() const
+{
+	size_t weights = 0;
+
+	for(auto& matrix : *this)
+	{
+		weights += matrix.size();
+	}
+	
+	return weights - back().columns();
+}
+
+Layer::Matrix Layer::getFlattenedWeights() const
+{
+	Matrix weights;
+	
+	auto matrix = begin();
+	
+	// Discard the bias weights
+	weights = weights.appendColumns(
+		Matrix(1, matrix->size() - matrix->columns(),
+		matrix->slice(0, 0, matrix->rows() - 1,
+		matrix->columns()).data()));
+	
+	for(++matrix; matrix != end(); ++matrix)
+	{
+		weights = weights.appendColumns(Matrix(1, matrix->size(),
+			matrix->data()));
+	}
+	
+	return weights;
+}
+
+void Layer::setFlattenedWeights(const Matrix& m)
+{
+	size_t position = 0;
+	
+	auto matrix = begin();
+
+	// Add the bias weights back in
+	auto updatedWeights =
+		m.slice(0, 0, 1, matrix->size() - matrix->columns()).appendColumns(
+		matrix->slice(0, 0, 1, matrix->columns()));
+	
+	matrix->setDataRowMajor(updatedWeights.data());
+	
+	position += matrix->size() - matrix->columns();
+	
+	for(++matrix; matrix != end(); ++matrix)
+	{
+		matrix->setDataRowMajor(m.slice(0, position, 1,
+			position + matrix->size()).data());
+	
+		position += matrix->size();
+	}
 }
 
 Layer::iterator Layer::begin()

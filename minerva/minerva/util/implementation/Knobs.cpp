@@ -54,6 +54,12 @@ std::string KnobDatabase::getKnobValueAsString(const std::string& knobname)
 	return knob->second;
 }
 
+std::string KnobDatabase::getKnobValue(const std::string& knobname,
+	const std::string& defaultValue)
+{
+	return getKnobValue<std::string>(knobname, defaultValue);
+}
+
 }
 
 }

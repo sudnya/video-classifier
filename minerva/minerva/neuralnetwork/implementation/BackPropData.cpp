@@ -17,6 +17,8 @@ namespace neuralnetwork
 {
 
 typedef matrix::Matrix Matrix;
+typedef Matrix::FloatVector FloatVector;
+typedef BackPropData::MatrixVector MatrixVector;
 
 static bool isInMargin(const Matrix& ref, const Matrix& output, float epsilon)
 {
@@ -31,16 +33,18 @@ static bool isInMargin(const Matrix& ref, const Matrix& output, float epsilon)
     return true;
 }
 
-static float computeCost(const Layer& layer, const Matrix& layerInput, const Matrix& layerOutput)
+static float computeCost(const Layer& layer, const Matrix& layerInput, const Matrix& layerOutput, float lambda)
 {
-    //J(theta) = -1/m (sum over i, sum over k yi,k * log (h(xl)k) + (1-yik)*log(1-h(xi)k) + regularization term lambda/2m sum over l,i,j thetai,j,i^2
+    //J(theta) = -1/m (sum over i, sum over k yi,k * log (h(xl)k) + (1-yik)*log(1-h(xi)k) + regularization term lambda/2m sum over l,i,j (theta[i,j])^2
     
     auto hx = layer.runInputs(layerInput);
     
     auto logHx = hx.log();
     
     auto oneMinusHx = hx.negate().add(1.0f);
-    auto logOneMinusHx = oneMinusHx.log();
+    
+    // add an epsilon to avoid log(0)
+    auto logOneMinusHx = oneMinusHx.add(0.0001f).log();
     
     auto oneMinusY = layerOutput.negate().add(1.0f);
 
@@ -54,14 +58,49 @@ static float computeCost(const Layer& layer, const Matrix& layerInput, const Mat
     auto cost = sum.multiply(-1.0f/m);
 
     //TODO Normalize this with lambda!
-    util::log("BackPropData") << "  1 " << cost.toString() << "\n";
     float costSum = cost.reduceSum();
-    util::log("BackPropData") << "  2 " << costSum << "\n";
+
+    auto weights = layer.getFlattenedWeights();
+
+	costSum += (lambda / (2.0f * m)) * (weights.elementMultiply(weights).reduceSum());
 
     return costSum;
 }
 
-static bool gradientChecking(const Matrix& partialDerivatives, const Layer& layer, const Matrix& layerInput, const Matrix& layerOutput, float epsilon)
+static float computeCost(const NeuralNetwork& network, const Matrix& input,
+	const Matrix& referenceOutput, float lambda)
+{
+	//J(theta) = -1/m (sum over i, sum over k y(i,k) * log (h(x)) + (1-y(i,k))*log(1-h(x)) + regularization term lambda/2m sum over l,i,j (theta[i,j])^2
+	// J = (1/m) .* sum(sum(-yOneHot .* log(hx) - (1 - yOneHot) .* log(1 - hx)));
+
+    unsigned m = input.rows();
+	
+    auto hx = network.runInputs(input);
+    
+    auto logHx = hx.log();
+    auto yTemp = referenceOutput.elementMultiply(logHx);
+
+    auto oneMinusY = referenceOutput.negate().add(1.0f);
+    auto oneMinusHx = hx.negate().add(1.0f);
+    auto logOneMinusHx = oneMinusHx.add(0.000001f).log(); // add an epsilon to avoid log(0)
+    auto yMinusOneTemp = oneMinusY.elementMultiply(logOneMinusHx);
+
+    auto sum = yTemp.add(yMinusOneTemp);
+
+    float costSum = sum.reduceSum() * -1.0f / m;
+
+	if(lambda > 0.0f)
+	{
+		auto weights = network.getFlattenedWeights();
+
+		costSum += (lambda / (2.0f * m)) * ((weights.elementMultiply(weights)).reduceSum());
+	}
+	
+    return costSum;
+	
+}
+
+static bool gradientChecking(const Matrix& partialDerivatives, const Layer& layer, const Matrix& layerInput, const Matrix& layerOutput, float epsilon, float lambda)
 {
     Matrix gradientEstimate(partialDerivatives.rows(), partialDerivatives.columns());
 
@@ -91,7 +130,7 @@ static bool gradientChecking(const Matrix& partialDerivatives, const Layer& laye
         util::log("BackPropData") << "  layer minus e " << layerMinus.back().toString() << "\n";
 
         // update derivative value
-        float derivative = (computeCost(layerPlus, layerInput, layerOutput) - computeCost(layerMinus, layerInput, layerOutput)) / (2.0f * epsilon);
+        float derivative = (computeCost(layerPlus, layerInput, layerOutput, lambda) - computeCost(layerMinus, layerInput, layerOutput, lambda)) / (2.0f * epsilon);
     
         *estimate = derivative;
 
@@ -107,89 +146,90 @@ static bool gradientChecking(const Matrix& partialDerivatives, const Layer& laye
     return isInMargin(partialDerivatives, gradientEstimate, epsilon);
 }
 
-BackPropData::MatrixVector BackPropData::getCostDerivative()
+BackPropData::BackPropData(NeuralNetwork* ann, const Matrix& input, const Matrix& ref)
+ : m_neuralNetworkPtr(ann), m_input(input), m_referenceOutput(ref), m_lambda(0.0f)
 {
-    //get activations in a vector
-    auto activations = getActivations();
-    //get deltas in a vector
-    auto deltas = getDeltas(activations);
-    
-    MatrixVector partialDerivative;
-    
-    float lambda = util::KnobDatabase::getKnobValue("BackPropData::Lambda", 0.00f);
-
-    //derivative of layer = activation[i] * delta[i+1] - for same layer
-    auto layer = m_neuralNetworkPtr->begin();
-    for (auto i = deltas.begin(), j = activations.begin(); i != deltas.end() && j != activations.end(); ++i, ++j, ++layer)
-    {
-        //there will be one less delta than activation
-        auto unnormalizedPartialDerivative = (((*i).transpose()).multiply(*j)).transpose();
-        auto normalizedPartialDerivative = unnormalizedPartialDerivative.multiply(1.0f/(*j).rows());
-        
-        auto weights = layer->back().slice(0, 0, layer->back().rows() - 1, layer->back().columns());
-
-        auto lambdaTerm = weights.multiply(lambda/(*j).rows());
-        
-        partialDerivative.push_back(lambdaTerm.add(normalizedPartialDerivative));
-    
-		util::log("BackPropData") << " computed derivative for layer " << std::distance(deltas.begin(), i) << " (" << partialDerivative.back().rows()
-		       << " rows, " << partialDerivative.back().columns() << " columns).\n";
-        util::log("BackPropData") << " PD contains " << partialDerivative.back().toString() << "\n";
-    
-    }//this loop ends after all activations are done. and we don't need the last delta (ref-output anyway)
-    
-    bool performGradientChecking = util::KnobDatabase::getKnobValue("NeuralNetwork::DoGradientChecking", false);
-    
-    if (performGradientChecking)
-    { 
-        float epsilon = util::KnobDatabase::getKnobValue("NeuralNetwork::GradientCheckingEpsilon", 0.05f);
-        bool isInRange = gradientChecking(partialDerivative.back(), m_neuralNetworkPtr->back(), *(++activations.rbegin()), m_referenceOutput, epsilon);
-        assertM(isInRange, "Gradient checking indicates gradient descent is wrong\n");
-    }
-
-    return partialDerivative;
+	m_lambda = util::KnobDatabase::getKnobValue("BackPropData::Lambda", 0.0f);
 }
 
-BackPropData::NeuralNetwork* BackPropData::getNeuralNetworkPtr()
+MatrixVector BackPropData::getCostDerivative() const
+{
+    return getCostDerivative(*m_neuralNetworkPtr);
+}
+
+static size_t getElementCount(const MatrixVector& matrices)
+{
+	size_t size = 0;
+	
+	for(auto& matrix : matrices)
+	{
+		size += matrix.size();
+	}
+	
+	return size;
+}
+
+static Matrix flatten(const MatrixVector& matrices)
+{
+	FloatVector flattenedData(getElementCount(matrices));
+	
+	size_t position = 0;
+	
+	for(auto& matrix : matrices)
+	{
+		auto data = matrix.data();
+		
+		std::memcpy(&flattenedData[position], data.data(),
+			sizeof(float) * matrix.size());
+		
+		position += matrix.size();
+	}
+	
+	return Matrix(1, getElementCount(matrices), flattenedData);
+}
+
+NeuralNetwork* BackPropData::getNeuralNetworkPtr()
 {
     return m_neuralNetworkPtr;
 }
 
-BackPropData::FloatVector BackPropData::getFlattenedWeights()
+Matrix BackPropData::getFlattenedWeights() const
 {
-    assertM(false, "Not implemented.");
-
-    return FloatVector();
+    return m_neuralNetworkPtr->getFlattenedWeights();
 }
 
-BackPropData::FloatVector BackPropData::getFlattenedCostDerivative()
+Matrix BackPropData::getFlattenedCostDerivative() const
 {
-    assertM(false, "Not implemented.");
-
-    return FloatVector();
+    return flatten(getCostDerivative());
 }
 
-void BackPropData::setFlattenedWeights(const FloatVector& weights)
+void BackPropData::setFlattenedWeights(const Matrix& weights)
 {
-    assertM(false, "Not implemented.");
+    *m_neuralNetworkPtr = createNetworkFromWeights(weights);
 }
 
-float BackPropData::computeCostForNewFlattenedWeights(const FloatVector& weights) const
+float BackPropData::computeCostForNewFlattenedWeights(const Matrix& weights) const
 {
-    assertM(false, "Not implemented.");
+	auto network = createNetworkFromWeights(weights);
 
-    return 0.0f;
+    return computeCost(network, m_input, m_referenceOutput, m_lambda);
 }
 
-BackPropData::FloatVector BackPropData::computePartialDerivativesForNewFlattenedWeights(const FloatVector& weights) const
+float BackPropData::computeAccuracyForNewFlattenedWeights(const Matrix& weights) const
 {
-    assertM(false, "Not implemented.");
+	auto network = createNetworkFromWeights(weights);
 
-    return FloatVector();
+    return network.computeAccuracy(m_input, m_referenceOutput);
 }
 
+Matrix BackPropData::computePartialDerivativesForNewFlattenedWeights(const Matrix& weights) const
+{
+    auto network = createNetworkFromWeights(weights);
 
-BackPropData::MatrixVector BackPropData::getDeltas(const MatrixVector& activations) const
+	return flatten(getCostDerivative(network));
+}
+
+MatrixVector BackPropData::getDeltas(const MatrixVector& activations) const
 {
     MatrixVector deltas;
     
@@ -222,8 +262,7 @@ BackPropData::MatrixVector BackPropData::getDeltas(const MatrixVector& activatio
     return deltas;
 }
 
-
-BackPropData::MatrixVector BackPropData::getActivations() const
+MatrixVector BackPropData::getActivations() const
 {
 	MatrixVector activations;
 
@@ -251,7 +290,7 @@ BackPropData::MatrixVector BackPropData::getActivations() const
 //	return 1.0f / (1.0f + std::exp(-v));
 //}
 
-BackPropData::Matrix BackPropData::sigmoidDerivative(const Matrix& m) const
+Matrix BackPropData::sigmoidDerivative(const Matrix& m) const
 {
     // f(x) = 1/(1+e^-x)
     // dy/dx = f(x)' = f(x) * (1 - f(x))
@@ -265,6 +304,61 @@ BackPropData::Matrix BackPropData::sigmoidDerivative(const Matrix& m) const
 	}
 	
 	return temp;
+}
+
+
+NeuralNetwork BackPropData::createNetworkFromWeights(
+	const Matrix& weights) const
+{
+	NeuralNetwork newNetwork(*m_neuralNetworkPtr);
+	
+	newNetwork.setFlattenedWeights(weights);
+		
+	return newNetwork;
+}
+
+
+MatrixVector BackPropData::getCostDerivative(const NeuralNetwork& network) const
+{
+ //get activations in a vector
+    auto activations = getActivations();
+    //get deltas in a vector
+    auto deltas = getDeltas(activations);
+    
+    MatrixVector partialDerivative;
+    
+    unsigned int samples = m_input.rows();
+
+    //derivative of layer = activation[i] * delta[i+1] - for same layer
+    auto layer = network.begin();
+    for (auto i = deltas.begin(), j = activations.begin(); i != deltas.end() && j != activations.end(); ++i, ++j, ++layer)
+    {
+        //there will be one less delta than activation
+        auto unnormalizedPartialDerivative = (((*i).transpose()).multiply(*j)).transpose();
+        auto normalizedPartialDerivative = unnormalizedPartialDerivative.multiply(1.0f/samples);
+        
+        auto weights = layer->back().slice(0, 0, layer->back().rows() - 1, layer->back().columns());
+
+        auto lambdaTerm = weights.multiply(m_lambda/samples);
+        
+        partialDerivative.push_back(lambdaTerm.add(normalizedPartialDerivative));
+    
+		util::log("BackPropData") << " computed derivative for layer " << std::distance(deltas.begin(), i) << " (" << partialDerivative.back().rows()
+		       << " rows, " << partialDerivative.back().columns() << " columns).\n";
+        util::log("BackPropData") << " PD contains " << partialDerivative.back().toString() << "\n";
+    
+    }//this loop ends after all activations are done. and we don't need the last delta (ref-output anyway)
+    
+    bool performGradientChecking = util::KnobDatabase::getKnobValue("NeuralNetwork::DoGradientChecking", false);
+    
+    if (performGradientChecking)
+    { 
+        float epsilon = util::KnobDatabase::getKnobValue("NeuralNetwork::GradientCheckingEpsilon", 0.05f);
+        bool isInRange = gradientChecking(partialDerivative.back(), network.back(), *(++activations.rbegin()), m_referenceOutput, epsilon, m_lambda);
+        assertM(isInRange, "Gradient checking indicates gradient descent is wrong\n");
+    }
+
+    return partialDerivative;	
 }
 
 }//end neuralnetwork

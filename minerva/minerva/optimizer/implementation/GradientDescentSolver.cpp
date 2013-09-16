@@ -3,12 +3,15 @@
  * The implementation for the Gradient Descent Solver class 
  */
 
-
+// Minerva Includes
 #include <minerva/optimizer/interface/Solver.h>
 #include <minerva/optimizer/interface/GradientDescentSolver.h>
 
 #include <minerva/util/interface/Knobs.h>
 #include <minerva/util/interface/debug.h>
+
+// Standard Library Includes
+#include <stdexcept>
 
 namespace minerva
 {
@@ -19,13 +22,64 @@ typedef minerva::matrix::Matrix Matrix;
 typedef Matrix::FloatVector FloatVector;
 typedef std::vector<Matrix> MatrixVector;
 
-
-
 void GradientDescentSolver::solve()
 {
-    util::log("GradientDescentSolver") << " Solve\n";
-	float learningRate = util::KnobDatabase::getKnobValue<float>("GradientDescentSolver::LearningRate", 0.3f);
+   float learningRate = util::KnobDatabase::getKnobValue<float>(
+		"GradientDescentSolver::LearningRate", 2.4f/m_backPropDataPtr->getNeuralNetworkPtr()->getInputCount());
+	float convergenceRatio = util::KnobDatabase::getKnobValue<float>(
+		"GradientDescentSolver::ConvergenceRatio", 0.1f);
+	float learningRateBackoff = util::KnobDatabase::getKnobValue<float>(
+		"GradientDescentSolver::LearningRateBackoff", 0.3f);
+	unsigned iterations = util::KnobDatabase::getKnobValue<float>(
+		"GradientDescentSolver::Iterations", 10);
+	
+	auto weights = m_backPropDataPtr->getFlattenedWeights();
+	
+	float originalCost = m_backPropDataPtr->computeCostForNewFlattenedWeights(
+		weights);
+	float previousCost = originalCost;
+	
+	util::log("GradientDescentSolver") << "Solving for " << iterations << " iterations\n";
+	
+	for(unsigned i = 0; i < iterations; ++i)
+	{
+		auto derivative = m_backPropDataPtr->computePartialDerivativesForNewFlattenedWeights(weights);
+		
+		auto newWeights = weights.subtract(derivative.multiply(learningRate));
+	
+		float newCost = m_backPropDataPtr->computeCostForNewFlattenedWeights(newWeights);
 
+		if(newCost <= previousCost)
+		{
+			util::log("GradientDescentSolver") << " Cost is now " << (newCost) << " (changed by " << (newCost - previousCost) << ")\n";
+			
+			weights = newWeights;
+			previousCost = newCost;
+			
+			// Early exit if the cost was reduced significantly enough
+			if(newCost <= originalCost * convergenceRatio)
+			{
+				break;
+			}
+		}
+		else
+		{
+			learningRate = learningRate * learningRateBackoff;
+			iterations = iterations * learningRateBackoff;
+			util::log("GradientDescentSolver") << " Backing off learning rate to " << learningRate << "\n";
+			/*
+			throw std::runtime_error("Gradient descent failed"
+				" to decrease cost at all.");
+			*/
+		}
+	}
+	
+	m_backPropDataPtr->setFlattenedWeights(weights);
+
+
+
+	/*
+	
     // doing batch descent, so dont need cost
     MatrixVector partialDerivatives = m_backPropDataPtr->getCostDerivative();
 
@@ -49,10 +103,11 @@ void GradientDescentSolver::solve()
             (*layerWeight) = (*layerWeight).subtract(weightAndBiasUpdates);
         }
     }
+    */
 }
 
-
 }
+
 }
 
 

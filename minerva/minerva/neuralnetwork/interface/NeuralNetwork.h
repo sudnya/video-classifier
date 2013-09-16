@@ -36,10 +36,13 @@ class NeuralNetwork
         {
         }
     
-        void initializeRandomly();
+        void initializeRandomly(float epsilon = 0.3f);
         void backPropagate(const Matrix& input, const Matrix& reference);
         
         Matrix runInputs(const Matrix& m) const;
+
+	public:
+		float computeAccuracy(const Matrix& input, const Matrix& reference) const;
         
     public:
         std::string getLabelForOutputNeuron(unsigned int idx) const;
@@ -52,6 +55,13 @@ class NeuralNetwork
     public:
         unsigned getInputCount()  const;
         unsigned getOutputCount() const;
+
+	public:
+		size_t totalWeights() const;
+	
+	public:
+		Matrix getFlattenedWeights() const;
+		void setFlattenedWeights(const Matrix& m);
 
     public:
         void addLayer(const Layer&);

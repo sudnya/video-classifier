@@ -25,7 +25,7 @@ class Layer
         Layer(unsigned totalBlocks = 0, size_t blockInput = 0,
         	size_t blockOutput = 0);
 
-        void initializeRandomly();
+        void initializeRandomly(float epsilon = 0.3f);
         Matrix runInputs(const Matrix& m) const;
         Matrix runReverse(const Matrix& m) const;
  
@@ -35,6 +35,13 @@ class Layer
     public:
         unsigned getInputCount()  const;
         unsigned getOutputCount() const;
+        
+    public:
+    	size_t totalWeights() const;
+    	
+    public:
+		Matrix getFlattenedWeights() const;
+		void setFlattenedWeights(const Matrix& m);
 
     public:
         iterator       begin();

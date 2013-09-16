@@ -6,7 +6,10 @@
 
 #include <minerva/optimizer/interface/Solver.h>
 #include <minerva/optimizer/interface/GradientDescentSolver.h>
+#include <minerva/optimizer/interface/MultiLevelOptimizer.h>
+
 #include <minerva/util/interface/debug.h>
+#include <minerva/util/interface/Knobs.h>
 
 namespace minerva
 {
@@ -20,6 +23,15 @@ void Solver::solve()
 
 Solver* Solver::create(BackPropData* d)
 {
+	auto solverName = util::KnobDatabase::getKnobValue("Solver::Type",
+		"MultiLevelOptimizer");
+	
+	if(solverName == "MultiLevelOptimizer")
+	{
+		return new MultiLevelOptimizer(d);
+	}
+
+	// Fall back to gradient descent
     return new GradientDescentSolver(d);
 }
 

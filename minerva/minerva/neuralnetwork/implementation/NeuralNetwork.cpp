@@ -18,13 +18,13 @@ namespace minerva
 namespace neuralnetwork
 {
 
-void NeuralNetwork::initializeRandomly()
+void NeuralNetwork::initializeRandomly(float epsilon)
 {
     util::log("NeuralNetwork") << "Initializing neural network randomly.\n";
     
     for (auto i = m_layers.begin(); i != m_layers.end(); ++i)
     {
-        (*i).initializeRandomly();
+        (*i).initializeRandomly(epsilon);
     }
 }
 
@@ -70,6 +70,30 @@ NeuralNetwork::Matrix NeuralNetwork::runInputs(const Matrix& m) const
     }
 
     return temp;
+}
+
+float NeuralNetwork::computeAccuracy(const Matrix& input, const Matrix& reference) const
+{
+	assert(input.rows() == reference.rows());
+	assert(reference.columns() == getOutputCount());
+
+	Matrix result = runInputs(input);
+
+	float matches = 0.0f;
+
+	for(Matrix::const_iterator referenceValue = reference.begin(), resultValue = result.begin();
+		resultValue != result.end(); ++referenceValue, ++resultValue)
+	{
+		bool referenceActivation = *referenceValue >= 0.5f;
+		bool resultActivation    = *resultValue    >= 0.5f;
+
+		if(referenceActivation == resultActivation)
+		{
+			matches += 1.0f;
+		}
+	}
+
+	return matches / result.size();
 }
 
 std::string NeuralNetwork::getLabelForOutputNeuron(unsigned int i) const
@@ -158,6 +182,44 @@ unsigned NeuralNetwork::getOutputCount() const
         return 0;
 
     return back().getOutputCount();
+}
+
+size_t NeuralNetwork::totalWeights() const
+{
+	size_t weights = 0;
+	
+	for(auto& layer : *this)
+	{
+		weights += layer.totalWeights();
+	}
+	
+	return weights;
+}
+
+NeuralNetwork::Matrix NeuralNetwork::getFlattenedWeights() const
+{
+	Matrix weights;
+	
+	for(auto& layer : *this)
+	{
+		weights = weights.appendColumns(layer.getFlattenedWeights());
+	}
+	
+	return weights;
+}
+
+void NeuralNetwork::setFlattenedWeights(const Matrix& m)
+{
+	size_t weights = 0;
+
+	for(auto& layer : *this)
+	{
+		auto sliced = m.slice(0, weights, 1, layer.totalWeights());
+		
+		layer.setFlattenedWeights(sliced);
+		
+		weights += layer.totalWeights();
+	}
 }
 
 NeuralNetwork::iterator NeuralNetwork::begin()

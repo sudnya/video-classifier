@@ -156,7 +156,7 @@ def getVersion(base):
 		svn_path = which('svn')
 	except:
 		print 'Failed to get subversion revision'
-		return base + '.0'
+		return base + '.unknown'
 
 	process = subprocess.Popen('svn info ..', shell=True,
 		stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -170,7 +170,7 @@ def getVersion(base):
 		if end:
 			revision = svn_info[match.end():match.end()+end.start()]
 	else:
-		print 'Failed to get SVN repository version!'
+		print 'Failed to get repository version!'
 
 	return base + '.' + revision
 

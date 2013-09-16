@@ -23,20 +23,20 @@ class BackPropData
         typedef minerva::matrix::Matrix::FloatVector FloatVector;
         typedef std::vector<minerva::matrix::Matrix> MatrixVector;
     public:
-        BackPropData(NeuralNetwork* ann, Matrix input, Matrix ref) : m_neuralNetworkPtr(ann), m_input(input), m_referenceOutput(ref)
-        {
-        }
+        BackPropData(NeuralNetwork* ann, const Matrix& input, const Matrix& ref);
+        	
     public:
-        MatrixVector getCostDerivative();
+        MatrixVector getCostDerivative() const;
         NeuralNetwork* getNeuralNetworkPtr();
 
     public:
-        FloatVector getFlattenedWeights();
-        FloatVector getFlattenedCostDerivative();
-        void   setFlattenedWeights(const FloatVector& weights);
-        float  computeCostForNewFlattenedWeights(const FloatVector& weights) const;
-        FloatVector computePartialDerivativesForNewFlattenedWeights(const FloatVector& weights) const;
-
+        Matrix getFlattenedWeights() const;
+        Matrix getFlattenedCostDerivative() const;
+        void   setFlattenedWeights(const Matrix& weights);
+        float  computeCostForNewFlattenedWeights(const Matrix& weights) const;
+        float  computeAccuracyForNewFlattenedWeights(const Matrix& weights) const;
+        Matrix computePartialDerivativesForNewFlattenedWeights(const Matrix& weights) const;
+		
     private:
         bool testDerivative();
 
@@ -44,10 +44,18 @@ class BackPropData
         MatrixVector getDeltas(const MatrixVector& m) const;
         MatrixVector getActivations() const;
         Matrix sigmoidDerivative(const Matrix& m) const;
+       
+    private:
+        NeuralNetwork createNetworkFromWeights(const Matrix& weights) const;
+        MatrixVector getCostDerivative(const NeuralNetwork& network) const;
+
     private:
         NeuralNetwork* m_neuralNetworkPtr;
         Matrix m_input;
         Matrix m_referenceOutput;
+
+	private:
+		float m_lambda; // cost function regularization
 
 };
 

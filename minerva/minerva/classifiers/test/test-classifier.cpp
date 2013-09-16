@@ -18,11 +18,9 @@ namespace classifiers
 typedef neuralnetwork::Layer Layer;
 typedef matrix::Matrix Matrix;
 
-neuralnetwork::NeuralNetwork createAndInitializeNeuralNetwork()
+neuralnetwork::NeuralNetwork createAndInitializeNeuralNetwork(unsigned networkSize, float epsilon)
 {
     neuralnetwork::NeuralNetwork ann;
-
-    const unsigned networkSize = 8;
 
     // Layer 1
     ann.addLayer(Layer(1,networkSize,networkSize));
@@ -33,7 +31,8 @@ neuralnetwork::NeuralNetwork createAndInitializeNeuralNetwork()
     // Layer 3
     ann.addLayer(Layer(1,networkSize,networkSize/2));
 
-    ann.initializeRandomly();
+    ann.initializeRandomly(epsilon);
+
     return ann;
 }
 
@@ -98,9 +97,28 @@ Matrix threshold(const Matrix& output)
     return temp;
 }
 
+float computeEntropy(const Matrix& thresholdOutput)
+{
+	float totalColumnEntropy;
+
+	for(size_t column = 0; column < thresholdOutput.columns(); ++column)
+	{
+		float totalBits = 0.0f;
+		
+		for(size_t row = 0; row < thresholdOutput.rows(); ++row)
+		{
+			totalBits += thresholdOutput(row, column);
+		}
+		
+		totalColumnEntropy += 0.5f - std::fabs(0.5f - (totalBits / thresholdOutput.rows()));
+	}
+	
+	return totalColumnEntropy / thresholdOutput.columns();
+}
+
 void trainNeuralNetwork(neuralnetwork::NeuralNetwork& ann, unsigned trainingIter, std::default_random_engine& generator)
 {
-    unsigned samplesPerIter = 100;
+    unsigned samplesPerIter = ann.getInputCount() * 10;
 
     util::log("TestClassifier") << "Starting training\n";
 
@@ -112,6 +130,7 @@ void trainNeuralNetwork(neuralnetwork::NeuralNetwork& ann, unsigned trainingIter
 
         util::log("TestClassifier") << " Input is:     " << input.toString();
         util::log("TestClassifier") << " Output is:    " << threshold(ann.runInputs(input)).toString();
+        util::log("TestClassifier") << "  Output entropy is " << computeEntropy(threshold(ann.runInputs(input))) << "\n";
         util::log("TestClassifier") << " Reference is: " << referenceMatrix.toString();
 
         ann.backPropagate(input, referenceMatrix);
@@ -166,12 +185,12 @@ float classify(const neuralnetwork::NeuralNetwork& ann, unsigned iterations, std
     return accuracy;
 }
 
-void runTest(unsigned iterations, bool seed)
+void runTest(unsigned iterations, bool seed, unsigned networkSize, float epsilon)
 {
     
     // Create neural network
     // 3 layers
-    neuralnetwork::NeuralNetwork ann = createAndInitializeNeuralNetwork(); 
+    neuralnetwork::NeuralNetwork ann = createAndInitializeNeuralNetwork(networkSize, epsilon); 
 
     // Train network against reference XOR function
 
@@ -181,7 +200,7 @@ void runTest(unsigned iterations, bool seed)
 
     // Run classifier and record accuracy
 
-    float accuracy = classify(ann, iterations/10, generator);
+    float accuracy = classify(ann, std::max(1U, iterations/10), generator);
 
     // Test if accuracy is greater than threshold
 
@@ -220,6 +239,8 @@ int main(int argc, char** argv)
     std::string loggingEnabledModules;
 	
 	unsigned iterations = 0;
+	unsigned networkSize = 0;
+	float epsilon = 1.0f;
 
     parser.description("The Minerva image classifier.");
 
@@ -230,6 +251,10 @@ int main(int argc, char** argv)
 		"(comma-separated list of modules, e.g. NeuralNetwork, Layer, ...).");
     parser.parse("-s", "--seed", seed, false,
         "Seed with time.");
+    parser.parse("-n", "--network-size", networkSize, 8,
+        "The number of inputs to the network.");
+    parser.parse("-e", "--epsilon", epsilon, 1.0f,
+        "Range to intiialize the network with.");
     parser.parse("-v", "--verbose", verbose, false,
         "Print out log messages during execution");
 	parser.parse();
@@ -247,7 +272,7 @@ int main(int argc, char** argv)
     
     try
     {
-        minerva::classifiers::runTest(iterations, seed);
+        minerva::classifiers::runTest(iterations, seed, networkSize, epsilon);
     }
     catch(const std::exception& e)
     {

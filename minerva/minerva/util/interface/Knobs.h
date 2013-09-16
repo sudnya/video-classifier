@@ -30,6 +30,9 @@ public:
 	static T getKnobValue(const std::string& knobname, const T& defaultValue);
 
 	static bool knobExists(const std::string& knobname);
+	
+	static std::string getKnobValue(const std::string& knobname,
+		const std::string& defaultValue);
 
 public:	
 	static std::string getKnobValueAsString(const std::string& knobname);
