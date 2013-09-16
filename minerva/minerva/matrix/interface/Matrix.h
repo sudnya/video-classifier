@@ -247,7 +247,7 @@ public:
 	public:
 		explicit const_iterator(const Matrix*);
 		const_iterator(const Matrix* , size_t);
-		const_iterator(const Matrix::iterator&);
+		explicit const_iterator(const Matrix::iterator&);
 
 	public:
 		ConstFloatReference operator*() const;

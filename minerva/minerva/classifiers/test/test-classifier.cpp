@@ -257,8 +257,6 @@ int main(int argc, char** argv)
         "Range to intiialize the network with.");
     parser.parse("-v", "--verbose", verbose, false,
         "Print out log messages during execution");
-    parser.parse("-b", "--input-bits", inputBits, 1024,
-        "The length of the input bit vector to the neural network");
 
 	parser.parse();
 

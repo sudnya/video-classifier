@@ -26,9 +26,9 @@ class MultiLevelOptimizer : public Solver
     
     private:
         Matrix localSearch(const Matrix& startingWeights, float learningRate, unsigned maxIterations);
-        Matrix simulatedAnnealing(const Matrix& initialWeights, float learningRate, float maximumDistance);
+        Matrix simulatedAnnealing(const Matrix& initialWeights, float learningRate, float maximumDistance, float epsilon);
         float estimateMaximumDistanceToExplore(float learningRate, unsigned maxIterations);
-        float estimateOptimalLearningRate(const Matrix& initialWeights, unsigned maxIterations); 
+        float estimateCostFunctionRange(const Matrix& initialWeights, unsigned maxIterations, float epsilon); 
 
         void greedy();
         void addToTabuList();
