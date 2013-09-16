@@ -23,6 +23,7 @@ public:
 
 public:
 	virtual StringVector getSupportedExtensions() const;
+    virtual void displayOnScreen(size_t x, size_t y, size_t colorComponents, size_t pixelSize, const DataVector& pixels);
 
 
 };

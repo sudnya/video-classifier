@@ -39,6 +39,8 @@ public:
 	static Header loadHeader(const std::string& path);
 	static DataVector loadData(const std::string& path);
 
+    static void displayOnScreen(size_t x, size_t y, size_t colorComponents, size_t pixelSize, const DataVector& pixels);
+
 };
 
 }

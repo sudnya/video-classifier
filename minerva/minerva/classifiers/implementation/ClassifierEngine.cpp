@@ -56,6 +56,7 @@ typedef video::VideoVector VideoVector;
 
 static void parseImageDatabase(ImageVector& images, VideoVector& video,
 	const std::string& path, bool requiresLabeledData);
+static void displayOnScreen(ImageVector& images);
 
 void ClassifierEngine::runOnPaths(const StringVector& paths)
 {
@@ -148,7 +149,7 @@ void ClassifierEngine::runOnPaths(const StringVector& paths)
 			}
 
 			auto batch = video.getNextFrames(maxBatchSize);
-	
+            displayOnScreen(batch);	
 			// TODO fix this
 			if(batch.empty())
 			{
@@ -252,6 +253,17 @@ static void parseImageDatabase(ImageVector& images, VideoVector& videos,
 	}
 	
 	consolidateLabels(images, videos);
+}
+
+static void displayOnScreen(ImageVector& images)
+{
+    bool shouldDisplay = util::KnobDatabase::getKnobValue("ClassifierEngine::DisplayOnScreen", false);
+    if (!shouldDisplay)
+        return;
+    for (auto& i : images)
+    {
+        i.displayOnScreen();
+    }
 }
 
 static void parseSinglePath(ImageVector& images, VideoVector& videos,

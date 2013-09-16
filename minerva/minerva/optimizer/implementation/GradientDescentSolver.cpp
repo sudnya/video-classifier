@@ -10,8 +10,12 @@
 #include <minerva/util/interface/Knobs.h>
 #include <minerva/util/interface/debug.h>
 
+<<<<<<< HEAD
 // Standard Library Includes
 #include <stdexcept>
+=======
+#include <cmath>
+>>>>>>> 6884a0a472cea9dab19dbebfce0624733d7323af
 
 namespace minerva
 {
@@ -24,6 +28,7 @@ typedef std::vector<Matrix> MatrixVector;
 
 void GradientDescentSolver::solve()
 {
+<<<<<<< HEAD
    float learningRate = util::KnobDatabase::getKnobValue<float>(
 		"GradientDescentSolver::LearningRate", 2.4f/m_backPropDataPtr->getNeuralNetworkPtr()->getInputCount());
 	float convergenceRatio = util::KnobDatabase::getKnobValue<float>(
@@ -75,6 +80,10 @@ void GradientDescentSolver::solve()
 	}
 	
 	m_backPropDataPtr->setFlattenedWeights(weights);
+=======
+    util::log("GradientDescentSolver") << " Solve\n";
+	float learningRate = util::KnobDatabase::getKnobValue<float>("GradientDescentSolver::LearningRate", (128.0f) / std::pow(m_backPropDataPtr->getNeuralNetworkPtr()->getInputCount(), 2.0f));
+>>>>>>> 6884a0a472cea9dab19dbebfce0624733d7323af
 
 
 

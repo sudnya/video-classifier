@@ -79,6 +79,19 @@ OpenCVLibrary::IplImage* OpenCVLibrary::cvRetrieveFrame(CvCapture* c)
 	return (*_interface.cvRetrieveFrame)(c);
 }
 
+int OpenCVLibrary::cvNamedWindow(const char* name, int flags)
+{
+    _check();
+
+    return (*_interface.cvNamedWindow)(name, flags);
+}
+void OpenCVLibrary::cvShowImage(const char* name, const CvArr* image)
+{
+    _check();
+
+    (*_interface.cvShowImage)(name, image);
+}
+
 void OpenCVLibrary::_check()
 {
 	load();

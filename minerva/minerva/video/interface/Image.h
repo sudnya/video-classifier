@@ -44,7 +44,8 @@ public:
     float range() const;
 
 public:
-	bool loaded() const;
+    void displayOnScreen();
+    bool loaded() const;
 	void load();
 
 public:

@@ -31,6 +31,7 @@ public:
 
 public:
 	virtual StringVector getSupportedExtensions() const = 0;
+    virtual void displayOnScreen(size_t x, size_t y, size_t colorComponents, size_t pixelSize, const DataVector& pixels) = 0;
 
 
 };

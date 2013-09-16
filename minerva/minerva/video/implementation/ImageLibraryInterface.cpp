@@ -99,6 +99,20 @@ ImageLibraryInterface::DataVector ImageLibraryInterface::loadData(
 	return library->second->loadData(path);
 }
 
+void ImageLibraryInterface::displayOnScreen(size_t x, size_t y, size_t colorComponents, size_t pixelSize, const DataVector& pixels)
+{
+    std::string capability = "render";
+	auto library = database.libraries.find(capability);
+	
+	if(library == database.libraries.end())
+	{
+		throw std::runtime_error("No image library can support capability '" +
+			capability + "'");
+	}
+
+    library->second->displayOnScreen(x, y, colorComponents, pixelSize, pixels);
+}
+
 }
 
 }

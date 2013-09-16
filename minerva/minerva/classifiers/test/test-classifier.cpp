@@ -244,9 +244,9 @@ int main(int argc, char** argv)
 
     parser.description("The Minerva image classifier.");
 
-    parser.parse("-I", "--iterations", iterations, 1000,
+    parser.parse("-i", "--iterations", iterations, 1000,
         "The number of iterations to train for");
-    parser.parse("-L", "--log-module", loggingEnabledModules, "",
+    parser.parse("-l", "--log-module", loggingEnabledModules, "",
 		"Print out log messages during execution for specified modules "
 		"(comma-separated list of modules, e.g. NeuralNetwork, Layer, ...).");
     parser.parse("-s", "--seed", seed, false,
@@ -257,6 +257,9 @@ int main(int argc, char** argv)
         "Range to intiialize the network with.");
     parser.parse("-v", "--verbose", verbose, false,
         "Print out log messages during execution");
+    parser.parse("-b", "--input-bits", inputBits, 1024,
+        "The length of the input bit vector to the neural network");
+
 	parser.parse();
 
     if(verbose)
