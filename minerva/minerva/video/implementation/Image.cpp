@@ -72,6 +72,13 @@ const std::string& Image::label() const
 	return _label;
 }
 
+void Image::displayOnScreen()
+{
+    load();
+    ImageLibraryInterface::displayOnScreen(_x, _y, _colorComponents, _pixelSize, _pixels);
+}
+
+
 bool Image::loaded() const
 {
 	return _loaded;

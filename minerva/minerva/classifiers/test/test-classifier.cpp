@@ -18,11 +18,11 @@ namespace classifiers
 typedef neuralnetwork::Layer Layer;
 typedef matrix::Matrix Matrix;
 
-neuralnetwork::NeuralNetwork createAndInitializeNeuralNetwork()
+neuralnetwork::NeuralNetwork createAndInitializeNeuralNetwork(unsigned inputBits)
 {
     neuralnetwork::NeuralNetwork ann;
 
-    const unsigned networkSize = 8;
+    const unsigned networkSize = inputBits;
 
     // Layer 1
     ann.addLayer(Layer(1,networkSize,networkSize));
@@ -166,12 +166,12 @@ float classify(const neuralnetwork::NeuralNetwork& ann, unsigned iterations, std
     return accuracy;
 }
 
-void runTest(unsigned iterations, bool seed)
+void runTest(unsigned iterations, bool seed, unsigned inputBits)
 {
     
     // Create neural network
     // 3 layers
-    neuralnetwork::NeuralNetwork ann = createAndInitializeNeuralNetwork(); 
+    neuralnetwork::NeuralNetwork ann = createAndInitializeNeuralNetwork(inputBits); 
 
     // Train network against reference XOR function
 
@@ -220,18 +220,22 @@ int main(int argc, char** argv)
     std::string loggingEnabledModules;
 	
 	unsigned iterations = 0;
+    unsigned inputBits = 0;
 
     parser.description("The Minerva image classifier.");
 
-    parser.parse("-I", "--iterations", iterations, 1000,
+    parser.parse("-i", "--iterations", iterations, 1000,
         "The number of iterations to train for");
-    parser.parse("-L", "--log-module", loggingEnabledModules, "",
+    parser.parse("-l", "--log-module", loggingEnabledModules, "",
 		"Print out log messages during execution for specified modules "
 		"(comma-separated list of modules, e.g. NeuralNetwork, Layer, ...).");
     parser.parse("-s", "--seed", seed, false,
         "Seed with time.");
     parser.parse("-v", "--verbose", verbose, false,
         "Print out log messages during execution");
+    parser.parse("-b", "--input-bits", inputBits, 1024,
+        "The length of the input bit vector to the neural network");
+
 	parser.parse();
 
     if(verbose)
@@ -247,7 +251,7 @@ int main(int argc, char** argv)
     
     try
     {
-        minerva::classifiers::runTest(iterations, seed);
+        minerva::classifiers::runTest(iterations, seed, inputBits);
     }
     catch(const std::exception& e)
     {

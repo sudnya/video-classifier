@@ -45,8 +45,9 @@ public:
 	} IplImage;
 
 	typedef IplImage Image;
-
-	static const int CV_LOAD_IMAGE_COLOR = 1;
+    typedef void CvArr;
+	
+    static const int CV_LOAD_IMAGE_COLOR = 1;
 
 	static const int IPL_DEPTH_SIGN = 0x80000000;
 	static const int IPL_DEPTH_1U = 1;
@@ -58,6 +59,7 @@ public:
 	static const int IPL_DEPTH_32S = (IPL_DEPTH_SIGN|32);
 
 	static const int CV_CAP_PROP_POS_AVI_RATIO = 2;
+    static const int CV_WINDOW_AUTOSIZE = 1;
 
 public:
 	static void load();
@@ -76,7 +78,9 @@ public:
 	static double cvGetCaptureProperty(CvCapture*, int property);
 	static bool cvGrabFrame(CvCapture*);
 	static IplImage* cvRetrieveFrame(CvCapture*);
-	
+    static int cvNamedWindow(const char* name, int flags=CV_WINDOW_AUTOSIZE);
+    static void cvShowImage(const char* name, const CvArr* image);
+
 private:
 	static void _check();
 	
@@ -94,8 +98,9 @@ private:
 		double (*cvGetCaptureProperty)(CvCapture*, int property);
 		bool (*cvGrabFrame)(CvCapture*);
 		IplImage* (*cvRetrieveFrame)(CvCapture*);
-
-	public:
+        int (*cvNamedWindow)(const char* name, int flags);
+        void (*cvShowImage) (const char* name, const CvArr* image);
+    public:
 		/*! \brief The constructor zeros out all of the pointers */
 		Interface();
 		

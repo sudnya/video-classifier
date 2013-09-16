@@ -10,6 +10,8 @@
 #include <minerva/util/interface/Knobs.h>
 #include <minerva/util/interface/debug.h>
 
+#include <cmath>
+
 namespace minerva
 {
 namespace optimizer
@@ -24,7 +26,7 @@ typedef std::vector<Matrix> MatrixVector;
 void GradientDescentSolver::solve()
 {
     util::log("GradientDescentSolver") << " Solve\n";
-	float learningRate = util::KnobDatabase::getKnobValue<float>("GradientDescentSolver::LearningRate", 0.3f);
+	float learningRate = util::KnobDatabase::getKnobValue<float>("GradientDescentSolver::LearningRate", (128.0f) / std::pow(m_backPropDataPtr->getNeuralNetworkPtr()->getInputCount(), 2.0f));
 
     // doing batch descent, so dont need cost
     MatrixVector partialDerivatives = m_backPropDataPtr->getCostDerivative();

@@ -80,10 +80,28 @@ OpenCVImageLibrary::DataVector OpenCVImageLibrary::loadData(
 	return data;
 }
 
+void OpenCVImageLibrary::displayOnScreen(size_t x, size_t y, size_t colorComponents, size_t pixelSize, const DataVector& pixels)
+{
+    //call create window
+    const char* name = "display-window";
+    int error = OpenCVLibrary::cvNamedWindow(name/*, flags*/);
+    if (error == 0)
+    {
+        //convert the imageData into CVArr
+        //call CV imageshow
+        OpenCVLibrary::cvShowImage(name, this);
+    }
+    else
+    {
+		throw std::runtime_error("Failed to display window with OpenCV.");
+
+    }
+}
+
 OpenCVImageLibrary::StringVector
 	OpenCVImageLibrary::getSupportedExtensions() const
 {
-    return StringVector(util::split(".jpg|.png", "|"));
+    return StringVector(util::split(".jpg|.png|render", "|"));
 }
 
 }
