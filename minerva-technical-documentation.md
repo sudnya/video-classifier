@@ -53,7 +53,7 @@ A sparse autoencoder is an unsupervised learning technique that attempts to
 address the shortcomings of feature selection systems by providing a framework
 that generates them automatically.  At a high level, it works using an
 artificial neural network that is trained with unlabaled data and configured
-with a very specific topology that guides that inner layers of the network
+with a very specific topology that guides the inner layers of the network
 to respond to patterns in the input data that capture the majority of
 information in that data. After training on unlabeled data, the inner layers
 of this network can be used directly as features; in other words, the network
