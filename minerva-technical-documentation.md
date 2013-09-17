@@ -131,8 +131,14 @@ b.) The Multilevel optimizer uses a greedy heurisitc with simulated annealing & 
  At each of the following steps, the neural network generated is written out to the disk. The network is a represented as a model with various attributes & their corresponding values. This model is then serialized & written to a file.
  Writing these models decouples each step & thus allows the capability of resuming with the help of a model file. Eg: The unsupervised learning step takes many hours of running video to automatically generate a feature selector neural network. This network can be saved to a file & then reused with different sets of training data to create a classification neural network. This saves the time required to rerun the unsupervised learning step.
 
-### The supervised learning module
 ### The unsupervised learning module
+
+ This is the first step. We start by creating a new model. This new model is simply a randomly initialized neural network. We then feed video database to this network. After processing sufficiently large amounts of input images the neural network automatically configures itself to be a feature selector. Here are some details of how the neural network is configured:
+The idea behind a sparse autoencoder is that features in some data can be attributed to only some relevant parts of the input space, rest of it is noise. Using a steady reduction factor, the size of the neural network layers is decreased significantly. At this stage, we start adding new layers one at the time and train all the neurons in the new layer by running back-propagation algorithm.
+
+### The supervised learning module
+
+ This module uses the neural network from the earlier unsupervised learning stage as the starting point (instead of a randomly initialized neural network). At the start, this neural network is capable to selecting features. We feed in labeled data to this network to 
 ### The classification module
 
 
