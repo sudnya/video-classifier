@@ -13,17 +13,39 @@ Automatic feature selection or 'deep learning' is a problem that has recently re
 ## 3. Classification
 
 ## System
-The system is composed of the following main components:
-1.  The artificial neural network
-2.  The optimization library
-3.  The linear algebra library
-4.  The video library
+The system is composed of the following main component libraries:
 
+* The artificial neural network
+* The optimization library
+* The linear algebra library
+* The video library
+
+These libraries are used internally by the following interfaces:
+
+* The model builder
+* The supervised learning module
+* The unsupervised learning module
+* The classification module
+
+In Minerva, the classification system is called a Model.  Models contain a serialized representation
+of the entire system, including all neural networks and associated metadata.  The model builder is used to create a blank model with new parameters (network topology, labels, etc).
+
+Once a model has been created, it can be updated with supervised or unsupervised learning, or it can be used directly to perform classification.  Minerva currently supports video and image input data sets, but none of the modules are tied to this representation.  Supporting a new input format (e.g. text or numeric data) would simply require a new driver application that converts the input into a standardized vector of floating point values, and presents it to the existing models.
+
+The details of the libraries and modules are described next.
+
+### The Neural Network Library
 
  Each neural network contains multiple layers. Each layer is represented as a collection of sparse matrices.  The neural network library starts by initializing the network randomly. The inputs to the neural network are pixels of a down-sampled image in the form of a matrix. We use the back-propagation 
 
-2. The optimization library
-3. The matrix library
-4. Tools (to read in video, images & convert them into Matrix)
+### The optimization library
+### The linear algebra library
+### The video library
+
+### The model builder
+### The supervised learning module
+### The unsupervised learning module
+### The classification module
+
 
 
