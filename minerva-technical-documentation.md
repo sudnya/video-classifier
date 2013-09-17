@@ -55,7 +55,9 @@ that generates them automatically.  At a high level, it works using an
 artificial neural network that is trained with unlabaled data and configured
 with a very specific topology that guides that inner layers of the network
 to respond to patterns in the input data that capture the majority of
-information in that data.  
+information in that data. After training on unlabeled data, the inner layers
+of this network can be used directly as features; in other words, the network
+itself becomes a feature selection system. 
 
 The details of sparse autoencoders are described here
 http://stanford.edu/class/cs294a/sparseAutoencoder.pdf .  
