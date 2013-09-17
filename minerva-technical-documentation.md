@@ -141,5 +141,5 @@ The idea behind a sparse autoencoder is that features in some data can be attrib
 
 ### The classification module
 
- This module is uses the classifier neural network (from the supervised learning step) to classify gestures in test images.
+ This module uses both the neural network (the feature selector from the unsupervised learning step) and the classifier neural network (from the supervised learning step) to classify gestures in test images.
 
