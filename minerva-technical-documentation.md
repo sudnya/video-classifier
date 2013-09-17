@@ -31,7 +31,7 @@ automatically discovering patterns in large data sets without human interaction.
 Without unsupervised learning, it is necessary to manually label thousands
 or millions of video frames to perform classification (identify what an image
 contains) that is robust to variations in color, alignment, and noise.  This
-is not feasible for most project since developers do not have the resources
+is not feasible for most projects since developers do not have the resources
 to gather such a large number of videos.  
 
 As a response, many projects rely
