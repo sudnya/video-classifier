@@ -32,6 +32,8 @@ void Layer::initializeRandomly(float e)
 {
 	float epsilon = util::KnobDatabase::getKnobValue("Layer::RandomInitializationEpsilon", e);
 
+	epsilon = (e / std::sqrt(getInputCount() + 1));
+
     std::default_random_engine generator(std::time(0));
     std::uniform_real_distribution<float> distribution(-epsilon, epsilon);
     

@@ -26,7 +26,7 @@ neuralnetwork::NeuralNetwork createAndInitializeNeuralNetwork(unsigned networkSi
     ann.addLayer(Layer(1,networkSize,networkSize));
 
     // Layer 2
-    ann.addLayer(Layer(1,networkSize,networkSize));
+    ann.addLayer(Layer(1, networkSize,networkSize));
 
     // Layer 3
     ann.addLayer(Layer(1,networkSize,networkSize/2));
@@ -51,7 +51,7 @@ Matrix generateRandomMatrix(unsigned rows, unsigned columns, std::default_random
         }
         else
         {
-            *value = 0.0f;
+            *value = -1.0f;
         }
     }
 
@@ -162,7 +162,7 @@ float classify(const neuralnetwork::NeuralNetwork& ann, unsigned iterations, std
 {
     float accuracy = 0.0f;
     unsigned correctBits = 0;
-    unsigned samplesPerIter = 100;
+    unsigned samplesPerIter = ann.getInputCount() * 10;
 
     util::log("TestClassifier") << "Starting classification\n";
 
