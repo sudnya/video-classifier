@@ -45,9 +45,18 @@ a.) Gradient descent with linear simulated annealing
 b.) The Multilevel optimizer uses a greedy heurisitc with simulated annealing & local search (with tabu search)
 
 ### The linear algebra library
+
+ The linear algebra library leverages the optimized Matrix operations from pre-existing implementations. The smallest unit for calculations in the neural network & optimizer is the Matrix. The linear algebra library translates these into calls to the Matrix library.
+
 ### The video library
 
+ OpenCV is used for all the image processing required in this project. The input video is converted into a series of images. These images are then converted to a lower resolution & then finally to a matrix of pixel values. 
+
 ### The model builder
+
+ At each of the following steps, the neural network generated is written out to the disk. The network is a represented as a model with various attributes & their corresponding values. This model is then serialized & written to a file.
+ Writing these models decouples each step & thus allows the capability of resuming with the help of a model file. Eg: The unsupervised learning step takes many hours of running video to automatically generate a feature selector neural network. This network can be saved to a file & then reused with different sets of training data to create a classification neural network. This saves the time required to rerun the unsupervised learning step.
+
 ### The supervised learning module
 ### The unsupervised learning module
 ### The classification module
