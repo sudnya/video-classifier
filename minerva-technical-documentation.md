@@ -40,7 +40,10 @@ The details of the libraries and modules are described next.
 
 ### The optimization library
 
- 
+ The optimization library aims to reduce the difference between the actual output (from the labeled data) and the output predicted by the neural network. This library contains a couple of implementations. 
+a.) Gradient descent with linear simulated annealing
+b.) The Multilevel optimizer uses a greedy heurisitc with simulated annealing & local search (with tabu search)
+
 ### The linear algebra library
 ### The video library
 
