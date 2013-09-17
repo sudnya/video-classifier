@@ -11,3 +11,19 @@ Automatic feature selection or 'deep learning' is a problem that has recently re
 ## 2. Supervised Learning
 
 ## 3. Classification
+
+## System
+The system is composed of the following main components:
+1.  The artificial neural network
+2.  The optimization library
+3.  The linear algebra library
+4.  The video library
+
+
+ Each neural network contains multiple layers. Each layer is represented as a collection of sparse matrices.  The neural network library starts by initializing the network randomly. The inputs to the neural network are pixels of a down-sampled image in the form of a matrix. We use the back-propagation 
+
+2. The optimization library
+3. The matrix library
+4. Tools (to read in video, images & convert them into Matrix)
+
+
