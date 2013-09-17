@@ -24,7 +24,7 @@ void Solver::solve()
 Solver* Solver::create(BackPropData* d)
 {
 	auto solverName = util::KnobDatabase::getKnobValue("Solver::Type",
-		"MultiLevelOptimizer");
+		"GradientDescentSolver");
 	
 	if(solverName == "MultiLevelOptimizer")
 	{

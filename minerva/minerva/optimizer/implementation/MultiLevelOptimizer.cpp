@@ -64,11 +64,9 @@ float MultiLevelOptimizer::estimateMaximumDistanceToExplore(float learningRate, 
     return learningRate * maxIterations * distance;
 }
 
-static float computeTempurature(unsigned i, unsigned iterations, float range)
+static float computeTempurature(unsigned i, unsigned iterations, float temperature)
 {
-    float maxTempurature = range;
-
-    return (((float)iterations - i)/iterations) * maxTempurature;
+    return temperature * 0.9f;
 }
 
 static float annealingProbability(float currentCost, float newCost, float tempurature)
@@ -84,15 +82,15 @@ static Matrix pickNeighbouringState(const Matrix& weights, std::default_random_e
     Matrix newWeights = weights;
 
     std::uniform_int_distribution<unsigned> intDistribution(0, weights.size() - 1);
-    std::uniform_real_distribution<float> floatDistribution(-epsilon, epsilon);
+    std::uniform_real_distribution<float> floatDistribution(-epsilon*0.1f, epsilon*0.1f);
 
-    unsigned changes = std::max(1UL, 2 * weights.size() / iterations);
+    unsigned changes = std::max(100UL, 2 * weights.size() / iterations);
 
     for(unsigned change = 0; change != changes; ++change)
     {
         unsigned position = intDistribution(generator);
         
-        newWeights(0, position) = floatDistribution(generator);
+        newWeights(0, position) += floatDistribution(generator);
     }
 
     return newWeights;
@@ -102,7 +100,9 @@ Matrix MultiLevelOptimizer::simulatedAnnealing(const Matrix& initialWeights, flo
 {
     std::uniform_real_distribution<float> distribution(0.0f, 1.0f);
     
-    unsigned iterations = util::KnobDatabase::getKnobValue("MultiLevelOptimizer::SimmulatedAnnealingIterations", 500);
+    unsigned iterations =
+util::KnobDatabase::getKnobValue("MultiLevelOptimizer::SimmulatedAnnealingIterations",
+50000);
     
     auto  currentWeights = initialWeights;
     float currentCost    = m_backPropDataPtr->computeCostForNewFlattenedWeights(currentWeights);
@@ -110,13 +110,13 @@ Matrix MultiLevelOptimizer::simulatedAnnealing(const Matrix& initialWeights, flo
     float bestCostSoFar = currentCost;
     auto  bestWeights   = currentWeights;
 
-    bool anyChange = false;
-    
     util::log("MultiLevelOptimizer") << "   Running simmulated annealing for " << iterations << " iterations\n";
+
+	float tempurature = 5.0f;
     
     for(unsigned i = 0; i < iterations; ++i)
     {
-        float tempurature = computeTempurature(i, iterations, range);
+        tempurature = computeTempurature(i, iterations, tempurature);
         
         auto newWeights = pickNeighbouringState(currentWeights, generator, iterations, epsilon);
         
@@ -134,16 +134,12 @@ Matrix MultiLevelOptimizer::simulatedAnnealing(const Matrix& initialWeights, flo
         {
             bestWeights   = newWeights;
             bestCostSoFar = newCost;
-            anyChange = true;
 
-			util::log("MultiLevelOptimizer") << "     cost is now: " << bestCostSoFar << " (iteration " << i << ")\n";
+			util::log("MultiLevelOptimizer") << "     best cost is now: " << bestCostSoFar << " (iteration " << i << ")\n";
         }
     }
 	
-    if (anyChange)
-        return bestWeights;
-    
-    return currentWeights;
+    return bestWeights;
 }
 
 Matrix MultiLevelOptimizer::localSearch(const Matrix& startingWeights, float range, unsigned iterations)
@@ -184,13 +180,27 @@ Matrix MultiLevelOptimizer::localSearch(const Matrix& startingWeights, float ran
     return currentWeights;
 }
 
+static float computeEpsilon(const Matrix& weights)
+{
+    float minCost = std::numeric_limits<float>::max();
+    float maxCost = std::numeric_limits<float>::min();
+
+	for (auto weight : weights)
+	{
+		minCost = std::min(minCost, (float)weight);
+		maxCost = std::max(maxCost, (float)weight);
+	}
+
+	return (maxCost - minCost) / 2.0f;
+}
+
 void MultiLevelOptimizer::solve()
 {
     util::log("MultiLevelOptimizer") << "Solve\n";
     auto initialWeights = m_backPropDataPtr->getFlattenedWeights();
 	
 	unsigned maxIterations = util::KnobDatabase::getKnobValue("MultiLevelOptimizer::LocalSearchIterations", 20);
-    float epsilon = util::KnobDatabase::getKnobValue("MultiLevelOptimizer::RandomInitializationEpsilon", 2.0f);
+    float epsilon = computeEpsilon(initialWeights);
    
     //we have access to backPropData - make do with only the interface functions of that class
     //figure out the learning rate by doing a real simulated annealing
@@ -204,7 +214,8 @@ void MultiLevelOptimizer::solve()
     util::log("MultiLevelOptimizer") << " search distance:     " << maximumDistance << "\n";
     util::log("MultiLevelOptimizer") << " initial cost:        " << bestCostSoFar   << "\n";
     
-    unsigned iterationCount = util::KnobDatabase::getKnobValue("MultiLevelOptimizer::IterationCount", 1);
+    unsigned iterationCount =
+util::KnobDatabase::getKnobValue("MultiLevelOptimizer::IterationCount", 10);
 	
     for(unsigned iteration = 0; iteration < iterationCount; ++iteration)
     {
@@ -214,7 +225,7 @@ void MultiLevelOptimizer::solve()
         //we have a vector of weights & corresponding pds - 1 PD per layer right?
         //find the initial cost
         //simulated annealing will just randomly add / subtract from weights in various layers
-        auto randomWeights = simulatedAnnealing(initialWeights, range, maximumDistance, epsilon);
+        auto randomWeights = simulatedAnnealing(bestWeights, range, maximumDistance, epsilon);
 		
         //local search is simply gradient descent on the output of simulated annealing
 		
