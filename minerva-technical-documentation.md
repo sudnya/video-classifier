@@ -136,7 +136,8 @@ The idea behind a sparse autoencoder is that features in some data can be attrib
 
 ### The supervised learning module
 
- This module uses the neural network from the earlier unsupervised learning stage as the starting point (instead of a randomly initialized neural network). At the start, this neural network is capable to selecting features. We feed in labeled data to this network to 
+ This module uses the neural network from the earlier unsupervised learning stage as the starting point (instead of a randomly initialized neural network). At the start, this neural network is capable to selecting features. We feed in labeled data to this network to generate a classifier neural network. This is the training step which uses labeled data with gesture names for images. At the end of this step i.e. once the neural network output is within threshold of the expected output, it is written out as a classifier neural network ready to be used for testing with images.
+
 ### The classification module
 
 
