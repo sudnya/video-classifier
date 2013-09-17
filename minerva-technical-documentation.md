@@ -64,7 +64,7 @@ http://stanford.edu/class/cs294a/sparseAutoencoder.pdf .
 
 ## 2. Supervised Learning
 
-Minerva uses a well known neural network for supervised learning.  The input
+Minerva uses a well known design involving an artificial neural network for supervised learning.  The input
 data is preprocessed using the feature selection network.  
 
 ## 3. Classification
