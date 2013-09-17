@@ -110,13 +110,13 @@ The details of the libraries and modules are described next.
 
 ### The Neural Network Library
 
- Each neural network contains multiple layers. Each layer is represented as a collection of sparse matrices.  The neural network library starts by initializing the network randomly. The inputs to the neural network are pixels of a down-sampled image in the form of a matrix. With pixel values as input to the neural network, we use the back-propagation algorithm to train the neural network. The neural network is trained until the cost function for the neural network is minimized. The optimization library is used to compute this cost function. 
+ Each neural network contains multiple layers. Each layer is represented as a collection of sparse matrices.  The neural network library starts by initializing the network randomly. The inputs to the neural network are pixels of a down-sampled image in the form of a matrix. With pixel values as input to the neural network, we use the optimization library to train the neural network. The neural network is trained until the cost function for the neural network is minimized. The cost function captures the difference between the expected output and the predictions made by the neural network. 
 
 ### The optimization library
 
- The optimization library aims to reduce the difference between the actual output (from the labeled data) and the output predicted by the neural network. This library contains a couple of implementations. 
+ The optimization library aims to reduce the difference between the actual output (from the labeled data) and the output predicted by the neural network by modifying individual neuron weights. This library contains multiple implementations. 
 a.) Gradient descent with linear simulated annealing
-b.) The Multilevel optimizer uses a greedy heurisitc with simulated annealing & local search (with tabu search)
+b.) The Multilevel optimizer uses a greedy heurisitc with simulated annealing and local search (with tabu search)
 
 ### The linear algebra library
 
@@ -124,21 +124,20 @@ b.) The Multilevel optimizer uses a greedy heurisitc with simulated annealing & 
 
 ### The video library
 
- OpenCV is used for all the image processing required in this project. The input video is converted into a series of images. These images are then converted to a lower resolution & then finally to a matrix of pixel values. 
+ OpenCV is used for all the image processing required in this project. The input video is converted into a series of images. These images are then converted to a lower resolution and then finally to a matrix of pixel values. The resolution chosen depends on the size of the neural network.  For a sufficiently large network, no downsampling is performed and the network is connected directly to raw pixel values.
 
 ### The model builder
 
- At each of the following steps, the neural network generated is written out to the disk. The network is a represented as a model with various attributes & their corresponding values. This model is then serialized & written to a file.
- Writing these models decouples each step & thus allows the capability of resuming with the help of a model file. Eg: The unsupervised learning step takes many hours of running video to automatically generate a feature selector neural network. This network can be saved to a file & then reused with different sets of training data to create a classification neural network. This saves the time required to rerun the unsupervised learning step.
+ At each of the following steps, the neural network generated is written out to the disk. The network is a represented as a model with various attributes and their corresponding values. This model is then serialized and written to a compressed file. Writing these models decouples each step and thus allows the capability of resuming with the help of a model file. Eg: The unsupervised learning step takes many hours of running video to automatically generate a feature selector neural network. This network can be saved to a file and then reused with different sets of training data to create a classification neural network. This saves the time required to rerun the unsupervised learning step.
 
 ### The unsupervised learning module
 
  This is the first step. We start by creating a new model. This new model is simply a randomly initialized neural network. We then feed video database to this network. After processing sufficiently large amounts of input images the neural network automatically configures itself to be a feature selector. Here are some details of how the neural network is configured:
-The idea behind a sparse autoencoder is that features in some data can be attributed to only some relevant parts of the input space, rest of it is noise. Using a steady reduction factor, the size of the neural network layers is decreased significantly. At this stage, we start adding new layers one at the time and train all the neurons in the new layer by running back-propagation algorithm.
+The idea behind a sparse autoencoder is that features in some data can be attributed to only some relevant parts of the input space, rest of it is noise. Using a steady reduction factor, the size of the neural network layers is decreased significantly. At this stage, we start adding new layers one at a time and train all the neurons in the new layer by running back-propagation algorithm.
 
 ### The supervised learning module
 
- This module uses the neural network from the earlier unsupervised learning stage as the starting point (instead of a randomly initialized neural network). At the start, this neural network is capable to selecting features. We feed in labeled data to this network to generate a classifier neural network. This is the training step which uses labeled data with gesture names for images. At the end of this step i.e. once the neural network output is within threshold of the expected output, it is written out as a classifier neural network ready to be used for testing with images.
+ This module uses the neural network from the earlier unsupervised learning stage as the starting point (instead of a randomly initialized neural network). At the start, this neural network is capable to selecting features. We feed in labeled data to this network to generate a classifier neural network. This is the training step which uses labeled data with gesture names for images or video frames. At the end of this step i.e. once the neural network output is within threshold of the expected output, it is written out as a classifier neural network ready to be used for testing with images.
 
 ### The classification module
 
