@@ -84,7 +84,7 @@ static Matrix pickNeighbouringState(const Matrix& weights, std::default_random_e
     std::uniform_int_distribution<unsigned> intDistribution(0, weights.size() - 1);
     std::uniform_real_distribution<float> floatDistribution(-epsilon*0.1f, epsilon*0.1f);
 
-    unsigned changes = std::max(100UL, 2 * weights.size() / iterations);
+    unsigned changes = std::max(10UL, 2 * weights.size() / iterations);
 
     for(unsigned change = 0; change != changes; ++change)
     {
