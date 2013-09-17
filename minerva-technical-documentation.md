@@ -36,9 +36,11 @@ The details of the libraries and modules are described next.
 
 ### The Neural Network Library
 
- Each neural network contains multiple layers. Each layer is represented as a collection of sparse matrices.  The neural network library starts by initializing the network randomly. The inputs to the neural network are pixels of a down-sampled image in the form of a matrix. We use the back-propagation 
+ Each neural network contains multiple layers. Each layer is represented as a collection of sparse matrices.  The neural network library starts by initializing the network randomly. The inputs to the neural network are pixels of a down-sampled image in the form of a matrix. With pixel values as input to the neural network, we use the back-propagation algorithm to train the neural network. The neural network is trained until the cost function for the neural network is minimized. The optimization library is used to compute this cost function. 
 
 ### The optimization library
+
+ 
 ### The linear algebra library
 ### The video library
 
