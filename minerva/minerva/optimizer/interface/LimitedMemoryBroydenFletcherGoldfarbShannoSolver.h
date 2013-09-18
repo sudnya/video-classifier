@@ -18,15 +18,17 @@ namespace optimizer
 class LimitedMemoryBroydenFletcherGoldfarbShannoSolver : public LinearSolver
 {
 public:
-	typedef LimitedMemoryBroydenFletcherGoldfarbShannoSolver LBFGSSolver;
-	
-public:
-	virtual ~LMBFGSSolver();
+	virtual ~LimitedMemoryBroydenFletcherGoldfarbShannoSolver();
 
 public:
 	virtual float solve(Matrix& inputs, const CostAndGradient& callback);
 
+public:
+	static bool isSupported();
+
 };
+
+typedef LimitedMemoryBroydenFletcherGoldfarbShannoSolver LBFGSSolver;
 
 }
 

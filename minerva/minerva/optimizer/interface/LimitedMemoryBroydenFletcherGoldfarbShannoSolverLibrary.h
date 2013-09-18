@@ -30,6 +30,8 @@ public:
 		const float* g, const float fx, const float xnorm, const float gnorm,
 		const float step, int n, int k, int ls);
 
+	class lbfgs_parameter_t;
+
 public:
 	/*
 	Start a L-BFGS optimization.
@@ -81,12 +83,12 @@ private:
 	class Interface
 	{
 	public:
-		int lbfgs(int n, float* x, float* ptr_fx,
+		int (*lbfgs)(int n, float* x, float* ptr_fx,
 			lbfgs_evaluate_t proc_evaluate, lbfgs_progress_t proc_progress,
 			void* instance, lbfgs_parameter_t* param);
-		void lbfgs_parameter_init(lbfgs_parameter_t* param);
-		float* lbfgs_malloc(int n);
-		void lbfgs_free(float* x);
+		void (*lbfgs_parameter_init)(lbfgs_parameter_t* param);
+		float* (*lbfgs_malloc)(int n);
+		void (*lbfgs_free)(float* x);
 	
     public:
 		/*! \brief The constructor zeros out all of the pointers*/
