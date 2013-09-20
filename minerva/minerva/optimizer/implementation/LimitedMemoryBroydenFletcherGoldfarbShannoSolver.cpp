@@ -10,8 +10,14 @@
 
 #include <minerva/matrix/interface/Matrix.h>
 
+#include <minerva/util/interface/Knobs.h>
+#include <minerva/util/interface/debug.h>
+
+
 // Standard Library Includes
 #include <stdexcept>
+#include <sstream>
+#include <limits>
 
 namespace minerva
 {
@@ -29,17 +35,27 @@ LBFGSSolver::~LimitedMemoryBroydenFletcherGoldfarbShannoSolver()
 
 }
 
-static void copyData(float* data, const Matrix& matrix)
+static void copyData(double* data, const Matrix& matrix)
 {
 	auto matrixData = matrix.data();
+
+	std::vector<double> matrixDataAsDoubles(matrixData.begin(),
+		matrixData.end());
 	
-	std::memcpy(data, matrixData.data(), matrix.size() * sizeof(float));
+	std::memcpy(data, matrixDataAsDoubles.data(),
+		matrix.size() * sizeof(double));
 }
 
-static float lbfgsCallback(void* instance, const float* x, float* g,
-	const int n, const float step)
+static void copyData(Matrix& matrix, const double* data)
 {
-	const CostAndGradient* callback = reinterpret_cast<const CostAndGradient*>(instance);
+	matrix.setDataRowMajor(FloatVector(data, matrix.size() + data));
+}
+
+static double lbfgsCallback(void* instance, const double* x, double* g,
+	const int n, const double step)
+{
+	const CostAndGradient* callback =
+		reinterpret_cast<const CostAndGradient*>(instance);
 
 	// TODO: get rid of these copies	
 	Matrix weights (1, n, FloatVector(x, x + n));
@@ -47,16 +63,121 @@ static float lbfgsCallback(void* instance, const float* x, float* g,
 	
 	float cost = callback->computeCostAndGradient(gradient, weights);
 	
-	auto data = gradient.data();
-	
-	std::memcpy(g, data.data(), sizeof(float) * data.size());
+	copyData(g, gradient);
 	
 	return cost;
 }
 
+static int lbfgsProgress(void* instance, const double* x,
+	const double* g, const double fx, const double xnorm, const double gnorm,
+	const double step, int n, int k, int ls)
+{
+	const CostAndGradient* callback =
+		reinterpret_cast<const CostAndGradient*>(instance);
+
+	util::log("LBFGSSolver") << "LBFGS Update (cost " << fx << ", xnorm "
+		<< xnorm << ", gnorm " << gnorm << ", step " << step << ", n " << n
+		<< ", k " << k << ", ls " << ls << ")\n";
+
+	// Early exit if cost is low enough
+	if(fx < callback->initialCost * callback->costReductionFactor)
+	{
+		return 1;
+	}
+
+	return 0;
+}
+
+static std::string getMessage(int status)
+{
+	switch(status)
+	{
+	case LBFGSSolverLibrary::LBFGS_SUCCESS:
+		return "L-BFGS reaches convergence";
+	case LBFGSSolverLibrary::LBFGS_STOP:
+		return "L-BFGS stopped by user";
+	case LBFGSSolverLibrary::LBFGS_ALREADY_MINIMIZED:
+		return "The initial variables already minimize the objective function.";
+	case LBFGSSolverLibrary::LBFGSERR_UNKNOWNERROR:
+		return "Unknown error.";
+	case LBFGSSolverLibrary::LBFGSERR_LOGICERROR:
+		return "Logic error.";
+	case LBFGSSolverLibrary::LBFGSERR_OUTOFMEMORY:
+		return "Insufficient memory.";
+	case LBFGSSolverLibrary::LBFGSERR_CANCELED:
+		return "The minimization process has been canceled.";
+	case LBFGSSolverLibrary::LBFGSERR_INVALID_N:
+		return "Invalid number of variables specified.";
+	case LBFGSSolverLibrary::LBFGSERR_INVALID_N_SSE:
+		return "Invalid number of variables (for SSE) specified.";
+	case LBFGSSolverLibrary::LBFGSERR_INVALID_X_SSE:
+		return "The array x must be aligned to 16 (for SSE).";
+	case LBFGSSolverLibrary::LBFGSERR_INVALID_EPSILON:
+		return "Invalid parameter lbfgs_parameter_t::epsilon specified.";
+	case LBFGSSolverLibrary::LBFGSERR_INVALID_TESTPERIOD:
+		return "Invalid parameter lbfgs_parameter_t::past specified.";
+	case LBFGSSolverLibrary::LBFGSERR_INVALID_DELTA:
+		return "Invalid parameter lbfgs_parameter_t::delta specified.";
+	case LBFGSSolverLibrary::LBFGSERR_INVALID_LINESEARCH:
+		return "Invalid parameter lbfgs_parameter_t::linesearch specified.";
+	case LBFGSSolverLibrary::LBFGSERR_INVALID_MINSTEP:
+		return "Invalid parameter lbfgs_parameter_t::max_step specified.";
+	case LBFGSSolverLibrary::LBFGSERR_INVALID_MAXSTEP:
+		return "Invalid parameter lbfgs_parameter_t::max_step specified.";
+	case LBFGSSolverLibrary::LBFGSERR_INVALID_FTOL:
+		return "Invalid parameter lbfgs_parameter_t::ftol specified.";
+	case LBFGSSolverLibrary::LBFGSERR_INVALID_WOLFE:
+		return "Invalid parameter lbfgs_parameter_t::wolfe specified.";
+	case LBFGSSolverLibrary::LBFGSERR_INVALID_GTOL:
+		return "Invalid parameter lbfgs_parameter_t::gtol specified.";
+	case LBFGSSolverLibrary::LBFGSERR_INVALID_XTOL:
+		return "Invalid parameter lbfgs_parameter_t::xtol specified.";
+	case LBFGSSolverLibrary::LBFGSERR_INVALID_MAXLINESEARCH:
+		return "Invalid parameter lbfgs_parameter_t::max_linesearch specified.";
+	case LBFGSSolverLibrary::LBFGSERR_INVALID_ORTHANTWISE:
+		return "Invalid parameter lbfgs_parameter_t::orthantwise_c specified.";
+	case LBFGSSolverLibrary::LBFGSERR_INVALID_ORTHANTWISE_START:
+		return "Invalid parameter lbfgs_parameter_t::orthantwise_start "
+			"specified.";
+	case LBFGSSolverLibrary::LBFGSERR_INVALID_ORTHANTWISE_END:
+		return "Invalid parameter lbfgs_parameter_t::orthantwise_end "
+			"specified.";
+	case LBFGSSolverLibrary::LBFGSERR_OUTOFINTERVAL:
+		return "The line-search step went out of the interval of uncertainty.";
+	case LBFGSSolverLibrary::LBFGSERR_INCORRECT_TMINMAX:
+		return "A logic error occurred; alternatively, the interval of"
+			" uncertainty became too small.";
+	case LBFGSSolverLibrary::LBFGSERR_ROUNDING_ERROR:
+		return "A rounding error occurred; alternatively, no line-search "
+			"step satisfies the sufficient decrease and curvature conditions.";
+	case LBFGSSolverLibrary::LBFGSERR_MINIMUMSTEP:
+		return "The line-search step became smaller than "
+			"lbfgs_parameter_t::min_step.";
+	case LBFGSSolverLibrary::LBFGSERR_MAXIMUMSTEP:
+		return "The line-search step became larger than "
+			"lbfgs_parameter_t::max_step.";
+	case LBFGSSolverLibrary::LBFGSERR_MAXIMUMLINESEARCH:
+		return "The line-search routine reaches the maximum "
+			"number of evaluations.";
+	case LBFGSSolverLibrary::LBFGSERR_MAXIMUMITERATION:
+		return "The algorithm routine reaches the maximum number "
+			"of iterations.";
+	case LBFGSSolverLibrary::LBFGSERR_WIDTHTOOSMALL:
+		return "Relative width of the interval of uncertainty is at "
+			"most lbfgs_parameter_t::xtol.";
+	case LBFGSSolverLibrary::LBFGSERR_INVALIDPARAMETERS:
+		return "A logic error (negative line-search step) occurred.";
+	case LBFGSSolverLibrary::LBFGSERR_INCREASEGRADIENT:
+		return "The current search direction increases the objective "
+			"function value.";
+	}
+	
+	return "unknown error";
+}
+
 float LBFGSSolver::solve(Matrix& inputs, const CostAndGradient& callback)
 {
-	float* inputArray = LBFGSSolverLibrary::lbfgs_malloc(inputs.size());
+	double* inputArray = LBFGSSolverLibrary::lbfgs_malloc(inputs.size());
 	
 	if(inputArray == nullptr)
 	{
@@ -65,19 +186,44 @@ float LBFGSSolver::solve(Matrix& inputs, const CostAndGradient& callback)
 	
 	copyData(inputArray, inputs);
 	
-	float finalCost = 0.0f;
+	double finalCost = 0.0;
+	
+	LBFGSSolverLibrary::lbfgs_parameter_t parameters;
+	
+	LBFGSSolverLibrary::lbfgs_parameter_init(&parameters);
+	
+	//parameters.min_step = 10e-10;
+	//parameters.max_linesearch = 5.0;
+	//parameters.linesearch = 3;
+	//parameters.max_linesearch = 1000;
+	//parameters.epsilon = 0.001;
+	//parameters.xtol = 0.000001;
+	//parameters.ftol = .1;
+	//parameters.gtol = .1;
+	
+	parameters.max_iterations =
+		util::KnobDatabase::getKnobValue("LBFGSSolver::MaxIterations", 100);
 	
 	int status = LBFGSSolverLibrary::lbfgs(inputs.size(), inputArray,
-		&finalCost, lbfgsCallback, nullptr,
-		const_cast<CostAndGradient*>(&callback), nullptr);
+		&finalCost, lbfgsCallback, lbfgsProgress,
+		const_cast<CostAndGradient*>(&callback), &parameters);
 	
-	LBFGSSolverLibrary::lbfgs_free(inputArray);
-	
-	if(status != 0)
+	if(status < 0 && status != LBFGSSolverLibrary::LBFGSERR_MAXIMUMITERATION)
 	{
-		throw std::runtime_error("LBFGSSolver returned error code.");		
+		LBFGSSolverLibrary::lbfgs_free(inputArray);
+		
+		std::stringstream code;
+		
+		code << status;
+			
+		throw std::runtime_error("LBFGSSolver returned error code (" +
+			code.str() + ") message (" + getMessage(status) + ").");		
 	}
+	
+	copyData(inputs, inputArray);
 
+	LBFGSSolverLibrary::lbfgs_free(inputArray);
+		
 	return finalCost;
 }
 

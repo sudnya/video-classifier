@@ -39,13 +39,19 @@ public:
 	class CostAndGradient
 	{
 	public:
+		CostAndGradient(float initialCost, float costReductionFactor = 0.2f);
 		virtual ~CostAndGradient();
 	
 	public:
 		virtual float computeCostAndGradient(Matrix& gradient,
 			const Matrix& inputs) const = 0;
 	
+	public:
+		float initialCost;
+		float costReductionFactor;
+	
 	};
+
 
 };
 

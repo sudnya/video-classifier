@@ -30,7 +30,7 @@ bool LBFGSSolverLibrary::loaded()
 	return _interface.loaded();
 }
 
-int LBFGSSolverLibrary::lbfgs(int n, float* x, float* ptr_fx,
+int LBFGSSolverLibrary::lbfgs(int n, double* x, double* ptr_fx,
 	lbfgs_evaluate_t proc_evaluate, lbfgs_progress_t proc_progress,
 	void* instance, lbfgs_parameter_t* param)
 {
@@ -47,14 +47,14 @@ void LBFGSSolverLibrary::lbfgs_parameter_init(lbfgs_parameter_t* param)
 	(*_interface.lbfgs_parameter_init)(param);
 }
 
-float* LBFGSSolverLibrary::lbfgs_malloc(int n)
+double* LBFGSSolverLibrary::lbfgs_malloc(int n)
 {
 	_check();
 	
 	return (*_interface.lbfgs_malloc)(n);
 }
 
-void LBFGSSolverLibrary::lbfgs_free(float* x)
+void LBFGSSolverLibrary::lbfgs_free(double* x)
 {
 	_check();
 

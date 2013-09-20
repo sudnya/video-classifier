@@ -77,7 +77,7 @@ static float computeCost(const NeuralNetwork& network, const Matrix& input,
 	
     auto hx = network.runInputs(input);
     
-    auto logHx = hx.log();
+    auto logHx = hx.add(0.000001f).log();
     auto yTemp = referenceOutput.elementMultiply(logHx);
 
     auto oneMinusY = referenceOutput.negate().add(1.0f);
@@ -149,7 +149,7 @@ static bool gradientChecking(const Matrix& partialDerivatives, const Layer& laye
 BackPropData::BackPropData(NeuralNetwork* ann, const Matrix& input, const Matrix& ref)
  : m_neuralNetworkPtr(ann), m_input(input), m_referenceOutput(ref), m_lambda(0.0f)
 {
-	m_lambda = util::KnobDatabase::getKnobValue("BackPropData::Lambda", 1.0f);
+	m_lambda = util::KnobDatabase::getKnobValue("BackPropData::Lambda", .1f);
 }
 
 MatrixVector BackPropData::getCostDerivative() const
@@ -229,7 +229,7 @@ Matrix BackPropData::computePartialDerivativesForNewFlattenedWeights(const Matri
 	return flatten(getCostDerivative(network));
 }
 
-MatrixVector BackPropData::getDeltas(const MatrixVector& activations) const
+MatrixVector BackPropData::getDeltas(const NeuralNetwork& network, const MatrixVector& activations) const
 {
     MatrixVector deltas;
     
@@ -243,7 +243,7 @@ MatrixVector BackPropData::getDeltas(const MatrixVector& activations) const
         
         unsigned int layerNumber = std::distance(activations.begin(), --(i.base()));
         //util::log ("BackPropData") << " Layer number: " << layerNumber << "\n";
-        auto& layer = (*m_neuralNetworkPtr)[layerNumber];
+        auto& layer = network[layerNumber];
 
         auto activationDerivativeOfCurrentLayer = sigmoidDerivative(*i);
         auto deltaPropagatedReverse = layer.runReverse(delta);
@@ -262,7 +262,7 @@ MatrixVector BackPropData::getDeltas(const MatrixVector& activations) const
     return deltas;
 }
 
-MatrixVector BackPropData::getActivations() const
+MatrixVector BackPropData::getActivations(const NeuralNetwork& network) const
 {
 	MatrixVector activations;
 
@@ -270,8 +270,7 @@ MatrixVector BackPropData::getActivations() const
 	activations.push_back(temp);
     //util::log("BackPropData") << " added activation of size ( " << activations.back().rows() << " ) rows and ( " << activations.back().columns() << " )\n" ;
 
-	for (auto i = m_neuralNetworkPtr->begin();
-		i != m_neuralNetworkPtr->end(); ++i)
+	for (auto i = network.begin(); i != network.end(); ++i)
     {
 
         activations.push_back((*i).runInputs(temp));
@@ -320,10 +319,10 @@ NeuralNetwork BackPropData::createNetworkFromWeights(
 
 MatrixVector BackPropData::getCostDerivative(const NeuralNetwork& network) const
 {
- //get activations in a vector
-    auto activations = getActivations();
+    //get activations in a vector
+    auto activations = getActivations(network);
     //get deltas in a vector
-    auto deltas = getDeltas(activations);
+    auto deltas = getDeltas(network, activations);
     
     MatrixVector partialDerivative;
     

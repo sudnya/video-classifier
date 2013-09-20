@@ -17,6 +17,12 @@ LinearSolver::~LinearSolver()
 
 }
 
+LinearSolver::CostAndGradient::CostAndGradient(float i, float c)
+: initialCost(i), costReductionFactor(c)
+{
+
+}
+
 LinearSolver::CostAndGradient::~CostAndGradient()
 {
 

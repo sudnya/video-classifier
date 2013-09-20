@@ -41,8 +41,8 @@ class BackPropData
         bool testDerivative();
 
     private:
-        MatrixVector getDeltas(const MatrixVector& m) const;
-        MatrixVector getActivations() const;
+        MatrixVector getDeltas(const NeuralNetwork& network, const MatrixVector& m) const;
+        MatrixVector getActivations(const NeuralNetwork& network) const;
         Matrix sigmoidDerivative(const Matrix& m) const;
        
     private:

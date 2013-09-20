@@ -6,6 +6,8 @@
  */
 #include <minerva/optimizer/interface/Solver.h>
 #include <minerva/optimizer/interface/MultiLevelOptimizer.h>
+#include <minerva/optimizer/interface/LinearSolverFactory.h>
+#include <minerva/optimizer/interface/LinearSolver.h>
 
 #include <minerva/util/interface/Knobs.h>
 #include <minerva/util/interface/debug.h>
@@ -16,6 +18,8 @@
 
 typedef minerva::matrix::Matrix Matrix;
 typedef minerva::matrix::Matrix::FloatVector FloatVector;
+
+typedef minerva::neuralnetwork::BackPropData BackPropData;
 
 namespace minerva
 {
@@ -100,9 +104,7 @@ Matrix MultiLevelOptimizer::simulatedAnnealing(const Matrix& initialWeights, flo
 {
     std::uniform_real_distribution<float> distribution(0.0f, 1.0f);
     
-    unsigned iterations =
-util::KnobDatabase::getKnobValue("MultiLevelOptimizer::SimmulatedAnnealingIterations",
-50000);
+    unsigned iterations = util::KnobDatabase::getKnobValue("MultiLevelOptimizer::SimmulatedAnnealingIterations", 50000);
     
     auto  currentWeights = initialWeights;
     float currentCost    = m_backPropDataPtr->computeCostForNewFlattenedWeights(currentWeights);
@@ -144,8 +146,7 @@ util::KnobDatabase::getKnobValue("MultiLevelOptimizer::SimmulatedAnnealingIterat
 
 Matrix MultiLevelOptimizer::localSearch(const Matrix& startingWeights, float range, unsigned iterations)
 {
-	float learningRateBackoff = util::KnobDatabase::getKnobValue<float>(
-		"GradientDescentSolver::LearningRateBackoff", 0.7f);
+	float learningRateBackoff = util::KnobDatabase::getKnobValue<float>("GradientDescentSolver::LearningRateBackoff", 0.7f);
     
     float learningRate  = range / iterations;
 	float bestCostSoFar = m_backPropDataPtr->computeCostForNewFlattenedWeights(startingWeights);
@@ -194,10 +195,89 @@ static float computeEpsilon(const Matrix& weights)
 	return (maxCost - minCost) / 2.0f;
 }
 
+class NeuralNetworkCostAndGradient : public LinearSolver::CostAndGradient
+{
+public:
+	NeuralNetworkCostAndGradient(const BackPropData* b,
+		float initialCost, float costReductionFactor)
+	: CostAndGradient(initialCost, costReductionFactor), m_backPropDataPtr(b)
+	{
+	
+	}
+	
+	virtual ~NeuralNetworkCostAndGradient()
+	{
+	
+	}
+	
+public:
+	virtual float computeCostAndGradient(Matrix& gradient,
+		const Matrix& inputs) const
+	{
+		gradient = m_backPropDataPtr->computePartialDerivativesForNewFlattenedWeights(inputs);
+		
+		util::log("MultiLevelOptimizer") << " new gradient is : " << gradient.toString();
+		
+		float newCost = m_backPropDataPtr->computeCostForNewFlattenedWeights(inputs);
+	
+		util::log("MultiLevelOptimizer") << " new cost is : " << newCost << "\n";
+		
+		return newCost;
+	}
+
+private:
+	const BackPropData* m_backPropDataPtr;
+};
+
+static float approximateSearch(Matrix& weights, float currentCost, BackPropData* backPropData)
+{
+	auto solver = LinearSolverFactory::create("LBFGSSolver");
+	
+	if(solver == nullptr)
+	{
+		return currentCost;
+	}
+	
+	float newCost = currentCost;
+	
+	try
+	{
+		NeuralNetworkCostAndGradient costAndGradient(backPropData,
+			currentCost, 0.2f);
+	
+		newCost = solver->solve(weights, costAndGradient);
+	}
+	catch(...)
+	{
+		delete solver;
+		throw;
+	}
+	
+	delete solver;
+	
+	return newCost;
+}
+
 void MultiLevelOptimizer::solve()
 {
     util::log("MultiLevelOptimizer") << "Solve\n";
-    auto initialWeights = m_backPropDataPtr->getFlattenedWeights();
+    
+    auto  initialWeights = m_backPropDataPtr->getFlattenedWeights();
+    float bestCostSoFar  = m_backPropDataPtr->computeCostForNewFlattenedWeights(initialWeights);
+
+    util::log("MultiLevelOptimizer") << " initial cost is : " << bestCostSoFar << "\n";
+	
+	float newCost = approximateSearch(initialWeights, bestCostSoFar, m_backPropDataPtr);
+	
+	float acceptableImprovement = util::KnobDatabase::getKnobValue("MultiLevelOptimizer::AcceptableImprovement", 0.0f);
+	
+	util::log("MultiLevelOptimizer") << " approximate search produced solution with cost: " << newCost << "\n";
+	if((bestCostSoFar >= newCost) && ((((bestCostSoFar - newCost) / bestCostSoFar)) >= acceptableImprovement))
+	{
+		util::log("MultiLevelOptimizer") << "  accepted approximate search solution, final cost is: " << newCost << "\n";
+	    m_backPropDataPtr->setFlattenedWeights(initialWeights);
+		return;
+	}
 	
 	unsigned maxIterations = util::KnobDatabase::getKnobValue("MultiLevelOptimizer::LocalSearchIterations", 20);
     float epsilon = computeEpsilon(initialWeights);
@@ -207,15 +287,14 @@ void MultiLevelOptimizer::solve()
     float range           = estimateCostFunctionRange(initialWeights, maxIterations, epsilon);
     float maximumDistance = estimateMaximumDistanceToExplore(range, maxIterations);
 	
-    float bestCostSoFar = m_backPropDataPtr->computeCostForNewFlattenedWeights(initialWeights);
+          bestCostSoFar = newCost;
     auto  bestWeights   = initialWeights;
     
     util::log("MultiLevelOptimizer") << " cost function range: " << range           << "\n";
     util::log("MultiLevelOptimizer") << " search distance:     " << maximumDistance << "\n";
     util::log("MultiLevelOptimizer") << " initial cost:        " << bestCostSoFar   << "\n";
     
-    unsigned iterationCount =
-util::KnobDatabase::getKnobValue("MultiLevelOptimizer::IterationCount", 10);
+    unsigned iterationCount = util::KnobDatabase::getKnobValue("MultiLevelOptimizer::IterationCount", 10);
 	
     for(unsigned iteration = 0; iteration < iterationCount; ++iteration)
     {
@@ -227,8 +306,7 @@ util::KnobDatabase::getKnobValue("MultiLevelOptimizer::IterationCount", 10);
         //simulated annealing will just randomly add / subtract from weights in various layers
         auto randomWeights = simulatedAnnealing(bestWeights, range, maximumDistance, epsilon);
 		
-        //local search is simply gradient descent on the output of simulated annealing
-		
+        // local search is simply gradient descent on the output of simulated annealing
         auto newWeights = localSearch(randomWeights, range, maxIterations);
 		
         float newCost = m_backPropDataPtr->computeCostForNewFlattenedWeights(newWeights);

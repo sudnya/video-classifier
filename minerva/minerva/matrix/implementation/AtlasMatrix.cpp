@@ -307,6 +307,9 @@ void AtlasMatrix::logSelf()
 
 static float sigmoid(float v)
 {
+    if(v < -50.0f) return 0.0f;
+    if(v > 50.0f)  return 1.0f;
+    
     return 1.0f / (1.0f + std::exp(-v)); 
 }
 
