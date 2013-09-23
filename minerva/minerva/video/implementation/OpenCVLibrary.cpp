@@ -92,6 +92,7 @@ int OpenCVLibrary::cvNamedWindow(const char* name, int flags)
 
     return (*_interface.cvNamedWindow)(name, flags);
 }
+
 void OpenCVLibrary::cvShowImage(const char* name, const IplImage* image)
 {
     _check();
@@ -154,6 +155,7 @@ void OpenCVLibrary::Interface::load()
 	#define DynLink( function ) util::bit_cast(function, dlsym(_library, #function)); checkFunction((void*)function, #function)
 	
 	DynLink(cvLoadImage);
+	DynLink(cvSaveImage);
 	DynLink(cvReleaseImage);
 	
 	DynLink(cvCreateFileCapture);

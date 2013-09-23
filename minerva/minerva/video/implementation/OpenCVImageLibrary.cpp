@@ -116,6 +116,14 @@ void OpenCVImageLibrary::saveImage(const std::string& path,
 	IplImage iplImage;
 	
 	createIplImage(iplImage, header, data);
+	
+	int status = OpenCVLibrary::cvSaveImage(path.c_str(), &iplImage);
+
+	if(!status)
+	{
+		throw std::runtime_error("Failed to save image '" + path
+			+ "' with OpenCV.");
+	}
 }
 
 void OpenCVImageLibrary::displayOnScreen(size_t x, size_t y,

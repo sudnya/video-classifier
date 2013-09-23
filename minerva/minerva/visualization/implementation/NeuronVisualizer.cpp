@@ -15,9 +15,12 @@
 #include <minerva/video/interface/Image.h>
 
 #include <minerva/util/interface/Knobs.h>
+#include <minerva/util/interface/debug.h>
 
 // Standard Library Includes
 #include <cassert>
+#include <random>
+#include <cstdlib>
 
 namespace minerva
 {
@@ -51,18 +54,32 @@ void NeuronVisualizer::visualizeNeuron(Image& image, unsigned int outputNeuron)
 static Matrix generateRandomImage(const NeuralNetwork* network,
 	const Image& image)
 {
-	return Matrix(1, network->getInputCount(),
-		image.getSampledData(network->getInputCount()));
+	std::uniform_real_distribution<float> distribution(-1.0f, 1.0f);
+	std::default_random_engine generator(std::time(0));
+
+	Matrix::FloatVector data(network->getInputCount());
+
+	for(auto& value : data)
+	{
+		value = distribution(generator);
+	}
+
+	return Matrix(1, network->getInputCount(), data);
 }
 
 static float computeCost(const NeuralNetwork* network, unsigned int neuron,
 	const Matrix& inputs)
 {
 	auto result = network->runInputs(inputs);
-		
+	
+	util::log("NeuronVisualizer")
+		<< "Updating cost function for neuron " << neuron <<  ".\n";
+	
 	// Result = slice results from the neuron, sum(1.0f - neuronOuput)
-	return result.slice(0, neuron, result.rows(),
-		neuron + 1).negate().add(1.0f).reduceSum();
+	float cost = result.slice(0, neuron, result.rows(),
+		1).negate().add(1.0f).reduceSum();
+
+	return cost;
 }
 
 class CostFunction : public optimizer::NonDifferentiableLinearSolver::Cost
@@ -104,6 +121,8 @@ static Matrix optimize(const NeuralNetwork* network, const Matrix& initialData,
 	CostFunction costFunction(network, neuron, bestCost);
 
 	bestCost = solver->solve(bestSoFar, costFunction);
+	
+	delete solver;
 	
 	return bestSoFar;
 }

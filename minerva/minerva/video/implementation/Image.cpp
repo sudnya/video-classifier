@@ -189,8 +189,9 @@ void Image::updateImageFromSamples(const FloatVector& samples)
 					((position + 0.0) / totalSize()) * samples.size();
 				
 				float sample = samples[sampleIndex];
+				float colorValue = (sample + 1.0f) * (range()/2.0f);
 				
-				setComponentAt(x, y, color, sample);
+				setComponentAt(x, y, color, colorValue);
 			}
 		}
 	}

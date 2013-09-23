@@ -66,7 +66,7 @@ static void visualizeNeurons(const std::string& modelFileName,
 	{
 		std::stringstream path;
 		
-		path << networkName << "::Output::" << i;
+		path << networkName << "::Output::" << i << ".png";
 		
 		image.setPath(util::joinPaths(outputPath, path.str()));
 		

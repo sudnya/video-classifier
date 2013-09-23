@@ -41,7 +41,7 @@ Matrix NonDifferentiableLinearSolver::Cost::computeMultipleCosts(
 	for(unsigned int row = 0; row != inputs.rows(); ++row)
 	{
 		result(row, 0) = computeCost(
-			inputs.slice(row, 0, row + 1, inputs.columns()));
+			inputs.slice(row, 0, 1, inputs.columns()));
 	}
 	
 	return result;

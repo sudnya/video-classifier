@@ -69,7 +69,7 @@ static Matrix pickNeighbouringState(const Matrix& inputs,
 	{
 		unsigned position = intDistribution(generator);
 		
-		newInputs(0, position) += floatDistribution(generator);
+		newInputs(0, position) = floatDistribution(generator);
 	}
 
 	return newInputs;
@@ -81,7 +81,7 @@ static float simulatedAnnealing(Matrix& inputs, const Cost& callback)
 	std::default_random_engine generator(std::time(0));
 
 	unsigned iterations = util::KnobDatabase::getKnobValue(
-		"SimulatedAnnealing::Iterations", 5000);
+		"SimulatedAnnealing::Iterations", 50000);
 	
 	auto  currentInputs = inputs;
 	float currentCost	= callback.computeCost(currentInputs);
