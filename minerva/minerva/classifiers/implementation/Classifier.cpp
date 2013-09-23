@@ -47,7 +47,7 @@ Classifier::Matrix Classifier::detectGestures(const ImageVector& images)
     assert(m_classifierNetwork.getInputCount() == m_featureSelectorNetwork.getOutputCount());
     
     /* run classification using features, classifier network to emit gesture */
-    auto matrix = images.convertToMatrix(m_featureSelectorNetwork.getInputCount()).sigmoid();
+    auto matrix = images.convertToStandardizedMatrix(m_featureSelectorNetwork.getInputCount());
 
     assert(matrix.columns() == m_featureSelectorNetwork.getInputCount());
 

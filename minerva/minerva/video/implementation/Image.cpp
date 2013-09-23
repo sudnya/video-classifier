@@ -153,10 +153,31 @@ Image::FloatVector Image::getSampledData(size_t sampleCount) const
 			position = imageSize - 1;
 		}
 		
-		samples.push_back((getComponentAt(position) / range()) - 0.5f);
+		samples.push_back((getComponentAt(position) * 2.0f / range()) - 1.0f);
 	}
 
 	return samples;
+}
+
+void Image::updateImageFromSamples(const FloatVector& samples)
+{
+	// nearest neighbor sampling
+	for(size_t y = 0; y < this->y(); ++y)
+	{
+		for(size_t x = 0; x < this->x(); ++x)
+		{
+			for(size_t color = 0; color < this->colorComponents(); ++color)
+			{
+				size_t position = getPosition(x, y, color);
+				size_t sampleIndex =
+					((position + 0.0) / totalSize()) * samples.size();
+				
+				float sample = samples[sampleIndex];
+				
+				setComponentAt(x, y, color, sample);
+			}
+		}
+	}
 }
 
 Image Image::sample(size_t samples) const

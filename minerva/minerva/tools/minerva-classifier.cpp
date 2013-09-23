@@ -11,7 +11,11 @@
 #include <minerva/model/interface/ClassificationModelBuilder.h>
 #include <minerva/model/interface/ClassificationModel.h>
 
+#include <minerva/visualization/interface/NeuronVisualizer.h>
+#include <minerva/video/interface/Image.h>
+
 #include <minerva/util/interface/ArgumentParser.h>
+#include <minerva/util/interface/paths.h>
 #include <minerva/util/interface/debug.h>
 #include <minerva/util/interface/Knobs.h>
 
@@ -40,6 +44,36 @@ static void createNewModel(const std::string& modelFileName)
 	model->save();
 
 	delete model;
+}
+
+static void visualizeNeurons(const std::string& modelFileName,
+	const std::string& outputPath)
+{
+	model::ClassificationModel model(modelFileName);
+	
+	model.load();
+	
+	std::string networkName = util::KnobDatabase::getKnobValue(
+		"NetworkToVisualize", "FeatureSelector");
+	
+	auto network = model.getNeuralNetwork(networkName);
+	
+	visualization::NeuronVisualizer visualizer(&network);
+	
+	video::Image image(model.xPixels(), model.yPixels(), model.colors(), 1);
+	
+	for(unsigned int i = 0; i < network.getOutputCount(); ++i)
+	{
+		std::stringstream path;
+		
+		path << networkName << "::Output::" << i;
+		
+		image.setPath(util::joinPaths(outputPath, path.str()));
+		
+		visualizer.visualizeNeuron(image, i);
+		
+		image.save();
+	}
 }
 
 static void runClassifier(const std::string& inputFileNames,
@@ -159,12 +193,14 @@ int main(int argc, char** argv)
 	
 	std::string inputFileNames;
 	std::string modelFileName;
+	std::string outputPath;
 	std::string options;
 
-	bool shouldClassify	  = false;
-	bool shouldTrain		 = false;
+	bool shouldClassify      = false;
+	bool shouldTrain         = false;
 	bool shouldLearnFeatures = false;
-	bool createNewModel	  = false;
+	bool createNewModel      = false;
+	bool visualizeNetwork    = false;
 
 	std::string loggingEnabledModules;
 	
@@ -174,7 +210,10 @@ int main(int argc, char** argv)
 
 	parser.parse("-i", "--input",  inputFileNames,
 		"", "The input image or video file path or list of paths.");
-
+	parser.parse("-o", "--output",  outputPath,
+		"", "The output path to store generated files "
+			"(currently only for visualization).");
+	
 	parser.parse("-m", "--model",  modelFileName,
 		"", "The path to the model to use for classification (or to update).");
 
@@ -186,6 +225,8 @@ int main(int argc, char** argv)
 		"Perform supervised learning and labeled input data.");
 	parser.parse("-l", "--learn", shouldLearnFeatures, false,
 		"Perform unsupervised learning on unlabeled input data.");
+	parser.parse("-V", "--visualize-network", visualizeNetwork, false,
+		"Produce visualization for each neuron.");
 	parser.parse("", "--options", options, "", 
 		"A comma separated list of options (option_name=option_value, ...).");
 
@@ -212,6 +253,10 @@ int main(int argc, char** argv)
 		if(createNewModel)
 		{
 			minerva::createNewModel(modelFileName);
+		}
+		else if(visualizeNetwork)
+		{
+			minerva::visualizeNeurons(modelFileName, outputPath);
 		}
 		else
 		{

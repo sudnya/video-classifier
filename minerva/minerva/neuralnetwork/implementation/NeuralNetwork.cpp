@@ -146,26 +146,17 @@ void NeuralNetwork::resize(size_t layers)
 
 void NeuralNetwork::mirror()
 {
-	size_t layers = size();
+	addLayer(Layer(1, getOutputCount(), getInputCount()));
 	
-	for(size_t layer = 0; layer != layers; ++layer)
-	{
-		size_t index = layers - layer - 1;
-		
-		addLayer((*this)[index]);
-		
-		back().transpose();
-
-        // should be pseudo inverse
-	    back().initializeRandomly();
-    }
+    // should be pseudo inverse
+    back().initializeRandomly();   
 }
 
 void NeuralNetwork::cutOffSecondHalf()
 {
-	assert((size() % 2) == 0);
+	assert(size() > 1);
 
-	resize(size() / 2);
+	resize(size() - 1);
 }
 
 unsigned NeuralNetwork::getInputCount() const

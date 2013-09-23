@@ -30,27 +30,44 @@ void UnsupervisedLearner::loadFeatureSelector()
 {
     /* read from the feature file into memory/variable */
     m_featureSelector = m_classificationModelPtr->getNeuralNetwork("FeatureSelector");
-
-    // mirror neural network
-    m_featureSelector.mirror();
     
 }
 
 void UnsupervisedLearner::learn(const ImageVector& images)
 {
-    /* using the feature NN & training images emit a NN for classifiers */
-    auto matrix = images.convertToMatrix(m_featureSelector.getInputCount()).sigmoid();
+    neuralnetwork::NeuralNetwork incrementalNetwork;
+		
+	/* using the feature NN & training images emit a NN for classifiers */
+	auto matrix = images.convertToStandardizedMatrix(m_featureSelector.getInputCount());
     
-    util::log("UnsupervisedLearner") << "Training feature selector matrix with input: " << matrix.toString() << "\n";
+    auto reference = matrix.sigmoid();
+    
+    for(auto& layer : m_featureSelector)
+    {
+		incrementalNetwork.addLayer(layer);
 
-    m_featureSelector.backPropagate(matrix, matrix);
+		util::log("UnsupervisedLearner") << "Training feature selector layer "
+			<< (incrementalNetwork.size() - 1) << " with input: "
+			<< matrix.toString() << "\n";
+		
+	    // mirror neural network
+		incrementalNetwork.mirror();
+		
+		incrementalNetwork.backPropagate(matrix, reference);
+    
+    	incrementalNetwork.cutOffSecondHalf();
+    }
+    
+    for(auto originalLayer = m_featureSelector.begin(),
+    	newLayer = incrementalNetwork.begin();
+    	originalLayer != m_featureSelector.end(); ++originalLayer, ++newLayer)
+	{
+		*originalLayer = *newLayer;
+	}
 }
 
 void UnsupervisedLearner::writeFeaturesNeuralNetwork()
 {
-    // cut the trained network in half
-    m_featureSelector.cutOffSecondHalf();
-
 	// save it
     m_classificationModelPtr->setNeuralNetwork("FeatureSelector", m_featureSelector);
 }

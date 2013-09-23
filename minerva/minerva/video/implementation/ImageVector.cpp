@@ -83,7 +83,7 @@ void ImageVector::push_back(const Image& image)
 	_images.push_back(image);
 }
 
-ImageVector::Matrix ImageVector::convertToMatrix(size_t sampleCount) const
+ImageVector::Matrix ImageVector::convertToStandardizedMatrix(size_t sampleCount) const
 {
 	size_t rows    = _images.size();
 	size_t columns = sampleCount;

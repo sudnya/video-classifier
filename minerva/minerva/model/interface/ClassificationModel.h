@@ -30,11 +30,12 @@ public:
 public:
 	NeuralNetwork getNeuralNetwork(const std::string& name);
 	void setNeuralNetwork(const std::string& name, const NeuralNetwork& n);
-	void setInputImageResolution(unsigned int x, unsigned int y);
+	void setInputImageResolution(unsigned int x, unsigned int y, unsigned int colors);
 
 public:
 	unsigned int xPixels() const;
 	unsigned int yPixels() const;
+	unsigned int colors()  const;
 
 public:
 	void save() const;
@@ -52,6 +53,7 @@ private:
 
 	unsigned int _xPixels;
 	unsigned int _yPixels;
+	unsigned int _colors;
 
 };
 

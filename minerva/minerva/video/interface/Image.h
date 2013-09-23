@@ -47,6 +47,7 @@ public:
     void displayOnScreen();
     bool loaded() const;
 	void load();
+	void save();
 
 public:
 	void setPath(const std::string& path);
@@ -58,6 +59,8 @@ public:
 
 public:
 	FloatVector getSampledData(size_t samples) const;
+	void updateImageFromSamples(const FloatVector& samples);
+	
     Image sample(size_t samples) const;
     
 public:

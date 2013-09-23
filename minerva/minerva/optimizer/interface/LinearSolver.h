@@ -24,16 +24,17 @@ public:
 	virtual ~LinearSolver();
 
 public:
-	/*! \brief Performs unconstrained linear optimization.
+	/*! \brief Performs unconstrained linear optimization on a differentiable
+		function.
 	
 		\input inputs - The initial parameter values being optimized.
-		\input callBackInterface - A CostAndGradient object that is used
+		\input callBack - A CostAndGradient object that is used
 			by the optimization library to determine the gradient and
 			cost of new parameter values.
 	
 		\return A floating point value representing the final cost.
 	 */
-	virtual float solve(Matrix& inputs, const CostAndGradient& callBackInterface) = 0;
+	virtual float solve(Matrix& inputs, const CostAndGradient& callBack) = 0;
 
 public:
 	class CostAndGradient

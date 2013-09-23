@@ -30,6 +30,7 @@ static unsigned logBase(unsigned base, unsigned value)
 	return std::ceil(std::log((double)value) / std::log((double)base));
 }
 
+#if 0
 static Matrix generateRandomInputsForNetwork(const NeuralNetwork& network,
 	std::default_random_engine& generator)
 {
@@ -204,6 +205,16 @@ static void tuneNeuralNetwork(NeuralNetwork& neuralNetwork)
 
 	neuralNetwork.initializeRandomly(weightEpsilon);
 }
+#endif
+
+static void tuneNeuralNetwork(NeuralNetwork& neuralNetwork)
+{
+	// The idea here is to pick random weights that are amenable for a network
+	// of this size.  
+	float weightEpsilon = util::KnobDatabase::getKnobValue("NeuralNetwork::InitializationEpsilon", 2.0f);
+
+	neuralNetwork.initializeRandomly(weightEpsilon);
+}
 
 static NeuralNetwork buildNeuralNetwork(const std::string& name, unsigned inputSize, unsigned outputSize)
 {
@@ -220,7 +231,6 @@ static NeuralNetwork buildNeuralNetwork(const std::string& name, unsigned inputS
 	for(unsigned layer = 0; layer != numberOfLayers; ++layer)
 	{
 		std::stringstream knobName;
-
 
 		knobName << name << "::NeuralNetwork::Layer" << layer;
 
@@ -279,14 +289,14 @@ ClassificationModel* ClassificationModelBuilder::create(const std::string& path)
 {
 	auto model = new ClassificationModel(path);
 	
-	unsigned x = util::KnobDatabase::getKnobValue("ResolutionX", 32);
-	unsigned y = util::KnobDatabase::getKnobValue("ResolutionY", 32);
+	unsigned x      = util::KnobDatabase::getKnobValue("ResolutionX",     32);
+	unsigned y      = util::KnobDatabase::getKnobValue("ResolutionY",     32);
+	unsigned colors = util::KnobDatabase::getKnobValue("ColorComponents", 3 );
 	
-	model->setInputImageResolution(x,y);
+	model->setInputImageResolution(x, y, colors);
 
-	unsigned featureSelectorInputSize  = x * y;
-	unsigned featureSelectorOutputSize =
-util::KnobDatabase::getKnobValue("FeatureSelector::NeuralNetwor::Outputs", 128);
+	unsigned featureSelectorInputSize  = x * y * colors;
+	unsigned featureSelectorOutputSize = util::KnobDatabase::getKnobValue("FeatureSelector::NeuralNetwor::Outputs", 128);
 	unsigned classifierInputSize       = featureSelectorOutputSize;
 	unsigned classifierOutputSize      = util::KnobDatabase::getKnobValue("Classifier::NeuralNetwork::Outputs", 20);
 

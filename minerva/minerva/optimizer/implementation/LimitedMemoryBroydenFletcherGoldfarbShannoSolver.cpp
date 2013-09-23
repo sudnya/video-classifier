@@ -202,22 +202,26 @@ float LBFGSSolver::solve(Matrix& inputs, const CostAndGradient& callback)
 	//parameters.gtol = .1;
 	
 	parameters.max_iterations =
-		util::KnobDatabase::getKnobValue("LBFGSSolver::MaxIterations", 100);
+		util::KnobDatabase::getKnobValue("LBFGSSolver::MaxIterations", 10);
 	
 	int status = LBFGSSolverLibrary::lbfgs(inputs.size(), inputArray,
 		&finalCost, lbfgsCallback, lbfgsProgress,
 		const_cast<CostAndGradient*>(&callback), &parameters);
 	
-	if(status < 0 && status != LBFGSSolverLibrary::LBFGSERR_MAXIMUMITERATION)
+	if(status < 0)
 	{
-		LBFGSSolverLibrary::lbfgs_free(inputArray);
+		if(status != LBFGSSolverLibrary::LBFGSERR_MAXIMUMITERATION &&
+			status != LBFGSSolverLibrary::LBFGSERR_ROUNDING_ERROR)
+		{
+			LBFGSSolverLibrary::lbfgs_free(inputArray);
 		
-		std::stringstream code;
+			std::stringstream code;
 		
-		code << status;
+			code << status;
 			
-		throw std::runtime_error("LBFGSSolver returned error code (" +
-			code.str() + ") message (" + getMessage(status) + ").");		
+			throw std::runtime_error("LBFGSSolver returned error code (" +
+				code.str() + ") message (" + getMessage(status) + ").");		
+		}
 	}
 	
 	copyData(inputs, inputArray);

@@ -95,7 +95,7 @@ void ClassifierEngine::runOnPaths(const StringVector& paths)
 	unsigned int maxBatchSize = util::KnobDatabase::getKnobValue<unsigned int>(
 		"ClassifierEngine::ImageBatchSize", 10);
 	
-    unsigned int maxVideoFrames = util::KnobDatabase::getKnobValue<unsigned int>(
+	unsigned int maxVideoFrames = util::KnobDatabase::getKnobValue<unsigned int>(
 		"ClassifierEngine::MaximumVideoFrames", 50);
 	
 	util::log("ClassifierEngine") << "Running image batches\n";
@@ -149,8 +149,10 @@ void ClassifierEngine::runOnPaths(const StringVector& paths)
 			}
 
 			auto batch = video.getNextFrames(maxBatchSize);
-            displayOnScreen(batch);	
-			// TODO fix this
+			
+			displayOnScreen(batch);	
+			
+			// TODO fix this, batches should never be empty
 			if(batch.empty())
 			{
 				continue;
@@ -257,13 +259,15 @@ static void parseImageDatabase(ImageVector& images, VideoVector& videos,
 
 static void displayOnScreen(ImageVector& images)
 {
-    bool shouldDisplay = util::KnobDatabase::getKnobValue("ClassifierEngine::DisplayOnScreen", false);
-    if (!shouldDisplay)
-        return;
-    for (auto& i : images)
-    {
-        i.displayOnScreen();
-    }
+	bool shouldDisplay = util::KnobDatabase::getKnobValue(
+		"ClassifierEngine::DisplayOnScreen", false);
+
+	if(!shouldDisplay) return;
+
+	for (auto& i : images)
+	{
+		i.displayOnScreen();
+	}
 }
 
 static void parseSinglePath(ImageVector& images, VideoVector& videos,

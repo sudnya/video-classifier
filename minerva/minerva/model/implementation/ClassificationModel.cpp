@@ -50,10 +50,11 @@ void ClassificationModel::setNeuralNetwork(
 }
 
 void ClassificationModel::setInputImageResolution(unsigned int x,
-	unsigned int y)
+	unsigned int y, unsigned int c)
 {
 	_xPixels = x;
 	_yPixels = y;
+	_colors  = c;
 }
 
 unsigned int ClassificationModel::xPixels() const
@@ -64,6 +65,11 @@ unsigned int ClassificationModel::xPixels() const
 unsigned int ClassificationModel::yPixels() const
 {
 	return _yPixels;
+}
+
+unsigned int ClassificationModel::colors() const
+{
+	return _colors;
 }
 
 void ClassificationModel::save() const
@@ -80,6 +86,7 @@ void ClassificationModel::save() const
 	stream << "\n";
 	stream << "\t\"xPixels\": " << xPixels() << ",\n";
 	stream << "\t\"yPixels\": " << yPixels() << ",\n";
+	stream << "\t\"colors\": "  << colors()  << ",\n";
 
 	stream << "\n";
 
@@ -216,10 +223,11 @@ void ClassificationModel::load()
 		util::json::Visitor headerVisitor(headerObject);
 		
 		_xPixels = (int) headerVisitor["xPixels"];		
-		_yPixels = (int) headerVisitor["yPixels"];
+		_yPixels = (int) headerVisitor["yPixels"];	
+		_colors  = (int) headerVisitor["colors" ];
 
 		util::log("ClassificationModel") << "  (" << _xPixels << " xPixels, "
-			<< _yPixels << " yPixels)\n";
+			<< _yPixels << " yPixels, " << _colors << " colors)\n";
 		
 		util::json::Visitor networksVisitor(
 			headerVisitor["neuralnetworks"]);		

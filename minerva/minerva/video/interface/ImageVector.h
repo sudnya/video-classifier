@@ -61,7 +61,7 @@ public:
 	void push_back(const Image& image);
 
 public:
-	Matrix convertToMatrix(size_t sampleCount) const;
+	Matrix convertToStandardizedMatrix(size_t sampleCount) const;
     Matrix getReference(const NeuralNetwork& network) const;
 
 private:

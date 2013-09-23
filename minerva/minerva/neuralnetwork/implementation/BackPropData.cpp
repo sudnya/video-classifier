@@ -149,7 +149,7 @@ static bool gradientChecking(const Matrix& partialDerivatives, const Layer& laye
 BackPropData::BackPropData(NeuralNetwork* ann, const Matrix& input, const Matrix& ref)
  : m_neuralNetworkPtr(ann), m_input(input), m_referenceOutput(ref), m_lambda(0.0f)
 {
-	m_lambda = util::KnobDatabase::getKnobValue("BackPropData::Lambda", .1f);
+	m_lambda = util::KnobDatabase::getKnobValue("BackPropData::Lambda", 0.1f);
 }
 
 MatrixVector BackPropData::getCostDerivative() const

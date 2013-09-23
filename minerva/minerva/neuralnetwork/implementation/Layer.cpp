@@ -116,6 +116,7 @@ void Layer::transpose()
 	for(auto& matrix : *this)
 	{
 		matrix.transposeSelf();
+		matrix.resize(matrix.rows() + 1, matrix.columns() - 1);
 	}
 }
 
