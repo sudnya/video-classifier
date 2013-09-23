@@ -7,8 +7,14 @@
 // Minvera Includes
 #include <minerva/optimizer/interface/SimulatedAnnealingSolver.h>
 
+#include <minerva/matrix/interface/Matrix.h>
+
+#include <minerva/util/interface/debug.h>
+#include <minerva/util/interface/Knobs.h>
+
 // Standard Library Includes
 #include <cmath>
+#include <random>
 
 namespace minerva
 {
@@ -16,10 +22,14 @@ namespace minerva
 namespace optimizer
 {
 
+typedef matrix::Matrix Matrix;
+
 SimulatedAnnealingSolver::~SimulatedAnnealingSolver()
 {
 
 }
+
+typedef SimulatedAnnealingSolver::Cost Cost;
 
 static float simulatedAnnealing(Matrix& inputs, const Cost& callback);
 
@@ -68,7 +78,8 @@ static Matrix pickNeighbouringState(const Matrix& inputs,
 static float simulatedAnnealing(Matrix& inputs, const Cost& callback)
 {
 	std::uniform_real_distribution<float> distribution(0.0f, 1.0f);
-	
+	std::default_random_engine generator(std::time(0));
+
 	unsigned iterations = util::KnobDatabase::getKnobValue(
 		"SimulatedAnnealing::Iterations", 5000);
 	
@@ -114,7 +125,7 @@ static float simulatedAnnealing(Matrix& inputs, const Cost& callback)
 		}
 	}
 	
-	return bestInputs;
+	return bestCostSoFar;
 }
 
 }

@@ -15,7 +15,7 @@ namespace minerva
 namespace optimizer
 {
 
-NonDifferentiableLinearSolver* NonDifferentiableLinearSolverFactory::create
+NonDifferentiableLinearSolver* NonDifferentiableLinearSolverFactory::create(
 	const std::string& name)
 {
 	NonDifferentiableLinearSolver* solver = nullptr;

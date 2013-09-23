@@ -75,7 +75,8 @@ const std::string& Image::label() const
 void Image::displayOnScreen()
 {
     load();
-    ImageLibraryInterface::displayOnScreen(_x, _y, _colorComponents, _pixelSize, _pixels);
+    ImageLibraryInterface::displayOnScreen(_x, _y, _colorComponents,
+    	_pixelSize, _pixels);
 }
 
 
@@ -91,6 +92,21 @@ void Image::load()
 	util::log("Image") << "Loading data from image path '" << _path << "'\n";
 	
 	_pixels = ImageLibraryInterface::loadData(_path);
+
+	util::log("Image") << " " << _pixels.size() << " bytes...\n";
+	
+	_loaded = true;
+}
+
+void Image::save()
+{
+	if(!loaded()) return;
+	
+	util::log("Image") << "Saving data to image path '" << _path << "'\n";
+	
+	ImageLibraryInterface::saveImage(_path,
+		ImageLibraryInterface::Header(x(), y(), colorComponents(), pixelSize()),
+		_pixels);
 
 	util::log("Image") << " " << _pixels.size() << " bytes...\n";
 	

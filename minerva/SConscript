@@ -22,7 +22,8 @@ env['path_to_root_dir'] = os.path.abspath(minerva_path_to_root_dir)
 
 # find all source files in the source tree
 directories = ['minerva/driver', 'minerva/util', 'minerva/classifiers',
-	'minerva/matrix', 'minerva/model', 'minerva/neuralnetwork', 'minerva/optimizer', 'minerva/video']
+	'minerva/matrix', 'minerva/model', 'minerva/neuralnetwork',
+	'minerva/optimizer', 'minerva/video', 'minerva/visualization']
 
 source_directories = [os.path.join(i, 'implementation') for i in directories]
 extensions = ['*.cpp']

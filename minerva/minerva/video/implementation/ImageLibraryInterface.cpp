@@ -99,9 +99,26 @@ ImageLibraryInterface::DataVector ImageLibraryInterface::loadData(
 	return library->second->loadData(path);
 }
 
-void ImageLibraryInterface::displayOnScreen(size_t x, size_t y, size_t colorComponents, size_t pixelSize, const DataVector& pixels)
+void ImageLibraryInterface::saveImage(const std::string& path,
+	const Header& header, const DataVector& data)
 {
-    std::string capability = "render";
+	auto extension = util::getExtension(path);
+	
+	auto library = database.libraries.find(extension);
+	
+	if(library == database.libraries.end())
+	{
+		throw std::runtime_error("No image library can support extension '" +
+			extension + "'");
+	}
+	
+	return library->second->saveImage(path, header, data);
+}
+
+void ImageLibraryInterface::displayOnScreen(size_t x, size_t y,
+	size_t colorComponents, size_t pixelSize, const DataVector& pixels)
+{
+	std::string capability = "render";
 	auto library = database.libraries.find(capability);
 	
 	if(library == database.libraries.end())
@@ -110,8 +127,16 @@ void ImageLibraryInterface::displayOnScreen(size_t x, size_t y, size_t colorComp
 			capability + "'");
 	}
 
-    library->second->displayOnScreen(x, y, colorComponents, pixelSize, pixels);
+	library->second->displayOnScreen(x, y, colorComponents, pixelSize, pixels);
 }
+
+ImageLibraryInterface::Header::Header(unsigned int X, unsigned int Y,
+	unsigned int c, unsigned int p)
+: x(X), y(Y), colorComponents(c), pixelSize(p)
+{
+
+}
+	
 
 }
 

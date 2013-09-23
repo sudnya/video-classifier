@@ -23,6 +23,10 @@ public:
 	class Header
 	{
 	public:
+		Header(unsigned int x = 0, unsigned int y = 0,
+			unsigned int c = 0, unsigned int p = 0);
+	
+	public:
 		unsigned int x;
 		unsigned int y;
 		unsigned int colorComponents;
@@ -39,7 +43,13 @@ public:
 	static Header loadHeader(const std::string& path);
 	static DataVector loadData(const std::string& path);
 
-    static void displayOnScreen(size_t x, size_t y, size_t colorComponents, size_t pixelSize, const DataVector& pixels);
+public:
+	static void saveImage(const std::string& path, const Header& header,
+		const DataVector& data);
+
+public:
+	static void displayOnScreen(size_t x, size_t y, size_t colorComponents,
+		size_t pixelSize, const DataVector& pixels);
 
 };
 

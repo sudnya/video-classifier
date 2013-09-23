@@ -37,6 +37,13 @@ OpenCVLibrary::IplImage* OpenCVLibrary::cvLoadImage(const char* f, int c)
 	return (*_interface.cvLoadImage)(f, c);
 }
 
+int OpenCVLibrary::cvSaveImage(const char* f, const IplImage* i)
+{
+	_check();
+	
+	return (*_interface.cvSaveImage)(f, i);
+}
+
 void OpenCVLibrary::cvReleaseImage(IplImage** i)
 {
 	_check();
@@ -85,7 +92,7 @@ int OpenCVLibrary::cvNamedWindow(const char* name, int flags)
 
     return (*_interface.cvNamedWindow)(name, flags);
 }
-void OpenCVLibrary::cvShowImage(const char* name, const CvArr* image)
+void OpenCVLibrary::cvShowImage(const char* name, const IplImage* image)
 {
     _check();
 
@@ -154,6 +161,9 @@ void OpenCVLibrary::Interface::load()
 	DynLink(cvGetCaptureProperty);
 	DynLink(cvGrabFrame);
 	DynLink(cvRetrieveFrame);
+	
+	DynLink(cvNamedWindow);
+	DynLink(cvShowImage);
 	
 	#undef DynLink	
 }

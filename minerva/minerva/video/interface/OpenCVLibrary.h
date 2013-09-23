@@ -58,6 +58,9 @@ public:
 	static const int IPL_DEPTH_16S = (IPL_DEPTH_SIGN|16);
 	static const int IPL_DEPTH_32S = (IPL_DEPTH_SIGN|32);
 
+	static const int IPL_DATA_ORDER_PIXEL = 0;
+
+
 	static const int CV_CAP_PROP_POS_AVI_RATIO = 2;
     static const int CV_WINDOW_AUTOSIZE = 1;
 
@@ -68,6 +71,7 @@ public:
 public:
 	static IplImage* cvLoadImage(const char* filename,
 		int iscolor = CV_LOAD_IMAGE_COLOR);
+	static int cvSaveImage(const char* filename, const IplImage* image);
 	
 	static void cvReleaseImage(IplImage**);
 
@@ -79,7 +83,7 @@ public:
 	static bool cvGrabFrame(CvCapture*);
 	static IplImage* cvRetrieveFrame(CvCapture*);
     static int cvNamedWindow(const char* name, int flags=CV_WINDOW_AUTOSIZE);
-    static void cvShowImage(const char* name, const CvArr* image);
+    static void cvShowImage(const char* name, const IplImage* image);
 
 private:
 	static void _check();
@@ -89,6 +93,7 @@ private:
 	{
 	public:
 		IplImage* (*cvLoadImage)(const char* filename, int iscolor);
+		int (*cvSaveImage)(const char* filename, const IplImage*);
 		void (*cvReleaseImage)(IplImage**);
 
 	public:
@@ -99,7 +104,7 @@ private:
 		bool (*cvGrabFrame)(CvCapture*);
 		IplImage* (*cvRetrieveFrame)(CvCapture*);
         int (*cvNamedWindow)(const char* name, int flags);
-        void (*cvShowImage) (const char* name, const CvArr* image);
+        void (*cvShowImage) (const char* name, const IplImage* image);
     public:
 		/*! \brief The constructor zeros out all of the pointers */
 		Interface();

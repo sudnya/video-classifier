@@ -19,8 +19,11 @@ namespace minerva
 namespace video
 {
 
-OpenCVImageLibrary::Header OpenCVImageLibrary::loadHeader(
-	const std::string& path)
+typedef OpenCVImageLibrary::Header Header;
+typedef OpenCVImageLibrary::DataVector DataVector;
+typedef OpenCVLibrary::IplImage IplImage;
+
+Header OpenCVImageLibrary::loadHeader(const std::string& path)
 {
 	Header header;
 	
@@ -80,7 +83,43 @@ OpenCVImageLibrary::DataVector OpenCVImageLibrary::loadData(
 	return data;
 }
 
-void OpenCVImageLibrary::displayOnScreen(size_t x, size_t y, size_t colorComponents, size_t pixelSize, const DataVector& pixels)
+static void createIplImage(IplImage& iplImage, const Header& header,
+	const DataVector& data)
+{
+	iplImage.nSize = sizeof(IplImage);
+	iplImage.ID = 0;
+	iplImage.nChannels = header.colorComponents;
+	iplImage.alphaChannel = 0;
+	iplImage.depth = header.pixelSize * 8;
+	
+	iplImage.dataOrder = OpenCVLibrary::IPL_DATA_ORDER_PIXEL;
+	iplImage.origin = 0;
+	iplImage.align  = header.x;
+	iplImage.width  = header.x;
+	iplImage.height = header.y;
+	
+	iplImage.roi = nullptr;
+	iplImage.maskROI = nullptr;
+	iplImage.imageId = nullptr;
+	iplImage.tileInfo = nullptr;
+	
+	iplImage.imageSize = data.size();
+	iplImage.imageData = (char*)data.data();
+	iplImage.widthStep = header.x;
+	iplImage.imageDataOrigin = (char*)data.data();
+	
+}
+
+void OpenCVImageLibrary::saveImage(const std::string& path,
+	const Header& header, const DataVector& data)
+{
+	IplImage iplImage;
+	
+	createIplImage(iplImage, header, data);
+}
+
+void OpenCVImageLibrary::displayOnScreen(size_t x, size_t y,
+	size_t colorComponents, size_t pixelSize, const DataVector& pixels)
 {
     //call create window
     const char* name = "display-window";
@@ -88,8 +127,13 @@ void OpenCVImageLibrary::displayOnScreen(size_t x, size_t y, size_t colorCompone
     if (error == 0)
     {
         //convert the imageData into CVArr
+		IplImage iplImage;
+		
+		createIplImage(iplImage, Header(x, y, colorComponents, pixelSize),
+			pixels);
+        
         //call CV imageshow
-        OpenCVLibrary::cvShowImage(name, this);
+        OpenCVLibrary::cvShowImage(name, &iplImage);
     }
     else
     {
