@@ -99,7 +99,7 @@ Matrix threshold(const Matrix& output)
 
 float computeEntropy(const Matrix& thresholdOutput)
 {
-	float totalColumnEntropy;
+	float totalColumnEntropy = 0;
 
 	for(size_t column = 0; column < thresholdOutput.columns(); ++column)
 	{
