@@ -195,14 +195,16 @@ float LBFGSSolver::solve(Matrix& inputs, const CostAndGradient& callback)
 	//parameters.min_step = 10e-10;
 	//parameters.max_linesearch = 5.0;
 	//parameters.linesearch = 3;
-	//parameters.max_linesearch = 1000;
 	//parameters.epsilon = 0.001;
 	//parameters.xtol = 0.000001;
 	//parameters.ftol = .1;
 	//parameters.gtol = .1;
 	
+	parameters.max_linesearch = util::KnobDatabase::getKnobValue(
+		"LBFGSSolver::MaxLineSearchIterations", 4);
+
 	parameters.max_iterations =
-		util::KnobDatabase::getKnobValue("LBFGSSolver::MaxIterations", 10);
+		util::KnobDatabase::getKnobValue("LBFGSSolver::MaxIterations", 20);
 	
 	int status = LBFGSSolverLibrary::lbfgs(inputs.size(), inputArray,
 		&finalCost, lbfgsCallback, lbfgsProgress,
@@ -211,7 +213,8 @@ float LBFGSSolver::solve(Matrix& inputs, const CostAndGradient& callback)
 	if(status < 0)
 	{
 		if(status != LBFGSSolverLibrary::LBFGSERR_MAXIMUMITERATION &&
-			status != LBFGSSolverLibrary::LBFGSERR_ROUNDING_ERROR)
+			status != LBFGSSolverLibrary::LBFGSERR_ROUNDING_ERROR &&
+			status != LBFGSSolverLibrary::LBFGSERR_MAXIMUMLINESEARCH)
 		{
 			LBFGSSolverLibrary::lbfgs_free(inputArray);
 		

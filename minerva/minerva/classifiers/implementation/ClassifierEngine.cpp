@@ -101,6 +101,8 @@ void ClassifierEngine::runOnPaths(const StringVector& paths)
 	util::log("ClassifierEngine") << "Running image batches\n";
 
 	// Run images first
+	runAllImages(images, maxBatchSize, maxVideoFrames);
+
 	for(unsigned int i = 0; i < images.size(); i += maxBatchSize)
 	{
 		unsigned int batchSize = std::min(images.size() - i,
@@ -133,50 +135,8 @@ void ClassifierEngine::runOnPaths(const StringVector& paths)
 	}
 	
 	// Run videos next
-	bool allFinished = false;
+	runAllVideos(videos, maxBatchSize, maxVideoFrames);
 
-	while(!allFinished)
-	{
-		allFinished = true;
-		
-		bool hitFrameLimit = false;
-
-		for(auto& video : videos)
-		{
-			if(video.finished())
-			{
-				continue;
-			}
-
-			auto batch = video.getNextFrames(maxBatchSize);
-			
-			displayOnScreen(batch);	
-			
-			// TODO fix this, batches should never be empty
-			if(batch.empty())
-			{
-				continue;
-			}
-	
-			allFinished = false;
-
-			runOnImageBatch(batch);
-
-			if(maxVideoFrames <= batch.size())
-			{
-				hitFrameLimit = true;
-				break;
-			}
-
-			maxVideoFrames -= batch.size();
-		}
-
-		if(hitFrameLimit)
-		{
-			break;
-		}
-	}
-	
 	// close
 	closeModel();
 }
@@ -255,6 +215,53 @@ static void parseImageDatabase(ImageVector& images, VideoVector& videos,
 	}
 	
 	consolidateLabels(images, videos);
+}
+
+static void runAllVideos(VideoVector& videos)
+{
+	bool allFinished = false;
+
+	while(!allFinished)
+	{
+		allFinished = true;
+		
+		bool hitFrameLimit = false;
+
+		for(auto& video : videos)
+		{
+			if(video.finished())
+			{
+				continue;
+			}
+
+			auto batch = video.getNextFrames(maxBatchSize);
+			
+			displayOnScreen(batch);	
+			
+			// TODO fix this, batches should never be empty
+			if(batch.empty())
+			{
+				continue;
+			}
+	
+			allFinished = false;
+
+			runOnImageBatch(batch);
+
+			if(maxVideoFrames <= batch.size())
+			{
+				hitFrameLimit = true;
+				break;
+			}
+
+			maxVideoFrames -= batch.size();
+		}
+
+		if(hitFrameLimit)
+		{
+			break;
+		}
+	}
 }
 
 static void displayOnScreen(ImageVector& images)
