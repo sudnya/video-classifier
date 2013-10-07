@@ -231,10 +231,14 @@ private:
 
 static float approximateSearch(Matrix& weights, float currentCost, BackPropData* backPropData)
 {
+	util::log("MultiLevelOptimizer")
+		<< "  starting approximate search with cost : " << currentCost << "\n";
+		
 	auto solver = LinearSolverFactory::create("LBFGSSolver");
 	
 	if(solver == nullptr)
 	{
+		util::log("MultiLevelOptimizer") << "   failed to allocate solver\n";
 		return currentCost;
 	}
 	
@@ -249,12 +253,15 @@ static float approximateSearch(Matrix& weights, float currentCost, BackPropData*
 	}
 	catch(...)
 	{
+		util::log("MultiLevelOptimizer") << "   solver produced an error.\n";
 		delete solver;
 		throw;
 	}
 	
 	delete solver;
 	
+	util::log("MultiLevelOptimizer") << "   solver produced new cost: "
+		<< newCost << ".\n";
 	return newCost;
 }
 

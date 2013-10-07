@@ -12,6 +12,7 @@
 // Standard Library Includes
 #include <cassert>
 #include <cmath>
+#include <stdexcept>
 
 namespace minerva
 {
@@ -117,26 +118,54 @@ Value* CublasMatrix::multiply(const Value* matrix) const
 	assert(m != nullptr);
 	assert(columns() == m->rows());
 
-	CublasMatrix* result = new CublasMatrix(rows(), m->columns());
-		
-	float* a = (float*)CublasLibrary::cudaMalloc(sizeof(float) * size());
-	float* b = (float*)CublasLibrary::cudaMalloc(sizeof(float) * size());
-	float* c = (float*)CublasLibrary::cudaMalloc(sizeof(float) * size());
+	CublasMatrix* result = nullptr;
 
-	CublasLibrary::cudaMemcpy(&a, &_data[0], sizeof(float) * size());
-	CublasLibrary::cudaMemcpy(&b, &m->_data[0], sizeof(float) * m->size());
+	float* a = nullptr;
+	float* b = nullptr;
+	float* c = nullptr;
+
+	float* alpha = nullptr;
+	float* beta  = nullptr;
 	
-	CublasLibrary::cublasSgemm(CublasLibrary::CUBLAS_OP_T,
-		CublasLibrary::CUBLAS_OP_T,
-		result->rows(), result->columns(), columns(), 1.0f, a, columns(), b,
-		m->columns(), 0.0f, c, result->columns());
+	try
+	{
+		result = new CublasMatrix(rows(), m->columns());
 	
-	CublasLibrary::cudaMemcpy(&result->_data[0], c,
-		sizeof(float) * result->size());
+		a = (float*)CublasLibrary::cudaMalloc(sizeof(float) * size()        );
+		b = (float*)CublasLibrary::cudaMalloc(sizeof(float) * m->size()     );
+		c = (float*)CublasLibrary::cudaMalloc(sizeof(float) * result->size());
+		
+		CublasLibrary::cudaMemcpy(a, &_data[0],    sizeof(float) *    size());
+		CublasLibrary::cudaMemcpy(b, &m->_data[0], sizeof(float) * m->size());
+		
+		float alpha = 1.0f;
+		float beta  = 0.0f;
+		
+		CublasLibrary::cublasSgemm(CublasLibrary::CUBLAS_OP_T,
+			CublasLibrary::CUBLAS_OP_T,
+			result->rows(), result->columns(), rows(), &alpha, a, rows(),
+			b, m->columns(), &beta, c, result->rows());
+		
+		CublasLibrary::cudaMemcpy(&result->_data[0], c,
+			sizeof(float) * result->size(), CublasLibrary::cudaMemcpyDefault);
+	}
+	catch(...)
+	{
+		CublasLibrary::cudaFree(a);
+		CublasLibrary::cudaFree(b);
+		CublasLibrary::cudaFree(c);
+		
+		delete result;
+		
+		throw;
+	}
 	
 	CublasLibrary::cudaFree(a);
 	CublasLibrary::cudaFree(b);
 	CublasLibrary::cudaFree(c);
+
+	CublasLibrary::cudaFree(alpha);
+	CublasLibrary::cudaFree(beta);
 	
 	return result;
 }

@@ -122,6 +122,8 @@ void LBFGSSolverLibrary::Interface::load()
 	DynLink(lbfgs_free);
 	
 	#undef DynLink	
+
+	util::log("LBFGSSolverLibrary") << " success\n";
 }
 
 bool LBFGSSolverLibrary::Interface::loaded() const

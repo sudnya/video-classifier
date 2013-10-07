@@ -30,16 +30,42 @@ bool CublasLibrary::loaded()
 	return _interface.loaded();
 }
 
-
-void CublasLibrary::cublasSgemm(char transa, char transb, int m, int n, int k, 
-	float alpha, const float *A, int lda, 
-	const float *B, int ldb, float beta, float *C, 
-	int ldc)
+void CublasLibrary::cublasSgemm(
+	cublasOperation_t transa, cublasOperation_t transb,
+	int m, int n, int k, const float* alpha, const float *A, int lda, 
+	const float *B, int ldb, const float* beta, float *C, int ldc)
 {
 	_check();
 	
-	(*_interface.cublasSgemm)(transa, transb, m, n, k, alpha, A, lda, B, ldb,
+	util::log("CublasLibrary") << " CUBLAS SGEMM: ("
+		"handle: " << _interface.handle <<  ", "
+		"transa: " << transa <<  ", "
+		"transb: " << transb <<  ", "
+
+		"m: " << m <<  ", "
+		"n: " << n <<  ", "
+		"k: " << k <<  ", "
+
+		"alpha: " << alpha <<  ", "
+		"A: " << A <<  ", "
+		"lda: " << lda <<  ", "
+
+		"B: " << B <<  ", "
+		"ldb: " << ldb <<  ", "
+		"beta: " << beta <<  ", "
+
+		"C: " << C <<  ", "
+		"ldc: " << ldc << ")\n";
+	
+	cublasStatus_t status = (*_interface.cublasSgemm_v2)(_interface.handle,
+		transa, transb, m, n, k, alpha, A, lda, B, ldb,
 		beta, C, ldc);
+		
+	if(status != CUBLAS_STATUS_SUCCESS)
+	{
+		throw std::runtime_error("Cuda SGEMM failed: " +
+			cublasGetErrorString(status));
+	}
 }
 
 void* CublasLibrary::cudaMalloc(size_t bytes)
@@ -48,7 +74,16 @@ void* CublasLibrary::cudaMalloc(size_t bytes)
 
 	void* address = nullptr;
 
-	(*_interface.cudaMalloc)(&address, bytes);
+	int status = (*_interface.cudaMalloc)(&address, bytes);
+	
+	if(status != CUDA_SUCCESS)
+	{
+		throw std::runtime_error("Cuda malloc failed: " +
+			cudaGetErrorString(status));
+	}
+	
+	util::log("CublasLibrary") << " CUDA allocated memory (address: "
+		<< address << ", " << bytes << " bytes)\n";
 		
 	return address;
 }
@@ -58,15 +93,84 @@ void CublasLibrary::cudaFree(void* ptr)
 	_check();
 
 	(*_interface.cudaFree)(ptr);
+
+	util::log("CublasLibrary") << " CUDA freed memory (address: "
+		<< ptr << ")\n";
 }
 
-void CublasLibrary::cudaMemcpy(void* dest, const void* src, size_t bytes)
+void CublasLibrary::cudaMemcpy(void* dest, const void* src, size_t bytes, 
+	cudaMemcpyKind kind)
 {
 	_check();
 
-	(*_interface.cudaMemcpy)(dest, src, bytes);
+	util::log("CublasLibrary") << " CUDA memcopy (destination address: "
+		<< dest << ", source address: " << src << ", " << bytes
+		<< " bytes)\n";
+
+	int status = (*_interface.cudaMemcpy)(dest, src, bytes, kind);
+
+	if(status != CUDA_SUCCESS)
+	{
+		throw std::runtime_error("Cuda memcpy failed: " +
+			cudaGetErrorString(status));
+	}
 }
 
+std::string CublasLibrary::cudaGetErrorString(int error)
+{
+	_check();
+	
+	return (*_interface.cudaGetErrorString)(error);
+}
+
+std::string CublasLibrary::cublasGetErrorString(cublasStatus_t error)
+{
+	switch(error)
+	{
+	case CUBLAS_STATUS_SUCCESS:
+	{
+		return "success";
+		break;
+	}
+	case CUBLAS_STATUS_NOT_INITIALIZED:
+	{
+		return "not initialized";
+		break;
+	}
+	case CUBLAS_STATUS_ALLOC_FAILED:
+	{
+		return "allocation failed";
+		break;
+	}
+	case CUBLAS_STATUS_INVALID_VALUE:
+	{
+		return "invalid value";
+		break;
+	}
+	case CUBLAS_STATUS_ARCH_MISMATCH:
+	{
+		return "arch mismatch";
+		break;
+	}
+	case CUBLAS_STATUS_MAPPING_ERROR:
+	{
+		return "mapping error";
+		break;
+	}
+	case CUBLAS_STATUS_EXECUTION_FAILED:
+	{
+		return "execution failed";
+		break;
+	}
+	case CUBLAS_STATUS_INTERNAL_ERROR:
+	{
+		return "internal error";
+		break;
+	}
+	}
+	
+	return "Unknown error.";
+}
 
 void CublasLibrary::_check()
 {
@@ -81,7 +185,7 @@ void CublasLibrary::_check()
 }
 
 CublasLibrary::Interface::Interface()
-: _library(nullptr), _failed(false)
+: handle(nullptr), _library(nullptr), _failed(false)
 {
 
 }
@@ -123,20 +227,36 @@ void CublasLibrary::Interface::load()
 		_failed = true;
 		return;
 	}
-	
-	#define DynLink( function ) util::bit_cast(function, \
-		dlsym(_library, #function)); checkFunction((void*)function, #function)
-	
-	DynLink(cublasSgemm);
-	
-	DynLink(cudaMalloc);
-	DynLink(cudaFree);
-	DynLink(cudaMemcpy);
-	
-	#undef DynLink	
 
-	util::log("CublasLibrary") << " Loaded library '" << libraryName
-		<< "' successfully\n";
+	try
+	{
+	
+		#define DynLink( function ) \
+			util::bit_cast(function, dlsym(_library, #function)); \
+			checkFunction((void*)function, #function)
+			
+		DynLink(cublasSgemm_v2);
+		
+		DynLink(cublasCreate_v2);
+		DynLink(cublasDestroy_v2);
+			
+		DynLink(cudaMalloc);
+		DynLink(cudaFree);
+		DynLink(cudaMemcpy);
+		DynLink(cudaGetErrorString);
+		
+		#undef DynLink	
+
+		util::log("CublasLibrary") << " Loaded library '" << libraryName
+			<< "' successfully\n";
+			
+		_createHandle();
+	}
+	catch(...)
+	{
+		unload();
+		throw;
+	}
 }
 
 bool CublasLibrary::Interface::loaded() const
@@ -148,10 +268,29 @@ void CublasLibrary::Interface::unload()
 {
 	if(!loaded()) return;
 
+	//_destroyHandle();
+
 	dlclose(_library);
 	_library = nullptr;
 }
-	
+
+void CublasLibrary::Interface::_createHandle()
+{
+	cublasStatus_t status = (*cublasCreate_v2)(&handle);
+
+	if(status != CUBLAS_STATUS_SUCCESS)
+	{
+		throw std::runtime_error("Failed to create cublas handle.");
+	}
+}
+
+void CublasLibrary::Interface::_destroyHandle()
+{
+	cublasStatus_t status = (*cublasDestroy_v2)(handle);
+
+	assert(status == CUBLAS_STATUS_SUCCESS);
+}
+
 CublasLibrary::Interface CublasLibrary::_interface;
 
 }

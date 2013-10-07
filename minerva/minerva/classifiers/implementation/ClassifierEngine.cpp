@@ -93,10 +93,10 @@ void ClassifierEngine::runOnPaths(const StringVector& paths)
 	}
 	
 	unsigned int maxBatchSize = util::KnobDatabase::getKnobValue<unsigned int>(
-		"ClassifierEngine::ImageBatchSize", 10);
+		"ClassifierEngine::ImageBatchSize", 100);
 	
 	unsigned int maxVideoFrames = util::KnobDatabase::getKnobValue<unsigned int>(
-		"ClassifierEngine::MaximumVideoFrames", 50);
+		"ClassifierEngine::MaximumVideoFrames", 500);
 	
 	util::log("ClassifierEngine") << "Running image batches\n";
 
