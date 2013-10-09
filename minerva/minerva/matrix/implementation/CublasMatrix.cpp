@@ -100,12 +100,24 @@ Value* CublasMatrix::transpose() const
 {
 	CublasMatrix* result = new CublasMatrix(columns(), rows());
 	
-	// TODO: faster
-	for(size_t row = 0; row != rows(); ++row)
+	const size_t blockSize = 16;
+		
+	for(size_t row = 0; row < rows(); row += blockSize)
 	{
-		for(size_t column = 0; column != columns(); ++column)
+		for(size_t column = 0; column < columns(); column += blockSize)
 		{
-			result->setValue(column, row, getValue(row, column));
+			size_t rowLimit    = std::min(rows(),    row + blockSize   );
+			size_t columnLimit = std::min(columns(), column + blockSize);
+			
+			for(size_t blockRow = row; blockRow < rowLimit; ++blockRow)
+			{
+				for(size_t blockColumn = column;
+					blockColumn < columnLimit; ++blockColumn)
+				{
+					result->_data[result->_getPosition(blockColumn, blockRow)] =
+						_data[_getPosition(blockRow, blockColumn)];
+				}
+			}
 		}
 	}
 	
@@ -351,12 +363,12 @@ void CublasMatrix::transposeSelf()
     // TODO: in place
 	auto matrix = transpose();
 	
-	auto atlasMatrix = dynamic_cast<CublasMatrix*>(matrix);
-	assert(atlasMatrix != nullptr);
+	auto cublasMatrix = dynamic_cast<CublasMatrix*>(matrix);
+	assert(cublasMatrix != nullptr);
 	
-	*this = *atlasMatrix;
+	*this = *cublasMatrix;
 	
-	delete atlasMatrix;
+	delete cublasMatrix;
 }
 
 float CublasMatrix::reduceSum() const
