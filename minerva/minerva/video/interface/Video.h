@@ -58,7 +58,10 @@ public:
 
 public:
 	ImageVector getNextFrames(unsigned int frames = 1);
+	Image getSpecificFrame(unsigned int frame);
 
+	size_t getTotalFrames();
+	
 	bool finished();
 
 public:

@@ -6,6 +6,9 @@
 
 #pragma once
 
+// Standard Library Includes
+#include <cstring>
+
 // Forward Declarations
 namespace minerva { namespace video { class Image; } }
 
@@ -23,6 +26,8 @@ public:
 public:
 	virtual bool finished() const = 0;
 	virtual bool getNextFrame(Image&) = 0;
+	virtual size_t getTotalFrames() const = 0;
+	virtual bool seek(size_t f) = 0;
 
 };
 

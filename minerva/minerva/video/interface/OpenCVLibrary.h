@@ -60,8 +60,10 @@ public:
 
 	static const int IPL_DATA_ORDER_PIXEL = 0;
 
-
 	static const int CV_CAP_PROP_POS_AVI_RATIO = 2;
+	static const int CV_CAP_PROP_FRAME_COUNT   = 7;
+	static const int CV_CAP_PROP_POS_FRAMES    = 1;
+	
     static const int CV_WINDOW_AUTOSIZE = 1;
 
 public:
@@ -80,6 +82,7 @@ public:
 	static void cvReleaseCapture(CvCapture**);
 	
 	static double cvGetCaptureProperty(CvCapture*, int property);
+	static int cvSetCaptureProperty(CvCapture*, int property, double value);
 	static bool cvGrabFrame(CvCapture*);
 	static IplImage* cvRetrieveFrame(CvCapture*);
     static int cvNamedWindow(const char* name, int flags=CV_WINDOW_AUTOSIZE);
@@ -101,6 +104,7 @@ private:
 		void (*cvReleaseCapture)(CvCapture**);
 	
 		double (*cvGetCaptureProperty)(CvCapture*, int property);
+		int (*cvSetCaptureProperty)(CvCapture*, int property, double value);
 		bool (*cvGrabFrame)(CvCapture*);
 		IplImage* (*cvRetrieveFrame)(CvCapture*);
         int (*cvNamedWindow)(const char* name, int flags);

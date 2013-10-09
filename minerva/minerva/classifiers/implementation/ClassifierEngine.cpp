@@ -57,6 +57,10 @@ typedef video::VideoVector VideoVector;
 static void parseImageDatabase(ImageVector& images, VideoVector& video,
 	const std::string& path, bool requiresLabeledData);
 static void displayOnScreen(ImageVector& images);
+static void runAllImages(ClassifierEngine* engine, ImageVector& images,
+	unsigned int maxBatchSize, unsigned int& maxVideoFrames);
+static void runAllVideos(ClassifierEngine* engine, VideoVector& images,
+	unsigned int maxBatchSize, unsigned int& maxVideoFrames);
 
 void ClassifierEngine::runOnPaths(const StringVector& paths)
 {
@@ -93,49 +97,19 @@ void ClassifierEngine::runOnPaths(const StringVector& paths)
 	}
 	
 	unsigned int maxBatchSize = util::KnobDatabase::getKnobValue<unsigned int>(
-		"ClassifierEngine::ImageBatchSize", 100);
+		"ClassifierEngine::ImageBatchSize", 10);
 	
-	unsigned int maxVideoFrames = util::KnobDatabase::getKnobValue<unsigned int>(
-		"ClassifierEngine::MaximumVideoFrames", 500);
+	unsigned int maxVideoFrames =
+		util::KnobDatabase::getKnobValue<unsigned int>(
+		"ClassifierEngine::MaximumVideoFrames", 50);
 	
 	util::log("ClassifierEngine") << "Running image batches\n";
 
 	// Run images first
-	runAllImages(images, maxBatchSize, maxVideoFrames);
-
-	for(unsigned int i = 0; i < images.size(); i += maxBatchSize)
-	{
-		unsigned int batchSize = std::min(images.size() - i,
-			(size_t)maxBatchSize);
-	
-		ImageVector batch;
-		
-		for(unsigned int j = 0; j < batchSize; ++j)
-		{
-			batch.push_back(images[j]);
-		}
-		
-		for(auto& image : batch)
-		{
-			image.load();
-			image = image.sample(getInputFeatureCount());
-		}
-
-		util::log("ClassifierEngine") << " running batch with " << batch.size()
-			<< " images\n";
-		
-		runOnImageBatch(batch);
-		
-		if(maxVideoFrames <= batch.size())
-		{
-			break;
-		}
-	
-		maxVideoFrames -= batch.size();
-	}
+	runAllImages(this, images, maxBatchSize, maxVideoFrames);
 	
 	// Run videos next
-	runAllVideos(videos, maxBatchSize, maxVideoFrames);
+	runAllVideos(this, videos, maxBatchSize, maxVideoFrames);
 
 	// close
 	closeModel();
@@ -217,51 +191,54 @@ static void parseImageDatabase(ImageVector& images, VideoVector& videos,
 	consolidateLabels(images, videos);
 }
 
-static void runAllVideos(VideoVector& videos)
+typedef std::vector<std::pair<unsigned int, unsigned int>> VideoAndFrameVector;
+
+static VideoAndFrameVector pickRandomFrames(VideoVector& videos,
+	unsigned int maxVideoFrames);
+
+static void runAllVideos(ClassifierEngine* engine, VideoVector& videos,
+	unsigned int maxBatchSize, unsigned int& maxVideoFrames)
 {
-	bool allFinished = false;
+	auto frames = pickRandomFrames(videos, maxVideoFrames);
 
-	while(!allFinished)
+	for(unsigned int i = 0; i < frames.size(); i += maxBatchSize)
 	{
-		allFinished = true;
+		unsigned int batchSize = std::min(frames.size() - i, 
+			(size_t)maxBatchSize);
+			
+		ImageVector batch;
 		
-		bool hitFrameLimit = false;
-
-		for(auto& video : videos)
+		for(unsigned int j = 0; j < batchSize; ++j)
 		{
-			if(video.finished())
-			{
-				continue;
-			}
-
-			auto batch = video.getNextFrames(maxBatchSize);
+			unsigned int video = frames[i + j].first;
+			unsigned int frame = frames[i + j].second;
 			
-			displayOnScreen(batch);	
-			
-			// TODO fix this, batches should never be empty
-			if(batch.empty())
-			{
-				continue;
-			}
-	
-			allFinished = false;
-
-			runOnImageBatch(batch);
-
-			if(maxVideoFrames <= batch.size())
-			{
-				hitFrameLimit = true;
-				break;
-			}
-
-			maxVideoFrames -= batch.size();
+			batch.push_back(videos[video].getSpecificFrame(frame));
 		}
-
-		if(hitFrameLimit)
-		{
-			break;
-		}
+		
+		displayOnScreen(batch);
+		
+		engine->runOnImageBatch(batch);
 	}
+}
+
+static VideoAndFrameVector pickRandomFrames(VideoVector& videos,
+	unsigned int maxVideoFrames)
+{
+	std::default_random_engine generator(std::time(0));
+	
+	VideoAndFrameVector positions;
+	
+	for(unsigned int i = 0; i < maxVideoFrames; ++i)
+	{
+		unsigned int video = generator() % videos.size();
+		unsigned int frames = videos[video].getTotalFrames();
+		unsigned int frame = generator() % frames;
+		
+		positions.push_back(std::make_pair(video, frame));
+	}
+		
+	return positions;
 }
 
 static void displayOnScreen(ImageVector& images)
@@ -274,6 +251,41 @@ static void displayOnScreen(ImageVector& images)
 	for (auto& i : images)
 	{
 		i.displayOnScreen();
+	}
+}
+
+static void runAllImages(ClassifierEngine* engine, ImageVector& images,
+	unsigned int maxBatchSize, unsigned int& maxVideoFrames)
+{
+	for(unsigned int i = 0; i < images.size(); i += maxBatchSize)
+	{
+		unsigned int batchSize = std::min(images.size() - i,
+			(size_t)maxBatchSize);
+	
+		ImageVector batch;
+		
+		for(unsigned int j = 0; j < batchSize; ++j)
+		{
+			batch.push_back(images[i + j]);
+		}
+		
+		for(auto& image : batch)
+		{
+			image.load();
+			image = image.sample(engine->getInputFeatureCount()); // is this needed?
+		}
+
+		util::log("ClassifierEngine") << " running batch with " << batch.size()
+			<< " images\n";
+		
+		engine->runOnImageBatch(batch);
+		
+		if(maxVideoFrames <= batch.size())
+		{
+			break;
+		}
+	
+		maxVideoFrames -= batch.size();
 	}
 }
 

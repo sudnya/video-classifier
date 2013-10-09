@@ -52,7 +52,7 @@ protected:
 	
 	virtual bool requiresLabeledData() const;
 
-protected:
+public:
 
 	virtual void runOnImageBatch(const ImageVector& images) = 0;
 	virtual size_t getInputFeatureCount() const = 0;

@@ -42,6 +42,8 @@ public:
 	public:
 		virtual bool finished() const;
 		virtual bool getNextFrame(Image&);
+		virtual size_t getTotalFrames() const;
+		virtual bool seek(size_t frame);
 	
 	private:
 		std::string _path;

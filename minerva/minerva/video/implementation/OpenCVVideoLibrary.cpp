@@ -92,6 +92,22 @@ bool OpenCVVideoLibrary::OpenCVVideoStream::getNextFrame(Image& frame)
     return true;
 }
 
+size_t OpenCVVideoLibrary::OpenCVVideoStream::getTotalFrames() const
+{
+	return OpenCVLibrary::cvGetCaptureProperty(_cvCapture,
+		OpenCVLibrary::CV_CAP_PROP_FRAME_COUNT);
+}
+
+bool OpenCVVideoLibrary::OpenCVVideoStream::seek(size_t frame)
+{
+	OpenCVLibrary::cvSetCaptureProperty(_cvCapture,
+		OpenCVLibrary::CV_CAP_PROP_POS_FRAMES, frame);
+
+	// TODO check for failure
+
+	return true;
+}
+
 }
 
 }

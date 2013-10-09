@@ -137,6 +137,29 @@ ImageVector Video::getNextFrames(unsigned int frames)
 	return images;
 }
 
+Image Video::getSpecificFrame(unsigned int frame)
+{
+	load();
+	
+	_seek(frame);
+	
+	Image image;
+    
+    if(_stream->getNextFrame(image))
+	{
+		image.setLabel(_getLabelForCurrentFrame());
+	}
+	
+	return image;
+}
+
+size_t Video::getTotalFrames()
+{
+	load();
+
+	return _stream->getTotalFrames();
+}
+
 bool Video::finished()
 {
 	load();
@@ -168,19 +191,8 @@ bool Video::isPathAVideo(const std::string& path)
 
 void Video::_seek(unsigned int frame)
 {
-	if(frame < _frame)
-	{
-		invalidateCache();
-		_frame = 0;
-	}
-	
-	while(frame > _frame)
-	{
-		Image i;
-        
-        _stream->getNextFrame(i);
-		++_frame;
-	}
+	_stream->seek(frame);
+	_frame = frame;
 }
 
 std::string Video::_getLabelForCurrentFrame() const

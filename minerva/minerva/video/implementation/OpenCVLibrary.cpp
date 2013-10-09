@@ -72,6 +72,13 @@ double OpenCVLibrary::cvGetCaptureProperty(CvCapture* c, int p)
 	return (*_interface.cvGetCaptureProperty)(c, p);
 }
 
+int OpenCVLibrary::cvSetCaptureProperty(CvCapture* c, int p, double v)
+{
+	_check();
+	
+	return (*_interface.cvSetCaptureProperty)(c, p, v);
+}
+
 bool OpenCVLibrary::cvGrabFrame(CvCapture* c)
 {
 	_check();
@@ -161,6 +168,7 @@ void OpenCVLibrary::Interface::load()
 	DynLink(cvCreateFileCapture);
 	DynLink(cvReleaseCapture);
 	DynLink(cvGetCaptureProperty);
+	DynLink(cvSetCaptureProperty);
 	DynLink(cvGrabFrame);
 	DynLink(cvRetrieveFrame);
 	

@@ -123,9 +123,6 @@ Value* CublasMatrix::multiply(const Value* matrix) const
 	float* a = nullptr;
 	float* b = nullptr;
 	float* c = nullptr;
-
-	float* alpha = nullptr;
-	float* beta  = nullptr;
 	
 	try
 	{
@@ -163,9 +160,6 @@ Value* CublasMatrix::multiply(const Value* matrix) const
 	CublasLibrary::cudaFree(a);
 	CublasLibrary::cudaFree(b);
 	CublasLibrary::cudaFree(c);
-
-	CublasLibrary::cudaFree(alpha);
-	CublasLibrary::cudaFree(beta);
 	
 	return result;
 }
