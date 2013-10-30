@@ -34,10 +34,12 @@ MatrixImplementation::Value* MatrixImplementation::createBestImplementation(
 {
 	Value* matrix = nullptr;
 	
+	
 	if(matrix == nullptr && CublasMatrix::isSupported())
 	{
 		matrix = new CublasMatrix(rows, columns, f);
 	}
+	
 	
 	if(matrix == nullptr && AtlasMatrix::isSupported())
 	{

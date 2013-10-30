@@ -114,6 +114,10 @@ public:
 	void setDataRowMajor(const FloatVector& data);
 
 public:
+	bool operator==(const Matrix& m) const;
+	bool operator!=(const Matrix& m) const;
+
+public:
     std::string toString(size_t maxRows = 10, size_t maxColumns = 10) const;
 
 public:

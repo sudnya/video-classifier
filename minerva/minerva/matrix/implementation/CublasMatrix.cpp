@@ -150,11 +150,38 @@ Value* CublasMatrix::multiply(const Value* matrix) const
 		float alpha = 1.0f;
 		float beta  = 0.0f;
 		
-		CublasLibrary::cublasSgemm(CublasLibrary::CUBLAS_OP_T,
-			CublasLibrary::CUBLAS_OP_T,
-			result->rows(), result->columns(), rows(), &alpha, a, rows(),
-			b, m->columns(), &beta, c, result->rows());
 		
+		//lda = num_col_A = num_row_AT = N;
+		int lda = columns();
+
+		// ldb = num_col_B = num_row_BT = N;
+		int ldb = m->columns();
+
+		// ldc = num_col_C = N;
+		int ldc = result->columns();
+
+		// m and n in the cuBLAS GEMM routine are the #rows and #cols of the result matrix C,
+
+		// k is the common dimension of A^T and B,
+
+		// k = num_col_AT = num_row_B = M;
+		int k = columns();
+
+		// n = num_col_C
+		int n = result->rows();
+
+		// m = num_row_C
+		int m = result->columns();
+		
+		CublasLibrary::cublasSgemm(CublasLibrary::CUBLAS_OP_N,
+			CublasLibrary::CUBLAS_OP_N, m, n, k, &alpha,
+			b, ldb, a, lda, &beta, c, ldc);
+		
+		/*CublasLibrary::cublasSgemm(CublasLibrary::CUBLAS_OP_T,
+			CublasLibrary::CUBLAS_OP_T,
+			result->rows(), result->columns(), columns(), &alpha, a, columns(),
+			b, m->columns(), &beta, c, result->rows());
+		*/
 		CublasLibrary::cudaMemcpy(&result->_data[0], c,
 			sizeof(float) * result->size(), CublasLibrary::cudaMemcpyDefault);
 	}
@@ -172,6 +199,8 @@ Value* CublasMatrix::multiply(const Value* matrix) const
 	CublasLibrary::cudaFree(a);
 	CublasLibrary::cudaFree(b);
 	CublasLibrary::cudaFree(c);
+	
+	//result->transposeSelf();
 	
 	return result;
 }

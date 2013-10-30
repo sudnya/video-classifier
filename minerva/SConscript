@@ -35,7 +35,7 @@ for dir in source_directories:
 		sources.extend(env.Glob(regexp))
 
 # create the library
-libminerva = env.SharedLibrary('minerva', sources)
+libminerva = env.SharedLibrary('minerva', sources, LIBS=env['EXTRA_LIBS'])
 minerva_libs = ['minerva'] + env['EXTRA_LIBS']
 
 if env['install']:
@@ -49,6 +49,8 @@ tools.append(env.Program('minerva-classifier', \
 	['minerva/tools/minerva-classifier.cpp'], LIBS=minerva_libs))
 tools.append(env.Program('test-classifier', \
 	['minerva/classifiers/test/test-classifier.cpp'], LIBS=minerva_libs))
+tools.append(env.Program('test-matrix', \
+	['minerva/matrix/test/test-matrix.cpp'], LIBS=minerva_libs))
 
 for tool in tools:
 	env.Depends(tool, libminerva)

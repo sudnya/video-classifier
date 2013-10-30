@@ -340,6 +340,16 @@ Matrix::Matrix(MatrixImplementation* i)
 
 }
 
+bool Matrix::operator==(const Matrix& m) const
+{
+	return data() == m.data();
+}
+
+bool Matrix::operator!=(const Matrix& m) const
+{
+	return data() != m.data();
+}
+
 std::string Matrix::toString(size_t maxRows, size_t maxColumns) const
 {
     std::stringstream stream;

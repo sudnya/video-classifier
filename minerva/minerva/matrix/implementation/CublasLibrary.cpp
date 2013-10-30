@@ -46,13 +46,13 @@ void CublasLibrary::cublasSgemm(
 		"n: " << n <<  ", "
 		"k: " << k <<  ", "
 
-		"alpha: " << alpha <<  ", "
+		"alpha: " << alpha <<  " (" << *alpha << "), "
 		"A: " << A <<  ", "
 		"lda: " << lda <<  ", "
 
 		"B: " << B <<  ", "
 		"ldb: " << ldb <<  ", "
-		"beta: " << beta <<  ", "
+		"beta: " << beta <<  " (" << *beta << "), "
 
 		"C: " << C <<  ", "
 		"ldc: " << ldc << ")\n";
