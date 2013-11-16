@@ -57,32 +57,32 @@ Matrix& Matrix::operator=(const Matrix& m)
 
 Matrix::iterator Matrix::begin()
 {
-	return iterator(this);
+	return _matrix->data().begin();
 }
 
 Matrix::const_iterator Matrix::begin() const
 {
-	return const_iterator(this);
+	return _matrix->data().begin();
 }
 
 Matrix::iterator Matrix::end()
 {
-	return iterator(this, size());
+	return _matrix->data().end();
 }
 
 Matrix::const_iterator Matrix::end() const
 {
-	return const_iterator(this, size());
+	return _matrix->data().end();
 }
 
 Matrix::FloatReference Matrix::operator[](size_t index)
 {
-	return FloatReference(this, index);
+	return _matrix->data()[index];
 }
 
 Matrix::ConstFloatReference Matrix::operator[](size_t index) const
 {
-	return ConstFloatReference(this, index);
+	return _matrix->data()[index];
 }
 
 Matrix::FloatReference Matrix::operator()(size_t row, size_t column)
@@ -97,20 +97,6 @@ Matrix::ConstFloatReference Matrix::operator()(size_t row, size_t column) const
 	size_t position = getPosition(row, column);
 
 	return (*this)[position];
-}
-
-void Matrix::setValue(size_t position, float value)
-{
-	assert(_matrix != nullptr);
-
-	_matrix->setValue(_getRow(position), _getColumn(position), value);
-}
-
-float Matrix::getValue(size_t position) const
-{
-	assert(_matrix != nullptr);
-
-	return _matrix->getValue(_getRow(position), _getColumn(position));
 }
 
 size_t Matrix::size() const
@@ -260,29 +246,37 @@ Matrix Matrix::appendRows(const Matrix& m) const
 
 Matrix Matrix::log() const
 {
-    Matrix result(*this);
+	assert(_matrix != nullptr);
 	
-	result.logSelf();
+	return Matrix(_matrix->log());
+}
+
+Matrix Matrix::abs() const
+{
+	assert(_matrix != nullptr);
 	
-    return result;
+	return Matrix(_matrix->abs());
 }
 
 Matrix Matrix::negate() const
 {
-    Matrix result(*this);
+	assert(_matrix != nullptr);
 	
-	result.negateSelf();
-
-    return result;
+	return Matrix(_matrix->negate());
 }
 
 Matrix Matrix::sigmoid() const
 {
-    Matrix result(*this);
+	assert(_matrix != nullptr);
 	
-	result.sigmoidSelf();
+	return Matrix(_matrix->sigmoid());
+}
 
-    return result;
+Matrix Matrix::sigmoidDerivative() const
+{
+	assert(_matrix != nullptr);
+	
+	return Matrix(_matrix->sigmoidDerivative());
 }
 
 void Matrix::negateSelf()
@@ -306,6 +300,34 @@ void Matrix::sigmoidSelf()
 	_matrix->sigmoidSelf();
 }
 
+void Matrix::sigmoidDerivativeSelf()
+{
+	assert(_matrix != nullptr);
+
+	_matrix->sigmoidDerivativeSelf();
+}
+
+void Matrix::assignUniformRandomValues(float min, float max)
+{
+	assert(_matrix != nullptr);
+
+	_matrix->assignUniformRandomValues(min, max);
+}
+
+Matrix Matrix::greaterThanOrEqual(float f) const
+{
+	assert(_matrix != nullptr);
+
+	return Matrix(_matrix->greaterThanOrEqual(f));
+}
+
+Matrix Matrix::equals(const Matrix& m) const
+{
+	assert(_matrix != nullptr);
+
+	return Matrix(_matrix->equals(m._matrix));
+}
+
 void Matrix::transposeSelf()
 {
 	assert(_matrix != nullptr);
@@ -320,18 +342,18 @@ float Matrix::reduceSum() const
 	return _matrix->reduceSum();
 }
 
-Matrix::FloatVector Matrix::data() const
+const Matrix::FloatVector& Matrix::data() const
 {
 	assert(_matrix != nullptr);
 
 	return _matrix->data();
 }
 
-void Matrix::setDataRowMajor(const FloatVector& data)
+Matrix::FloatVector& Matrix::data()
 {
 	assert(_matrix != nullptr);
 
-	return _matrix->setDataRowMajor(data);
+	return _matrix->data();
 }
 
 Matrix::Matrix(MatrixImplementation* i)
@@ -370,348 +392,6 @@ std::string Matrix::toString(size_t maxRows, size_t maxColumns) const
     stream << "]\n";
 
     return stream.str();
-}
-
-size_t Matrix::_getRow(size_t position) const
-{
-	return position / columns();
-}
-
-size_t Matrix::_getColumn(size_t position) const
-{
-	return position % columns();
-}
-
-typedef Matrix::FloatReference      FloatReference;
-typedef Matrix::ConstFloatReference ConstFloatReference;
-
-typedef Matrix::FloatPointer      FloatPointer;
-typedef Matrix::ConstFloatPointer ConstFloatPointer;
-
-typedef Matrix::iterator       iterator;
-typedef Matrix::const_iterator const_iterator;
-
-FloatPointer::FloatPointer(Matrix* matrix, size_t position)
-: _matrix(matrix), _position(position)
-{
-
-}
-	
-FloatReference FloatPointer::operator*()
-{
-	return FloatReference(_matrix, _position);
-}
-
-ConstFloatReference FloatPointer::operator*() const
-{
-	return ConstFloatReference(_matrix, _position);
-}
-
-ConstFloatPointer::ConstFloatPointer(const Matrix* matrix, size_t position)
-: _matrix(matrix), _position(position)
-{
-
-}
-
-ConstFloatPointer::ConstFloatPointer(const FloatPointer& p)
-: _matrix(p._matrix), _position(p._position)
-{
-
-}
-
-ConstFloatReference ConstFloatPointer::operator*() const
-{
-	return ConstFloatReference(_matrix, _position);
-}
-
-FloatReference::FloatReference(Matrix* matrix, size_t position)
-: _matrix(matrix), _position(position)
-{
-
-}
-
-FloatReference& FloatReference::operator=(float f)
-{
-	_matrix->setValue(_position, f);
-
-	return *this;
-}
-
-FloatReference& FloatReference::operator+=(float f)
-{
-	_matrix->setValue(_position, _matrix->getValue(_position) + f);
-
-	return *this;
-}
-
-FloatReference& FloatReference::operator-=(float f)
-{
-	_matrix->setValue(_position, _matrix->getValue(_position) - f);
-
-	return *this;
-}
-
-FloatReference::operator float() const
-{
-	return _matrix->getValue(_position);
-}
-
-FloatPointer FloatReference::operator&()
-{
-	return FloatPointer(_matrix, _position);
-}
-
-FloatPointer FloatReference::operator->()
-{
-	return FloatPointer(_matrix, _position);
-}
-
-ConstFloatReference::ConstFloatReference(const Matrix* matrix, size_t position)
-: _matrix(matrix), _position(position)
-{
-
-}
-
-ConstFloatReference::operator float() const
-{
-	return _matrix->getValue(_position);
-}
-
-ConstFloatPointer ConstFloatReference::operator&()
-{
-	return ConstFloatPointer(_matrix, _position);
-}
-
-ConstFloatPointer ConstFloatReference::operator->()
-{
-	return ConstFloatPointer(_matrix, _position);
-}
-
-iterator::iterator(Matrix* matrix)
-: _matrix(matrix), _position(0)
-{
-
-}
-
-iterator::iterator(Matrix* matrix, size_t position)
-: _matrix(matrix), _position(position)
-{
-
-}
-
-FloatReference iterator::operator*()
-{
-	return FloatReference(_matrix, _position);
-}
-
-ConstFloatReference iterator::operator*() const
-{
-	return ConstFloatReference(_matrix, _position);
-}
-
-FloatPointer iterator::operator->()
-{
-	return FloatPointer(_matrix, _position);
-}
-
-ConstFloatPointer iterator::operator->() const
-{
-	return ConstFloatPointer(_matrix, _position);
-}
-
-iterator& iterator::operator++()
-{
-	++_position;
-
-	return *this;
-}
-
-iterator iterator::operator++(int)
-{
-	iterator temp = *this;
-
-	++(*this);
-
-	return temp;
-}
-
-iterator& iterator::operator--()
-{
-	--_position;
-	
-	return *this;
-}
-
-iterator iterator::operator--(int)
-{
-	iterator temp = *this;
-
-	--(*this);
-
-	return temp;
-}
-
-iterator::difference_type iterator::operator-(const const_iterator& i) const
-{
-	return _position - i._position;
-}
-
-iterator::difference_type iterator::operator-(const Matrix::iterator& i) const
-{
-	return _position - i._position;
-}
-
-iterator::operator const_iterator() const
-{
-	return const_iterator(_matrix, _position);
-}
-
-bool iterator::operator!=(const const_iterator& i) const
-{
-	return !(*this == i);
-}
-
-bool iterator::operator==(const const_iterator& i) const
-{
-	return i._matrix == _matrix && i._position == _position;
-}
-
-bool iterator::operator<(const const_iterator& i) const
-{
-	if(_matrix < i._matrix) return true;
-	
-	if(_matrix > i._matrix) return false;
-	
-	return _position < i._position;
-}
-
-bool iterator::operator!=(const Matrix::iterator& i) const
-{
-	return !(*this == i);
-}
-
-bool iterator::operator==(const Matrix::iterator& i) const
-{
-	return i._matrix == _matrix && i._position == _position;
-}
-
-bool iterator::operator<(const Matrix::iterator& i) const
-{
-	if(_matrix < i._matrix) return true;
-	
-	if(_matrix > i._matrix) return false;
-	
-	return _position < i._position;
-}
-
-const_iterator::const_iterator(const Matrix* matrix)
-: _matrix(matrix), _position(0)
-{
-
-}
-
-const_iterator::const_iterator(const Matrix* matrix, size_t position)
-: _matrix(matrix), _position(position)
-{
-
-}
-
-const_iterator::const_iterator(const Matrix::iterator& i)
-: _matrix(i._matrix), _position(i._position)
-{
-
-}
-
-ConstFloatReference const_iterator::operator*() const
-{
-	return ConstFloatReference(_matrix, _position);
-}
-
-ConstFloatPointer const_iterator::operator->() const
-{
-	return ConstFloatPointer(_matrix, _position);
-}
-
-const_iterator& const_iterator::operator++()
-{
-	++_position;
-
-	return *this;
-}
-
-const_iterator const_iterator::operator++(int)
-{
-	const_iterator temp = *this;
-
-	++(*this);
-
-	return temp;
-}
-
-const_iterator& const_iterator::operator--()
-{
-	--_position;
-	
-	return *this;
-}
-
-const_iterator const_iterator::operator--(int)
-{
-	const_iterator temp = *this;
-
-	--(*this);
-
-	return temp;
-}
-
-const_iterator::difference_type const_iterator::operator-(
-	const const_iterator& i) const
-{
-	return _position - i._position;
-}
-
-const_iterator::difference_type const_iterator::operator-(
-    const Matrix::iterator& i) const
-{
-	return _position - i._position;
-}
-
-bool const_iterator::operator!=(const const_iterator& i) const
-{
-	return !(*this == i);
-}
-
-bool const_iterator::operator==(const const_iterator& i) const
-{
-	return i._matrix == _matrix && i._position == _position;
-}
-
-bool const_iterator::operator<(const const_iterator& i) const
-{
-	if(_matrix < i._matrix) return true;
-	
-	if(_matrix > i._matrix) return false;
-	
-	return _position < i._position;
-}
-
-bool const_iterator::operator!=(const Matrix::iterator& i) const
-{
-	return !(*this == i);
-}
-
-bool const_iterator::operator==(const Matrix::iterator& i) const
-{
-	return i._matrix == _matrix && i._position == _position;
-}
-
-bool const_iterator::operator<(const Matrix::iterator& i) const
-{
-	if(_matrix < i._matrix) return true;
-	
-	if(_matrix > i._matrix) return false;
-	
-	return _position < i._position;
 }
 
 }

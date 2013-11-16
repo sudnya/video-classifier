@@ -5,29 +5,36 @@
 
 #pragma once
 
-#include <minerva/matrix/interface/Matrix.h>
+#include <minerva/matrix/interface/BlockSparseMatrix.h>
+
 namespace minerva
 {
 namespace neuralnetwork
 {
 
+/* \brief A neural network layer.
+
+	Each layer is stored as a block sparse matrix.  Rows correspond to output neurons,
+    and columns correspond to input weights.  
+
+
+*/
 class Layer
 {
     public:
         typedef minerva::matrix::Matrix Matrix;
-        typedef std::vector<Matrix> MatrixList;
+		typedef minerva::matrix::BlockSparseMatrix BlockSparseMatrix;
         
-        typedef MatrixList::iterator       iterator;
-        typedef MatrixList::const_iterator const_iterator;
-
+        typedef BlockSparseMatrix::iterator       iterator;
+        typedef BlockSparseMatrix::const_iterator const_iterator;
 
     public:
         Layer(unsigned totalBlocks = 0, size_t blockInput = 0,
         	size_t blockOutput = 0);
 
         void initializeRandomly(float epsilon = 0.3f);
-        Matrix runInputs(const Matrix& m) const;
-        Matrix runReverse(const Matrix& m) const;
+        BlockSparseMatrix runInputs(const BlockSparseMatrix& m) const;
+        BlockSparseMatrix runReverse(const BlockSparseMatrix& m) const;
  
  	public:
  		void transpose();
@@ -35,6 +42,9 @@ class Layer
     public:
         unsigned getInputCount()  const;
         unsigned getOutputCount() const;
+
+	public:
+		BlockSparseMatrix getWeightsWithoutBias() const;
         
     public:
     	size_t totalWeights() const;
@@ -62,13 +72,17 @@ class Layer
     	void push_back(const Matrix& );
     
     public:
-        unsigned int size() const;
-        bool         empty() const; 
-       
+        size_t size() const;
+        bool   empty() const; 
+      
+	public:
+		size_t blocks() const;
+
     private:
-        std::vector<Matrix> m_sparseMatrix;
+		BlockSparseMatrix m_sparseMatrix;
 
 };
 
 }
 }
+

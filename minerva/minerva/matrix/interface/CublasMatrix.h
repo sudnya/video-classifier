@@ -41,8 +41,10 @@ public:
 	virtual Value* subtract(float f) const;
 
 	virtual Value* log() const;
+	virtual Value* abs() const;
 	virtual Value* negate() const;
 	virtual Value* sigmoid() const;
+	virtual Value* sigmoidDerivative() const;
 
 public:
 	virtual Value* slice(size_t startRow, size_t startColumn,
@@ -51,29 +53,29 @@ public:
 public:
 	virtual void negateSelf();
 	virtual void logSelf();
+	virtual void absSelf();
     virtual void sigmoidSelf();
+    virtual void sigmoidDerivativeSelf();
 
+	virtual void assignUniformRandomValues(float min, float max);
 	virtual void transposeSelf();
+
+public:
+	virtual Value* greaterThanOrEqual(float f) const;
+	virtual Value* equals(const Value* m) const;
 
 public:
     virtual float reduceSum() const;
 
 public:
-	virtual FloatVector data() const;
-	virtual void setDataRowMajor(const FloatVector& data);
-
-public:
-	virtual void  setValue(size_t row, size_t column, float value);
-	virtual float getValue(size_t row, size_t column) const;
+	virtual FloatVector& data();
+	virtual const FloatVector& data() const;
 
 public:
 	virtual Value* clone() const;
 
 public:
 	static bool isSupported();
-
-private:
-	size_t _getPosition(size_t row, size_t column) const;
 
 private:
 	FloatVector _data;

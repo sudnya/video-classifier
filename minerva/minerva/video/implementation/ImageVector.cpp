@@ -102,7 +102,7 @@ ImageVector::Matrix ImageVector::convertToStandardizedMatrix(size_t sampleCount)
 		offset += columns;
 	}
 	
-	matrix.setDataRowMajor(data);
+	matrix.data() = data;
 	
 	return matrix;
 }

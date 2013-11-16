@@ -28,7 +28,7 @@ void NeuralNetwork::initializeRandomly(float epsilon)
     }
 }
 
-void NeuralNetwork::backPropagate(const Matrix& inputMatrix, const Matrix& referenceOutput)
+void NeuralNetwork::train(const Matrix& inputMatrix, const Matrix& referenceOutput)
 {
     //create a backpropagate-data class
     //given the neural network, inputs & reference outputs 
@@ -36,7 +36,7 @@ void NeuralNetwork::backPropagate(const Matrix& inputMatrix, const Matrix& refer
        << inputMatrix.columns() << ") columns. Using reference output of (" << referenceOutput.rows() << ") rows, ("
        << referenceOutput.columns() << ") columns. \n";
 
-    BackPropData data(this, inputMatrix, referenceOutput);
+    BackPropData data(this, convertInputToBlockSparse(inputMatrix), convertOutputToBlockSparse(referenceOutput));
     //should we worry about comparing costs here?
     //data.computeCost();
     //data.computeDerivative();
@@ -62,7 +62,14 @@ NeuralNetwork::Matrix NeuralNetwork::runInputs(const Matrix& m) const
     //util::log("NeuralNetwork") << "Running forward propagation on matrix (" << m.rows()
     //        << " rows, " << m.columns() << " columns).\n";
     
-    Matrix temp = m;
+    auto temp = convertInputToBlockSparse(m);
+
+	return convertOutputToMatrix(runInputs(temp));
+}
+
+NeuralNetwork::BlockSparseMatrix NeuralNetwork::runInputs(const BlockSparseMatrix& m) const
+{
+	auto temp = m;
 
     for (auto i = m_layers.begin(); i != m_layers.end(); ++i)
     {
@@ -74,24 +81,26 @@ NeuralNetwork::Matrix NeuralNetwork::runInputs(const Matrix& m) const
 
 float NeuralNetwork::computeAccuracy(const Matrix& input, const Matrix& reference) const
 {
+	return computeAccuracy(convertInputToBlockSparse(input),
+		convertOutputToBlockSparse(reference));
+}
+
+float NeuralNetwork::computeAccuracy(const BlockSparseMatrix& input,
+	const BlockSparseMatrix& reference) const
+{
 	assert(input.rows() == reference.rows());
 	assert(reference.columns() == getOutputCount());
 
-	Matrix result = runInputs(input);
+	auto result = runInputs(input);
 
-	float matches = 0.0f;
+	float threshold = 0.5f;
 
-	for(Matrix::const_iterator referenceValue = reference.begin(), resultValue = result.begin();
-		resultValue != result.end(); ++referenceValue, ++resultValue)
-	{
-		bool referenceActivation = *referenceValue >= 0.5f;
-		bool resultActivation    = *resultValue    >= 0.5f;
+	auto resultActivations    = result.greaterThanOrEqual(threshold);
+	auto referenceActivations = result.greaterThanOrEqual(threshold);
 
-		if(referenceActivation == resultActivation)
-		{
-			matches += 1.0f;
-		}
-	}
+	auto matchingActivations = resultActivations.equals(referenceActivations);
+
+	float matches = matchingActivations.reduceSum();
 
 	return matches / result.size();
 }
@@ -213,6 +222,49 @@ void NeuralNetwork::setFlattenedWeights(const Matrix& m)
 	}
 }
 
+NeuralNetwork::Matrix NeuralNetwork::convertOutputToMatrix(const BlockSparseMatrix& blockedMatrix) const
+{
+	Matrix result;
+	
+	for(auto& matrix : blockedMatrix)
+	{
+		result.appendRows(matrix);
+	}
+	
+	return result;
+}
+
+NeuralNetwork::BlockSparseMatrix NeuralNetwork::convertInputToBlockSparse(const Matrix& m) const
+{
+	assert(m.rows() == front().getInputCount());
+	
+	BlockSparseMatrix result;
+
+	for(auto& block : front())
+	{
+		result.push_back(m.slice(result.rows(), 0, block.rows(), m.columns()));
+	}
+	
+	return result;
+}
+
+NeuralNetwork::BlockSparseMatrix NeuralNetwork::convertOutputToBlockSparse(const Matrix& m) const
+{
+	auto totalRows    = back().getOutputCount() - back().blocks();
+	auto rowsPerBlock = totalRows / back().blocks();
+
+	assert(m.rows() == totalRows);
+	
+	BlockSparseMatrix result;
+
+	for(size_t i = 0; i < back().blocks(); ++i)
+	{
+		result.push_back(m.slice(result.rows(), 0, rowsPerBlock, m.columns()));
+	}
+	
+	return result;
+}
+
 NeuralNetwork::iterator NeuralNetwork::begin()
 {
 	return m_layers.begin();
@@ -274,5 +326,6 @@ bool NeuralNetwork::empty() const
 }
 
 }
+
 }
 

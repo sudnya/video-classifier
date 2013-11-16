@@ -23,7 +23,7 @@ public:
 	typedef MatrixImplementation Value;
 
 public:
-	MatrixImplementation(size_t rows, size_t columns);
+	MatrixImplementation(size_t rows, size_t columns, const FloatVector& v);
 	virtual ~MatrixImplementation();
 
 public:
@@ -32,6 +32,8 @@ public:
 
     inline size_t columns() const;
 	inline size_t rows()	const;
+	
+	inline size_t getPosition(size_t row, size_t columns) const;
 	
 public:
 	virtual void resize(size_t rows, size_t columns) = 0;
@@ -53,8 +55,10 @@ public:
 	virtual Value* subtract(float f) const = 0;
 
 	virtual Value* log() const = 0;
+	virtual Value* abs() const = 0;
 	virtual Value* negate() const = 0;
 	virtual Value* sigmoid() const = 0;
+	virtual Value* sigmoidDerivative() const = 0;
 
 public:
 	virtual Value* slice(size_t startRow, size_t startColumn,
@@ -63,20 +67,23 @@ public:
 public:
 	virtual void negateSelf() = 0;
 	virtual void logSelf() = 0;
+	virtual void absSelf() = 0;
     virtual void sigmoidSelf() = 0;
+    virtual void sigmoidDerivativeSelf() = 0;
 
+	virtual void assignUniformRandomValues(float min, float max) = 0;
 	virtual void transposeSelf() = 0;
+
+public:
+	virtual Value* greaterThanOrEqual(float f) const = 0;
+	virtual Value* equals(const Value* m) const = 0;
 
 public:
     virtual float reduceSum() const = 0;
 
 public:
-	virtual FloatVector data() const = 0;
-	virtual void setDataRowMajor(const FloatVector& data) = 0;
-	
-public:
-	virtual void  setValue(size_t row, size_t column, float value) = 0;
-	virtual float getValue(size_t row, size_t column) const = 0;
+	virtual FloatVector& data() = 0;
+	virtual const FloatVector& data() const = 0;
 
 public:
 	virtual Value* clone() const = 0;
@@ -86,6 +93,8 @@ public:
 		size_t columns, const FloatVector& f);
 
 protected:
+	FloatVector _data;
+
 	size_t _rows;
 	size_t _columns;
 
@@ -109,6 +118,11 @@ inline size_t MatrixImplementation::columns() const
 inline size_t MatrixImplementation::rows()	const
 {
 	return _rows;
+}
+
+inline size_t MatrixImplementation::getPosition(size_t row, size_t column) const
+{
+	return row * columns() + column;
 }
 
 }

@@ -28,12 +28,13 @@ public:
 	typedef std::vector<float> FloatVector;
 
 public:
-	class FloatReference;
-	class ConstFloatReference;
-	class FloatPointer;
-	class ConstFloatPointer;
-	class iterator;
-	class const_iterator;
+	typedef       float& FloatReference;
+	typedef const float& ConstFloatReference;
+	typedef       float* FloatPointer;
+	typedef const float* ConstFloatPointer;
+
+	typedef FloatVector::iterator       iterator;
+	typedef FloatVector::const_iterator const_iterator;
 
 public:
 	explicit Matrix(size_t rows = 0, size_t colums = 0,
@@ -57,9 +58,6 @@ public:
 
 	     FloatReference operator()(size_t row, size_t column);
 	ConstFloatReference operator()(size_t row, size_t column) const;
-
-	void  setValue(size_t position, float value);
-	float getValue(size_t position) const;
 
 public:
 	Matrix getColumn(size_t number) const;
@@ -91,8 +89,10 @@ public:
 	Matrix subtract(float f) const;
 
 	Matrix log() const;
+	Matrix abs() const;
 	Matrix negate() const;
 	Matrix sigmoid() const;
+	Matrix sigmoidDerivative() const;
 
 public:
 	Matrix slice(size_t startRow, size_t startColumn,
@@ -103,15 +103,22 @@ public:
 	void negateSelf();
 	void logSelf();
     void sigmoidSelf();
+    void sigmoidDerivativeSelf();
 
 	void transposeSelf();
+
+	void assignUniformRandomValues(float min, float max);
+
+public:
+	Matrix greaterThanOrEqual(float f) const;
+	Matrix equals(const Matrix& m) const;
 
 public:
     float reduceSum() const;
 
 public:
-	FloatVector data() const;
-	void setDataRowMajor(const FloatVector& data);
+	const FloatVector& data() const;
+	FloatVector& data();
 
 public:
 	bool operator==(const Matrix& m) const;
@@ -120,182 +127,11 @@ public:
 public:
     std::string toString(size_t maxRows = 10, size_t maxColumns = 10) const;
 
-public:
-
-	class FloatPointer
-	{
-	public:
-		FloatPointer(Matrix* matrix, size_t position);
-	
-	public:
-		     FloatReference operator*();
-		ConstFloatReference operator*() const;
-
-	private:
-		Matrix* _matrix;
-		size_t  _position;
-
-	public:
-		friend class Matrix::ConstFloatPointer;
-
-	};
-
-	class ConstFloatPointer
-	{
-	public:
-		ConstFloatPointer(const Matrix* matrix, size_t position);
-		ConstFloatPointer(const FloatPointer& p);	
-
-	public:
-		ConstFloatReference operator*() const;
-
-	private:
-		const Matrix* _matrix;
-		size_t        _position;
-	
-	};
-
-	class FloatReference
-	{
-	public:
-		FloatReference(Matrix* matrix, size_t position);
-
-	public:
-		FloatReference& operator=(float f);
-		FloatReference& operator+=(float f);
-		FloatReference& operator-=(float f);
-
-	public:
-		operator float() const;
-		
-	public:
-		FloatPointer operator&();
-		FloatPointer operator->();
-
-	private:
-		Matrix* _matrix;
-		size_t  _position;
-
-	};
-
-	class ConstFloatReference
-	{
-	public:
-		ConstFloatReference(const Matrix* matrix, size_t position);
-
-	public:
-		ConstFloatReference& operator=(const ConstFloatReference& ) = delete;
-		
-	public:
-		operator float() const;
-		
-	public:
-		ConstFloatPointer operator&();
-		ConstFloatPointer operator->();
-
-	private:
-		const Matrix* _matrix;
-		size_t        _position;
-
-	};
-
-	class const_iterator;
-
-	class iterator: public std::iterator<std::random_access_iterator_tag, float>
-	{	
-	public:
-		explicit iterator(Matrix*);
-		iterator(Matrix* , size_t);
-
-	public:
-		FloatReference operator*();
-		ConstFloatReference operator*() const;
-
-		FloatPointer operator->();
-		ConstFloatPointer operator->() const;
-
-	public:
-		iterator& operator++();
-		iterator operator++(int);
-
-		iterator& operator--();
-		iterator operator--(int);
-	
-	public:
-		difference_type operator-(const const_iterator&) const;
-		difference_type operator-(const Matrix::iterator&) const;
-
-	public:
-		operator const_iterator() const;
-
-	public:
-		bool operator!=(const const_iterator& ) const;
-		bool operator==(const const_iterator& ) const;
-		bool operator<(const const_iterator& ) const;
-		
-        bool operator!=(const Matrix::iterator& ) const;
-		bool operator==(const Matrix::iterator& ) const;
-		bool operator<(const Matrix::iterator& ) const;
-
-	private:
-		Matrix* _matrix;
-		size_t  _position;
-		
-	private:
-		friend class Matrix::const_iterator;
-	};
-
-	class const_iterator:
-		public std::iterator<std::random_access_iterator_tag, const float>
-	{
-	public:
-		explicit const_iterator(const Matrix*);
-		const_iterator(const Matrix* , size_t);
-		explicit const_iterator(const Matrix::iterator&);
-
-	public:
-		ConstFloatReference operator*() const;
-		ConstFloatPointer operator->() const;
-
-	public:
-		const_iterator& operator++();
-		const_iterator operator++(int);
-
-		const_iterator& operator--();
-		const_iterator operator--(int);
-	
-	public:
-		difference_type operator-(const const_iterator&) const;
-		difference_type operator-(const Matrix::iterator&) const;
-	
-	public:
-		bool operator!=(const const_iterator& ) const;
-		bool operator==(const const_iterator& ) const;
-		bool operator<(const const_iterator& ) const;
-		
-        bool operator!=(const Matrix::iterator& ) const;
-		bool operator==(const Matrix::iterator& ) const;
-		bool operator<(const Matrix::iterator& ) const;
-
-	private:
-		const Matrix* _matrix;
-		size_t        _position;
-		
-	private:
-		friend class Matrix::iterator;
-	};
-
-private:
-	size_t _getRow(size_t position) const;
-	size_t _getColumn(size_t position) const;
-
 private:
 	Matrix(MatrixImplementation* implementation);
 
 private:
 	MatrixImplementation* _matrix;
-
-
 
 };
 

@@ -53,7 +53,7 @@ void UnsupervisedLearner::learn(const ImageVector& images)
 	    // mirror neural network
 		incrementalNetwork.mirror();
 		
-		incrementalNetwork.backPropagate(matrix, reference);
+		incrementalNetwork.train(matrix, reference);
     
     	incrementalNetwork.cutOffSecondHalf();
     }

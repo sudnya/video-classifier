@@ -133,7 +133,7 @@ void trainNeuralNetwork(neuralnetwork::NeuralNetwork& ann, unsigned trainingIter
         util::log("TestClassifier") << "  Output entropy is " << computeEntropy(threshold(ann.runInputs(input))) << "\n";
         util::log("TestClassifier") << " Reference is: " << referenceMatrix.toString();
 
-        ann.backPropagate(input, referenceMatrix);
+        ann.train(input, referenceMatrix);
         util::log("TestClassifier") << " After BackProp, output is:    " << threshold(ann.runInputs(input)).toString();
     }    
 }

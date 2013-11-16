@@ -20,10 +20,11 @@ class BackPropData
     public:
         typedef minerva::neuralnetwork::NeuralNetwork NeuralNetwork;
         typedef minerva::matrix::Matrix Matrix;
+        typedef minerva::matrix::BlockSparseMatrix BlockSparseMatrix;
         typedef minerva::matrix::Matrix::FloatVector FloatVector;
-        typedef std::vector<minerva::matrix::Matrix> MatrixVector;
+        typedef std::vector<BlockSparseMatrix> MatrixVector;
     public:
-        BackPropData(NeuralNetwork* ann, const Matrix& input, const Matrix& ref);
+        BackPropData(NeuralNetwork* ann, const BlockSparseMatrix& input, const BlockSparseMatrix& ref);
         	
     public:
         MatrixVector getCostDerivative() const;
@@ -51,8 +52,8 @@ class BackPropData
 
     private:
         NeuralNetwork* m_neuralNetworkPtr;
-        Matrix m_input;
-        Matrix m_referenceOutput;
+        BlockSparseMatrix m_input;
+        BlockSparseMatrix m_referenceOutput;
 
 	private:
 		float m_lambda; // cost function regularization

@@ -11,6 +11,7 @@
 
 // Standard Library Includes
 #include <cmath>
+#include <random>
 
 namespace minerva
 {
@@ -21,7 +22,7 @@ namespace matrix
 typedef NaiveMatrix::Value Value;
 
 NaiveMatrix::NaiveMatrix(size_t r, size_t c, const FloatVector& d)
-: MatrixImplementation(r, c), _data(d)
+: MatrixImplementation(r, c, d)
 {
     resize(rows(), columns());
 }
@@ -48,18 +49,18 @@ Value* NaiveMatrix::appendColumns(const Value* matrix) const
         resultRows = m->rows();
     }
 
-	NaiveMatrix* result = new NaiveMatrix(resultRows, columns() + m->columns());
+	auto result = new NaiveMatrix(resultRows, columns() + m->columns());
 	
 	// Copy rows from the original and appended matrices
 	for(size_t row = 0; row != resultRows; ++row)
 	{
-		size_t originalPosition = _getPosition(row, 0);
-		size_t newPosition = result->_getPosition(row, 0);
+		size_t originalPosition = getPosition(row, 0);
+		size_t newPosition = result->getPosition(row, 0);
 	
 		std::memcpy(&result->_data[newPosition], &_data[originalPosition],
 			columns() * sizeof(float));
 
-		size_t appendedPosition = m->_getPosition(row, 0);
+		size_t appendedPosition = m->getPosition(row, 0);
 		newPosition += columns();
 		
 		std::memcpy(&(*result)._data[newPosition], &m->_data[appendedPosition],
@@ -102,7 +103,8 @@ Value* NaiveMatrix::transpose() const
 	{
 		for(size_t column = 0; column != columns(); ++column)
 		{
-			result->setValue(column, row, getValue(row, column));
+			result->data()[result->getPosition(column, row)] =
+				data()[getPosition(row, column)];
 		}
 	}
 	
@@ -117,19 +119,6 @@ Value* NaiveMatrix::multiply(const Value* matrix) const
 	assert(columns() == m->rows());
 
 	NaiveMatrix* result = new NaiveMatrix(rows(), m->columns());
-	/*
-	const size_t blockSize = 32;
-	
-	size_t blocksX = rows()    / blockSize;
-	size_t blocksY = columns() / blockSize;
-	
-	for(size_t blockX = 0; blockX != blocksX; ++blockX)
-	{
-		for(size_t blockY = 0; blockY != blocksY; ++blockY)
-		{
-			
-		}
-	}*/
 	
 	// TODO: much faster
 	for(size_t row = 0; row != result->rows(); ++row)
@@ -140,10 +129,11 @@ Value* NaiveMatrix::multiply(const Value* matrix) const
 			
 			for(size_t inner = 0; inner != columns(); ++inner)
 			{
-				value += getValue(row, inner) * m->getValue(inner, column);
+				value += data()[getPosition(row, inner)] *
+					m->data()[m->getPosition(inner, column)];
 			}
 
-            result->setValue(row, column, value);
+            result->data()[result->getPosition(row, column)] = value;
 		}
 	}
 	
@@ -260,14 +250,11 @@ Value* NaiveMatrix::slice(size_t startRow, size_t startColumn,
 	assert(startRow    + rows    <= this->rows()   );
 	assert(startColumn + columns <= this->columns());
 	
-	// TODO: faster
 	for(size_t row = 0; row != rows; ++row)
 	{
-		for(size_t column = 0; column != columns; ++column)
-		{
-			result->setValue(row, column,
-				getValue(row + startRow, column + startColumn));
-		}
+		std::memcpy(&result->data()[result->getPosition(row, 0)],
+			&data()[getPosition(row + startRow, startColumn)],
+			columns * sizeof(float));
 	}
 	
 	return result;
@@ -278,6 +265,15 @@ Value* NaiveMatrix::log() const
     NaiveMatrix* result = new NaiveMatrix(*this);
 	
 	result->logSelf();
+
+    return result;
+}
+
+Value* NaiveMatrix::abs() const
+{
+    NaiveMatrix* result = new NaiveMatrix(*this);
+	
+	result->absSelf();
 
     return result;
 }
@@ -300,6 +296,15 @@ Value* NaiveMatrix::sigmoid() const
     return result;
 }
 
+Value* NaiveMatrix::sigmoidDerivative() const
+{
+    NaiveMatrix* result = new NaiveMatrix(*this);
+	
+	result->sigmoidDerivativeSelf();
+
+    return result;
+}
+
 void NaiveMatrix::negateSelf()
 {
 	for(auto& f : _data)
@@ -316,6 +321,14 @@ void NaiveMatrix::logSelf()
 	}
 }
 
+void NaiveMatrix::absSelf()
+{
+	for(auto& f : _data)
+	{
+		f = std::abs(f);
+	}
+}
+
 static float sigmoid(float v)
 {
     if(v < -50.0f) return 0.0f;
@@ -324,11 +337,41 @@ static float sigmoid(float v)
     return 1.0f / (1.0f + std::exp(-v)); 
 }
 
+static float sigmoidDerivative(float v)
+{
+    // f(x) = 1/(1+e^-x)
+    // dy/dx = f(x)' = f(x) * (1 - f(x))
+	float element = sigmoid(v) * (1.0f - sigmoid(v));
+	
+	element = element * (1.0f - element);
+	
+	return element;
+}
+
 void NaiveMatrix::sigmoidSelf()
 {
 	for(auto& f : _data)
 	{
 		f = matrix::sigmoid(f);
+	}
+}
+
+void NaiveMatrix::sigmoidDerivativeSelf()
+{
+	for(auto& f : _data)
+	{
+		f = matrix::sigmoidDerivative(f);
+	}
+}
+
+void NaiveMatrix::assignUniformRandomValues(float min, float max)
+{
+	std::default_random_engine generator(std::time(0));
+	std::uniform_real_distribution<float> distribution(min, max);
+
+	for(auto& f : _data)
+	{
+		f = distribution(generator);
 	}
 }
 
@@ -345,6 +388,36 @@ void NaiveMatrix::transposeSelf()
 	delete naiveMatrix;
 }
 
+Value* NaiveMatrix::greaterThanOrEqual(float f) const
+{
+	NaiveMatrix* result = new NaiveMatrix(*this);
+	
+	// TODO: faster
+	for(auto& value : result->_data)
+	{
+		value = (value >= f) ? 1.0f : 0.0f;
+	}
+	
+	return result;
+}
+
+Value* NaiveMatrix::equals(const Value* m) const
+{
+	assert(m->size() == size());
+
+	NaiveMatrix* result = new NaiveMatrix(*this);
+	
+	// TODO: faster
+	auto value = m->data().begin();
+	for(auto resultValue = result->data().begin(); resultValue != result->data().end();
+		++resultValue, ++value)
+	{
+		*resultValue = (*resultValue == *value) ? 1.0f : 0.0f;
+	}
+	
+	return result;
+}
+
 float NaiveMatrix::reduceSum() const
 {
     float sum = 0.0f;
@@ -357,46 +430,19 @@ float NaiveMatrix::reduceSum() const
     return sum;
 }
 
-NaiveMatrix::FloatVector NaiveMatrix::data() const
+const NaiveMatrix::FloatVector& NaiveMatrix::data() const
 {
 	return _data;
 }
 
-void NaiveMatrix::setDataRowMajor(const FloatVector& data)
+NaiveMatrix::FloatVector& NaiveMatrix::data()
 {
-	assert(data.size() == size());
-	
-	_data = data;
-}
-
-void NaiveMatrix::setValue(size_t row, size_t column, float value)
-{
-	assert(row < rows());
-	assert(column < columns());
-
-	size_t position = _getPosition(row, column);
-	
-	_data[position] = value;
-}
-
-float NaiveMatrix::getValue(size_t row, size_t column) const
-{
-	assert(row < rows());
-	assert(column < columns());
-
-	size_t position = _getPosition(row, column);
-	
-	return _data[position];
+	return _data;
 }
 
 Value* NaiveMatrix::clone() const
 {
 	return new NaiveMatrix(*this);
-}
-
-size_t NaiveMatrix::_getPosition(size_t row, size_t column) const
-{
-	return row * columns() + column;
 }
 
 }

@@ -21,12 +21,12 @@ class NeuralNetwork
 {
     public:
         typedef minerva::matrix::Matrix Matrix;
+        typedef minerva::matrix::BlockSparseMatrix BlockSparseMatrix;
         typedef minerva::neuralnetwork::Layer Layer;
 
         typedef std::map<unsigned, std::string> NeuronToLabelMap;
         
         typedef std::vector<Layer> LayerVector;
-        typedef std::vector<Matrix> MatrixList;
 
         typedef LayerVector::iterator       iterator;
         typedef LayerVector::const_iterator const_iterator;
@@ -37,12 +37,16 @@ class NeuralNetwork
         }
     
         void initializeRandomly(float epsilon = 0.3f);
-        void backPropagate(const Matrix& input, const Matrix& reference);
         
+		void train(const Matrix& input, const Matrix& reference);
+		void train(const BlockSparseMatrix& input, const BlockSparseMatrix& reference);        
+
         Matrix runInputs(const Matrix& m) const;
+		BlockSparseMatrix runInputs(const BlockSparseMatrix& m) const;
 
 	public:
 		float computeAccuracy(const Matrix& input, const Matrix& reference) const;
+		float computeAccuracy(const BlockSparseMatrix& input, const BlockSparseMatrix& reference) const;
         
     public:
         std::string getLabelForOutputNeuron(unsigned int idx) const;
@@ -62,6 +66,11 @@ class NeuralNetwork
 	public:
 		Matrix getFlattenedWeights() const;
 		void setFlattenedWeights(const Matrix& m);
+
+	public:
+		Matrix convertOutputToMatrix(const BlockSparseMatrix& m) const;
+		BlockSparseMatrix convertInputToBlockSparse(const Matrix& m) const;
+		BlockSparseMatrix convertOutputToBlockSparse(const Matrix& m) const;
 
     public:
         void addLayer(const Layer&);
@@ -101,6 +110,7 @@ class NeuralNetwork
         NeuronToLabelMap m_labels;
 
 };
+
 }//end neural network
 }//end minerva
 

@@ -5,6 +5,8 @@
 
 #include <minerva/neuralnetwork/interface/Layer.h>
 
+#include <minerva/matrix/interface/Matrix.h>
+
 #include <minerva/util/interface/debug.h>
 #include <minerva/util/interface/Knobs.h>
 
@@ -20,12 +22,7 @@ typedef minerva::matrix::Matrix::FloatVector FloatVector;
 
 Layer::Layer(unsigned totalBlocks, size_t blockInput, size_t blockOutput)
 {
-    m_sparseMatrix.resize(totalBlocks);
-    for (auto i = m_sparseMatrix.begin(); i != m_sparseMatrix.end(); ++i)
-    {
-		// The +1 is for the bias layer
-        (*i).resize(blockInput + 1, blockOutput);
-    }
+    m_sparseMatrix.resize(totalBlocks, blockInput + 1, blockOutput);
 }
 
 void Layer::initializeRandomly(float e)
@@ -33,91 +30,46 @@ void Layer::initializeRandomly(float e)
 	float epsilon = util::KnobDatabase::getKnobValue("Layer::RandomInitializationEpsilon", e);
 
 	epsilon = (e / std::sqrt(getInputCount() + 1));
-
-    std::default_random_engine generator(std::time(0));
-    std::uniform_real_distribution<float> distribution(-epsilon, epsilon);
-    
-    for (auto i = begin(); i != end(); ++i)
-    {
-        for (auto j = i->begin(); j != i->end(); ++j)
-        {
-            float randomNumber = distribution(generator);
-            *j = randomNumber;
-        }
-    }
+	
+	m_sparseMatrix.assignUniformRandomValues(-epsilon, epsilon);
 }
 
-Layer::Matrix Layer::runInputs(const Matrix& m) const
+Layer::BlockSparseMatrix Layer::runInputs(const BlockSparseMatrix& m) const
 {
     util::log("Layer") << " Running forward propagation on matrix (" << m.rows()
             << " rows, " << m.columns() << " columns).\n";
+	
+	auto output = m_sparseMatrix.multiply(m).sigmoid();
+    util::log("Layer") << "  output: " << output.toString() << "\n";
     
-    unsigned int inputPixPos = 0;
-    Matrix finalOutput;
+    util::log("Layer") << "  layer output is a matrix (" << output.rows()
+            << " rows, " << output.columns() << " columns).\n";
     
-    // sparse multiply
-    // slice input Matrix into chunks multipliable to matrix blocks
-    for (auto i = m_sparseMatrix.begin(); i != m_sparseMatrix.end(); ++i)
-    {
-    	// Extract the input
-        Matrix temp = m.slice(inputPixPos, 0, m.rows(), (*i).rows() - 1);
-
-		// add the bias
-		temp = temp.appendColumns(Matrix(temp.rows(), 1,
-			FloatVector(temp.columns(), 1.0f)));
-
-		// The -1 corrects for the bias, which does not exist in the input
-        inputPixPos += (*i).rows() - 1;
-
-        Matrix output = temp.multiply((*i)).sigmoid();
-        util::log("Layer") << "  output: " << output.toString() << "\n";
-       
-        finalOutput = finalOutput.appendColumns(output);
-    }
-    
-    util::log("Layer") << "  layer output is a matrix (" << finalOutput.rows()
-            << " rows, " << finalOutput.columns() << " columns).\n";
-    
-    return finalOutput;
+    return output;
 }
 
-Layer::Matrix Layer::runReverse(const Matrix& m) const
+Layer::BlockSparseMatrix Layer::runReverse(const BlockSparseMatrix& m) const
 {
     util::log("Layer") << " Running reverse propagation on matrix (" << m.rows()
             << " rows, " << m.columns() << " columns).\n";
-    
-    unsigned int inputPixPos = 0;
-    Matrix finalOutput;
-    // sparse multiply
-    // slice input Matrix into chunks multipliable to matrix blocks
-    for (auto i = m_sparseMatrix.begin(); i != m_sparseMatrix.end(); ++i)
-    {
-    	auto sparseMatrixT = i->transpose();
-    
-        Matrix temp = m.slice(inputPixPos, 0, m.rows(), sparseMatrixT.rows());
-        inputPixPos += sparseMatrixT.rows();
-        Matrix output = temp.multiply(sparseMatrixT);
-        
-        // drop the final row corresponding to the bias
-        output = output.slice(0, 0, output.rows(), output.columns() - 1);
-        
-        util::log("Layer") << "  output: " << output.toString() << "\n";
-        finalOutput = finalOutput.appendColumns(output);
-    }
-    
-    util::log("Layer") << "  layer output is a matrix (" << finalOutput.rows()
-            << " rows, " << finalOutput.columns() << " columns).\n";
-    
-    return finalOutput;
+   
+	auto result = m.multiply(m_sparseMatrix.transpose());
+
+    // drop the final row from each slice corresponding to the bias
+	for(auto& block : result)
+	{	
+		block = block.slice(0, 0, block.rows(), block.columns() - 1); 
+	}
+
+    util::log("Layer") << "  layer output is a matrix (" << result.rows()
+            << " rows, " << result.columns() << " columns).\n";
+
+    return result;
 }
 
 void Layer::transpose()
 {
-	for(auto& matrix : *this)
-	{
-		matrix.transposeSelf();
-		matrix.resize(matrix.rows() + 1, matrix.columns() - 1);
-	}
+	m_sparseMatrix.transposeSelf();
 }
 
 unsigned Layer::getInputCount() const
@@ -125,41 +77,29 @@ unsigned Layer::getInputCount() const
     if(empty())
         return 0;
 
-    unsigned count = 0;
-    
-    for(auto& matrix : *this)
-    {
-        count += matrix.rows();
-    }
-
-    return count - 1;
+	return m_sparseMatrix.rows() - 1;
 }
 
 unsigned Layer::getOutputCount() const
 {
-    if(empty())
-        return 0;
+	return m_sparseMatrix.columns();
+}
 
-    unsigned count = 0;
-    
-    for(auto& matrix : *this)
-    {
-        count += matrix.columns();
-    }
+Layer::BlockSparseMatrix Layer::getWeightsWithoutBias() const
+{
+	BlockSparseMatrix result;
 
-    return count;
+	for(auto& matrix : *this)
+	{
+		result.push_back(matrix.slice(0, 0, matrix.rows(), matrix.columns() - 1));
+	}
+	
+	return result;
 }
 
 size_t Layer::totalWeights() const
 {
-	size_t weights = 0;
-
-	for(auto& matrix : *this)
-	{
-		weights += matrix.size();
-	}
-	
-	return weights - back().columns();
+	return m_sparseMatrix.size() - m_sparseMatrix.columns();
 }
 
 Layer::Matrix Layer::getFlattenedWeights() const
@@ -194,14 +134,14 @@ void Layer::setFlattenedWeights(const Matrix& m)
 		m.slice(0, 0, 1, matrix->size() - matrix->columns()).appendColumns(
 		matrix->slice(0, 0, 1, matrix->columns()));
 	
-	matrix->setDataRowMajor(updatedWeights.data());
+	matrix->data() = updatedWeights.data();
 	
 	position += matrix->size() - matrix->columns();
 	
 	for(++matrix; matrix != end(); ++matrix)
 	{
-		matrix->setDataRowMajor(m.slice(0, position, 1,
-			position + matrix->size()).data());
+		matrix->data() = m.slice(0, position, 1,
+			position + matrix->size()).data();
 	
 		position += matrix->size();
 	}
@@ -252,9 +192,14 @@ void Layer::push_back(const Matrix& m)
 	m_sparseMatrix.push_back(m);
 }
 
-unsigned int Layer::size() const
+size_t Layer::size() const
 {
 	return m_sparseMatrix.size();
+}
+
+size_t Layer::blocks() const
+{
+	return m_sparseMatrix.blocks();
 }
 
 bool Layer::empty() const

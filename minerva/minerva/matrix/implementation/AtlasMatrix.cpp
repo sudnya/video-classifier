@@ -12,6 +12,8 @@
 // Standard Library Includes
 #include <cassert>
 #include <cmath>
+#include <random>
+#include <ctime>
 
 namespace minerva
 {
@@ -22,7 +24,7 @@ namespace matrix
 typedef MatrixImplementation Value;
 
 AtlasMatrix::AtlasMatrix(size_t r, size_t c, const FloatVector& data)
-: MatrixImplementation(r, c), _data(data)
+: MatrixImplementation(r, c, data)
 {
 	resize(rows(), columns());
 }
@@ -49,18 +51,19 @@ Value* AtlasMatrix::appendColumns(const Value* matrix) const
         resultRows = m->rows();
     }
 
-	AtlasMatrix* result = new AtlasMatrix(resultRows, columns() + m->columns());
+	AtlasMatrix* result = new AtlasMatrix(resultRows,
+		columns() + m->columns());
 	
 	// Copy rows from the original and appended matrices
 	for(size_t row = 0; row != resultRows; ++row)
 	{
-		size_t originalPosition = _getPosition(row, 0);
-		size_t newPosition = result->_getPosition(row, 0);
+		size_t originalPosition = getPosition(row, 0);
+		size_t newPosition = result->getPosition(row, 0);
 	
 		std::memcpy(&result->_data[newPosition], &_data[originalPosition],
 			columns() * sizeof(float));
 
-		size_t appendedPosition = m->_getPosition(row, 0);
+		size_t appendedPosition = m->getPosition(row, 0);
 		newPosition += columns();
 		
 		std::memcpy(&(*result)._data[newPosition], &m->_data[appendedPosition],
@@ -113,8 +116,8 @@ Value* AtlasMatrix::transpose() const
 				for(size_t blockColumn = column;
 					blockColumn < columnLimit; ++blockColumn)
 				{
-					result->_data[result->_getPosition(blockColumn, blockRow)] =
-						_data[_getPosition(blockRow, blockColumn)];
+					result->_data[result->getPosition(blockColumn, blockRow)] =
+						_data[getPosition(blockRow, blockColumn)];
 				}
 			}
 		}
@@ -249,14 +252,11 @@ Value* AtlasMatrix::slice(size_t startRow, size_t startColumn,
 	assert(startRow    + rows    <= this->rows()   );
 	assert(startColumn + columns <= this->columns());
 	
-	// TODO: faster
 	for(size_t row = 0; row != rows; ++row)
 	{
-		for(size_t column = 0; column != columns; ++column)
-		{
-			result->setValue(row, column,
-				getValue(row + startRow, column + startColumn));
-		}
+		std::memcpy(&result->data()[result->getPosition(row, 0)],
+			&data()[getPosition(row + startRow, startColumn)],
+			columns * sizeof(float));
 	}
 	
 	return result;
@@ -267,6 +267,15 @@ Value* AtlasMatrix::log() const
     AtlasMatrix* result = new AtlasMatrix(*this);
 	
 	result->logSelf();
+
+    return result;
+}
+
+Value* AtlasMatrix::abs() const
+{
+    AtlasMatrix* result = new AtlasMatrix(*this);
+	
+	result->absSelf();
 
     return result;
 }
@@ -289,6 +298,15 @@ Value* AtlasMatrix::sigmoid() const
     return result;
 }
 
+Value* AtlasMatrix::sigmoidDerivative() const
+{
+    AtlasMatrix* result = new AtlasMatrix(*this);
+	
+	result->sigmoidDerivativeSelf();
+
+    return result;
+}
+
 void AtlasMatrix::negateSelf()
 {
 	for(auto& f : _data)
@@ -305,6 +323,14 @@ void AtlasMatrix::logSelf()
 	}
 }
 
+void AtlasMatrix::absSelf()
+{
+	for(auto& f : _data)
+	{
+		f = std::abs(f);
+	}
+}
+
 static float sigmoid(float v)
 {
     if(v < -50.0f) return 0.0f;
@@ -313,12 +339,72 @@ static float sigmoid(float v)
     return 1.0f / (1.0f + std::exp(-v)); 
 }
 
+static float sigmoidDerivative(float v)
+{
+    // f(x) = 1/(1+e^-x)
+    // dy/dx = f(x)' = f(x) * (1 - f(x))
+	float element = sigmoid(v) * (1.0f - sigmoid(v));
+	
+	element = element * (1.0f - element);
+	
+	return element;
+}
+
 void AtlasMatrix::sigmoidSelf()
 {
 	for(auto& f : _data)
 	{
 		f = matrix::sigmoid(f);
 	}
+}
+
+void AtlasMatrix::sigmoidDerivativeSelf()
+{
+	for(auto& f : _data)
+	{
+		f = matrix::sigmoidDerivative(f);
+	}
+}
+
+void AtlasMatrix::assignUniformRandomValues(float min, float max)
+{
+	std::default_random_engine generator(std::time(0));
+	std::uniform_real_distribution<float> distribution(min, max);
+
+	for(auto& f : _data)
+	{
+		f = distribution(generator);
+	}
+}
+
+Value* AtlasMatrix::greaterThanOrEqual(float f) const
+{
+	AtlasMatrix* result = new AtlasMatrix(*this);
+	
+	// TODO: faster
+	for(auto& value : result->_data)
+	{
+		value = (value >= f) ? 1.0f : 0.0f;
+	}
+	
+	return result;
+}
+
+Value* AtlasMatrix::equals(const Value* m) const
+{
+	assert(m->size() == size());
+
+	AtlasMatrix* result = new AtlasMatrix(*this);
+	
+	// TODO: faster
+	auto value = m->data().begin();
+	for(auto resultValue = result->data().begin(); resultValue != result->data().end();
+		++resultValue, ++value)
+	{
+		*resultValue = (*resultValue == *value) ? 1.0f : 0.0f;
+	}
+	
+	return result;
 }
 
 void AtlasMatrix::transposeSelf()
@@ -346,36 +432,14 @@ float AtlasMatrix::reduceSum() const
     return sum;
 }
 
-AtlasMatrix::FloatVector AtlasMatrix::data() const
+const AtlasMatrix::FloatVector& AtlasMatrix::data() const
 {
 	return _data;
 }
 
-void AtlasMatrix::setDataRowMajor(const FloatVector& data)
+AtlasMatrix::FloatVector& AtlasMatrix::data()
 {
-	assert(data.size() == size());
-	
-	_data = data;
-}
-
-void AtlasMatrix::setValue(size_t row, size_t column, float value)
-{
-	assert(row < rows());
-	assert(column < columns());
-
-	size_t position = _getPosition(row, column);
-	
-	_data[position] = value;
-}
-
-float AtlasMatrix::getValue(size_t row, size_t column) const
-{
-	assert(row < rows());
-	assert(column < columns());
-
-	size_t position = _getPosition(row, column);
-	
-	return _data[position];
+	return _data;
 }
 
 Value* AtlasMatrix::clone() const

@@ -48,7 +48,7 @@ static void copyData(double* data, const Matrix& matrix)
 
 static void copyData(Matrix& matrix, const double* data)
 {
-	matrix.setDataRowMajor(FloatVector(data, matrix.size() + data));
+	matrix.data() = FloatVector(data, matrix.size() + data);
 }
 
 static double lbfgsCallback(void* instance, const double* x, double* g,

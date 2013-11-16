@@ -18,8 +18,9 @@ namespace matrix
 {
 
 
-MatrixImplementation::MatrixImplementation(size_t rows, size_t columns)
-: _rows(rows), _columns(columns)
+MatrixImplementation::MatrixImplementation(
+	size_t rows, size_t columns, const FloatVector& d)
+: _data(d), _rows(rows), _columns(columns)
 {
 
 }
@@ -34,12 +35,10 @@ MatrixImplementation::Value* MatrixImplementation::createBestImplementation(
 {
 	Value* matrix = nullptr;
 	
-	
 	if(matrix == nullptr && CublasMatrix::isSupported())
 	{
 		matrix = new CublasMatrix(rows, columns, f);
 	}
-	
 	
 	if(matrix == nullptr && AtlasMatrix::isSupported())
 	{

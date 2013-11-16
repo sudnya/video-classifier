@@ -38,7 +38,7 @@ void Learner::trainClassifier(const ImageVector& images)
     auto featureMatrix    = m_featureSelectorNetwork.runInputs(matrix);
 
     // TODO: optimize weights using back propagation as tool
-    m_classifierNetwork.backPropagate(featureMatrix,
+    m_classifierNetwork.train(featureMatrix,
     	images.getReference(m_classifierNetwork));
 }
  

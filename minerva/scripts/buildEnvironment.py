@@ -45,7 +45,7 @@ gCompilerOptions = {
 			'standard': ['-stdlib=libc++', '-std=c++0x', '-pthread']},
 		'clang++' : {'warn_all' : '-Wall',
 			'warn_errors' : '-Werror',
-			'optimization' : '-O2', 'debug' : '-g',
+			'optimization' : ['-O2', '-g'], 'debug' : '-g',
 			'exception_handling' : '',
 			'standard': ['-stdlib=libc++', '-std=c++0x', '-pthread']},
 		'cl'  : {'warn_all' : '/Wall',
@@ -61,7 +61,7 @@ gCompilerOptions = {
 # this dictionary maps the name of a linker program to a dictionary mapping the name of
 # a linker switch of interest to the specific switch implementing the feature
 gLinkerOptions = {
-        'gcc'  : {'debug' : '', 'libraries' : ''},
+		'gcc'  : {'debug' : '', 'libraries' : ''},
 		'clang'  : {'debug' : '', 'libraries' : ''},
 		'g++'  : {'debug' : '', 'libraries' : ''},
 		'c++'  : {'debug' : '', 'libraries' : '-lc++'},

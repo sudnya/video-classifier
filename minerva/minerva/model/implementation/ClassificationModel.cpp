@@ -289,11 +289,7 @@ void ClassificationModel::load()
 					
 					matrix.resize(rows, columns);
 					
-					matrix::Matrix::FloatVector data(rows * columns);
-					
-					stream.read((char*)data.data(), rows * columns);
-				
-					matrix.setDataRowMajor(data);
+					stream.read((char*)matrix.data().data(), rows * columns);
 				}
 			}
 			

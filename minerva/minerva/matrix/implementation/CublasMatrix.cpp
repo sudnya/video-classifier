@@ -13,6 +13,8 @@
 #include <cassert>
 #include <cmath>
 #include <stdexcept>
+#include <random>
+#include <ctime>
 
 namespace minerva
 {
@@ -23,7 +25,7 @@ namespace matrix
 typedef MatrixImplementation Value;
 
 CublasMatrix::CublasMatrix(size_t r, size_t c, const FloatVector& data)
-: MatrixImplementation(r, c), _data(data)
+: MatrixImplementation(r, c, data)
 {
 	resize(rows(), columns());
 }
@@ -56,13 +58,13 @@ Value* CublasMatrix::appendColumns(const Value* matrix) const
 	// Copy rows from the original and appended matrices
 	for(size_t row = 0; row != resultRows; ++row)
 	{
-		size_t originalPosition = _getPosition(row, 0);
-		size_t newPosition = result->_getPosition(row, 0);
+		size_t originalPosition = getPosition(row, 0);
+		size_t newPosition = result->getPosition(row, 0);
 	
 		std::memcpy(&result->_data[newPosition], &_data[originalPosition],
 			columns() * sizeof(float));
 
-		size_t appendedPosition = m->_getPosition(row, 0);
+		size_t appendedPosition = m->getPosition(row, 0);
 		newPosition += columns();
 		
 		std::memcpy(&(*result)._data[newPosition], &m->_data[appendedPosition],
@@ -114,8 +116,8 @@ Value* CublasMatrix::transpose() const
 				for(size_t blockColumn = column;
 					blockColumn < columnLimit; ++blockColumn)
 				{
-					result->_data[result->_getPosition(blockColumn, blockRow)] =
-						_data[_getPosition(blockRow, blockColumn)];
+					result->_data[result->getPosition(blockColumn, blockRow)] =
+						_data[getPosition(blockRow, blockColumn)];
 				}
 			}
 		}
@@ -160,7 +162,8 @@ Value* CublasMatrix::multiply(const Value* matrix) const
 		// ldc = num_col_C = N;
 		int ldc = result->columns();
 
-		// m and n in the cuBLAS GEMM routine are the #rows and #cols of the result matrix C,
+		// m and n in the cuBLAS GEMM routine are the #rows and #cols of
+		// the result matrix C,
 
 		// k is the common dimension of A^T and B,
 
@@ -318,11 +321,9 @@ Value* CublasMatrix::slice(size_t startRow, size_t startColumn,
 	// TODO: faster
 	for(size_t row = 0; row != rows; ++row)
 	{
-		for(size_t column = 0; column != columns; ++column)
-		{
-			result->setValue(row, column,
-				getValue(row + startRow, column + startColumn));
-		}
+		std::memcpy(&result->data()[result->getPosition(row, 0)],
+			&data()[getPosition(row + startRow, startColumn)],
+			columns * sizeof(float));
 	}
 	
 	return result;
@@ -333,6 +334,15 @@ Value* CublasMatrix::log() const
     CublasMatrix* result = new CublasMatrix(*this);
 	
 	result->logSelf();
+
+    return result;
+}
+
+Value* CublasMatrix::abs() const
+{
+    CublasMatrix* result = new CublasMatrix(*this);
+	
+	result->absSelf();
 
     return result;
 }
@@ -355,6 +365,15 @@ Value* CublasMatrix::sigmoid() const
     return result;
 }
 
+Value* CublasMatrix::sigmoidDerivative() const
+{
+    CublasMatrix* result = new CublasMatrix(*this);
+	
+	result->sigmoidDerivativeSelf();
+
+    return result;
+}
+
 void CublasMatrix::negateSelf()
 {
 	for(auto& f : _data)
@@ -371,6 +390,14 @@ void CublasMatrix::logSelf()
 	}
 }
 
+void CublasMatrix::absSelf()
+{
+	for(auto& f : _data)
+	{
+		f = std::abs(f);
+	}
+}
+
 static float sigmoid(float v)
 {
     if(v < -50.0f) return 0.0f;
@@ -379,12 +406,73 @@ static float sigmoid(float v)
     return 1.0f / (1.0f + std::exp(-v)); 
 }
 
+static float sigmoidDerivative(float v)
+{
+    // f(x) = 1/(1+e^-x)
+    // dy/dx = f(x)' = f(x) * (1 - f(x))
+	float element = sigmoid(v) * (1.0f - sigmoid(v));
+	
+	element = element * (1.0f - element);
+	
+	return element;
+}
+
 void CublasMatrix::sigmoidSelf()
 {
 	for(auto& f : _data)
 	{
 		f = matrix::sigmoid(f);
 	}
+}
+
+void CublasMatrix::sigmoidDerivativeSelf()
+{
+	for(auto& f : _data)
+	{
+		f = matrix::sigmoidDerivative(f);
+	}
+}
+
+void CublasMatrix::assignUniformRandomValues(float min, float max)
+{
+	// TODO: use cuRand
+	std::default_random_engine generator(std::time(0));
+	std::uniform_real_distribution<float> distribution(min, max);
+
+	for(auto& f : _data)
+	{
+		f = distribution(generator);
+	}
+}
+
+Value* CublasMatrix::greaterThanOrEqual(float f) const
+{
+	CublasMatrix* result = new CublasMatrix(*this);
+	
+	// TODO: faster
+	for(auto& value : result->_data)
+	{
+		value = (value >= f) ? 1.0f : 0.0f;
+	}
+	
+	return result;
+}
+
+Value* CublasMatrix::equals(const Value* m) const
+{
+	assert(m->size() == size());
+
+	CublasMatrix* result = new CublasMatrix(*this);
+	
+	// TODO: faster
+	auto value = m->data().begin();
+	for(auto resultValue = result->data().begin(); resultValue != result->data().end();
+		++resultValue, ++value)
+	{
+		*resultValue = (*resultValue == *value) ? 1.0f : 0.0f;
+	}
+	
+	return result;
 }
 
 void CublasMatrix::transposeSelf()
@@ -412,36 +500,14 @@ float CublasMatrix::reduceSum() const
     return sum;
 }
 
-CublasMatrix::FloatVector CublasMatrix::data() const
+const CublasMatrix::FloatVector& CublasMatrix::data() const
 {
 	return _data;
 }
 
-void CublasMatrix::setDataRowMajor(const FloatVector& data)
+CublasMatrix::FloatVector& CublasMatrix::data()
 {
-	assert(data.size() == size());
-	
-	_data = data;
-}
-
-void CublasMatrix::setValue(size_t row, size_t column, float value)
-{
-	assert(row < rows());
-	assert(column < columns());
-
-	size_t position = _getPosition(row, column);
-	
-	_data[position] = value;
-}
-
-float CublasMatrix::getValue(size_t row, size_t column) const
-{
-	assert(row < rows());
-	assert(column < columns());
-
-	size_t position = _getPosition(row, column);
-	
-	return _data[position];
+	return _data;
 }
 
 Value* CublasMatrix::clone() const
@@ -454,11 +520,6 @@ bool CublasMatrix::isSupported()
 	CublasLibrary::load();
 
 	return CublasLibrary::loaded();
-}
-
-size_t CublasMatrix::_getPosition(size_t row, size_t column) const
-{
-	return row * columns() + column;
 }
 
 }
