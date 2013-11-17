@@ -112,11 +112,11 @@ Value* CublasMatrix::transpose() const
 		result = new CublasMatrix(this->columns(), this->rows());
 		
 		a = (float*)CublasLibrary::cudaMalloc(sizeof(float) * size()        );
-		b = (float*)CublasLibrary::cudaMalloc(sizeof(float) * this->size()     );
+		//b = (float*)CublasLibrary::cudaMalloc(sizeof(float) * this->size()     );
 		c = (float*)CublasLibrary::cudaMalloc(sizeof(float) * result->size());
 		
 		CublasLibrary::cudaMemcpy(a, &_data[0],    sizeof(float) *    size());
-		CublasLibrary::cudaMemcpy(b, &this->_data[0], sizeof(float) * this->size());
+		//CublasLibrary::cudaMemcpy(b, &this->_data[0], sizeof(float) * this->size());
 		
 	
 		float alpha = 1.0f;
@@ -130,7 +130,7 @@ Value* CublasMatrix::transpose() const
 		int ldb = this->columns();
 
 		// ldc = num_col_C = N;
-		int ldc = result->columns();
+		int ldc = result->rows();
 
 		// m and n in the cuBLAS GEMM routine are the #rows and #cols of the result matrix C,
 
