@@ -30,6 +30,44 @@ bool CublasLibrary::loaded()
 	return _interface.loaded();
 }
 
+void CublasLibrary::cublasSgeam(
+    cublasOperation_t transa, cublasOperation_t transb,
+    int m, int n, const float *alpha, const float *A,
+	int lda, const float *beta, const float *B, int ldb, 
+	float *C, int ldc)
+{
+	_check();
+	
+	util::log("CublasLibrary") << " CUBLAS SGEAM: ("
+		"handle: " << _interface.handle <<  ", "
+		"transa: " << transa <<  ", "
+		"transb: " << transb <<  ", "
+
+		"m: " << m <<  ", "
+		"n: " << n <<  ", "
+
+		"alpha: " << alpha <<  " (" << *alpha << "), "
+		"A: " << A <<  ", "
+		"lda: " << lda <<  ", "
+
+		"beta: " << beta <<  " (" << *beta << "), "
+		"B: " << B <<  ", "
+		"ldb: " << ldb <<  ", "
+
+		"C: " << C <<  ", "
+		"ldc: " << ldc << ")\n";
+	
+	cublasStatus_t status = (*_interface.cublasSgeam_v2)(_interface.handle,
+		transa, transb, m, n, alpha, A, lda, beta, B, ldb, C, ldc);
+		
+	if(status != CUBLAS_STATUS_SUCCESS)
+	{
+		throw std::runtime_error("Cuda SGEAM failed: " +
+			cublasGetErrorString(status));
+	}
+
+}
+
 void CublasLibrary::cublasSgemm(
 	cublasOperation_t transa, cublasOperation_t transb,
 	int m, int n, int k, const float* alpha, const float *A, int lda, 

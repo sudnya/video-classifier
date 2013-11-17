@@ -71,6 +71,45 @@ bool testMultiply()
 	return computed == c;
 }
 
+bool testTranspose()
+{
+	Matrix a(3, 2);
+	
+	a(0, 0) = 1;
+	a(0, 1) = 2;
+	a(1, 0) = 3;
+	a(1, 1) = 4;
+	a(2, 0) = 5;
+	a(2, 1) = 6;
+	
+	Matrix t(2, 3);
+	
+	t(0, 0) = 1;
+	t(0, 1) = 3;
+	t(0, 2) = 5;
+	t(1, 0) = 2;
+	t(1, 1) = 4;
+	t(1, 2) = 6;
+
+
+	Matrix computed = a.transpose();
+	
+	if(computed != t)
+	{
+		std::cout << " Matrix Transpose Test Failed:\n";
+		std::cout << "  result matrix " << computed.toString();
+		std::cout << "  does not match reference matrix " << t.toString();
+	}
+	else
+	{
+		std::cout << " Matrix Transpose Test Passed\n";
+	}
+	
+	return computed == t;
+
+}
+
+
 int main(int argc, char** argv)
 {
 	minerva::util::enableAllLogs();
@@ -80,6 +119,7 @@ int main(int argc, char** argv)
     bool passed = true;
     
     passed &= testMultiply();
+	passed &= testTranspose();
 
 	if(not passed)
 	{

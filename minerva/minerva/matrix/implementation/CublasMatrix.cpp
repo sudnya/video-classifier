@@ -98,28 +98,71 @@ Value* CublasMatrix::appendRows(const Value* matrix) const
 
 Value* CublasMatrix::transpose() const
 {
-	CublasMatrix* result = new CublasMatrix(columns(), rows());
-	
-	const size_t blockSize = 16;
-		
-	for(size_t row = 0; row < rows(); row += blockSize)
+	//auto m = dynamic_cast<const CublasMatrix*>(matrix);	
+	assert(this != nullptr);
+	assert(columns() == this->rows());
+
+	CublasMatrix* result = nullptr;
+
+	float* a = nullptr;
+	float* b = nullptr;
+	float* c = nullptr;
+	//float* t = nullptr;
+	try
 	{
-		for(size_t column = 0; column < columns(); column += blockSize)
-		{
-			size_t rowLimit    = std::min(rows(),    row + blockSize   );
-			size_t columnLimit = std::min(columns(), column + blockSize);
-			
-			for(size_t blockRow = row; blockRow < rowLimit; ++blockRow)
-			{
-				for(size_t blockColumn = column;
-					blockColumn < columnLimit; ++blockColumn)
-				{
-					result->_data[result->_getPosition(blockColumn, blockRow)] =
-						_data[_getPosition(blockRow, blockColumn)];
-				}
-			}
-		}
+		result = new CublasMatrix(this->columns(), this->rows());
+		
+		a = (float*)CublasLibrary::cudaMalloc(sizeof(float) * size()        );
+		b = (float*)CublasLibrary::cudaMalloc(sizeof(float) * this->size()     );
+		c = (float*)CublasLibrary::cudaMalloc(sizeof(float) * result->size());
+		
+		CublasLibrary::cudaMemcpy(a, &_data[0],    sizeof(float) *    size());
+		CublasLibrary::cudaMemcpy(b, &this->_data[0], sizeof(float) * this->size());
+		
+	
+		float alpha = 1.0f;
+		float beta  = 0.0f;
+		
+		
+		//lda = num_col_A = num_row_AT = N;
+		int lda = columns();
+
+		// ldb = num_col_B = num_row_BT = N;
+		int ldb = this->columns();
+
+		// ldc = num_col_C = N;
+		int ldc = result->columns();
+
+		// m and n in the cuBLAS GEMM routine are the #rows and #cols of the result matrix C,
+
+		// n = num_col_C
+		int n = result->rows();
+
+		// m = num_row_C
+		int m = result->columns();
+		
+		CublasLibrary::cublasSgeam(CublasLibrary::CUBLAS_OP_N,
+			CublasLibrary::CUBLAS_OP_N, m, n, &alpha, a, lda, &beta, b, ldb, c, ldc);
+		
+		CublasLibrary::cudaMemcpy(&result->_data[0], c,
+			sizeof(float) * result->size(), CublasLibrary::cudaMemcpyDefault);
 	}
+	catch(...)
+	{
+		CublasLibrary::cudaFree(a);
+		CublasLibrary::cudaFree(b);
+		CublasLibrary::cudaFree(c);
+		
+		delete result;
+		
+		throw;
+	}
+	
+	CublasLibrary::cudaFree(a);
+	CublasLibrary::cudaFree(b);
+	CublasLibrary::cudaFree(c);
+	
+	//result->transposeSelf();
 	
 	return result;
 }
