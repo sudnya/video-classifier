@@ -68,6 +68,12 @@ public:
 	static bool loaded();
 
 public:
+	static void	cublasSgeam(cublasOperation_t transa, 
+		cublasOperation_t transb, int m, int n, 
+		const float *alpha, const float *A, int lda, 
+		const float *beta, const float *B, int ldb, float *C, 
+		int ldc);
+
 	static void cublasSgemm(cublasOperation_t transa,
 		cublasOperation_t transb, int m, int n, int k, 
 		const float* alpha, const float *A, int lda, 
@@ -96,6 +102,12 @@ private:
 		typedef struct cublasContext* cublasHandle_t;
 	
 	public:
+		cublasStatus_t (*cublasSgeam)(cublasHandle_t handle,
+                          cublasOperation_t transa, cublasOperation_t transb,
+                          int m, int n, const float *alpha, const float *A,
+						  int lda, const float *beta, const float *B, int ldb, 
+						  float *C, int ldc);
+
 		cublasStatus_t (*cublasSgemm_v2) (cublasHandle_t handle,
 			cublasOperation_t transa, cublasOperation_t transb,
 			int m, int n, int k, const float* alpha, const float* A, int lda, 
