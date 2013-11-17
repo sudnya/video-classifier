@@ -57,7 +57,7 @@ void CublasLibrary::cublasSgeam(
 		"C: " << C <<  ", "
 		"ldc: " << ldc << ")\n";
 	
-	cublasStatus_t status = (*_interface.cublasSgeam_v2)(_interface.handle,
+	cublasStatus_t status = (*_interface.cublasSgeam)(_interface.handle,
 		transa, transb, m, n, alpha, A, lda, beta, B, ldb, C, ldc);
 		
 	if(status != CUBLAS_STATUS_SUCCESS)
@@ -273,6 +273,7 @@ void CublasLibrary::Interface::load()
 			util::bit_cast(function, dlsym(_library, #function)); \
 			checkFunction((void*)function, #function)
 			
+		DynLink(cublasSgeam);
 		DynLink(cublasSgemm_v2);
 		
 		DynLink(cublasCreate_v2);

@@ -102,7 +102,7 @@ private:
 		typedef struct cublasContext* cublasHandle_t;
 	
 	public:
-		cublasStatus_t (*cublasSgeam_v2)(cublasHandle_t handle,
+		cublasStatus_t (*cublasSgeam)(cublasHandle_t handle,
                           cublasOperation_t transa, cublasOperation_t transb,
                           int m, int n, const float *alpha, const float *A,
 						  int lda, const float *beta, const float *B, int ldb, 

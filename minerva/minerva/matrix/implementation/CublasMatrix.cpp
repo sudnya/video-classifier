@@ -112,35 +112,31 @@ Value* CublasMatrix::transpose() const
 		result = new CublasMatrix(this->columns(), this->rows());
 		
 		a = (float*)CublasLibrary::cudaMalloc(sizeof(float) * size()        );
-		//b = (float*)CublasLibrary::cudaMalloc(sizeof(float) * this->size()     );
 		c = (float*)CublasLibrary::cudaMalloc(sizeof(float) * result->size());
 		
 		CublasLibrary::cudaMemcpy(a, &_data[0],    sizeof(float) *    size());
-		//CublasLibrary::cudaMemcpy(b, &this->_data[0], sizeof(float) * this->size());
-		
 	
 		float alpha = 1.0f;
 		float beta  = 0.0f;
-		
 		
 		//lda = num_col_A = num_row_AT = N;
 		int lda = columns();
 
 		// ldb = num_col_B = num_row_BT = N;
-		int ldb = 0;//this->columns();
+		int ldb = rows();//this->columns();
 
-		// ldc = num_col_C = N;
-		int ldc = this->rows();
+		// ldc = num_col_C, num_row_CT = N;
+		int ldc = result->columns();
 
 		// m and n in the cuBLAS GEMM routine are the #rows and #cols of the result matrix C,
 
-		// n = num_col_C
-		int n = this->rows();
+		// m = num_row_C, num_col_CT
+		int m = result->columns();
 
-		// m = num_row_C
-		int m = this->columns();
+		// n = num_col_C, num_row_CT
+		int n = result->rows();
 		
-		CublasLibrary::cublasSgeam(CublasLibrary::CUBLAS_OP_N,
+		CublasLibrary::cublasSgeam(CublasLibrary::CUBLAS_OP_T,
 			CublasLibrary::CUBLAS_OP_N, m, n, &alpha, a, lda, &beta, b, ldb, c, ldc);
 		
 		CublasLibrary::cudaMemcpy(&result->_data[0], c,
@@ -149,7 +145,6 @@ Value* CublasMatrix::transpose() const
 	catch(...)
 	{
 		CublasLibrary::cudaFree(a);
-		CublasLibrary::cudaFree(b);
 		CublasLibrary::cudaFree(c);
 		
 		delete result;
@@ -158,10 +153,7 @@ Value* CublasMatrix::transpose() const
 	}
 	
 	CublasLibrary::cudaFree(a);
-	CublasLibrary::cudaFree(b);
 	CublasLibrary::cudaFree(c);
-	
-	//result->transposeSelf();
 	
 	return result;
 }
