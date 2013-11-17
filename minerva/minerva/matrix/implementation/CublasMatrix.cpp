@@ -127,18 +127,18 @@ Value* CublasMatrix::transpose() const
 		int lda = columns();
 
 		// ldb = num_col_B = num_row_BT = N;
-		int ldb = this->columns();
+		int ldb = 0;//this->columns();
 
 		// ldc = num_col_C = N;
-		int ldc = result->rows();
+		int ldc = this->rows();
 
 		// m and n in the cuBLAS GEMM routine are the #rows and #cols of the result matrix C,
 
 		// n = num_col_C
-		int n = result->rows();
+		int n = this->rows();
 
 		// m = num_row_C
-		int m = result->columns();
+		int m = this->columns();
 		
 		CublasLibrary::cublasSgeam(CublasLibrary::CUBLAS_OP_N,
 			CublasLibrary::CUBLAS_OP_N, m, n, &alpha, a, lda, &beta, b, ldb, c, ldc);
