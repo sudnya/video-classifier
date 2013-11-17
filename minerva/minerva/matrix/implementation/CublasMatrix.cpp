@@ -100,7 +100,6 @@ Value* CublasMatrix::transpose() const
 {
 	//auto m = dynamic_cast<const CublasMatrix*>(matrix);	
 	assert(this != nullptr);
-	assert(columns() == this->rows());
 
 	CublasMatrix* result = nullptr;
 
