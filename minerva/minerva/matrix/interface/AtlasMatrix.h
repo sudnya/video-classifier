@@ -35,6 +35,7 @@ public:
 	virtual Value* elementMultiply(const Value* m) const;
 
 	virtual Value* add(const Value* m) const;
+	virtual Value* addBroadcastRow(const Value* m) const;
 	virtual Value* add(float f) const;
 
 	virtual Value* subtract(const Value* m) const;
@@ -79,9 +80,6 @@ public:
 
 private:
 	inline size_t _getPosition(size_t row, size_t column) const;
-
-private:
-	FloatVector _data;
 
 };
 

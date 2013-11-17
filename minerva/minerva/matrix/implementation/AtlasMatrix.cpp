@@ -176,19 +176,6 @@ Value* AtlasMatrix::elementMultiply(const Value* matrix) const
     return result;
 }
 
-Value* AtlasMatrix::add(float f) const
-{
-	AtlasMatrix* result = new AtlasMatrix(*this);
-	
-	// TODO: faster
-	for(auto& value : result->_data)
-	{
-		value += f;
-	}
-	
-	return result;
-}
-
 Value* AtlasMatrix::add(const Value* matrix) const
 {
 	auto m = dynamic_cast<const AtlasMatrix*>(matrix);	
@@ -205,6 +192,44 @@ Value* AtlasMatrix::add(const Value* matrix) const
 		++value, ++rValue)
 	{
 		*rValue += *value;
+	}
+	
+	return result;
+}
+
+Value* AtlasMatrix::addBroadcastRow(const Value* matrix) const
+{
+	auto m = dynamic_cast<const AtlasMatrix*>(matrix);	
+	assert(m != nullptr);
+	
+	assert(m->columns() == columns());
+
+	AtlasMatrix* result = new AtlasMatrix(*this);
+	
+	// TODO: faster
+	size_t columnSize = columns();
+	size_t rowSize    = rows();
+
+	for(size_t r = 0; r < rowSize; ++r)
+	{
+		for(size_t c = 0; c < columnSize; ++c)
+		{
+			result->data()[result->getPosition(r, c)] =
+				data()[getPosition(r, c)] + m->data()[m->getPosition(0, c)];
+		}
+	}
+
+	return result;
+}
+
+Value* AtlasMatrix::add(float f) const
+{
+	AtlasMatrix* result = new AtlasMatrix(*this);
+	
+	// TODO: faster
+	for(auto& value : result->_data)
+	{
+		value += f;
 	}
 	
 	return result;

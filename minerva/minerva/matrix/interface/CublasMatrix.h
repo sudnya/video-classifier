@@ -35,6 +35,7 @@ public:
 	virtual Value* elementMultiply(const Value* m) const;
 
 	virtual Value* add(const Value* m) const;
+	virtual Value* addBroadcastRow(const Value* m) const;
 	virtual Value* add(float f) const;
 
 	virtual Value* subtract(const Value* m) const;
@@ -76,9 +77,6 @@ public:
 
 public:
 	static bool isSupported();
-
-private:
-	FloatVector _data;
 
 };
 

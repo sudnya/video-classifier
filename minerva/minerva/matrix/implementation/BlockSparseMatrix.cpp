@@ -145,7 +145,7 @@ BlockSparseMatrix BlockSparseMatrix::multiply(
 	// TODO: in parallel
 	BlockSparseMatrix result;
 
-	assert(m.size() == size());
+	assert(m.blocks() == blocks());
 
 	for(auto left = begin(), right = m.begin(); left != end(); ++left, ++right)
 	{
@@ -173,7 +173,7 @@ BlockSparseMatrix BlockSparseMatrix::elementMultiply(const BlockSparseMatrix& m)
 	// TODO: in parallel
 	BlockSparseMatrix result;
 
-	assert(m.size() == size());
+	assert(m.blocks() == blocks());
 
 	for(auto left = begin(), right = m.begin(); left != end(); ++left, ++right)
 	{
@@ -193,6 +193,22 @@ BlockSparseMatrix BlockSparseMatrix::add(const BlockSparseMatrix& m) const
 	for(auto left = begin(), right = m.begin(); left != end(); ++left, ++right)
 	{
 		result.push_back(left->add(*right));
+	}
+
+	return result;
+
+}
+
+BlockSparseMatrix BlockSparseMatrix::addBroadcastRow(const BlockSparseMatrix& m) const
+{
+	// TODO: in parallel
+	BlockSparseMatrix result;
+
+	assert(m.columns() == columns());
+
+	for(auto left = begin(), right = m.begin(); left != end(); ++left, ++right)
+	{
+		result.push_back(left->addBroadcastRow(*right));
 	}
 
 	return result;
@@ -399,7 +415,7 @@ float BlockSparseMatrix::reduceSum() const
 
 std::string BlockSparseMatrix::toString() const
 {
-	if(empty()) return "[]";
+	if(empty()) return "(0 rows, 0 columns) []";
 	
 	return front().toString();
 }

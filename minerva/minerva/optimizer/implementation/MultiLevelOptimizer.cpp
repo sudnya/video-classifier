@@ -104,7 +104,7 @@ Matrix MultiLevelOptimizer::simulatedAnnealing(const Matrix& initialWeights, flo
 {
     std::uniform_real_distribution<float> distribution(0.0f, 1.0f);
     
-    unsigned iterations = util::KnobDatabase::getKnobValue("MultiLevelOptimizer::SimmulatedAnnealingIterations", 50000);
+    unsigned iterations = util::KnobDatabase::getKnobValue("MultiLevelOptimizer::SimmulatedAnnealingIterations", 5000);
     
     auto  currentWeights = initialWeights;
     float currentCost    = m_backPropDataPtr->computeCostForNewFlattenedWeights(currentWeights);
@@ -272,11 +272,12 @@ void MultiLevelOptimizer::solve()
     auto  initialWeights = m_backPropDataPtr->getFlattenedWeights();
     float bestCostSoFar  = m_backPropDataPtr->computeCostForNewFlattenedWeights(initialWeights);
 
-    util::log("MultiLevelOptimizer") << " initial cost is : " << bestCostSoFar << "\n";
+    util::log("MultiLevelOptimizer") << " number of weights : " << initialWeights.size() << "\n";
+    util::log("MultiLevelOptimizer") << " initial cost is   : " << bestCostSoFar << "\n";
 	
 	float newCost = approximateSearch(initialWeights, bestCostSoFar, m_backPropDataPtr);
 	
-	float acceptableImprovement = util::KnobDatabase::getKnobValue("MultiLevelOptimizer::AcceptableImprovement", 0.0f);
+	float acceptableImprovement = util::KnobDatabase::getKnobValue("MultiLevelOptimizer::AcceptableImprovement", 0.001f);
 	
 	util::log("MultiLevelOptimizer") << " approximate search produced solution with cost: " << newCost << "\n";
 	if((bestCostSoFar >= newCost) && ((((bestCostSoFar - newCost) / bestCostSoFar)) >= acceptableImprovement))
@@ -297,11 +298,12 @@ void MultiLevelOptimizer::solve()
           bestCostSoFar = newCost;
     auto  bestWeights   = initialWeights;
     
+    util::log("MultiLevelOptimizer") << " epsilon:             " << epsilon         << "\n";
     util::log("MultiLevelOptimizer") << " cost function range: " << range           << "\n";
     util::log("MultiLevelOptimizer") << " search distance:     " << maximumDistance << "\n";
     util::log("MultiLevelOptimizer") << " initial cost:        " << bestCostSoFar   << "\n";
     
-    unsigned iterationCount = util::KnobDatabase::getKnobValue("MultiLevelOptimizer::IterationCount", 10);
+    unsigned iterationCount = util::KnobDatabase::getKnobValue("MultiLevelOptimizer::IterationCount", 1);
 	
     for(unsigned iteration = 0; iteration < iterationCount; ++iteration)
     {

@@ -242,19 +242,6 @@ Value* CublasMatrix::elementMultiply(const Value* matrix) const
     return result;
 }
 
-Value* CublasMatrix::add(float f) const
-{
-	CublasMatrix* result = new CublasMatrix(*this);
-	
-	// TODO: faster
-	for(auto& value : result->_data)
-	{
-		value += f;
-	}
-	
-	return result;
-}
-
 Value* CublasMatrix::add(const Value* matrix) const
 {
 	auto m = dynamic_cast<const CublasMatrix*>(matrix);	
@@ -271,6 +258,44 @@ Value* CublasMatrix::add(const Value* matrix) const
 		++value, ++rValue)
 	{
 		*rValue += *value;
+	}
+	
+	return result;
+}
+
+Value* CublasMatrix::addBroadcastRow(const Value* matrix) const
+{
+	auto m = dynamic_cast<const CublasMatrix*>(matrix);	
+	assert(m != nullptr);
+	
+	assert(m->columns() == columns());
+
+	CublasMatrix* result = new CublasMatrix(*this);
+	
+	// TODO: faster
+	size_t columnSize = columns();
+	size_t rowSize    = rows();
+
+	for(size_t r = 0; r < rowSize; ++r)
+	{
+		for(size_t c = 0; c < columnSize; ++c)
+		{
+			result->data()[result->getPosition(r, c)] =
+				data()[getPosition(r, c)] + m->data()[m->getPosition(0, c)];
+		}
+	}
+
+	return result;
+}
+
+Value* CublasMatrix::add(float f) const
+{
+	CublasMatrix* result = new CublasMatrix(*this);
+	
+	// TODO: faster
+	for(auto& value : result->_data)
+	{
+		value += f;
 	}
 	
 	return result;

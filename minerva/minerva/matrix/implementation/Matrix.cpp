@@ -174,13 +174,6 @@ Matrix Matrix::elementMultiply(const Matrix& m) const
 	return Matrix(_matrix->elementMultiply(m._matrix));
 }
 
-Matrix Matrix::add(float f) const
-{
-	assert(_matrix != nullptr);
-	
-	return Matrix(_matrix->add(f));
-}
-
 Matrix Matrix::add(const Matrix& m) const
 {
 	assert(_matrix != nullptr);
@@ -189,6 +182,22 @@ Matrix Matrix::add(const Matrix& m) const
 	assert(m.columns() == columns());
 
 	return Matrix(_matrix->add(m._matrix));
+}
+
+Matrix Matrix::addBroadcastRow(const Matrix& m) const
+{
+	assert(_matrix != nullptr);
+	
+	assert(m.columns() == columns());
+
+	return Matrix(_matrix->addBroadcastRow(m._matrix));
+}
+
+Matrix Matrix::add(float f) const
+{
+	assert(_matrix != nullptr);
+	
+	return Matrix(_matrix->add(f));
 }
 
 Matrix Matrix::subtract(const Matrix& m) const
@@ -375,6 +384,8 @@ bool Matrix::operator!=(const Matrix& m) const
 std::string Matrix::toString(size_t maxRows, size_t maxColumns) const
 {
     std::stringstream stream;
+
+	stream << "(" << rows() << " rows, " << columns() << " columns) ";
 
     stream << "[ ";
 

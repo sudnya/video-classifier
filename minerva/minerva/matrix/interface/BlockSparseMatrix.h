@@ -71,6 +71,7 @@ public:
 	BlockSparseMatrix elementMultiply(const BlockSparseMatrix& m) const;
 
 	BlockSparseMatrix add(const BlockSparseMatrix& m) const;
+	BlockSparseMatrix addBroadcastRow(const BlockSparseMatrix& m) const;
 	BlockSparseMatrix add(float f) const;
 
 	BlockSparseMatrix subtract(const BlockSparseMatrix& m) const;

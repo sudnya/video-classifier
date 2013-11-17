@@ -80,6 +80,7 @@ class Layer
 
     private:
 		BlockSparseMatrix m_sparseMatrix;
+		BlockSparseMatrix m_bias;
 
 };
 

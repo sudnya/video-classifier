@@ -228,7 +228,7 @@ NeuralNetwork::Matrix NeuralNetwork::convertOutputToMatrix(const BlockSparseMatr
 	
 	for(auto& matrix : blockedMatrix)
 	{
-		result.appendRows(matrix);
+		result = result.appendRows(matrix);
 	}
 	
 	return result;
@@ -236,13 +236,16 @@ NeuralNetwork::Matrix NeuralNetwork::convertOutputToMatrix(const BlockSparseMatr
 
 NeuralNetwork::BlockSparseMatrix NeuralNetwork::convertInputToBlockSparse(const Matrix& m) const
 {
-	assert(m.rows() == front().getInputCount());
+	assert(m.columns() == front().getInputCount());
 	
 	BlockSparseMatrix result;
+	size_t column = 0;
 
 	for(auto& block : front())
 	{
-		result.push_back(m.slice(result.rows(), 0, block.rows(), m.columns()));
+		size_t blockInputsExceptBias = block.rows();
+		result.push_back(m.slice(0, column, m.rows(), column + blockInputsExceptBias));
+		column += block.rows();
 	}
 	
 	return result;
@@ -250,16 +253,15 @@ NeuralNetwork::BlockSparseMatrix NeuralNetwork::convertInputToBlockSparse(const 
 
 NeuralNetwork::BlockSparseMatrix NeuralNetwork::convertOutputToBlockSparse(const Matrix& m) const
 {
-	auto totalRows    = back().getOutputCount() - back().blocks();
-	auto rowsPerBlock = totalRows / back().blocks();
-
-	assert(m.rows() == totalRows);
+	assert(m.columns() == back().getOutputCount());
 	
 	BlockSparseMatrix result;
+	size_t column = 0;
 
-	for(size_t i = 0; i < back().blocks(); ++i)
+	for(auto& block : back())
 	{
-		result.push_back(m.slice(result.rows(), 0, rowsPerBlock, m.columns()));
+		result.push_back(m.slice(0, column, m.rows(), column + block.columns()));
+		column += block.columns();
 	}
 	
 	return result;

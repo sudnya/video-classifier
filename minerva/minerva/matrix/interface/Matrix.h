@@ -83,6 +83,7 @@ public:
 	Matrix elementMultiply(const Matrix& m) const;
 
 	Matrix add(const Matrix& m) const;
+	Matrix addBroadcastRow(const Matrix& m) const;
 	Matrix add(float f) const;
 
 	Matrix subtract(const Matrix& m) const;

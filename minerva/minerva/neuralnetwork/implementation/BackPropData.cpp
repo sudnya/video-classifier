@@ -255,18 +255,18 @@ MatrixVector BackPropData::getDeltas(const NeuralNetwork& network, const MatrixV
 
         auto activationDerivativeOfCurrentLayer = i->sigmoidDerivative();
         auto deltaPropagatedReverse = layer.runReverse(delta);
-        
+       
         delta = deltaPropagatedReverse.elementMultiply(activationDerivativeOfCurrentLayer);
 
         ++i; 
     }
 
     std::reverse(deltas.begin(), deltas.end());
-    //for (auto& delta : deltas)
-    //{
-    //    util::log("BackPropData") << " added delta of size ( " << delta.rows() << " ) rows and ( " << delta.columns() << " )\n" ;
-    //    util::log("BackPropData") << " delta contains " << delta.toString() << "\n";
-    //}
+    for (auto& delta : deltas)
+    {
+        util::log("BackPropData") << " added delta of size ( " << delta.rows() << " ) rows and ( " << delta.columns() << " )\n" ;
+        util::log("BackPropData") << " delta contains " << delta.toString() << "\n";
+    }
     return deltas;
 }
 
@@ -291,28 +291,6 @@ MatrixVector BackPropData::getActivations(const NeuralNetwork& network) const
     return activations;
 }
 
-//static float sigmoid(float v)
-//{
-//	return 1.0f / (1.0f + std::exp(-v));
-//}
-
-Matrix BackPropData::sigmoidDerivative(const Matrix& m) const
-{
-    // f(x) = 1/(1+e^-x)
-    // dy/dx = f(x)' = f(x) * (1 - f(x))
-
-	Matrix temp = m;
-
-	for(auto element : temp)
-	{
-	//	element = sigmoid(element) * (1.0f - sigmoid(element));
-		element = element * (1.0f - element);
-	}
-	
-	return temp;
-}
-
-
 NeuralNetwork BackPropData::createNetworkFromWeights(
 	const Matrix& weights) const
 {
@@ -322,7 +300,6 @@ NeuralNetwork BackPropData::createNetworkFromWeights(
 		
 	return newNetwork;
 }
-
 
 MatrixVector BackPropData::getCostDerivative(const NeuralNetwork& network) const
 {

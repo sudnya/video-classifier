@@ -49,6 +49,7 @@ public:
 	virtual Value* elementMultiply(const Value* m) const = 0;
 
 	virtual Value* add(const Value* m) const = 0;
+	virtual Value* addBroadcastRow(const Value* m) const = 0;
 	virtual Value* add(float f) const = 0;
 
 	virtual Value* subtract(const Value* m) const = 0;

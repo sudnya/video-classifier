@@ -44,7 +44,6 @@ class BackPropData
     private:
         MatrixVector getDeltas(const NeuralNetwork& network, const MatrixVector& m) const;
         MatrixVector getActivations(const NeuralNetwork& network) const;
-        Matrix sigmoidDerivative(const Matrix& m) const;
        
     private:
         NeuralNetwork createNetworkFromWeights(const Matrix& weights) const;

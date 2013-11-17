@@ -124,7 +124,7 @@ void trainNeuralNetwork(neuralnetwork::NeuralNetwork& ann, unsigned trainingIter
 
     for(unsigned i = 0; i < trainingIter; ++i)
     {
-        // matrix is 100 rows x 1024 columns
+        // matrix is (samples) rows x (features) columns
         Matrix input = generateRandomMatrix(samplesPerIter, ann.getInputCount(), generator);
         Matrix referenceMatrix = matrixXor(input);
 
@@ -246,7 +246,7 @@ int main(int argc, char** argv)
 
     parser.parse("-i", "--iterations", iterations, 1000,
         "The number of iterations to train for");
-    parser.parse("-l", "--log-module", loggingEnabledModules, "",
+    parser.parse("-L", "--log-module", loggingEnabledModules, "",
 		"Print out log messages during execution for specified modules "
 		"(comma-separated list of modules, e.g. NeuralNetwork, Layer, ...).");
     parser.parse("-s", "--seed", seed, false,
