@@ -60,6 +60,8 @@ class NeuralNetwork
         unsigned getInputCount()  const;
         unsigned getOutputCount() const;
 
+		unsigned getBlockingFactor() const;
+
 	public:
 		size_t totalWeights() const;
 	

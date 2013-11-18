@@ -234,7 +234,7 @@ static NeuralNetwork buildNeuralNetwork(const std::string& name, unsigned inputS
 
 		knobName << name << "::NeuralNetwork::Layer" << layer;
 
-		unsigned blocks	 = util::KnobDatabase::getKnobValue(knobName.str() + "::Blocks",	   1);
+		unsigned blocks	    = util::KnobDatabase::getKnobValue(knobName.str() + "::Blocks",	   1);
 		size_t blockInputs  = util::KnobDatabase::getKnobValue(knobName.str() + "::BlockInputs",  currentSize);
 		size_t blockOutputs = util::KnobDatabase::getKnobValue(knobName.str() + "::BlockOutputs", currentSize/reductionFactor);
 		
@@ -288,24 +288,70 @@ static NeuralNetwork buildNeuralNetwork(const std::string& name, unsigned inputS
 ClassificationModel* ClassificationModelBuilder::create(const std::string& path)
 {
 	auto model = new ClassificationModel(path);
-	
-	unsigned x      = util::KnobDatabase::getKnobValue("ResolutionX",     32);
-	unsigned y      = util::KnobDatabase::getKnobValue("ResolutionY",     32);
-	unsigned colors = util::KnobDatabase::getKnobValue("ColorComponents", 3 );
+
+	unsigned x         = util::KnobDatabase::getKnobValue("ResolutionX",     32       );
+	unsigned y         = util::KnobDatabase::getKnobValue("ResolutionY",     32       );
+	unsigned colors    = util::KnobDatabase::getKnobValue("ColorComponents", 3        );
+
+
+	// For reference: Multi-Column Deep Neural Network (Topology) 
+	//                http://arxiv.org/pdf/1202.2745.pdf
+	// 
+	//                                          Compute Complexity                     Memory Complexity
+	// 
+	// Layer 1: (100 5x5) convolutional blocks  O(1e4) 
+	// Layer 2: (100 2x2) max pooling           O(1e4) 
+	// Layer 3: (100 4x4) convolutional blocks  O(1e4) 
+	// Layer 4: (100 2x2) max pooling           O(1e4) 
+	// Layer 5: (1 300) fully connected         O(1e8) N/2 connections
+	// Layer 6: (1 100) fully connected         O(1e3) trivial
+	//
+
+	// Our topology (CPU)
+	//
+	//                                          Compute Complexity                     Memory Complexity
+	//                      
+	// Layer 1: (1024 16 x 16 ) sparse blocks   O(1024 * 256^3) O(1024 * 1e7) O(1e10)  O(256^2*1024) O(1e7)
+	// Layer 2: (256  16 x 16 ) sparse blocks   O(1e9)                                 O(1e7)
+	// Layer 3: (64   16 x 16 ) sparse blocks   O(1e8)                                 O(1e6)
+	// Layer 4: (32   16 x 16 ) sparse blocks   O(1e8)                                 O(1e6)
+	// Layer 5: (1    300)      fully connected O(1e8)                                 O(1e4)
+	// Layer 6: (1    100)      fully connected O(1e8)                                 O(1e4)
+	// 
+
+	// Our topology (GPU)
+	//
+	//                                          Compute Complexity                     Memory Complexity
+	//                      
+	// Layer 1: (1024 32 x 32 ) sparse blocks   O(1024 * 1024^3) O(1024 * 1e9) O(1e12) O(1024^3) O(1e9)
+	// Layer 2: (256  32 x 32 ) sparse blocks   O(1e9)                                 O(1e8)
+	// Layer 3: (64   32 x 32 ) sparse blocks   O(1e8)                                 O(1e7)
+	// Layer 4: (32   32 x 32 ) sparse blocks   O(1e8)                                 O(1e7)
+	// Layer 5: (1    600)      fully connected O(1e8)                                 O(1e5)
+	// Layer 6: (1    200)      fully connected O(1e8)                                 O(1e4)
+	// 
 	
 	model->setInputImageResolution(x, y, colors);
 
 	unsigned featureSelectorInputSize  = x * y * colors;
-	unsigned featureSelectorOutputSize = util::KnobDatabase::getKnobValue("FeatureSelector::NeuralNetwor::Outputs", 128);
-	unsigned classifierInputSize       = featureSelectorOutputSize;
-	unsigned classifierOutputSize      = util::KnobDatabase::getKnobValue("Classifier::NeuralNetwork::Outputs", 20);
+	unsigned classifierOutputSize = util::KnobDatabase::getKnobValue("Classifier::NeuralNetwork::Outputs", 20);
+
+	auto modelType = util::KnobDatabase::getKnobValue("ModelType", "FastModel"); // (FastModel, ConvolutionalCPUModel, ConvolutionalGPUModel)
 
 	util::log("ClassificationModelBuilder") << "Creating ...\n";
-	model->setNeuralNetwork("FeatureSelector",
-		buildNeuralNetwork("FeatureSelector", featureSelectorInputSize,
-		featureSelectorOutputSize));
-	model->setNeuralNetwork("Classifier", buildNeuralNetwork("Classifier",
-		classifierInputSize, classifierOutputSize));
+
+	if(modelType == "ConvolutionalGPUModel")
+	{
+		buildConvolutionalGPUModel(model, featureSelectorInputSize, classifierOutputSize);
+	}
+	else if(modelType == "ConvolutionalCPUModel")
+	{
+		buildConvolutionalCPUModel(model, featureSelectorInputSize, classifierOutputSize);
+	}
+	else if(modelType == "ConvolutionalFastModel")
+	{
+		buildConvolutionalFastModel(model, featureSelectorInputSize, classifierOutputSize);
+	}
 
 	return model;
 }

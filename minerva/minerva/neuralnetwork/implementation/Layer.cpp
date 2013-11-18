@@ -96,6 +96,11 @@ unsigned Layer::getOutputCount() const
 	return m_sparseMatrix.columns() * blocks();
 }
 
+unsigned Layer::getBlockingFactor() const
+{
+	return m_sparseMatrix.front().rows();
+}
+
 Layer::BlockSparseMatrix Layer::getWeightsWithoutBias() const
 {
 	BlockSparseMatrix result;

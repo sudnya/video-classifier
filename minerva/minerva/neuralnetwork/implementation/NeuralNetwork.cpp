@@ -178,6 +178,14 @@ unsigned NeuralNetwork::getInputCount() const
     return front().getInputCount();
 }
 
+unsigned NeuralNetwork::getBlockingFactor() const
+{
+	if(empty())
+		return 0;
+
+	return front().getBlockingFactor();
+}
+
 unsigned NeuralNetwork::getOutputCount() const
 {
     if(empty())
