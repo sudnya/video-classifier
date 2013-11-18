@@ -287,7 +287,7 @@ void MultiLevelOptimizer::solve()
 		return;
 	}
 	
-	unsigned maxIterations = util::KnobDatabase::getKnobValue("MultiLevelOptimizer::LocalSearchIterations", 20);
+	unsigned maxIterations = util::KnobDatabase::getKnobValue("MultiLevelOptimizer::LocalSearchIterations", 50);
     float epsilon = computeEpsilon(initialWeights);
    
     //we have access to backPropData - make do with only the interface functions of that class

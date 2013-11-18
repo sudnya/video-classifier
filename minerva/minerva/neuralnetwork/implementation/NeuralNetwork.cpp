@@ -36,7 +36,8 @@ void NeuralNetwork::train(const Matrix& inputMatrix, const Matrix& referenceOutp
        << inputMatrix.columns() << ") columns. Using reference output of (" << referenceOutput.rows() << ") rows, ("
        << referenceOutput.columns() << ") columns. \n";
 
-    BackPropData data(this, convertInputToBlockSparse(inputMatrix), convertOutputToBlockSparse(referenceOutput));
+    BackPropData data(this, convertToBlockSparseForLayerInput(front(), inputMatrix),
+		convertToBlockSparseForLayerOutput(back(), referenceOutput));
     //should we worry about comparing costs here?
     //data.computeCost();
     //data.computeDerivative();
@@ -62,9 +63,9 @@ NeuralNetwork::Matrix NeuralNetwork::runInputs(const Matrix& m) const
     //util::log("NeuralNetwork") << "Running forward propagation on matrix (" << m.rows()
     //        << " rows, " << m.columns() << " columns).\n";
     
-    auto temp = convertInputToBlockSparse(m);
+    auto temp = convertToBlockSparseForLayerInput(front(), m);
 
-	return convertOutputToMatrix(runInputs(temp));
+	return runInputs(temp).toMatrix();
 }
 
 NeuralNetwork::BlockSparseMatrix NeuralNetwork::runInputs(const BlockSparseMatrix& m) const
@@ -73,7 +74,8 @@ NeuralNetwork::BlockSparseMatrix NeuralNetwork::runInputs(const BlockSparseMatri
 
     for (auto i = m_layers.begin(); i != m_layers.end(); ++i)
     {
-        temp = (*i).runInputs(temp);
+        formatInputForLayer(*i, temp);
+		temp = (*i).runInputs(temp);
     }
 
     return temp;
@@ -81,8 +83,8 @@ NeuralNetwork::BlockSparseMatrix NeuralNetwork::runInputs(const BlockSparseMatri
 
 float NeuralNetwork::computeAccuracy(const Matrix& input, const Matrix& reference) const
 {
-	return computeAccuracy(convertInputToBlockSparse(input),
-		convertOutputToBlockSparse(reference));
+	return computeAccuracy(convertToBlockSparseForLayerInput(front(), input),
+		convertToBlockSparseForLayerOutput(back(), reference));
 }
 
 float NeuralNetwork::computeAccuracy(const BlockSparseMatrix& input,
@@ -222,48 +224,64 @@ void NeuralNetwork::setFlattenedWeights(const Matrix& m)
 	}
 }
 
-NeuralNetwork::Matrix NeuralNetwork::convertOutputToMatrix(const BlockSparseMatrix& blockedMatrix) const
+NeuralNetwork::BlockSparseMatrix NeuralNetwork::convertToBlockSparseForLayerInput(const Layer& layer, const Matrix& m) const
 {
-	Matrix result;
-	
-	for(auto& matrix : blockedMatrix)
-	{
-		result = result.appendRows(matrix);
-	}
-	
-	return result;
-}
-
-NeuralNetwork::BlockSparseMatrix NeuralNetwork::convertInputToBlockSparse(const Matrix& m) const
-{
-	assert(m.columns() == front().getInputCount());
+	assert(m.columns() == layer.getInputCount());
 	
 	BlockSparseMatrix result;
 	size_t column = 0;
 
-	for(auto& block : front())
+	for(auto& block : layer)
 	{
 		size_t blockInputsExceptBias = block.rows();
-		result.push_back(m.slice(0, column, m.rows(), column + blockInputsExceptBias));
-		column += block.rows();
+		result.push_back(m.slice(0, column, m.rows(), blockInputsExceptBias));
+		column += blockInputsExceptBias;
 	}
-	
+
+	result.setColumnSparse();
+
 	return result;
 }
 
-NeuralNetwork::BlockSparseMatrix NeuralNetwork::convertOutputToBlockSparse(const Matrix& m) const
+void NeuralNetwork::formatInputForLayer(const Layer& layer, BlockSparseMatrix& m) const
 {
-	assert(m.columns() == back().getOutputCount());
+	assert(layer.getInputCount() == m.columns());
+	
+	if(layer.blocks() == m.blocks()) return;
+
+	assert(m.isColumnSparse());
+
+	// TODO: faster
+	m = convertToBlockSparseForLayerInput(layer, m.toMatrix());
+}
+
+void NeuralNetwork::formatOutputForLayer(const Layer& layer, BlockSparseMatrix& m) const
+{
+	assert(layer.getOutputCount() == m.columns());
+	
+	if(layer.blocks() == m.blocks()) return;
+
+	assert(m.isColumnSparse());
+
+	// TODO: faster
+	m = convertToBlockSparseForLayerOutput(layer, m.toMatrix());
+}
+
+NeuralNetwork::BlockSparseMatrix NeuralNetwork::convertToBlockSparseForLayerOutput(const Layer& layer, const Matrix& m) const
+{
+	assert(m.columns() == layer.getOutputCount());
 	
 	BlockSparseMatrix result;
 	size_t column = 0;
 
-	for(auto& block : back())
+	for(auto& block : layer)
 	{
-		result.push_back(m.slice(0, column, m.rows(), column + block.columns()));
+		result.push_back(m.slice(0, column, m.rows(), block.columns()));
 		column += block.columns();
 	}
 	
+	result.setColumnSparse();
+
 	return result;
 }
 

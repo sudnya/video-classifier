@@ -18,13 +18,19 @@ namespace matrix
 {
 
 BlockSparseMatrix::BlockSparseMatrix(size_t blocks, size_t rows,
-	size_t columns)
-: _matrices(blocks)
+	size_t columns, bool isRowSparse)
+: _matrices(blocks), _isRowSparse(isRowSparse)
 {
 	for(auto& matrix : *this)
 	{
 		matrix.resize(rows, columns);
 	}
+}
+
+BlockSparseMatrix::BlockSparseMatrix(bool isRowSparse)
+: _isRowSparse(isRowSparse)
+{
+
 }
 
 BlockSparseMatrix::iterator BlockSparseMatrix::begin()
@@ -111,21 +117,47 @@ bool BlockSparseMatrix::empty() const
 
 size_t BlockSparseMatrix::columns() const
 {
-	if(empty()) return 0;
+	if(isColumnSparse())
+	{
+		size_t c = 0;
 
+		for(auto& matrix : *this)
+		{
+			c += matrix.columns();
+		}
+
+		return c;
+	}
+	
 	return front().columns();
 }
 
 size_t BlockSparseMatrix::rows() const
 {
-	size_t r = 0;
-
-	for(auto& matrix : *this)
+	if(isRowSparse())
 	{
-		r += matrix.rows();
+		size_t r = 0;
+
+		for(auto& matrix : *this)
+		{
+			r += matrix.rows();
+		}
+
+		return r;
 	}
 
-	return r;
+
+	return front().rows();
+}
+
+bool BlockSparseMatrix::isRowSparse() const
+{
+	return _isRowSparse;
+}
+
+bool BlockSparseMatrix::isColumnSparse() const
+{
+	return not isRowSparse();
 }
 
 void BlockSparseMatrix::resize(size_t blocks, size_t rowsPerBlock,
@@ -139,13 +171,24 @@ void BlockSparseMatrix::resize(size_t blocks, size_t rowsPerBlock,
 	}
 }
 
+void BlockSparseMatrix::setColumnSparse()
+{
+	_isRowSparse = false;
+}
+
+void BlockSparseMatrix::setRowSparse()
+{
+	_isRowSparse = true;
+}
+
 BlockSparseMatrix BlockSparseMatrix::multiply(
 	const BlockSparseMatrix& m) const
 {
 	// TODO: in parallel
-	BlockSparseMatrix result;
+	BlockSparseMatrix result(isRowSparse());
 
 	assert(m.blocks() == blocks());
+	assert(columns() == m.rows());
 
 	for(auto left = begin(), right = m.begin(); left != end(); ++left, ++right)
 	{
@@ -157,7 +200,7 @@ BlockSparseMatrix BlockSparseMatrix::multiply(
 
 BlockSparseMatrix BlockSparseMatrix::multiply(float f) const
 {
-	BlockSparseMatrix result;
+	BlockSparseMatrix result(isRowSparse());
 
 	// TODO: in parallel
 	for(auto& matrix : *this)
@@ -171,7 +214,7 @@ BlockSparseMatrix BlockSparseMatrix::multiply(float f) const
 BlockSparseMatrix BlockSparseMatrix::elementMultiply(const BlockSparseMatrix& m) const
 {
 	// TODO: in parallel
-	BlockSparseMatrix result;
+	BlockSparseMatrix result(isRowSparse());
 
 	assert(m.blocks() == blocks());
 
@@ -186,7 +229,7 @@ BlockSparseMatrix BlockSparseMatrix::elementMultiply(const BlockSparseMatrix& m)
 BlockSparseMatrix BlockSparseMatrix::add(const BlockSparseMatrix& m) const
 {
 	// TODO: in parallel
-	BlockSparseMatrix result;
+	BlockSparseMatrix result(isRowSparse());
 
 	assert(m.size() == size());
 
@@ -202,7 +245,7 @@ BlockSparseMatrix BlockSparseMatrix::add(const BlockSparseMatrix& m) const
 BlockSparseMatrix BlockSparseMatrix::addBroadcastRow(const BlockSparseMatrix& m) const
 {
 	// TODO: in parallel
-	BlockSparseMatrix result;
+	BlockSparseMatrix result(isRowSparse());
 
 	assert(m.columns() == columns());
 
@@ -217,7 +260,7 @@ BlockSparseMatrix BlockSparseMatrix::addBroadcastRow(const BlockSparseMatrix& m)
 
 BlockSparseMatrix BlockSparseMatrix::add(float f) const
 {
-	BlockSparseMatrix result;
+	BlockSparseMatrix result(isRowSparse());
 
 	// TODO: in parallel
 	for(auto& matrix : *this)
@@ -231,7 +274,7 @@ BlockSparseMatrix BlockSparseMatrix::add(float f) const
 BlockSparseMatrix BlockSparseMatrix::subtract(const BlockSparseMatrix& m) const
 {
 	// TODO: in parallel
-	BlockSparseMatrix result;
+	BlockSparseMatrix result(isRowSparse());
 
 	assert(m.size() == size());
 
@@ -245,7 +288,7 @@ BlockSparseMatrix BlockSparseMatrix::subtract(const BlockSparseMatrix& m) const
 
 BlockSparseMatrix BlockSparseMatrix::subtract(float f) const
 {
-	BlockSparseMatrix result;
+	BlockSparseMatrix result(isRowSparse());
 
 	// TODO: in parallel
 	for(auto& matrix : *this)
@@ -258,7 +301,7 @@ BlockSparseMatrix BlockSparseMatrix::subtract(float f) const
 
 BlockSparseMatrix BlockSparseMatrix::log() const
 {
-	BlockSparseMatrix result;
+	BlockSparseMatrix result(isRowSparse());
 
 	// TODO: in parallel
 	for(auto& matrix : *this)
@@ -271,7 +314,7 @@ BlockSparseMatrix BlockSparseMatrix::log() const
 
 BlockSparseMatrix BlockSparseMatrix::negate() const
 {
-	BlockSparseMatrix result;
+	BlockSparseMatrix result(isRowSparse());
 
 	// TODO: in parallel
 	for(auto& matrix : *this)
@@ -285,7 +328,7 @@ BlockSparseMatrix BlockSparseMatrix::negate() const
 
 BlockSparseMatrix BlockSparseMatrix::sigmoidDerivative() const
 {
-	BlockSparseMatrix result;
+	BlockSparseMatrix result(isRowSparse());
 	
 	// TODO: in parallel
 	for(auto& matrix : *this)
@@ -298,7 +341,7 @@ BlockSparseMatrix BlockSparseMatrix::sigmoidDerivative() const
 
 BlockSparseMatrix BlockSparseMatrix::sigmoid() const
 {
-	BlockSparseMatrix result;
+	BlockSparseMatrix result(isRowSparse());
 
 	// TODO: in parallel
 	for(auto& matrix : *this)
@@ -311,7 +354,7 @@ BlockSparseMatrix BlockSparseMatrix::sigmoid() const
 
 BlockSparseMatrix BlockSparseMatrix::transpose() const
 {
-	BlockSparseMatrix result;
+	BlockSparseMatrix result(isRowSparse());
 	
 	// TODO: in parallel
 	for(auto& matrix : *this)
@@ -378,7 +421,7 @@ void BlockSparseMatrix::assignUniformRandomValues(float min, float max)
 
 BlockSparseMatrix BlockSparseMatrix::greaterThanOrEqual(float f) const
 {
-	BlockSparseMatrix result;
+	BlockSparseMatrix result(isRowSparse());
 	
 	for(auto& matrix : *this)
 	{
@@ -390,13 +433,36 @@ BlockSparseMatrix BlockSparseMatrix::greaterThanOrEqual(float f) const
 
 BlockSparseMatrix BlockSparseMatrix::equals(const BlockSparseMatrix& m) const
 {
-	BlockSparseMatrix result;
+	BlockSparseMatrix result(isRowSparse());
 	
 	for(auto matrix = begin(), block = m.begin(); matrix != end(); ++matrix, ++block)
 	{
 		result.push_back(matrix->equals(*block));
 	}
 
+	return result;
+}
+
+Matrix BlockSparseMatrix::toMatrix() const
+{
+	Matrix result;
+
+	// TODO: faster	
+	if(isColumnSparse())
+	{
+		for(auto& matrix : *this)
+		{
+			result = result.appendColumns(matrix);
+		}
+	}
+	else
+	{
+		for(auto& matrix : *this)
+		{
+			result = result.appendRows(matrix);
+		}
+	}
+	
 	return result;
 }
 

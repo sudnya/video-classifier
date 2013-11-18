@@ -253,8 +253,10 @@ MatrixVector BackPropData::getDeltas(const NeuralNetwork& network, const MatrixV
         //util::log ("BackPropData") << " Layer number: " << layerNumber << "\n";
         auto& layer = network[layerNumber];
 
+		network.formatOutputForLayer(layer, deltas.back());
+
         auto activationDerivativeOfCurrentLayer = i->sigmoidDerivative();
-        auto deltaPropagatedReverse = layer.runReverse(delta);
+        auto deltaPropagatedReverse = layer.runReverse(deltas.back());
        
         delta = deltaPropagatedReverse.elementMultiply(activationDerivativeOfCurrentLayer);
 
@@ -275,14 +277,16 @@ MatrixVector BackPropData::getActivations(const NeuralNetwork& network) const
 	MatrixVector activations;
 
 	auto temp = m_input;
+
 	activations.push_back(temp);
     //util::log("BackPropData") << " added activation of size ( " << activations.back().rows() << " ) rows and ( " << activations.back().columns() << " )\n" ;
 
 	for (auto i = network.begin(); i != network.end(); ++i)
     {
-        activations.push_back((*i).runInputs(temp));
+		network.formatInputForLayer(*i, activations.back());
+	
+        activations.push_back((*i).runInputs(activations.back()));
         //util::log("BackPropData") << " added activation of size ( " << activations.back().rows() << " ) rows and ( " << activations.back().columns() << " )\n" ;
-        temp = activations.back();
     }
 
     util::log("BackPropData") << " intermediate stage ( " << activations[activations.size() / 2].toString() << "\n";
@@ -316,8 +320,12 @@ MatrixVector BackPropData::getCostDerivative(const NeuralNetwork& network) const
     auto layer = network.begin();
     for (auto i = deltas.begin(), j = activations.begin(); i != deltas.end() && j != activations.end(); ++i, ++j, ++layer)
     {
-        //there will be one less delta than activation
-        auto unnormalizedPartialDerivative = (((*i).transpose()).multiply(*j)).transpose();
+        auto transposedDelta = (*i).transpose();
+
+		transposedDelta.setRowSparse();
+
+		//there will be one less delta than activation
+        auto unnormalizedPartialDerivative = ((transposedDelta).multiply(*j)).transpose();
         auto normalizedPartialDerivative = unnormalizedPartialDerivative.multiply(1.0f/samples);
         
         auto weights = layer->getWeightsWithoutBias();

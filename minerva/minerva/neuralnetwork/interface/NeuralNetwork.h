@@ -68,9 +68,11 @@ class NeuralNetwork
 		void setFlattenedWeights(const Matrix& m);
 
 	public:
-		Matrix convertOutputToMatrix(const BlockSparseMatrix& m) const;
-		BlockSparseMatrix convertInputToBlockSparse(const Matrix& m) const;
+		BlockSparseMatrix convertToBlockSparseForLayerInput(const Layer& layer, const Matrix& m) const;
+		BlockSparseMatrix convertToBlockSparseForLayerOutput(const Layer& layer, const Matrix& m) const;
 		BlockSparseMatrix convertOutputToBlockSparse(const Matrix& m) const;
+		void formatInputForLayer(const Layer& layer, BlockSparseMatrix& m) const;
+		void formatOutputForLayer(const Layer& layer, BlockSparseMatrix& m) const;
 
     public:
         void addLayer(const Layer&);

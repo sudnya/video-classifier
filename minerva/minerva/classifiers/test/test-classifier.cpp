@@ -22,11 +22,15 @@ neuralnetwork::NeuralNetwork createAndInitializeNeuralNetwork(unsigned networkSi
 {
     neuralnetwork::NeuralNetwork ann;
 
+	size_t convolutionalLayers = std::min(networkSize, 1U);
+
     // Layer 1
-    ann.addLayer(Layer(1,networkSize,networkSize));
+    ann.addLayer(Layer(convolutionalLayers,networkSize/convolutionalLayers,networkSize/convolutionalLayers));
+	
+	size_t convolutionalLayersTwo = std::min(networkSize, 2U);
 
     // Layer 2
-    ann.addLayer(Layer(1, networkSize,networkSize));
+    ann.addLayer(Layer(convolutionalLayersTwo, networkSize/convolutionalLayersTwo, networkSize/convolutionalLayersTwo));
 
     // Layer 3
     ann.addLayer(Layer(1,networkSize,networkSize/2));

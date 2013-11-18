@@ -30,7 +30,8 @@ public:
 
 public:
 	explicit BlockSparseMatrix(size_t blocks = 0, size_t rows = 0,
-		size_t columns = 0);
+		size_t columns = 0, bool rowSparse = true);
+	explicit BlockSparseMatrix(bool rowSparse);
 
 public:
 	iterator	   begin();
@@ -62,8 +63,13 @@ public:
     size_t columns() const;
 	size_t rows()	const;
 
+	bool isRowSparse()    const;
+	bool isColumnSparse() const;
+
 public:
 	void resize(size_t blocks, size_t rowsPerBlock, size_t columnsPerBlock);
+	void setColumnSparse();
+	void setRowSparse();
 
 public: 
 	BlockSparseMatrix multiply(const BlockSparseMatrix& m) const;
@@ -100,6 +106,9 @@ public:
 	BlockSparseMatrix equals(const BlockSparseMatrix& m) const;
 
 public:
+	Matrix toMatrix() const;
+
+public:
     float reduceSum() const;
 
 public:
@@ -107,6 +116,7 @@ public:
 
 private:
 	MatrixVector _matrices;
+	bool         _isRowSparse;
 
 };
 

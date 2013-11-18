@@ -24,6 +24,7 @@ Layer::Layer(unsigned totalBlocks, size_t blockInput, size_t blockOutput)
 {
 	m_sparseMatrix.resize(totalBlocks, blockInput, blockOutput);
 	m_bias.resize(totalBlocks, 1, blockOutput);
+	m_bias.setColumnSparse();
 }
 
 void Layer::initializeRandomly(float e)
@@ -40,8 +41,8 @@ Layer::BlockSparseMatrix Layer::runInputs(const BlockSparseMatrix& m) const
 {
 	util::log("Layer") << " Running forward propagation on matrix (" << m.rows()
 		<< " rows, " << m.columns() << " columns) through layer with dimensions ("
-		<< m_sparseMatrix.rows() << " rows, " << m_sparseMatrix.columns()
-		<< " columns).\n";
+		<< getInputCount() << " inputs, " << getOutputCount()
+		<< " outputs).\n";
 	util::log("Layer") << "  layer: " << m_sparseMatrix.toString() << "\n";
 
 	auto unbiasedOutput = m.multiply(m_sparseMatrix);
@@ -60,8 +61,8 @@ Layer::BlockSparseMatrix Layer::runReverse(const BlockSparseMatrix& m) const
 {
 	util::log("Layer") << " Running reverse propagation on matrix (" << m.rows()
 			<< " rows, " << m.columns() << " columns) through layer with dimensions ("
-		<< m_sparseMatrix.rows() << " rows, " << m_sparseMatrix.columns()
-		<< " columns).\n";
+		<< getInputCount() << " inputs, " << getOutputCount()
+		<< " outputs).\n";
 	util::log("Layer") << "  layer: " << m_sparseMatrix.toString() << "\n";
    
 	auto result = m.multiply(m_sparseMatrix.transpose());
@@ -92,7 +93,7 @@ unsigned Layer::getInputCount() const
 
 unsigned Layer::getOutputCount() const
 {
-	return m_sparseMatrix.columns();
+	return m_sparseMatrix.columns() * blocks();
 }
 
 Layer::BlockSparseMatrix Layer::getWeightsWithoutBias() const
@@ -134,7 +135,7 @@ void Layer::setFlattenedWeights(const Matrix& m)
 	for(auto matrix = begin(); matrix != end(); ++matrix)
 	{
 		matrix->data() = m.slice(0, position, 1,
-			position + matrix->size()).data();
+			matrix->size()).data();
 	
 		position += matrix->size();
 	}
