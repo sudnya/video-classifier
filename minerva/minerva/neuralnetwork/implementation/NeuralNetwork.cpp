@@ -155,9 +155,28 @@ void NeuralNetwork::resize(size_t layers)
 	m_layers.resize(layers);
 }
 
+static size_t getGreatestCommonDivisor(size_t a, size_t b)
+{
+	// Euclid's method
+	if(b == 0)
+	{
+		return a;
+	}
+
+	return getGreatestCommonDivisor(b, a % b);
+}
+
 void NeuralNetwork::mirror()
 {
-	addLayer(Layer(1, getOutputCount(), getInputCount()));
+	size_t blocks = getGreatestCommonDivisor(getBlockingFactor(),
+		getGreatestCommonDivisor(getOutputCount(), getInputCount()));
+
+	assertM(getOutputCount() % blocks == 0, "Input count " << getOutputCount()
+		<< " not divisible by " << blocks << ".");
+	assertM(getInputCount() % blocks == 0, "Output count " << getInputCount()
+		<< " not divisivle by " << blocks << ".");
+
+	addLayer(Layer(blocks, getOutputCount()/blocks, getInputCount()/blocks));
 	
     // should be pseudo inverse
     back().initializeRandomly();   

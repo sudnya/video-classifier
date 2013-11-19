@@ -103,8 +103,6 @@ void ClassifierEngine::runOnPaths(const StringVector& paths)
 		util::KnobDatabase::getKnobValue<unsigned int>(
 		"ClassifierEngine::MaximumVideoFrames", 50);
 	
-	util::log("ClassifierEngine") << "Running image batches\n";
-
 	// Run images first
 	runAllImages(this, images, maxBatchSize, maxVideoFrames);
 	
@@ -199,6 +197,8 @@ static VideoAndFrameVector pickRandomFrames(VideoVector& videos,
 static void runAllVideos(ClassifierEngine* engine, VideoVector& videos,
 	unsigned int maxBatchSize, unsigned int& maxVideoFrames)
 {
+	util::log("ClassifierEngine") << "Running video batches\n";
+	
 	auto frames = pickRandomFrames(videos, maxVideoFrames);
 
 	for(unsigned int i = 0; i < frames.size(); i += maxBatchSize)
@@ -212,6 +212,9 @@ static void runAllVideos(ClassifierEngine* engine, VideoVector& videos,
 		{
 			unsigned int video = frames[i + j].first;
 			unsigned int frame = frames[i + j].second;
+
+			util::log("ClassifierEngine") << " Getting frame (" << frame
+				<< ") from video " << videos[video].path() << "\n"; 
 			
 			batch.push_back(videos[video].getSpecificFrame(frame));
 		}
@@ -225,6 +228,12 @@ static void runAllVideos(ClassifierEngine* engine, VideoVector& videos,
 static VideoAndFrameVector pickRandomFrames(VideoVector& videos,
 	unsigned int maxVideoFrames)
 {
+	util::log("ClassifierEngine") << " Picking random " << maxVideoFrames << " frames from videos\n"; 
+	if(videos.size() == 0)
+	{
+		return VideoAndFrameVector();
+	}
+	
 	std::default_random_engine generator(std::time(0));
 	
 	VideoAndFrameVector positions;
@@ -233,7 +242,15 @@ static VideoAndFrameVector pickRandomFrames(VideoVector& videos,
 	{
 		unsigned int video = generator() % videos.size();
 		unsigned int frames = videos[video].getTotalFrames();
+		
+		if(frames == 0)
+		{
+			continue;
+		}
+
 		unsigned int frame = generator() % frames;
+		util::log("ClassifierEngine") << "  Video " << videos[video].path()
+			<< " has " << frames << " frames\n"; 
 		
 		positions.push_back(std::make_pair(video, frame));
 	}
@@ -257,6 +274,8 @@ static void displayOnScreen(ImageVector& images)
 static void runAllImages(ClassifierEngine* engine, ImageVector& images,
 	unsigned int maxBatchSize, unsigned int& maxVideoFrames)
 {
+	util::log("ClassifierEngine") << "Running image batches\n";
+
 	for(unsigned int i = 0; i < images.size(); i += maxBatchSize)
 	{
 		unsigned int batchSize = std::min(images.size() - i,

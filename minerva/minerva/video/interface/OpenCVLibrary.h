@@ -73,7 +73,7 @@ public:
 public:
 	static IplImage* cvLoadImage(const char* filename,
 		int iscolor = CV_LOAD_IMAGE_COLOR);
-	static int cvSaveImage(const char* filename, const IplImage* image);
+	static int cvSaveImage(const char* filename, const IplImage* image, const int* params = nullptr);
 	
 	static void cvReleaseImage(IplImage**);
 
@@ -96,7 +96,7 @@ private:
 	{
 	public:
 		IplImage* (*cvLoadImage)(const char* filename, int iscolor);
-		int (*cvSaveImage)(const char* filename, const IplImage*);
+		int (*cvSaveImage)(const char* filename, const IplImage*, const int* params);
 		void (*cvReleaseImage)(IplImage**);
 
 	public:

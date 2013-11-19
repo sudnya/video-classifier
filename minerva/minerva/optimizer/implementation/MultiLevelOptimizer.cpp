@@ -104,7 +104,7 @@ Matrix MultiLevelOptimizer::simulatedAnnealing(const Matrix& initialWeights, flo
 {
     std::uniform_real_distribution<float> distribution(0.0f, 1.0f);
     
-    unsigned iterations = util::KnobDatabase::getKnobValue("MultiLevelOptimizer::SimmulatedAnnealingIterations", 5000);
+    unsigned iterations = util::KnobDatabase::getKnobValue("MultiLevelOptimizer::SimmulatedAnnealingIterations", 50);
     
     auto  currentWeights = initialWeights;
     float currentCost    = m_backPropDataPtr->computeCostForNewFlattenedWeights(currentWeights);
@@ -295,8 +295,8 @@ void MultiLevelOptimizer::solve()
     float range           = estimateCostFunctionRange(initialWeights, maxIterations, epsilon);
     float maximumDistance = estimateMaximumDistanceToExplore(range, maxIterations);
 	
-          bestCostSoFar = newCost;
-    auto  bestWeights   = initialWeights;
+	auto bestWeights   = localSearch(initialWeights, range, maxIterations);
+         bestCostSoFar = m_backPropDataPtr->computeCostForNewFlattenedWeights(bestWeights);
     
     util::log("MultiLevelOptimizer") << " epsilon:             " << epsilon         << "\n";
     util::log("MultiLevelOptimizer") << " cost function range: " << range           << "\n";

@@ -72,22 +72,23 @@ bool OpenCVVideoLibrary::OpenCVVideoStream::getNextFrame(Image& frame)
 		throw std::runtime_error("Failed to retrieve frame from video stream.");
 	}
 	
-	int pixelSize = (image->depth % 32) / 8;
-	
+	int colorSize = (image->depth % 32) / 8;
+	int pixelSize = image->nChannels * colorSize;
+
 	Image::ByteVector data(image->height * image->width *
-		image->nChannels * pixelSize);
+		pixelSize);
 	
 	for(int y = 0; y < image->height; ++y)
 	{
 		int position = y * image->widthStep;
-		int dataPosition = y * image->width * image->nChannels * pixelSize;
+		int dataPosition = y * image->width * pixelSize;
 		
 		std::memcpy(&data[dataPosition], &image->imageData[position],
-			image->widthStep);
+			std::min(image->widthStep, image->width * pixelSize));
 	}
 	
 	frame = Image(image->width, image->height, image->nChannels,
-		pixelSize, _path, data);
+		colorSize, _path, data);
 
     return true;
 }

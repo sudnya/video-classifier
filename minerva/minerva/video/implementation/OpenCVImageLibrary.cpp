@@ -91,10 +91,19 @@ static void createIplImage(IplImage& iplImage, const Header& header,
 	iplImage.nChannels = header.colorComponents;
 	iplImage.alphaChannel = 0;
 	iplImage.depth = header.pixelSize * 8;
+
+	iplImage.colorModel[0] = 'R';
+	iplImage.colorModel[1] = 'G';
+	iplImage.colorModel[2] = 'B';
+	iplImage.colorModel[3] = '\0';
+	iplImage.channelSeq[0] = 'B';
+	iplImage.channelSeq[1] = 'G';
+	iplImage.channelSeq[2] = 'R';
+	iplImage.channelSeq[3] = '\0';
 	
 	iplImage.dataOrder = OpenCVLibrary::IPL_DATA_ORDER_PIXEL;
 	iplImage.origin = 0;
-	iplImage.align  = header.x;
+	iplImage.align  = 4;
 	iplImage.width  = header.x;
 	iplImage.height = header.y;
 	
@@ -102,6 +111,15 @@ static void createIplImage(IplImage& iplImage, const Header& header,
 	iplImage.maskROI = nullptr;
 	iplImage.imageId = nullptr;
 	iplImage.tileInfo = nullptr;
+
+	iplImage.BorderMode[0] = 0;
+	iplImage.BorderMode[1] = 0;
+	iplImage.BorderMode[2] = 0;
+	iplImage.BorderMode[3] = 0;
+	iplImage.BorderConst[0] = 0;
+	iplImage.BorderConst[1] = 0;
+	iplImage.BorderConst[2] = 0;
+	iplImage.BorderConst[3] = 0;
 	
 	iplImage.imageSize = data.size();
 	iplImage.imageData = (char*)data.data();

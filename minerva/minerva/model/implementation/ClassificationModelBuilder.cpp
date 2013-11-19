@@ -25,12 +25,12 @@ typedef minerva::neuralnetwork::NeuralNetwork NeuralNetwork;
 typedef minerva::neuralnetwork::Layer Layer;
 typedef minerva::matrix::Matrix Matrix;
 
+#if 0
 static unsigned logBase(unsigned base, unsigned value)
 {
 	return std::ceil(std::log((double)value) / std::log((double)base));
 }
 
-#if 0
 static Matrix generateRandomInputsForNetwork(const NeuralNetwork& network,
 	std::default_random_engine& generator)
 {
@@ -216,42 +216,8 @@ static void tuneNeuralNetwork(NeuralNetwork& neuralNetwork)
 	neuralNetwork.initializeRandomly(weightEpsilon);
 }
 
-static NeuralNetwork buildNeuralNetwork(const std::string& name, unsigned inputSize, unsigned outputSize)
+static void addLabels(NeuralNetwork& neuralNetwork, const std::string& name, unsigned outputSize)
 {
-	NeuralNetwork neuralNetwork;
-	
-	unsigned numberOfLayers = util::KnobDatabase::getKnobValue(name + "::NeuralNetwork::Layers", 3);
-
-	unsigned currentSize     = inputSize;
-	unsigned reductionFactor = std::max(1U, logBase(numberOfLayers, inputSize / outputSize));
-	
-	util::log("ClassificationModelBuilder") << " Building a neural network named '" << name << "' with input size = "
-		<< inputSize << "\n";
-
-	for(unsigned layer = 0; layer != numberOfLayers; ++layer)
-	{
-		std::stringstream knobName;
-
-		knobName << name << "::NeuralNetwork::Layer" << layer;
-
-		unsigned blocks	    = util::KnobDatabase::getKnobValue(knobName.str() + "::Blocks",	   1);
-		size_t blockInputs  = util::KnobDatabase::getKnobValue(knobName.str() + "::BlockInputs",  currentSize);
-		size_t blockOutputs = util::KnobDatabase::getKnobValue(knobName.str() + "::BlockOutputs", currentSize/reductionFactor);
-		
-		if(layer + 1 == numberOfLayers || blockOutputs < outputSize)
-		{
-			blockOutputs = outputSize;
-		}
-		
-		neuralNetwork.addLayer(Layer(blocks, blockInputs, blockOutputs));
-		util::log("ClassificationModelBuilder") << " added layer with input size = "
-			<< blockInputs << " and output size " << blockOutputs << "\n";
-
-		currentSize = blockOutputs;
-	}
-
-	util::log("ClassificationModelBuilder") << " Output size for '" << name << "' will be " << outputSize << "\n";
-	
 	const char* defaultLabels[] = {"vattene", "vieniqui", "perfetto", "furbo",
 		"cheduepalle", "chevuoi", "daccordo", "seipazzo", "combinato",
 		"freganiente", "ok", "cosatifarei", "basta", "prendere", "noncenepiu",
@@ -280,32 +246,46 @@ static NeuralNetwork buildNeuralNetwork(const std::string& name, unsigned inputS
 		neuralNetwork.setLabelForOutputNeuron(output, outputNeuronName);
 	}
 	
-	tuneNeuralNetwork(neuralNetwork);
-
-	return neuralNetwork;
 }
 
-ClassificationModel* ClassificationModelBuilder::create(const std::string& path)
+static void buildConvolutionalGPUModel(ClassificationModel* model, unsigned inputSize, unsigned outputSize)
 {
-	auto model = new ClassificationModel(path);
+	NeuralNetwork featureSelectorNetwork;
 
-	unsigned x         = util::KnobDatabase::getKnobValue("ResolutionX",     32       );
-	unsigned y         = util::KnobDatabase::getKnobValue("ResolutionY",     32       );
-	unsigned colors    = util::KnobDatabase::getKnobValue("ColorComponents", 3        );
-
-
-	// For reference: Multi-Column Deep Neural Network (Topology) 
-	//                http://arxiv.org/pdf/1202.2745.pdf
-	// 
-	//                                          Compute Complexity                     Memory Complexity
-	// 
-	// Layer 1: (100 5x5) convolutional blocks  O(1e4) 
-	// Layer 2: (100 2x2) max pooling           O(1e4) 
-	// Layer 3: (100 4x4) convolutional blocks  O(1e4) 
-	// Layer 4: (100 2x2) max pooling           O(1e4) 
-	// Layer 5: (1 300) fully connected         O(1e8) N/2 connections
-	// Layer 6: (1 100) fully connected         O(1e3) trivial
+	// Our topology (GPU)
 	//
+	//                                          Compute Complexity                     Memory Complexity
+	//                      
+	// Layer 1: (1024 32 x 32 ) sparse blocks   O(1024 * 1024^3) O(1024 * 1e9) O(1e12) O(1024^3) O(1e9)
+	// Layer 2: (256  32 x 32 ) sparse blocks   O(1e9)                                 O(1e8)
+	// Layer 3: (64   32 x 32 ) sparse blocks   O(1e8)                                 O(1e7)
+	// Layer 4: (32   32 x 32 ) sparse blocks   O(1e8)                                 O(1e7)
+	// Layer 5: (1    600)      fully connected O(1e8)                                 O(1e5)
+	// Layer 6: (1    200)      fully connected O(1e8)                                 O(1e4)
+	// 
+	featureSelectorNetwork.addLayer(Layer(1024, 1024, 1024));
+	featureSelectorNetwork.addLayer(Layer(1024, 1024,  128));
+	featureSelectorNetwork.addLayer(Layer( 128, 1024, 1024));
+	featureSelectorNetwork.addLayer(Layer( 128, 1024,    8));
+
+	tuneNeuralNetwork(featureSelectorNetwork);
+
+	model->setNeuralNetwork("FeatureSelector", featureSelectorNetwork);
+
+	NeuralNetwork classifierNetwork;
+
+	classifierNetwork.addLayer(Layer(1, 1024, 600));
+	classifierNetwork.addLayer(Layer(1, 600,  200));
+	classifierNetwork.addLayer(Layer(1, 200,  outputSize));
+
+	addLabels(classifierNetwork, "Classifier", outputSize);
+
+	model->setNeuralNetwork("Classifier", classifierNetwork);
+}
+
+static void buildConvolutionalCPUModel(ClassificationModel* model, unsigned inputSize, unsigned outputSize)
+{
+	NeuralNetwork featureSelectorNetwork;
 
 	// Our topology (CPU)
 	//
@@ -319,24 +299,77 @@ ClassificationModel* ClassificationModelBuilder::create(const std::string& path)
 	// Layer 6: (1    100)      fully connected O(1e8)                                 O(1e4)
 	// 
 
-	// Our topology (GPU)
-	//
-	//                                          Compute Complexity                     Memory Complexity
-	//                      
-	// Layer 1: (1024 32 x 32 ) sparse blocks   O(1024 * 1024^3) O(1024 * 1e9) O(1e12) O(1024^3) O(1e9)
-	// Layer 2: (256  32 x 32 ) sparse blocks   O(1e9)                                 O(1e8)
-	// Layer 3: (64   32 x 32 ) sparse blocks   O(1e8)                                 O(1e7)
-	// Layer 4: (32   32 x 32 ) sparse blocks   O(1e8)                                 O(1e7)
-	// Layer 5: (1    600)      fully connected O(1e8)                                 O(1e5)
-	// Layer 6: (1    200)      fully connected O(1e8)                                 O(1e4)
-	// 
+	featureSelectorNetwork.addLayer(Layer(1024, 256, 256));
+	featureSelectorNetwork.addLayer(Layer(1024, 256,  32));
+	featureSelectorNetwork.addLayer(Layer(  32, 256, 256));
+	featureSelectorNetwork.addLayer(Layer(  32, 256,   8));
+
+	tuneNeuralNetwork(featureSelectorNetwork);
+
+	model->setNeuralNetwork("FeatureSelector", featureSelectorNetwork);
+
+	NeuralNetwork classifierNetwork;
+
+	classifierNetwork.addLayer(Layer(1, 128, 300));
+	classifierNetwork.addLayer(Layer(1, 300, 100));
+	classifierNetwork.addLayer(Layer(1, 100, outputSize));
+
+	addLabels(classifierNetwork, "Classifier", outputSize);
+
+	model->setNeuralNetwork("Classifier", classifierNetwork);
+}
+
+static void buildConvolutionalFastModel(ClassificationModel* model, unsigned inputSize, unsigned outputSize)
+{
+	NeuralNetwork featureSelectorNetwork;
 	
+	// For reference: Multi-Column Deep Neural Network (Topology) 
+	//                http://arxiv.org/pdf/1202.2745.pdf
+	// 
+	//                                          Compute Complexity                     Memory Complexity
+	// 
+	// Layer 1: (100 5x5) convolutional blocks  O(1e4) 
+	// Layer 2: (100 2x2) max pooling           O(1e4) 
+	// Layer 3: (100 4x4) convolutional blocks  O(1e4) 
+	// Layer 4: (100 2x2) max pooling           O(1e4) 
+	// Layer 5: (1 300) fully connected         O(1e8) N/2 connections
+	// Layer 6: (1 100) fully connected         O(1e3) trivial
+	//
+
+	featureSelectorNetwork.addLayer(Layer(100, 25, 25));
+	featureSelectorNetwork.addLayer(Layer(100, 25,  4));
+	featureSelectorNetwork.addLayer(Layer( 16, 25, 25));
+	featureSelectorNetwork.addLayer(Layer( 16, 25,  5));
+
+	tuneNeuralNetwork(featureSelectorNetwork);
+
+	model->setNeuralNetwork("FeatureSelector", featureSelectorNetwork);
+
+	NeuralNetwork classifierNetwork;
+
+	classifierNetwork.addLayer(Layer(1,  80, 300));
+	classifierNetwork.addLayer(Layer(1, 300, 100));
+	classifierNetwork.addLayer(Layer(1, 100, outputSize));
+
+	addLabels(classifierNetwork, "Classifier", outputSize);
+
+	model->setNeuralNetwork("Classifier", classifierNetwork);
+}
+
+ClassificationModel* ClassificationModelBuilder::create(const std::string& path)
+{
+	auto model = new ClassificationModel(path);
+
+	unsigned x         = util::KnobDatabase::getKnobValue("ResolutionX",     32       );
+	unsigned y         = util::KnobDatabase::getKnobValue("ResolutionY",     32       );
+	unsigned colors    = util::KnobDatabase::getKnobValue("ColorComponents", 3        );
+
 	model->setInputImageResolution(x, y, colors);
 
 	unsigned featureSelectorInputSize  = x * y * colors;
 	unsigned classifierOutputSize = util::KnobDatabase::getKnobValue("Classifier::NeuralNetwork::Outputs", 20);
 
-	auto modelType = util::KnobDatabase::getKnobValue("ModelType", "FastModel"); // (FastModel, ConvolutionalCPUModel, ConvolutionalGPUModel)
+	auto modelType = util::KnobDatabase::getKnobValue("ModelType", "ConvolutionalFastModel"); // (FastModel, ConvolutionalCPUModel, ConvolutionalGPUModel)
 
 	util::log("ClassificationModelBuilder") << "Creating ...\n";
 

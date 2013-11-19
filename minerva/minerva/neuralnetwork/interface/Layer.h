@@ -63,6 +63,13 @@ class Layer
         const_iterator end() const;
 
     public:
+        iterator       begin_bias();
+        const_iterator begin_bias() const;
+
+        iterator       end_bias();
+        const_iterator end_bias() const;
+
+    public:
               Matrix& operator[](size_t index);
         const Matrix& operator[](size_t index) const;
     
@@ -71,7 +78,12 @@ class Layer
         const Matrix& back() const;
     
     public:
+              Matrix& back_bias();
+        const Matrix& back_bias() const;
+    
+    public:
     	void push_back(const Matrix& );
+		void push_back_bias(const Matrix& );
     
     public:
         size_t size() const;

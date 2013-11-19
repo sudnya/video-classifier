@@ -144,7 +144,33 @@ void ClassificationModel::save() const
 					std::make_pair(filename.str(), &*matrix));
 			}
 
+			stream << "],\n";
+			stream << "\t\t\t\t\t\"biases\" : [\n";
+
+			for(auto matrix = layer->begin_bias(); matrix != layer->end_bias(); ++matrix)
+			{
+				if(matrix != layer->begin_bias())
+				{
+					stream << ",\n";
+				}
+			
+				unsigned int matrixIndex =
+					std::distance(layer->begin_bias(), matrix);
+			
+				std::stringstream filename;
+				
+				filename << network->first << "-layer" << index
+					<< "-bias-matrix" << matrixIndex << ".bin";
+			
+				stream << "\t\t\t\t\t\t\"" << filename.str() << "\"";
+				
+				filenameToMatrices.insert(
+					std::make_pair(filename.str(), &*matrix));
+
+			}
+			
 			stream << "]\n";
+
 			
 			stream << "\t\t\t\t}";
 		}	
@@ -286,6 +312,39 @@ void ClassificationModel::load()
 					layer.push_back(matrix::Matrix());
 					
 					auto& matrix = layer.back();
+					
+					matrix.resize(rows, columns);
+					
+					stream.read((char*)matrix.data().data(), rows * columns);
+				}
+				
+				matrixArrayVisitor = util::json::Visitor(layerVisitor["biases"]);	
+			
+				for(auto weightMatrixObject = matrixArrayVisitor.begin_array();
+					weightMatrixObject != matrixArrayVisitor.end_array();
+					++weightMatrixObject)
+				{
+					util::json::Visitor weightMatrixVisitor(
+						*weightMatrixObject);
+					
+					std::string filename = weightMatrixVisitor;
+					
+					std::stringstream stream;
+					
+					tar.extractFile(filename, stream);
+					
+					uint64_t rows    = 0;
+					uint64_t columns = 0;
+					
+					stream.read((char*)&rows,    sizeof(uint64_t));
+					stream.read((char*)&columns, sizeof(uint64_t));
+
+					util::log("ClassificationModel") << "    bias matrix(" << rows
+						<< " rows, " << columns << " columns)\n";
+					
+					layer.push_back_bias(matrix::Matrix());
+					
+					auto& matrix = layer.back_bias();
 					
 					matrix.resize(rows, columns);
 					

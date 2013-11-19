@@ -37,11 +37,11 @@ OpenCVLibrary::IplImage* OpenCVLibrary::cvLoadImage(const char* f, int c)
 	return (*_interface.cvLoadImage)(f, c);
 }
 
-int OpenCVLibrary::cvSaveImage(const char* f, const IplImage* i)
+int OpenCVLibrary::cvSaveImage(const char* f, const IplImage* i, const int* p)
 {
 	_check();
 	
-	return (*_interface.cvSaveImage)(f, i);
+	return (*_interface.cvSaveImage)(f, i, p);
 }
 
 void OpenCVLibrary::cvReleaseImage(IplImage** i)

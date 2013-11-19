@@ -41,6 +41,7 @@ Layer::BlockSparseMatrix Layer::runInputs(const BlockSparseMatrix& m) const
 {
 	util::log("Layer") << " Running forward propagation on matrix (" << m.rows()
 		<< " rows, " << m.columns() << " columns) through layer with dimensions ("
+		<< blocks() << " blocks, "
 		<< getInputCount() << " inputs, " << getOutputCount()
 		<< " outputs).\n";
 	util::log("Layer") << "  layer: " << m_sparseMatrix.toString() << "\n";
@@ -60,7 +61,8 @@ Layer::BlockSparseMatrix Layer::runInputs(const BlockSparseMatrix& m) const
 Layer::BlockSparseMatrix Layer::runReverse(const BlockSparseMatrix& m) const
 {
 	util::log("Layer") << " Running reverse propagation on matrix (" << m.rows()
-			<< " rows, " << m.columns() << " columns) through layer with dimensions ("
+		<< " rows, " << m.columns() << " columns) through layer with dimensions ("
+		<< blocks() << " blocks, "
 		<< getInputCount() << " inputs, " << getOutputCount()
 		<< " outputs).\n";
 	util::log("Layer") << "  layer: " << m_sparseMatrix.toString() << "\n";
@@ -166,6 +168,26 @@ Layer::const_iterator Layer::end() const
 	return m_sparseMatrix.end();
 }
 
+Layer::iterator Layer::begin_bias()
+{
+	return m_bias.begin();
+}
+
+Layer::const_iterator Layer::begin_bias() const
+{
+	return m_bias.begin();
+}
+
+Layer::iterator Layer::end_bias()
+{
+	return m_bias.end();
+}
+
+Layer::const_iterator Layer::end_bias() const
+{
+	return m_bias.end();
+}
+
 Layer::Matrix& Layer::operator[](size_t index)
 {
 	return m_sparseMatrix[index];
@@ -186,9 +208,24 @@ const Layer::Matrix& Layer::back() const
 	return m_sparseMatrix.back();
 }
 
+Layer::Matrix& Layer::back_bias()
+{
+	return m_bias.back();
+}
+
+const Layer::Matrix& Layer::back_bias() const
+{
+	return m_bias.back();
+}
+
 void Layer::push_back(const Matrix& m)
 {
 	m_sparseMatrix.push_back(m);
+}
+
+void Layer::push_back_bias(const Matrix& m)
+{
+	m_bias.push_back(m);
 }
 
 size_t Layer::size() const
