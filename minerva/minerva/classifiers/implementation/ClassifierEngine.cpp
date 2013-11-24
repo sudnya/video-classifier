@@ -79,7 +79,7 @@ static void runAllVideos(ClassifierEngine* engine, VideoVector& images,
 
 void ClassifierEngine::runOnDatabaseFile(const std::string& path)
 {
-	runOnPaths({path});
+	runOnPaths(StringVector(1, path));
 }
 
 void ClassifierEngine::runOnPaths(const StringVector& paths)
