@@ -29,14 +29,28 @@ namespace classifiers
 {
 
 ClassifierEngine::ClassifierEngine()
-: _model(nullptr)
+: _model(nullptr), _ownModel(true)
 {
 
 }
 
 ClassifierEngine::~ClassifierEngine()
 {
-	delete _model;
+	if(_ownModel)
+	{
+		delete _model;
+	}
+}
+
+void ClassifierEngine::setModel(ClassificationModel* model)
+{
+	if(_ownModel)
+	{
+		delete _model;
+	}
+
+	_ownModel = false;
+	_model = model;
 }
 
 void ClassifierEngine::loadModel(const std::string& pathToModelFile)
@@ -45,6 +59,7 @@ void ClassifierEngine::loadModel(const std::string& pathToModelFile)
 		<<  "'...\n";
 	
 	_model = new ClassificationModel(pathToModelFile);
+	_ownModel = true;
 
 	util::log("ClassifierEngine") << " model loaded.\n";
 }
@@ -61,6 +76,11 @@ static void runAllImages(ClassifierEngine* engine, ImageVector& images,
 	unsigned int maxBatchSize, unsigned int& maxVideoFrames);
 static void runAllVideos(ClassifierEngine* engine, VideoVector& images,
 	unsigned int maxBatchSize, unsigned int& maxVideoFrames);
+
+void ClassifierEngine::runOnDatabaseFile(const std::string& path)
+{
+	runOnPaths({path});
+}
 
 void ClassifierEngine::runOnPaths(const StringVector& paths)
 {

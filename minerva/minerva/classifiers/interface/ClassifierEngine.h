@@ -40,6 +40,12 @@ public:
 	/*! \brief Load a model from a file */
 	void loadModel(const std::string& pathToModelFile);
 	
+	/*! \brief Add model directly */
+	void setModel(ClassificationModel* model);
+
+	/*! \brief Run on a single image/video database file */
+	void runOnDatabaseFile(const std::string& pathToDatabase file);
+
 	/*! \brief Run the classifier on all of the contained paths */
 	void runOnPaths(const StringVector& paths);
 	
@@ -66,6 +72,7 @@ protected:
 
 protected:
 	ClassificationModel* _model;
+	bool                 _ownModel;
 
 };
 
