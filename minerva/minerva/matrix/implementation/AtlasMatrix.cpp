@@ -391,9 +391,9 @@ void AtlasMatrix::sigmoidDerivativeSelf()
 	}
 }
 
-void AtlasMatrix::assignUniformRandomValues(float min, float max)
+void AtlasMatrix::assignUniformRandomValues(
+	std::default_random_engine& generator, float min, float max)
 {
-	std::default_random_engine generator(std::time(0));
 	std::uniform_real_distribution<float> distribution(min, max);
 
 	for(auto& f : _data)

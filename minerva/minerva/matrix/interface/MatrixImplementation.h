@@ -9,6 +9,7 @@
 // Standard Library Includes
 #include <vector>
 #include <cstring>
+#include <random>
 
 namespace minerva
 {
@@ -72,7 +73,8 @@ public:
     virtual void sigmoidSelf() = 0;
     virtual void sigmoidDerivativeSelf() = 0;
 
-	virtual void assignUniformRandomValues(float min, float max) = 0;
+	virtual void assignUniformRandomValues(
+		std::default_random_engine& engine, float min, float max) = 0;
 	virtual void transposeSelf() = 0;
 
 public:

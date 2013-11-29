@@ -316,11 +316,12 @@ void Matrix::sigmoidDerivativeSelf()
 	_matrix->sigmoidDerivativeSelf();
 }
 
-void Matrix::assignUniformRandomValues(float min, float max)
+void Matrix::assignUniformRandomValues(
+	std::default_random_engine& engine, float min, float max)
 {
 	assert(_matrix != nullptr);
 
-	_matrix->assignUniformRandomValues(min, max);
+	_matrix->assignUniformRandomValues(engine, min, max);
 }
 
 Matrix Matrix::greaterThanOrEqual(float f) const
@@ -389,15 +390,18 @@ std::string Matrix::toString(size_t maxRows, size_t maxColumns) const
 
     stream << "[ ";
 
-    for(size_t row = 0; row != std::min(rows(), maxRows); ++row)
+	size_t finalRow = std::min(rows(), maxRows);
+
+    for(size_t row = 0; row != finalRow; ++row)
     {
-        for(size_t column = 0;
-        	column != std::min(columns(), maxColumns); ++column)
+		size_t finalColumn = std::min(columns(), maxColumns);
+
+        for(size_t column = 0; column != finalColumn; ++column)
         {
             stream << (*this)(row, column) << " ";
         }
         
-        stream << "\n ";
+		if(row + 1 != finalRow) stream << "\n ";
     }
 
     stream << "]\n";

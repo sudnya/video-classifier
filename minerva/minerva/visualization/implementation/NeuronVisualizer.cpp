@@ -8,9 +8,13 @@
 #include <minerva/visualization/interface/NeuronVisualizer.h>
 
 #include <minerva/neuralnetwork/interface/NeuralNetwork.h>
+#include <minerva/neuralnetwork/interface/BackPropData.h>
 
 #include <minerva/optimizer/interface/NonDifferentiableLinearSolver.h>
 #include <minerva/optimizer/interface/NonDifferentiableLinearSolverFactory.h>
+
+#include <minerva/optimizer/interface/LinearSolver.h>
+#include <minerva/optimizer/interface/LinearSolverFactory.h>
 
 #include <minerva/video/interface/Image.h>
 
@@ -31,6 +35,7 @@ namespace visualization
 typedef matrix::Matrix Matrix;
 typedef neuralnetwork::NeuralNetwork NeuralNetwork;
 typedef video::Image Image;
+typedef neuralnetwork::BackPropData BackPropData;
 
 NeuronVisualizer::NeuronVisualizer(const NeuralNetwork* network)
 : _network(network)
@@ -39,16 +44,31 @@ NeuronVisualizer::NeuronVisualizer(const NeuralNetwork* network)
 }
 
 static Matrix generateRandomImage(const NeuralNetwork*, const Image&);
-static Matrix optimize(const NeuralNetwork*, const Matrix& , unsigned int);
+static Matrix optimizeWithoutDerivative(const NeuralNetwork*, const Matrix& , unsigned int);
+static Matrix optimizeWithDerivative(const NeuralNetwork*, const Matrix& , unsigned int);
 static void updateImage(Image& , const Matrix& );
 
 void NeuronVisualizer::visualizeNeuron(Image& image, unsigned int outputNeuron)
 {
 	auto matrix = generateRandomImage(_network, image);
 
-	auto optimizedMatrix = optimize(_network, matrix, outputNeuron);
+	std::string solverClass = util::KnobDatabase::getKnobValue(
+		"NeuronVisualizer::SolverClass", "Differentiable");
 	
-	updateImage(image, optimizedMatrix);
+	if(solverClass == "Differentiable")
+	{
+		matrix = optimizeWithDerivative(_network, matrix, outputNeuron);
+	}
+	else if(solverClass == "NonDifferentiable")
+	{
+		matrix = optimizeWithoutDerivative(_network, matrix, outputNeuron);
+	}
+	else
+	{
+		throw std::runtime_error("Invalid neuron visializer solver class " + solverClass);
+	}
+
+	updateImage(image, matrix);
 }
 
 static Matrix generateRandomImage(const NeuralNetwork* network,
@@ -72,12 +92,13 @@ static float computeCost(const NeuralNetwork* network, unsigned int neuron,
 {
 	auto result = network->runInputs(inputs);
 	
-	util::log("NeuronVisualizer")
-		<< "Updating cost function for neuron " << neuron <<  ".\n";
-	
 	// Result = slice results from the neuron, sum(1.0f - neuronOuput)
 	float cost = result.slice(0, neuron, result.rows(),
 		1).negate().add(1.0f).reduceSum();
+	
+	util::log("NeuronVisualizer")
+		<< "Updating cost function for neuron " << neuron
+		<<  " to " << cost << ".\n";
 
 	return cost;
 }
@@ -104,8 +125,8 @@ private:
 
 };
 
-static Matrix optimize(const NeuralNetwork* network, const Matrix& initialData,
-	unsigned int neuron)
+static Matrix optimizeWithoutDerivative(const NeuralNetwork* network,
+	const Matrix& initialData, unsigned int neuron)
 {
 	Matrix bestSoFar = initialData;
 	float  bestCost  = computeCost(network, neuron, bestSoFar);
@@ -124,6 +145,88 @@ static Matrix optimize(const NeuralNetwork* network, const Matrix& initialData,
 	
 	delete solver;
 	
+	return bestSoFar;
+}
+
+class CostAndGradientFunction : public optimizer::LinearSolver::CostAndGradient
+{
+public:
+	CostAndGradientFunction(const BackPropData* d,
+		float initialCost, float costReductionFactor)
+	: CostAndGradient(initialCost, costReductionFactor), _backPropData(d)
+	{
+	
+	}
+
+
+public:
+	virtual float computeCostAndGradient(Matrix& gradient,
+		const Matrix& inputs) const
+	{
+		util::log("NeuronVisualizer") << " inputs are : " << inputs.toString();
+		
+		gradient = _backPropData->computePartialDerivativesForNewFlattenedInputs(inputs);
+		
+		util::log("NeuronVisualizer") << " new gradient is : " << gradient.toString();
+		
+		float newCost = _backPropData->computeCostForNewFlattenedInputs(inputs);
+	
+		util::log("NeuronVisualizer") << " new cost is : " << newCost << "\n";
+		
+		return newCost;
+	}
+
+private:
+	const BackPropData* _backPropData;
+};
+
+static Matrix generateReferenceForNeuron(const NeuralNetwork* network,
+	unsigned int neuron) 
+{
+	Matrix reference(1, network->getOutputCount());
+	
+	reference(0, neuron) = 1.0f;
+	
+	return reference;
+}
+
+static Matrix optimizeWithDerivative(const NeuralNetwork* network,
+	const Matrix& initialData, unsigned int neuron)
+{
+	BackPropData data(const_cast<NeuralNetwork*>(network),
+		network->convertToBlockSparseForLayerInput(network->front(), initialData),
+		network->convertToBlockSparseForLayerOutput(network->back(),
+		generateReferenceForNeuron(network, neuron)));
+	
+	Matrix bestSoFar = initialData;
+	float  bestCost  = data.computeCost();
+
+	auto solver = optimizer::LinearSolverFactory::create("LBFGSSolver");
+	
+	assert(solver != nullptr);
+	
+	util::log("NeuronVisualizer") << "Initial inputs are   : " << initialData.toString();
+	util::log("NeuronVisualizer") << "Initial reference is : " << generateReferenceForNeuron(network, neuron).toString();
+	util::log("NeuronVisualizer") << "Initial output is    : " << network->runInputs(initialData).toString();
+	util::log("NeuronVisualizer") << "Initial cost is      : " << bestCost << "\n";
+	
+	try
+	{
+		CostAndGradientFunction costAndGradient(&data, bestCost, 0.2f);
+	
+		bestCost = solver->solve(bestSoFar, costAndGradient);
+	}
+	catch(...)
+	{
+		util::log("NeuronVisualizer") << "   solver produced an error.\n";
+		delete solver;
+		throw;
+	}
+	
+	delete solver;
+	
+	util::log("NeuronVisualizer") << "   solver produced new cost: "
+		<< bestCost << ".\n";
 	return bestSoFar;
 }
 

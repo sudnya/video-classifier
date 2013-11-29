@@ -225,6 +225,9 @@ float LBFGSSolver::solve(Matrix& inputs, const CostAndGradient& callback)
 			throw std::runtime_error("LBFGSSolver returned error code (" +
 				code.str() + ") message (" + getMessage(status) + ").");		
 		}
+
+		util::log("LBFGSSolver") << "Terminated search early "
+			<< getMessage(status) << ".\n";
 	}
 	
 	copyData(inputs, inputArray);

@@ -58,7 +58,8 @@ public:
     virtual void sigmoidSelf();
     virtual void sigmoidDerivativeSelf();
 
-	virtual void assignUniformRandomValues(float min, float max);
+	virtual void assignUniformRandomValues(
+		std::default_random_engine& engine, float min, float max);
 	virtual void transposeSelf();
 
 public:

@@ -5,7 +5,11 @@
 
 #pragma once
 
+// Minerva Includes
 #include <minerva/matrix/interface/BlockSparseMatrix.h>
+
+// Standard Library Includes
+#include <random>
 
 namespace minerva
 {
@@ -32,7 +36,7 @@ class Layer
         Layer(unsigned totalBlocks = 0, size_t blockInput = 0,
         	size_t blockOutput = 0);
 
-        void initializeRandomly(float epsilon = 0.3f);
+        void initializeRandomly(std::default_random_engine& engine, float epsilon = 0.3f);
         BlockSparseMatrix runInputs(const BlockSparseMatrix& m) const;
         BlockSparseMatrix runReverse(const BlockSparseMatrix& m) const;
  

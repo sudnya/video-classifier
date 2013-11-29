@@ -27,14 +27,14 @@ Layer::Layer(unsigned totalBlocks, size_t blockInput, size_t blockOutput)
 	m_bias.setColumnSparse();
 }
 
-void Layer::initializeRandomly(float e)
+void Layer::initializeRandomly(std::default_random_engine& engine, float e)
 {
 	float epsilon = util::KnobDatabase::getKnobValue("Layer::RandomInitializationEpsilon", e);
 
 	epsilon = (e / std::sqrt(getInputCount() + 1));
 	
-	m_sparseMatrix.assignUniformRandomValues(-epsilon, epsilon);
-	        m_bias.assignUniformRandomValues(-epsilon, epsilon);
+	m_sparseMatrix.assignUniformRandomValues(engine, -epsilon, epsilon);
+	        m_bias.assignUniformRandomValues(engine, -epsilon, epsilon);
 }
 
 Layer::BlockSparseMatrix Layer::runInputs(const BlockSparseMatrix& m) const

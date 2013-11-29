@@ -28,26 +28,35 @@ class BackPropData
         	
     public:
         MatrixVector getCostDerivative() const;
+		BlockSparseMatrix getInputDerivative() const;
         NeuralNetwork* getNeuralNetworkPtr();
+        float computeCost() const;
 
     public:
         Matrix getFlattenedWeights() const;
         Matrix getFlattenedCostDerivative() const;
+		Matrix getFlattenedInputs() const;
         void   setFlattenedWeights(const Matrix& weights);
+		void   setFlattenedInputs(const Matrix& inputs);
         float  computeCostForNewFlattenedWeights(const Matrix& weights) const;
+        float  computeCostForNewFlattenedInputs(const Matrix& inputs) const;
         float  computeAccuracyForNewFlattenedWeights(const Matrix& weights) const;
-        Matrix computePartialDerivativesForNewFlattenedWeights(const Matrix& weights) const;
-		
+		Matrix computePartialDerivativesForNewFlattenedWeights(const Matrix& weights) const;
+		Matrix computePartialDerivativesForNewFlattenedInputs(const Matrix& inputs) const;	
+	
     private:
         bool testDerivative();
 
     private:
+        BlockSparseMatrix getInputDelta(const NeuralNetwork& network, const MatrixVector& m) const;
         MatrixVector getDeltas(const NeuralNetwork& network, const MatrixVector& m) const;
-        MatrixVector getActivations(const NeuralNetwork& network) const;
+        MatrixVector getActivations(const NeuralNetwork& network, const BlockSparseMatrix& inputs) const;
        
     private:
         NeuralNetwork createNetworkFromWeights(const Matrix& weights) const;
         MatrixVector getCostDerivative(const NeuralNetwork& network) const;
+		BlockSparseMatrix getInputDerivative(const NeuralNetwork& network,
+			const BlockSparseMatrix& input) const;
 
     private:
         NeuralNetwork* m_neuralNetworkPtr;

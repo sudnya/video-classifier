@@ -8,6 +8,8 @@
 #include <minerva/matrix/interface/BlockSparseMatrix.h>
 #include <minerva/matrix/interface/Matrix.h>
 
+#include <minerva/util/interface/debug.h>
+
 // Standard Library Includes
 #include <cassert>
 
@@ -188,7 +190,7 @@ BlockSparseMatrix BlockSparseMatrix::multiply(
 	BlockSparseMatrix result(isRowSparse());
 
 	assert(m.blocks() == blocks());
-	assert(columns() == m.rows());
+	assertM(columns() == m.rows(), "Left columns " << columns() << " does not match right rows " << m.rows());
 
 	for(auto left = begin(), right = m.begin(); left != end(); ++left, ++right)
 	{
@@ -410,12 +412,13 @@ void BlockSparseMatrix::transposeSelf()
 	}
 }
 
-void BlockSparseMatrix::assignUniformRandomValues(float min, float max)
+void BlockSparseMatrix::assignUniformRandomValues(
+	std::default_random_engine& engine, float min, float max)
 {
 	// TODO: in parallel
 	for(auto& matrix : *this)
 	{
-		matrix.assignUniformRandomValues(min, max);
+		matrix.assignUniformRandomValues(engine, min, max);
 	}
 }
 

@@ -10,6 +10,7 @@
 
 #include <cassert>
 #include <vector>
+#include <ctime>
 
 typedef minerva::optimizer::Solver Solver;
 
@@ -18,14 +19,21 @@ namespace minerva
 namespace neuralnetwork
 {
 
-void NeuralNetwork::initializeRandomly(float epsilon)
+void NeuralNetwork::initializeRandomly(std::default_random_engine& engine, float epsilon)
 {
     util::log("NeuralNetwork") << "Initializing neural network randomly.\n";
-    
+
     for (auto i = m_layers.begin(); i != m_layers.end(); ++i)
     {
-        (*i).initializeRandomly(epsilon);
+        (*i).initializeRandomly(engine, epsilon);
     }
+}
+
+void NeuralNetwork::initializeRandomly(float epsilon)
+{
+	std::default_random_engine engine(std::time(0));
+	
+	initializeRandomly(engine, epsilon);
 }
 
 void NeuralNetwork::train(const Matrix& inputMatrix, const Matrix& referenceOutput)
@@ -98,7 +106,10 @@ float NeuralNetwork::computeAccuracy(const BlockSparseMatrix& input,
 	float threshold = 0.5f;
 
 	auto resultActivations    = result.greaterThanOrEqual(threshold);
-	auto referenceActivations = result.greaterThanOrEqual(threshold);
+	auto referenceActivations = reference.greaterThanOrEqual(threshold);
+
+	util::log("NeuralNetwork") << "Result activations " << resultActivations.toString();
+	util::log("NeuralNetwork") << "Reference activations " << referenceActivations.toString();
 
 	auto matchingActivations = resultActivations.equals(referenceActivations);
 
@@ -179,7 +190,9 @@ void NeuralNetwork::mirror()
 	addLayer(Layer(blocks, getOutputCount()/blocks, getInputCount()/blocks));
 	
     // should be pseudo inverse
-    back().initializeRandomly();   
+	std::default_random_engine engine(std::time(nullptr));
+
+    back().initializeRandomly(engine);
 }
 
 void NeuralNetwork::cutOffSecondHalf()

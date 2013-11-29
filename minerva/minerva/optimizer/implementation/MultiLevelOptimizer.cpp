@@ -104,7 +104,7 @@ Matrix MultiLevelOptimizer::simulatedAnnealing(const Matrix& initialWeights, flo
 {
     std::uniform_real_distribution<float> distribution(0.0f, 1.0f);
     
-    unsigned iterations = util::KnobDatabase::getKnobValue("MultiLevelOptimizer::SimmulatedAnnealingIterations", 50);
+    unsigned iterations = util::KnobDatabase::getKnobValue("MultiLevelOptimizer::SimmulatedAnnealingIterations", 500);
     
     auto  currentWeights = initialWeights;
     float currentCost    = m_backPropDataPtr->computeCostForNewFlattenedWeights(currentWeights);
@@ -275,8 +275,13 @@ void MultiLevelOptimizer::solve()
     util::log("MultiLevelOptimizer") << " number of weights : " << initialWeights.size() << "\n";
     util::log("MultiLevelOptimizer") << " initial cost is   : " << bestCostSoFar << "\n";
 	
-	float newCost = approximateSearch(initialWeights, bestCostSoFar, m_backPropDataPtr);
-	
+	float newCost = bestCostSoFar;
+
+	if(util::KnobDatabase::getKnobValue("MultiLevelOptimizer::UseApproximateSearch", true))
+	{
+		newCost = approximateSearch(initialWeights, bestCostSoFar, m_backPropDataPtr);
+	}
+
 	float acceptableImprovement = util::KnobDatabase::getKnobValue("MultiLevelOptimizer::AcceptableImprovement", 0.001f);
 	
 	util::log("MultiLevelOptimizer") << " approximate search produced solution with cost: " << newCost << "\n";
@@ -287,7 +292,7 @@ void MultiLevelOptimizer::solve()
 		return;
 	}
 	
-	unsigned maxIterations = util::KnobDatabase::getKnobValue("MultiLevelOptimizer::LocalSearchIterations", 50);
+	unsigned maxIterations = util::KnobDatabase::getKnobValue("MultiLevelOptimizer::LocalSearchIterations", 100);
     float epsilon = computeEpsilon(initialWeights);
    
     //we have access to backPropData - make do with only the interface functions of that class
@@ -323,7 +328,8 @@ void MultiLevelOptimizer::solve()
         if (newCost < bestCostSoFar)
         {
 		    util::log("MultiLevelOptimizer") << "   updated cost to:     " << newCost << "\n";
-            util::log("MultiLevelOptimizer") << "   updated accuracy to: " << m_backPropDataPtr->computeAccuracyForNewFlattenedWeights(newWeights) << "\n";
+            util::log("MultiLevelOptimizer") << "   updated accuracy to: "
+				<< m_backPropDataPtr->computeAccuracyForNewFlattenedWeights(newWeights) << "\n";
             bestWeights   = newWeights;
             bestCostSoFar = newCost;
         }

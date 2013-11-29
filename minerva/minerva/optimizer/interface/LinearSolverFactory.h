@@ -22,7 +22,7 @@ namespace optimizer
 class LinearSolverFactory
 {
 public:
-	static LinearSolver* create(const std::string& classifierName);
+	static LinearSolver* create(const std::string& solverName);
 
 };
 

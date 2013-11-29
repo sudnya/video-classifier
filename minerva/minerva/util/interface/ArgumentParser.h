@@ -240,7 +240,7 @@ namespace util
 					        ++pos;
 				        }
 					}
-					if( pos < str.size() )
+					if( identifier == str )
 					{
 						found = true;
 						str = str.substr( pos );

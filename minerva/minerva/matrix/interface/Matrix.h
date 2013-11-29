@@ -12,6 +12,7 @@
 // Standard Library Includes
 #include <string>
 #include <cstddef>
+#include <random>
 
 // Forward Declarations
 namespace minerva { namespace matrix { class MatrixImplementation; } }
@@ -108,7 +109,8 @@ public:
 
 	void transposeSelf();
 
-	void assignUniformRandomValues(float min, float max);
+	void assignUniformRandomValues(
+		std::default_random_engine& engine, float min, float max);
 
 public:
 	Matrix greaterThanOrEqual(float f) const;

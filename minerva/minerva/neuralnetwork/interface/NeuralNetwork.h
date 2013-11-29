@@ -11,6 +11,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <random>
 
 namespace minerva
 {
@@ -36,6 +37,7 @@ class NeuralNetwork
         {
         }
     
+		void initializeRandomly(std::default_random_engine& engine, float epsilon = 0.3f);
         void initializeRandomly(float epsilon = 0.3f);
         
 		void train(const Matrix& input, const Matrix& reference);

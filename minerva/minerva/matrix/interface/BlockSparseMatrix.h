@@ -9,6 +9,7 @@
 // Standard Library Includes
 #include <vector>
 #include <cstdint>
+#include <random>
 
 // Forward Declarations
 namespace minerva { namespace matrix { class Matrix; } }
@@ -99,7 +100,8 @@ public:
 
 	void transposeSelf();
 
-	void assignUniformRandomValues(float min = 0.0f, float max = 1.0f);
+	void assignUniformRandomValues(std::default_random_engine& engine,
+		float min = 0.0f, float max = 1.0f);
 
 public:
 	BlockSparseMatrix greaterThanOrEqual(float f) const;
@@ -110,6 +112,7 @@ public:
 
 public:
     float reduceSum() const;
+	BlockSparseMatrix reduceSumAlongColumns() const;
 
 public:
 	std::string toString() const;

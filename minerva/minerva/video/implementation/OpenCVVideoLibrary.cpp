@@ -88,7 +88,7 @@ bool OpenCVVideoLibrary::OpenCVVideoStream::getNextFrame(Image& frame)
 	}
 	
 	frame = Image(image->width, image->height, image->nChannels,
-		colorSize, _path, data);
+		colorSize, _path, "", data);
 
     return true;
 }

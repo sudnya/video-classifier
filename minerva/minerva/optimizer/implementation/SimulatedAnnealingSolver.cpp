@@ -61,7 +61,7 @@ static Matrix pickNeighbouringState(const Matrix& inputs,
 	Matrix newInputs = inputs;
 
 	IntDistribution   intDistribution(0, inputs.size() - 1);
-	FloatDistribution floatDistribution(-1.0f, 1.0f);
+	FloatDistribution floatDistribution(-2.0f / inputs.size(), 2.0f / inputs.size());
 
 	unsigned changes = std::max(10UL, 2 * inputs.size() / iterations);
 
@@ -69,7 +69,7 @@ static Matrix pickNeighbouringState(const Matrix& inputs,
 	{
 		unsigned position = intDistribution(generator);
 		
-		newInputs(0, position) = floatDistribution(generator);
+		newInputs(0, position) += floatDistribution(generator);
 	}
 
 	return newInputs;
@@ -94,7 +94,7 @@ static float simulatedAnnealing(Matrix& inputs, const Cost& callback)
 		<< iterations << " iterations\n";
 
 	float tempurature = util::KnobDatabase::getKnobValue(
-		"SimulatedAnnealing::Tempurature", 5.0f);
+		"SimulatedAnnealing::Tempurature", 50.0f);
 	
 	for(unsigned i = 0; i < iterations; ++i)
 	{

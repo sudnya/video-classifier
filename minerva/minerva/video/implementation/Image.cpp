@@ -30,7 +30,7 @@ Image::Image(const std::string& path, const std::string& label)
 }
 
 Image::Image(size_t x, size_t y, size_t c, size_t p, const std::string& path,
-	const ByteVector& d, const std::string& l)
+	const std::string& l, const ByteVector& d)
 : _path(path), _label(l), _loaded(true), _invalidToLoad(true), _x(x), _y(y),
 	_colorComponents(c), _pixelSize(p), _pixels(d)
 {
@@ -228,6 +228,32 @@ Image Image::sample(size_t samples) const
 	}
 	
 	return newImage;
+}
+
+Image Image::downsample(size_t newX, size_t newY) const
+{
+	Image image(newX, newY, colorComponents(), pixelSize(), path(), label());
+
+	double xStep = (x() + 0.0) / newX;
+	double yStep = (y() + 0.0) / newY;
+
+	double yPosition = 0.0;
+	
+	for(size_t y = 0; y != newY; ++y, yPosition += yStep)
+	{
+		double xPosition = 0.0;
+
+		for(size_t x = 0; x != newX; ++x, xPosition += xStep)
+		{
+			for(size_t color = 0; color != colorComponents(); ++color)
+			{
+				image.setComponentAt(x, y, color,
+					getComponentAt(xPosition, yPosition, color));
+			}
+		}
+	}
+	
+	return image;
 }
 
 float Image::getComponentAt(size_t position) const

@@ -41,10 +41,10 @@ public:
 	void loadModel(const std::string& pathToModelFile);
 	
 	/*! \brief Add model directly */
-	void setModel(ClassificationModel* model);
+	void setModel(model::ClassificationModel* model);
 
 	/*! \brief Run on a single image/video database file */
-	void runOnDatabaseFile(const std::string& pathToDatabase file);
+	void runOnDatabaseFile(const std::string& pathToDatabase);
 
 	/*! \brief Run the classifier on all of the contained paths */
 	void runOnPaths(const StringVector& paths);

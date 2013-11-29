@@ -27,7 +27,8 @@ public:
 	Image(const std::string& path, const std::string& label = "");
 	Image(size_t x = 0, size_t y = 0, size_t colorComponents = 0,
 		size_t pixelSize = 0, const std::string& path = "",
-		const ByteVector& data = ByteVector(), const std::string& label = "");
+		const std::string& label = "",
+		const ByteVector& data = ByteVector());
 
 public:
 	size_t x() const;
@@ -62,7 +63,8 @@ public:
 	void updateImageFromSamples(const FloatVector& samples);
 	
     Image sample(size_t samples) const;
-    
+	Image downsample(size_t x, size_t y) const;   
+ 
 public:
 	float getComponentAt(size_t position) const;
 	float getComponentAt(size_t x, size_t y, size_t color) const;

@@ -22,12 +22,12 @@ neuralnetwork::NeuralNetwork createAndInitializeNeuralNetwork(unsigned networkSi
 {
     neuralnetwork::NeuralNetwork ann;
 
-	size_t convolutionalLayers = std::min(networkSize, 1U);
+	size_t convolutionalLayers = 1;//std::min(networkSize/4, 1U);
 
     // Layer 1
     ann.addLayer(Layer(convolutionalLayers,networkSize/convolutionalLayers,networkSize/convolutionalLayers));
 	
-	size_t convolutionalLayersTwo = std::min(networkSize, 2U);
+	size_t convolutionalLayersTwo = 1;//std::min(networkSize/4, 1U);
 
     // Layer 2
     ann.addLayer(Layer(convolutionalLayersTwo, networkSize/convolutionalLayersTwo, networkSize/convolutionalLayersTwo));
@@ -144,7 +144,8 @@ void trainNeuralNetwork(neuralnetwork::NeuralNetwork& ann, unsigned trainingIter
 
 unsigned compare(const Matrix& output, const Matrix& reference)
 {
-    assertM(output.rows() == reference.rows() && output.columns() == reference.columns(), "Output and reference matrix have incompatible dimensions");
+    assertM(output.rows() == reference.rows() && output.columns() == reference.columns(),
+		"Output and reference matrix have incompatible dimensions");
     unsigned bitsThatMatch = 0;
     for (unsigned i = 0; i < output.rows(); ++i)
     {
@@ -152,7 +153,6 @@ unsigned compare(const Matrix& output, const Matrix& reference)
         {
             bool outputIsTrue    = output(i,j)    > 0.5f;
             bool referenceIsTrue = reference(i,j) > 0.5f;
-            
             
             if (outputIsTrue == referenceIsTrue)
                 ++bitsThatMatch;
