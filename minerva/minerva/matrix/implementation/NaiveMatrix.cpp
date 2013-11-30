@@ -366,9 +366,9 @@ static float sigmoidDerivative(float v)
 {
     // f(x) = 1/(1+e^-x)
     // dy/dx = f(x)' = f(x) * (1 - f(x))
-	float element = sigmoid(v) * (1.0f - sigmoid(v));
+	//float element = sigmoid(v) * (1.0f - sigmoid(v));
 	
-	element = element * (1.0f - element);
+	float element = v * (1.0f - v);
 	
 	return element;
 }

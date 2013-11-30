@@ -104,7 +104,7 @@ Matrix MultiLevelOptimizer::simulatedAnnealing(const Matrix& initialWeights, flo
 {
     std::uniform_real_distribution<float> distribution(0.0f, 1.0f);
     
-    unsigned iterations = util::KnobDatabase::getKnobValue("MultiLevelOptimizer::SimmulatedAnnealingIterations", 500);
+    unsigned iterations = util::KnobDatabase::getKnobValue("MultiLevelOptimizer::SimmulatedAnnealingIterations", 5);
     
     auto  currentWeights = initialWeights;
     float currentCost    = m_backPropDataPtr->computeCostForNewFlattenedWeights(currentWeights);
@@ -292,7 +292,8 @@ void MultiLevelOptimizer::solve()
 		return;
 	}
 	
-	unsigned maxIterations = util::KnobDatabase::getKnobValue("MultiLevelOptimizer::LocalSearchIterations", 100);
+	unsigned maxIterations = 5;
+	unsigned localSearchIterations = util::KnobDatabase::getKnobValue("MultiLevelOptimizer::LocalSearchIterations", 100);
     float epsilon = computeEpsilon(initialWeights);
    
     //we have access to backPropData - make do with only the interface functions of that class
@@ -300,14 +301,16 @@ void MultiLevelOptimizer::solve()
     float range           = estimateCostFunctionRange(initialWeights, maxIterations, epsilon);
     float maximumDistance = estimateMaximumDistanceToExplore(range, maxIterations);
 	
-	auto bestWeights   = localSearch(initialWeights, range, maxIterations);
+	auto bestWeights   = localSearch(initialWeights, range, localSearchIterations);
          bestCostSoFar = m_backPropDataPtr->computeCostForNewFlattenedWeights(bestWeights);
     
     util::log("MultiLevelOptimizer") << " epsilon:             " << epsilon         << "\n";
     util::log("MultiLevelOptimizer") << " cost function range: " << range           << "\n";
     util::log("MultiLevelOptimizer") << " search distance:     " << maximumDistance << "\n";
     util::log("MultiLevelOptimizer") << " initial cost:        " << bestCostSoFar   << "\n";
-    
+    util::log("MultiLevelOptimizer") << " initial accuracy:    "
+		<< m_backPropDataPtr->computeAccuracyForNewFlattenedWeights(bestWeights) << "\n";
+
     unsigned iterationCount = util::KnobDatabase::getKnobValue("MultiLevelOptimizer::IterationCount", 1);
 	
     for(unsigned iteration = 0; iteration < iterationCount; ++iteration)
@@ -321,7 +324,7 @@ void MultiLevelOptimizer::solve()
         auto randomWeights = simulatedAnnealing(bestWeights, range, maximumDistance, epsilon);
 		
         // local search is simply gradient descent on the output of simulated annealing
-        auto newWeights = localSearch(randomWeights, range, maxIterations);
+        auto newWeights = localSearch(randomWeights, range, localSearchIterations);
 		
         float newCost = m_backPropDataPtr->computeCostForNewFlattenedWeights(newWeights);
 		

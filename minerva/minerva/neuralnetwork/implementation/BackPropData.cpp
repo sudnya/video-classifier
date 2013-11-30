@@ -167,7 +167,7 @@ static bool gradientChecking(const BlockSparseMatrix& partialDerivatives, const 
 BackPropData::BackPropData(NeuralNetwork* ann, const BlockSparseMatrix& input, const BlockSparseMatrix& ref)
  : m_neuralNetworkPtr(ann), m_input(input), m_referenceOutput(ref), m_lambda(0.0f)
 {
-	m_lambda = util::KnobDatabase::getKnobValue("BackPropData::Lambda", 0.2f);
+	m_lambda = util::KnobDatabase::getKnobValue("BackPropData::Lambda", 0.0f);
 }
 
 MatrixVector BackPropData::getCostDerivative() const
@@ -315,7 +315,7 @@ BlockSparseMatrix BackPropData::getInputDelta(const NeuralNetwork& network, cons
     auto delta = (*i).subtract(m_referenceOutput);
     ++i;
 
-    while (i != activations.rend())
+    while (i + 1 != activations.rend())
     {
         unsigned int layerNumber = std::distance(activations.begin(), --(i.base()));
         auto& layer = network[layerNumber];
@@ -330,7 +330,7 @@ BlockSparseMatrix BackPropData::getInputDelta(const NeuralNetwork& network, cons
 
         ++i; 
     }
-/*
+
 	// Handle the first layer differently because the input does not have sigmoid applied
 	unsigned int layerNumber = 0;
 	auto& layer = network[layerNumber];
@@ -342,7 +342,7 @@ BlockSparseMatrix BackPropData::getInputDelta(const NeuralNetwork& network, cons
 
 	util::log ("BackPropData") << " Computing input delta for layer number: " << layerNumber << "\n";
 	delta = deltaPropagatedReverse;//deltaPropagatedReverse.elementMultiply(activationDerivativeOfCurrentLayer);
-	*/
+	
 	return delta;	
 }
 
@@ -441,15 +441,8 @@ BlockSparseMatrix BackPropData::getInputDerivative(
     //get deltas in a vector
     auto delta = getInputDelta(network, activations);
 	
-	auto transposedDelta = delta.transpose();
-	transposedDelta.setRowSparse();
-    
 	util::log("BackPropData") << "Input delta: " << delta.toString();
     unsigned int samples = input.rows();
-
-	auto& layer = network.front();
-	
-	auto weights = layer.getWeightsWithoutBias();
 
 	auto partialDerivative = delta;
 

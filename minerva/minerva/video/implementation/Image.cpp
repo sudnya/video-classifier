@@ -8,6 +8,8 @@
 #include <minerva/video/interface/Image.h>
 #include <minerva/video/interface/ImageLibraryInterface.h>
 
+#include <minerva/matrix/interface/Matrix.h>
+
 #include <minerva/util/interface/paths.h>
 #include <minerva/util/interface/debug.h>
 
@@ -130,7 +132,7 @@ void Image::setLabel(const std::string& label)
 
 float Image::range() const
 {
-   return (float)(1 << (8 * pixelSize()));
+   return (float)((1 << (8 * pixelSize())) - 1);
 }
 
 void Image::invalidateCache()
@@ -148,6 +150,13 @@ void Image::invalidateCache()
 Image::ByteVector& Image::getRawData()
 {
 	return _pixels;
+}
+
+Image::Matrix Image::convertToStandardizedMatrix(size_t sampleCount) const
+{
+	auto samples = getSampledData(sampleCount);
+
+	return Matrix(1, sampleCount, samples);
 }
 
 Image::FloatVector Image::getSampledData(size_t sampleCount) const
@@ -169,7 +178,12 @@ Image::FloatVector Image::getSampledData(size_t sampleCount) const
 			position = imageSize - 1;
 		}
 		
-		samples.push_back((getComponentAt(position) * 2.0f / range()) - 1.0f);
+		float sampleValue = standardize(getComponentAt(position));
+
+		//std::cout << path() << ": sample " << sampleValue << " (" << getComponentAt(position)
+		//	<< ") = (position " << position << ")\n";
+		
+		samples.push_back(sampleValue);
 	}
 
 	return samples;
@@ -189,9 +203,12 @@ void Image::updateImageFromSamples(const FloatVector& samples)
 					((position + 0.0) / totalSize()) * samples.size();
 				
 				float sample = samples[sampleIndex];
-				float colorValue = (sample + 1.0f) * (range()/2.0f);
-				
-				setComponentAt(x, y, color, colorValue);
+	
+				setStandardizedComponentAt(x, y, color, sample);
+			
+				//std::cout << path() << ": (" << x << ", " << y << ", color " << color
+				//	<< ", position " << position << ") = sample " << sample
+				//	<< " (" << getComponentAt(x, y, color) << ") \n";
 			}
 		}
 	}
@@ -230,12 +247,13 @@ Image Image::sample(size_t samples) const
 	return newImage;
 }
 
-Image Image::downsample(size_t newX, size_t newY) const
+Image Image::downsample(size_t newX, size_t newY, size_t newColorComponents) const
 {
-	Image image(newX, newY, colorComponents(), pixelSize(), path(), label());
+	Image image(newX, newY, newColorComponents, pixelSize(), path(), label());
 
-	double xStep = (x() + 0.0) / newX;
-	double yStep = (y() + 0.0) / newY;
+	double xStep     = (x() + 0.0) / newX;
+	double yStep     = (y() + 0.0) / newY;
+	double colorStep = (colorComponents() + 0.0) / newColorComponents;
 
 	double yPosition = 0.0;
 	
@@ -245,10 +263,13 @@ Image Image::downsample(size_t newX, size_t newY) const
 
 		for(size_t x = 0; x != newX; ++x, xPosition += xStep)
 		{
-			for(size_t color = 0; color != colorComponents(); ++color)
+			double colorPosition = 0.0;
+
+			for(size_t color = 0; color != newColorComponents;
+				++color, colorPosition += colorStep)
 			{
 				image.setComponentAt(x, y, color,
-					getComponentAt(xPosition, yPosition, color));
+					getComponentAt(xPosition, yPosition, colorPosition));
 			}
 		}
 	}
@@ -281,16 +302,26 @@ float Image::getComponentAt(size_t x, size_t y, size_t color) const
 	return getComponentAt(getPosition(x, y, color));
 }
 
+float Image::getStandardizedComponentAt(size_t x, size_t y, size_t color) const
+{
+	return standardize(getComponentAt(x, y, color));
+}
+
 void Image::setComponentAt(size_t x, size_t y, size_t color,
 	float component)
 {
-	size_t positionInBytes = getPosition(x, y, color);
+	size_t positionInBytes = getPosition(x, y, color) * pixelSize();
 	assert(positionInBytes + pixelSize() <= _pixels.size());
 	
 	unsigned int value = component;
 	assert(pixelSize() < sizeof(unsigned int));
 
 	std::memcpy(&_pixels[positionInBytes], &value, pixelSize());
+}
+
+void Image::setStandardizedComponentAt(size_t x, size_t y, size_t color, float component)
+{
+	setComponentAt(x, y, color, destandardize(component));
 }
 
 size_t Image::getPosition(size_t x, size_t y, size_t color) const
@@ -301,6 +332,21 @@ size_t Image::getPosition(size_t x, size_t y, size_t color) const
 
 	return y * this->x() * colorComponents() +
 		x * colorComponents() + color;
+}
+
+float Image::standardize(float component) const
+{
+	return (component * 2.0f / range()) - 1.0f;
+}
+
+float Image::destandardize(float component) const
+{
+	component = std::min(component, 1.0f);
+	component = std::max(component, -1.0f);
+
+	float colorValue = (component + 1.0f) * (range()/2.0f);
+	
+	return colorValue;
 }
 
 bool Image::isPathAnImage(const std::string& path)

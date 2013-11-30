@@ -11,6 +11,9 @@
 #include <vector>
 #include <cstdint>
 
+// Forward Declarations
+namespace minerva { namespace matrix { class Matrix; } }
+
 namespace minerva
 {
 
@@ -22,6 +25,7 @@ class Image
 public:
 	typedef std::vector<uint8_t> ByteVector;
 	typedef std::vector<float>   FloatVector;
+	typedef matrix::Matrix       Matrix;
 
 public:
 	Image(const std::string& path, const std::string& label = "");
@@ -59,20 +63,27 @@ public:
 	ByteVector& getRawData();
 
 public:
+	Matrix convertToStandardizedMatrix(size_t samples) const;
 	FloatVector getSampledData(size_t samples) const;
 	void updateImageFromSamples(const FloatVector& samples);
 	
     Image sample(size_t samples) const;
-	Image downsample(size_t x, size_t y) const;   
+	Image downsample(size_t x, size_t y, size_t colors) const;   
  
 public:
 	float getComponentAt(size_t position) const;
 	float getComponentAt(size_t x, size_t y, size_t color) const;
+	float getStandardizedComponentAt(size_t x, size_t y, size_t color) const;
 
 	void setComponentAt(size_t x, size_t y, size_t color, float component);
+	void setStandardizedComponentAt(size_t x, size_t y, size_t color, float component);
 
 public:
 	size_t getPosition(size_t x, size_t y, size_t color) const;
+
+public:
+	float standardize(float component) const;
+	float destandardize(float component) const;
 
 public:
 	static bool isPathAnImage(const std::string& path);

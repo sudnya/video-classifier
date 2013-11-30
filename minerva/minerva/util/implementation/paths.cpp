@@ -31,6 +31,18 @@ std::string getExtension(const std::string& path)
 	return "." + components.back();
 }
 
+std::string stripExtension(const std::string& path)
+{
+	auto position = path.rfind(".");
+
+	if(position == std::string::npos)
+	{
+		return path;
+	}
+
+	return path.substr(0, position);
+}
+
 std::string getDirectory(const std::string& path)
 {
 	auto position = path.rfind(separator());

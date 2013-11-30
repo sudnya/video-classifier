@@ -13,6 +13,7 @@
 #include <minerva/visualization/interface/NeuronVisualizer.h>
 
 #include <minerva/util/interface/debug.h>
+#include <minerva/util/interface/paths.h>
 #include <minerva/util/interface/ArgumentParser.h>
 
 // Type definitions
@@ -24,15 +25,15 @@ typedef minerva::matrix::Matrix Matrix;
 typedef minerva::visualization::NeuronVisualizer NeuronVisualizer;
 
 static NeuralNetwork createNeuralNetwork(size_t xPixels, size_t yPixels,
-	std::default_random_engine& engine)
+	size_t colors, std::default_random_engine& engine)
 {
 	NeuralNetwork network;
 
 	// 5x5 convolutional layer
-	network.addLayer(Layer(1, 64, 64));
+	network.addLayer(Layer(30, xPixels * yPixels * colors / 30, xPixels * yPixels * colors / 30));
 
 	// 2x2 pooling layer
-	network.addLayer(Layer(1, 64, 16));
+	//network.addLayer(Layer(1, 16, 16));
 
 	// final prediction layer
 	network.addLayer(Layer(1, network.getOutputCount(), 1));
@@ -42,22 +43,22 @@ static NeuralNetwork createNeuralNetwork(size_t xPixels, size_t yPixels,
 	return network;
 }
 
-static Image generateRandomImage(size_t xPixels, size_t yPixels,
+static Image generateRandomImage(size_t xPixels, size_t yPixels, size_t colors,
 	std::default_random_engine& engine)
 {
-	Image image(xPixels, yPixels, 3, 1);
+	Image image(xPixels, yPixels, colors, 1);
+	
+	std::uniform_real_distribution<float> distribution(-1.0f, 1.0f);
 
 	for(size_t y = 0; y != yPixels; ++y)
 	{
 		for(size_t x = 0; x != xPixels; ++x)
 		{
-			for(int c = 0; c != 3; ++c)
+			for(int c = 0; c != colors; ++c)
 			{
-				std::uniform_real_distribution<float> distribution(0.0f, 1.0f);
-				
 				float value = distribution(engine);
 
-				image.setComponentAt(x, y, c, value);
+				image.setStandardizedComponentAt(x, y, c, value);
 			}
 		}
 	}
@@ -82,11 +83,11 @@ static Image addRandomNoiseToImage(const Image& image, float noiseMagnitude,
 		{
 			for(int c = 0; c != colors; ++c)
 			{
-				float value = distribution(engine) + image.getComponentAt(x, y, c);
+				float value = distribution(engine) + image.getStandardizedComponentAt(x, y, c);
 
-				if(value < 0.0f)
+				if(value < -1.0f)
 				{
-					value = 0.0f;
+					value = -1.0f;
 				}
 
 				if(value > 1.0f)
@@ -94,7 +95,7 @@ static Image addRandomNoiseToImage(const Image& image, float noiseMagnitude,
 					value = 1.0f;
 				}
 
-				copy.setComponentAt(x, y, c, value);
+				copy.setStandardizedComponentAt(x, y, c, value);
 			}
 		}
 	}
@@ -116,7 +117,7 @@ static ImageVector generateBatch(const Image& image, float noiseMagnitude,
 		if(generateRandom)
 		{
 			images.push_back(generateRandomImage(
-				image.y(), image.x(), engine));
+				image.y(), image.x(), image.colorComponents(), engine));
 		}
 		else
 		{
@@ -143,11 +144,14 @@ static Matrix generateReference(const ImageVector& images)
 }
 
 static void trainNetwork(NeuralNetwork& neuralNetwork, const Image& image,
-	float noiseMagnitude, size_t iterations, size_t batchSize, size_t xPixels,
-	size_t yPixels, std::default_random_engine& engine)
+	float noiseMagnitude, size_t iterations, size_t batchSize,
+	std::default_random_engine& engine)
 {
+	minerva::util::log("TestVisualization") << "Training the network.\n";
 	for(size_t i = 0; i != iterations; ++i)
 	{
+		minerva::util::log("TestVisualization") << " Iteration " << i << " out of "
+			<< iterations << "\n";
 		ImageVector batch = generateBatch(image, noiseMagnitude,
 			batchSize, engine);
 		
@@ -155,21 +159,29 @@ static void trainNetwork(NeuralNetwork& neuralNetwork, const Image& image,
 			neuralNetwork.getInputCount());
 		
 		Matrix reference = generateReference(batch);
+		
+		minerva::util::log("TestVisualization") << "  Input:     " << input.toString();
+		minerva::util::log("TestVisualization") << "  Reference: " << reference.toString();
 		
 		neuralNetwork.train(input, reference);
 	}
 }
 
 static float testNetwork(NeuralNetwork& neuralNetwork, const Image& image,
-	float noiseMagnitude, size_t iterations, size_t batchSize, size_t xPixels,
-	size_t yPixels, std::default_random_engine& engine)
+	float noiseMagnitude, size_t iterations, size_t batchSize,
+	std::default_random_engine& engine)
 {
 	float accuracy = 0.0f;
 
 	iterations = std::max(iterations, 1UL);
 
+	minerva::util::log("TestVisualization") << "Testing the accuracy of the trained network.\n";
+
 	for(size_t i = 0; i != iterations; ++i)
 	{
+		minerva::util::log("TestVisualization") << " Iteration " << i << " out of "
+			<< iterations << "\n";
+		
 		ImageVector batch = generateBatch(image, noiseMagnitude,
 			batchSize, engine);
 		
@@ -177,6 +189,9 @@ static float testNetwork(NeuralNetwork& neuralNetwork, const Image& image,
 			neuralNetwork.getInputCount());
 		
 		Matrix reference = generateReference(batch);
+		
+		minerva::util::log("TestVisualization") << "  Input:     " << input.toString();
+		minerva::util::log("TestVisualization") << "  Reference: " << reference.toString();
 		
 		accuracy += neuralNetwork.computeAccuracy(input, reference);
 	}
@@ -184,23 +199,45 @@ static float testNetwork(NeuralNetwork& neuralNetwork, const Image& image,
 	return accuracy * 100.0f / iterations;
 }
 
-static void visualizeNetwork(NeuralNetwork& neuralNetwork, const std::string& outputPath,
-	size_t xPixels, size_t yPixels)
+static std::string rename(const std::string& name)
 {
+	return minerva::util::stripExtension(name) + "-reference" +
+		minerva::util::getExtension(name);
+}
+
+static float visualizeNetwork(NeuralNetwork& neuralNetwork, const Image& referenceImage,
+	const std::string& outputPath)
+{
+	// save the downsampled reference
+	Image reference = referenceImage;
+	
+	reference.setPath(rename(outputPath));
+	reference.save();
+
 	NeuronVisualizer visualizer(&neuralNetwork);
 	
-	Image image(xPixels, yPixels, 3, 1);
+	Image image = referenceImage;
 	
 	image.setPath(outputPath);
 	
 	visualizer.visualizeNeuron(image, 0);
+
+	minerva::util::log("TestVisualization") << "Reference response: "
+		<< neuralNetwork.runInputs(referenceImage.convertToStandardizedMatrix(
+			neuralNetwork.getInputCount())).toString();
+	minerva::util::log("TestVisualization") << "Visualized response: "
+		<< neuralNetwork.runInputs(image.convertToStandardizedMatrix(
+			neuralNetwork.getInputCount())).toString();
 	
 	image.save();
+
+	return 0.0f;
 }
 
 static void runTest(const std::string& imagePath, float noiseMagnitude,
-	size_t iterations, size_t batchSize, bool seedWithTime, size_t xPixels,
-	size_t yPixels, const std::string& outputPath)
+	size_t iterations, size_t batchSize, bool seedWithTime,
+	size_t xPixels, size_t yPixels,
+	size_t colors, const std::string& outputPath)
 {
 	std::default_random_engine randomNumberGenerator;
 
@@ -213,7 +250,7 @@ static void runTest(const std::string& imagePath, float noiseMagnitude,
 	/// one convolutional layer
 	/// one output layer
 
-	auto neuralNetwork = createNeuralNetwork(xPixels, yPixels,
+	auto neuralNetwork = createNeuralNetwork(xPixels, yPixels, colors,
 		randomNumberGenerator);
 
 	// load image
@@ -221,23 +258,31 @@ static void runTest(const std::string& imagePath, float noiseMagnitude,
 	Image image(imagePath, "reference");
 	image.load();
 
-	image = image.downsample(xPixels, yPixels);
+	image = image.downsample(xPixels, yPixels, colors);
 
 	// iterate
 	/// select default or random image
 	/// add noise to image
 	/// train
 	trainNetwork(neuralNetwork, image, noiseMagnitude, iterations,
-		batchSize, xPixels, yPixels, randomNumberGenerator);
-
-	// visualize the output
-	visualizeNetwork(neuralNetwork, outputPath, xPixels, yPixels);
+		batchSize, randomNumberGenerator);
 
 	// test the network's predition ability
 	float accuracy = testNetwork(neuralNetwork, image, noiseMagnitude, iterations,
-		batchSize, xPixels, yPixels, randomNumberGenerator);
+		batchSize, randomNumberGenerator);
 
 	std::cout << "Test accuracy was " << accuracy << "%\n";
+
+	if(accuracy < 95.0)
+	{
+		std::cout << "Test Failed! Accuracy is too low.\n";
+	}
+	
+	// visualize the output
+	float visualizationAccuracy = visualizeNetwork(neuralNetwork, image,
+		outputPath);
+	
+	std::cout << "Visualization accuracy was " << visualizationAccuracy << "%\n";
 }
 
 static void enableSpecificLogs(const std::string& modules)
@@ -259,6 +304,7 @@ int main(int argc, char** argv)
     std::string loggingEnabledModules;
 	size_t xPixels = 0;
 	size_t yPixels = 0;
+	size_t colors  = 0;
 	size_t iterations = 0;
 	size_t batchSize = 0;
 	float noiseMagnitude = 0.0f;
@@ -281,12 +327,13 @@ int main(int argc, char** argv)
     parser.parse("-L", "--log-module", loggingEnabledModules, "",
 		"Print out log messages during execution for specified modules "
 		"(comma-separated list of modules, e.g. NeuralNetwork, Layer, ...).");
-    parser.parse("-s", "--seed", seed, false,
-        "Seed with time.");
-    parser.parse("-x", "--x-pixels", xPixels, 8,
+    parser.parse("-s", "--seed", seed, false, "Seed with time.");
+    parser.parse("-x", "--x-pixels", xPixels, 5,
         "The number of X pixels to consider from the input image.");
-	parser.parse("-y", "--y-pixels", yPixels, 8,
+	parser.parse("-y", "--y-pixels", yPixels, 5,
 		"The number of Y pixels to consider from the input image");
+	parser.parse("-c", "--colors", colors, 3,
+		"The number of color components (e.g. RGB) to consider from the input image");
     parser.parse("-v", "--verbose", verbose, false,
         "Print out log messages during execution");
 
@@ -301,12 +348,12 @@ int main(int argc, char** argv)
 		enableSpecificLogs(loggingEnabledModules);
 	}
     
-    minerva::util::log("TestVisualization") << "Test begings\n";
+    minerva::util::log("TestVisualization") << "Test begins\n";
     
     try
     {
         runTest(image, noiseMagnitude, iterations,
-			batchSize, seed, xPixels, yPixels, outputPath);
+			batchSize, seed, xPixels, yPixels, colors, outputPath);
     }
     catch(const std::exception& e)
     {

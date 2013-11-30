@@ -18,6 +18,7 @@ namespace util
 char separator();
 
 std::string getExtension(const std::string& path);
+std::string stripExtension(const std::string& path);
 
 std::string getDirectory(const std::string& path);
 

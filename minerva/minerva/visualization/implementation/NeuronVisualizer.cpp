@@ -57,6 +57,7 @@ void NeuronVisualizer::visualizeNeuron(Image& image, unsigned int outputNeuron)
 	
 	if(solverClass == "Differentiable")
 	{
+		//matrix = image.convertToStandardizedMatrix(_network->getInputCount());
 		matrix = optimizeWithDerivative(_network, matrix, outputNeuron);
 	}
 	else if(solverClass == "NonDifferentiable")
@@ -74,8 +75,8 @@ void NeuronVisualizer::visualizeNeuron(Image& image, unsigned int outputNeuron)
 static Matrix generateRandomImage(const NeuralNetwork* network,
 	const Image& image)
 {
-	std::uniform_real_distribution<float> distribution(-1.0f, 1.0f);
-	std::default_random_engine generator(std::time(0));
+	std::uniform_real_distribution<float> distribution(-0.01f, 0.01f);
+	std::default_random_engine generator(0);//std::time(0));
 
 	Matrix::FloatVector data(network->getInputCount());
 
@@ -212,9 +213,9 @@ static Matrix optimizeWithDerivative(const NeuralNetwork* network,
 	
 	try
 	{
-		CostAndGradientFunction costAndGradient(&data, bestCost, 0.2f);
+		CostAndGradientFunction costAndGradient(&data, bestCost, 0.002f);
 	
-		bestCost = solver->solve(bestSoFar, costAndGradient);
+		for(int i = 0; i < 10; ++i) bestCost = solver->solve(bestSoFar, costAndGradient);
 	}
 	catch(...)
 	{
@@ -227,6 +228,7 @@ static Matrix optimizeWithDerivative(const NeuralNetwork* network,
 	
 	util::log("NeuronVisualizer") << "   solver produced new cost: "
 		<< bestCost << ".\n";
+	util::log("NeuronVisualizer") << "   final output is : " << network->runInputs(bestSoFar).toString();
 	return bestSoFar;
 }
 

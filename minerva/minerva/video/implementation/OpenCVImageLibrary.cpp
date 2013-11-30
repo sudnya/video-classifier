@@ -107,6 +107,7 @@ static void createIplImage(IplImage& iplImage, const Header& header,
 	iplImage.width  = header.x;
 	iplImage.height = header.y;
 	
+
 	iplImage.roi = nullptr;
 	iplImage.maskROI = nullptr;
 	iplImage.imageId = nullptr;
@@ -123,7 +124,7 @@ static void createIplImage(IplImage& iplImage, const Header& header,
 	
 	iplImage.imageSize = data.size();
 	iplImage.imageData = (char*)data.data();
-	iplImage.widthStep = header.x;
+	iplImage.widthStep = header.x * header.colorComponents;
 	iplImage.imageDataOrigin = (char*)data.data();
 	
 }
