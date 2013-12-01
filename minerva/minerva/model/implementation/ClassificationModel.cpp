@@ -30,7 +30,18 @@ ClassificationModel::ClassificationModel(const std::string& path)
 
 }
 
-ClassificationModel::NeuralNetwork ClassificationModel::getNeuralNetwork(
+const ClassificationModel::NeuralNetwork& ClassificationModel::getNeuralNetwork(
+	const std::string& name) const
+{
+	auto network = _neuralNetworks.find(name);
+	
+	assertM(network != _neuralNetworks.end(), "Invalid neural network name "
+		+ name);
+	
+	return network->second;
+}
+
+ClassificationModel::NeuralNetwork& ClassificationModel::getNeuralNetwork(
 	const std::string& name)
 {
 	load();

@@ -48,7 +48,10 @@ public:
 
 	/*! \brief Run the classifier on all of the contained paths */
 	void runOnPaths(const StringVector& paths);
-	
+
+public:
+	std::string reportStatisticsString() const;
+
 public:
 	virtual void reportStatistics(std::ostream& stream) const;
 

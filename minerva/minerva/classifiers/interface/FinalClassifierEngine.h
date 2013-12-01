@@ -9,6 +9,9 @@
 // Minerva Includes
 #include <minerva/classifiers/interface/ClassifierEngine.h>
 
+// Standard Library Includes
+#include <map>
+
 namespace minerva
 {
 
@@ -19,6 +22,9 @@ class FinalClassifierEngine : public ClassifierEngine
 {
 public:
 	FinalClassifierEngine();
+
+public:
+	float getAccuracy() const;
 	
 public:
 	virtual void reportStatistics(std::ostream& stream) const;
@@ -28,15 +34,39 @@ protected:
 	virtual size_t getInputFeatureCount() const;
 
 private:
+
+	class LabelStatistic
+	{
+	public:
+		LabelStatistic(const std::string& label, size_t truePositives,
+			size_t trueNegatives, size_t falsePositives,
+			size_t falseNegatives);
+
+	public:
+		std::string label;
+
+		size_t truePositives;
+		size_t trueNegatives;
+		size_t falsePositives;
+		size_t falseNegatives;
+	};
+
+	typedef std::map<std::string, LabelStatistic> LabelStatisticMap;
+
 	class Statistics
 	{
 	public:
 		std::string toString() const;
 	
 	public:
-		// TODO
+		LabelStatisticMap labelStatistics;
 		
 	};
+	
+	typedef video::Image Image;
+
+private:
+	void _updateStatistics(const std::string& label, const Image& image);
 
 private:
 	Statistics _statistics;

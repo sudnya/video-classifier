@@ -133,11 +133,19 @@ void ClassifierEngine::runOnPaths(const StringVector& paths)
 	closeModel();
 }
 
+std::string ClassifierEngine::reportStatisticsString() const
+{
+	std::stringstream stream;
+
+	reportStatistics(stream);
+	
+	return stream.str();
+}
+
 void ClassifierEngine::reportStatistics(std::ostream& stream) const
 {
 	// intentionally blank
 }
-
 
 void ClassifierEngine::registerModel()
 {
