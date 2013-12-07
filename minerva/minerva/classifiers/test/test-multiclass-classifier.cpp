@@ -1,6 +1,7 @@
-/* Author: Sudnya Padalikar
- * Date  : 11/23/2013
- * A unit test that implements a neural network to perform face detection on a set of images
+/*! \file   test-multiclass-classifier.cpp
+	\author Gregory Diamos
+	\date   Saturday December 6, 2013
+	\brief  A unit test that implements a neural network to perform multi-class classification.
 */
 
 // Minerva Includes
@@ -231,7 +232,7 @@ int main(int argc, char** argv)
 		minerva::classifiers::enableSpecificLogs(loggingEnabledModules);
 	}
     
-    minerva::util::log("TestFaceDetector") << "Test begins\n";
+    minerva::util::log("TestClassifier") << "Test begins\n";
     
     try
     {
@@ -246,5 +247,6 @@ int main(int argc, char** argv)
 
     return 0;
 }
+
 
 

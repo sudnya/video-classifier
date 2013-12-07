@@ -25,11 +25,13 @@ public:
 	typedef neuralnetwork::NeuralNetwork NeuralNetwork;
 
 public:
-	ClassificationModel(const std::string& path = "unknown-path");
+	ClassificationModel(const std::string& path);
+	ClassificationModel();
 
 public:
 	const NeuralNetwork& getNeuralNetwork(const std::string& name) const;
 	NeuralNetwork& getNeuralNetwork(const std::string& name);
+	bool containsNeuralNetwork(const std::string& name) const;
 	void setNeuralNetwork(const std::string& name, const NeuralNetwork& n);
 	void setInputImageResolution(unsigned int x, unsigned int y, unsigned int colors);
 

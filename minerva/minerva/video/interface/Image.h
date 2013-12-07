@@ -52,6 +52,7 @@ public:
     void displayOnScreen();
     bool loaded() const;
 	void load();
+	void loadHeader();
 	void save();
 
 public:
@@ -94,6 +95,7 @@ private:
 private:
 	std::string _path;
 	std::string _label;
+	bool        _headerLoaded;
 	bool        _loaded;
 	bool        _invalidToLoad;
 

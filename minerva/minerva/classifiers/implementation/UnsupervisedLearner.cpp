@@ -30,7 +30,6 @@ void UnsupervisedLearner::loadFeatureSelector()
 {
     /* read from the feature file into memory/variable */
     m_featureSelector = m_classificationModelPtr->getNeuralNetwork("FeatureSelector");
-    
 }
 
 void UnsupervisedLearner::learn(const ImageVector& images)

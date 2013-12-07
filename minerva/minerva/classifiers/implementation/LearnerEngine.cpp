@@ -42,7 +42,7 @@ void LearnerEngine::closeModel()
 {
 	_learner->writeClassifier();
 
-	_model->save();
+	saveModel();
 }
 	
 void LearnerEngine::runOnImageBatch(const ImageVector& images)

@@ -122,12 +122,15 @@ size_t Layer::totalWeights() const
 
 Layer::Matrix Layer::getFlattenedWeights() const
 {
-	Matrix weights;
+	Matrix weights(1, totalWeights());
 	
+	size_t position = 0;
+
 	for(auto matrix = begin(); matrix != end(); ++matrix)
 	{
-		weights = weights.appendColumns(Matrix(1, matrix->size(),
-			matrix->data()));
+		std::memcpy(&weights.data()[position], &matrix->data()[0], matrix->size() * sizeof(float));
+
+		position += matrix->size();
 	}
 	
 	return weights;

@@ -50,6 +50,12 @@ public:
 	void runOnPaths(const StringVector& paths);
 
 public:
+	/*! \brief Set the maximum samples to be run by the engine */
+	void setMaximumSamplesToRun(unsigned int samples);
+	/*! \brief Should the engine be allowed to run the same sample multiple times */
+	void setMultipleSamplesAllowed(bool);
+
+public:
 	std::string reportStatisticsString() const;
 
 public:
@@ -61,8 +67,10 @@ protected:
 	
 	virtual bool requiresLabeledData() const;
 
-public:
+protected:
+	void saveModel();
 
+public:
 	virtual void runOnImageBatch(const ImageVector& images) = 0;
 	virtual size_t getInputFeatureCount() const = 0;
 	
@@ -76,6 +84,11 @@ protected:
 protected:
 	ClassificationModel* _model;
 	bool                 _ownModel;
+
+private:
+	unsigned int _maximumSamplesToRun;
+	bool         _areMultipleSamplesAllowed;
+
 
 };
 

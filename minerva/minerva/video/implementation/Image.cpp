@@ -25,37 +25,45 @@ namespace video
 {
 
 Image::Image(const std::string& path, const std::string& label)
-: _path(path), _label(label), _loaded(false), _invalidToLoad(false), _x(0),
-	_y(0), _colorComponents(0), _pixelSize(0)
+: _path(path), _label(label), _headerLoaded(false), _loaded(false),
+	_invalidToLoad(false), _x(0), _y(0), _colorComponents(0), _pixelSize(0)
 {
-	_loadImageHeader();
+
 }
 
 Image::Image(size_t x, size_t y, size_t c, size_t p, const std::string& path,
 	const std::string& l, const ByteVector& d)
-: _path(path), _label(l), _loaded(true), _invalidToLoad(true), _x(x), _y(y),
-	_colorComponents(c), _pixelSize(p), _pixels(d)
+: _path(path), _label(l), _headerLoaded(true), _loaded(true), _invalidToLoad(true),
+	_x(x), _y(y), _colorComponents(c), _pixelSize(p), _pixels(d)
 {
 	_pixels.resize(totalSize() * pixelSize());
 }
 
 size_t Image::x() const
 {
+	assert(_headerLoaded);
+
 	return _x;
 }
 
 size_t Image::y() const
 {
+	assert(_headerLoaded);
+	
 	return _y;
 }
 	
 size_t Image::colorComponents() const
 {
+	assert(_headerLoaded);
+	
 	return _colorComponents;
 }
 
 size_t Image::pixelSize() const
 {
+	assert(_headerLoaded);
+	
 	return _pixelSize;
 }
 
@@ -77,10 +85,9 @@ const std::string& Image::label() const
 void Image::displayOnScreen()
 {
     load();
-    ImageLibraryInterface::displayOnScreen(_x, _y, _colorComponents,
-    	_pixelSize, _pixels);
+    ImageLibraryInterface::displayOnScreen(x(), y(), colorComponents(),
+    	pixelSize(), _pixels);
 }
-
 
 bool Image::loaded() const
 {
@@ -91,6 +98,8 @@ void Image::load()
 {
 	if(loaded()) return;
 	
+	loadHeader();
+	
 	util::log("Image") << "Loading data from image path '" << _path << "'\n";
 	
 	_pixels = ImageLibraryInterface::loadData(_path);
@@ -98,6 +107,15 @@ void Image::load()
 	util::log("Image") << " " << _pixels.size() << " bytes...\n";
 	
 	_loaded = true;
+}
+
+void Image::loadHeader()
+{
+	if(_headerLoaded) return;
+
+	_loadImageHeader();
+
+	_headerLoaded = true;
 }
 
 void Image::save()

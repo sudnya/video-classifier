@@ -1,6 +1,6 @@
 /* Author: Sudnya Padalikar
  * Date  : 08/10/2013
- * The implementation of the class to classify test images into gestures
+ * The implementation of the class to classify test images into labels 
 */
 
 #include <minerva/classifiers/interface/Classifier.h>
@@ -14,78 +14,106 @@ namespace minerva
 namespace classifiers
 {
 
-GestureVector Classifier::classify(const ImageVector& images)
+typedef Classifier::LabelVector LabelVector;
+
+LabelVector Classifier::classify(const ImageVector& images)
 {
-    loadFeatureSelector();
-    loadClassifier();
-    Matrix m = detectGestures(images);
-    GestureVector gestureName = pickMostLikelyGesture(m);
-    return gestureName;
+	loadFeatureSelector();
+	loadClassifier();
+	
+	Matrix m = detectLabels(images);
+	LabelVector labelName = pickMostLikelyLabel(m);
+	
+	return labelName;
 }
 
 unsigned Classifier::getInputFeatureCount()
 {
 	loadFeatureSelector();
+
+	if (m_featureSelectorNetwork.empty())
+		return m_classifierNetwork.getInputCount();
 	
 	return m_featureSelectorNetwork.getInputCount();
 }
 
 void Classifier::loadFeatureSelector()
 {
-    /* read from the feature file into memory/variable */
-    m_featureSelectorNetwork = m_classificationModel.getNeuralNetwork("FeatureSelector");
+	if (!m_classificationModel->containsNeuralNetwork("FeatureSelector"))
+		return;
+
+	/* read from the feature file into memory/variable */
+	m_featureSelectorNetwork = m_classificationModel->getNeuralNetwork("FeatureSelector");
 }
 
 void Classifier::loadClassifier()
 {
-    /* read from the classifier file into memory/variable */
-    m_classifierNetwork = m_classificationModel.getNeuralNetwork("Classifier");
+	/* read from the classifier file into memory/variable */
+	m_classifierNetwork = m_classificationModel->getNeuralNetwork("Classifier");
 }
 
-Classifier::Matrix Classifier::detectGestures(const ImageVector& images)
+Classifier::Matrix Classifier::detectLabels(const ImageVector& images)
 {
-    assert(m_classifierNetwork.getInputCount() == m_featureSelectorNetwork.getOutputCount());
-    
-    /* run classification using features, classifier network to emit gesture */
-    auto matrix = images.convertToStandardizedMatrix(m_featureSelectorNetwork.getInputCount());
+	size_t classifierInputCount = m_classifierNetwork.getInputCount();
+	size_t systemInputCount	 = m_classifierNetwork.getInputCount();
 
-    assert(matrix.columns() == m_featureSelectorNetwork.getInputCount());
+	if (!m_featureSelectorNetwork.empty())
+	{
+		classifierInputCount = m_featureSelectorNetwork.getOutputCount();
+		systemInputCount	 = m_featureSelectorNetwork.getInputCount();
+	}
 
-    util::log("Classifier") << "Input image data " << matrix.toString();
-    
-    auto featureMatrix = m_featureSelectorNetwork.runInputs(matrix);
-    
-    util::log("Classifier") << "Feature selector produced " << featureMatrix.toString();
-    
-    auto gestureMatrix = m_classifierNetwork.runInputs(featureMatrix);
+	assert(m_classifierNetwork.getInputCount() == classifierInputCount);
+	
+	/* run classification using features, classifier network to emit label */
+	auto matrix = images.convertToStandardizedMatrix(systemInputCount);
 
-    return gestureMatrix;    
+	assert(matrix.columns() == systemInputCount);
+
+	//util::log("Classifier") << "Input image data " << matrix.toString();
+	
+	if (!m_featureSelectorNetwork.empty())
+	{
+		matrix = m_featureSelectorNetwork.runInputs(matrix);
+
+	//	util::log("Classifier") << "Feature selector produced " << matrix.toString();
+	}
+	
+	auto labelMatrix = m_classifierNetwork.runInputs(matrix);
+
+	return labelMatrix;	
 }
 
-GestureVector Classifier::pickMostLikelyGesture(const Matrix& likelyGestures)
+LabelVector Classifier::pickMostLikelyLabel(const Matrix& likelyLabels)
 {
-    /* some algorithm to pick the best value out of the input vector of likely gestures */
-    //until we come up with a sophisticated heuristic, just return the max
-    /*auto maxIter = max_element(likelyGestures.begin(), likelyGestures.end());
-    if (maxIter == likelyGestures.end)
-        return "Could not determine gesture accurately\n";
-    return *maxIter;*/
-    GestureVector gestureList;
-    unsigned int totalRows = likelyGestures.rows();
+	/* some algorithm to pick the best value out of the input vector of likely labels */
+	//until we come up with a sophisticated heuristic, just return the max
+	
+	LabelVector labelList;
+	unsigned int totalRows = likelyLabels.rows();
 
-    util::log("Classifier") << "Finding gestures for each image\n";
-	util::log("Classifier") << " (images X neuron outputs) " << likelyGestures.toString();
+	util::log("Classifier") << "Finding labels for each image\n";
+	util::log("Classifier") << " (images X neuron outputs) " << likelyLabels.toString();
 
-    for (unsigned i = 0; i < totalRows; ++i)
-    {
-        auto gestureNeurons = likelyGestures.getRow(i);
-        
-        auto maxNeuron = std::max_element(gestureNeurons.begin(), gestureNeurons.end());
-        std::string name = m_classifierNetwork.getLabelForOutputNeuron(std::distance(gestureNeurons.begin(),maxNeuron));
-        gestureList.push_back(name);
-    }
-    
-    return gestureList;
+	for (unsigned i = 0; i < totalRows; ++i)
+	{
+		auto labelNeurons = likelyLabels.getRow(i);
+		
+		auto maxNeuron = std::max_element(labelNeurons.begin(), labelNeurons.end());
+		
+		// threshold test
+		if(*maxNeuron < 0.5f)
+		{
+			labelList.push_back("no-label-matched");
+		}
+		else
+		{
+			std::string name = m_classifierNetwork.getLabelForOutputNeuron(std::distance(labelNeurons.begin(),maxNeuron));
+			labelList.push_back(name);
+		}
+	}
+	
+	return labelList;
 }
 
 }//end classifiers

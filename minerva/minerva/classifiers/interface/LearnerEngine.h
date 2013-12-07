@@ -39,7 +39,7 @@ private:
 	virtual bool requiresLabeledData() const;
 
 private:
-	Learner* _learner;
+	Learner*     _learner;
 
 
 };

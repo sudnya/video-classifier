@@ -10,6 +10,7 @@
 #include <minerva/neuralnetwork/interface/NeuralNetwork.h>
 
 #include <minerva/matrix/interface/Matrix.h>
+
 #include <minerva/visualization/interface/NeuronVisualizer.h>
 
 #include <minerva/util/interface/debug.h>
