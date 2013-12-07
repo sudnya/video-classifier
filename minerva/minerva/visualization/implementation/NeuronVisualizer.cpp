@@ -43,26 +43,24 @@ NeuronVisualizer::NeuronVisualizer(const NeuralNetwork* network)
 
 }
 
-static Matrix generateRandomImage(const NeuralNetwork*, const Image&);
-static Matrix optimizeWithoutDerivative(const NeuralNetwork*, const Matrix& , unsigned int);
-static Matrix optimizeWithDerivative(const NeuralNetwork*, const Matrix& , unsigned int);
+static Matrix optimizeWithoutDerivative(const NeuralNetwork*, const Image& , unsigned int);
+static Matrix optimizeWithDerivative(const NeuralNetwork*, const Image& , unsigned int);
 static void updateImage(Image& , const Matrix& );
 
 void NeuronVisualizer::visualizeNeuron(Image& image, unsigned int outputNeuron)
 {
-	auto matrix = generateRandomImage(_network, image);
+	Matrix matrix;
 
 	std::string solverClass = util::KnobDatabase::getKnobValue(
 		"NeuronVisualizer::SolverClass", "Differentiable");
 	
 	if(solverClass == "Differentiable")
 	{
-		//matrix = image.convertToStandardizedMatrix(_network->getInputCount());
-		matrix = optimizeWithDerivative(_network, matrix, outputNeuron);
+		matrix = optimizeWithDerivative(_network, image, outputNeuron);
 	}
 	else if(solverClass == "NonDifferentiable")
 	{
-		matrix = optimizeWithoutDerivative(_network, matrix, outputNeuron);
+		matrix = optimizeWithoutDerivative(_network, image, outputNeuron);
 	}
 	else
 	{
@@ -73,10 +71,10 @@ void NeuronVisualizer::visualizeNeuron(Image& image, unsigned int outputNeuron)
 }
 
 static Matrix generateRandomImage(const NeuralNetwork* network,
-	const Image& image)
+	const Image& image, unsigned int seed, float range)
 {
-	std::uniform_real_distribution<float> distribution(-0.01f, 0.01f);
-	std::default_random_engine generator(0);//std::time(0));
+	std::uniform_real_distribution<float> distribution(-range, range);
+	std::default_random_engine generator(seed);
 
 	Matrix::FloatVector data(network->getInputCount());
 
@@ -127,9 +125,9 @@ private:
 };
 
 static Matrix optimizeWithoutDerivative(const NeuralNetwork* network,
-	const Matrix& initialData, unsigned int neuron)
+	const Image& image, unsigned int neuron)
 {
-	Matrix bestSoFar = initialData;
+	Matrix bestSoFar = generateRandomImage(network, image, 0, 0.1f);
 	float  bestCost  = computeCost(network, neuron, bestSoFar);
 	
 	std::string solverType = util::KnobDatabase::getKnobValue(
@@ -191,7 +189,7 @@ static Matrix generateReferenceForNeuron(const NeuralNetwork* network,
 	return reference;
 }
 
-static Matrix optimizeWithDerivative(const NeuralNetwork* network,
+static Matrix optimizeWithDerivative(float& bestCost, const NeuralNetwork* network,
 	const Matrix& initialData, unsigned int neuron)
 {
 	BackPropData data(const_cast<NeuralNetwork*>(network),
@@ -200,36 +198,70 @@ static Matrix optimizeWithDerivative(const NeuralNetwork* network,
 		generateReferenceForNeuron(network, neuron)));
 	
 	Matrix bestSoFar = initialData;
-	float  bestCost  = data.computeCost();
+	       bestCost  = data.computeCost();
 
 	auto solver = optimizer::LinearSolverFactory::create("LBFGSSolver");
 	
 	assert(solver != nullptr);
 	
-	util::log("NeuronVisualizer") << "Initial inputs are   : " << initialData.toString();
-	util::log("NeuronVisualizer") << "Initial reference is : " << generateReferenceForNeuron(network, neuron).toString();
-	util::log("NeuronVisualizer") << "Initial output is    : " << network->runInputs(initialData).toString();
-	util::log("NeuronVisualizer") << "Initial cost is      : " << bestCost << "\n";
+	util::log("NeuronVisualizer") << " Initial inputs are   : " << initialData.toString();
+	util::log("NeuronVisualizer") << " Initial reference is : " << generateReferenceForNeuron(network, neuron).toString();
+	util::log("NeuronVisualizer") << " Initial output is    : " << network->runInputs(initialData).toString();
+	util::log("NeuronVisualizer") << " Initial cost is      : " << bestCost << "\n";
 	
 	try
 	{
 		CostAndGradientFunction costAndGradient(&data, bestCost, 0.002f);
 	
-		for(int i = 0; i < 10; ++i) bestCost = solver->solve(bestSoFar, costAndGradient);
+		bestCost = solver->solve(bestSoFar, costAndGradient);
 	}
 	catch(...)
 	{
-		util::log("NeuronVisualizer") << "   solver produced an error.\n";
+		util::log("NeuronVisualizer") << "  solver produced an error.\n";
 		delete solver;
 		throw;
 	}
 	
 	delete solver;
 	
-	util::log("NeuronVisualizer") << "   solver produced new cost: "
+	util::log("NeuronVisualizer") << "  solver produced new cost: "
 		<< bestCost << ".\n";
-	util::log("NeuronVisualizer") << "   final output is : " << network->runInputs(bestSoFar).toString();
+	util::log("NeuronVisualizer") << "  final output is : " << network->runInputs(bestSoFar).toString();
 	return bestSoFar;
+}
+
+static Matrix optimizeWithDerivative(const NeuralNetwork* network,
+	const Image& image, unsigned int neuron)
+{
+	unsigned int iterations = util::KnobDatabase::getKnobValue(
+		"NeuronVisualizer::SolverIterations", 1);
+	float range = util::KnobDatabase::getKnobValue("NeuronVisualizer::InputRange", 0.1f);
+
+	float  bestCost = std::numeric_limits<float>::max();
+	Matrix bestInputs;
+
+	util::log("NeuronVisualizer") << "Searching for lowest cost inputs...\n";
+
+	for(unsigned int iteration = 0; iteration < iterations; ++iteration)
+	{
+		util::log("NeuronVisualizer") << " Iteration " << iteration << "\n";
+
+		auto randomInputs = generateRandomImage(network, image, iteration, range);
+
+		float newCost = std::numeric_limits<float>::max();
+		auto newInputs = optimizeWithDerivative(newCost, network, randomInputs, neuron);
+
+		if(newCost < bestCost)
+		{
+			bestInputs = newInputs;
+			bestCost   = newCost;
+			util::log("NeuronVisualizer") << " updated best cost: " << bestCost << "\n";
+		}
+
+		range /= 2.0f;
+	}
+	
+	return bestInputs;
 }
 
 static void updateImage(Image& image, const Matrix& bestData)

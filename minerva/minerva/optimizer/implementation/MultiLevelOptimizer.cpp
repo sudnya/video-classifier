@@ -247,7 +247,7 @@ static float approximateSearch(Matrix& weights, float currentCost, BackPropData*
 	try
 	{
 		NeuralNetworkCostAndGradient costAndGradient(backPropData,
-			currentCost, 0.2f);
+			currentCost, 1e-5f);
 	
 		newCost = solver->solve(weights, costAndGradient);
 	}
@@ -282,7 +282,7 @@ void MultiLevelOptimizer::solve()
 		newCost = approximateSearch(initialWeights, bestCostSoFar, m_backPropDataPtr);
 	}
 
-	float acceptableImprovement = util::KnobDatabase::getKnobValue("MultiLevelOptimizer::AcceptableImprovement", 0.001f);
+	float acceptableImprovement = util::KnobDatabase::getKnobValue("MultiLevelOptimizer::AcceptableImprovement", 0.0001f);
 	
 	util::log("MultiLevelOptimizer") << " approximate search produced solution with cost: " << newCost << "\n";
 	if((bestCostSoFar >= newCost) && ((((bestCostSoFar - newCost) / bestCostSoFar)) >= acceptableImprovement))

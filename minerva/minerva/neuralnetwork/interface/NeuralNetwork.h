@@ -88,6 +88,8 @@ class NeuralNetwork
 	public:
 		void resize(size_t layers);
 
+		void clear();
+
     public:
         iterator       begin();
         const_iterator begin() const;

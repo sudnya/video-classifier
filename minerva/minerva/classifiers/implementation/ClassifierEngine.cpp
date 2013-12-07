@@ -29,9 +29,10 @@ namespace classifiers
 {
 
 ClassifierEngine::ClassifierEngine()
-: _model(nullptr), _ownModel(true)
+: _model(nullptr), _ownModel(true), _maximumSamplesToRun(0), _areMultipleSamplesAllowed(false)
 {
-
+	_maximumSamplesToRun = util::KnobDatabase::getKnobValue<unsigned int>(
+		"ClassifierEngine::MaximumVideoFrames", 100);
 }
 
 ClassifierEngine::~ClassifierEngine()
@@ -84,7 +85,7 @@ void ClassifierEngine::runOnDatabaseFile(const std::string& path)
 
 void ClassifierEngine::runOnPaths(const StringVector& paths)
 {
-	_model->load();
+	if(_ownModel) _model->load();
 
 	registerModel();
 		
@@ -117,20 +118,32 @@ void ClassifierEngine::runOnPaths(const StringVector& paths)
 	}
 	
 	unsigned int maxBatchSize = util::KnobDatabase::getKnobValue<unsigned int>(
-		"ClassifierEngine::ImageBatchSize", 10);
+		"ClassifierEngine::ImageBatchSize", 200);
 	
-	unsigned int maxVideoFrames =
-		util::KnobDatabase::getKnobValue<unsigned int>(
-		"ClassifierEngine::MaximumVideoFrames", 50);
+	unsigned int maxVideoFrames = _maximumSamplesToRun;
 	
-	// Run images first
-	runAllImages(this, images, maxBatchSize, maxVideoFrames);
-	
-	// Run videos next
-	runAllVideos(this, videos, maxBatchSize, maxVideoFrames);
+	do
+	{
+		// Run images first
+		runAllImages(this, images, maxBatchSize, maxVideoFrames);
+		
+		// Run videos next
+		runAllVideos(this, videos, maxBatchSize, maxVideoFrames);
+	}
+	while(maxVideoFrames > 0 && _areMultipleSamplesAllowed);
 
 	// close
 	closeModel();
+}
+
+void ClassifierEngine::setMaximumSamplesToRun(unsigned int samples)
+{
+	_maximumSamplesToRun = samples;
+}
+
+void ClassifierEngine::setMultipleSamplesAllowed(bool allowed)
+{
+	_areMultipleSamplesAllowed = allowed;
 }
 
 std::string ClassifierEngine::reportStatisticsString() const
@@ -160,6 +173,11 @@ void ClassifierEngine::closeModel()
 bool ClassifierEngine::requiresLabeledData() const
 {
 	return false;
+}
+
+void ClassifierEngine::saveModel()
+{
+	if(_ownModel) _model->save();
 }
 
 static bool isComment(const std::string& line);
@@ -261,9 +279,16 @@ static VideoAndFrameVector pickRandomFrames(VideoVector& videos,
 	{
 		return VideoAndFrameVector();
 	}
+
+	std::default_random_engine generator;
 	
-	std::default_random_engine generator(std::time(0));
-	
+	bool shouldSeedWithTime = util::KnobDatabase::getKnobValue(
+		"ClassifierEngine::SeedWithTime", false);
+	if(shouldSeedWithTime)
+	{
+		generator.seed(std::time(0));
+	}
+
 	VideoAndFrameVector positions;
 	
 	for(unsigned int i = 0; i < maxVideoFrames; ++i)
@@ -299,10 +324,38 @@ static void displayOnScreen(ImageVector& images)
 	}
 }
 
+typedef std::vector<unsigned int> IntVector;
+
+IntVector getRandomOrder(unsigned int size)
+{
+	IntVector order(size);
+
+	for(unsigned int i = 0; i < size; ++i)
+	{
+		order[i] = i;
+	}
+
+	std::default_random_engine generator;
+	
+	bool shouldSeedWithTime = util::KnobDatabase::getKnobValue(
+		"ClassifierEngine::SeedWithTime", true);
+	if(shouldSeedWithTime)
+	{
+		generator.seed(std::time(0));
+	}
+	
+	std::shuffle(order.begin(), order.end(), generator);	
+
+	return order;
+}
+
 static void runAllImages(ClassifierEngine* engine, ImageVector& images,
 	unsigned int maxBatchSize, unsigned int& maxVideoFrames)
 {
 	util::log("ClassifierEngine") << "Running image batches\n";
+
+	// shuffle the inputs
+	auto randomImageOrder = getRandomOrder(images.size());
 
 	for(unsigned int i = 0; i < images.size(); i += maxBatchSize)
 	{
@@ -313,13 +366,12 @@ static void runAllImages(ClassifierEngine* engine, ImageVector& images,
 		
 		for(unsigned int j = 0; j < batchSize; ++j)
 		{
-			batch.push_back(images[i + j]);
+			batch.push_back(images[randomImageOrder[i + j]]);
 		}
 		
 		for(auto& image : batch)
 		{
 			image.load();
-			image = image.sample(engine->getInputFeatureCount()); // is this needed?
 		}
 
 		util::log("ClassifierEngine") << " running batch with " << batch.size()
@@ -329,6 +381,7 @@ static void runAllImages(ClassifierEngine* engine, ImageVector& images,
 		
 		if(maxVideoFrames <= batch.size())
 		{
+			maxVideoFrames = 0;
 			break;
 		}
 	
@@ -343,15 +396,15 @@ static void parseSinglePath(ImageVector& images, VideoVector& videos,
 	
 	if(Image::isPathAnImage(filePath))
 	{
-		//util::log("ClassifierEngine") << "  found image '" << filePath
-		//	<< "'\n";
+		util::log("ClassifierEngine") << "  found unlabeled image '" << filePath
+			<< "'\n";
 		
 		images.push_back(Image(filePath));
 	}
 	else if(Video::isPathAVideo(filePath))
 	{
-		//util::log("ClassifierEngine") << "  found video '" << filePath
-		//	<< "'\n";
+		util::log("ClassifierEngine") << "  found unlabeled video '" << filePath
+			<< "'\n";
 
 		videos.push_back(Video(filePath));
 	}
@@ -382,8 +435,8 @@ static void parseLabeledPath(ImageVector& images, VideoVector& videos,
 	
 	if(Image::isPathAnImage(filePath))
 	{
-		//util::log("ClassifierEngine") << "  found labeled image '" << filePath
-		//	<< "'\n";
+		util::log("ClassifierEngine") << "  found labeled image '" << filePath
+			<< "' with label '" << label << "'\n";
 
 		if(components.size() != 2)
 		{
@@ -395,8 +448,8 @@ static void parseLabeledPath(ImageVector& images, VideoVector& videos,
 	}
 	else if(Video::isPathAVideo(filePath))
 	{
-		//util::log("ClassifierEngine") << "  found labeled video '" << filePath
-		//	<< "'\n";
+		util::log("ClassifierEngine") << "  found labeled video '" << filePath
+			<< "' with label '" << label << "'\n";
 		
 		if(components.size() != 4)
 		{

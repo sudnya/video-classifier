@@ -8272,7 +8272,6 @@
 /mnt/Data/fall2013/not-faces//101_ObjectCategories/scissors/image_0010.jpg, not-face
 /mnt/Data/fall2013/not-faces//101_ObjectCategories/scissors/image_0031.jpg, not-face
 /mnt/Data/fall2013/not-faces//101_ObjectCategories/scissors/image_0032.jpg, not-face
-/mnt/Data/fall2013/faces, face
 /mnt/Data/fall2013/faces/BioID_1427.jpg, face
 /mnt/Data/fall2013/faces/BioID_0524.jpg, face
 /mnt/Data/fall2013/faces/BioID_1174.jpg, face

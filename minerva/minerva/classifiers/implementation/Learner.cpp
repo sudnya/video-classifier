@@ -3,7 +3,10 @@
  * The implementation of the class to learn from raw video & features to classifiers 
  */
 
+// Minerva Includes
 #include <minerva/classifiers/interface/Learner.h>
+
+#include <minerva/util/interface/debug.h>
 
 namespace minerva
 {
@@ -22,6 +25,8 @@ size_t Learner::getInputFeatureCount() const
 
 void Learner::loadFeatureSelector()
 {
+	if (!m_classificationModel->containsNeuralNetwork("FeatureSelector")) return;
+
     /* read from the feature file into memory/variable */
     m_featureSelectorNetwork = m_classificationModel->getNeuralNetwork("FeatureSelector");
 }
@@ -33,13 +38,26 @@ void Learner::loadClassifier()
 
 void Learner::trainClassifier(const ImageVector& images)
 {
-    /* using the feature NN & training images emit a NN for classifiers */
-    auto matrix           = images.convertToStandardizedMatrix(m_featureSelectorNetwork.getInputCount());
-    auto featureMatrix    = m_featureSelectorNetwork.runInputs(matrix);
+	size_t inputCount = m_featureSelectorNetwork.getInputCount();
 
-    // TODO: optimize weights using back propagation as tool
-    m_classifierNetwork.train(featureMatrix,
-    	images.getReference(m_classifierNetwork));
+	if(m_featureSelectorNetwork.empty())
+	{
+		inputCount = m_classifierNetwork.getInputCount();
+	}
+
+    auto matrix = images.convertToStandardizedMatrix(inputCount);
+    
+	// If there is a feature selector, do feature selection first
+	if (!m_featureSelectorNetwork.empty())
+	{
+    	matrix = m_featureSelectorNetwork.runInputs(matrix);
+	}
+
+	auto reference = images.getReference(m_classifierNetwork);
+
+	util::log("Learner") << "Training classifier network with reference: " << reference.toString();
+
+    m_classifierNetwork.train(matrix, reference);
 }
  
 void Learner::writeClassifier()

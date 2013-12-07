@@ -52,7 +52,7 @@ void UnsupervisedLearnerEngine::closeModel()
 {
 	_learner->writeFeaturesNeuralNetwork();
 
-	_model->save();
+	saveModel();
 }
 
 size_t UnsupervisedLearnerEngine::getInputFeatureCount() const

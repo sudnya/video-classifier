@@ -47,7 +47,7 @@ void FinalClassifierEngine::reportStatistics(std::ostream& stream) const
 
 void FinalClassifierEngine::runOnImageBatch(const ImageVector& images)
 {
-	Classifier classifier(*_model);
+	Classifier classifier(_model);
 	
 	auto labels = classifier.classify(images);
 	
@@ -68,7 +68,7 @@ void FinalClassifierEngine::runOnImageBatch(const ImageVector& images)
 
 size_t FinalClassifierEngine::getInputFeatureCount() const
 {
-	Classifier classifier(*_model);
+	Classifier classifier(_model);
 	
 	return classifier.getInputFeatureCount();
 }

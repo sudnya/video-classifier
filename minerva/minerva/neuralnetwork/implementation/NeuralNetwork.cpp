@@ -166,6 +166,11 @@ void NeuralNetwork::resize(size_t layers)
 	m_layers.resize(layers);
 }
 
+void NeuralNetwork::clear()
+{
+	m_layers.clear();
+}
+
 static size_t getGreatestCommonDivisor(size_t a, size_t b)
 {
 	// Euclid's method
@@ -240,11 +245,19 @@ size_t NeuralNetwork::totalWeights() const
 
 NeuralNetwork::Matrix NeuralNetwork::getFlattenedWeights() const
 {
-	Matrix weights;
+	// TODO: avoid the copy
+	Matrix weights(1, totalWeights());
+	
+	size_t position = 0;
 	
 	for(auto& layer : *this)
 	{
-		weights = weights.appendColumns(layer.getFlattenedWeights());
+		auto flattenedWeights = layer.getFlattenedWeights();
+
+		std::memcpy(&weights.data()[position], &flattenedWeights.data()[0],
+			flattenedWeights.size() * sizeof(float));
+
+		position += flattenedWeights.size();	
 	}
 	
 	return weights;
@@ -285,7 +298,9 @@ NeuralNetwork::BlockSparseMatrix NeuralNetwork::convertToBlockSparseForLayerInpu
 
 void NeuralNetwork::formatInputForLayer(const Layer& layer, BlockSparseMatrix& m) const
 {
-	assert(layer.getInputCount() == m.columns());
+	assertM(layer.getInputCount() == m.columns(), "Layer input count "
+		<< layer.getInputCount() << " does not match the input count "
+		<< m.columns());
 	
 	if(layer.blocks() == m.blocks()) return;
 
