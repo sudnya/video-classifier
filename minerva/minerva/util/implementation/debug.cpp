@@ -14,6 +14,7 @@
 #define DEBUG_CPP_INCLUDED
 
 #include <minerva/util/interface/debug.h>
+#include <minerva/util/interface/string.h>
 
 // Standard Library Includes
 #include <memory>
@@ -106,6 +107,16 @@ namespace util
 	void enableAllLogs()
 	{
 		logDatabase.enableAll = true;
+	}
+	
+	void enableSpecificLogs(const std::string& modules)
+	{
+		auto individualModules = util::split(modules, ",");
+		
+		for(auto& module : individualModules)
+		{
+			enableLog(module);
+		}
 	}
 	
 	void enableLog(const std::string& name)

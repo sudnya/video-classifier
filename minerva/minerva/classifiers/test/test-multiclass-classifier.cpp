@@ -8,9 +8,13 @@
 #include <minerva/classifiers/interface/ClassifierFactory.h>
 #include <minerva/classifiers/interface/ClassifierEngine.h>
 #include <minerva/classifiers/interface/LearnerEngine.h>
+#include <minerva/classifiers/interface/UnsupervisedLearnerEngine.h>
 #include <minerva/classifiers/interface/FinalClassifierEngine.h>
 
 #include <minerva/model/interface/ClassificationModel.h>
+
+#include <minerva/database/interface/SampleDatabase.h>
+#include <minerva/database/interface/Sample.h>
 
 #include <minerva/util/interface/debug.h>
 #include <minerva/util/interface/ArgumentParser.h>
@@ -33,43 +37,110 @@ typedef matrix::Matrix Matrix;
 typedef model::ClassificationModel ClassificationModel;
 typedef classifiers::LearnerEngine LearnerEngine;
 typedef classifiers::FinalClassifierEngine FinalClassifierEngine;
+typedef neuralnetwork::NeuralNetwork NeuralNetwork;
+typedef database::SampleDatabase SampleDatabase;
 
-neuralnetwork::NeuralNetwork createAndInitializeNeuralNetwork(unsigned networkSize, float epsilon,
+static void createAndInitializeNeuralNetworks(
+	ClassificationModel& model,
+	size_t xPixels, size_t yPixels,
+	size_t colors, size_t classes,
 	std::default_random_engine& engine)
 {
-    neuralnetwork::NeuralNetwork ann;
-    
-	// Layer 1: (1024 16 x 16 ) sparse blocks   O(1024 * 256^3) O(1024 * 1e7) O(1e10)  O(256^2*1024) O(1e7)
-	// Layer 2: (256  16 x 16 ) sparse blocks   O(1e9)                                 O(1e7)
-	// Layer 3: (64   16 x 16 ) sparse blocks   O(1e8)                                 O(1e6)
-	// Layer 4: (32   16 x 16 ) sparse blocks   O(1e8)                                 O(1e6)
-	// Layer 5: (1    300)      fully connected O(1e8)                                 O(1e4)
-	// Layer 6: (1    100)      fully connected O(1e8)                                 O(1e4)
+	size_t reductionFactor = 4;
+
+	assert(xPixels % reductionFactor == 0);
+	assert(yPixels % reductionFactor == 0);
 	
-	//assert(networkSize % 32 == 0);
-
-	unsigned convolutionalLayers = std::min(1024U, networkSize);
-
-	//ann.addLayer(Layer(convolutionalLayers,    32, 32)); // convolutional layer
-	//ann.addLayer(Layer(convolutionalLayers,    32,  4)); // max pooling layer
-	//ann.addLayer(Layer(convolutionalLayers/8,  32, 32));
-	//ann.addLayer(Layer(convolutionalLayers,  32,  32));
-	//ann.addLayer(Layer(convolutionalLayers,  32,  32));
+	NeuralNetwork featureSelector;
 	
-	//ann.addLayer(Layer(1, convolutionalLayers, 1));
-	ann.addLayer(Layer(3 * convolutionalLayers, 2624, 256 / convolutionalLayers));
-	ann.addLayer(Layer(1, ann.getOutputCount(), 500));
-	//ann.addLayer(Layer(1, 300, 100));
-	ann.addLayer(Layer(1, 500, 1));
+	// derive parameters from image dimensions 
+	const size_t blockSize = xPixels;
+	const size_t blocks    = yPixels * colors;
+	
+	// convolutional layer
+	featureSelector.addLayer(Layer(blocks, blockSize, blockSize));
+	
+	// pooling layer
+	featureSelector.addLayer(Layer(featureSelector.back().blocks(),
+		featureSelector.back().getBlockingFactor(),
+		featureSelector.back().getBlockingFactor() / reductionFactor));
+	
+	// convolutional layer
+	featureSelector.addLayer(Layer(featureSelector.back().blocks() / reductionFactor,
+		featureSelector.back().getBlockingFactor(),
+		featureSelector.back().getBlockingFactor()));
+	
+	// pooling layer
+	featureSelector.addLayer(Layer(featureSelector.back().blocks(),
+		featureSelector.back().getBlockingFactor(),
+		featureSelector.back().getBlockingFactor() / reductionFactor));
 
-    ann.initializeRandomly(engine, epsilon);
+	featureSelector.initializeRandomly(engine);
+	
+	model.setNeuralNetwork("FeatureSelector", featureSelector);
+	
+	// fully connected input layer
+	NeuralNetwork classifier;
 
-	ann.setLabelForOutputNeuron(0, "face");
+	classifier.addLayer(Layer(1, featureSelector.getOutputCount(), featureSelector.getOutputCount()));
 
-    return ann;
+	// fully connected hidden layer
+	classifier.addLayer(Layer(1, classifier.getOutputCount(), classifier.getOutputCount()));
+	
+	// final prediction layer
+	classifier.addLayer(Layer(1, classifier.getOutputCount(), classes));
+
+	classifier.initializeRandomly(engine);
+
+	model.setNeuralNetwork("Classifier", classifier);
 }
 
-void trainNeuralNetwork(ClassificationModel& faceModel, const std::string& faceDatabasePath, unsigned iterations)
+static void setupOutputNeuronLabels(ClassificationModel& model,
+	const std::string& trainingDatabasePath)
+{
+	auto& network = model.getNeuralNetwork("Classifier");
+	
+	SampleDatabase database(trainingDatabasePath);
+
+	auto labels = database.getAllPossibleLabels();
+	
+	assert(labels.size() == network.getOutputCount());
+
+	size_t labelCount = labels.size();
+
+	for(size_t i = 0; i < labelCount; ++i)
+	{
+		network.setLabelForOutputNeuron(i, labels[i]);
+	}
+}
+
+static size_t getNumberOfClasses(const std::string& trainingDatabasePath)
+{
+	SampleDatabase database(trainingDatabasePath);
+	
+	return database.getTotalLabelCount();
+}
+
+static void trainFeatureSelector(ClassificationModel& model, const std::string& trainingDatabasePath,
+	size_t iterations, size_t batchSize)
+{
+	// engine will now be an unsupervised Learner
+	std::unique_ptr<UnsupervisedLearnerEngine> unsupervisedLearnerEngine(
+		static_cast<UnsupervisedLearnerEngine*>(
+		classifiers::ClassifierFactory::create("UnsupervisedLearnerEngine")));
+
+	unsupervisedLearnerEngine->setMaximumSamplesToRun(iterations);
+	unsupervisedLearnerEngine->setMultipleSamplesAllowed(true);
+	unsupervisedLearnerEngine->setModel(&model);
+	unsupervisedLearnerEngine->setBatchSize(batchSize);
+
+	// read from database and use model to train
+    unsupervisedLearnerEngine->runOnDatabaseFile(trainingDatabasePath);
+}
+
+static void trainClassifier(ClassificationModel& model,
+	const std::string& trainingDatabasePath,
+	size_t iterations, size_t batchSize)
 {
 	// engine will now be a Learner
 	std::unique_ptr<LearnerEngine> learnerEngine(static_cast<LearnerEngine*>(
@@ -77,50 +148,71 @@ void trainNeuralNetwork(ClassificationModel& faceModel, const std::string& faceD
 
 	learnerEngine->setMaximumSamplesToRun(iterations);
 	learnerEngine->setMultipleSamplesAllowed(true);
-	learnerEngine->setModel(&faceModel);
+	learnerEngine->setModel(&model);
+	learnerEngine->setBatchSize(batchSize);
 
 	// read from database and use model to train
-    learnerEngine->runOnDatabaseFile(faceDatabasePath);
+    learnerEngine->runOnDatabaseFile(trainingDatabasePath);
 }
 
-float classify(ClassificationModel& faceModel, const std::string& faceDatabasePath, unsigned iterations)
+static float classify(ClassificationModel& model, const std::string& testDatabasePath,
+	size_t iterations)
 {
 	std::unique_ptr<FinalClassifierEngine> classifierEngine(static_cast<FinalClassifierEngine*>(
 		classifiers::ClassifierFactory::create("FinalClassifierEngine")));
 
 	classifierEngine->setMaximumSamplesToRun(iterations);
-	classifierEngine->setModel(&faceModel);
+	classifierEngine->setModel(&model);
 
 	// read from database and use model to test 
-    classifierEngine->runOnDatabaseFile(faceDatabasePath);
+    classifierEngine->runOnDatabaseFile(testDatabasePath);
 
-	util::log("TestFaceDetector") << classifierEngine->reportStatisticsString();
+	util::log("TestMulticlassClassifier") << classifierEngine->reportStatisticsString();
 	
 	return classifierEngine->getAccuracy();
 }
 
-static void visualizeNetwork(neuralnetwork::NeuralNetwork& neuralNetwork,
-	const std::string& outputPath, unsigned networkSize)
+static void visualizeModel(ClassificationModel& model,
+	const std::string& outputPath, size_t xPixels, size_t yPixels,
+	size_t colors)
 {
-	// save the downsampled reference
-	visualization::NeuronVisualizer visualizer(&neuralNetwork);
-	
-	unsigned factor = std::sqrt(networkSize);
+	// Visualize the first layer
+	auto& featureSelectorNetwork = model.getNeuralNetwork("FeatureSelector");
 
-	//video::Image image(384, 246, 3, 1);
-	video::Image image(64 * factor, 41 * factor, 3, 1);
-	
-	image.setPath(outputPath);
-	
-	visualizer.visualizeNeuron(image, 0);
+	NeuralNetwork oneLayerNetwork;
 
-	image.save();
+	oneLayerNetwork.addLayer(featureSelectorNetwork.front());
+
+	visualization::NeuronVisualizer visualizer(&oneLayerNetwork);
+	
+	size_t firstLayerNeurons = oneLayerNetwork.getOutputCount();
+
+	for(size_t neuron = 0; neuron < firstLayerNeurons; ++neuron)
+	{
+		video::Image image(xPixels, yPixels, colors, 1);
+		
+		std::stringstream path;
+
+		path << outputPath << "FeatureSelector::Layer0::Neuron" << neuron << ".jpg";
+
+		image.setPath(path.str());
+		
+		visualizer.visualizeNeuron(image, neuron);
+
+		image.save();
+	}
+
+
+	// Visualize the final layer
+	// TODO
 }
 
-void runTest(const std::string& faceTrainingDatabasePath, const std::string& faceTestDatabasePath,
+static void runTest(const std::string& trainingDatabasePath,
+	const std::string& testDatabasePath,
 	const std::string& outputVisualizationPath,
-	unsigned iterations, unsigned classificationIterations,
-	bool seed, unsigned networkSize, float epsilon)
+	size_t iterations, size_t batchSize, size_t classificationIterations,
+	size_t xPixels, size_t yPixels, size_t colors,
+	bool seed)
 {
 	std::default_random_engine generator;
 
@@ -129,24 +221,22 @@ void runTest(const std::string& faceTrainingDatabasePath, const std::string& fac
 		generator.seed(std::time(0));
 	}
 
-	// create a neural network - simple, 3 layer - done in runTest and passed here
-    neuralnetwork::NeuralNetwork ann = createAndInitializeNeuralNetwork(networkSize, epsilon, generator); 
+	// Create a model for multiclass classification
+	ClassificationModel model;
 	
-	// add it to the model, hardcode the resolution for these images
-	ClassificationModel faceModel;
-	faceModel.setNeuralNetwork("Classifier", ann);
-
-	trainNeuralNetwork(faceModel, faceTrainingDatabasePath, iterations);
+	// initialize the model, one feature selector network and one classifier network
+    createAndInitializeNeuralNetworks(model, xPixels, yPixels, colors,
+		getNumberOfClasses(testDatabasePath), generator); 
+	setupOutputNeuronLabels(model, testDatabasePath);
+	
+	trainFeatureSelector(model, trainingDatabasePath, iterations, batchSize);
+	trainClassifier(model, trainingDatabasePath, iterations, batchSize);
 
     // Run classifier and record accuracy
-
-    float accuracy = classify(faceModel, faceTestDatabasePath, classificationIterations);
+    float accuracy = classify(model, testDatabasePath, classificationIterations);
 
     // Test if accuracy is greater than threshold
-	// if > 90% accurate - say good
-	// if < 90% accurate - say bad
-
-    float threshold = 0.90;
+    const float threshold = 0.95;
     if (accuracy > threshold)
     {
         std::cout << "Test passed with accuracy " << accuracy 
@@ -158,19 +248,8 @@ void runTest(const std::string& faceTrainingDatabasePath, const std::string& fac
             << " which is less than expected threshold " << threshold << "\n";
     }
 
-	// Visualize the neuron
-	visualizeNetwork(faceModel.getNeuralNetwork("Classifier"),
-		outputVisualizationPath, networkSize);
-}
-
-static void enableSpecificLogs(const std::string& modules)
-{
-	auto individualModules = util::split(modules, ",");
-	
-	for(auto& module : individualModules)
-	{
-		util::enableLog(module);
-	}
+	// Visualize the model neurons
+	visualizeModel(model, outputVisualizationPath, xPixels, yPixels, colors);
 }
 
 }
@@ -185,39 +264,46 @@ int main(int argc, char** argv)
     bool seed = false;
     std::string loggingEnabledModules;
 
-	std::string facePaths;
+	std::string trainingPaths;
 	std::string testPaths;
 	std::string outputVisualizationPath;
 	
-	unsigned iterations = 0;
-	unsigned classificationIterations = 0;
-	unsigned networkSize = 0;
-	float epsilon = 1.0f;
+	size_t xPixels = 0;
+	size_t yPixels = 0;
+	size_t colors  = 0;
+	size_t iterations = 0;
+	size_t batchSize = 0;
+	size_t classificationIterations = 0;
 
-    parser.description("The minerva face detection classifier test.");
+    parser.description("The minerva multiclass classifier test.");
 
-    parser.parse("-f", "--face-path", facePaths,
-		"examples/faces-training-database.txt",
+	parser.parse("-t", "--training-data-path", trainingPaths,
+		"examples/multiclass-training-database.txt",
         "The path to the training file.");
-    parser.parse("-t", "--test-path", testPaths,
-		"examples/faces-test-database.txt",
+    parser.parse("-e", "--test-data-path", testPaths,
+		"examples/multiclass-test-database.txt",
         "The path to the test file.");
+    parser.parse("-i", "--iterations", iterations, 10,
+        "The number of iterations to train for.");
+    parser.parse("-b", "--batch-size", batchSize, 100,
+        "The number of images to use for each iteration.");
+    parser.parse("-x", "--x-pixels", xPixels, 64,
+        "The number of X pixels to consider from the input image.");
+	parser.parse("-y", "--y-pixels", yPixels, 64,
+		"The number of Y pixels to consider from the input image");
+	parser.parse("-c", "--colors", colors, 3,
+		"The number of color components (e.g. RGB) to consider from the input image");
+    parser.parse("-C", "--classification-samples", classificationIterations, 1000000,
+        "The maximum number of samples to classify.");
+
 	parser.parse("-o", "--output-visualization", outputVisualizationPath,
-		"visualization/face-neuron.jpg",
-		"The output image in which to visualize the face detector neuron.");
-    parser.parse("-i", "--iterations", iterations, 1000,
-        "The number of iterations to train for");
-    parser.parse("-c", "--classification-iterations", classificationIterations, 10000,
-        "The number of iterations to classifier for");
+		"visualization/multiclass",
+		"The path which to store visualizions of the individual neurons.");
     parser.parse("-L", "--log-module", loggingEnabledModules, "",
 		"Print out log messages during execution for specified modules "
 		"(comma-separated list of modules, e.g. NeuralNetwork, Layer, ...).");
     parser.parse("-s", "--seed", seed, false,
         "Seed with time.");
-    parser.parse("-n", "--network-size", networkSize, 1024,
-        "The number of inputs to the network.");
-    parser.parse("-e", "--epsilon", epsilon, 1.0f,
-        "Range to intiialize the network with.");
     parser.parse("-v", "--verbose", verbose, false,
         "Print out log messages during execution");
 
@@ -229,19 +315,19 @@ int main(int argc, char** argv)
 	}
 	else
 	{
-		minerva::classifiers::enableSpecificLogs(loggingEnabledModules);
+		minerva::util::enableSpecificLogs(loggingEnabledModules);
 	}
     
-    minerva::util::log("TestClassifier") << "Test begins\n";
+    minerva::util::log("TestMulticlassClassifier") << "Test begins\n";
     
     try
     {
-        minerva::classifiers::runTest(facePaths, testPaths, outputVisualizationPath,
-			iterations, classificationIterations, seed, networkSize, epsilon);
+        minerva::classifiers::runTest(trainingPaths, testPaths, outputVisualizationPath,
+			iterations, batchSize, classificationIterations, xPixels, yPixels, colors, seed);
     }
     catch(const std::exception& e)
     {
-        std::cout << "Minerva Face Detection Classifier Test Failed:\n";
+        std::cout << "Minerva Multiclass Classifier Test Failed:\n";
         std::cout << "Message: " << e.what() << "\n\n";
     }
 

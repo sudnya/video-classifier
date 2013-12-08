@@ -139,6 +139,9 @@ namespace util
 	
 	extern void enableAllLogs();
 	extern void enableLog(const std::string& logName);
+
+	/* Enable a comma sepearated list of logs */
+	extern void enableSpecificLogs(const std::string& modules);
 	
 }
 

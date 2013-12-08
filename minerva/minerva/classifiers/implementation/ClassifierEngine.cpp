@@ -6,7 +6,11 @@
 
 // Minerva Includes
 #include <minerva/classifiers/interface/ClassifierEngine.h>
+
 #include <minerva/model/interface/ClassificationModel.h>
+
+#include <minerva/database/interface/SampleDatabase.h>
+#include <minerva/database/interface/Sample.h>
 
 #include <minerva/video/interface/Image.h>
 #include <minerva/video/interface/Video.h>
@@ -29,10 +33,13 @@ namespace classifiers
 {
 
 ClassifierEngine::ClassifierEngine()
-: _model(nullptr), _ownModel(true), _maximumSamplesToRun(0), _areMultipleSamplesAllowed(false)
+: _model(nullptr), _ownModel(true), _maximumSamplesToRun(0),
+	_batchSize(0), _areMultipleSamplesAllowed(false)
 {
 	_maximumSamplesToRun = util::KnobDatabase::getKnobValue<unsigned int>(
 		"ClassifierEngine::MaximumVideoFrames", 100);
+	_batchSize = util::KnobDatabase::getKnobValue<unsigned int>(
+		"ClassifierEngine::ImageBatchSize", 200);
 }
 
 ClassifierEngine::~ClassifierEngine()
@@ -117,9 +124,8 @@ void ClassifierEngine::runOnPaths(const StringVector& paths)
 		}
 	}
 	
-	unsigned int maxBatchSize = util::KnobDatabase::getKnobValue<unsigned int>(
-		"ClassifierEngine::ImageBatchSize", 200);
-	
+	unsigned int maxBatchSize = _batchSize;
+
 	unsigned int maxVideoFrames = _maximumSamplesToRun;
 	
 	do
@@ -139,6 +145,11 @@ void ClassifierEngine::runOnPaths(const StringVector& paths)
 void ClassifierEngine::setMaximumSamplesToRun(unsigned int samples)
 {
 	_maximumSamplesToRun = samples;
+}
+
+void ClassifierEngine::setBatchSize(unsigned int samples)
+{
+	_batchSize = samples;
 }
 
 void ClassifierEngine::setMultipleSamplesAllowed(bool allowed)
@@ -180,13 +191,6 @@ void ClassifierEngine::saveModel()
 	if(_ownModel) _model->save();
 }
 
-static bool isComment(const std::string& line);
-static bool isLabeled(const std::string& line);
-static std::string removeWhitespace(const std::string& line);
-static void parseSinglePath(ImageVector& images, VideoVector& videos,
-	const std::string& line, const std::string& databaseDirectory);
-static void parseLabeledPath(ImageVector& images, VideoVector& videos,
-	const std::string& line, const std::string& databaseDirectory);
 static void consolidateLabels(ImageVector& images, VideoVector& videos);
 
 static void parseImageDatabase(ImageVector& images, VideoVector& videos,
@@ -194,42 +198,50 @@ static void parseImageDatabase(ImageVector& images, VideoVector& videos,
 {
 	util::log("ClassifierEngine") << " scanning image database '"
 		<< path << "'\n";
-	
-	std::ifstream file(path.c_str());
-	
-	if(!file.is_open())
-	{
-		throw std::runtime_error("Could not open '" + path + "' for reading.");
-	}
 
-	auto databaseDirectory = util::getDirectory(path);
-	
-	while(file.good())
-	{
-		std::string line;
-		
-		std::getline(file, line);
-		
-		line = removeWhitespace(line);
-		
-		if(line.empty()) continue;
-		
-		if(isComment(line)) continue;
+	database::SampleDatabase sampleDatabase(path);
 
-		if(isLabeled(line))
-		{
-			parseLabeledPath(images, videos, line, databaseDirectory);
-		}
-		else if(!requiresLabeledData)
-		{
-			parseSinglePath(images, videos, line, databaseDirectory);
-		}
-		else
+	for(auto& sample : sampleDatabase)
+	{
+		if(!sample.hasLabel() && requiresLabeledData)
 		{
 			util::log("ClassifierEngine") << "  skipped unlabeled data '"
-				<< line	<< "'\n";
+				<< sample.path() << "'\n";
+			continue;
 		}
 
+		if(sample.isImageSample())
+		{
+
+			if(sample.hasLabel())
+			{
+				util::log("ClassifierEngine") << "  found labeled image '" << sample.path()
+					<< "' with label '" << sample.label() << "'\n";
+			}
+			else
+			{
+				util::log("ClassifierEngine") << "  found unlabeled image '" << sample.path()
+					<< "'n";
+			}
+			
+			images.push_back(Image(sample.path(), sample.label()));
+		}
+		else if(sample.isVideoSample())
+		{
+			if(sample.hasLabel())
+			{
+				util::log("ClassifierEngine") << "  found labeled video '" << sample.path()
+					<< "' with label '" << sample.label() << "'\n";
+			}
+			else
+			{
+				util::log("ClassifierEngine") << "  found unlabeled video '" << sample.path()
+					<< "'n";
+			}
+
+			videos.push_back(Video(sample.path(), sample.label(),
+				sample.beginFrame(), sample.endFrame()));
+		}
 	}
 	
 	consolidateLabels(images, videos);
@@ -274,7 +286,9 @@ static void runAllVideos(ClassifierEngine* engine, VideoVector& videos,
 static VideoAndFrameVector pickRandomFrames(VideoVector& videos,
 	unsigned int maxVideoFrames)
 {
-	util::log("ClassifierEngine") << " Picking random " << maxVideoFrames << " frames from videos\n"; 
+	util::log("ClassifierEngine") << " Picking random " << maxVideoFrames
+		<< " frames from videos\n"; 
+
 	if(videos.size() == 0)
 	{
 		return VideoAndFrameVector();
@@ -389,99 +403,6 @@ static void runAllImages(ClassifierEngine* engine, ImageVector& images,
 	}
 }
 
-static void parseSinglePath(ImageVector& images, VideoVector& videos,
-	const std::string& line, const std::string& databaseDirectory)
-{
-	auto filePath = util::getRelativePath(databaseDirectory, line);
-	
-	if(Image::isPathAnImage(filePath))
-	{
-		util::log("ClassifierEngine") << "  found unlabeled image '" << filePath
-			<< "'\n";
-		
-		images.push_back(Image(filePath));
-	}
-	else if(Video::isPathAVideo(filePath))
-	{
-		util::log("ClassifierEngine") << "  found unlabeled video '" << filePath
-			<< "'\n";
-
-		videos.push_back(Video(filePath));
-	}
-	else
-	{
-		throw std::runtime_error("Path '" + filePath +
-			"' is not an image or video.");
-	}
-}
-
-static unsigned int parseInteger(const std::string s);
-
-static void parseLabeledPath(ImageVector& images, VideoVector& videos,
-	const std::string& line, const std::string& databaseDirectory)
-{
-	auto components = util::split(line, ",");
-	
-	if(components.size() < 2)
-	{
-		throw std::runtime_error("Malformed labeled image/video statement '" +
-			line + "', should be (path, label) or "
-			"(path, label, startFrame, endFrame).");
-	}
-	
-	auto filePath = util::getRelativePath(databaseDirectory, components[0]);
-	
-	auto label = removeWhitespace(components[1]);
-	
-	if(Image::isPathAnImage(filePath))
-	{
-		util::log("ClassifierEngine") << "  found labeled image '" << filePath
-			<< "' with label '" << label << "'\n";
-
-		if(components.size() != 2)
-		{
-			throw std::runtime_error("Malformed labeled image statement '" +
-				line + "', should be (path, label).");
-		}
-
-		images.push_back(Image(filePath, label));
-	}
-	else if(Video::isPathAVideo(filePath))
-	{
-		util::log("ClassifierEngine") << "  found labeled video '" << filePath
-			<< "' with label '" << label << "'\n";
-		
-		if(components.size() != 4)
-		{
-			throw std::runtime_error("Malformed labeled video statement '" +
-				line + "', should be (path, label, startFrame, endFrame).");
-		}
-		
-		unsigned int startFrame = parseInteger(components[2]);
-		unsigned int endFrame   = parseInteger(components[3]);
-	
-		videos.push_back(Video(filePath, label, startFrame, endFrame));
-	}
-	else
-	{
-		throw std::runtime_error("Path '" + filePath +
-			"' is not an image or video.");
-	}
-}
-
-static unsigned int parseInteger(const std::string s)
-{
-	std::stringstream stream;
-	
-	stream << s;
-	
-	unsigned int value = 0;
-	
-	stream >> value;
-	
-	return value;
-}
-
 static void consolidateLabels(ImageVector& images, VideoVector& videos)
 {
 	typedef std::map<std::string, Video> VideoMap;
@@ -519,48 +440,6 @@ static void consolidateLabels(ImageVector& images, VideoVector& videos)
 		std::default_random_engine(std::time(0)));
 }
 
-static bool isComment(const std::string& line)
-{
-	auto comment = removeWhitespace(line);
-	
-	if(comment.empty())
-	{
-		return false;
-	}
-	
-	return comment.front() == '#';
-}
-
-static bool isLabeled(const std::string& line)
-{
-	return line.find(",") != std::string::npos;
-}
-
-static bool isWhitespace(char c);
-
-static std::string removeWhitespace(const std::string& line)
-{
-	unsigned int begin = 0;
-	
-	for(; begin != line.size(); ++begin)
-	{
-		if(!isWhitespace(line[begin])) break;
-	}
-	
-	unsigned int end = line.size();
-	
-	for(; end != 0; --end)
-	{
-		if(!isWhitespace(line[end - 1])) break;
-	}	
-	
-	return line.substr(begin, end - begin);
-}
-
-static bool isWhitespace(char c)
-{
-	return (c == ' ') || (c == '\n') || (c == '\t') || (c == '\r');
-}
 
 }
 

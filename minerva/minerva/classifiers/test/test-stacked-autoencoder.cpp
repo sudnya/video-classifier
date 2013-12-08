@@ -176,7 +176,8 @@ static void trainUsingGreedyStacking(NeuralNetwork& neuralNetwork, const Matrix&
 
 	unsigned int counter = 0;
 
-	for(auto layer = neuralNetwork.begin(); layer != neuralNetwork.end() && counter < 4; ++layer, ++counter)
+	for(auto layer = neuralNetwork.begin();
+		layer != neuralNetwork.end() && counter < 4; ++layer, ++counter)
 	{
 		copy.addLayer(*layer);
 		

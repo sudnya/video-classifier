@@ -52,6 +52,8 @@ public:
 public:
 	/*! \brief Set the maximum samples to be run by the engine */
 	void setMaximumSamplesToRun(unsigned int samples);
+	/*! \brief Set the number of samples to be run in a batch by the engine */
+	void setBatchSize(unsigned int samples);
 	/*! \brief Should the engine be allowed to run the same sample multiple times */
 	void setMultipleSamplesAllowed(bool);
 
@@ -87,6 +89,7 @@ protected:
 
 private:
 	unsigned int _maximumSamplesToRun;
+	unsigned int _batchSize;
 	bool         _areMultipleSamplesAllowed;
 
 

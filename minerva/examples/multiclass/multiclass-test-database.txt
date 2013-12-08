@@ -1,0 +1,24 @@
+################################################################################
+# Various labeled images
+################################################################################
+
+####################
+# Possible labels  #
+####################
+labels: dollar-bill, face
+
+####################
+# labeled Images #
+####################
+
+/mnt/Data/fall2013/not-faces//101_ObjectCategories/dollar_bill/image_0043.jpg, dollar-bill
+/mnt/Data/fall2013/not-faces//101_ObjectCategories/dollar_bill/image_0041.jpg, dollar-bill
+/mnt/Data/fall2013/not-faces//101_ObjectCategories/dollar_bill/image_0027.jpg, dollar-bill
+/mnt/Data/fall2013/not-faces//101_ObjectCategories/dollar_bill/image_0001.jpg, dollar-bill
+/mnt/Data/fall2013/not-faces//101_ObjectCategories/dollar_bill/image_0012.jpg, dollar-bill
+/mnt/Data/fall2013/not-faces//101_ObjectCategories/dollar_bill/image_0047.jpg, dollar-bill
+/mnt/Data/fall2013/not-faces//101_ObjectCategories/dollar_bill/image_0017.jpg, dollar-bill
+/mnt/Data/fall2013/not-faces//101_ObjectCategories/dollar_bill/image_0034.jpg, dollar-bill
+/mnt/Data/fall2013/not-faces//101_ObjectCategories/dollar_bill/image_0020.jpg, dollar-bill
+/mnt/Data/fall2013/not-faces//101_ObjectCategories/dollar_bill/image_0029.jpg, dollar-bill
+
