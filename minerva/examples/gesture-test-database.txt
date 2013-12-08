@@ -1,0 +1,36 @@
+################################################################################
+# A list of images of people performing sign language
+################################################################################
+
+
+####################
+# Unlabeled Images #
+####################
+#../images/signlanguageabc02.jpg
+
+
+#################
+# Labeled Images#
+#################
+# 
+../images/gestures/Sample00001_color.mp4, vieniqui, 41, 79
+../images/gestures/Sample00001_color.mp4, prendere, 121, 159
+../images/gestures/Sample00001_color.mp4, sonostufo, 191, 219
+../images/gestures/Sample00001_color.mp4, chevuoi, 251, 279
+../images/gestures/Sample00001_color.mp4, daccordo, 301, 319
+../images/gestures/Sample00001_color.mp4, perfetto, 361, 399
+../images/gestures/Sample00001_color.mp4, vattene, 421, 439
+../images/gestures/Sample00001_color.mp4, basta, 461, 479
+../images/gestures/Sample00001_color.mp4, buonissimo, 501, 519
+../images/gestures/Sample00001_color.mp4, cheduepalle, 551, 579
+../images/gestures/Sample00001_color.mp4, cosatifarei, 621, 659
+../images/gestures/Sample00001_color.mp4, fame, 691, 719
+../images/gestures/Sample00001_color.mp4, noncenepiu, 761, 799
+../images/gestures/Sample00001_color.mp4, seipazzo, 1071, 1099
+../images/gestures/Sample00001_color.mp4, tantotempo, 1131, 1159
+../images/gestures/Sample00001_color.mp4, messidaccordo, 1176, 1199
+../images/gestures/Sample00001_color.mp4, ok, 1231, 1254
+../images/gestures/Sample00001_color.mp4, furbo, 841, 879
+../images/gestures/Sample00001_color.mp4, combinato, 921, 959
+../images/gestures/Sample00001_color.mp4, freganiente, 1001, 1039
+

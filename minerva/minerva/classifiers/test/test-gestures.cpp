@@ -19,6 +19,10 @@
 #include <cstdlib>
 #include <memory>
 
+const int XRES = 16;
+const int YRES = 16;
+const int MAXCOLORS = 8;
+
 namespace minerva
 {
 namespace classifiers
@@ -65,7 +69,25 @@ static NeuralNetwork createNeuralNetwork(size_t xPixels, size_t yPixels, size_t 
 	network.addLayer(Layer(1, network.getOutputCount(), network.getOutputCount()));
 	
 	// final prediction layer
-	network.addLayer(Layer(1, network.getOutputCount(), 1));
+	network.addLayer(Layer(1, network.getOutputCount(), 20));
+
+	network.setLabelForOutputNeuron(0, "vieniqui");
+	network.setLabelForOutputNeuron(1, "prendere");
+	network.setLabelForOutputNeuron(2, "sonostufo");
+	network.setLabelForOutputNeuron(3, "chevuoi");
+	network.setLabelForOutputNeuron(4, "daccordo");
+	network.setLabelForOutputNeuron(5, "perfetto");
+	network.setLabelForOutputNeuron(6, "vattene");
+	network.setLabelForOutputNeuron(7, "basta");
+	network.setLabelForOutputNeuron(8, "buonissimo");
+	network.setLabelForOutputNeuron(9, "cheduepalle");
+	network.setLabelForOutputNeuron(10, "cosatifarei");
+	network.setLabelForOutputNeuron(11, "fame");
+	network.setLabelForOutputNeuron(12, "noncenepiu");
+	network.setLabelForOutputNeuron(13, "seipazzo");
+	network.setLabelForOutputNeuron(14, "tantotempo");
+	network.setLabelForOutputNeuron(15, "messidaccordo");
+	network.setLabelForOutputNeuron(16, "ok");
 
 	network.initializeRandomly(engine);
 
@@ -116,9 +138,9 @@ void runTest(const std::string& gestureTrainingDatabasePath, const std::string& 
 	/// one convolutional layer
 	/// one output layer
 
-	size_t xPixels = 64;
-	size_t yPixels = 64;
-	size_t colors  = 8;
+	size_t xPixels = XRES;
+	size_t yPixels = YRES;
+	size_t colors  = MAXCOLORS;
 	auto neuralNetwork = createNeuralNetwork(xPixels, yPixels, colors, randomNumberGenerator);
 
 	
