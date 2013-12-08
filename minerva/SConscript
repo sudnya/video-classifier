@@ -52,6 +52,8 @@ tools.append(env.Program('test-classifier', \
 	['minerva/classifiers/test/test-classifier.cpp'], LIBS=minerva_libs))
 tools.append(env.Program('test-face-detector', \
 	['minerva/classifiers/test/test-face-detector.cpp'], LIBS=minerva_libs))
+tools.append(env.Program('test-gestures', \
+	['minerva/classifiers/test/test-gestures.cpp'], LIBS=minerva_libs))
 tools.append(env.Program('test-stacked-autoencoder', \
 	['minerva/classifiers/test/test-stacked-autoencoder.cpp'], LIBS=minerva_libs))
 tools.append(env.Program('test-matrix', \

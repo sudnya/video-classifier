@@ -231,7 +231,7 @@ int main(int argc, char** argv)
 		minerva::classifiers::enableSpecificLogs(loggingEnabledModules);
 	}
     
-    minerva::util::log("TestClassifier") << "Test begins\n";
+    minerva::util::log("TestFaceDetector") << "Test begins\n";
     
     try
     {

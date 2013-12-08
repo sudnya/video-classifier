@@ -1,0 +1,36 @@
+################################################################################
+# A list of images of people performing sign language
+################################################################################
+
+
+###################
+# Unlabeled Video #
+###################
+## Filename
+#/mnt/Data/summer2013/gestures/Sign Language 101- Greetings and Useful Words.mp4
+
+
+#################
+# Labeled Video #
+#################
+## Filename, Label, StartFrame, EndFrame
+../images/gestures/Sample00001_color.mp4, vieniqui, 1, 40 
+../images/gestures/Sample00001_color.mp4, prendere, 80, 120
+../images/gestures/Sample00001_color.mp4, sonostufo, 160, 190
+../images/gestures/Sample00001_color.mp4, chevuoi, 220, 250
+../images/gestures/Sample00001_color.mp4, daccordo, 280, 300
+../images/gestures/Sample00001_color.mp4, perfetto, 320, 360
+../images/gestures/Sample00001_color.mp4, vattene, 400, 420
+../images/gestures/Sample00001_color.mp4, basta, 440, 460
+../images/gestures/Sample00001_color.mp4, buonissimo, 480, 500
+../images/gestures/Sample00001_color.mp4, cheduepalle, 520, 550
+../images/gestures/Sample00001_color.mp4, cosatifarei, 580, 620
+../images/gestures/Sample00001_color.mp4, fame, 660, 690
+../images/gestures/Sample00001_color.mp4, noncenepiu, 720, 760
+../images/gestures/Sample00001_color.mp4, seipazzo, 1040, 1070
+../images/gestures/Sample00001_color.mp4, tantotempo, 1100, 1130
+../images/gestures/Sample00001_color.mp4, messidaccordo, 1160, 1175
+../images/gestures/Sample00001_color.mp4, ok, 1200, 1230
+../images/gestures/Sample00001_color.mp4, furbo, 800, 840
+../images/gestures/Sample00001_color.mp4, combinato, 880, 920
+../images/gestures/Sample00001_color.mp4, freganiente, 960, 1000
