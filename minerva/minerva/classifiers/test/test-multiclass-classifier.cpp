@@ -78,12 +78,13 @@ static void createAndInitializeNeuralNetworks(
 	featureSelector.initializeRandomly(engine);
 	
 	model.setNeuralNetwork("FeatureSelector", featureSelector);
+
+	const size_t hiddenLayerSize = 256;
 	
 	// fully connected input layer
 	NeuralNetwork classifier;
 
-	classifier.addLayer(Layer(1, featureSelector.getOutputCount(),
-		featureSelector.getOutputCount()));
+	classifier.addLayer(Layer(1, featureSelector.getOutputCount(), hiddenLayerSize));
 
 	// fully connected hidden layer
 	classifier.addLayer(Layer(1, classifier.getOutputCount(), classifier.getOutputCount()));
