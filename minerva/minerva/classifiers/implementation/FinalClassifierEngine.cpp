@@ -23,21 +23,7 @@ FinalClassifierEngine::FinalClassifierEngine()
 
 float FinalClassifierEngine::getAccuracy() const
 {
-	size_t matches = 0;
-	size_t total   = 0;
-
-	for(auto& labelStatistic : _statistics.labelStatistics)
-	{
-		total += labelStatistic.second.truePositives;
-		total += labelStatistic.second.trueNegatives;
-		total += labelStatistic.second.falsePositives;
-		total += labelStatistic.second.falseNegatives;
-
-		matches += labelStatistic.second.truePositives;
-		matches += labelStatistic.second.trueNegatives;
-	}
-	
-	return (matches + 0.0) / total;
+	return (_statistics.exactMatches + 0.0) / _statistics.totalSamples;
 }
 
 void FinalClassifierEngine::reportStatistics(std::ostream& stream) const
