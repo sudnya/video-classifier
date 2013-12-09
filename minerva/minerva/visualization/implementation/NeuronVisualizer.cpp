@@ -70,6 +70,11 @@ void NeuronVisualizer::visualizeNeuron(Image& image, unsigned int outputNeuron)
 	updateImage(image, matrix);
 }
 
+void NeuronVisualizer::setNeuralNetwork(const NeuralNetwork* network)
+{
+	_network = network;
+}
+
 static Matrix generateRandomImage(const NeuralNetwork* network,
 	const Image& image, unsigned int seed, float range)
 {

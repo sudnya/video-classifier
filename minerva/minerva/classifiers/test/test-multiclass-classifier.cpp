@@ -180,6 +180,7 @@ static void visualizeModel(ClassificationModel& model,
 {
 	// Visualize the first layer
 	auto& featureSelectorNetwork = model.getNeuralNetwork("FeatureSelector");
+	auto& classifierNetwork      = model.getNeuralNetwork("Classifier");
 
 	NeuralNetwork oneLayerNetwork;
 
@@ -196,11 +197,58 @@ static void visualizeModel(ClassificationModel& model,
 			break;
 		}
 
+		size_t neuronIndex = neuron;
+
+		if(neuronIndex < oneLayerNetwork.front().blocks())
+		{
+			neuronIndex = neuronIndex * oneLayerNetwork.front().getBlockingFactor();
+		}
+
 		video::Image image(xPixels, yPixels, colors, 1);
 		
 		std::stringstream path;
 
-		path << outputPath << "FeatureSelector::Layer0::Neuron" << neuron << ".jpg";
+		path << outputPath << "FeatureSelector::Layer0::Neuron" << neuronIndex << ".jpg";
+
+		image.setPath(path.str());
+		
+		visualizer.visualizeNeuron(image, neuronIndex);
+
+		image.save();
+	}
+
+
+	// Visualize the final layer
+	NeuralNetwork completeNetwork;
+
+	for(auto& layer : featureSelectorNetwork)
+	{
+		completeNetwork.addLayer(layer);
+	}
+
+	for(auto& layer : classifierNetwork)
+	{
+		completeNetwork.addLayer(layer);
+	}
+
+	size_t outputNeurons = completeNetwork.getOutputCount();
+
+	visualizer.setNeuralNetwork(&completeNetwork);
+
+	for(size_t neuron = 0; neuron < outputNeurons; ++neuron)
+	{
+		if(neuron >= maximumNeuronsPerLayer)
+		{
+			break;
+		}
+
+		video::Image image(xPixels, yPixels, colors, 1);
+		
+		std::stringstream path;
+
+		path << outputPath << "Network::Layer" << completeNetwork.size()
+			<< "::Neuron" << neuron << "-"
+			<< classifierNetwork.getLabelForOutputNeuron(neuron) << ".jpg";
 
 		image.setPath(path.str());
 		
@@ -208,10 +256,6 @@ static void visualizeModel(ClassificationModel& model,
 
 		image.save();
 	}
-
-
-	// Visualize the final layer
-	// TODO
 }
 
 static void runTest(const std::string& trainingDatabasePath,

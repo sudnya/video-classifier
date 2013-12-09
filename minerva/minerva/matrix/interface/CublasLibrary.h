@@ -54,15 +54,6 @@ public:
 		CUBLAS_OP_C = 2  
 	} cublasOperation_t;
 	
-	enum cudaMemcpyKind
-	{
-		cudaMemcpyHostToHost          =   0,
-		cudaMemcpyHostToDevice        =   1,
-		cudaMemcpyDeviceToHost        =   2,
-		cudaMemcpyDeviceToDevice      =   3,
-		cudaMemcpyDefault             =   4 
-	};
-	
 public:
 	static void load();
 	static bool loaded();
@@ -81,14 +72,6 @@ public:
 		int ldc);
 
 public:
-	static void* cudaMalloc(size_t bytes);
-	static void cudaFree(void* ptr);
-
-	static void cudaMemcpy(void* dest, const void* src, size_t bytes,
-		cudaMemcpyKind kind = cudaMemcpyDefault);
-
-public:
-	static std::string cudaGetErrorString(int error); 
 	static std::string cublasGetErrorString(cublasStatus_t error); 
 
 private:
@@ -116,15 +99,6 @@ private:
 	public:
 		cublasStatus_t (*cublasCreate_v2)  (cublasHandle_t* handle);
 		cublasStatus_t (*cublasDestroy_v2) (cublasHandle_t  handle);
-
-	public:
-		int (*cudaMalloc)(void** ptr, size_t bytes);
-		int (*cudaFree)  (void*  ptr);
-		int (*cudaMemcpy)(void*  dest, const void* src, size_t bytes, 
-			cudaMemcpyKind kind);
-
-	public:
-		const char* (*cudaGetErrorString)(int error); 
 
 	public:
 		cublasHandle_t handle;

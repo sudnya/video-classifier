@@ -195,8 +195,10 @@ Image::FloatVector Image::getSampledData(size_t sampleCount) const
 		{
 			position = imageSize - 1;
 		}
+
+		size_t zPosition = linearToZOrder(position);
 		
-		float sampleValue = standardize(getComponentAt(position));
+		float sampleValue = standardize(getComponentAt(zPosition));
 
 		//std::cout << path() << ": sample " << sampleValue << " (" << getComponentAt(position)
 		//	<< ") = (position " << position << ")\n";
@@ -216,9 +218,11 @@ void Image::updateImageFromSamples(const FloatVector& samples)
 		{
 			for(size_t color = 0; color < this->colorComponents(); ++color)
 			{
-				size_t position = getPosition(x, y, color);
+				size_t position  = getPosition(x, y, color);
+				size_t zPosition = zToLinearOrder(position);
+
 				size_t sampleIndex =
-					((position + 0.0) / totalSize()) * samples.size();
+					((zPosition + 0.0) / totalSize()) * samples.size();
 				
 				float sample = samples[sampleIndex];
 	
@@ -303,7 +307,8 @@ float Image::getComponentAt(size_t position) const
 	
 	size_t positionInBytes = position * pixelSize();
 	assertM(positionInBytes + pixelSize() <= _pixels.size(),
-		"Position in bytes is " << positionInBytes << "");
+		"Position in bytes is " << positionInBytes
+		<< " out of max size " << _pixels.size());
 	
 	unsigned int value = 0;
 	assert(pixelSize() < sizeof(unsigned int));
@@ -350,6 +355,78 @@ size_t Image::getPosition(size_t x, size_t y, size_t color) const
 
 	return y * this->x() * colorComponents() +
 		x * colorComponents() + color;
+}
+
+static size_t zip(size_t x, size_t y)
+{
+	size_t result = 0;
+
+	for(size_t i = 0; i < sizeof(size_t) * 8 / 2; ++i)
+	{
+		size_t position = sizeof(size_t) * 8 / 2 - i - 1;
+		
+		result = (result << 1) | ((y >> position) & 0x1);
+		result = (result << 1) | ((x >> position) & 0x1);
+	}
+
+	return result;
+}
+
+static void unzip(size_t& x, size_t& y, size_t zPosition)
+{
+	x = 0;
+	y = 0;
+	
+	for(size_t i = 0; i < sizeof(size_t) * 8 / 2; ++i)
+	{
+		size_t position = sizeof(size_t) * 8 / 2 - i - 1;
+		
+		x = (x << 1) | ((zPosition >>  (position * 2)     ) & 0x1);
+		y = (y << 1) | ((zPosition >> ((position * 2) + 1)) & 0x1);
+	}
+}
+
+size_t Image::linearToZOrder(size_t linearPosition) const
+{
+	assert(linearPosition < totalSize());
+	
+	size_t pixelPosition = linearPosition / colorComponents();
+	size_t color         = linearPosition % colorComponents();	
+
+	size_t xPosition = pixelPosition % x();
+	size_t yPosition = pixelPosition / x();
+	
+	size_t zOrder = zip(xPosition, yPosition);
+
+	size_t zPosition = (zOrder * colorComponents() + color) % totalSize();
+	
+	//std::cout << path() << ": mapping linear position "
+	//	<< linearPosition << " (" << xPosition << " x, "
+	//	<< yPosition << " y, " << color
+	//	<< " color) to z order " << zPosition << "\n";
+
+	return zPosition;
+}
+
+size_t Image::zToLinearOrder(size_t zPosition) const
+{
+	assert(zPosition < totalSize());
+	
+	size_t pixelPosition = zPosition / colorComponents();
+	size_t color         = zPosition % colorComponents();	
+	
+	size_t xPosition = 0;
+	size_t yPosition = 0;
+
+	unzip(xPosition, yPosition, pixelPosition);
+	
+	size_t linearPosition = getPosition(xPosition, yPosition, color);
+
+	//std::cout << path() << ": mapping z order "
+	//	<< zPosition << " to linear position " << linearPosition
+	//	<< " reverse mapping would be " << linearToZOrder(linearPosition) << "\n";
+	
+	return linearPosition;
 }
 
 float Image::standardize(float component) const

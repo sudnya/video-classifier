@@ -83,6 +83,11 @@ public:
 	size_t getPosition(size_t x, size_t y, size_t color) const;
 
 public:
+	size_t linearToZOrder(size_t linearPosition) const;
+	size_t zToLinearOrder(size_t linearPosition) const;
+
+
+public:
 	float standardize(float component) const;
 	float destandardize(float component) const;
 

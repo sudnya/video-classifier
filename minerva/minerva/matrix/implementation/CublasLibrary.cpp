@@ -106,61 +106,6 @@ void CublasLibrary::cublasSgemm(
 	}
 }
 
-void* CublasLibrary::cudaMalloc(size_t bytes)
-{
-	_check();
-
-	void* address = nullptr;
-
-	int status = (*_interface.cudaMalloc)(&address, bytes);
-	
-	if(status != CUDA_SUCCESS)
-	{
-		throw std::runtime_error("Cuda malloc failed: " +
-			cudaGetErrorString(status));
-	}
-	
-	util::log("CublasLibrary") << " CUDA allocated memory (address: "
-		<< address << ", " << bytes << " bytes)\n";
-		
-	return address;
-}
-
-void CublasLibrary::cudaFree(void* ptr)
-{
-	_check();
-
-	(*_interface.cudaFree)(ptr);
-
-	util::log("CublasLibrary") << " CUDA freed memory (address: "
-		<< ptr << ")\n";
-}
-
-void CublasLibrary::cudaMemcpy(void* dest, const void* src, size_t bytes, 
-	cudaMemcpyKind kind)
-{
-	_check();
-
-	util::log("CublasLibrary") << " CUDA memcopy (destination address: "
-		<< dest << ", source address: " << src << ", " << bytes
-		<< " bytes)\n";
-
-	int status = (*_interface.cudaMemcpy)(dest, src, bytes, kind);
-
-	if(status != CUDA_SUCCESS)
-	{
-		throw std::runtime_error("Cuda memcpy failed: " +
-			cudaGetErrorString(status));
-	}
-}
-
-std::string CublasLibrary::cudaGetErrorString(int error)
-{
-	_check();
-	
-	return (*_interface.cudaGetErrorString)(error);
-}
-
 std::string CublasLibrary::cublasGetErrorString(cublasStatus_t error)
 {
 	switch(error)
@@ -278,11 +223,6 @@ void CublasLibrary::Interface::load()
 		
 		DynLink(cublasCreate_v2);
 		DynLink(cublasDestroy_v2);
-			
-		DynLink(cudaMalloc);
-		DynLink(cudaFree);
-		DynLink(cudaMemcpy);
-		DynLink(cudaGetErrorString);
 		
 		#undef DynLink	
 

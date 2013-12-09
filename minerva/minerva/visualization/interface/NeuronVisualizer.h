@@ -27,6 +27,9 @@ public:
 
 public:
 	void visualizeNeuron(Image& image, unsigned int outputNeuron);
+
+public:
+	void setNeuralNetwork(const NeuralNetwork* network);
 	
 private:
 	const NeuralNetwork* _network;

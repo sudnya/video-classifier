@@ -8,6 +8,7 @@
 #include <minerva/matrix/interface/CublasMatrix.h>
 
 #include <minerva/matrix/interface/CublasLibrary.h>
+#include <minerva/matrix/interface/CudaRuntimeLibrary.h>
 
 // Standard Library Includes
 #include <cassert>
@@ -113,10 +114,10 @@ Value* CublasMatrix::transpose() const
 	{
 		result = new CublasMatrix(this->columns(), this->rows());
 		
-		a = (float*)CublasLibrary::cudaMalloc(sizeof(float) * size()        );
-		c = (float*)CublasLibrary::cudaMalloc(sizeof(float) * result->size());
+		a = (float*)CudaRuntimeLibrary::cudaMalloc(sizeof(float) * size()        );
+		c = (float*)CudaRuntimeLibrary::cudaMalloc(sizeof(float) * result->size());
 		
-		CublasLibrary::cudaMemcpy(a, &_data[0],    sizeof(float) *    size());
+		CudaRuntimeLibrary::cudaMemcpy(a, &_data[0],    sizeof(float) *    size());
 	
 		float alpha = 1.0f;
 		float beta  = 0.0f;
@@ -141,21 +142,21 @@ Value* CublasMatrix::transpose() const
 		CublasLibrary::cublasSgeam(CublasLibrary::CUBLAS_OP_T,
 			CublasLibrary::CUBLAS_OP_N, m, n, &alpha, a, lda, &beta, b, ldb, c, ldc);
 		
-		CublasLibrary::cudaMemcpy(&result->_data[0], c,
-			sizeof(float) * result->size(), CublasLibrary::cudaMemcpyDefault);
+		CudaRuntimeLibrary::cudaMemcpy(&result->_data[0], c,
+			sizeof(float) * result->size(), CudaRuntimeLibrary::cudaMemcpyDefault);
 	}
 	catch(...)
 	{
-		CublasLibrary::cudaFree(a);
-		CublasLibrary::cudaFree(c);
+		CudaRuntimeLibrary::cudaFree(a);
+		CudaRuntimeLibrary::cudaFree(c);
 		
 		delete result;
 		
 		throw;
 	}
 	
-	CublasLibrary::cudaFree(a);
-	CublasLibrary::cudaFree(c);
+	CudaRuntimeLibrary::cudaFree(a);
+	CudaRuntimeLibrary::cudaFree(c);
 	
 	return result;
 }
@@ -176,12 +177,12 @@ Value* CublasMatrix::multiply(const Value* matrix) const
 	{
 		result = new CublasMatrix(rows(), m->columns());
 	
-		a = (float*)CublasLibrary::cudaMalloc(sizeof(float) * size()        );
-		b = (float*)CublasLibrary::cudaMalloc(sizeof(float) * m->size()     );
-		c = (float*)CublasLibrary::cudaMalloc(sizeof(float) * result->size());
+		a = (float*)CudaRuntimeLibrary::cudaMalloc(sizeof(float) * size()        );
+		b = (float*)CudaRuntimeLibrary::cudaMalloc(sizeof(float) * m->size()     );
+		c = (float*)CudaRuntimeLibrary::cudaMalloc(sizeof(float) * result->size());
 		
-		CublasLibrary::cudaMemcpy(a, &_data[0],    sizeof(float) *    size());
-		CublasLibrary::cudaMemcpy(b, &m->_data[0], sizeof(float) * m->size());
+		CudaRuntimeLibrary::cudaMemcpy(a, &_data[0],    sizeof(float) *    size());
+		CudaRuntimeLibrary::cudaMemcpy(b, &m->_data[0], sizeof(float) * m->size());
 		
 		float alpha = 1.0f;
 		float beta  = 0.0f;
@@ -219,23 +220,23 @@ Value* CublasMatrix::multiply(const Value* matrix) const
 			result->rows(), result->columns(), columns(), &alpha, a, columns(),
 			b, m->columns(), &beta, c, result->rows());
 		*/
-		CublasLibrary::cudaMemcpy(&result->_data[0], c,
-			sizeof(float) * result->size(), CublasLibrary::cudaMemcpyDefault);
+		CudaRuntimeLibrary::cudaMemcpy(&result->_data[0], c,
+			sizeof(float) * result->size(), CudaRuntimeLibrary::cudaMemcpyDefault);
 	}
 	catch(...)
 	{
-		CublasLibrary::cudaFree(a);
-		CublasLibrary::cudaFree(b);
-		CublasLibrary::cudaFree(c);
+		CudaRuntimeLibrary::cudaFree(a);
+		CudaRuntimeLibrary::cudaFree(b);
+		CudaRuntimeLibrary::cudaFree(c);
 		
 		delete result;
 		
 		throw;
 	}
 	
-	CublasLibrary::cudaFree(a);
-	CublasLibrary::cudaFree(b);
-	CublasLibrary::cudaFree(c);
+	CudaRuntimeLibrary::cudaFree(a);
+	CudaRuntimeLibrary::cudaFree(b);
+	CudaRuntimeLibrary::cudaFree(c);
 	
 	//result->transposeSelf();
 	
