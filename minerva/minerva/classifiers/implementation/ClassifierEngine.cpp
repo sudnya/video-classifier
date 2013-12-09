@@ -83,7 +83,7 @@ static void displayOnScreen(ImageVector& images);
 static void runAllImages(ClassifierEngine* engine, ImageVector& images,
 	unsigned int maxBatchSize, unsigned int& maxVideoFrames);
 static void runAllVideos(ClassifierEngine* engine, VideoVector& images,
-	unsigned int maxBatchSize, unsigned int& maxVideoFrames);
+	unsigned int maxBatchSize, unsigned int& maxVideoFrames, bool requiresLabeledData);
 
 void ClassifierEngine::runOnDatabaseFile(const std::string& path)
 {
@@ -134,7 +134,8 @@ void ClassifierEngine::runOnPaths(const StringVector& paths)
 		runAllImages(this, images, maxBatchSize, maxVideoFrames);
 		
 		// Run videos next
-		runAllVideos(this, videos, maxBatchSize, maxVideoFrames);
+		runAllVideos(this, videos, maxBatchSize, maxVideoFrames,
+			requiresLabeledData());
 	}
 	while(maxVideoFrames > 0 && _areMultipleSamplesAllowed);
 
@@ -250,14 +251,15 @@ static void parseImageDatabase(ImageVector& images, VideoVector& videos,
 typedef std::vector<std::pair<unsigned int, unsigned int>> VideoAndFrameVector;
 
 static VideoAndFrameVector pickRandomFrames(VideoVector& videos,
-	unsigned int maxVideoFrames);
+	unsigned int maxVideoFrames, bool requiresLabeledData);
 
 static void runAllVideos(ClassifierEngine* engine, VideoVector& videos,
-	unsigned int maxBatchSize, unsigned int& maxVideoFrames)
+	unsigned int maxBatchSize, unsigned int& maxVideoFrames,
+	bool requiresLabeledData)
 {
 	util::log("ClassifierEngine") << "Running video batches\n";
 	
-	auto frames = pickRandomFrames(videos, maxVideoFrames);
+	auto frames = pickRandomFrames(videos, maxVideoFrames, requiresLabeledData);
 
 	for(unsigned int i = 0; i < frames.size(); i += maxBatchSize)
 	{
@@ -293,8 +295,37 @@ static void runAllVideos(ClassifierEngine* engine, VideoVector& videos,
 	}
 }
 
+static unsigned int mapFrameIndexToLabeledFrameIndex(unsigned int frame, const Video& video)
+{
+	unsigned int totalLabeledFrames = 0;
+
+	auto labeledFrames = video.getLabels();
+
+	for(auto& label : labeledFrames)
+	{
+		totalLabeledFrames += label.coveredFrames();
+	}
+
+	unsigned int labeledFrame = frame % totalLabeledFrames;
+	
+	unsigned int framePrefix = 0;
+
+	for(auto& label : labeledFrames)
+	{
+		if(labeledFrame - framePrefix < label.coveredFrames())
+		{
+			framePrefix = label.beginFrame + labeledFrame - framePrefix;
+			break;
+		}
+
+		framePrefix += label.coveredFrames();
+	}
+
+	return framePrefix;
+}
+
 static VideoAndFrameVector pickRandomFrames(VideoVector& videos,
-	unsigned int maxVideoFrames)
+	unsigned int maxVideoFrames, bool requiresLabeledData)
 {
 	util::log("ClassifierEngine") << " Picking random " << maxVideoFrames
 		<< " frames from videos\n"; 
@@ -326,6 +357,12 @@ static VideoAndFrameVector pickRandomFrames(VideoVector& videos,
 		}
 
 		unsigned int frame = generator() % frames;
+
+		if(requiresLabeledData)
+		{
+			frame = mapFrameIndexToLabeledFrameIndex(frame, videos[video]);
+		}
+
 		util::log("ClassifierEngine") << "  Video " << videos[video].path()
 			<< " has " << frames << " frames\n"; 
 		

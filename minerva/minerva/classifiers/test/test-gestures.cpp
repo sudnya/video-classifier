@@ -8,6 +8,10 @@
 #include <minerva/classifiers/interface/ClassifierEngine.h>
 #include <minerva/classifiers/interface/LearnerEngine.h>
 #include <minerva/classifiers/interface/FinalClassifierEngine.h>
+#include <minerva/classifiers/interface/UnsupervisedLearnerEngine.h>
+
+#include <minerva/database/interface/SampleDatabase.h>
+#include <minerva/database/interface/Sample.h>
 
 #include <minerva/model/interface/ClassificationModel.h>
 
@@ -34,79 +38,112 @@ typedef matrix::Matrix Matrix;
 typedef model::ClassificationModel ClassificationModel;
 typedef classifiers::LearnerEngine LearnerEngine;
 typedef classifiers::FinalClassifierEngine FinalClassifierEngine;
+typedef database::SampleDatabase SampleDatabase;
 
-static NeuralNetwork createNeuralNetwork(size_t xPixels, size_t yPixels, size_t colors, std::default_random_engine& engine)
+
+static size_t getNumberOfClasses(const std::string& trainingDatabasePath)
 {
-	// Layer 1: (1024 16 x 16 ) sparse blocks   O(1024 * 256^3) O(1024 * 1e7) O(1e10)  O(256^2*1024) O(1e7)
-	// Layer 2: (256  16 x 16 ) sparse blocks   O(1e9)                                 O(1e7)
-	// Layer 3: (64   16 x 16 ) sparse blocks   O(1e8)                                 O(1e6)
-	// Layer 4: (32   16 x 16 ) sparse blocks   O(1e8)                                 O(1e6)
-	// Layer 5: (1    300)      fully connected O(1e8)                                 O(1e4)
-	// Layer 6: (1    100)      fully connected O(1e8)                                 O(1e4)
+	SampleDatabase database(trainingDatabasePath);
+	
+	return database.getTotalLabelCount();
+}
 
+static void createAndInitializeNeuralNetworks( ClassificationModel& model, size_t xPixels, size_t yPixels, size_t colors, size_t classes, std::default_random_engine& engine)
+{
 	size_t reductionFactor = 4;
 
 	assert(xPixels % reductionFactor == 0);
 	assert(yPixels % reductionFactor == 0);
 	
-	NeuralNetwork network;
-
-	// convolutional layer
-	network.addLayer(Layer(colors * yPixels, xPixels, xPixels));
-
-	// pooling layer
-	network.addLayer(Layer(network.back().blocks(), network.back().getBlockingFactor(),
-		network.back().getBlockingFactor() / reductionFactor));
+	NeuralNetwork featureSelector;
+	
+	// derive parameters from image dimensions 
+	const size_t blockSize = xPixels;
+	const size_t blocks    = yPixels * colors;
 	
 	// convolutional layer
-	network.addLayer(Layer(network.back().blocks() / reductionFactor, network.back().getBlockingFactor(), network.back().getBlockingFactor()));
-
+	featureSelector.addLayer(Layer(blocks, blockSize, blockSize));
+	
 	// pooling layer
-	network.addLayer(Layer(network.back().blocks(), network.back().getBlockingFactor(),
-		network.back().getBlockingFactor() / reductionFactor));
+	featureSelector.addLayer(Layer(featureSelector.back().blocks(), featureSelector.back().getBlockingFactor(),
+		featureSelector.back().getBlockingFactor() / reductionFactor));
+	
+	// convolutional layer
+	featureSelector.addLayer(Layer(featureSelector.back().blocks() / reductionFactor,
+		featureSelector.back().getBlockingFactor(), featureSelector.back().getBlockingFactor()));
+	
+	// pooling layer
+	featureSelector.addLayer(Layer(featureSelector.back().blocks(),
+		featureSelector.back().getBlockingFactor(), featureSelector.back().getBlockingFactor() / reductionFactor));
+
+	featureSelector.initializeRandomly(engine);
+	
+	model.setNeuralNetwork("FeatureSelector", featureSelector);
+	
+	// fully connected input layer
+	NeuralNetwork classifier;
+
+	classifier.addLayer(Layer(1, featureSelector.getOutputCount(), featureSelector.getOutputCount()));
 
 	// fully connected hidden layer
-	network.addLayer(Layer(1, network.getOutputCount(), network.getOutputCount()));
+	classifier.addLayer(Layer(1, classifier.getOutputCount(), classifier.getOutputCount()));
 	
 	// final prediction layer
-	network.addLayer(Layer(1, network.getOutputCount(), 20));
+	classifier.addLayer(Layer(1, classifier.getOutputCount(), classes));
 
-	network.setLabelForOutputNeuron(0, "vieniqui");
-	network.setLabelForOutputNeuron(1, "prendere");
-	network.setLabelForOutputNeuron(2, "sonostufo");
-	network.setLabelForOutputNeuron(3, "chevuoi");
-	network.setLabelForOutputNeuron(4, "daccordo");
-	network.setLabelForOutputNeuron(5, "perfetto");
-	network.setLabelForOutputNeuron(6, "vattene");
-	network.setLabelForOutputNeuron(7, "basta");
-	network.setLabelForOutputNeuron(8, "buonissimo");
-	network.setLabelForOutputNeuron(9, "cheduepalle");
-	network.setLabelForOutputNeuron(10, "cosatifarei");
-	network.setLabelForOutputNeuron(11, "fame");
-	network.setLabelForOutputNeuron(12, "noncenepiu");
-	network.setLabelForOutputNeuron(13, "seipazzo");
-	network.setLabelForOutputNeuron(14, "tantotempo");
-	network.setLabelForOutputNeuron(15, "messidaccordo");
-	network.setLabelForOutputNeuron(16, "ok");
+	classifier.initializeRandomly(engine);
 
-	network.initializeRandomly(engine);
+	model.setNeuralNetwork("Classifier", classifier);
+}
 
-	return network;
+static void setupOutputNeuronLabels(ClassificationModel& model, const std::string& trainingDatabasePath)
+{
+	auto& network = model.getNeuralNetwork("Classifier");
+	
+	SampleDatabase database(trainingDatabasePath);
+
+	auto labels = database.getAllPossibleLabels();
+	
+	assert(labels.size() == network.getOutputCount());
+
+	size_t labelCount = labels.size();
+
+	for(size_t i = 0; i < labelCount; ++i)
+	{
+		network.setLabelForOutputNeuron(i, labels[i]);
+	}
 }
 
 
-void trainNeuralNetwork(ClassificationModel& gestureModel, const std::string& gestureDatabasePath, unsigned iterations)
+static void trainFeatureSelector(ClassificationModel& model, const std::string& trainingDatabasePath, size_t iterations, size_t batchSize)
 {
-	// engine will now be a Learner
-	std::unique_ptr<LearnerEngine> learnerEngine(static_cast<LearnerEngine*>(
-		classifiers::ClassifierFactory::create("LearnerEngine")));
+	// engine will now be an unsupervised Learner
+	std::unique_ptr<UnsupervisedLearnerEngine> unsupervisedLearnerEngine(
+		static_cast<UnsupervisedLearnerEngine*>( classifiers::ClassifierFactory::create("UnsupervisedLearnerEngine")));
 
-	learnerEngine->setModel(&gestureModel);
+	unsupervisedLearnerEngine->setMaximumSamplesToRun(iterations);
+	unsupervisedLearnerEngine->setMultipleSamplesAllowed(true);
+	unsupervisedLearnerEngine->setModel(&model);
+	unsupervisedLearnerEngine->setBatchSize(batchSize);
 
 	// read from database and use model to train
-    learnerEngine->runOnDatabaseFile(gestureDatabasePath);
+    unsupervisedLearnerEngine->runOnDatabaseFile(trainingDatabasePath);
 }
 
+
+static void trainClassifier(ClassificationModel& model, const std::string& trainingDatabasePath, size_t iterations, size_t batchSize)
+{
+	// engine will now be a Learner
+	std::unique_ptr<LearnerEngine> learnerEngine(static_cast<LearnerEngine*>( classifiers::ClassifierFactory::create("LearnerEngine")));
+
+	learnerEngine->setMaximumSamplesToRun(iterations);
+	learnerEngine->setMultipleSamplesAllowed(true);
+	learnerEngine->setModel(&model);
+	learnerEngine->setBatchSize(batchSize);
+
+	// read from database and use model to train
+    learnerEngine->runOnDatabaseFile(trainingDatabasePath);
+}
 
 float classify(ClassificationModel& gestureModel, const std::string& gestureDatabasePath, unsigned iterations)
 {
@@ -114,6 +151,7 @@ float classify(ClassificationModel& gestureModel, const std::string& gestureData
 		classifiers::ClassifierFactory::create("FinalClassifierEngine")));
 
 	classifierEngine->setModel(&gestureModel);
+	classifierEngine->useLabeledData(true);
 
 	// read from database and use model to test 
     classifierEngine->runOnDatabaseFile(gestureDatabasePath);
@@ -124,8 +162,8 @@ float classify(ClassificationModel& gestureModel, const std::string& gestureData
 }
 
 
-void runTest(const std::string& gestureTrainingDatabasePath, const std::string& gestureTestDatabasePath,
-	unsigned iterations, bool seedWithTime, unsigned networkSize, float epsilon)
+void runTest(const std::string& gestureTrainingDatabasePath, const std::string& gestureTestDatabasePath, size_t iterations, size_t batchSize, bool seedWithTime, 
+		size_t xPixels, size_t yPixels, size_t colors, float epsilon)
 {
 	std::default_random_engine randomNumberGenerator;
 	
@@ -134,40 +172,29 @@ void runTest(const std::string& gestureTrainingDatabasePath, const std::string& 
 		randomNumberGenerator.seed(std::time(nullptr));
 	}
 
-	// create network
-	/// one convolutional layer
-	/// one output layer
-
-	size_t xPixels = XRES;
-	size_t yPixels = YRES;
-	size_t colors  = MAXCOLORS;
-	auto neuralNetwork = createNeuralNetwork(xPixels, yPixels, colors, randomNumberGenerator);
-
-	
-	// add it to the model, hardcode the resolution for these images
+	// Create a model for gesture classification
 	ClassificationModel gestureModel;
-	gestureModel.setNeuralNetwork("Classifier", neuralNetwork);
+	
+	// initialize the model, one feature selector network and one classifier network
+	createAndInitializeNeuralNetworks(gestureModel, xPixels, yPixels, colors, getNumberOfClasses(gestureTestDatabasePath), randomNumberGenerator);
+	setupOutputNeuronLabels(gestureModel, gestureTestDatabasePath);
 
-	trainNeuralNetwork(gestureModel, gestureTrainingDatabasePath, iterations);
+	trainFeatureSelector(gestureModel, gestureTrainingDatabasePath, iterations, batchSize);
+	trainClassifier(gestureModel, gestureTrainingDatabasePath, iterations, batchSize);
 
     // Run classifier and record accuracy
-
     float accuracy = classify(gestureModel, gestureTestDatabasePath, iterations);
 
-    // Test if accuracy is greater than threshold
-	// if > 90% accurate - say good
-	// if < 90% accurate - say bad
+    // Test if accuracy is greater than threshold // if > 90% accurate - say good // if < 90% accurate - say bad
 
     float threshold = 0.90;
     if (accuracy > threshold)
     {
-        std::cout << "Test passed with accuracy " << accuracy 
-            << " which is more than expected threshold " << threshold << "\n";
+        std::cout << "Test passed with accuracy " << accuracy << " which is more than expected threshold " << threshold << "\n";
     }
     else
     {
-        std::cout << "Test FAILED with accuracy " << accuracy 
-            << " which is less than expected threshold " << threshold << "\n";
+        std::cout << "Test FAILED with accuracy " << accuracy << " which is less than expected threshold " << threshold << "\n";
     }
 }
 
@@ -192,12 +219,15 @@ int main(int argc, char** argv)
     bool verbose = false;
     bool seed = false;
     std::string loggingEnabledModules;
+	size_t xPixels = 0;
+	size_t yPixels = 0;
+	size_t colors  = 0;
 
 	std::string gesturePaths;
 	std::string testPaths;
 	
-	unsigned iterations = 0;
-	unsigned networkSize = 0;
+	size_t iterations = 0;
+	size_t batchSize = 0;
 	float epsilon = 1.0f;
 
     parser.description("The minerva gesture recognition classifier test.");
@@ -207,9 +237,14 @@ int main(int argc, char** argv)
     parser.parse("-i", "--iterations", iterations, 1000, "The number of iterations to train for");
     parser.parse("-L", "--log-module", loggingEnabledModules, "", "Print out log messages during execution for specified modules "
 		"(comma-separated list of modules, e.g. NeuralNetwork, Layer, ...).");
-    parser.parse("-s", "--seed", seed, false, "Seed with time.");
-    parser.parse("-n", "--network-size", networkSize, 100, "The number of inputs to the network.");
+
+    parser.parse("-x", "--x-pixels", xPixels, 16, "The number of X pixels to consider from the input image.");
+	parser.parse("-y", "--y-pixels", yPixels, 16, "The number of Y pixels to consider from the input image");
+	parser.parse("-c", "--colors", colors, 3, "The number of color components (e.g. RGB) to consider from the input image");
+
+	parser.parse("-s", "--seed", seed, false, "Seed with time.");
     parser.parse("-e", "--epsilon", epsilon, 1.0f, "Range to intiialize the network with.");
+    parser.parse("-b", "--batch-size", batchSize, 100, "The number of images to use for each iteration.");
     parser.parse("-v", "--verbose", verbose, false, "Print out log messages during execution");
 
 	parser.parse();
@@ -227,7 +262,7 @@ int main(int argc, char** argv)
     
     try
     {
-        minerva::classifiers::runTest(gesturePaths, testPaths, iterations, seed, networkSize, epsilon);
+        minerva::classifiers::runTest(gesturePaths, testPaths, iterations, batchSize, seed, xPixels, yPixels, colors, epsilon);
     }
     catch(const std::exception& e)
     {
@@ -237,3 +272,4 @@ int main(int argc, char** argv)
 
     return 0;
 }
+

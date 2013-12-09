@@ -30,7 +30,10 @@ public:
 	public:
 		Label(const std::string& name, unsigned int beginFrame,
 			unsigned int endFrame);
-	
+
+	public:
+		unsigned int coveredFrames() const;
+
 	public:
 		std::string  name;
 		unsigned int beginFrame;
