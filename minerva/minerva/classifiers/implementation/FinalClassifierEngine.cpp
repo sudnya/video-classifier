@@ -73,6 +73,12 @@ size_t FinalClassifierEngine::getInputFeatureCount() const
 	return classifier.getInputFeatureCount();
 }
 
+FinalClassifierEngine::Statistics::Statistics()
+: exactMatches(0), totalSamples(0)
+{
+
+}
+
 std::string FinalClassifierEngine::Statistics::toString() const
 {
 	std::stringstream stream;
@@ -89,12 +95,21 @@ std::string FinalClassifierEngine::Statistics::toString() const
 		stream << "  false negatives: " << labelStatistic.second.falseNegatives << "\n";
 	}
 
+	stream << " aggregate statistics:\n";
+	stream << "  total samples: " << totalSamples << "\n";
+	stream << "  exact matches: " << exactMatches << "\n";
+
 	return stream.str();
 }
 
 void FinalClassifierEngine::_updateStatistics(const std::string& label,
 	const Image& image)
 {
+	// Finished a sample
+	_statistics.totalSamples += 1;
+	
+	bool isExactMatch = true;
+
 	// Add trackers for all possible labels if they exist
 	auto& classifier = _model->getNeuralNetwork("Classifier");
 	
@@ -126,16 +141,23 @@ void FinalClassifierEngine::_updateStatistics(const std::string& label,
 			else
 			{
 				labelStatistic.second.falsePositives += 1;
+				isExactMatch = false;
 			}
 		}
 		else if (image.label() == labelStatistic.second.label)
 		{
 			labelStatistic.second.falseNegatives += 1;
+			isExactMatch = false;
 		}
 		else
 		{
 			labelStatistic.second.trueNegatives += 1;
 		}
+	}
+	
+	if(isExactMatch)
+	{
+		_statistics.exactMatches += 1;
 	}
 }
 

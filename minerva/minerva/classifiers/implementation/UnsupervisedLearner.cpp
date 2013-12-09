@@ -34,34 +34,34 @@ void UnsupervisedLearner::loadFeatureSelector()
 
 void UnsupervisedLearner::learn(const ImageVector& images)
 {
-    neuralnetwork::NeuralNetwork incrementalNetwork;
-		
 	/* using the feature NN & training images emit a NN for classifiers */
-	auto matrix = images.convertToStandardizedMatrix(m_featureSelector.getInputCount());
+	auto input = images.convertToStandardizedMatrix(m_featureSelector.getInputCount());
     
-    auto reference = matrix.sigmoid();
-    
-    for(auto& layer : m_featureSelector)
-    {
-		incrementalNetwork.addLayer(layer);
+	auto inputReference = input.add(1.0f).multiply(0.5f);
+	auto layerInput = input;
+	
+	unsigned int counter = 0;
 
-		util::log("UnsupervisedLearner") << "Training feature selector layer "
-			<< (incrementalNetwork.size() - 1) << " with input: "
-			<< matrix.toString() << "\n";
-		
-	    // mirror neural network
-		incrementalNetwork.mirror();
-		
-		incrementalNetwork.train(matrix, reference);
-    
-    	incrementalNetwork.cutOffSecondHalf();
-    }
-    
-    for(auto originalLayer = m_featureSelector.begin(),
-    	newLayer = incrementalNetwork.begin();
-    	originalLayer != m_featureSelector.end(); ++originalLayer, ++newLayer)
+	for(auto layer = m_featureSelector.begin();
+		layer != m_featureSelector.end(); ++layer, ++counter)
 	{
-		*originalLayer = *newLayer;
+		util::log("UnsupervisedLearner") << "Training feature selector layer "
+			<< (counter) << "\n";
+    	
+		neuralnetwork::NeuralNetwork copy;
+		
+		copy.addLayer(*layer);
+		
+		copy.mirror();
+		
+		copy.train(layerInput, inputReference);
+		
+		copy.cutOffSecondHalf();
+	
+		layerInput = copy.runInputs(layerInput);
+		inputReference = layerInput;
+
+		*layer = copy.back();
 	}
 }
 

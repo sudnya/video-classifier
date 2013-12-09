@@ -12,13 +12,25 @@ labels: dollar-bill, face
 ####################
 
 /mnt/Data/fall2013/not-faces//101_ObjectCategories/dollar_bill/image_0043.jpg, dollar-bill
-/mnt/Data/fall2013/not-faces//101_ObjectCategories/dollar_bill/image_0041.jpg, dollar-bill
-/mnt/Data/fall2013/not-faces//101_ObjectCategories/dollar_bill/image_0027.jpg, dollar-bill
-/mnt/Data/fall2013/not-faces//101_ObjectCategories/dollar_bill/image_0001.jpg, dollar-bill
-/mnt/Data/fall2013/not-faces//101_ObjectCategories/dollar_bill/image_0012.jpg, dollar-bill
+/mnt/Data/fall2013/not-faces//101_ObjectCategories/dollar_bill/image_0044.jpg, dollar-bill
+/mnt/Data/fall2013/not-faces//101_ObjectCategories/dollar_bill/image_0045.jpg, dollar-bill
+/mnt/Data/fall2013/not-faces//101_ObjectCategories/dollar_bill/image_0046.jpg, dollar-bill
 /mnt/Data/fall2013/not-faces//101_ObjectCategories/dollar_bill/image_0047.jpg, dollar-bill
-/mnt/Data/fall2013/not-faces//101_ObjectCategories/dollar_bill/image_0017.jpg, dollar-bill
-/mnt/Data/fall2013/not-faces//101_ObjectCategories/dollar_bill/image_0034.jpg, dollar-bill
-/mnt/Data/fall2013/not-faces//101_ObjectCategories/dollar_bill/image_0020.jpg, dollar-bill
-/mnt/Data/fall2013/not-faces//101_ObjectCategories/dollar_bill/image_0029.jpg, dollar-bill
+/mnt/Data/fall2013/not-faces//101_ObjectCategories/dollar_bill/image_0048.jpg, dollar-bill
+/mnt/Data/fall2013/not-faces//101_ObjectCategories/dollar_bill/image_0049.jpg, dollar-bill
+/mnt/Data/fall2013/not-faces//101_ObjectCategories/dollar_bill/image_0050.jpg, dollar-bill
+/mnt/Data/fall2013/not-faces//101_ObjectCategories/dollar_bill/image_0051.jpg, dollar-bill
+/mnt/Data/fall2013/not-faces//101_ObjectCategories/dollar_bill/image_0052.jpg, dollar-bill
+
+/mnt/Data/fall2013/faces/BioID_1427.jpg, face
+/mnt/Data/fall2013/faces/BioID_0524.jpg, face
+/mnt/Data/fall2013/faces/BioID_1174.jpg, face
+/mnt/Data/fall2013/faces/BioID_1442.jpg, face
+/mnt/Data/fall2013/faces/BioID_0633.jpg, face
+/mnt/Data/fall2013/faces/BioID_0827.jpg, face
+/mnt/Data/fall2013/faces/BioID_0625.jpg, face
+/mnt/Data/fall2013/faces/BioID_0434.jpg, face
+/mnt/Data/fall2013/faces/BioID_0586.jpg, face
+/mnt/Data/fall2013/faces/BioID_0979.jpg, face
+
 

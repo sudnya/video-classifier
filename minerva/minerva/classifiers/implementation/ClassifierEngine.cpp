@@ -280,6 +280,16 @@ static void runAllVideos(ClassifierEngine* engine, VideoVector& videos,
 		displayOnScreen(batch);
 		
 		engine->runOnImageBatch(batch);
+
+		if(batch.size() < maxVideoFrames)
+		{
+			maxVideoFrames -= batch.size();
+		}
+		else
+		{
+			maxVideoFrames = 0;
+			break;
+		}
 	}
 }
 

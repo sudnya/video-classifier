@@ -1,0 +1,115 @@
+################################################################################
+# Various labeled images
+################################################################################
+
+####################
+# Possible labels  #
+####################
+labels: dollar-bill, face
+
+####################
+# labeled Images #
+####################
+
+/mnt/Data/fall2013/not-faces//101_ObjectCategories/dollar_bill/image_0001.jpg, dollar-bill
+/mnt/Data/fall2013/not-faces//101_ObjectCategories/dollar_bill/image_0002.jpg, dollar-bill
+/mnt/Data/fall2013/not-faces//101_ObjectCategories/dollar_bill/image_0003.jpg, dollar-bill
+/mnt/Data/fall2013/not-faces//101_ObjectCategories/dollar_bill/image_0004.jpg, dollar-bill
+/mnt/Data/fall2013/not-faces//101_ObjectCategories/dollar_bill/image_0005.jpg, dollar-bill
+/mnt/Data/fall2013/not-faces//101_ObjectCategories/dollar_bill/image_0006.jpg, dollar-bill
+/mnt/Data/fall2013/not-faces//101_ObjectCategories/dollar_bill/image_0007.jpg, dollar-bill
+/mnt/Data/fall2013/not-faces//101_ObjectCategories/dollar_bill/image_0008.jpg, dollar-bill
+/mnt/Data/fall2013/not-faces//101_ObjectCategories/dollar_bill/image_0009.jpg, dollar-bill
+/mnt/Data/fall2013/not-faces//101_ObjectCategories/dollar_bill/image_0010.jpg, dollar-bill
+/mnt/Data/fall2013/not-faces//101_ObjectCategories/dollar_bill/image_0011.jpg, dollar-bill
+/mnt/Data/fall2013/not-faces//101_ObjectCategories/dollar_bill/image_0012.jpg, dollar-bill
+/mnt/Data/fall2013/not-faces//101_ObjectCategories/dollar_bill/image_0013.jpg, dollar-bill
+/mnt/Data/fall2013/not-faces//101_ObjectCategories/dollar_bill/image_0014.jpg, dollar-bill
+/mnt/Data/fall2013/not-faces//101_ObjectCategories/dollar_bill/image_0015.jpg, dollar-bill
+/mnt/Data/fall2013/not-faces//101_ObjectCategories/dollar_bill/image_0016.jpg, dollar-bill
+/mnt/Data/fall2013/not-faces//101_ObjectCategories/dollar_bill/image_0017.jpg, dollar-bill
+/mnt/Data/fall2013/not-faces//101_ObjectCategories/dollar_bill/image_0018.jpg, dollar-bill
+/mnt/Data/fall2013/not-faces//101_ObjectCategories/dollar_bill/image_0019.jpg, dollar-bill
+/mnt/Data/fall2013/not-faces//101_ObjectCategories/dollar_bill/image_0020.jpg, dollar-bill
+/mnt/Data/fall2013/not-faces//101_ObjectCategories/dollar_bill/image_0021.jpg, dollar-bill
+/mnt/Data/fall2013/not-faces//101_ObjectCategories/dollar_bill/image_0022.jpg, dollar-bill
+/mnt/Data/fall2013/not-faces//101_ObjectCategories/dollar_bill/image_0023.jpg, dollar-bill
+/mnt/Data/fall2013/not-faces//101_ObjectCategories/dollar_bill/image_0024.jpg, dollar-bill
+/mnt/Data/fall2013/not-faces//101_ObjectCategories/dollar_bill/image_0025.jpg, dollar-bill
+/mnt/Data/fall2013/not-faces//101_ObjectCategories/dollar_bill/image_0026.jpg, dollar-bill
+/mnt/Data/fall2013/not-faces//101_ObjectCategories/dollar_bill/image_0027.jpg, dollar-bill
+/mnt/Data/fall2013/not-faces//101_ObjectCategories/dollar_bill/image_0028.jpg, dollar-bill
+/mnt/Data/fall2013/not-faces//101_ObjectCategories/dollar_bill/image_0029.jpg, dollar-bill
+/mnt/Data/fall2013/not-faces//101_ObjectCategories/dollar_bill/image_0030.jpg, dollar-bill
+/mnt/Data/fall2013/not-faces//101_ObjectCategories/dollar_bill/image_0031.jpg, dollar-bill
+/mnt/Data/fall2013/not-faces//101_ObjectCategories/dollar_bill/image_0032.jpg, dollar-bill
+/mnt/Data/fall2013/not-faces//101_ObjectCategories/dollar_bill/image_0033.jpg, dollar-bill
+/mnt/Data/fall2013/not-faces//101_ObjectCategories/dollar_bill/image_0034.jpg, dollar-bill
+/mnt/Data/fall2013/not-faces//101_ObjectCategories/dollar_bill/image_0035.jpg, dollar-bill
+/mnt/Data/fall2013/not-faces//101_ObjectCategories/dollar_bill/image_0036.jpg, dollar-bill
+/mnt/Data/fall2013/not-faces//101_ObjectCategories/dollar_bill/image_0037.jpg, dollar-bill
+/mnt/Data/fall2013/not-faces//101_ObjectCategories/dollar_bill/image_0038.jpg, dollar-bill
+/mnt/Data/fall2013/not-faces//101_ObjectCategories/dollar_bill/image_0039.jpg, dollar-bill
+/mnt/Data/fall2013/not-faces//101_ObjectCategories/dollar_bill/image_0040.jpg, dollar-bill
+/mnt/Data/fall2013/not-faces//101_ObjectCategories/dollar_bill/image_0041.jpg, dollar-bill
+/mnt/Data/fall2013/not-faces//101_ObjectCategories/dollar_bill/image_0042.jpg, dollar-bill
+
+/mnt/Data/fall2013/faces/BioID_1427.jpg, face
+/mnt/Data/fall2013/faces/BioID_0524.jpg, face
+/mnt/Data/fall2013/faces/BioID_1174.jpg, face
+/mnt/Data/fall2013/faces/BioID_1442.jpg, face
+/mnt/Data/fall2013/faces/BioID_0633.jpg, face
+/mnt/Data/fall2013/faces/BioID_0827.jpg, face
+/mnt/Data/fall2013/faces/BioID_0625.jpg, face
+/mnt/Data/fall2013/faces/BioID_0434.jpg, face
+/mnt/Data/fall2013/faces/BioID_0586.jpg, face
+/mnt/Data/fall2013/faces/BioID_0979.jpg, face
+/mnt/Data/fall2013/faces/BioID_0119.jpg, face
+/mnt/Data/fall2013/faces/BioID_0323.jpg, face
+/mnt/Data/fall2013/faces/BioID_1086.jpg, face
+/mnt/Data/fall2013/faces/BioID_0837.jpg, face
+/mnt/Data/fall2013/faces/BioID_1053.jpg, face
+/mnt/Data/fall2013/faces/BioID_1481.jpg, face
+/mnt/Data/fall2013/faces/BioID_0231.jpg, face
+/mnt/Data/fall2013/faces/BioID_0831.jpg, face
+/mnt/Data/fall2013/faces/BioID_0892.jpg, face
+/mnt/Data/fall2013/faces/BioID_1377.jpg, face
+/mnt/Data/fall2013/faces/BioID_0493.jpg, face
+/mnt/Data/fall2013/faces/BioID_0942.jpg, face
+/mnt/Data/fall2013/faces/BioID_1186.jpg, face
+/mnt/Data/fall2013/faces/BioID_1178.jpg, face
+/mnt/Data/fall2013/faces/BioID_1211.jpg, face
+/mnt/Data/fall2013/faces/BioID_0989.jpg, face
+/mnt/Data/fall2013/faces/BioID_0684.jpg, face
+/mnt/Data/fall2013/faces/BioID_1436.jpg, face
+/mnt/Data/fall2013/faces/BioID_1336.jpg, face
+/mnt/Data/fall2013/faces/BioID_0332.jpg, face
+/mnt/Data/fall2013/faces/BioID_1517.jpg, face
+/mnt/Data/fall2013/faces/BioID_0759.jpg, face
+/mnt/Data/fall2013/faces/BioID_1277.jpg, face
+/mnt/Data/fall2013/faces/BioID_0970.jpg, face
+/mnt/Data/fall2013/faces/BioID_0206.jpg, face
+/mnt/Data/fall2013/faces/BioID_0784.jpg, face
+/mnt/Data/fall2013/faces/BioID_0515.jpg, face
+/mnt/Data/fall2013/faces/BioID_0316.jpg, face
+/mnt/Data/fall2013/faces/BioID_0116.jpg, face
+/mnt/Data/fall2013/faces/BioID_1308.jpg, face
+/mnt/Data/fall2013/faces/BioID_0360.jpg, face
+/mnt/Data/fall2013/faces/BioID_1488.jpg, face
+/mnt/Data/fall2013/faces/BioID_0996.jpg, face
+/mnt/Data/fall2013/faces/BioID_0724.jpg, face
+/mnt/Data/fall2013/faces/BioID_0303.jpg, face
+/mnt/Data/fall2013/faces/BioID_0141.jpg, face
+/mnt/Data/fall2013/faces/BioID_0190.jpg, face
+/mnt/Data/fall2013/faces/BioID_1177.jpg, face
+/mnt/Data/fall2013/faces/BioID_1369.jpg, face
+/mnt/Data/fall2013/faces/BioID_0014.jpg, face
+/mnt/Data/fall2013/faces/BioID_1025.jpg, face
+/mnt/Data/fall2013/faces/BioID_1061.jpg, face
+/mnt/Data/fall2013/faces/BioID_1425.jpg, face
+/mnt/Data/fall2013/faces/BioID_1299.jpg, face
+/mnt/Data/fall2013/faces/BioID_0093.jpg, face
+/mnt/Data/fall2013/faces/BioID_0669.jpg, face
+/mnt/Data/fall2013/faces/BioID_0587.jpg, face
+/mnt/Data/fall2013/faces/BioID_0134.jpg, face
+

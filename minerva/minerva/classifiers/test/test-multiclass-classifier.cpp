@@ -82,7 +82,8 @@ static void createAndInitializeNeuralNetworks(
 	// fully connected input layer
 	NeuralNetwork classifier;
 
-	classifier.addLayer(Layer(1, featureSelector.getOutputCount(), featureSelector.getOutputCount()));
+	classifier.addLayer(Layer(1, featureSelector.getOutputCount(),
+		featureSelector.getOutputCount()));
 
 	// fully connected hidden layer
 	classifier.addLayer(Layer(1, classifier.getOutputCount(), classifier.getOutputCount()));
@@ -121,7 +122,8 @@ static size_t getNumberOfClasses(const std::string& trainingDatabasePath)
 	return database.getTotalLabelCount();
 }
 
-static void trainFeatureSelector(ClassificationModel& model, const std::string& trainingDatabasePath,
+static void trainFeatureSelector(ClassificationModel& model,
+	const std::string& trainingDatabasePath,
 	size_t iterations, size_t batchSize)
 {
 	// engine will now be an unsupervised Learner
@@ -174,7 +176,7 @@ static float classify(ClassificationModel& model, const std::string& testDatabas
 
 static void visualizeModel(ClassificationModel& model,
 	const std::string& outputPath, size_t xPixels, size_t yPixels,
-	size_t colors)
+	size_t colors, size_t maximumNeuronsPerLayer)
 {
 	// Visualize the first layer
 	auto& featureSelectorNetwork = model.getNeuralNetwork("FeatureSelector");
@@ -189,6 +191,11 @@ static void visualizeModel(ClassificationModel& model,
 
 	for(size_t neuron = 0; neuron < firstLayerNeurons; ++neuron)
 	{
+		if(neuron >= maximumNeuronsPerLayer)
+		{
+			break;
+		}
+
 		video::Image image(xPixels, yPixels, colors, 1);
 		
 		std::stringstream path;
@@ -211,6 +218,7 @@ static void runTest(const std::string& trainingDatabasePath,
 	const std::string& testDatabasePath,
 	const std::string& outputVisualizationPath,
 	size_t iterations, size_t batchSize, size_t classificationIterations,
+	size_t maximumNeuronsToVisualizePerLayer,
 	size_t xPixels, size_t yPixels, size_t colors,
 	bool seed)
 {
@@ -249,7 +257,8 @@ static void runTest(const std::string& trainingDatabasePath,
     }
 
 	// Visualize the model neurons
-	visualizeModel(model, outputVisualizationPath, xPixels, yPixels, colors);
+	visualizeModel(model, outputVisualizationPath, xPixels, yPixels, colors,
+		maximumNeuronsToVisualizePerLayer);
 }
 
 }
@@ -274,14 +283,15 @@ int main(int argc, char** argv)
 	size_t iterations = 0;
 	size_t batchSize = 0;
 	size_t classificationIterations = 0;
+	size_t maximumNeuronsToVisualizePerLayer = 0;
 
     parser.description("The minerva multiclass classifier test.");
 
 	parser.parse("-t", "--training-data-path", trainingPaths,
-		"examples/multiclass-training-database.txt",
+		"examples/multiclass/multiclass-training-database.txt",
         "The path to the training file.");
     parser.parse("-e", "--test-data-path", testPaths,
-		"examples/multiclass-test-database.txt",
+		"examples/multiclass/multiclass-test-database.txt",
         "The path to the test file.");
     parser.parse("-i", "--iterations", iterations, 10,
         "The number of iterations to train for.");
@@ -297,8 +307,10 @@ int main(int argc, char** argv)
         "The maximum number of samples to classify.");
 
 	parser.parse("-o", "--output-visualization", outputVisualizationPath,
-		"visualization/multiclass",
+		"visualization/multiclass/",
 		"The path which to store visualizions of the individual neurons.");
+	parser.parse("-N", "--max-neurons-to-visualize", maximumNeuronsToVisualizePerLayer,
+		10, "The maximum number of neurons to produce visualizations for per layer");
     parser.parse("-L", "--log-module", loggingEnabledModules, "",
 		"Print out log messages during execution for specified modules "
 		"(comma-separated list of modules, e.g. NeuralNetwork, Layer, ...).");
@@ -323,7 +335,8 @@ int main(int argc, char** argv)
     try
     {
         minerva::classifiers::runTest(trainingPaths, testPaths, outputVisualizationPath,
-			iterations, batchSize, classificationIterations, xPixels, yPixels, colors, seed);
+			iterations, batchSize, classificationIterations, maximumNeuronsToVisualizePerLayer,
+			xPixels, yPixels, colors, seed);
     }
     catch(const std::exception& e)
     {

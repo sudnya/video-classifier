@@ -56,10 +56,16 @@ private:
 	class Statistics
 	{
 	public:
+		Statistics();
+
+	public:
 		std::string toString() const;
 	
 	public:
 		LabelStatisticMap labelStatistics;
+
+		size_t exactMatches;
+		size_t totalSamples;
 		
 	};
 	
