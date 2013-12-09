@@ -82,6 +82,11 @@ const std::string& Image::label() const
 	return _label;
 }
 
+bool Image::hasLabel() const
+{
+	return !label().empty();
+}
+
 void Image::displayOnScreen()
 {
     load();

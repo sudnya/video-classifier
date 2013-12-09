@@ -46,6 +46,9 @@ public:
 	const std::string& label() const;
 
 public:
+	bool hasLabel() const;
+
+public:
     float range() const;
 
 public:

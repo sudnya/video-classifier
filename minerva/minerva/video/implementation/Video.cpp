@@ -127,7 +127,7 @@ ImageVector Video::getNextFrames(unsigned int frames)
 		name << images.back().path() << "-frame-" << _frame;
 	
 		util::log("Video") << "Getting next frame " << _frame << " from video "
-			<< path() << "\n";
+			<< path() << " with label '" << images.back().label() << "' \n";
 	
 		images.back().setPath(name.str());
 
@@ -149,6 +149,9 @@ Image Video::getSpecificFrame(unsigned int frame)
 	{
 		image.setLabel(_getLabelForCurrentFrame());
 	}
+
+	util::log("Video") << "Getting specific frame " << frame << " from video "
+		<< path() << " with label '" << image.label() << "' \n";
 	
 	return image;
 }
@@ -213,6 +216,11 @@ Video::Label::Label(const std::string& n, unsigned int b, unsigned int e)
 : name(n), beginFrame(b), endFrame(e)
 {
 	
+}
+
+unsigned int Video::Label::coveredFrames() const
+{
+	return endFrame - beginFrame;
 }
 
 }

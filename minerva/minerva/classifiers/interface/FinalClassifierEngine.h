@@ -25,13 +25,18 @@ public:
 
 public:
 	float getAccuracy() const;
-	
+
+public:
+	void useLabeledData(bool useIt);
+
 public:
 	virtual void reportStatistics(std::ostream& stream) const;
 
 protected:
 	virtual void runOnImageBatch(const ImageVector& images);
 	virtual size_t getInputFeatureCount() const;
+	
+	virtual bool requiresLabeledData() const;
 
 private:
 
@@ -76,6 +81,7 @@ private:
 
 private:
 	Statistics _statistics;
+	bool       _shouldUseLabeledData;
 
 };
 

@@ -151,6 +151,7 @@ float classify(ClassificationModel& gestureModel, const std::string& gestureData
 		classifiers::ClassifierFactory::create("FinalClassifierEngine")));
 
 	classifierEngine->setModel(&gestureModel);
+	classifierEngine->useLabeledData(true);
 
 	// read from database and use model to test 
     classifierEngine->runOnDatabaseFile(gestureDatabasePath);
@@ -271,3 +272,4 @@ int main(int argc, char** argv)
 
     return 0;
 }
+

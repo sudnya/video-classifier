@@ -17,6 +17,7 @@ namespace classifiers
 {
 
 FinalClassifierEngine::FinalClassifierEngine()
+: _shouldUseLabeledData(false)
 {
 
 }	
@@ -24,6 +25,11 @@ FinalClassifierEngine::FinalClassifierEngine()
 float FinalClassifierEngine::getAccuracy() const
 {
 	return (_statistics.exactMatches + 0.0) / _statistics.totalSamples;
+}
+
+void FinalClassifierEngine::useLabeledData(bool shouldUse)
+{
+	_shouldUseLabeledData = shouldUse;
 }
 
 void FinalClassifierEngine::reportStatistics(std::ostream& stream) const
@@ -43,9 +49,16 @@ void FinalClassifierEngine::runOnImageBatch(const ImageVector& images)
 	for(auto label = labels.begin(); label != labels.end() &&
 		image != images.end(); ++label, ++image)
 	{
-		util::log("FinalClassifierEngine") << " Classified '" << image->path()
-			<< "' as '" << *label << "'\n";
-		
+		if(image->hasLabel())
+		{
+			util::log("FinalClassifierEngine") << " Classified '" << image->path()
+				<< "' as '" << *label << "'\n";
+		}
+		else
+		{
+			util::log("FinalClassifierEngine") << " Classified '" << image->path()
+				<< "' with label '" << image->label() << "' as '" << *label << "'\n";
+		}	
 		_updateStatistics(*label, *image);
 	}
 
@@ -57,6 +70,11 @@ size_t FinalClassifierEngine::getInputFeatureCount() const
 	Classifier classifier(_model);
 	
 	return classifier.getInputFeatureCount();
+}
+
+bool FinalClassifierEngine::requiresLabeledData() const
+{
+	return _shouldUseLabeledData;
 }
 
 FinalClassifierEngine::Statistics::Statistics()
