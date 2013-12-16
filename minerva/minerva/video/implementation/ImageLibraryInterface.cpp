@@ -130,6 +130,48 @@ void ImageLibraryInterface::displayOnScreen(size_t x, size_t y,
 	library->second->displayOnScreen(x, y, colorComponents, pixelSize, pixels);
 }
 
+void ImageLibraryInterface::deleteWindow()
+{
+	std::string capability = "render";
+	auto library = database.libraries.find(capability);
+	
+	if(library == database.libraries.end())
+	{
+		throw std::runtime_error("No image library can support capability '" +
+			capability + "'");
+	}
+
+	library->second->deleteWindow();
+}
+
+void ImageLibraryInterface::waitForKey(int delayInMilliseconds)
+{
+	std::string capability = "render";
+	auto library = database.libraries.find(capability);
+	
+	if(library == database.libraries.end())
+	{
+		throw std::runtime_error("No image library can support capability '" +
+			capability + "'");
+	}
+
+	library->second->waitForKey(delayInMilliseconds);
+}
+
+void ImageLibraryInterface::addTextToStatusBar(const std::string& text)
+{
+	std::string capability = "render";
+	auto library = database.libraries.find(capability);
+	
+	if(library == database.libraries.end())
+	{
+		throw std::runtime_error("No image library can support capability '" +
+			capability + "'");
+	}
+
+	library->second->addTextToStatusBar(text);
+}
+
 ImageLibraryInterface::Header::Header(unsigned int X, unsigned int Y,
 	unsigned int c, unsigned int p)
 : x(X), y(Y), colorComponents(c), pixelSize(p)

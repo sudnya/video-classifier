@@ -169,6 +169,29 @@ void OpenCVImageLibrary::displayOnScreen(size_t x, size_t y,
     }
 }
 
+void OpenCVImageLibrary::deleteWindow()
+{
+    const char* name = "display-window";
+	
+	OpenCVLibrary::cvDestroyWindow(name);
+}
+
+void OpenCVImageLibrary::waitForKey(int delayInMilliseconds)
+{
+	OpenCVLibrary::cvWaitKey(delayInMilliseconds);
+}
+
+void OpenCVImageLibrary::addTextToStatusBar(const std::string& text)
+{
+	const char* name  = "display-window";
+
+	// This is buggy and requires Qt
+	// const int   delay = 0;
+	// OpenCVLibrary::cvDisplayOverlay(name, text.c_str(), delay);
+
+	OpenCVLibrary::cvCreateTrackbar(text.c_str(), name);
+}
+
 OpenCVImageLibrary::StringVector
 	OpenCVImageLibrary::getSupportedExtensions() const
 {

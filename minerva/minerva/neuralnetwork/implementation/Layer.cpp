@@ -103,6 +103,11 @@ unsigned Layer::getBlockingFactor() const
 	return m_sparseMatrix.front().rows();
 }
 
+unsigned Layer::getOutputBlockingFactor() const
+{
+	return m_sparseMatrix.front().columns();
+}
+
 Layer::BlockSparseMatrix Layer::getWeightsWithoutBias() const
 {
 	BlockSparseMatrix result;

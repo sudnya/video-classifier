@@ -3,9 +3,13 @@
  * The implementation of the class to classify test images into labels 
 */
 
+// Minerva Includes
 #include <minerva/classifiers/interface/Classifier.h>
-#include <minerva/util/interface/debug.h>
 
+#include <minerva/util/interface/debug.h>
+#include <minerva/util/interface/Knobs.h>
+
+// Standard Library Includes
 #include <algorithm>
 #include <cassert>
 
@@ -95,6 +99,9 @@ LabelVector Classifier::pickMostLikelyLabel(const Matrix& likelyLabels)
 	util::log("Classifier") << "Finding labels for each image\n";
 	util::log("Classifier") << " (images X neuron outputs) " << likelyLabels.toString();
 
+	bool doThresholdTest = util::KnobDatabase::getKnobValue("Classifier::DoThresholdTest", false);
+
+
 	for (unsigned i = 0; i < totalRows; ++i)
 	{
 		auto labelNeurons = likelyLabels.getRow(i);
@@ -102,7 +109,7 @@ LabelVector Classifier::pickMostLikelyLabel(const Matrix& likelyLabels)
 		auto maxNeuron = std::max_element(labelNeurons.begin(), labelNeurons.end());
 		
 		// threshold test
-		if(*maxNeuron < 0.5f)
+		if(*maxNeuron < 0.5f && doThresholdTest)
 		{
 			labelList.push_back("no-label-matched");
 		}

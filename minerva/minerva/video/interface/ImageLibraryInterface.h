@@ -50,6 +50,10 @@ public:
 public:
 	static void displayOnScreen(size_t x, size_t y, size_t colorComponents,
 		size_t pixelSize, const DataVector& pixels);
+	static void deleteWindow();
+
+	static void waitForKey(int delayInMilliseconds = 0);
+	static void addTextToStatusBar(const std::string& text);
 
 };
 

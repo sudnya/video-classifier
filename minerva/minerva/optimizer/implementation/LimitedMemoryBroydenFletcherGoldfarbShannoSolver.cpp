@@ -202,7 +202,7 @@ float LBFGSSolver::solve(Matrix& inputs, const CostAndGradient& callback)
 		"LBFGSSolver::MaxLineSearchIterations", 50);
 
 	parameters.max_iterations =
-		util::KnobDatabase::getKnobValue("LBFGSSolver::MaxIterations", 50);
+		util::KnobDatabase::getKnobValue("LBFGSSolver::MaxIterations", 200);
 	
 	int status = LBFGSSolverLibrary::lbfgs(inputs.size(), inputArray,
 		&finalCost, lbfgsCallback, lbfgsProgress,

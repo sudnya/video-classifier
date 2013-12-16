@@ -94,6 +94,29 @@ void Image::displayOnScreen()
     	pixelSize(), _pixels);
 }
 
+void Image::displayOnScreen() const
+{
+    assert(loaded());
+
+    ImageLibraryInterface::displayOnScreen(x(), y(), colorComponents(),
+    	pixelSize(), _pixels);
+}
+
+void Image::waitForKeyPress() const
+{
+	ImageLibraryInterface::waitForKey();
+}
+
+void Image::addTextToDisplay(const std::string& text) const
+{
+	ImageLibraryInterface::addTextToStatusBar(text);	
+}
+
+void Image::deleteWindow() const
+{
+	ImageLibraryInterface::deleteWindow();
+}
+
 bool Image::loaded() const
 {
 	return _loaded;
@@ -175,11 +198,11 @@ Image::ByteVector& Image::getRawData()
 	return _pixels;
 }
 
-Image::Matrix Image::convertToStandardizedMatrix(size_t sampleCount) const
+matrix::Matrix Image::convertToStandardizedMatrix(size_t sampleCount) const
 {
 	auto samples = getSampledData(sampleCount);
-
-	return Matrix(1, sampleCount, samples);
+	
+	return matrix::Matrix(1, sampleCount, samples);
 }
 
 Image::FloatVector Image::getSampledData(size_t sampleCount) const

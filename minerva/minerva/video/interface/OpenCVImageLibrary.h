@@ -28,6 +28,9 @@ public:
 public:
 	virtual void displayOnScreen(size_t x, size_t y, size_t colorComponents,
 		size_t pixelSize, const DataVector& pixels);
+	virtual void deleteWindow();
+	virtual void waitForKey(int delayInMilliseconds);
+	virtual void addTextToStatusBar(const std::string& text);
 
 public:
 	virtual StringVector getSupportedExtensions() const;

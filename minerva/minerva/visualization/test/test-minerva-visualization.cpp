@@ -319,7 +319,7 @@ int main(int argc, char** argv)
         "The input image to train on, and perform visualization on.");
     parser.parse("-o", "--output-path", outputPath, "visualization/cat.jpg",
         "The output path to generate visualization results.");
-    parser.parse("", "--iterations", iterations, 1000,
+    parser.parse("", "--iterations", iterations, 2,
         "The number of iterations to train the network for.");
     parser.parse("-b", "--batch-size", batchSize, 100,
         "The number of images to use for each iteration.");
@@ -329,9 +329,9 @@ int main(int argc, char** argv)
 		"Print out log messages during execution for specified modules "
 		"(comma-separated list of modules, e.g. NeuralNetwork, Layer, ...).");
     parser.parse("-s", "--seed", seed, false, "Seed with time.");
-    parser.parse("-x", "--x-pixels", xPixels, 5,
+    parser.parse("-x", "--x-pixels", xPixels, 8,
         "The number of X pixels to consider from the input image.");
-	parser.parse("-y", "--y-pixels", yPixels, 5,
+	parser.parse("-y", "--y-pixels", yPixels, 8,
 		"The number of Y pixels to consider from the input image");
 	parser.parse("-c", "--colors", colors, 3,
 		"The number of color components (e.g. RGB) to consider from the input image");

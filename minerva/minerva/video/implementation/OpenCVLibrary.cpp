@@ -100,11 +100,40 @@ int OpenCVLibrary::cvNamedWindow(const char* name, int flags)
     return (*_interface.cvNamedWindow)(name, flags);
 }
 
+void OpenCVLibrary::cvDestroyWindow(const char* name)
+{
+    _check();
+
+    return (*_interface.cvDestroyWindow)(name);
+}
+
 void OpenCVLibrary::cvShowImage(const char* name, const IplImage* image)
 {
     _check();
 
     (*_interface.cvShowImage)(name, image);
+}
+
+void OpenCVLibrary::cvWaitKey(int millisecondDelay)
+{
+	_check();
+
+	(*_interface.cvWaitKey)(millisecondDelay);
+}
+
+int OpenCVLibrary::cvCreateTrackbar(const char* name,
+	const char* window, int* value, int count, CvTrackbarCallback on_change)
+{
+	_check();
+
+	return (*_interface.cvCreateTrackbar)(name, window, value, count, on_change);
+}
+
+void OpenCVLibrary::cvDisplayOverlay(const char* window, const char* text, int delayInMilliseconds)
+{
+	_check();
+
+	(*_interface.cvDisplayOverlay)(window, text, delayInMilliseconds);
 }
 
 void OpenCVLibrary::_check()
@@ -173,7 +202,13 @@ void OpenCVLibrary::Interface::load()
 	DynLink(cvRetrieveFrame);
 	
 	DynLink(cvNamedWindow);
+	DynLink(cvDestroyWindow);
 	DynLink(cvShowImage);
+	DynLink(cvWaitKey);
+	DynLink(cvCreateTrackbar);
+
+	// This is buggy on OSX
+	// DynLink(cvDisplayOverlay);
 	
 	#undef DynLink	
 }

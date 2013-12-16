@@ -53,6 +53,12 @@ public:
 
 public:
     void displayOnScreen();
+	void displayOnScreen() const;
+	void addTextToDisplay(const std::string& text) const;
+	void waitForKeyPress() const;
+	void deleteWindow() const;
+	
+public:
     bool loaded() const;
 	void load();
 	void loadHeader();

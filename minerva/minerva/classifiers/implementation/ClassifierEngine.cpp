@@ -34,7 +34,7 @@ namespace classifiers
 
 ClassifierEngine::ClassifierEngine()
 : _model(nullptr), _ownModel(true), _maximumSamplesToRun(0),
-	_batchSize(0), _areMultipleSamplesAllowed(false)
+	_batchSize(0), _areMultipleSamplesAllowed(false), _shouldDisplayImages(false)
 {
 	_maximumSamplesToRun = util::KnobDatabase::getKnobValue<unsigned int>(
 		"ClassifierEngine::MaximumVideoFrames", 100);
@@ -79,7 +79,6 @@ typedef video::VideoVector VideoVector;
 
 static void parseImageDatabase(ImageVector& images, VideoVector& video,
 	const std::string& path, bool requiresLabeledData);
-static void displayOnScreen(ImageVector& images);
 static void runAllImages(ClassifierEngine* engine, ImageVector& images,
 	unsigned int maxBatchSize, unsigned int& maxVideoFrames);
 static void runAllVideos(ClassifierEngine* engine, VideoVector& images,
@@ -156,6 +155,11 @@ void ClassifierEngine::setBatchSize(unsigned int samples)
 void ClassifierEngine::setMultipleSamplesAllowed(bool allowed)
 {
 	_areMultipleSamplesAllowed = allowed;
+}
+
+void ClassifierEngine::setDisplayImages(bool shouldDisplay)
+{
+	_shouldDisplayImages = shouldDisplay;
 }
 
 std::string ClassifierEngine::reportStatisticsString() const
@@ -279,8 +283,6 @@ static void runAllVideos(ClassifierEngine* engine, VideoVector& videos,
 			batch.push_back(videos[video].getSpecificFrame(frame));
 		}
 		
-		displayOnScreen(batch);
-		
 		engine->runOnImageBatch(batch);
 
 		if(batch.size() < maxVideoFrames)
@@ -370,19 +372,6 @@ static VideoAndFrameVector pickRandomFrames(VideoVector& videos,
 	}
 		
 	return positions;
-}
-
-static void displayOnScreen(ImageVector& images)
-{
-	bool shouldDisplay = util::KnobDatabase::getKnobValue(
-		"ClassifierEngine::DisplayOnScreen", false);
-
-	if(!shouldDisplay) return;
-
-	for (auto& i : images)
-	{
-		i.displayOnScreen();
-	}
 }
 
 typedef std::vector<unsigned int> IntVector;

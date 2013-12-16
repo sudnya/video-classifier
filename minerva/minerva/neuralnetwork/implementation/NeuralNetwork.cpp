@@ -184,7 +184,7 @@ static size_t getGreatestCommonDivisor(size_t a, size_t b)
 
 void NeuralNetwork::mirror()
 {
-	size_t blocks = getGreatestCommonDivisor(getBlockingFactor(),
+	size_t blocks = getGreatestCommonDivisor(front().blocks(),
 		getGreatestCommonDivisor(getOutputCount(), getInputCount()));
 
 	assertM(getOutputCount() % blocks == 0, "Input count " << getOutputCount()
@@ -192,7 +192,16 @@ void NeuralNetwork::mirror()
 	assertM(getInputCount() % blocks == 0, "Output count " << getInputCount()
 		<< " not divisivle by " << blocks << ".");
 
-	addLayer(Layer(blocks, getOutputCount()/blocks, getInputCount()/blocks));
+	size_t newInputs  = getOutputCount() / blocks;
+	size_t newOutputs = getInputCount()  / blocks;
+
+	util::log("NeuralNetwork") << "Mirroring neural network output layer ("
+		<< back().blocks() << " blocks, " << back().getBlockingFactor()
+		<< " inputs, " << back().getOutputBlockingFactor()
+		<< " outputs) to (" << blocks << " blocks, " << newInputs
+		<< " inputs, " << newOutputs << " outputs)\n";
+
+	addLayer(Layer(blocks, newInputs, newOutputs));
 	
     // should be pseudo inverse
 	std::default_random_engine engine(std::time(nullptr));

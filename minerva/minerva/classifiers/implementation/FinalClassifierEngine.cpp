@@ -58,7 +58,16 @@ void FinalClassifierEngine::runOnImageBatch(const ImageVector& images)
 		{
 			util::log("FinalClassifierEngine") << " Classified '" << image->path()
 				<< "' with label '" << image->label() << "' as '" << *label << "'\n";
-		}	
+		}
+
+		if(_shouldDisplayImages)
+		{
+			image->displayOnScreen();
+			image->addTextToDisplay(*label);
+			image->waitForKeyPress();
+			image->deleteWindow();
+		}
+
 		_updateStatistics(*label, *image);
 	}
 

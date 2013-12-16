@@ -56,6 +56,8 @@ public:
 	void setBatchSize(unsigned int samples);
 	/*! \brief Should the engine be allowed to run the same sample multiple times */
 	void setMultipleSamplesAllowed(bool);
+	/*! \brief Should the engine display images and their labels after running them? */
+	void setDisplayImages(bool);
 
 public:
 	std::string reportStatisticsString() const;
@@ -87,10 +89,11 @@ protected:
 	ClassificationModel* _model;
 	bool                 _ownModel;
 
-private:
+protected:
 	unsigned int _maximumSamplesToRun;
 	unsigned int _batchSize;
 	bool         _areMultipleSamplesAllowed;
+	bool         _shouldDisplayImages;
 
 
 };

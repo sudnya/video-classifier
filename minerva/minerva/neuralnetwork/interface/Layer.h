@@ -48,6 +48,7 @@ class Layer
         unsigned getOutputCount() const;
 
 		unsigned getBlockingFactor() const;
+		unsigned getOutputBlockingFactor() const;
 
 	public:
 		BlockSparseMatrix getWeightsWithoutBias() const;
