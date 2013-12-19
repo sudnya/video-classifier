@@ -45,7 +45,9 @@ void Learner::trainClassifier(const ImageVector& images)
 		inputCount = m_classifierNetwork.getInputCount();
 	}
 
-    auto matrix = images.convertToStandardizedMatrix(inputCount);
+    auto matrix = images.convertToStandardizedMatrix(inputCount,
+		std::sqrt(m_classifierNetwork.getBlockingFactor()),
+		std::sqrt(m_classifierNetwork.getBlockingFactor()));
     
 	// If there is a feature selector, do feature selection first
 	if (!m_featureSelectorNetwork.empty())

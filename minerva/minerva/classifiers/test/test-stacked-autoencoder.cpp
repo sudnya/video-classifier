@@ -211,7 +211,8 @@ static void trainNetwork(NeuralNetwork& neuralNetwork, const Image& image,
 			batchSize, engine);
 		
 		Matrix input = batch.convertToStandardizedMatrix(
-			neuralNetwork.getInputCount());
+			neuralNetwork.getInputCount(), std::sqrt(neuralNetwork.getBlockingFactor()),
+			std::sqrt(neuralNetwork.getBlockingFactor()));
 		
 		Matrix reference = generateReference(batch);
 		
@@ -241,7 +242,8 @@ static float testNetwork(NeuralNetwork& neuralNetwork, const Image& image,
 			batchSize, engine);
 		
 		Matrix input = batch.convertToStandardizedMatrix(
-			neuralNetwork.getInputCount());
+			neuralNetwork.getInputCount(), std::sqrt(neuralNetwork.getBlockingFactor()),
+			std::sqrt(neuralNetwork.getBlockingFactor()));
 		
 		Matrix reference = generateReference(batch);
 		
@@ -279,10 +281,12 @@ static float visualizeNetwork(NeuralNetwork& neuralNetwork, const Image& referen
 
 	minerva::util::log("TestStackedAutoencoder") << "Reference response: "
 		<< neuralNetwork.runInputs(referenceImage.convertToStandardizedMatrix(
-			neuralNetwork.getInputCount())).toString();
+			neuralNetwork.getInputCount(), std::sqrt(neuralNetwork.getBlockingFactor()),
+			std::sqrt(neuralNetwork.getBlockingFactor()))).toString();
 	minerva::util::log("TestStackedAutoencoder") << "Visualized response: "
 		<< neuralNetwork.runInputs(image.convertToStandardizedMatrix(
-			neuralNetwork.getInputCount())).toString();
+			neuralNetwork.getInputCount(), std::sqrt(neuralNetwork.getBlockingFactor()),
+			std::sqrt(neuralNetwork.getBlockingFactor()))).toString();
 	
 	image.save();
 

@@ -45,7 +45,7 @@ NeuronVisualizer::NeuronVisualizer(const NeuralNetwork* network)
 
 static Matrix optimizeWithoutDerivative(const NeuralNetwork*, const Image& , unsigned int);
 static Matrix optimizeWithDerivative(const NeuralNetwork*, const Image& , unsigned int);
-static void updateImage(Image& , const Matrix& );
+static void updateImage(Image& , const Matrix& , size_t xTileSize, size_t yTileSize);
 
 void NeuronVisualizer::visualizeNeuron(Image& image, unsigned int outputNeuron)
 {
@@ -67,7 +67,8 @@ void NeuronVisualizer::visualizeNeuron(Image& image, unsigned int outputNeuron)
 		throw std::runtime_error("Invalid neuron visializer solver class " + solverClass);
 	}
 
-	updateImage(image, matrix);
+	updateImage(image, matrix, std::sqrt(_network->getBlockingFactor()),
+		std::sqrt(_network->getBlockingFactor()));
 }
 
 void NeuronVisualizer::setNeuralNetwork(const NeuralNetwork* network)
@@ -269,9 +270,9 @@ static Matrix optimizeWithDerivative(const NeuralNetwork* network,
 	return bestInputs;
 }
 
-static void updateImage(Image& image, const Matrix& bestData)
+static void updateImage(Image& image, const Matrix& bestData, size_t xTileSize, size_t yTileSize)
 {
-	image.updateImageFromSamples(bestData.data());
+	image.updateImageFromSamples(bestData.data(), xTileSize, yTileSize);
 }
 
 }

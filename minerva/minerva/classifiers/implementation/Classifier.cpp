@@ -59,7 +59,7 @@ void Classifier::loadClassifier()
 Classifier::Matrix Classifier::detectLabels(const ImageVector& images)
 {
 	size_t classifierInputCount = m_classifierNetwork.getInputCount();
-	size_t systemInputCount	 = m_classifierNetwork.getInputCount();
+	size_t     systemInputCount = m_classifierNetwork.getInputCount();
 
 	if (!m_featureSelectorNetwork.empty())
 	{
@@ -70,7 +70,9 @@ Classifier::Matrix Classifier::detectLabels(const ImageVector& images)
 	assert(m_classifierNetwork.getInputCount() == classifierInputCount);
 	
 	/* run classification using features, classifier network to emit label */
-	auto matrix = images.convertToStandardizedMatrix(systemInputCount);
+	auto matrix = images.convertToStandardizedMatrix(systemInputCount,
+		std::sqrt(m_featureSelectorNetwork.getBlockingFactor()),
+		std::sqrt(m_featureSelectorNetwork.getBlockingFactor()));
 
 	assert(matrix.columns() == systemInputCount);
 

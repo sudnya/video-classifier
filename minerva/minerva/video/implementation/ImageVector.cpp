@@ -83,7 +83,8 @@ void ImageVector::push_back(const Image& image)
 	_images.push_back(image);
 }
 
-ImageVector::Matrix ImageVector::convertToStandardizedMatrix(size_t sampleCount) const
+ImageVector::Matrix ImageVector::convertToStandardizedMatrix(size_t sampleCount,
+	size_t xTileSize, size_t yTileSize) const
 {
 	size_t rows    = _images.size();
 	size_t columns = sampleCount;
@@ -95,7 +96,7 @@ ImageVector::Matrix ImageVector::convertToStandardizedMatrix(size_t sampleCount)
     size_t offset = 0;
 	for(auto& image : _images)
 	{
-		auto samples = image.getSampledData(columns);
+		auto samples = image.getSampledData(columns, xTileSize, yTileSize);
 		
 		std::copy(samples.begin(), samples.end(), data.begin() + offset);
 		

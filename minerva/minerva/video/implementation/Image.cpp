@@ -198,14 +198,14 @@ Image::ByteVector& Image::getRawData()
 	return _pixels;
 }
 
-matrix::Matrix Image::convertToStandardizedMatrix(size_t sampleCount) const
+matrix::Matrix Image::convertToStandardizedMatrix(size_t sampleCount, size_t xTileSize, size_t yTileSize) const
 {
-	auto samples = getSampledData(sampleCount);
+	auto samples = getSampledData(sampleCount, xTileSize, yTileSize);
 	
 	return matrix::Matrix(1, sampleCount, samples);
 }
 
-Image::FloatVector Image::getSampledData(size_t sampleCount) const
+Image::FloatVector Image::getSampledData(size_t sampleCount, size_t xTileSize, size_t yTileSize) const
 {
 	FloatVector samples;
 
@@ -224,7 +224,7 @@ Image::FloatVector Image::getSampledData(size_t sampleCount) const
 			position = imageSize - 1;
 		}
 
-		size_t zPosition = linearToZOrder(position);
+		size_t zPosition = linearToZOrder(position, xTileSize, yTileSize);
 		
 		float sampleValue = standardize(getComponentAt(zPosition));
 
@@ -237,7 +237,7 @@ Image::FloatVector Image::getSampledData(size_t sampleCount) const
 	return samples;
 }
 
-void Image::updateImageFromSamples(const FloatVector& samples)
+void Image::updateImageFromSamples(const FloatVector& samples, size_t xTileSize, size_t yTileSize)
 {
 	// nearest neighbor sampling
 	for(size_t y = 0; y < this->y(); ++y)
@@ -247,7 +247,7 @@ void Image::updateImageFromSamples(const FloatVector& samples)
 			for(size_t color = 0; color < this->colorComponents(); ++color)
 			{
 				size_t position  = getPosition(x, y, color);
-				size_t zPosition = zToLinearOrder(position);
+				size_t zPosition = zToLinearOrder(position, xTileSize, yTileSize);
 
 				size_t sampleIndex =
 					((zPosition + 0.0) / totalSize()) * samples.size();
@@ -385,76 +385,100 @@ size_t Image::getPosition(size_t x, size_t y, size_t color) const
 		x * colorComponents() + color;
 }
 
-static size_t zip(size_t x, size_t y)
-{
-	size_t result = 0;
-
-	for(size_t i = 0; i < sizeof(size_t) * 8 / 2; ++i)
-	{
-		size_t position = sizeof(size_t) * 8 / 2 - i - 1;
-		
-		result = (result << 1) | ((y >> position) & 0x1);
-		result = (result << 1) | ((x >> position) & 0x1);
-	}
-
-	return result;
-}
-
-static void unzip(size_t& x, size_t& y, size_t zPosition)
-{
-	x = 0;
-	y = 0;
-	
-	for(size_t i = 0; i < sizeof(size_t) * 8 / 2; ++i)
-	{
-		size_t position = sizeof(size_t) * 8 / 2 - i - 1;
-		
-		x = (x << 1) | ((zPosition >>  (position * 2)     ) & 0x1);
-		y = (y << 1) | ((zPosition >> ((position * 2) + 1)) & 0x1);
-	}
-}
-
-size_t Image::linearToZOrder(size_t linearPosition) const
+size_t Image::linearToZOrder(size_t linearPosition, size_t _xTileSize, size_t _yTileSize) const
 {
 	assert(linearPosition < totalSize());
 	
 	size_t pixelPosition = linearPosition / colorComponents();
 	size_t color         = linearPosition % colorComponents();	
 
-	size_t xPosition = pixelPosition % x();
-	size_t yPosition = pixelPosition / x();
-	
-	size_t zOrder = zip(xPosition, yPosition);
+	size_t tileRowSize = _yTileSize * x();
 
-	size_t zPosition = (zOrder * colorComponents() + color) % totalSize();
+	size_t yTileId        = pixelPosition / tileRowSize;
+	size_t remainingInRow = pixelPosition % tileRowSize;
+
+	size_t yTileSize = _yTileSize;
 	
-	//std::cout << path() << ": mapping linear position "
-	//	<< linearPosition << " (" << xPosition << " x, "
-	//	<< yPosition << " y, " << color
-	//	<< " color) to z order " << zPosition << "\n";
+	if((yTileId + 1) * yTileSize > y())
+	{
+		yTileSize = y() - yTileId * yTileSize;
+	}
+
+	size_t tileSize = _xTileSize * yTileSize;
+
+	size_t xTileId      = remainingInRow / (tileSize);
+	size_t offsetInTile = remainingInRow % (tileSize);
+
+	size_t xTileSize = _xTileSize;
+
+	if((xTileId + 1) * xTileSize > x())
+	{
+		xTileSize = x() - xTileId * xTileSize;
+	}
+
+	size_t yOffsetInTile = offsetInTile / xTileSize;
+	size_t xOffsetInTile = offsetInTile % xTileSize;
+
+	size_t finalPosition = (yTileId * tileRowSize) + (xTileId * _xTileSize) + (yOffsetInTile * x()) + xOffsetInTile;
+
+	size_t zPosition = (finalPosition * colorComponents() + color);
+
+	assert(zPosition < totalSize());
+	
+//	std::cout << path() << ": mapping linear position "
+//		<< linearPosition << " (" << (pixelPosition % x()) << " x, "
+//		<< (pixelPosition / x()) << " y, " << color
+//		<< " color) (" << xTileId << " xTileId, " << yTileId
+//		<< " yTileId) (" << xOffsetInTile << " xOffsetInTile, "
+//		<< yOffsetInTile << " yOffsetInTile) (" << xTileSize
+//		<< " xTileSize, " << yTileSize << " yTileSize) ("
+//		<< remainingInRow << " remaining in row) to z order " << zPosition << "\n";
 
 	return zPosition;
 }
 
-size_t Image::zToLinearOrder(size_t zPosition) const
+size_t Image::zToLinearOrder(size_t zPosition, size_t _xTileSize, size_t _yTileSize) const
 {
 	assert(zPosition < totalSize());
 	
 	size_t pixelPosition = zPosition / colorComponents();
 	size_t color         = zPosition % colorComponents();	
-	
-	size_t xPosition = 0;
-	size_t yPosition = 0;
 
-	unzip(xPosition, yPosition, pixelPosition);
+	size_t xPosition = pixelPosition % x();
+	size_t yPosition = pixelPosition / x();
 	
-	size_t linearPosition = getPosition(xPosition, yPosition, color);
+	size_t xTileId = xPosition / _xTileSize;
+	size_t yTileId = yPosition / _yTileSize;
 
-	//std::cout << path() << ": mapping z order "
-	//	<< zPosition << " to linear position " << linearPosition
-	//	<< " reverse mapping would be " << linearToZOrder(linearPosition) << "\n";
+	size_t xTileOffset = xPosition % _xTileSize;
+	size_t yTileOffset = yPosition % _yTileSize;
 	
-	return linearPosition;
+	size_t yTileSize = _yTileSize;
+	
+	if((yTileId + 1) * yTileSize > y())
+	{
+		yTileSize = y() - yTileId * yTileSize;
+	}
+	
+	size_t xTileSize = _xTileSize;
+	
+	if((xTileId + 1) * xTileSize > x())
+	{
+		xTileSize = x() - xTileId * xTileSize;
+	}
+	
+	size_t linearPosition = (yTileId * (_yTileSize * x())) +
+		(yTileSize * _xTileSize * xTileId) +
+		(yTileOffset * xTileSize) + xTileOffset;
+
+	size_t linearPositionWithColor = linearPosition * colorComponents() + color;
+	
+//	std::cout << path() << ": mapping z order "
+//		<< zPosition << " to linear position " << linearPositionWithColor
+//		<< " reverse mapping would be "
+//		<< linearToZOrder(linearPositionWithColor, _xTileSize, _yTileSize) << "\n";
+	
+	return linearPositionWithColor;
 }
 
 float Image::standardize(float component) const

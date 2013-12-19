@@ -48,15 +48,15 @@ static void createAndInitializeNeuralNetworks(
 {
 	size_t reductionFactor = 4;
 
-	assert(xPixels % reductionFactor == 0);
-	assert(yPixels % reductionFactor == 0);
+	assert(xPixels > reductionFactor);
+	assert(yPixels > reductionFactor);
 	
 	NeuralNetwork featureSelector;
 	
 	size_t totalPixels = xPixels * yPixels * colors;
 
 	// derive parameters from image dimensions 
-	const size_t blockSize = std::min(64UL, xPixels) * colors;
+	const size_t blockSize = std::min(32UL, xPixels) * colors;
 	const size_t blocks    = totalPixels / blockSize;
 	
 	// convolutional layer
@@ -78,7 +78,10 @@ static void createAndInitializeNeuralNetworks(
 		featureSelector.back().getBlockingFactor() / reductionFactor));
 
 	featureSelector.initializeRandomly(engine);
-	util::log("TestMulticlassClassifier") << "Building feature selector network with " << featureSelector.getOutputCount() << " output neurons\n";
+	util::log("TestMulticlassClassifier")
+		<< "Building feature selector network with "
+		<< featureSelector.getOutputCount() << " output neurons\n";
+
 	model.setNeuralNetwork("FeatureSelector", featureSelector);
 
 	const size_t hiddenLayerSize = 1024;
@@ -270,7 +273,8 @@ static void visualizeModel(ClassificationModel& model,
 static void runTest(const std::string& trainingDatabasePath,
 	const std::string& testDatabasePath,
 	const std::string& outputVisualizationPath,
-	size_t iterations, size_t batchSize, size_t classificationIterations,
+	size_t iterations, size_t trainingIterations,
+	size_t batchSize, size_t classificationIterations,
 	size_t maximumNeuronsToVisualizePerLayer,
 	size_t xPixels, size_t yPixels, size_t colors,
 	bool seed, bool displayClassifiedImages)
@@ -291,7 +295,7 @@ static void runTest(const std::string& trainingDatabasePath,
 	setupOutputNeuronLabels(model, testDatabasePath);
 	
 	trainFeatureSelector(model, trainingDatabasePath, iterations, batchSize);
-	trainClassifier(model, trainingDatabasePath, iterations, batchSize);
+	trainClassifier(model, trainingDatabasePath, trainingIterations, batchSize);
 
     // Run classifier and record accuracy
     float accuracy = classify(model, testDatabasePath, classificationIterations,
@@ -335,6 +339,7 @@ int main(int argc, char** argv)
 	size_t yPixels = 0;
 	size_t colors  = 0;
 	size_t iterations = 0;
+	size_t trainingIterations = 0;
 	size_t batchSize = 0;
 	size_t classificationIterations = 0;
 	size_t maximumNeuronsToVisualizePerLayer = 0;
@@ -350,6 +355,8 @@ int main(int argc, char** argv)
 		"examples/multiclass/multiclass-test-database.txt",
         "The path to the test file.");
     parser.parse("-i", "--iterations", iterations, 2,
+        "The number of iterations to run unsupervised learning for.");
+    parser.parse("-T", "--training-iterations", trainingIterations, 2,
         "The number of iterations to train for.");
     parser.parse("-b", "--batch-size", batchSize, 30,
         "The number of images to use for each iteration.");
@@ -393,8 +400,8 @@ int main(int argc, char** argv)
     try
     {
         minerva::classifiers::runTest(trainingPaths, testPaths, outputVisualizationPath,
-			iterations, batchSize, classificationIterations, maximumNeuronsToVisualizePerLayer,
-			xPixels, yPixels, colors, seed, displayClassifiedImages);
+			iterations, trainingIterations, batchSize, classificationIterations,
+			maximumNeuronsToVisualizePerLayer, xPixels, yPixels, colors, seed, displayClassifiedImages);
     }
     catch(const std::exception& e)
     {

@@ -67,18 +67,20 @@ public:
 public:
 	void setPath(const std::string& path);
 	void setLabel(const std::string& label);
+
+public:
 	void invalidateCache();
 	
 public:
 	ByteVector& getRawData();
 
 public:
-	Matrix convertToStandardizedMatrix(size_t samples) const;
-	FloatVector getSampledData(size_t samples) const;
-	void updateImageFromSamples(const FloatVector& samples);
+	Matrix convertToStandardizedMatrix(size_t samples, size_t xTileSize, size_t yTileSize) const;
+	FloatVector getSampledData(size_t samples, size_t xTileSize, size_t yTileSize) const;
+	void updateImageFromSamples(const FloatVector& samples, size_t xTileSize, size_t yTileSize);
 	
     Image sample(size_t samples) const;
-	Image downsample(size_t x, size_t y, size_t colors) const;   
+	Image downsample(size_t x, size_t y, size_t colors) const;
  
 public:
 	float getComponentAt(size_t position) const;
@@ -92,8 +94,8 @@ public:
 	size_t getPosition(size_t x, size_t y, size_t color) const;
 
 public:
-	size_t linearToZOrder(size_t linearPosition) const;
-	size_t zToLinearOrder(size_t linearPosition) const;
+	size_t linearToZOrder(size_t linearPosition, size_t xTileSize, size_t yTileSize) const;
+	size_t zToLinearOrder(size_t linearPosition, size_t xTileSize, size_t yTileSize) const;
 
 
 public:

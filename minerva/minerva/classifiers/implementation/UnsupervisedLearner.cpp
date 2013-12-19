@@ -35,7 +35,9 @@ void UnsupervisedLearner::loadFeatureSelector()
 void UnsupervisedLearner::learn(const ImageVector& images)
 {
 	/* using the feature NN & training images emit a NN for classifiers */
-	auto input = images.convertToStandardizedMatrix(m_featureSelector.getInputCount());
+	auto input = images.convertToStandardizedMatrix(m_featureSelector.getInputCount(),
+		std::sqrt(m_featureSelector.getBlockingFactor()),
+		std::sqrt(m_featureSelector.getBlockingFactor()));
     
 	auto inputReference = input.add(1.0f).multiply(0.5f);
 	auto layerInput = input;
