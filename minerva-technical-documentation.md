@@ -2,7 +2,10 @@
 
 ## Overview
 
-Minerva is a high-performance open-source neural network classification system.   It provides fast implementations of recently published research techniques drawn from the fields of computer vision, machine learning, and optimization with clean software interfaces that builds on multiple platforms with minimal dependencies.
+Minerva is a high-performance open-source neural network classification system.
+It provides fast implementations of recently published research techniques drawn
+from the fields of computer vision, machine learning, and optimization with clean
+software interfaces that builds on multiple platforms with minimal dependencies.
 
 This project implements a general purpose classification system.  The focus of
 the project is on achieving robust performance (classification accuracy) with
@@ -73,10 +76,10 @@ in the first layers of the visual cortex in mammalians, and perform well at visu
 ![Layer One Features](/documentation/tech-report/images/SoftFeatures.png "Gabor Function Responses and Spatial Domain Representation")
 
 From this paper:
-    Stanton R. Price ; Derek T. Anderson ; Robert H. Luke ; Kevin Stone ; James M. Keller; 
-    Automatic detection system for buried explosive hazards in FL-LWIR based on soft feature
-    extraction using a bank of Gabor energy filters. Proc. SPIE 8709, Detection and Sensing of
-    Mines, Explosive Objects, and Obscured Targets XVIII, 87091B (June 7, 2013);
+>    Stanton R. Price ; Derek T. Anderson ; Robert H. Luke ; Kevin Stone ; James M. Keller; 
+>    Automatic detection system for buried explosive hazards in FL-LWIR based on soft feature
+>    extraction using a bank of Gabor energy filters. Proc. SPIE 8709, Detection and Sensing of
+>    Mines, Explosive Objects, and Obscured Targets XVIII, 87091B (June 7, 2013);
 
 The accompanying figure on the top-right shows the corresponding spatial domain representation of each of the Gabor Filters.
 
