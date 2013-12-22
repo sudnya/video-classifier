@@ -68,7 +68,7 @@ itself becomes a feature selection system.
 The following image includes a visualization of some of the low level features
 that were learned by Minerva after being presented 10,000 random images.  
 
-![Layer One Features](/documentation/tech-report/images.jpg "Layer One Features")
+![Layer One Features](/documentation/tech-report/layer1-features-64x64-network/images.jpg "Layer One Features")
 
 The details of sparse autoencoders are described here http://stanford.edu/class/cs294a/sparseAutoencoder.pdf .  
 
