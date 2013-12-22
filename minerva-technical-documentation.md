@@ -68,7 +68,17 @@ itself becomes a feature selection system.
 The following image includes a visualization of some of the low level features
 that were learned by Minerva after being presented 10,000 random images.  
 
-![Layer One Features](/documentation/tech-report/images.jpg "Layer One Features")
+![Layer One Features](/documentation/tech-report/images/layer1-features-64x64-network.jpg "Layer One Feature Responses")
+
+These compare favorably to Gabor Function responses.  For example in the following figure: 
+
+![Layer One Features](/documentation/tech-report/images/SoftFeatures.png "Gabor Function Responses and Spatial Domain Representation")
+
+From this paper:
+    Stanton R. Price ; Derek T. Anderson ; Robert H. Luke ; Kevin Stone ; James M. Keller; 
+    Automatic detection system for buried explosive hazards in FL-LWIR based on soft feature
+    extraction using a bank of Gabor energy filters. Proc. SPIE 8709, Detection and Sensing of
+    Mines, Explosive Objects, and Obscured Targets XVIII, 87091B (June 7, 2013);
 
 The details of sparse autoencoders are described here http://stanford.edu/class/cs294a/sparseAutoencoder.pdf .  
 
