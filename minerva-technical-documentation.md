@@ -115,8 +115,8 @@ data sets. It uses three principles to achieve high performance.
 * Design convolutional neural networks in the first few layers to reduce the computational complexity of large networks.
 
 A long term vision for this project is to scale to millions of input features
-on single node systems, and billions of input features on thousand node
-clusters.
+on single node systems (handle mega-pixel images without any downsampling), and
+billions of input features on thousand node clusters.
 
 # System
 The system is composed of the following main component libraries:
