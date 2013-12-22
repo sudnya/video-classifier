@@ -2,12 +2,18 @@
 
 ## Overview
 
+Minerva is a high-performance open-source neural network classification system.  
+It provides fast implementations of recently published research techniques drawn
+from the fields of computer vision, machine learning, and optimization
+with clean software interfaces that builds on multiple platforms with minimal dependencies.
+
 This project implements a general purpose classification system.  The focus of
 the project is on achieving robust performance (classification accuracy) with
 minimal human interaction. Unlike most classification systems, which rely on
 domain specific heuristics to perform feature selection, Minerva uses an
 unsupervised learning technique called 'sparse autoencoding' that learns
 important features automatically over time without any human interaction.
+
 The sparse autoencoder is implemented with a convolutional neural network that takes raw
 data as input and produces a set of features that attempt to capture the
 essential information in that data.  It is trained by streaming through massive
@@ -17,10 +23,10 @@ is trained using supervised learning.  This system is also implemented with
 a neural network, and it attempts to discover complex relationships between
 generated features and output classes.  
 
-Although Minerva is designed to handle arbitrary input data, this project
-includes additional supporting modules for performing classification on video
-data. For the first case study, Minerva is used to perform automatic gesture
-recognition.  
+Although Minerva is designed to handle arbitrary input data such as unformatted
+text or audio, this project includes additional supporting modules for performing
+classification on video data. As a case study, Minerva is used to
+perform automatic gesture recognition.  
 
 The labeled dataset used for training was obtained from http://www.kaggle.com/c/multi-modal-gesture-recognition
 
@@ -59,8 +65,18 @@ information in that data. After training on unlabeled data, the inner layers
 of this network can be used directly as features; in other words, the network
 itself becomes a feature selection system. 
 
-The details of sparse autoencoders are described here
-http://stanford.edu/class/cs294a/sparseAutoencoder.pdf .  
+The following image includes a visualization of some of the low level features
+that were learned by Minerva after being presented 10,000 random images.  
+
+![Layer One Features](/documentation/tech-report/images.jpg "Layer One Features")
+
+The details of sparse autoencoders are described here http://stanford.edu/class/cs294a/sparseAutoencoder.pdf .  
+
+Minerva is influenced by the following research groups in deep learning:
+
+* Andrew Ng (Automatic Feature Selection): http://ufldl.stanford.edu/wiki/index.php/UFLDL_Tutorial
+* Yann Lecun (Learning Feature Hierarchies): http://www.cs.nyu.edu/~yann/talks/lecun-20110505-lip6.pdf
+** Convolutional and Pooling Networks: http://deeplearning.net/tutorial/lenet.html
 
 ## 2. Supervised Learning
 
@@ -102,9 +118,14 @@ These libraries are used internally by the following interfaces:
 * The classification module
 
 In Minerva, the classification system is called a Model.  Models contain a serialized representation
-of the entire system, including all neural networks and associated metadata.  The model builder is used to create a blank model with new parameters (network topology, labels, etc).
+of the entire system, including all neural networks and associated metadata.  The model builder is
+used to create a blank model with new parameters (network topology, labels, etc).
 
-Once a model has been created, it can be updated with supervised or unsupervised learning, or it can be used directly to perform classification.  Minerva currently supports video and image input data sets, but none of the modules are tied to this representation.  Supporting a new input format (e.g. text or numeric data) would simply require a new driver application that converts the input into a standardized vector of floating point values, and presents it to the existing models.
+Once a model has been created, it can be updated with supervised or unsupervised learning, or it
+can be used directly to perform classification.  Minerva currently supports video and image input
+data sets, but none of the modules are tied to this representation.  Supporting a new input format
+(e.g. text or numeric data) would simply require a new data conversion component that transforms the input
+into a standardized vector of floating point values, and presents it to the existing models.
 
 The details of the libraries and modules are described next.
 
