@@ -63,7 +63,8 @@ of this network can be used directly as features; in other words, the network
 itself becomes a feature selection system. 
 
 The following image includes a visualization of some of the low level features
-that were learned by Minerva after being presented 10,000 random images.  
+(inputs that a pooling maximally responds to) that were learned by Minerva after
+being presented 10,000 random images.  
 
 ![Layer One Features](/documentation/tech-report/images/layer1-features-64x64-network.jpg "Layer One Feature Responses")
 
@@ -78,7 +79,7 @@ From this paper:
 >    extraction using a bank of Gabor energy filters. Proc. SPIE 8709, Detection and Sensing of
 >    Mines, Explosive Objects, and Obscured Targets XVIII, 87091B (June 7, 2013);
 
-The accompanying figure on the top-right shows the corresponding spatial domain representation of each of the Gabor Filters.
+The accompanying figure on the top-right shows the corresponding spatial domain representation (inpulse response) of each of the Gabor Filters.
 
 The details of sparse autoencoders are described here http://stanford.edu/class/cs294a/sparseAutoencoder.pdf .  
 
@@ -92,6 +93,11 @@ Minerva is influenced by the following research groups in deep learning:
 
 Minerva uses a well known design involving an artificial neural network for supervised learning.  The input
 data is preprocessed using the feature selection network.  
+
+The following image shows the neural network input that produces the maximum response for a neuron trained
+using Minerva to recognize images of cats.
+
+![Cat Neuron](/documentation/tech-report/images/cat-response-convolutional.jpg "Cat Neuron Response")
 
 ## 3. Classification
 
@@ -146,20 +152,22 @@ The details of the libraries and modules are described next.
 ### The optimization library
 
  The optimization library aims to reduce the difference between the actual output (from the labeled data) and the output predicted by the neural network by modifying individual neuron weights. This library contains multiple implementations. 
-a.) Gradient descent with linear simulated annealing
-b.) The Multilevel optimizer uses a greedy heurisitc with simulated annealing and local search (with tabu search)
+a.) Gradient descent with linear simulated annealing.
+b.) The Multilevel optimizer uses a greedy heurisitc with simulated annealing and local search (with tabu search).
+c.) The Broyden–Fletcher–Goldfarb–Shanno algorithm (an approximation of the Simplex method for unconstrained linear optimization).
+d.) Multi-level coordinate search (TBD) (an approximation of the branch and bound method for uncontrained linear optimization).
 
 ### The linear algebra library
 
- The linear algebra library leverages the optimized Matrix operations from pre-existing implementations. The smallest unit for calculations in the neural network & optimizer is the Matrix. The linear algebra library translates these into calls to the Matrix library.
+ The linear algebra library leverages the optimized Matrix operations from pre-existing implementations (ATLAS or CUBLAS). The smallest unit for calculations in the neural network & optimizer is the Matrix. The linear algebra library translates these into calls to the Matrix library.  There is a SparseMatrix wrapper class that is used to implement sparse (convolutional/pooling) neural network layers.  
 
 ### The video library
 
- OpenCV is used for all the image processing required in this project. The input video is converted into a series of images. These images are then converted to a lower resolution and then finally to a matrix of pixel values. The resolution chosen depends on the size of the neural network.  For a sufficiently large network, no downsampling is performed and the network is connected directly to raw pixel values.
+ OpenCV is used for all the image processing required in this project. The input video is converted into a series of images. These images are then converted to a lower resolution (using tiling) and then finally to a matrix of pixel values.  Pixel values are standardized and then passed, and then can be passed directly into a network. The resolution chosen depends on the size of the neural network.  For a sufficiently large network, no downsampling is performed and the network is connected directly to raw pixel values.
 
 ### The model builder
 
- At each of the following steps, the neural network generated is written out to the disk. The network is a represented as a model with various attributes and their corresponding values. This model is then serialized and written to a compressed file. Writing these models decouples each step and thus allows the capability of resuming with the help of a model file. Eg: The unsupervised learning step takes many hours of running video to automatically generate a feature selector neural network. This network can be saved to a file and then reused with different sets of training data to create a classification neural network. This saves the time required to rerun the unsupervised learning step.
+ At each of the following steps, the neural network generated may be written out to the disk. The network is a represented as a model with various attributes and their corresponding values. This model is then serialized and written to a compressed file. Writing these models decouples each step and thus allows the capability of resuming with the help of a model file. Eg: The unsupervised learning step takes many hours of running video to automatically generate a feature selector neural network. This network can be saved to a file and then reused with different sets of training data to create a classification neural network. This saves the time required to rerun the unsupervised learning step.
 
 ### The unsupervised learning module
 
@@ -172,5 +180,5 @@ The idea behind a sparse autoencoder is that features in some data can be attrib
 
 ### The classification module
 
- This module uses both the neural network (the feature selector from the unsupervised learning step) and the classifier neural network (from the supervised learning step) to classify gestures in test images.
+ This module uses both the neural network (the feature selector from the unsupervised learning step) and the classifier neural network (from the supervised learning step) to perform classification in test images.  It is really a convience interface that abstracts some of the low level operations involved in setting up the input data and training the networks contained in a model.  It presents a clean interface for feeding input labeled or unlabeled data to the model.  Operations like random sampling and input caching are automated using the classification module framework.  
 
