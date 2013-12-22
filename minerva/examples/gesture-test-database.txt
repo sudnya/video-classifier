@@ -34,9 +34,31 @@
 #../images/gestures/Sample00001_color.mp4, combinato, 921, 959
 #../images/gestures/Sample00001_color.mp4, freganiente, 1001, 1039
 
-../images/gestures/Sample00001_color.mp4, vieniqui, 1, 79
-../images/gestures/Sample00001_color.mp4, prendere, 80, 159
-../images/gestures/Sample00001_color.mp4, sonostufo, 160, 219
+
+#../images/gestures/Sample00003_color.mp4, cosatifarei, 1, 79
+#../images/gestures/Sample00003_color.mp4, perfetto, 80, 119
+#../images/gestures/Sample00003_color.mp4, buonissimo, 120, 159
+../images/gestures/Sample00003_color.mp4, prendere, 160, 199
+#../images/gestures/Sample00003_color.mp4, fame, 200, 239
+../images/gestures/Sample00003_color.mp4, sonostufo, 240, 279
+#../images/gestures/Sample00003_color.mp4, cheduepalle, 280, 359
+../images/gestures/Sample00003_color.mp4, vieniqui, 360, 399
+#../images/gestures/Sample00003_color.mp4, furbo, 400, 479
+#../images/gestures/Sample00003_color.mp4, vattene, 480, 519
+#../images/gestures/Sample00003_color.mp4, freganiente, 520, 559
+#../images/gestures/Sample00003_color.mp4, chevuoi, 560, 619
+#../images/gestures/Sample00003_color.mp4, combinato, 620, 679
+#../images/gestures/Sample00003_color.mp4, messidaccordo, 680, 739
+#../images/gestures/Sample00003_color.mp4, noncenepiu, 740, 779
+#../images/gestures/Sample00003_color.mp4, tantotempo, 780, 839
+#../images/gestures/Sample00003_color.mp4, ok, 840, 919
+#../images/gestures/Sample00003_color.mp4, basta, 920, 979
+#../images/gestures/Sample00003_color.mp4, seipazzo, 980, 1059
+#../images/gestures/Sample00003_color.mp4, daccordo, 1060, 1117
+
+#../images/gestures/Sample00001_color.mp4, vieniqui, 1, 79
+#../images/gestures/Sample00001_color.mp4, prendere, 80, 159
+#../images/gestures/Sample00001_color.mp4, sonostufo, 160, 219
 #../images/gestures/Sample00001_color.mp4, chevuoi, 220, 279
 #../images/gestures/Sample00001_color.mp4, daccordo, 280, 319
 #../images/gestures/Sample00001_color.mp4, perfetto, 320, 399

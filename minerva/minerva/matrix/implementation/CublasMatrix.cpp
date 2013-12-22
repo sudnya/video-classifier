@@ -10,6 +10,8 @@
 #include <minerva/matrix/interface/CublasLibrary.h>
 #include <minerva/matrix/interface/CudaRuntimeLibrary.h>
 
+#include <minerva/util/interface/Knobs.h>
+
 // Standard Library Includes
 #include <cassert>
 #include <cmath>
@@ -577,6 +579,11 @@ Value* CublasMatrix::clone() const
 
 bool CublasMatrix::isSupported()
 {
+	if(!util::KnobDatabase::getKnobValue("CublasMatrix::Enable", false))
+	{
+		return false;
+	}
+	
 	CublasLibrary::load();
 
 	return CublasLibrary::loaded();

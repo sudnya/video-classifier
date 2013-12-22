@@ -23,10 +23,6 @@
 #include <cstdlib>
 #include <memory>
 
-const int XRES = 16;
-const int YRES = 16;
-const int MAXCOLORS = 8;
-
 namespace minerva
 {
 namespace classifiers
@@ -58,8 +54,9 @@ static void createAndInitializeNeuralNetworks( ClassificationModel& model, size_
 	NeuralNetwork featureSelector;
 	
 	// derive parameters from image dimensions 
-	const size_t blockSize = xPixels;
-	const size_t blocks    = yPixels * colors;
+	const size_t totalSize = xPixels * yPixels * colors;
+	const size_t blockSize = std::min(16UL, xPixels) * colors;
+	const size_t blocks    =  totalSize / blockSize;
 	
 	// convolutional layer
 	featureSelector.addLayer(Layer(blocks, blockSize, blockSize));
@@ -79,14 +76,16 @@ static void createAndInitializeNeuralNetworks( ClassificationModel& model, size_
 	featureSelector.initializeRandomly(engine);
 	
 	model.setNeuralNetwork("FeatureSelector", featureSelector);
-	
+
+	const size_t hiddenLayerSize = 256;
+
 	// fully connected input layer
 	NeuralNetwork classifier;
 
-	classifier.addLayer(Layer(1, featureSelector.getOutputCount(), featureSelector.getOutputCount()));
+	classifier.addLayer(Layer(1, featureSelector.getOutputCount(), hiddenLayerSize));
 
 	// fully connected hidden layer
-	classifier.addLayer(Layer(1, classifier.getOutputCount(), classifier.getOutputCount()));
+	classifier.addLayer(Layer(1, hiddenLayerSize, classifier.getOutputCount()));
 	
 	// final prediction layer
 	classifier.addLayer(Layer(1, classifier.getOutputCount(), classes));

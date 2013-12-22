@@ -55,7 +55,7 @@ static Image generateRandomImage(size_t xPixels, size_t yPixels, size_t colors,
 	{
 		for(size_t x = 0; x != xPixels; ++x)
 		{
-			for(int c = 0; c != colors; ++c)
+			for(size_t c = 0; c != colors; ++c)
 			{
 				float value = distribution(engine);
 
@@ -82,7 +82,7 @@ static Image addRandomNoiseToImage(const Image& image, float noiseMagnitude,
 	{
 		for(size_t x = 0; x != xPixels; ++x)
 		{
-			for(int c = 0; c != colors; ++c)
+			for(size_t c = 0; c != colors; ++c)
 			{
 				float value = distribution(engine) + image.getStandardizedComponentAt(x, y, c);
 

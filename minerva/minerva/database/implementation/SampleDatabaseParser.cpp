@@ -18,6 +18,7 @@
 // Standard Library Includes
 #include <fstream>
 #include <sstream>
+#include <stdexcept>
 
 namespace minerva
 {

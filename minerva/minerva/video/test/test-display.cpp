@@ -12,6 +12,9 @@
 #include <minerva/util/interface/debug.h>
 #include <minerva/util/interface/ArgumentParser.h>
 
+// Standard Library Includes
+#include <stdexcept>
+
 namespace minerva
 {
 
