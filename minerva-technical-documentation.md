@@ -2,10 +2,7 @@
 
 ## Overview
 
-Minerva is a high-performance open-source neural network classification system.  
-It provides fast implementations of recently published research techniques drawn
-from the fields of computer vision, machine learning, and optimization
-with clean software interfaces that builds on multiple platforms with minimal dependencies.
+Minerva is a high-performance open-source neural network classification system.   It provides fast implementations of recently published research techniques drawn from the fields of computer vision, machine learning, and optimization with clean software interfaces that builds on multiple platforms with minimal dependencies.
 
 This project implements a general purpose classification system.  The focus of
 the project is on achieving robust performance (classification accuracy) with
@@ -70,7 +67,8 @@ that were learned by Minerva after being presented 10,000 random images.
 
 ![Layer One Features](/documentation/tech-report/images/layer1-features-64x64-network.jpg "Layer One Feature Responses")
 
-These compare favorably to Gabor Function responses.  For example in the following figure: 
+These compare favorably to Gabor Filter function responses in the top-left of the following figure, which have been found
+in the first layers of the visual cortex in mammalians, and perform well at visual classification tasks: 
 
 ![Layer One Features](/documentation/tech-report/images/SoftFeatures.png "Gabor Function Responses and Spatial Domain Representation")
 
@@ -79,6 +77,8 @@ From this paper:
     Automatic detection system for buried explosive hazards in FL-LWIR based on soft feature
     extraction using a bank of Gabor energy filters. Proc. SPIE 8709, Detection and Sensing of
     Mines, Explosive Objects, and Obscured Targets XVIII, 87091B (June 7, 2013);
+
+The accompanying figure on the top-right shows the corresponding spatial domain representation of each of the Gabor Filters.
 
 The details of sparse autoencoders are described here http://stanford.edu/class/cs294a/sparseAutoencoder.pdf .  
 
