@@ -25,10 +25,7 @@ generated features and output classes.
 
 Although Minerva is designed to handle arbitrary input data such as unformatted
 text or audio, this project includes additional supporting modules for performing
-classification on video data. As a case study, Minerva is used to
-perform automatic gesture recognition.  
-
-The labeled dataset used for training was obtained from http://www.kaggle.com/c/multi-modal-gesture-recognition
+classification on video data. 
 
 ## 1. Unsupervised Learning
 
