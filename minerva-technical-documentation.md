@@ -89,7 +89,7 @@ Minerva is influenced by the following research groups in deep learning:
 
 * Andrew Ng (Automatic Feature Selection): http://ufldl.stanford.edu/wiki/index.php/UFLDL_Tutorial
 * Yann Lecun (Learning Feature Hierarchies): http://www.cs.nyu.edu/~yann/talks/lecun-20110505-lip6.pdf
-** Convolutional and Pooling Networks: http://deeplearning.net/tutorial/lenet.html
+    * Convolutional and Pooling Networks: http://deeplearning.net/tutorial/lenet.html
 
 ## 2. Supervised Learning
 
