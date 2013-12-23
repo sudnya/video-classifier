@@ -8165,7 +8165,6 @@
 /mnt/Data/fall2013/not-faces/101_ObjectCategories/starfish/image_0031.jpg, starfish
 /mnt/Data/fall2013/not-faces/101_ObjectCategories/starfish/image_0044.jpg, starfish
 /mnt/Data/fall2013/not-faces/101_ObjectCategories/starfish/image_0032.jpg, starfish
-/mnt/Data/fall2013/not-faces/101_ObjectCategories/stegosaurus, stegosaurus
 /mnt/Data/fall2013/not-faces/101_ObjectCategories/stegosaurus/image_0043.jpg, stegosaurus
 /mnt/Data/fall2013/not-faces/101_ObjectCategories/stegosaurus/image_0041.jpg, stegosaurus
 /mnt/Data/fall2013/not-faces/101_ObjectCategories/stegosaurus/image_0027.jpg, stegosaurus
