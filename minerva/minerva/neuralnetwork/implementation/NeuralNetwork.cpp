@@ -3,11 +3,17 @@
  * The implementation of the Neural Network class 
  */
 
-#include <minerva/optimizer/interface/Solver.h>
+// Minerva Includes
 #include <minerva/neuralnetwork/interface/NeuralNetwork.h>
-#include <minerva/neuralnetwork/interface/BackPropData.h>
+#include <minerva/neuralnetwork/interface/BackPropagation.h>
+#include <minerva/neuralnetwork/interface/BackPropagationFactory.h>
+
+#include <minerva/optimizer/interface/Solver.h>
+
+#include <minerva/util/interface/Knobs.h>
 #include <minerva/util/interface/debug.h>
 
+// Standard Library Includes
 #include <cassert>
 #include <vector>
 #include <ctime>
@@ -21,12 +27,12 @@ namespace neuralnetwork
 
 void NeuralNetwork::initializeRandomly(std::default_random_engine& engine, float epsilon)
 {
-    util::log("NeuralNetwork") << "Initializing neural network randomly.\n";
+	util::log("NeuralNetwork") << "Initializing neural network randomly.\n";
 
-    for (auto i = m_layers.begin(); i != m_layers.end(); ++i)
-    {
-        (*i).initializeRandomly(engine, epsilon);
-    }
+	for (auto i = m_layers.begin(); i != m_layers.end(); ++i)
+	{
+		(*i).initializeRandomly(engine, epsilon);
+	}
 }
 
 void NeuralNetwork::initializeRandomly(float epsilon)
@@ -38,40 +44,52 @@ void NeuralNetwork::initializeRandomly(float epsilon)
 
 void NeuralNetwork::train(const Matrix& inputMatrix, const Matrix& referenceOutput)
 {
-    //create a backpropagate-data class
-    //given the neural network, inputs & reference outputs 
-    util::log("NeuralNetwork") << "Running back propagation on input matrix (" << inputMatrix.rows() << ") rows, ("
-       << inputMatrix.columns() << ") columns. Using reference output of (" << referenceOutput.rows() << ") rows, ("
-       << referenceOutput.columns() << ") columns. \n";
+	//create a backpropagate-data class
+	//given the neural network, inputs & reference outputs 
+	util::log("NeuralNetwork") << "Running back propagation on input matrix (" << inputMatrix.rows() << ") rows, ("
+	   << inputMatrix.columns() << ") columns. Using reference output of (" << referenceOutput.rows() << ") rows, ("
+	   << referenceOutput.columns() << ") columns. \n";
 
-    BackPropData data(this, convertToBlockSparseForLayerInput(front(), inputMatrix),
-		convertToBlockSparseForLayerOutput(back(), referenceOutput));
-    //should we worry about comparing costs here?
-    //data.computeCost();
-    //data.computeDerivative();
 
-    Solver* solver = Solver::create(&data);
-    
-    try
-    {
-        solver->solve();
-    }
-    catch(...)
-    {
-        delete solver;
+	auto inputData     = convertToBlockSparseForLayerInput(front(), inputMatrix);
+	auto referenceData = convertToBlockSparseForLayerOutput(back(), referenceOutput);
 
-        throw;
-    }
+	auto backPropagationType = util::KnobDatabase::getKnobValue("BackPropagation::Type", "DenseBackPropagation");
 
-    delete solver;
+	auto backPropagation = BackPropagationFactory::create(backPropagationType);
+
+	backPropagation->setNeuralNetwork(this);
+	backPropagation->setInput(&inputData);
+	backPropagation->setReferenceOutput(&referenceData);
+
+	if(backPropagation == nullptr)
+	{
+		throw std::runtime_error("Failed to create back propagation structure with type: " +
+			backPropagationType);
+	}
+
+	Solver* solver = Solver::create(backPropagation);
+	
+	try
+	{
+		solver->solve();
+	}
+	catch(...)
+	{
+		delete solver;
+
+		throw;
+	}
+
+	delete solver;
 }
 
 NeuralNetwork::Matrix NeuralNetwork::runInputs(const Matrix& m) const
 {
-    //util::log("NeuralNetwork") << "Running forward propagation on matrix (" << m.rows()
-    //        << " rows, " << m.columns() << " columns).\n";
-    
-    auto temp = convertToBlockSparseForLayerInput(front(), m);
+	//util::log("NeuralNetwork") << "Running forward propagation on matrix (" << m.rows()
+	//		<< " rows, " << m.columns() << " columns).\n";
+	
+	auto temp = convertToBlockSparseForLayerInput(front(), m);
 
 	return runInputs(temp).toMatrix();
 }
@@ -80,13 +98,13 @@ NeuralNetwork::BlockSparseMatrix NeuralNetwork::runInputs(const BlockSparseMatri
 {
 	auto temp = m;
 
-    for (auto i = m_layers.begin(); i != m_layers.end(); ++i)
-    {
-        formatInputForLayer(*i, temp);
+	for (auto i = m_layers.begin(); i != m_layers.end(); ++i)
+	{
+		formatInputForLayer(*i, temp);
 		temp = (*i).runInputs(temp);
-    }
+	}
 
-    return temp;
+	return temp;
 }
 
 float NeuralNetwork::computeAccuracy(const Matrix& input, const Matrix& reference) const
@@ -105,7 +123,7 @@ float NeuralNetwork::computeAccuracy(const BlockSparseMatrix& input,
 
 	float threshold = 0.5f;
 
-	auto resultActivations    = result.greaterThanOrEqual(threshold);
+	auto resultActivations	= result.greaterThanOrEqual(threshold);
 	auto referenceActivations = reference.greaterThanOrEqual(threshold);
 
 	util::log("NeuralNetwork") << "Result activations " << resultActivations.toString();
@@ -120,45 +138,45 @@ float NeuralNetwork::computeAccuracy(const BlockSparseMatrix& input,
 
 std::string NeuralNetwork::getLabelForOutputNeuron(unsigned int i) const
 {
-    auto label = m_labels.find(i);
-    
-    if(label == m_labels.end())
-    {
-    	std::stringstream stream;
-    	
-    	stream << "output-neuron-" << i;
-    	
-    	return stream.str();
-    }
-    
-    return label->second;
+	auto label = m_labels.find(i);
+	
+	if(label == m_labels.end())
+	{
+		std::stringstream stream;
+		
+		stream << "output-neuron-" << i;
+		
+		return stream.str();
+	}
+	
+	return label->second;
 }
 
 void NeuralNetwork::setLabelForOutputNeuron(unsigned int idx, const std::string& label)
 {
 	assert(idx < getOutputCount());
 
-    m_labels[idx] = label;
+	m_labels[idx] = label;
 }
 
 void NeuralNetwork::addLayer(const Layer& L)
 {
-    m_layers.push_back(L);
+	m_layers.push_back(L);
 }
 
 unsigned NeuralNetwork::getTotalLayerSize() const
 {
-    return m_layers.size();
+	return m_layers.size();
 }
 
 const NeuralNetwork::LayerVector* NeuralNetwork::getLayers() const
 {
-    return &m_layers;
+	return &m_layers;
 }
 
 NeuralNetwork::LayerVector* NeuralNetwork::getLayers()
 {
-    return &m_layers;
+	return &m_layers;
 }
 
 void NeuralNetwork::resize(size_t layers)
@@ -203,10 +221,10 @@ void NeuralNetwork::mirror()
 
 	addLayer(Layer(blocks, newInputs, newOutputs));
 	
-    // should be pseudo inverse
+	// should be pseudo inverse
 	std::default_random_engine engine(std::time(nullptr));
 
-    back().initializeRandomly(engine);
+	back().initializeRandomly(engine);
 }
 
 void NeuralNetwork::cutOffSecondHalf()
@@ -218,10 +236,10 @@ void NeuralNetwork::cutOffSecondHalf()
 
 unsigned NeuralNetwork::getInputCount() const
 {
-    if(empty())
-        return 0;
+	if(empty())
+		return 0;
 
-    return front().getInputCount();
+	return front().getInputCount();
 }
 
 unsigned NeuralNetwork::getBlockingFactor() const
@@ -234,10 +252,10 @@ unsigned NeuralNetwork::getBlockingFactor() const
 
 unsigned NeuralNetwork::getOutputCount() const
 {
-    if(empty())
-        return 0;
+	if(empty())
+		return 0;
 
-    return back().getOutputCount();
+	return back().getOutputCount();
 }
 
 size_t NeuralNetwork::totalWeights() const
@@ -250,6 +268,18 @@ size_t NeuralNetwork::totalWeights() const
 	}
 	
 	return weights;
+}
+
+size_t NeuralNetwork::totalActivations() const
+{
+	size_t activations = 0;
+	
+	for(auto& layer : *this)
+	{
+		activations += layer.getOutputCount();
+	}
+	
+	return activations;
 }
 
 NeuralNetwork::Matrix NeuralNetwork::getFlattenedWeights() const

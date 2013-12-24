@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include <minerva/neuralnetwork/interface/BackPropData.h>
+#include <minerva/neuralnetwork/interface/BackPropagation.h>
 
 namespace minerva
 {
@@ -14,10 +14,10 @@ namespace optimizer
 class Solver
 {
     public:
-        typedef minerva::neuralnetwork::BackPropData BackPropData;
+        typedef minerva::neuralnetwork::BackPropagation BackPropagation;
 
     public:
-        Solver(BackPropData* d)
+        Solver(BackPropagation* d)
         : m_backPropDataPtr(d)
         {
         
@@ -32,10 +32,10 @@ class Solver
         virtual void solve() = 0;
 
     public: 
-        static Solver* create(BackPropData* d);
+        static Solver* create(BackPropagation* d);
 
     protected:
-        BackPropData* m_backPropDataPtr;
+        BackPropagation* m_backPropDataPtr;
 };
 
 }

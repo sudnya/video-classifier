@@ -19,14 +19,14 @@
 typedef minerva::matrix::Matrix Matrix;
 typedef minerva::matrix::Matrix::FloatVector FloatVector;
 
-typedef minerva::neuralnetwork::BackPropData BackPropData;
+typedef minerva::neuralnetwork::BackPropagation BackPropagation;
 
 namespace minerva
 {
 namespace optimizer
 {
 
-MultiLevelOptimizer::MultiLevelOptimizer(BackPropData* d) : Solver(d), generator(std::time(0))
+MultiLevelOptimizer::MultiLevelOptimizer(BackPropagation* d) : Solver(d), generator(std::time(0))
 {
 
 }
@@ -198,7 +198,7 @@ static float computeEpsilon(const Matrix& weights)
 class NeuralNetworkCostAndGradient : public LinearSolver::CostAndGradient
 {
 public:
-	NeuralNetworkCostAndGradient(const BackPropData* b,
+	NeuralNetworkCostAndGradient(const BackPropagation* b,
 		float initialCost, float costReductionFactor)
 	: CostAndGradient(initialCost, costReductionFactor), m_backPropDataPtr(b)
 	{
@@ -226,10 +226,10 @@ public:
 	}
 
 private:
-	const BackPropData* m_backPropDataPtr;
+	const BackPropagation* m_backPropDataPtr;
 };
 
-static float approximateSearch(Matrix& weights, float currentCost, BackPropData* backPropData)
+static float approximateSearch(Matrix& weights, float currentCost, BackPropagation* backPropData)
 {
 	util::log("MultiLevelOptimizer")
 		<< "  starting approximate search with cost : " << currentCost << "\n";

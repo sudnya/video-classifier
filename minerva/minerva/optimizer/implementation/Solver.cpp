@@ -21,7 +21,7 @@ void Solver::solve()
     assertM(false, "Not implemented yet");
 }
 
-Solver* Solver::create(BackPropData* d)
+Solver* Solver::create(BackPropagation* d)
 {
 	auto solverName = util::KnobDatabase::getKnobValue("Solver::Type",
 		"MultiLevelOptimizer");
