@@ -63,7 +63,7 @@ of this network can be used directly as features; in other words, the network
 itself becomes a feature selection system. 
 
 The following image includes a visualization of some of the low level features
-(inputs that a pooling maximally responds to) that were learned by Minerva after
+(inputs that a pooling layer neuron maximally responds to) that were learned by Minerva after
 being presented 10,000 random images.  
 
 ![Layer One Features](/documentation/tech-report/images/layer1-features-64x64-network.jpg "Layer One Feature Responses")
@@ -115,8 +115,8 @@ data sets. It uses three principles to achieve high performance.
 * Design convolutional neural networks in the first few layers to reduce the computational complexity of large networks.
 
 A long term vision for this project is to scale to millions of input features
-on single node systems, and billions of input features on thousand node
-clusters.
+on single node systems (handle mega-pixel images without any downsampling), and
+billions of input features on thousand node clusters.
 
 # System
 The system is composed of the following main component libraries:
