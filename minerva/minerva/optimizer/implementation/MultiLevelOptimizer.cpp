@@ -9,6 +9,10 @@
 #include <minerva/optimizer/interface/LinearSolverFactory.h>
 #include <minerva/optimizer/interface/LinearSolver.h>
 
+#include <minerva/matrix/interface/Matrix.h>
+
+#include <minerva/neuralnetwork/interface/NeuralNetwork.h>
+
 #include <minerva/util/interface/Knobs.h>
 #include <minerva/util/interface/debug.h>
 

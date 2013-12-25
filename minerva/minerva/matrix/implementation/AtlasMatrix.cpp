@@ -362,7 +362,7 @@ void AtlasMatrix::logSelf()
 {
 	for(auto& f : _data)
 	{
-		f = std::logf(f);
+		f = std::log(f);
 	}
 }
 
@@ -379,7 +379,7 @@ static float sigmoid(float v)
     if(v < -50.0f) return 0.0f;
     if(v > 50.0f)  return 1.0f;
     
-    return 1.0f / (1.0f + std::expf(-v)); 
+    return 1.0f / (1.0f + std::exp(-v)); 
 }
 
 static float sigmoidDerivative(float v)
@@ -416,8 +416,8 @@ static float klDivergence(float value, float sparsity)
 	if(value > 1.0f) value = 1.0f;
 	if(value < 0.0f) value = 0.0f;
 
-	return sparsity * std::logf(sparsity / value) +
-		(1.0f - sparsity) * std::logf((1.0f - sparsity) / (1.0f - value));
+	return sparsity * std::log(sparsity / value) +
+		(1.0f - sparsity) * std::log((1.0f - sparsity) / (1.0f - value));
 }
 
 static float klDivergenceDerivative(float value, float sparsity)

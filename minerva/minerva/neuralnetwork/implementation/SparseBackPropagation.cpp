@@ -14,6 +14,9 @@
 #include <minerva/util/interface/debug.h>
 #include <minerva/util/interface/Knobs.h>
 
+// Standard Library Includes
+#include <algorithm>
+
 namespace minerva
 {
 

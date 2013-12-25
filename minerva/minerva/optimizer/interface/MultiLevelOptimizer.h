@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <minerva/neuralnetwork/interface/BackPropData.h>
+#include <minerva/neuralnetwork/interface/BackPropagation.h>
 #include <random>
 
 namespace minerva

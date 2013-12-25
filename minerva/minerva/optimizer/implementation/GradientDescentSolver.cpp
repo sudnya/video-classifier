@@ -7,6 +7,10 @@
 #include <minerva/optimizer/interface/Solver.h>
 #include <minerva/optimizer/interface/GradientDescentSolver.h>
 
+#include <minerva/matrix/interface/Matrix.h>
+
+#include <minerva/neuralnetwork/interface/NeuralNetwork.h>
+
 #include <minerva/util/interface/Knobs.h>
 #include <minerva/util/interface/debug.h>
 

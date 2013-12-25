@@ -413,8 +413,8 @@ static float klDivergence(float value, float sparsity)
 	if(value > 1.0f) value = 1.0f;
 	if(value < 0.0f) value = 0.0f;
 
-	return sparsity * std::logf(sparsity / value) +
-		(1.0f - sparsity) * std::logf((1.0f - sparsity) / (1.0f - value));
+	return sparsity * std::log(sparsity / value) +
+		(1.0f - sparsity) * std::log((1.0f - sparsity) / (1.0f - value));
 }
 
 static float klDivergenceDerivative(float value, float sparsity)
