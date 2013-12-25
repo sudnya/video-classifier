@@ -167,9 +167,9 @@ static BlockSparseMatrix getInputDelta(const NeuralNetwork& network, const Matri
 		auto deltaPropagatedReverse = layer.runReverse(delta);
 
 		// add in the sparsity term
-		auto klDivergenceDerivative = i->reduceSumAlongRows().klDivergenceDerivative(sparsity);
+		auto klDivergenceDerivative = i->reduceSumAlongRows().multiply(1.0f/i->rows()).klDivergenceDerivative(sparsity);
 
-		auto sparsityTerm = klDivergenceDerivative.multiply(sparsityWeight);
+		auto sparsityTerm = klDivergenceDerivative.multiply(sparsityWeight/i->rows());
 
 		util::log ("SparseBackPropagation") << " Computing input delta for layer number: " << layerNumber << "\n";
 		delta = deltaPropagatedReverse.elementMultiply(activationDerivativeOfCurrentLayer).addBroadcastRow(sparsityTerm);
