@@ -26,42 +26,43 @@ typedef Matrix::FloatVector FloatVector;
 typedef SparseBackPropagation::MatrixVector MatrixVector;
 
 static MatrixVector computeCostDerivative(const NeuralNetwork& network, const BlockSparseMatrix& input,
-	const BlockSparseMatrix& referenceOutput, float lambda, float sparsity);
+	const BlockSparseMatrix& referenceOutput, float lambda, float sparsity, float sparsityWeight);
 static BlockSparseMatrix computeInputDerivative(const NeuralNetwork& network, const BlockSparseMatrix& input,
-	const BlockSparseMatrix& referenceOutput, float lambda, float sparsity);
+	const BlockSparseMatrix& referenceOutput, float lambda, float sparsity, float sparsityWeight);
 static float computeCostForNetwork(const NeuralNetwork& network, const BlockSparseMatrix& input,
-	const BlockSparseMatrix& referenceOutput, float lambda, float sparsity);
-static Matrix getFlattenedActivations(const NeuralNetwork& network, const BlockSparseMatrix& input);
+	const BlockSparseMatrix& referenceOutput, float lambda, float sparsity, float sparsityWeight);
+static Matrix getAverageActivations(const NeuralNetwork& network, const BlockSparseMatrix& input);
 
 SparseBackPropagation::SparseBackPropagation(NeuralNetwork* ann,
 	BlockSparseMatrix* input,
 	BlockSparseMatrix* ref)
-: BackPropagation(ann, input, ref), _lambda(0.0f), _sparsity(0.0f)
+: BackPropagation(ann, input, ref), _lambda(0.0f), _sparsity(0.0f), _sparsityWeight(0.0f)
 {
-	_lambda   = util::KnobDatabase::getKnobValue("NeuralNetwork::Lambda",   0.1f);
-	_sparsity = util::KnobDatabase::getKnobValue("NeuralNetwork::Sparsity", 0.1f);
+	_lambda         = util::KnobDatabase::getKnobValue("NeuralNetwork::Lambda",         0.1f );
+	_sparsity       = util::KnobDatabase::getKnobValue("NeuralNetwork::Sparsity",       0.05f);
+	_sparsityWeight = util::KnobDatabase::getKnobValue("NeuralNetwork::SparsityWeight", 0.1f );
 }
 
 MatrixVector SparseBackPropagation::getCostDerivative(const NeuralNetwork& neuralNetwork,
 	const BlockSparseMatrix& input, const BlockSparseMatrix& reference) const
 {
-	return neuralnetwork::computeCostDerivative(neuralNetwork, input, reference, _lambda, _sparsity);
+	return neuralnetwork::computeCostDerivative(neuralNetwork, input, reference, _lambda, _sparsity, _sparsityWeight);
 }
 
 BlockSparseMatrix SparseBackPropagation::getInputDerivative(const NeuralNetwork& network,
 	const BlockSparseMatrix& input, const BlockSparseMatrix& reference) const
 {
-	return neuralnetwork::computeInputDerivative(network, input, reference, _lambda, _sparsity);
+	return neuralnetwork::computeInputDerivative(network, input, reference, _lambda, _sparsity, _sparsityWeight);
 }
 
 float SparseBackPropagation::getCost(const NeuralNetwork& network,
 	const BlockSparseMatrix& input, const BlockSparseMatrix& reference) const
 {
-	return neuralnetwork::computeCostForNetwork(network, input, reference, _lambda, _sparsity);
+	return neuralnetwork::computeCostForNetwork(network, input, reference, _lambda, _sparsity, _sparsityWeight);
 }
 
 static float computeCostForNetwork(const NeuralNetwork& network, const BlockSparseMatrix& input,
-	const BlockSparseMatrix& referenceOutput, float lambda, float sparsity)
+	const BlockSparseMatrix& referenceOutput, float lambda, float sparsity, float sparsityWeight)
 {
 	//J(theta) = -1/m (sum over i, sum over k y(i,k) * log (h(x)) + (1-y(i,k))*log(1-h(x)) +
 	//		   regularization term lambda/2m sum over l,i,j (theta[i,j])^2
@@ -92,17 +93,23 @@ static float computeCostForNetwork(const NeuralNetwork& network, const BlockSpar
 		costSum += (lambda / (2.0f * m)) * ((weights.elementMultiply(weights)).reduceSum());
 	}
 
-	if(sparsity > 0.0f)
+	if(sparsityWeight > 0.0f)
 	{
-		auto activations = getFlattenedActivations(network, input);
+		// The average activation of each neuron over all samples
+		auto averageActivations = getAverageActivations(network, input);
 
-		costSum += (sparsity / (m)) * std::sqrt(activations.elementMultiply(activations).reduceSum());
+		// Get the KL divergence of each activation
+		auto klDivergence = averageActivations.klDivergence(sparsity);
+	
+		// Add it into the cost
+		costSum += sparsityWeight * klDivergence.reduceSum();
 	}
 	
 	return costSum;
 }
 
-static MatrixVector getDeltas(const NeuralNetwork& network, const MatrixVector& activations, const BlockSparseMatrix& reference)
+static MatrixVector getDeltas(const NeuralNetwork& network, const MatrixVector& activations, const BlockSparseMatrix& reference,
+	float sparsity, float sparsityWeight)
 {
 	MatrixVector deltas;
 	
@@ -122,8 +129,13 @@ static MatrixVector getDeltas(const NeuralNetwork& network, const MatrixVector& 
 
 		auto activationDerivativeOfCurrentLayer = i->sigmoidDerivative();
 		auto deltaPropagatedReverse = layer.runReverse(deltas.back());
+		
+		// add in the sparsity term
+		auto klDivergenceDerivative = i->reduceSumAlongRows().multiply(1.0f/i->rows()).klDivergenceDerivative(sparsity);
+
+		auto sparsityTerm = klDivergenceDerivative.multiply(sparsityWeight/i->rows());
 	   
-		delta = deltaPropagatedReverse.elementMultiply(activationDerivativeOfCurrentLayer);
+		delta = deltaPropagatedReverse.elementMultiply(activationDerivativeOfCurrentLayer).addBroadcastRow(sparsityTerm);
 
 		++i; 
 	}
@@ -137,7 +149,8 @@ static MatrixVector getDeltas(const NeuralNetwork& network, const MatrixVector& 
 	return deltas;
 }
 
-static BlockSparseMatrix getInputDelta(const NeuralNetwork& network, const MatrixVector& activations, const BlockSparseMatrix& reference)
+static BlockSparseMatrix getInputDelta(const NeuralNetwork& network, const MatrixVector& activations,
+	const BlockSparseMatrix& reference, float sparsity, float sparsityWeight)
 {
 	auto i = activations.rbegin();
 	auto delta = (*i).subtract(reference);
@@ -153,8 +166,13 @@ static BlockSparseMatrix getInputDelta(const NeuralNetwork& network, const Matri
 		auto activationDerivativeOfCurrentLayer = i->sigmoidDerivative();
 		auto deltaPropagatedReverse = layer.runReverse(delta);
 
+		// add in the sparsity term
+		auto klDivergenceDerivative = i->reduceSumAlongRows().klDivergenceDerivative(sparsity);
+
+		auto sparsityTerm = klDivergenceDerivative.multiply(sparsityWeight);
+
 		util::log ("SparseBackPropagation") << " Computing input delta for layer number: " << layerNumber << "\n";
-		delta = deltaPropagatedReverse.elementMultiply(activationDerivativeOfCurrentLayer);
+		delta = deltaPropagatedReverse.elementMultiply(activationDerivativeOfCurrentLayer).addBroadcastRow(sparsityTerm);
 
 		++i; 
 	}
@@ -174,24 +192,30 @@ static BlockSparseMatrix getInputDelta(const NeuralNetwork& network, const Matri
 	return delta;	
 }
 
-static Matrix getFlattenedActivations(const NeuralNetwork& network, const BlockSparseMatrix& input)
+static Matrix getAverageActivations(const NeuralNetwork& network, const BlockSparseMatrix& input)
 {
-	Matrix activations(1, input.rows() * network.totalActivations());
+	assert(!network.empty());
+
+	Matrix activations(1, network.totalActivations() - network.getOutputCount());
 
 	auto temp = input;
 
 	size_t position = 0;
 
-	for (auto i = network.begin(); i != network.end(); ++i)
+	for (auto i = network.begin(); i != --network.end(); ++i)
 	{
 		network.formatInputForLayer(*i, temp);
 		
 		temp = (*i).runInputs(temp);
-		
-		for(auto& matrix : temp)
+	
+		auto reduced = temp.reduceSumAlongRows().multiply(1.0f/temp.rows());
+	
+		for(auto& matrix : reduced)
 		{
+			assert(position + matrix.size() <= activations.size());
+
 			std::memcpy(&activations.data()[position],
-				&matrix.data()[position],
+				&matrix.data()[0],
 				matrix.size() * sizeof(float));
 			
 			position += matrix.size();
@@ -227,12 +251,12 @@ static MatrixVector getActivations(const NeuralNetwork& network, const BlockSpar
 }
 
 static MatrixVector computeCostDerivative(const NeuralNetwork& network, const BlockSparseMatrix& input,
-	const BlockSparseMatrix& referenceOutput, float lambda, float sparsity)
+	const BlockSparseMatrix& referenceOutput, float lambda, float sparsity, float sparsityWeight)
 {
 	//get activations in a vector
 	auto activations = getActivations(network, input);
 	//get deltas in a vector
-	auto deltas = getDeltas(network, activations, referenceOutput);
+	auto deltas = getDeltas(network, activations, referenceOutput, sparsity, sparsityWeight);
 	
 	MatrixVector partialDerivative;
 	
@@ -242,12 +266,15 @@ static MatrixVector computeCostDerivative(const NeuralNetwork& network, const Bl
 	auto layer = network.begin();
 	for (auto i = deltas.begin(), j = activations.begin(); i != deltas.end() && j != activations.end(); ++i, ++j, ++layer)
 	{
-		auto transposedDelta = (*i).transpose();
+		auto& activation = *j;
+		auto& delta      = *i;
+
+		auto  transposedDelta = delta.transpose();
 
 		transposedDelta.setRowSparse();
 
-		//there will be one less delta than activation
-		auto unnormalizedPartialDerivative = (transposedDelta.multiply(*j)).transpose();
+		// there will be one less delta than activation
+		auto unnormalizedPartialDerivative = (transposedDelta.multiply(activation)).transpose();
 		auto normalizedPartialDerivative = unnormalizedPartialDerivative.multiply(1.0f/samples);
 		
 		// add in the regularization term
@@ -255,9 +282,12 @@ static MatrixVector computeCostDerivative(const NeuralNetwork& network, const Bl
 
 		auto lambdaTerm = weights.multiply(lambda/samples);
 		
-		partialDerivative.push_back(lambdaTerm.add(normalizedPartialDerivative));
+		auto regularizedPartialDerivative = lambdaTerm.add(normalizedPartialDerivative);
+		
+		partialDerivative.push_back(regularizedPartialDerivative);
 	
-		util::log("SparseBackPropagation") << " computed derivative for layer " << std::distance(deltas.begin(), i)
+		util::log("SparseBackPropagation") << " computed derivative for layer "
+			<< std::distance(deltas.begin(), i)
 			<< " (" << partialDerivative.back().rows()
 			<< " rows, " << partialDerivative.back().columns() << " columns).\n";
 		util::log("SparseBackPropagation") << " PD contains " << partialDerivative.back().toString() << "\n";
@@ -270,12 +300,12 @@ static MatrixVector computeCostDerivative(const NeuralNetwork& network, const Bl
 static BlockSparseMatrix computeInputDerivative(const NeuralNetwork& network,
 	const BlockSparseMatrix& input,
 	const BlockSparseMatrix& referenceOutput,
-	float lambda, float sparsity)
+	float lambda, float sparsity, float sparsityWeight)
 {
 	//get activations in a vector
 	auto activations = getActivations(network, input);
 	//get deltas in a vector
-	auto delta = getInputDelta(network, activations, referenceOutput);
+	auto delta = getInputDelta(network, activations, referenceOutput, sparsity, sparsityWeight);
 	
 	util::log("DenseBackPropagation") << "Input delta: " << delta.toString();
 	unsigned int samples = input.rows();

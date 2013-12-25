@@ -288,6 +288,20 @@ Matrix Matrix::sigmoidDerivative() const
 	return Matrix(_matrix->sigmoidDerivative());
 }
 
+Matrix Matrix::klDivergence(float sparsity) const
+{
+	assert(_matrix != nullptr);
+	
+	return Matrix(_matrix->klDivergence(sparsity));
+}
+
+Matrix Matrix::klDivergenceDerivative(float sparsity) const
+{
+	assert(_matrix != nullptr);
+	
+	return Matrix(_matrix->klDivergenceDerivative(sparsity));
+}
+
 void Matrix::negateSelf()
 {
 	assert(_matrix != nullptr);
@@ -314,6 +328,20 @@ void Matrix::sigmoidDerivativeSelf()
 	assert(_matrix != nullptr);
 
 	_matrix->sigmoidDerivativeSelf();
+}
+
+void Matrix::klDivergenceSelf(float sparsity)
+{
+	assert(_matrix != nullptr);
+
+	_matrix->klDivergenceSelf(sparsity);
+}
+
+void Matrix::klDivergenceDerivativeSelf(float sparsity)
+{
+	assert(_matrix != nullptr);
+
+	_matrix->klDivergenceDerivativeSelf(sparsity);
 }
 
 void Matrix::assignUniformRandomValues(
@@ -350,6 +378,13 @@ float Matrix::reduceSum() const
 	assert(_matrix != nullptr);
 
 	return _matrix->reduceSum();
+}
+
+Matrix Matrix::reduceSumAlongColumns() const
+{
+	assert(_matrix != nullptr);
+
+	return Matrix(_matrix->reduceSumAlongColumns());
 }
 
 const Matrix::FloatVector& Matrix::data() const

@@ -30,8 +30,10 @@ public:
 private:
 	// Used for controlling the magnitude of neuron weights
 	float _lambda;
-	// Used for controlling the sparsity of neuron responses (it penalizes all of the neurons firing at once)
+	// The ideal probability for a neuron to fire (i.e. 0.05 -> it should fire 5% of the time on average)
 	float _sparsity;
+	// Used for controlling the sparsity of neuron responses (it penalizes all of the neurons firing at once)
+	float _sparsityWeight;
 
 };
 

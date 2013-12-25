@@ -54,7 +54,7 @@ void NeuralNetwork::train(const Matrix& inputMatrix, const Matrix& referenceOutp
 	auto inputData     = convertToBlockSparseForLayerInput(front(), inputMatrix);
 	auto referenceData = convertToBlockSparseForLayerOutput(back(), referenceOutput);
 
-	auto backPropagationType = util::KnobDatabase::getKnobValue("BackPropagation::Type", "DenseBackPropagation");
+	auto backPropagationType = util::KnobDatabase::getKnobValue("BackPropagation::Type", "SparseBackPropagation");
 
 	auto backPropagation = BackPropagationFactory::create(backPropagationType);
 

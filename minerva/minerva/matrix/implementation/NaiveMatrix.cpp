@@ -330,6 +330,24 @@ Value* NaiveMatrix::sigmoidDerivative() const
     return result;
 }
 
+Value* NaiveMatrix::klDivergence(float sparsity) const
+{
+    NaiveMatrix* result = new NaiveMatrix(*this);
+	
+	result->klDivergenceDerivativeSelf(sparsity);
+
+    return result;
+}
+
+Value* NaiveMatrix::klDivergenceDerivative(float sparsity) const
+{
+    NaiveMatrix* result = new NaiveMatrix(*this);
+	
+	result->klDivergenceDerivativeSelf(sparsity);
+
+    return result;
+}
+
 void NaiveMatrix::negateSelf()
 {
 	for(auto& f : _data)
@@ -386,6 +404,42 @@ void NaiveMatrix::sigmoidDerivativeSelf()
 	for(auto& f : _data)
 	{
 		f = matrix::sigmoidDerivative(f);
+	}
+}
+
+static float klDivergence(float value, float sparsity)
+{
+	// f(x,y) = y * log(y/x) + (1-y) * log((1 - y)/(1 - x))
+	if(value > 1.0f) value = 1.0f;
+	if(value < 0.0f) value = 0.0f;
+
+	return sparsity * std::logf(sparsity / value) +
+		(1.0f - sparsity) * std::logf((1.0f - sparsity) / (1.0f - value));
+}
+
+static float klDivergenceDerivative(float value, float sparsity)
+{
+	// f(x,y) = y * log(y/x) + (1-y) * log((1 - y)/(1 - x))
+	// dy/dx = f'(x,y) = (-y/x + (1-y)/(1-x))
+	if(value > 1.0f) value = 1.0f;
+	if(value < 0.0f) value = 0.0f;
+
+	return (-sparsity / value + (1.0f - sparsity)/(1.0f - value));
+}
+
+void NaiveMatrix::klDivergenceSelf(float sparsity)
+{
+	for(auto& f : _data)
+	{
+		f = matrix::klDivergence(f, sparsity);
+	}
+}
+
+void NaiveMatrix::klDivergenceDerivativeSelf(float sparsity)
+{
+	for(auto& f : _data)
+	{
+		f = matrix::klDivergenceDerivative(f, sparsity);
 	}
 }
 
@@ -453,6 +507,28 @@ float NaiveMatrix::reduceSum() const
     }
 
     return sum;
+}
+
+Value* NaiveMatrix::reduceSumAlongColumns() const
+{
+	auto result = new NaiveMatrix(rows(), 1);
+	
+	size_t rowCount    = rows();
+	size_t columnCount = columns(); 
+
+	for(size_t row = 0; row < rowCount; ++row)
+	{
+		float value = 0.0f;
+		
+		for(size_t column = 0; column < columnCount; ++column)
+		{
+			value += data()[getPosition(row, column)];
+		}
+		
+		result->data()[result->getPosition(row, 0)] = value;
+	}
+    
+	return result;
 }
 
 const NaiveMatrix::FloatVector& NaiveMatrix::data() const

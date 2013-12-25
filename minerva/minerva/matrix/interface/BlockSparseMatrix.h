@@ -88,6 +88,9 @@ public:
 	BlockSparseMatrix negate() const;
 	BlockSparseMatrix sigmoid() const;
 	BlockSparseMatrix sigmoidDerivative() const;
+	
+	BlockSparseMatrix klDivergence(float sparsity) const;
+	BlockSparseMatrix klDivergenceDerivative(float sparsity) const;
 
 public:
 	BlockSparseMatrix transpose() const;
@@ -113,6 +116,7 @@ public:
 public:
     float reduceSum() const;
 	BlockSparseMatrix reduceSumAlongColumns() const;
+	BlockSparseMatrix reduceSumAlongRows() const;
 
 public:
 	std::string toString() const;

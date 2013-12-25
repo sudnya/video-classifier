@@ -61,6 +61,8 @@ public:
 	virtual Value* negate() const = 0;
 	virtual Value* sigmoid() const = 0;
 	virtual Value* sigmoidDerivative() const = 0;
+	virtual Value* klDivergence(float sparsity) const = 0;
+	virtual Value* klDivergenceDerivative(float sparsity) const = 0;
 
 public:
 	virtual Value* slice(size_t startRow, size_t startColumn,
@@ -72,6 +74,8 @@ public:
 	virtual void absSelf() = 0;
     virtual void sigmoidSelf() = 0;
     virtual void sigmoidDerivativeSelf() = 0;
+    virtual void klDivergenceSelf(float sparsity) = 0;
+    virtual void klDivergenceDerivativeSelf(float sparsity) = 0;
 
 	virtual void assignUniformRandomValues(
 		std::default_random_engine& engine, float min, float max) = 0;
@@ -82,7 +86,8 @@ public:
 	virtual Value* equals(const Value* m) const = 0;
 
 public:
-    virtual float reduceSum() const = 0;
+    virtual float  reduceSum() const = 0;
+    virtual Value* reduceSumAlongColumns() const = 0;
 
 public:
 	virtual FloatVector& data() = 0;
