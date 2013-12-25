@@ -436,6 +436,24 @@ Value* CublasMatrix::sigmoidDerivative() const
     return result;
 }
 
+Value* CublasMatrix::klDivergence(float sparsity) const
+{
+    CublasMatrix* result = new CublasMatrix(*this);
+	
+	result->klDivergenceSelf(sparsity);
+
+    return result;
+}
+
+Value* CublasMatrix::klDivergenceDerivative(float sparsity) const
+{
+    CublasMatrix* result = new CublasMatrix(*this);
+	
+	result->klDivergenceDerivativeSelf(sparsity);
+
+    return result;
+}
+
 void CublasMatrix::negateSelf()
 {
 	for(auto& f : _data)
@@ -492,6 +510,42 @@ void CublasMatrix::sigmoidDerivativeSelf()
 	for(auto& f : _data)
 	{
 		f = matrix::sigmoidDerivative(f);
+	}
+}
+
+static float klDivergence(float value, float sparsity)
+{
+	// f(x,y) = y * log(y/x) + (1-y) * log((1 - y)/(1 - x))
+	if(value > 1.0f) value = 1.0f;
+	if(value < 0.0f) value = 0.0f;
+
+	return sparsity * std::logf(sparsity / value) +
+		(1.0f - sparsity) * std::logf((1.0f - sparsity) / (1.0f - value));
+}
+
+static float klDivergenceDerivative(float value, float sparsity)
+{
+	// f(x,y) = y * log(y/x) + (1-y) * log((1 - y)/(1 - x))
+	// dy/dx = f'(x,y) = (-y/x + (1-y)/(1-x))
+	if(value > 1.0f) value = 1.0f;
+	if(value < 0.0f) value = 0.0f;
+
+	return (-sparsity / value + (1.0f - sparsity)/(1.0f - value));
+}
+
+void CublasMatrix::klDivergenceSelf(float sparsity)
+{
+	for(auto& f : _data)
+	{
+		f = matrix::klDivergence(f, sparsity);
+	}
+}
+
+void CublasMatrix::klDivergenceDerivativeSelf(float sparsity)
+{
+	for(auto& f : _data)
+	{
+		f = matrix::klDivergenceDerivative(f, sparsity);
 	}
 }
 
@@ -560,6 +614,28 @@ float CublasMatrix::reduceSum() const
     }
 
     return sum;
+}
+
+Value* CublasMatrix::reduceSumAlongColumns() const
+{
+	auto result = new CublasMatrix(rows(), 1);
+	
+	size_t rowCount    = rows();
+	size_t columnCount = columns(); 
+
+	for(size_t row = 0; row < rowCount; ++row)
+	{
+		float value = 0.0f;
+		
+		for(size_t column = 0; column < columnCount; ++column)
+		{
+			value += data()[getPosition(row, column)];
+		}
+		
+		result->data()[result->getPosition(row, 0)] = value;
+	}
+    
+	return result;
 }
 
 const CublasMatrix::FloatVector& CublasMatrix::data() const

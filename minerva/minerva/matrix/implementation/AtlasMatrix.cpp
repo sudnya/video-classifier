@@ -332,6 +332,24 @@ Value* AtlasMatrix::sigmoidDerivative() const
     return result;
 }
 
+Value* AtlasMatrix::klDivergence(float sparsity) const
+{
+    AtlasMatrix* result = new AtlasMatrix(*this);
+	
+	result->klDivergenceSelf(sparsity);
+
+    return result;
+}
+
+Value* AtlasMatrix::klDivergenceDerivative(float sparsity) const
+{
+    AtlasMatrix* result = new AtlasMatrix(*this);
+	
+	result->klDivergenceDerivativeSelf(sparsity);
+
+    return result;
+}
+
 void AtlasMatrix::negateSelf()
 {
 	for(auto& f : _data)
@@ -344,7 +362,7 @@ void AtlasMatrix::logSelf()
 {
 	for(auto& f : _data)
 	{
-		f = std::log(f);
+		f = std::logf(f);
 	}
 }
 
@@ -361,7 +379,7 @@ static float sigmoid(float v)
     if(v < -50.0f) return 0.0f;
     if(v > 50.0f)  return 1.0f;
     
-    return 1.0f / (1.0f + std::exp(-v)); 
+    return 1.0f / (1.0f + std::expf(-v)); 
 }
 
 static float sigmoidDerivative(float v)
@@ -388,6 +406,43 @@ void AtlasMatrix::sigmoidDerivativeSelf()
 	for(auto& f : _data)
 	{
 		f = matrix::sigmoidDerivative(f);
+	}
+}
+
+static float klDivergence(float value, float sparsity)
+{
+	// f(x,y) = y * log(y/x) + (1-y) * log((1 - y)/(1 - x))
+
+	if(value > 1.0f) value = 1.0f;
+	if(value < 0.0f) value = 0.0f;
+
+	return sparsity * std::logf(sparsity / value) +
+		(1.0f - sparsity) * std::logf((1.0f - sparsity) / (1.0f - value));
+}
+
+static float klDivergenceDerivative(float value, float sparsity)
+{
+	// f(x,y) = y * log(y/x) + (1-y) * log((1 - y)/(1 - x))
+	// dy/dx = f'(x,y) = (-y/x + (1-y)/(1-x))
+	if(value > 1.0f) value = 1.0f;
+	if(value < 0.0f) value = 0.0f;
+
+	return (-sparsity / value + (1.0f - sparsity)/(1.0f - value));
+}
+
+void AtlasMatrix::klDivergenceSelf(float sparsity)
+{
+	for(auto& f : _data)
+	{
+		f = matrix::klDivergence(f, sparsity);
+	}
+}
+
+void AtlasMatrix::klDivergenceDerivativeSelf(float sparsity)
+{
+	for(auto& f : _data)
+	{
+		f = matrix::klDivergenceDerivative(f, sparsity);
 	}
 }
 
@@ -455,6 +510,28 @@ float AtlasMatrix::reduceSum() const
     }
 
     return sum;
+}
+
+Value* AtlasMatrix::reduceSumAlongColumns() const
+{
+	auto result = new AtlasMatrix(rows(), 1);
+	
+	size_t rowCount    = rows();
+	size_t columnCount = columns(); 
+
+	for(size_t row = 0; row < rowCount; ++row)
+	{
+		float value = 0.0f;
+		
+		for(size_t column = 0; column < columnCount; ++column)
+		{
+			value += data()[getPosition(row, column)];
+		}
+		
+		result->data()[result->getPosition(row, 0)] = value;
+	}
+    
+	return result;
 }
 
 const AtlasMatrix::FloatVector& AtlasMatrix::data() const

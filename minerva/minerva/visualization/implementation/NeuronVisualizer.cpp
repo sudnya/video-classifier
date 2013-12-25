@@ -8,7 +8,7 @@
 #include <minerva/visualization/interface/NeuronVisualizer.h>
 
 #include <minerva/neuralnetwork/interface/NeuralNetwork.h>
-#include <minerva/neuralnetwork/interface/BackPropData.h>
+#include <minerva/neuralnetwork/interface/DenseBackPropagation.h>
 
 #include <minerva/optimizer/interface/NonDifferentiableLinearSolver.h>
 #include <minerva/optimizer/interface/NonDifferentiableLinearSolverFactory.h>
@@ -35,7 +35,7 @@ namespace visualization
 typedef matrix::Matrix Matrix;
 typedef neuralnetwork::NeuralNetwork NeuralNetwork;
 typedef video::Image Image;
-typedef neuralnetwork::BackPropData BackPropData;
+typedef neuralnetwork::DenseBackPropagation DenseBackPropagation;
 
 NeuronVisualizer::NeuronVisualizer(const NeuralNetwork* network)
 : _network(network)
@@ -156,7 +156,7 @@ static Matrix optimizeWithoutDerivative(const NeuralNetwork* network,
 class CostAndGradientFunction : public optimizer::LinearSolver::CostAndGradient
 {
 public:
-	CostAndGradientFunction(const BackPropData* d,
+	CostAndGradientFunction(const DenseBackPropagation* d,
 		float initialCost, float costReductionFactor)
 	: CostAndGradient(initialCost, costReductionFactor), _backPropData(d)
 	{
@@ -182,7 +182,7 @@ public:
 	}
 
 private:
-	const BackPropData* _backPropData;
+	const DenseBackPropagation* _backPropData;
 };
 
 static Matrix generateReferenceForNeuron(const NeuralNetwork* network,
@@ -198,10 +198,12 @@ static Matrix generateReferenceForNeuron(const NeuralNetwork* network,
 static Matrix optimizeWithDerivative(float& bestCost, const NeuralNetwork* network,
 	const Matrix& initialData, unsigned int neuron)
 {
-	BackPropData data(const_cast<NeuralNetwork*>(network),
-		network->convertToBlockSparseForLayerInput(network->front(), initialData),
-		network->convertToBlockSparseForLayerOutput(network->back(),
-		generateReferenceForNeuron(network, neuron)));
+	auto input     = network->convertToBlockSparseForLayerInput(network->front(), initialData);
+	auto reference = network->convertToBlockSparseForLayerOutput(network->back(),
+		generateReferenceForNeuron(network, neuron));
+
+	DenseBackPropagation data(const_cast<NeuralNetwork*>(network),
+		&input, &reference);
 	
 	Matrix bestSoFar = initialData;
 	       bestCost  = data.computeCost();

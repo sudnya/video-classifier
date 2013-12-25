@@ -25,7 +25,7 @@ typedef std::vector<Matrix> MatrixVector;
 void GradientDescentSolver::solve()
 {
    float learningRate = util::KnobDatabase::getKnobValue<float>(
-		"GradientDescentSolver::LearningRate", 2.4f/m_backPropDataPtr->getNeuralNetworkPtr()->getInputCount());
+		"GradientDescentSolver::LearningRate", 2.4f/m_backPropDataPtr->getNeuralNetwork()->getInputCount());
 	float convergenceRatio = util::KnobDatabase::getKnobValue<float>(
 		"GradientDescentSolver::ConvergenceRatio", 0.1f);
 	float learningRateBackoff = util::KnobDatabase::getKnobValue<float>(
@@ -80,30 +80,30 @@ void GradientDescentSolver::solve()
 
 	/*
 	
-    // doing batch descent, so dont need cost
-    MatrixVector partialDerivatives = m_backPropDataPtr->getCostDerivative();
+	// doing batch descent, so dont need cost
+	MatrixVector partialDerivatives = m_backPropDataPtr->getCostDerivative();
 
-    //we have partial derivates, now subtract from each layer's activations
-    // for each layer we have one pd
-    // Li = Li + alpha*pd
-    assertM(m_backPropDataPtr->getNeuralNetworkPtr()->getTotalLayerSize() == partialDerivatives.size(), "each layer should be associated with a partial derivative");
-    auto deriv = partialDerivatives.begin();
-    for (auto layer = m_backPropDataPtr->getNeuralNetworkPtr()->begin(); layer != m_backPropDataPtr->getNeuralNetworkPtr()->end() && deriv != partialDerivatives.end(); ++layer, ++deriv)
-    {
-    	assertM(layer->size() == 1, "Only dense matrices supported for now.");
-    
-        // change the neuron value for each matrix in this layer
-        for (auto layerWeight = layer->begin(); layerWeight != layer->end(); ++layerWeight)
-        {
-            auto weightUpdates = deriv->multiply(learningRate);
-            
-            // Don't change the bias weights
-            auto weightAndBiasUpdates = weightUpdates.appendRows(Matrix(1, weightUpdates.columns(), FloatVector(weightUpdates.columns(), 0.0f)));
-        
-            (*layerWeight) = (*layerWeight).subtract(weightAndBiasUpdates);
-        }
-    }
-    */
+	//we have partial derivates, now subtract from each layer's activations
+	// for each layer we have one pd
+	// Li = Li + alpha*pd
+	assertM(m_backPropDataPtr->getNeuralNetworkPtr()->getTotalLayerSize() == partialDerivatives.size(), "each layer should be associated with a partial derivative");
+	auto deriv = partialDerivatives.begin();
+	for (auto layer = m_backPropDataPtr->getNeuralNetworkPtr()->begin(); layer != m_backPropDataPtr->getNeuralNetworkPtr()->end() && deriv != partialDerivatives.end(); ++layer, ++deriv)
+	{
+		assertM(layer->size() == 1, "Only dense matrices supported for now.");
+	
+		// change the neuron value for each matrix in this layer
+		for (auto layerWeight = layer->begin(); layerWeight != layer->end(); ++layerWeight)
+		{
+			auto weightUpdates = deriv->multiply(learningRate);
+			
+			// Don't change the bias weights
+			auto weightAndBiasUpdates = weightUpdates.appendRows(Matrix(1, weightUpdates.columns(), FloatVector(weightUpdates.columns(), 0.0f)));
+		
+			(*layerWeight) = (*layerWeight).subtract(weightAndBiasUpdates);
+		}
+	}
+	*/
 }
 
 }

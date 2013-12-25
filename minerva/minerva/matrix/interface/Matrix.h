@@ -96,6 +96,9 @@ public:
 	Matrix sigmoid() const;
 	Matrix sigmoidDerivative() const;
 
+	Matrix klDivergence(float sparsity) const;
+	Matrix klDivergenceDerivative(float sparsity) const;
+
 public:
 	Matrix slice(size_t startRow, size_t startColumn,
 		size_t rows, size_t columns) const;
@@ -106,6 +109,8 @@ public:
 	void logSelf();
     void sigmoidSelf();
     void sigmoidDerivativeSelf();
+    void klDivergenceSelf(float sparsity);
+    void klDivergenceDerivativeSelf(float sparsity);
 
 	void transposeSelf();
 
@@ -117,7 +122,8 @@ public:
 	Matrix equals(const Matrix& m) const;
 
 public:
-    float reduceSum() const;
+    float  reduceSum()             const;
+	Matrix reduceSumAlongColumns() const;
 
 public:
 	const FloatVector& data() const;

@@ -17,11 +17,10 @@ namespace optimizer
 class MultiLevelOptimizer : public Solver
 {
     public:
-        typedef minerva::neuralnetwork::BackPropData BackPropData;
         typedef minerva::matrix::Matrix Matrix;
         
     public:
-        MultiLevelOptimizer(BackPropData* d);
+        MultiLevelOptimizer(BackPropagation* d);
         void solve();
     
     private:

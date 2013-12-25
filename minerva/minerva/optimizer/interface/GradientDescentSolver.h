@@ -11,15 +11,15 @@ namespace minerva
 {
 namespace optimizer
 {
+
 class GradientDescentSolver : public Solver
 {
-    public:
-        typedef minerva::neuralnetwork::BackPropData BackPropData;
-    public:
-        GradientDescentSolver(BackPropData* d) : Solver(d)
-    {
-    }
-        void solve();
+public:
+	GradientDescentSolver(BackPropagation* d) : Solver(d)
+	{
+	}
+	
+	void solve();
 
 };
 

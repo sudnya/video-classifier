@@ -2,12 +2,18 @@
 
 ## Overview
 
+Minerva is a high-performance open-source neural network classification system.
+It provides fast implementations of recently published research techniques drawn
+from the fields of computer vision, machine learning, and optimization with clean
+software interfaces that builds on multiple platforms with minimal dependencies.
+
 This project implements a general purpose classification system.  The focus of
 the project is on achieving robust performance (classification accuracy) with
 minimal human interaction. Unlike most classification systems, which rely on
 domain specific heuristics to perform feature selection, Minerva uses an
 unsupervised learning technique called 'sparse autoencoding' that learns
 important features automatically over time without any human interaction.
+
 The sparse autoencoder is implemented with a convolutional neural network that takes raw
 data as input and produces a set of features that attempt to capture the
 essential information in that data.  It is trained by streaming through massive
@@ -17,12 +23,9 @@ is trained using supervised learning.  This system is also implemented with
 a neural network, and it attempts to discover complex relationships between
 generated features and output classes.  
 
-Although Minerva is designed to handle arbitrary input data, this project
-includes additional supporting modules for performing classification on video
-data. For the first case study, Minerva is used to perform automatic gesture
-recognition.  
-
-The labeled dataset used for training was obtained from http://www.kaggle.com/c/multi-modal-gesture-recognition
+Although Minerva is designed to handle arbitrary input data such as unformatted
+text or audio, this project includes additional supporting modules for performing
+classification on video data. 
 
 ## 1. Unsupervised Learning
 
@@ -59,13 +62,42 @@ information in that data. After training on unlabeled data, the inner layers
 of this network can be used directly as features; in other words, the network
 itself becomes a feature selection system. 
 
-The details of sparse autoencoders are described here
-http://stanford.edu/class/cs294a/sparseAutoencoder.pdf .  
+The following image includes a visualization of some of the low level features
+(inputs that a pooling layer neuron maximally responds to) that were learned by Minerva after
+being presented 10,000 random images.  
+
+![Layer One Features](/documentation/tech-report/images/layer1-features-64x64-network.jpg "Layer One Feature Responses")
+
+These compare favorably to Gabor Filter function responses in the top-left of the following figure, which have been found
+in the first layers of the visual cortex in mammalians, and perform well at visual classification tasks: 
+
+![Layer One Features](/documentation/tech-report/images/SoftFeatures.png "Gabor Function Responses and Spatial Domain Representation")
+
+From this paper:
+>    Stanton R. Price ; Derek T. Anderson ; Robert H. Luke ; Kevin Stone ; James M. Keller; 
+>    Automatic detection system for buried explosive hazards in FL-LWIR based on soft feature
+>    extraction using a bank of Gabor energy filters. Proc. SPIE 8709, Detection and Sensing of
+>    Mines, Explosive Objects, and Obscured Targets XVIII, 87091B (June 7, 2013);
+
+The accompanying figure on the top-right shows the corresponding spatial domain representation (inpulse response) of each of the Gabor Filters.
+
+The details of sparse autoencoders are described here http://stanford.edu/class/cs294a/sparseAutoencoder.pdf .  
+
+Minerva is influenced by the following research groups in deep learning:
+
+* Andrew Ng (Automatic Feature Selection): http://ufldl.stanford.edu/wiki/index.php/UFLDL_Tutorial
+* Yann Lecun (Learning Feature Hierarchies): http://www.cs.nyu.edu/~yann/talks/lecun-20110505-lip6.pdf
+    * Convolutional and Pooling Networks: http://deeplearning.net/tutorial/lenet.html
 
 ## 2. Supervised Learning
 
 Minerva uses a well known design involving an artificial neural network for supervised learning.  The input
 data is preprocessed using the feature selection network.  
+
+The following image shows the neural network input that produces the maximum response for a neuron trained
+using Minerva to recognize images of cats.
+
+![Cat Neuron](/documentation/tech-report/images/cat-response-convolutional.jpg "Cat Neuron Response")
 
 ## 3. Classification
 
@@ -83,8 +115,8 @@ data sets. It uses three principles to achieve high performance.
 * Design convolutional neural networks in the first few layers to reduce the computational complexity of large networks.
 
 A long term vision for this project is to scale to millions of input features
-on single node systems, and billions of input features on thousand node
-clusters.
+on single node systems (handle mega-pixel images without any downsampling), and
+billions of input features on thousand node clusters.
 
 # System
 The system is composed of the following main component libraries:
@@ -102,9 +134,14 @@ These libraries are used internally by the following interfaces:
 * The classification module
 
 In Minerva, the classification system is called a Model.  Models contain a serialized representation
-of the entire system, including all neural networks and associated metadata.  The model builder is used to create a blank model with new parameters (network topology, labels, etc).
+of the entire system, including all neural networks and associated metadata.  The model builder is
+used to create a blank model with new parameters (network topology, labels, etc).
 
-Once a model has been created, it can be updated with supervised or unsupervised learning, or it can be used directly to perform classification.  Minerva currently supports video and image input data sets, but none of the modules are tied to this representation.  Supporting a new input format (e.g. text or numeric data) would simply require a new driver application that converts the input into a standardized vector of floating point values, and presents it to the existing models.
+Once a model has been created, it can be updated with supervised or unsupervised learning, or it
+can be used directly to perform classification.  Minerva currently supports video and image input
+data sets, but none of the modules are tied to this representation.  Supporting a new input format
+(e.g. text or numeric data) would simply require a new data conversion component that transforms the input
+into a standardized vector of floating point values, and presents it to the existing models.
 
 The details of the libraries and modules are described next.
 
@@ -115,20 +152,22 @@ The details of the libraries and modules are described next.
 ### The optimization library
 
  The optimization library aims to reduce the difference between the actual output (from the labeled data) and the output predicted by the neural network by modifying individual neuron weights. This library contains multiple implementations. 
-a.) Gradient descent with linear simulated annealing
-b.) The Multilevel optimizer uses a greedy heurisitc with simulated annealing and local search (with tabu search)
+a.) Gradient descent with linear simulated annealing.
+b.) The Multilevel optimizer uses a greedy heurisitc with simulated annealing and local search (with tabu search).
+c.) The Broyden–Fletcher–Goldfarb–Shanno algorithm (an approximation of the Simplex method for unconstrained linear optimization).
+d.) Multi-level coordinate search (TBD) (an approximation of the branch and bound method for uncontrained linear optimization).
 
 ### The linear algebra library
 
- The linear algebra library leverages the optimized Matrix operations from pre-existing implementations. The smallest unit for calculations in the neural network & optimizer is the Matrix. The linear algebra library translates these into calls to the Matrix library.
+ The linear algebra library leverages the optimized Matrix operations from pre-existing implementations (ATLAS or CUBLAS). The smallest unit for calculations in the neural network & optimizer is the Matrix. The linear algebra library translates these into calls to the Matrix library.  There is a SparseMatrix wrapper class that is used to implement sparse (convolutional/pooling) neural network layers.  
 
 ### The video library
 
- OpenCV is used for all the image processing required in this project. The input video is converted into a series of images. These images are then converted to a lower resolution and then finally to a matrix of pixel values. The resolution chosen depends on the size of the neural network.  For a sufficiently large network, no downsampling is performed and the network is connected directly to raw pixel values.
+ OpenCV is used for all the image processing required in this project. The input video is converted into a series of images. These images are then converted to a lower resolution (using tiling) and then finally to a matrix of pixel values.  Pixel values are standardized and then passed, and then can be passed directly into a network. The resolution chosen depends on the size of the neural network.  For a sufficiently large network, no downsampling is performed and the network is connected directly to raw pixel values.
 
 ### The model builder
 
- At each of the following steps, the neural network generated is written out to the disk. The network is a represented as a model with various attributes and their corresponding values. This model is then serialized and written to a compressed file. Writing these models decouples each step and thus allows the capability of resuming with the help of a model file. Eg: The unsupervised learning step takes many hours of running video to automatically generate a feature selector neural network. This network can be saved to a file and then reused with different sets of training data to create a classification neural network. This saves the time required to rerun the unsupervised learning step.
+ At each of the following steps, the neural network generated may be written out to the disk. The network is a represented as a model with various attributes and their corresponding values. This model is then serialized and written to a compressed file. Writing these models decouples each step and thus allows the capability of resuming with the help of a model file. Eg: The unsupervised learning step takes many hours of running video to automatically generate a feature selector neural network. This network can be saved to a file and then reused with different sets of training data to create a classification neural network. This saves the time required to rerun the unsupervised learning step.
 
 ### The unsupervised learning module
 
@@ -141,5 +180,5 @@ The idea behind a sparse autoencoder is that features in some data can be attrib
 
 ### The classification module
 
- This module uses both the neural network (the feature selector from the unsupervised learning step) and the classifier neural network (from the supervised learning step) to classify gestures in test images.
+ This module uses both the neural network (the feature selector from the unsupervised learning step) and the classifier neural network (from the supervised learning step) to perform classification in test images.  It is really a convience interface that abstracts some of the low level operations involved in setting up the input data and training the networks contained in a model.  It presents a clean interface for feeding input labeled or unlabeled data to the model.  Operations like random sampling and input caching are automated using the classification module framework.  
 

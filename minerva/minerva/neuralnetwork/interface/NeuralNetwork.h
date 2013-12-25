@@ -20,52 +20,53 @@ namespace neuralnetwork
 
 class NeuralNetwork
 {
-    public:
-        typedef minerva::matrix::Matrix Matrix;
-        typedef minerva::matrix::BlockSparseMatrix BlockSparseMatrix;
-        typedef minerva::neuralnetwork::Layer Layer;
+	public:
+		typedef minerva::matrix::Matrix Matrix;
+		typedef minerva::matrix::BlockSparseMatrix BlockSparseMatrix;
+		typedef minerva::neuralnetwork::Layer Layer;
 
-        typedef std::map<unsigned, std::string> NeuronToLabelMap;
-        
-        typedef std::vector<Layer> LayerVector;
+		typedef std::map<unsigned, std::string> NeuronToLabelMap;
+		
+		typedef std::vector<Layer> LayerVector;
 
-        typedef LayerVector::iterator       iterator;
-        typedef LayerVector::const_iterator const_iterator;
+		typedef LayerVector::iterator	   iterator;
+		typedef LayerVector::const_iterator const_iterator;
 
-    public:
-        NeuralNetwork()
-        {
-        }
-    
+	public:
+		NeuralNetwork()
+		{
+		}
+	
 		void initializeRandomly(std::default_random_engine& engine, float epsilon = 0.3f);
-        void initializeRandomly(float epsilon = 0.3f);
-        
+		void initializeRandomly(float epsilon = 0.3f);
+		
 		void train(const Matrix& input, const Matrix& reference);
-		void train(const BlockSparseMatrix& input, const BlockSparseMatrix& reference);        
+		void train(const BlockSparseMatrix& input, const BlockSparseMatrix& reference);		
 
-        Matrix runInputs(const Matrix& m) const;
+		Matrix runInputs(const Matrix& m) const;
 		BlockSparseMatrix runInputs(const BlockSparseMatrix& m) const;
 
 	public:
 		float computeAccuracy(const Matrix& input, const Matrix& reference) const;
 		float computeAccuracy(const BlockSparseMatrix& input, const BlockSparseMatrix& reference) const;
-        
-    public:
-        std::string getLabelForOutputNeuron(unsigned int idx) const;
-        void setLabelForOutputNeuron(unsigned int idx, const std::string& label);
+		
+	public:
+		std::string getLabelForOutputNeuron(unsigned int idx) const;
+		void setLabelForOutputNeuron(unsigned int idx, const std::string& label);
 
 	public:
 		void mirror();
 		void cutOffSecondHalf();
 
-    public:
-        unsigned getInputCount()  const;
-        unsigned getOutputCount() const;
+	public:
+		unsigned getInputCount()  const;
+		unsigned getOutputCount() const;
 
 		unsigned getBlockingFactor() const;
 
 	public:
-		size_t totalWeights() const;
+		size_t totalWeights()     const;
+		size_t totalActivations() const;
 	
 	public:
 		Matrix getFlattenedWeights() const;
@@ -78,44 +79,44 @@ class NeuralNetwork
 		void formatInputForLayer(const Layer& layer, BlockSparseMatrix& m) const;
 		void formatOutputForLayer(const Layer& layer, BlockSparseMatrix& m) const;
 
-    public:
-        void addLayer(const Layer&);
-        unsigned getTotalLayerSize() const;
-        
-              LayerVector* getLayers();
-        const LayerVector* getLayers() const;
+	public:
+		void addLayer(const Layer&);
+		unsigned getTotalLayerSize() const;
+		
+		      LayerVector* getLayers();
+		const LayerVector* getLayers() const;
 
 	public:
 		void resize(size_t layers);
 
 		void clear();
 
-    public:
-        iterator       begin();
-        const_iterator begin() const;
+	public:
+		iterator       begin();
+		const_iterator begin() const;
 
-        iterator       end();
-        const_iterator end() const;
+		iterator       end();
+		const_iterator end() const;
 
-    public:
-              Layer& operator[](size_t index);
-        const Layer& operator[](size_t index) const;
+	public:
+		      Layer& operator[](size_t index);
+		const Layer& operator[](size_t index) const;
 
-    public:
-              Layer& back();
-        const Layer& back() const;
-    
-    public:
-              Layer& front();
-        const Layer& front() const;
-    
-    public:
-        unsigned int size() const;
-        bool         empty() const;
-    
-    private:
-        LayerVector m_layers;
-        NeuronToLabelMap m_labels;
+	public:
+		      Layer& back();
+		const Layer& back() const;
+	
+	public:
+		      Layer& front();
+		const Layer& front() const;
+	
+	public:
+		unsigned int size() const;
+		bool         empty() const;
+	
+	private:
+		LayerVector m_layers;
+		NeuronToLabelMap m_labels;
 
 };
 

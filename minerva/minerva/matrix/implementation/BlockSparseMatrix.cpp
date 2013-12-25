@@ -353,6 +353,32 @@ BlockSparseMatrix BlockSparseMatrix::sigmoid() const
 	
 	return result;
 }
+	
+BlockSparseMatrix BlockSparseMatrix::klDivergence(float sparsity) const
+{
+	BlockSparseMatrix result(isRowSparse());
+
+	// TODO: in parallel
+	for(auto& matrix : *this)
+	{
+		result.push_back(matrix.klDivergence(sparsity));
+	}
+	
+	return result;
+}
+
+BlockSparseMatrix BlockSparseMatrix::klDivergenceDerivative(float sparsity) const
+{
+	BlockSparseMatrix result(isRowSparse());
+
+	// TODO: in parallel
+	for(auto& matrix : *this)
+	{
+		result.push_back(matrix.klDivergence(sparsity));
+	}
+	
+	return result;
+}
 
 BlockSparseMatrix BlockSparseMatrix::transpose() const
 {
@@ -495,6 +521,43 @@ float BlockSparseMatrix::reduceSum() const
 	}
 	
 	return sum;
+}
+
+BlockSparseMatrix BlockSparseMatrix::reduceSumAlongColumns() const
+{
+	BlockSparseMatrix result(isRowSparse());
+	
+	// TODO: in parallel
+	if(isColumnSparse())
+	{
+		if(!empty())
+		{
+			auto matrix = begin();
+			
+			auto resultMatrix = matrix->reduceSumAlongColumns();
+
+			for(++matrix; matrix != end(); ++matrix)
+			{
+				resultMatrix = resultMatrix.add(matrix->reduceSumAlongColumns());
+			}
+			
+			result.push_back(resultMatrix);
+		}
+	}
+	else
+	{
+		for(auto& matrix : *this)
+		{
+			result.push_back(matrix.reduceSumAlongColumns());
+		}
+	}
+	
+	return result;
+}
+
+BlockSparseMatrix BlockSparseMatrix::reduceSumAlongRows() const
+{
+	return transpose().reduceSumAlongColumns().transpose();
 }
 
 std::string BlockSparseMatrix::toString() const
