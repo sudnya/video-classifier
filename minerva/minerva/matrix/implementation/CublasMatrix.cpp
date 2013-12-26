@@ -516,8 +516,8 @@ void CublasMatrix::sigmoidDerivativeSelf()
 static float klDivergence(float value, float sparsity)
 {
 	// f(x,y) = y * log(y/x) + (1-y) * log((1 - y)/(1 - x))
-	if(value > 1.0f) value = 1.0f;
-	if(value < 0.0f) value = 0.0f;
+	if(value > 0.999f) value = 0.999f;
+	if(value < 0.0f  ) value = 0.0f;
 
 	return sparsity * std::log(sparsity / value) +
 		(1.0f - sparsity) * std::log((1.0f - sparsity) / (1.0f - value));
@@ -527,8 +527,8 @@ static float klDivergenceDerivative(float value, float sparsity)
 {
 	// f(x,y) = y * log(y/x) + (1-y) * log((1 - y)/(1 - x))
 	// dy/dx = f'(x,y) = (-y/x + (1-y)/(1-x))
-	if(value > 1.0f) value = 1.0f;
-	if(value < 0.0f) value = 0.0f;
+	if(value > 0.999f) value = 0.999f;
+	if(value < 0.0f  ) value = 0.0f;
 
 	return (-sparsity / value + (1.0f - sparsity)/(1.0f - value));
 }
