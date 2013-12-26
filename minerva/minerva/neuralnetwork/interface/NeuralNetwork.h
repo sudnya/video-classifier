@@ -33,10 +33,9 @@ class NeuralNetwork
 		typedef LayerVector::const_iterator const_iterator;
 
 	public:
-		NeuralNetwork()
-		{
-		}
-	
+		NeuralNetwork();
+
+	public:
 		void initializeRandomly(std::default_random_engine& engine, float epsilon = 0.3f);
 		void initializeRandomly(float epsilon = 0.3f);
 		
@@ -113,10 +112,16 @@ class NeuralNetwork
 	public:
 		unsigned int size() const;
 		bool         empty() const;
+
+	public:
+		void setUseSparseCostFunction(bool shouldUse);
 	
 	private:
 		LayerVector m_layers;
 		NeuronToLabelMap m_labels;
+	
+	private:
+		bool _useSparseCostFunction;
 
 };
 

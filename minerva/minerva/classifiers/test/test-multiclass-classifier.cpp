@@ -18,6 +18,7 @@
 
 #include <minerva/util/interface/debug.h>
 #include <minerva/util/interface/ArgumentParser.h>
+#include <minerva/util/interface/Knobs.h>
 
 #include <minerva/visualization/interface/NeuronVisualizer.h>
 
@@ -81,6 +82,8 @@ static void createAndInitializeNeuralNetworks(
 	util::log("TestMulticlassClassifier")
 		<< "Building feature selector network with "
 		<< featureSelector.getOutputCount() << " output neurons\n";
+
+	featureSelector.setUseSparseCostFunction(true);
 
 	model.setNeuralNetwork("FeatureSelector", featureSelector);
 

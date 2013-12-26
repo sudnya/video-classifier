@@ -41,9 +41,9 @@ SparseBackPropagation::SparseBackPropagation(NeuralNetwork* ann,
 	BlockSparseMatrix* ref)
 : BackPropagation(ann, input, ref), _lambda(0.0f), _sparsity(0.0f), _sparsityWeight(0.0f)
 {
-	_lambda         = util::KnobDatabase::getKnobValue("NeuralNetwork::Lambda",         0.1f );
+	_lambda         = util::KnobDatabase::getKnobValue("NeuralNetwork::Lambda",         0.05f );
 	_sparsity       = util::KnobDatabase::getKnobValue("NeuralNetwork::Sparsity",       0.05f);
-	_sparsityWeight = util::KnobDatabase::getKnobValue("NeuralNetwork::SparsityWeight", 0.1f );
+	_sparsityWeight = util::KnobDatabase::getKnobValue("NeuralNetwork::SparsityWeight", 0.10f );
 }
 
 MatrixVector SparseBackPropagation::getCostDerivative(const NeuralNetwork& neuralNetwork,
@@ -71,7 +71,7 @@ static float computeCostForNetwork(const NeuralNetwork& network, const BlockSpar
 	//		   regularization term lambda/2m sum over l,i,j (theta[i,j])^2
 	// J = (1/m) .* sum(sum(-yOneHot .* log(hx) - (1 - yOneHot) .* log(1 - hx)));
 
-	const float epsilon = 0.000001f;
+	const float epsilon = 1.0e-6f;
 
 	unsigned m = input.rows();
 

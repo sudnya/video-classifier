@@ -25,6 +25,12 @@ namespace minerva
 namespace neuralnetwork
 {
 
+NeuralNetwork::NeuralNetwork()
+: _useSparseCostFunction(false)
+{
+
+}
+
 void NeuralNetwork::initializeRandomly(std::default_random_engine& engine, float epsilon)
 {
 	util::log("NeuralNetwork") << "Initializing neural network randomly.\n";
@@ -54,7 +60,16 @@ void NeuralNetwork::train(const Matrix& inputMatrix, const Matrix& referenceOutp
 	auto inputData     = convertToBlockSparseForLayerInput(front(), inputMatrix);
 	auto referenceData = convertToBlockSparseForLayerOutput(back(), referenceOutput);
 
-	auto backPropagationType = util::KnobDatabase::getKnobValue("BackPropagation::Type", "SparseBackPropagation");
+	std::string backPropagationType;
+
+	if(_useSparseCostFunction)
+	{
+		backPropagationType = "SparseBackPropagation";
+	}
+	else
+	{
+		backPropagationType = util::KnobDatabase::getKnobValue("BackPropagation::Type", "DenseBackPropagation");
+	}
 
 	auto backPropagation = BackPropagationFactory::create(backPropagationType);
 
