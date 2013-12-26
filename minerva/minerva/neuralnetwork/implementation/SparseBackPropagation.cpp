@@ -127,16 +127,19 @@ static MatrixVector getDeltas(const NeuralNetwork& network, const MatrixVector& 
 		unsigned int layerNumber = std::distance(activations.begin(), --(i.base()));
 		//util::log ("SparseBackPropagation") << " Layer number: " << layerNumber << "\n";
 		auto& layer = network[layerNumber];
+		auto& activation = *i;		
+
+		size_t samples = i->rows();
 
 		network.formatOutputForLayer(layer, deltas.back());
 
-		auto activationDerivativeOfCurrentLayer = i->sigmoidDerivative();
+		auto activationDerivativeOfCurrentLayer = activation.sigmoidDerivative();
 		auto deltaPropagatedReverse = layer.runReverse(deltas.back());
 		
 		// add in the sparsity term
-		auto klDivergenceDerivative = i->reduceSumAlongRows().multiply(1.0f/i->rows()).klDivergenceDerivative(sparsity);
+		auto klDivergenceDerivative = activation.reduceSumAlongRows().multiply(1.0f/samples).klDivergenceDerivative(sparsity);
 
-		auto sparsityTerm = klDivergenceDerivative.multiply(sparsityWeight/i->rows());
+		auto sparsityTerm = klDivergenceDerivative.multiply(sparsityWeight/samples);
 	   
 		delta = deltaPropagatedReverse.elementMultiply(activationDerivativeOfCurrentLayer).addBroadcastRow(sparsityTerm);
 
@@ -166,13 +169,15 @@ static BlockSparseMatrix getInputDelta(const NeuralNetwork& network, const Matri
 
 		network.formatOutputForLayer(layer, delta);
 
+		size_t samples = i->rows();
+
 		auto activationDerivativeOfCurrentLayer = i->sigmoidDerivative();
 		auto deltaPropagatedReverse = layer.runReverse(delta);
 
 		// add in the sparsity term
-		auto klDivergenceDerivative = i->reduceSumAlongRows().multiply(1.0f/i->rows()).klDivergenceDerivative(sparsity);
+		auto klDivergenceDerivative = i->reduceSumAlongRows().multiply(1.0f/samples).klDivergenceDerivative(sparsity);
 
-		auto sparsityTerm = klDivergenceDerivative.multiply(sparsityWeight/i->rows());
+		auto sparsityTerm = klDivergenceDerivative.multiply(sparsityWeight/samples);
 
 		util::log ("SparseBackPropagation") << " Computing input delta for layer number: " << layerNumber << "\n";
 		delta = deltaPropagatedReverse.elementMultiply(activationDerivativeOfCurrentLayer).addBroadcastRow(sparsityTerm);

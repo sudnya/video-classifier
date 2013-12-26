@@ -119,7 +119,8 @@ public:
 	BlockSparseMatrix reduceSumAlongRows() const;
 
 public:
-	std::string toString() const;
+	std::string toString()    const;
+	std::string debugString() const;
 
 private:
 	MatrixVector _matrices;

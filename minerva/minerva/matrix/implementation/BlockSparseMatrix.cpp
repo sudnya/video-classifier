@@ -557,14 +557,51 @@ BlockSparseMatrix BlockSparseMatrix::reduceSumAlongColumns() const
 
 BlockSparseMatrix BlockSparseMatrix::reduceSumAlongRows() const
 {
-	return transpose().reduceSumAlongColumns().transpose();
+	BlockSparseMatrix result(isRowSparse());
+	
+	// TODO: in parallel
+	if(isRowSparse())
+	{
+		if(!empty())
+		{
+			auto matrix = begin();
+			
+			auto resultMatrix = matrix->reduceSumAlongRows();
+
+			for(++matrix; matrix != end(); ++matrix)
+			{
+				resultMatrix = resultMatrix.add(matrix->reduceSumAlongRows());
+			}
+			
+			result.push_back(resultMatrix);
+		}
+	}
+	else
+	{
+		for(auto& matrix : *this)
+		{
+			result.push_back(matrix.reduceSumAlongRows());
+		}
+	}
+	
+	return result;
 }
 
 std::string BlockSparseMatrix::toString() const
 {
 	if(empty()) return "(0 rows, 0 columns) []";
-	
-	return front().toString();
+
+	std::stringstream stream;
+
+	stream << "((" << blocks() << " blocks, " << rows()
+		<< " rows, " << columns() << " columns)) - [ " << front().toString();
+
+	return stream.str();
+}
+
+std::string BlockSparseMatrix::debugString() const
+{
+	return toString();
 }
 
 }

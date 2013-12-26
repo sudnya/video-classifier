@@ -124,6 +124,7 @@ public:
 public:
     float  reduceSum()             const;
 	Matrix reduceSumAlongColumns() const;
+	Matrix reduceSumAlongRows()    const;
 
 public:
 	const FloatVector& data() const;
@@ -135,6 +136,7 @@ public:
 
 public:
     std::string toString(size_t maxRows = 10, size_t maxColumns = 10) const;
+	std::string debugString() const;
 
 private:
 	Matrix(MatrixImplementation* implementation);

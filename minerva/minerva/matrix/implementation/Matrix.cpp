@@ -387,6 +387,12 @@ Matrix Matrix::reduceSumAlongColumns() const
 	return Matrix(_matrix->reduceSumAlongColumns());
 }
 
+Matrix Matrix::reduceSumAlongRows() const
+{
+	// TODO implement this
+	return transpose().reduceSumAlongColumns().transpose();
+}
+
 const Matrix::FloatVector& Matrix::data() const
 {
 	assert(_matrix != nullptr);
@@ -442,6 +448,11 @@ std::string Matrix::toString(size_t maxRows, size_t maxColumns) const
     stream << "]\n";
 
     return stream.str();
+}
+
+std::string Matrix::debugString() const
+{
+	return toString();
 }
 
 }
