@@ -454,6 +454,11 @@ bool NeuralNetwork::empty() const
 	return m_layers.empty();
 }
 
+void NeuralNetwork::setUseSparseCostFunction(bool shouldUse)
+{
+	_useSparseCostFunction = shouldUse;
+}
+
 }
 
 }
