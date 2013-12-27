@@ -4,20 +4,33 @@
 	\brief  A unit test for the performance of the neural network.
 */
 
-#pragma once
+// Minerva Includes
+#include <minerva/neuralnetwork/interface/NeuralNetwork.h>
+
+#include <minerva/model/interface/ClassificationModel.h>
+
+#include <minerva/util/interface/debug.h>
+#include <minerva/util/interface/ArgumentParser.h>
+#include <minerva/util/interface/Knobs.h>
+#include <minerva/util/interface/Timer.h>
+#include <minerva/util/interface/SystemCompatibility.h>
+
+// Standard Library Includes
+#include <random>
+#include <cstdlib>
+#include <memory>
+#include <cassert>
 
 namespace minerva
 {
 
 namespace neuralnetwork
 {
+
 typedef neuralnetwork::Layer Layer;
 typedef matrix::Matrix Matrix;
 typedef model::ClassificationModel ClassificationModel;
-typedef classifiers::LearnerEngine LearnerEngine;
-typedef classifiers::FinalClassifierEngine FinalClassifierEngine;
 typedef neuralnetwork::NeuralNetwork NeuralNetwork;
-typedef database::SampleDatabase SampleDatabase;
 
 static void createAndInitializeNeuralNetworks(
 	ClassificationModel& model,
@@ -81,35 +94,98 @@ static void createAndInitializeNeuralNetworks(
 	model.setNeuralNetwork("Classifier", classifier);
 }
 
-static void setupOutputNeuronLabels(ClassificationModel& model,
-	const std::string& trainingDatabasePath)
+static Matrix generateInput(NeuralNetwork& network, size_t samples,
+	std::default_random_engine& engine)
 {
-	auto& network = model.getNeuralNetwork("Classifier");
-	
-	SampleDatabase database(trainingDatabasePath);
+	size_t inputs = network.getInputCount();
 
-	auto labels = database.getAllPossibleLabels();
-	
-	assert(labels.size() == network.getOutputCount());
+	Matrix inputData(samples, inputs);
 
-	size_t labelCount = labels.size();
+	std::uniform_real_distribution<float> distribution(0.0f, 1.0f);
 
-	for(size_t i = 0; i < labelCount; ++i)
+	for(auto& value : inputData)
 	{
-		network.setLabelForOutputNeuron(i, labels[i]);
+		value = distribution(engine);
 	}
+
+	return inputData;
 }
 
-static size_t getNumberOfClasses(const std::string& trainingDatabasePath)
+static void trainFirstLayer(const Matrix& input, NeuralNetwork& neuralNetwork)
 {
-	SampleDatabase database(trainingDatabasePath);
+	NeuralNetwork copy;
 	
-	return database.getTotalLabelCount();
+	copy.addLayer(neuralNetwork.front());
+	
+	copy.mirror();
+
+	copy.train(input, input);
 }
 
-static void runTest(const std::string& trainingDatabasePath,
-	const std::string& testDatabasePath,
-	size_t iterations, size_t trainingIterations,
+static void reportUnsupervisedTrainingPerformance(NeuralNetwork& network,
+	const util::Timer& timer, size_t batchSize)
+{
+	// Compute the SOL flops required
+	size_t flops = network.getFloatingPointOperationCount() * 2;
+	
+	// Get the flops available on the current machine
+	size_t machineFlops = util::getMachineFlops();
+	
+	// Speed of light performance (seconds)
+	double speedOfLight = ((flops + 0.0) / (machineFlops + 0.0));
+
+	// Compute the slowdown over SOL
+	double slowdown = timer.seconds() / speedOfLight;
+
+	// Compare it to the actual runtime
+	std::cout << "Unsupervised Learning Performance:\n";
+	std::cout << " Network Connections: " << network.totalConnections() << "\n";
+	std::cout << " Network Neurons:     " << network.totalNeurons()     << "\n";
+	std::cout << " FLOPs required:      " << flops                      << "\n";
+	std::cout << " Machine FLOPS:       " << machineFlops               << "\n";
+	std::cout << " Speed of light:      " << speedOfLight               << "\n";
+	std::cout << "\n";
+	std::cout << " SLOWDOWN:            " << slowdown                   << "x\n";
+
+}
+
+static void benchmarkFeatureSelectorTraining(ClassificationModel& model,
+	size_t iterations, size_t batchSize, std::default_random_engine& engine)
+{
+	auto& featureSelector = model.getNeuralNetwork("FeatureSelector");
+	
+	// generate reference data
+	auto referenceData = generateInput(featureSelector, batchSize, engine);
+	
+	// Time training
+	util::Timer timer;
+
+	timer.start();
+	
+	for(size_t i = 0; i < iterations; ++i)
+	{
+		// train
+		trainFirstLayer(referenceData, featureSelector);
+	}
+
+	timer.stop();
+
+	reportUnsupervisedTrainingPerformance(featureSelector, timer, batchSize);
+}
+
+static void benchmarkClassifierTraining(ClassificationModel& model,
+	size_t iterations, size_t batchSize, std::default_random_engine& engine)
+{
+	
+}
+
+static void benchmarkClassification(ClassificationModel& model,
+	size_t iterations, size_t batchSize, std::default_random_engine& engine)
+{
+
+}
+
+static void runTest(size_t iterations, size_t trainingIterations,
 	size_t batchSize, size_t classificationIterations,
 	size_t xPixels, size_t yPixels, size_t colors,
 	bool seed)
@@ -125,21 +201,15 @@ static void runTest(const std::string& trainingDatabasePath,
 	ClassificationModel model;
 	
 	// initialize the model, one feature selector network and one classifier network
-    createAndInitializeNeuralNetworks(model, xPixels, yPixels, colors,
-		getNumberOfClasses(testDatabasePath), generator); 
-	setupOutputNeuronLabels(model, testDatabasePath);
+    createAndInitializeNeuralNetworks(model, xPixels, yPixels, colors, 20, generator); 
+
+	// benchmark the three main compute phases	
+	benchmarkFeatureSelectorTraining(model, iterations, batchSize, generator);
 	
-	trainFeatureSelector(model, trainingDatabasePath, iterations, batchSize);
-	trainClassifier(model, trainingDatabasePath, trainingIterations, batchSize);
+	benchmarkClassifierTraining(model, trainingIterations, batchSize, generator);
 
-    // Run classifier and record accuracy
-    float accuracy = classify(model, testDatabasePath, classificationIterations,
-		displayClassifiedImages);
-
-    // Test if accuracy is greater than threshold
-    const float threshold = 0.95;
-    if (accuracy > threshold)
-   
+    benchmarkClassification(model, classificationIterations, batchSize, generator);
+}
 
 }
 
@@ -153,9 +223,6 @@ int main(int argc, char** argv)
     bool seed = false;
     std::string loggingEnabledModules;
 
-	std::string trainingPaths;
-	std::string testPaths;
-	
 	size_t xPixels = 0;
 	size_t yPixels = 0;
 	size_t colors  = 0;
@@ -166,12 +233,6 @@ int main(int argc, char** argv)
 
     parser.description("The minerva neural network benchmark.");
 
-	parser.parse("-t", "--training-data-path", trainingPaths,
-		"examples/multiclass/multiclass-training-database.txt",
-        "The path to the training file.");
-    parser.parse("-e", "--test-data-path", testPaths,
-		"examples/multiclass/multiclass-test-database.txt",
-        "The path to the test file.");
     parser.parse("-i", "--iterations", iterations, 2,
         "The number of iterations to run unsupervised learning for.");
     parser.parse("-T", "--training-iterations", trainingIterations, 2,
@@ -208,13 +269,13 @@ int main(int argc, char** argv)
     
     try
     {
-        minerva::neuralnetwork::runTest(trainingPaths, testPaths, 
+        minerva::neuralnetwork::runTest(
 			iterations, trainingIterations, batchSize, classificationIterations,
 			xPixels, yPixels, colors, seed);
     }
     catch(const std::exception& e)
     {
-        std::cout << "Minerva Multiclass Classifier Test Failed:\n";
+        std::cout << "Minerva Neural Network Performance Test Failed:\n";
         std::cout << "Message: " << e.what() << "\n\n";
     }
 

@@ -31,7 +31,11 @@ public:
 public:
 	const NeuralNetwork& getNeuralNetwork(const std::string& name) const;
 	NeuralNetwork& getNeuralNetwork(const std::string& name);
+
+public:
 	bool containsNeuralNetwork(const std::string& name) const;
+
+public:
 	void setNeuralNetwork(const std::string& name, const NeuralNetwork& n);
 	void setInputImageResolution(unsigned int x, unsigned int y, unsigned int colors);
 

@@ -64,6 +64,8 @@ tools.append(env.Program('test-multiclass-classifier', \
 	['minerva/classifiers/test/test-multiclass-classifier.cpp'], LIBS=minerva_libs))
 tools.append(env.Program('test-minerva-display', \
 	['minerva/video/test/test-display.cpp'], LIBS=minerva_libs))
+tools.append(env.Program('test-minerva-performance', \
+	['minerva/neuralnetwork/test/test-neuralnetwork-performance.cpp'], LIBS=minerva_libs))
 
 for tool in tools:
 	env.Depends(tool, libminerva)

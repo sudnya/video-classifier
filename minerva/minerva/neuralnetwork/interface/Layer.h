@@ -51,6 +51,9 @@ class Layer
 		unsigned getOutputBlockingFactor() const;
 
 	public:
+		size_t getFloatingPointOperationCount() const;
+
+	public:
 		BlockSparseMatrix getWeightsWithoutBias() const;
         
     public:

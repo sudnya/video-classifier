@@ -14,6 +14,10 @@ Run:
  
  scons install=true
 
+  OR, for more options:
+
+ scons -h 
+
 If you are on another operating system, follow the
 examples in osx.sh or ubuntu-64-environment.sh to
 set up the environment for your system.

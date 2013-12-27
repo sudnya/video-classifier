@@ -108,6 +108,12 @@ unsigned Layer::getOutputBlockingFactor() const
 	return m_sparseMatrix.front().columns();
 }
 
+size_t Layer::getFloatingPointOperationCount() const
+{
+	// blocks * blockInputs^2 * blockOutputs
+	return blocks() * getBlockingFactor() * getBlockingFactor() * getOutputBlockingFactor();
+}
+
 Layer::BlockSparseMatrix Layer::getWeightsWithoutBias() const
 {
 	BlockSparseMatrix result;

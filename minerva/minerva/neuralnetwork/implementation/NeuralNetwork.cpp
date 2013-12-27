@@ -249,7 +249,7 @@ void NeuralNetwork::cutOffSecondHalf()
 	resize(size() - 1);
 }
 
-unsigned NeuralNetwork::getInputCount() const
+size_t NeuralNetwork::getInputCount() const
 {
 	if(empty())
 		return 0;
@@ -257,7 +257,7 @@ unsigned NeuralNetwork::getInputCount() const
 	return front().getInputCount();
 }
 
-unsigned NeuralNetwork::getBlockingFactor() const
+size_t NeuralNetwork::getBlockingFactor() const
 {
 	if(empty())
 		return 0;
@@ -265,12 +265,34 @@ unsigned NeuralNetwork::getBlockingFactor() const
 	return front().getBlockingFactor();
 }
 
-unsigned NeuralNetwork::getOutputCount() const
+size_t NeuralNetwork::getOutputCount() const
 {
 	if(empty())
 		return 0;
 
 	return back().getOutputCount();
+}
+
+size_t NeuralNetwork::totalConnections() const
+{
+	return totalWeights();
+}
+
+size_t NeuralNetwork::getFloatingPointOperationCount() const
+{
+	size_t flops = 0;
+
+	for(auto& layer : *this)
+	{
+		flops += layer.getFloatingPointOperationCount();
+	}
+	
+	return flops;
+}
+
+size_t NeuralNetwork::totalNeurons() const
+{
+	return totalActivations();
 }
 
 size_t NeuralNetwork::totalWeights() const

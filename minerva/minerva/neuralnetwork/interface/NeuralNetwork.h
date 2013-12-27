@@ -58,10 +58,17 @@ class NeuralNetwork
 		void cutOffSecondHalf();
 
 	public:
-		unsigned getInputCount()  const;
-		unsigned getOutputCount() const;
+		size_t getInputCount()  const;
+		size_t getOutputCount() const;
 
-		unsigned getBlockingFactor() const;
+		size_t getBlockingFactor() const;
+	
+	public:
+		size_t totalNeurons()     const;
+		size_t totalConnections() const;
+
+	public:
+		size_t getFloatingPointOperationCount() const;
 
 	public:
 		size_t totalWeights()     const;
