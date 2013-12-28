@@ -248,7 +248,7 @@ int main(int argc, char** argv)
 
     parser.description("The Minerva image classifier.");
 
-    parser.parse("-i", "--iterations", iterations, 1000,
+    parser.parse("-i", "--iterations", iterations, 4,
         "The number of iterations to train for");
     parser.parse("-L", "--log-module", loggingEnabledModules, "",
 		"Print out log messages during execution for specified modules "

@@ -94,6 +94,18 @@ static void createAndInitializeNeuralNetworks(
 	model.setNeuralNetwork("Classifier", classifier);
 }
 
+static void reportInitialStatistics(ClassificationModel& model)
+{
+	auto& featureSelector = model.getNeuralNetwork("FeatureSelector");
+	auto& classifier      = model.getNeuralNetwork("Classifier");
+
+	// Memory requirements for each network
+	double megabytes = ((featureSelector.totalConnections() + classifier.totalConnections()) * 4.0) / (1.0e6);
+	
+	std::cout << "Initial Overheads:\n";
+	std::cout << " Memory required:     " << megabytes << " MB\n";
+}
+
 static Matrix generateInput(NeuralNetwork& network, size_t samples,
 	std::default_random_engine& engine)
 {
@@ -124,6 +136,11 @@ static void trainFirstLayer(const Matrix& input, NeuralNetwork& neuralNetwork)
 	neuralNetwork.front() = std::move(copy.front());
 }
 
+static double toGiga(size_t value)
+{
+	return value / 1.0e9;
+}
+
 static void reportUnsupervisedTrainingPerformance(NeuralNetwork& network,
 	const util::Timer& timer, size_t iterations, size_t batchSize)
 {
@@ -131,8 +148,9 @@ static void reportUnsupervisedTrainingPerformance(NeuralNetwork& network,
 	// 1 * network layer 1 flops 
 	// 2 * forward and back prop
 	// 2 * extra training layer
-	// 5 * bfgs iterations 
-	size_t flops = network.front().getFloatingPointOperationCount() * 2 * 2 * 5;
+	// 5 * bfgs iterations
+	// 1 * batch size
+	size_t flops = network.front().getFloatingPointOperationCount() * 2 * 2 * 5 * batchSize;
 	
 	// Get the flops available on the current machine
 	size_t machineFlops = util::getMachineFlops();
@@ -144,17 +162,19 @@ static void reportUnsupervisedTrainingPerformance(NeuralNetwork& network,
 	double slowdown = timer.seconds() / (speedOfLight);
 
 	// Compute the memory requirements
-	double megabytes = (network.front().totalConnections() * 4.0 * 2.0) / (1.0e6);
+	//  4 bytes per float
+	//  2 layers (original + mirrored)
+	double megabytes = (network.front().totalConnections() * 4.0) / (1.0e6);
 
 	// Compare it to the actual runtime
 	std::cout << "Unsupervised Learning Performance:\n";
 	std::cout << " Network Connections: " << network.front().totalConnections() << "\n";
 	std::cout << " Network Neurons:     " << network.front().totalNeurons()     << "\n";
-	std::cout << " FLOPs required:      " << flops                              << "\n";
+	std::cout << " FLOPs required:      " << toGiga(flops)                      << " GFLOPS\n";
 	std::cout << " Memory required:     " << megabytes                          << " MB\n";
-	std::cout << " Machine FLOPS:       " << machineFlops                       << "\n";
-	std::cout << " Speed of light:      " << speedOfLight                       << "\n";
-	std::cout << " Minerva time:        " << timer.seconds()                    << "\n";
+	std::cout << " Machine FLOPS:       " << toGiga(machineFlops)               << " GFLOPS\n";
+	std::cout << " Speed of light:      " << speedOfLight                       << " seconds\n";
+	std::cout << " Minerva time:        " << timer.seconds()                    << " seconds\n";
 	std::cout << "\n";
 	std::cout << " CPU-SLOWDOWN:        " << slowdown                           << "x\n";
 
@@ -220,6 +240,8 @@ static void runTest(size_t iterations, size_t trainingIterations,
 	
 	// initialize the model, one feature selector network and one classifier network
     createAndInitializeNeuralNetworks(model, xPixels, yPixels, colors, 20, generator); 
+
+	reportInitialStatistics(model);
 
 	// benchmark the three main compute phases	
 	benchmarkFeatureSelectorTraining(model, iterations, batchSize, generator);
