@@ -130,7 +130,7 @@ Matrix BackPropagation::flatten(const MatrixVector& matrices)
 
 Matrix BackPropagation::flatten(const BlockSparseMatrix& blockedMatrix)
 {
-	FloatVector flattenedData(blockedMatrix.size());
+	Matrix result(1, blockedMatrix.size());
 	
 	size_t position = 0;
 	
@@ -138,13 +138,13 @@ Matrix BackPropagation::flatten(const BlockSparseMatrix& blockedMatrix)
 	{
 		auto data = matrix.data();
 		
-		std::memcpy(&flattenedData[position], data.data(),
+		std::memcpy(&result[position], data.data(),
 			sizeof(float) * matrix.size());
 		
 		position += matrix.size();
 	}
 
-	return Matrix(1, blockedMatrix.size(), flattenedData);
+	return result;
 } 
 
 Matrix BackPropagation::getFlattenedWeights() const

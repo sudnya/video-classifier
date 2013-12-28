@@ -26,6 +26,10 @@ unsigned int getHardwareThreadCount();
 std::string getExecutablePath(const std::string& executableName);
 /*! \brief The amount of free physical memory */
 long long unsigned int getFreePhysicalMemory();
+/*! \brief Get an estimate of the max clock speed */
+long long unsigned int getMaxClockSpeed();
+/*! \brief Get an estimate of the number of fmas per clock per core */
+long long unsigned int getFMAsPerClockPerCore();
 /*! \brief Get an estimate of the machine Floating Point Operations per second */
 long long unsigned int getMachineFlops();
 /*! \brief Has there been an OpenGL context bound to this process */

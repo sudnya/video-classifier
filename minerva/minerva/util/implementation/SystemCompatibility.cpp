@@ -8,6 +8,7 @@
 // Minerva includes
 #include <minerva/util/interface/SystemCompatibility.h>
 
+// System Includes
 #ifdef HAVE_CONFIG_H
 #include <configure.h>
 #endif
@@ -27,6 +28,9 @@
 #else 
 	#error "Unknown system/compiler (WIN32, APPLE, and GNUC are supported)."
 #endif
+
+// Standard Library Includes
+#include <algorithm>
 
 namespace minerva
 {
@@ -59,7 +63,7 @@ unsigned int getHardwareThreadCount()
 			count = 1;
 		}
 	}
-	return count;
+	return std::max(1U, count);
 #elif __GNUC__
 	return sysconf(_SC_NPROCESSORS_ONLN);
 #endif
@@ -92,10 +96,22 @@ long long unsigned int getFreePhysicalMemory()
 	#endif
 }
 
+long long unsigned int getMaxClockSpeed()
+{
+	// 3ghz, TODO
+	return (1ULL << 30) * 3;
+}
+
+long long unsigned int getFMAsPerClockPerCore()
+{
+	// TODO: check for SSE
+	return 8;
+}
+
 long long unsigned int getMachineFlops()
 {
-	// TODO
-	return getHardwareThreadCount() * (1 << 30);
+	// TODO: check for GPUs
+	return getHardwareThreadCount() * getMaxClockSpeed() * getFMAsPerClockPerCore();
 }
 
 bool isAnOpenGLContextAvailable()

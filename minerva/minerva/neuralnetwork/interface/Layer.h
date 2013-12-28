@@ -36,6 +36,11 @@ class Layer
         Layer(unsigned totalBlocks = 0, size_t blockInput = 0,
         	size_t blockOutput = 0);
 
+		Layer(const Layer&);
+		Layer& operator=(const Layer&);
+		Layer& operator=(Layer&&);
+
+	public:
         void initializeRandomly(std::default_random_engine& engine, float epsilon = 0.3f);
         BlockSparseMatrix runInputs(const BlockSparseMatrix& m) const;
         BlockSparseMatrix runReverse(const BlockSparseMatrix& m) const;
@@ -52,6 +57,10 @@ class Layer
 
 	public:
 		size_t getFloatingPointOperationCount() const;
+	
+	public:
+		size_t totalNeurons()     const;
+		size_t totalConnections() const;
 
 	public:
 		BlockSparseMatrix getWeightsWithoutBias() const;
@@ -62,6 +71,11 @@ class Layer
     public:
 		Matrix getFlattenedWeights() const;
 		void setFlattenedWeights(const Matrix& m);
+
+	public:
+		void resize(size_t blocks);
+		void resize(size_t blocks, size_t blockInput,
+        	size_t blockOutput);
 
     public:
         iterator       begin();
@@ -80,7 +94,11 @@ class Layer
     public:
               Matrix& operator[](size_t index);
         const Matrix& operator[](size_t index) const;
-    
+   
+	public:
+              Matrix& at_bias(size_t index);
+        const Matrix& at_bias(size_t index) const;
+ 
     public:
               Matrix& back();
         const Matrix& back() const;

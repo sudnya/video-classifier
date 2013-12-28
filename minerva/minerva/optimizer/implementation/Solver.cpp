@@ -7,6 +7,7 @@
 #include <minerva/optimizer/interface/Solver.h>
 #include <minerva/optimizer/interface/GradientDescentSolver.h>
 #include <minerva/optimizer/interface/MultiLevelOptimizer.h>
+#include <minerva/optimizer/interface/TiledConvolutionalSolver.h>
 
 #include <minerva/util/interface/debug.h>
 #include <minerva/util/interface/Knobs.h>
@@ -24,8 +25,12 @@ void Solver::solve()
 Solver* Solver::create(BackPropagation* d)
 {
 	auto solverName = util::KnobDatabase::getKnobValue("Solver::Type",
-		"MultiLevelOptimizer");
+		"TiledConvolutionalSolver");
 	
+	if(solverName == "TiledConvolutionalSolver")
+	{
+		return new TiledConvolutionalSolver(d);
+	}
 	if(solverName == "MultiLevelOptimizer")
 	{
 		return new MultiLevelOptimizer(d);

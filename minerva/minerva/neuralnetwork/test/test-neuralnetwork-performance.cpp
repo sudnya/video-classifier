@@ -115,37 +115,48 @@ static void trainFirstLayer(const Matrix& input, NeuralNetwork& neuralNetwork)
 {
 	NeuralNetwork copy;
 	
-	copy.addLayer(neuralNetwork.front());
+	copy.addLayer(std::move(neuralNetwork.front()));
 	
 	copy.mirror();
 
 	copy.train(input, input);
+
+	neuralNetwork.front() = std::move(copy.front());
 }
 
 static void reportUnsupervisedTrainingPerformance(NeuralNetwork& network,
-	const util::Timer& timer, size_t batchSize)
+	const util::Timer& timer, size_t iterations, size_t batchSize)
 {
 	// Compute the SOL flops required
-	size_t flops = network.getFloatingPointOperationCount() * 2;
+	// 1 * network layer 1 flops 
+	// 2 * forward and back prop
+	// 2 * extra training layer
+	// 5 * bfgs iterations 
+	size_t flops = network.front().getFloatingPointOperationCount() * 2 * 2 * 5;
 	
 	// Get the flops available on the current machine
 	size_t machineFlops = util::getMachineFlops();
 	
 	// Speed of light performance (seconds)
-	double speedOfLight = ((flops + 0.0) / (machineFlops + 0.0));
+	double speedOfLight = ((flops * iterations + 0.0) / (machineFlops + 0.0));
 
 	// Compute the slowdown over SOL
-	double slowdown = timer.seconds() / speedOfLight;
+	double slowdown = timer.seconds() / (speedOfLight);
+
+	// Compute the memory requirements
+	double megabytes = (network.front().totalConnections() * 4.0 * 2.0) / (1.0e6);
 
 	// Compare it to the actual runtime
 	std::cout << "Unsupervised Learning Performance:\n";
-	std::cout << " Network Connections: " << network.totalConnections() << "\n";
-	std::cout << " Network Neurons:     " << network.totalNeurons()     << "\n";
-	std::cout << " FLOPs required:      " << flops                      << "\n";
-	std::cout << " Machine FLOPS:       " << machineFlops               << "\n";
-	std::cout << " Speed of light:      " << speedOfLight               << "\n";
+	std::cout << " Network Connections: " << network.front().totalConnections() << "\n";
+	std::cout << " Network Neurons:     " << network.front().totalNeurons()     << "\n";
+	std::cout << " FLOPs required:      " << flops                              << "\n";
+	std::cout << " Memory required:     " << megabytes                          << " MB\n";
+	std::cout << " Machine FLOPS:       " << machineFlops                       << "\n";
+	std::cout << " Speed of light:      " << speedOfLight                       << "\n";
+	std::cout << " Minerva time:        " << timer.seconds()                    << "\n";
 	std::cout << "\n";
-	std::cout << " SLOWDOWN:            " << slowdown                   << "x\n";
+	std::cout << " CPU-SLOWDOWN:        " << slowdown                           << "x\n";
 
 }
 
@@ -170,7 +181,7 @@ static void benchmarkFeatureSelectorTraining(ClassificationModel& model,
 
 	timer.stop();
 
-	reportUnsupervisedTrainingPerformance(featureSelector, timer, batchSize);
+	reportUnsupervisedTrainingPerformance(featureSelector, timer, iterations, batchSize);
 }
 
 static void benchmarkClassifierTraining(ClassificationModel& model,
@@ -185,6 +196,11 @@ static void benchmarkClassification(ClassificationModel& model,
 
 }
 
+static void setupKnobs()
+{
+	util::KnobDatabase::addKnob("LBFGSSolver::MaxIterations", "5");
+}
+
 static void runTest(size_t iterations, size_t trainingIterations,
 	size_t batchSize, size_t classificationIterations,
 	size_t xPixels, size_t yPixels, size_t colors,
@@ -196,6 +212,8 @@ static void runTest(size_t iterations, size_t trainingIterations,
 	{
 		generator.seed(std::time(0));
 	}
+
+	setupKnobs();
 
 	// Create a model for multiclass classification
 	ClassificationModel model;
@@ -239,9 +257,9 @@ int main(int argc, char** argv)
         "The number of iterations to train for.");
     parser.parse("-b", "--batch-size", batchSize, 30,
         "The number of images to use for each iteration.");
-    parser.parse("-x", "--x-pixels", xPixels, 16,
+    parser.parse("-x", "--x-pixels", xPixels, 32,
         "The number of X pixels to consider from the input image.");
-	parser.parse("-y", "--y-pixels", yPixels, 16,
+	parser.parse("-y", "--y-pixels", yPixels, 32,
 		"The number of Y pixels to consider from the input image");
 	parser.parse("-c", "--colors", colors, 3,
 		"The number of color components (e.g. RGB) to consider from the input image");

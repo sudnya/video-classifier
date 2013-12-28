@@ -67,8 +67,11 @@ public:
 	bool isRowSparse()    const;
 	bool isColumnSparse() const;
 
+	size_t getBlockingFactor() const;
+
 public:
 	void resize(size_t blocks, size_t rowsPerBlock, size_t columnsPerBlock);
+	void resize(size_t blocks);
 	void setColumnSparse();
 	void setRowSparse();
 

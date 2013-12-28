@@ -7,8 +7,14 @@
 
 #pragma once
 
-#include <minerva/neuralnetwork/interface/BackPropagation.h>
+// Minerva Includes
+#include <minerva/optimizer/interface/Solver.h>
+
+// Standard Library Includes
 #include <random>
+
+// Forward Declarations
+namespace minerva { namespace matrix { class Matrix; } }
 
 namespace minerva
 {

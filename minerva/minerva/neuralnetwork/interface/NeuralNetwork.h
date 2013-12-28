@@ -40,7 +40,8 @@ class NeuralNetwork
 		void initializeRandomly(float epsilon = 0.3f);
 		
 		void train(const Matrix& input, const Matrix& reference);
-		void train(const BlockSparseMatrix& input, const BlockSparseMatrix& reference);		
+		void train(Matrix&& input, Matrix&& reference);
+		void train(BlockSparseMatrix& input, BlockSparseMatrix& reference);		
 
 		Matrix runInputs(const Matrix& m) const;
 		BlockSparseMatrix runInputs(const BlockSparseMatrix& m) const;
@@ -87,6 +88,7 @@ class NeuralNetwork
 
 	public:
 		void addLayer(const Layer&);
+		void addLayer(Layer&&);
 		unsigned getTotalLayerSize() const;
 		
 		      LayerVector* getLayers();
@@ -117,8 +119,8 @@ class NeuralNetwork
 		const Layer& front() const;
 	
 	public:
-		unsigned int size() const;
-		bool         empty() const;
+		size_t size() const;
+		bool   empty() const;
 
 	public:
 		void setUseSparseCostFunction(bool shouldUse);

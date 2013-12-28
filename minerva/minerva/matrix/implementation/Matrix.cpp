@@ -38,7 +38,7 @@ Matrix::Matrix(const Matrix& m)
 		_matrix = m._matrix->clone();
 	}
 }
-
+	
 Matrix& Matrix::operator=(const Matrix& m)
 {
 	if(&m == this) return *this;
@@ -51,6 +51,13 @@ Matrix& Matrix::operator=(const Matrix& m)
 	{
 		_matrix = m._matrix->clone();
 	}
+
+	return *this;
+}
+
+Matrix& Matrix::operator=(Matrix&& m)
+{
+	std::swap(_matrix, m._matrix);
 
 	return *this;
 }
@@ -391,6 +398,13 @@ Matrix Matrix::reduceSumAlongRows() const
 {
 	// TODO implement this
 	return transpose().reduceSumAlongColumns().transpose();
+}
+
+void Matrix::clear()
+{
+	assert(_matrix != nullptr);
+	
+	_matrix->resize(0, 0);
 }
 
 const Matrix::FloatVector& Matrix::data() const

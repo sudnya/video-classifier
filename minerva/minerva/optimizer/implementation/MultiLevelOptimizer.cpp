@@ -4,6 +4,8 @@
  * We use the following heuristics in this optimizer:
  * local search, tabu search, simulated annealing 
  */
+
+// Minerva Includes
 #include <minerva/optimizer/interface/Solver.h>
 #include <minerva/optimizer/interface/MultiLevelOptimizer.h>
 #include <minerva/optimizer/interface/LinearSolverFactory.h>
@@ -16,6 +18,7 @@
 #include <minerva/util/interface/Knobs.h>
 #include <minerva/util/interface/debug.h>
 
+// Standard Library Includes
 #include <random>
 #include <cstdlib>
 #include <cmath>

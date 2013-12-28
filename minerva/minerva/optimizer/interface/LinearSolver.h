@@ -40,7 +40,7 @@ public:
 	class CostAndGradient
 	{
 	public:
-		CostAndGradient(float initialCost, float costReductionFactor = 0.2f);
+		CostAndGradient(float initialCost = 0.0f, float costReductionFactor = 0.0f);
 		virtual ~CostAndGradient();
 	
 	public:

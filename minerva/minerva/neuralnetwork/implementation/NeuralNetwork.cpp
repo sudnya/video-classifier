@@ -50,16 +50,31 @@ void NeuralNetwork::initializeRandomly(float epsilon)
 
 void NeuralNetwork::train(const Matrix& inputMatrix, const Matrix& referenceOutput)
 {
-	//create a backpropagate-data class
-	//given the neural network, inputs & reference outputs 
-	util::log("NeuralNetwork") << "Running back propagation on input matrix (" << inputMatrix.rows() << ") rows, ("
-	   << inputMatrix.columns() << ") columns. Using reference output of (" << referenceOutput.rows() << ") rows, ("
-	   << referenceOutput.columns() << ") columns. \n";
-
-
 	auto inputData     = convertToBlockSparseForLayerInput(front(), inputMatrix);
 	auto referenceData = convertToBlockSparseForLayerOutput(back(), referenceOutput);
+	
+	train(inputData, referenceData);
+}
 
+void NeuralNetwork::train(Matrix&& inputMatrix, Matrix&& referenceOutput)
+{
+	auto inputData     = convertToBlockSparseForLayerInput(front(), inputMatrix);
+	auto referenceData = convertToBlockSparseForLayerOutput(back(), referenceOutput);
+	
+	inputMatrix.clear();
+	referenceOutput.clear();
+	
+	train(inputData, referenceData);
+}
+
+void NeuralNetwork::train(BlockSparseMatrix& input, BlockSparseMatrix& reference)
+{
+	//create a backpropagate-data class
+	//given the neural network, inputs & reference outputs 
+	util::log("NeuralNetwork") << "Running back propagation on input matrix (" << input.rows() << ") rows, ("
+	   << input.columns() << ") columns. Using reference output of (" << reference.rows() << ") rows, ("
+	   << reference.columns() << ") columns. \n";
+	
 	std::string backPropagationType;
 
 	if(_useSparseCostFunction)
@@ -74,8 +89,8 @@ void NeuralNetwork::train(const Matrix& inputMatrix, const Matrix& referenceOutp
 	auto backPropagation = BackPropagationFactory::create(backPropagationType);
 
 	backPropagation->setNeuralNetwork(this);
-	backPropagation->setInput(&inputData);
-	backPropagation->setReferenceOutput(&referenceData);
+	backPropagation->setInput(&input);
+	backPropagation->setReferenceOutput(&reference);
 
 	if(backPropagation == nullptr)
 	{
@@ -172,6 +187,11 @@ void NeuralNetwork::setLabelForOutputNeuron(unsigned int idx, const std::string&
 	assert(idx < getOutputCount());
 
 	m_labels[idx] = label;
+}
+
+void NeuralNetwork::addLayer(Layer&& L)
+{
+	m_layers.push_back(L);
 }
 
 void NeuralNetwork::addLayer(const Layer& L)
@@ -466,7 +486,7 @@ const Layer& NeuralNetwork::front() const
 	return m_layers.front();
 }
 
-unsigned int NeuralNetwork::size() const
+size_t NeuralNetwork::size() const
 {
 	return m_layers.size();
 }

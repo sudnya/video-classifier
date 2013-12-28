@@ -162,6 +162,15 @@ bool BlockSparseMatrix::isColumnSparse() const
 	return not isRowSparse();
 }
 
+size_t BlockSparseMatrix::getBlockingFactor() const
+{
+	if(blocks() == 0) return 0;
+	
+	if(isRowSparse()) return front().rows();
+
+	return front().columns();
+}
+
 void BlockSparseMatrix::resize(size_t blocks, size_t rowsPerBlock,
 	size_t columnsPerBlock)
 {
@@ -171,6 +180,11 @@ void BlockSparseMatrix::resize(size_t blocks, size_t rowsPerBlock,
 	{
 		matrix.resize(rowsPerBlock, columnsPerBlock);
 	}
+}
+
+void BlockSparseMatrix::resize(size_t blocks)
+{
+	_matrices.resize(blocks);
 }
 
 void BlockSparseMatrix::setColumnSparse()
@@ -189,12 +203,15 @@ BlockSparseMatrix BlockSparseMatrix::multiply(
 	// TODO: in parallel
 	BlockSparseMatrix result(isRowSparse());
 
+	result.resize(blocks());
+
 	assert(m.blocks() == blocks());
 	assertM(columns() == m.rows(), "Left columns " << columns() << " does not match right rows " << m.rows());
 
-	for(auto left = begin(), right = m.begin(); left != end(); ++left, ++right)
+	auto resultBlock = result.begin();
+	for(auto left = begin(), right = m.begin(); left != end(); ++left, ++right, ++resultBlock)
 	{
-		result.push_back(left->multiply(*right));
+		*resultBlock = std::move(left->multiply(*right));
 	}
 
 	return result;

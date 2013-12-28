@@ -210,6 +210,7 @@ Value* AtlasMatrix::addBroadcastRow(const Value* matrix) const
 	size_t columnSize = columns();
 	size_t rowSize    = rows();
 
+	// cache block this bad boy
 	for(size_t r = 0; r < rowSize; ++r)
 	{
 		for(size_t c = 0; c < columnSize; ++c)
@@ -276,6 +277,16 @@ Value* AtlasMatrix::slice(size_t startRow, size_t startColumn,
 	
 	assert(startRow    + rows    <= this->rows()   );
 	assert(startColumn + columns <= this->columns());
+
+	// fast path for a memcpy
+	if(rows == 1)
+	{
+		std::memcpy(&result->data()[0],
+			&data()[getPosition(startRow, startColumn)],
+			columns * sizeof(float));
+		
+		return result;
+	}
 	
 	for(size_t row = 0; row != rows; ++row)
 	{

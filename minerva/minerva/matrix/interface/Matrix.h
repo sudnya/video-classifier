@@ -45,6 +45,7 @@ public:
 public:
 	Matrix(const Matrix&);
 	Matrix& operator=(const Matrix&);
+	Matrix& operator=(Matrix&&);
 
 public:
 	iterator	   begin();
@@ -125,6 +126,9 @@ public:
     float  reduceSum()             const;
 	Matrix reduceSumAlongColumns() const;
 	Matrix reduceSumAlongRows()    const;
+
+public:
+	void clear();
 
 public:
 	const FloatVector& data() const;
