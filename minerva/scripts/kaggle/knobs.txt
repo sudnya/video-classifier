@@ -1,0 +1,20 @@
+
+# classification model
+ClassifictionModelBuilder::ResolutionX=64
+ClassifictionModelBuilder::ResolutionY=64
+ClassifictionModelBuilder::ResolutionColorComponents=3
+Classifier::NeuralNetwork::Outputs=1
+Classifier::NeuralNetwork::Output0="1"
+
+# training samples
+ClassifierEngine::MaximumVideoFrames=1000
+
+# batch size
+ClassifierEngine::ImageBatchSize=20
+
+# network cost function parameters 
+NeuralNetwork::Lambda=0.0
+NeuralNetwork::Sparsity=0.0
+NeuralNetwork::SparsityWeight=0.0
+
+

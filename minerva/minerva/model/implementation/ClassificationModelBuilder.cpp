@@ -267,6 +267,8 @@ static void buildConvolutionalGPUModel(ClassificationModel* model, unsigned inpu
 	featureSelectorNetwork.addLayer(Layer(1024, 1024,  128));
 	featureSelectorNetwork.addLayer(Layer( 128, 1024, 1024));
 	featureSelectorNetwork.addLayer(Layer( 128, 1024,    8));
+    
+    featureSelectorNetwork.setUseSparseCostFunction(true);
 
 	tuneNeuralNetwork(featureSelectorNetwork);
 
@@ -303,6 +305,8 @@ static void buildConvolutionalCPUModel(ClassificationModel* model, unsigned inpu
 	featureSelectorNetwork.addLayer(Layer(1024, 256,  32));
 	featureSelectorNetwork.addLayer(Layer(  32, 256, 256));
 	featureSelectorNetwork.addLayer(Layer(  32, 256,   8));
+    
+    featureSelectorNetwork.setUseSparseCostFunction(true);
 
 	tuneNeuralNetwork(featureSelectorNetwork);
 
@@ -340,7 +344,9 @@ static void buildConvolutionalFastModel(ClassificationModel* model, unsigned inp
 	featureSelectorNetwork.addLayer(Layer(100, 25,  4));
 	featureSelectorNetwork.addLayer(Layer( 16, 25, 25));
 	featureSelectorNetwork.addLayer(Layer( 16, 25,  5));
-
+    
+    featureSelectorNetwork.setUseSparseCostFunction(true);
+    
 	tuneNeuralNetwork(featureSelectorNetwork);
 
 	model->setNeuralNetwork("FeatureSelector", featureSelectorNetwork);
@@ -360,9 +366,9 @@ ClassificationModel* ClassificationModelBuilder::create(const std::string& path)
 {
 	auto model = new ClassificationModel(path);
 
-	unsigned x         = util::KnobDatabase::getKnobValue("ResolutionX",     32       );
-	unsigned y         = util::KnobDatabase::getKnobValue("ResolutionY",     32       );
-	unsigned colors    = util::KnobDatabase::getKnobValue("ColorComponents", 3        );
+	unsigned x         = util::KnobDatabase::getKnobValue("ClassifictionModelBuilder::ResolutionX",     32       );
+	unsigned y         = util::KnobDatabase::getKnobValue("ClassifictionModelBuilder::ResolutionY",     32       );
+	unsigned colors    = util::KnobDatabase::getKnobValue("ClassifictionModelBuilder::ColorComponents", 3        );
 
 	model->setInputImageResolution(x, y, colors);
 
