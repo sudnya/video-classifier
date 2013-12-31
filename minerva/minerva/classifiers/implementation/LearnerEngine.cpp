@@ -8,6 +8,8 @@
 #include <minerva/classifiers/interface/LearnerEngine.h>
 #include <minerva/classifiers/interface/Learner.h>
 
+#include <minerva/util/interface/debug.h>
+
 // Standard Library Includes
 #include <cassert>
 
@@ -47,6 +49,9 @@ void LearnerEngine::closeModel()
 	
 void LearnerEngine::runOnImageBatch(const ImageVector& images)
 {
+	util::log("LearnerEngine") << "Performing supervised "
+		"learning on batch of " << images.size() <<  " images...\n";
+	
 	_learner->learnAndTrain(images);
 }
 

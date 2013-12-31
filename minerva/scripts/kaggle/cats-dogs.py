@@ -6,12 +6,20 @@
 import argparse
 import os
 import itertools
+import subprocess
+
+unsupervised_learning_reduction_factor = 100
+unsupervised_learning_db = 'unsupervised_learning_db.txt'
+training_db = 'training_db.txt'
+cross_val_db = 'cross_val_db.txt'
 
 def populate_db(path, freq):
-    training_file = open('training_db.txt', 'w')
-    cv_file = open('cross_val_db.txt', 'w')
+    training_file = open(training_db, 'w')
+    unsupervised_learning_file = open(unsupervised_learning_db, 'w')
+    cv_file = open(cross_val_db, 'w')
     
     training_count = 0
+    unsupervised_count = 0
     for filename in os.listdir(path):
         striped_name = filename.split('.')[0]
         if (striped_name == 'cat'):
@@ -24,6 +32,10 @@ def populate_db(path, freq):
             training_count = 0
         else:
             training_file.write(path + '/' + filename + ' , ' + str(label) + '\n')
+            if unsupervised_count > unsupervised_learning_reduction_factor:
+                unsupervised_learning_file.write(path + '/' + filename + ' , ' + str(label) + '\n')
+                unsupervised_count = 0
+            unsupervised_count += 1
         
         training_count += 1
 
@@ -57,22 +69,35 @@ def call_minerva(p, options, count):
 
     cmd = 'minerva-classifier --options \"' + ",".join(knobs) + "\""
 
-    model = 'models/' + str(count) + '.tgz'
-    # create model
-    create = cmd + ' -n ' + model
-    # unsupervised learning
-    unsup = cmd + ' -l -m ' + model 
-    # supervised learning
-    supervised = cmd + ' -t -m ' + model
-    # test (we use cross val set here)
-    test = cmd + ' -c -m ' + model
-    
-    print "Create : " , create
-    print "Unsupervised : ", unsup
-    print "Supervised : ", supervised
-    print "Classifiy : ", test
+    logs = ' -L ClassifierEngine,UnsupervisedLearnerEngine,LearnerEngine,FinalClassifierEngine'
 
-    #print [dict(zip(options.keys(), p))] , "\n"
+    model = 'models/' + str(count) + '.tgz'
+    redirect_log = ' > ' + str(count) + '.log'
+    # create model
+    create = cmd + ' -n -m ' + model + redirect_log + '.create'
+    process = subprocess.Popen(create, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    print "Create : " , create
+    (stdOutData, stdErrData) = process.communicate()
+    
+    # unsupervised learning
+    unsupervised = cmd + logs + ' -i ' + training_db + ' -l -m ' + model + redirect_log + '.unsupervised'
+    process = subprocess.Popen(unsupervised, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    print "Unsupervised : ", unsupervised
+    (stdOutData, stdErrData) = process.communicate()
+ 
+    # supervised learning
+    supervised = cmd + logs + ' -i ' + training_db + ' -t -m ' + model + redirect_log + '.supervised'
+    process = subprocess.Popen(supervised, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    print "Supervised : ", supervised
+    (stdOutData, stdErrData) = process.communicate()
+
+    # test (we use cross val set here)
+    test = cmd + logs + ' -i ' + cross_val_db + ' -c -m ' + model + redirect_log + '.test'
+    process = subprocess.Popen(test, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    print "Classifiy : ", test
+    (stdOutData, stdErrData) = process.communicate()
+
+    
 
 def generate_search_space():
     options = {
@@ -80,7 +105,7 @@ def generate_search_space():
             "ClassificationModelBuilder::ResolutionY" : generate_list(64, 3, 2, True),
             "ClassificationModelBuilder::ResolutionColorComponents" : generate_list(3),
             "Classifier::NeuralNetwork::Outputs" : generate_list(1),
-            "Classifier::NeuralNetwork::Outputs0" : generate_list(1),
+            "Classifier::NeuralNetwork::Output0" : generate_list(1),
             "ClassifierEngine::ImageBatchSize" : generate_list(4, 6, 2, True),
             "NeuralNetwork::Lambda" : generate_list(0.0, 5, 0.2), 
             "NeuralNetwork::Sparsity" : generate_list(0.02, 3, 0.2),
@@ -91,6 +116,8 @@ def generate_search_space():
     for p in product:
         call_minerva(p, options, counter)
         counter += 1
+        if counter > 2:
+            break
 
 
 
