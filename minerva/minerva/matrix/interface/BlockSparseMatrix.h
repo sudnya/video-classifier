@@ -13,6 +13,7 @@
 
 // Forward Declarations
 namespace minerva { namespace matrix { class Matrix; } }
+namespace minerva { namespace matrix { class BlockSparseMatrixImplementation; } }
 
 namespace minerva
 {
@@ -33,6 +34,16 @@ public:
 	explicit BlockSparseMatrix(size_t blocks = 0, size_t rows = 0,
 		size_t columns = 0, bool rowSparse = true);
 	explicit BlockSparseMatrix(bool rowSparse);
+
+	BlockSparseMatrix(const BlockSparseMatrix&);
+	BlockSparseMatrix(BlockSparseMatrix&&);
+
+public:
+	~BlockSparseMatrix();
+
+public:
+	BlockSparseMatrix& operator=(const BlockSparseMatrix&);
+	BlockSparseMatrix& operator=(BlockSparseMatrix&&);
 
 public:
 	iterator	   begin();
@@ -126,8 +137,10 @@ public:
 	std::string debugString() const;
 
 private:
-	MatrixVector _matrices;
-	bool         _isRowSparse;
+	explicit BlockSparseMatrix(BlockSparseMatrixImplementation*);
+
+private:
+	BlockSparseMatrixImplementation* _implementation;
 
 };
 

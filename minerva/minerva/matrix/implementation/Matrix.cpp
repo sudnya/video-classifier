@@ -38,6 +38,12 @@ Matrix::Matrix(const Matrix& m)
 		_matrix = m._matrix->clone();
 	}
 }
+
+Matrix::Matrix(Matrix&& m)
+: _matrix(nullptr)
+{
+	std::swap(_matrix, m._matrix);
+}
 	
 Matrix& Matrix::operator=(const Matrix& m)
 {

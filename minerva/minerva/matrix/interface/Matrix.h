@@ -40,6 +40,7 @@ public:
 public:
 	explicit Matrix(size_t rows = 0, size_t colums = 0,
 		const FloatVector& data = FloatVector());
+	explicit Matrix(Matrix&&);
 	~Matrix();
 
 public:

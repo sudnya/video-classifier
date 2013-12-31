@@ -6,6 +6,7 @@
 
 // Minerva Includes
 #include <minerva/matrix/interface/BlockSparseMatrix.h>
+#include <minerva/matrix/interface/BlockSparseMatrixImplementation.h>
 #include <minerva/matrix/interface/Matrix.h>
 
 #include <minerva/util/interface/debug.h>
@@ -21,145 +22,150 @@ namespace matrix
 
 BlockSparseMatrix::BlockSparseMatrix(size_t blocks, size_t rows,
 	size_t columns, bool isRowSparse)
-: _matrices(blocks), _isRowSparse(isRowSparse)
+: _implementation(BlockSparseMatrixImplementation::createBestImplementation(blocks, rows, columns, isRowSparse))
 {
-	for(auto& matrix : *this)
-	{
-		matrix.resize(rows, columns);
-	}
+
 }
 
 BlockSparseMatrix::BlockSparseMatrix(bool isRowSparse)
-: _isRowSparse(isRowSparse)
+: _implementation(BlockSparseMatrixImplementation::createBestImplementation(0, 0, 0, isRowSparse))
 {
 
+}
+
+BlockSparseMatrix::BlockSparseMatrix(const BlockSparseMatrix& m)
+: _implementation(nullptr)
+{
+	if(m._implementation != nullptr)
+	{
+		_implementation = m._implementation->clone();
+	}
+}
+
+BlockSparseMatrix::BlockSparseMatrix(BlockSparseMatrix&& m)
+{
+	std::swap(_implementation, m._implementation);
+}
+
+BlockSparseMatrix::~BlockSparseMatrix()
+{
+	delete _implementation;
+}
+	
+BlockSparseMatrix& BlockSparseMatrix::operator=(const BlockSparseMatrix& m)
+{
+	if(this == &m) return *this;
+	
+	delete _implementation;
+	
+	if(m._implementation != nullptr)
+	{
+		_implementation = m._implementation->clone();
+	}
+	
+	return *this;
+}
+
+BlockSparseMatrix& BlockSparseMatrix::operator=(BlockSparseMatrix&& m)
+{
+	std::swap(_implementation, m._implementation);
+	
+	return *this;
 }
 
 BlockSparseMatrix::iterator BlockSparseMatrix::begin()
 {
-	return _matrices.begin();
+	return _implementation->begin();
 }
 
 BlockSparseMatrix::const_iterator BlockSparseMatrix::begin() const
 {
-	return _matrices.begin();
+	return _implementation->begin();
 }
 
 BlockSparseMatrix::iterator BlockSparseMatrix::end()
 {
-	return _matrices.end();
+	return _implementation->end();
 }
 
 BlockSparseMatrix::const_iterator BlockSparseMatrix::end() const
 {
-	return _matrices.end();
+	return _implementation->end();
 }
 
 Matrix& BlockSparseMatrix::front()
 {
-	return _matrices.front();
+	return _implementation->front();
 }
 
 const Matrix& BlockSparseMatrix::front() const
 {
-	return _matrices.front();
+	return _implementation->front();
 }
 
 Matrix& BlockSparseMatrix::back()
 {
-	return _matrices.back();
+	return _implementation->back();
 }
 
 const Matrix& BlockSparseMatrix::back() const
 {
-	return _matrices.back();
+	return _implementation->back();
 }
 
 const Matrix& BlockSparseMatrix::operator[](size_t position) const
 {
-	return _matrices[position];
+	return (*_implementation)[position];
 }
 
 Matrix& BlockSparseMatrix::operator[](size_t position)
 {
-	return _matrices[position];
+	return (*_implementation)[position];
 }
 
 void BlockSparseMatrix::pop_back()
 {
-	return _matrices.pop_back();
+	return _implementation->pop_back();
 }
 
 void BlockSparseMatrix::push_back(const Matrix& m)
 {
-	return _matrices.push_back(m);
+	return _implementation->push_back(m);
 }
 
 size_t BlockSparseMatrix::size() const
 {
-	size_t s = 0;
-
-	for(auto& m : *this)
-	{
-		s += m.size();
-	}
-
-	return s;
+	return _implementation->size();
 }
 
 size_t BlockSparseMatrix::blocks() const
 {
-	return _matrices.size();
+	return _implementation->size();
 }
 
 bool BlockSparseMatrix::empty() const
 {
-	return _matrices.empty();
+	return _implementation->empty();
 }
 
 size_t BlockSparseMatrix::columns() const
 {
-	if(isColumnSparse())
-	{
-		size_t c = 0;
-
-		for(auto& matrix : *this)
-		{
-			c += matrix.columns();
-		}
-
-		return c;
-	}
-	
-	return front().columns();
+	return _implementation->columns();
 }
 
 size_t BlockSparseMatrix::rows() const
 {
-	if(isRowSparse())
-	{
-		size_t r = 0;
-
-		for(auto& matrix : *this)
-		{
-			r += matrix.rows();
-		}
-
-		return r;
-	}
-
-
-	return front().rows();
+	return _implementation->rows();
 }
 
 bool BlockSparseMatrix::isRowSparse() const
 {
-	return _isRowSparse;
+	return _implementation->isRowSparse();
 }
 
 bool BlockSparseMatrix::isColumnSparse() const
 {
-	return not isRowSparse();
+	return not _implementation->isRowSparse();
 }
 
 size_t BlockSparseMatrix::getBlockingFactor() const
@@ -174,319 +180,139 @@ size_t BlockSparseMatrix::getBlockingFactor() const
 void BlockSparseMatrix::resize(size_t blocks, size_t rowsPerBlock,
 	size_t columnsPerBlock)
 {
-	_matrices.resize(blocks);
-
-	for(auto& matrix : *this)
-	{
-		matrix.resize(rowsPerBlock, columnsPerBlock);
-	}
+	_implementation->resize(blocks, rowsPerBlock, columnsPerBlock);
 }
 
 void BlockSparseMatrix::resize(size_t blocks)
 {
-	_matrices.resize(blocks);
+	_implementation->resize(blocks);
 }
 
 void BlockSparseMatrix::setColumnSparse()
 {
-	_isRowSparse = false;
+	_implementation->isRowSparse() = false;
 }
 
 void BlockSparseMatrix::setRowSparse()
 {
-	_isRowSparse = true;
+	_implementation->isRowSparse() = true;
 }
 
 BlockSparseMatrix BlockSparseMatrix::multiply(
 	const BlockSparseMatrix& m) const
 {
-	// TODO: in parallel
-	BlockSparseMatrix result(isRowSparse());
-
-	result.resize(blocks());
-
-	assert(m.blocks() == blocks());
-	assertM(columns() == m.rows(), "Left columns " << columns() << " does not match right rows " << m.rows());
-
-	auto resultBlock = result.begin();
-	for(auto left = begin(), right = m.begin(); left != end(); ++left, ++right, ++resultBlock)
-	{
-		*resultBlock = std::move(left->multiply(*right));
-	}
-
-	return result;
+	return BlockSparseMatrix(_implementation->multiply(m._implementation));
 }
 
 BlockSparseMatrix BlockSparseMatrix::multiply(float f) const
 {
-	BlockSparseMatrix result(isRowSparse());
-
-	// TODO: in parallel
-	for(auto& matrix : *this)
-	{
-		result.push_back(matrix.multiply(f));
-	}
-	
-	return result;
+	return BlockSparseMatrix(_implementation->multiply(f));
 }
 
 BlockSparseMatrix BlockSparseMatrix::elementMultiply(const BlockSparseMatrix& m) const
 {
-	// TODO: in parallel
-	BlockSparseMatrix result(isRowSparse());
-
-	assert(m.blocks() == blocks());
-
-	for(auto left = begin(), right = m.begin(); left != end(); ++left, ++right)
-	{
-		result.push_back(left->elementMultiply(*right));
-	}
-
-	return result;
+	return BlockSparseMatrix(_implementation->elementMultiply(m._implementation));
 }
 
 BlockSparseMatrix BlockSparseMatrix::add(const BlockSparseMatrix& m) const
 {
-	// TODO: in parallel
-	BlockSparseMatrix result(isRowSparse());
-
-	assert(m.size() == size());
-
-	for(auto left = begin(), right = m.begin(); left != end(); ++left, ++right)
-	{
-		result.push_back(left->add(*right));
-	}
-
-	return result;
-
+	return BlockSparseMatrix(_implementation->add(m._implementation));
 }
 
 BlockSparseMatrix BlockSparseMatrix::addBroadcastRow(const BlockSparseMatrix& m) const
 {
-	// TODO: in parallel
-	BlockSparseMatrix result(isRowSparse());
-
-	assert(m.columns() == columns());
-
-	for(auto left = begin(), right = m.begin(); left != end(); ++left, ++right)
-	{
-		result.push_back(left->addBroadcastRow(*right));
-	}
-
-	return result;
-
+	return BlockSparseMatrix(_implementation->addBroadcastRow(m._implementation));
 }
 
 BlockSparseMatrix BlockSparseMatrix::add(float f) const
 {
-	BlockSparseMatrix result(isRowSparse());
-
-	// TODO: in parallel
-	for(auto& matrix : *this)
-	{
-		result.push_back(matrix.add(f));
-	}
-	
-	return result;
+	return BlockSparseMatrix(_implementation->add(f));
 }
 
 BlockSparseMatrix BlockSparseMatrix::subtract(const BlockSparseMatrix& m) const
 {
-	// TODO: in parallel
-	BlockSparseMatrix result(isRowSparse());
-
-	assert(m.size() == size());
-
-	for(auto left = begin(), right = m.begin(); left != end(); ++left, ++right)
-	{
-		result.push_back(left->subtract(*right));
-	}
-
-	return result;
+	return BlockSparseMatrix(_implementation->subtract(m._implementation));
 }
 
 BlockSparseMatrix BlockSparseMatrix::subtract(float f) const
 {
-	BlockSparseMatrix result(isRowSparse());
-
-	// TODO: in parallel
-	for(auto& matrix : *this)
-	{
-		result.push_back(matrix.subtract(f));
-	}
-	
-	return result;
+	return BlockSparseMatrix(_implementation->subtract(f));
 }
 
 BlockSparseMatrix BlockSparseMatrix::log() const
 {
-	BlockSparseMatrix result(isRowSparse());
-
-	// TODO: in parallel
-	for(auto& matrix : *this)
-	{
-		result.push_back(matrix.log());
-	}
-	
-	return result;
+	return BlockSparseMatrix(_implementation->log());
 }
 
 BlockSparseMatrix BlockSparseMatrix::negate() const
 {
-	BlockSparseMatrix result(isRowSparse());
-
-	// TODO: in parallel
-	for(auto& matrix : *this)
-	{
-		result.push_back(matrix.negate());
-	}
-	
-	return result;
-
+	return BlockSparseMatrix(_implementation->negate());
 }
 
 BlockSparseMatrix BlockSparseMatrix::sigmoidDerivative() const
 {
-	BlockSparseMatrix result(isRowSparse());
-	
-	// TODO: in parallel
-	for(auto& matrix : *this)
-	{
-		result.push_back(matrix.sigmoidDerivative());
-	}
-	
-	return result;
+	return BlockSparseMatrix(_implementation->sigmoidDerivative());
 }
 
 BlockSparseMatrix BlockSparseMatrix::sigmoid() const
 {
-	BlockSparseMatrix result(isRowSparse());
-
-	// TODO: in parallel
-	for(auto& matrix : *this)
-	{
-		result.push_back(matrix.sigmoid());
-	}
-	
-	return result;
+	return BlockSparseMatrix(_implementation->sigmoid());
 }
 	
 BlockSparseMatrix BlockSparseMatrix::klDivergence(float sparsity) const
 {
-	BlockSparseMatrix result(isRowSparse());
-
-	// TODO: in parallel
-	for(auto& matrix : *this)
-	{
-		result.push_back(matrix.klDivergence(sparsity));
-	}
-	
-	return result;
+	return BlockSparseMatrix(_implementation->klDivergence(sparsity));
 }
 
 BlockSparseMatrix BlockSparseMatrix::klDivergenceDerivative(float sparsity) const
 {
-	BlockSparseMatrix result(isRowSparse());
-
-	// TODO: in parallel
-	for(auto& matrix : *this)
-	{
-		result.push_back(matrix.klDivergence(sparsity));
-	}
-	
-	return result;
+	return BlockSparseMatrix(_implementation->klDivergenceDerivative(sparsity));
 }
 
 BlockSparseMatrix BlockSparseMatrix::transpose() const
 {
-	BlockSparseMatrix result(isRowSparse());
-	
-	// TODO: in parallel
-	for(auto& matrix : *this)
-	{
-		result.push_back(matrix.transpose());
-	}
-	
-	return result;
+	return BlockSparseMatrix(_implementation->transpose());
 }
 
 void BlockSparseMatrix::negateSelf()
 {
-	// TODO: in parallel
-	for(auto& matrix : *this)
-	{
-		matrix.negateSelf();
-	}
+	_implementation->negateSelf();
 }
 
 void BlockSparseMatrix::logSelf()
 {
-	// TODO: in parallel
-	for(auto& matrix : *this)
-	{
-		matrix.logSelf();
-	}
+	_implementation->logSelf();
 }
 
 void BlockSparseMatrix::sigmoidSelf()
 {
-	// TODO: in parallel
-	for(auto& matrix : *this)
-	{
-		matrix.sigmoidSelf();
-	}
+	_implementation->sigmoidSelf();
 }
 
 void BlockSparseMatrix::sigmoidDerivativeSelf()
 {
-	// TODO: in parallel
-	for(auto& matrix : *this)
-	{
-		matrix.sigmoidDerivativeSelf();
-	}
+	_implementation->sigmoidDerivativeSelf();
 }
 
 void BlockSparseMatrix::transposeSelf()
 {
-	// TODO: in parallel
-	for(auto& matrix : *this)
-	{
-		matrix.transposeSelf();
-	}
+	_implementation->transposeSelf();
 }
 
 void BlockSparseMatrix::assignUniformRandomValues(
 	std::default_random_engine& engine, float min, float max)
 {
-	// TODO: in parallel
-	for(auto& matrix : *this)
-	{
-		matrix.assignUniformRandomValues(engine, min, max);
-	}
+	_implementation->assignUniformRandomValues(engine, min, max);
 }
 
 BlockSparseMatrix BlockSparseMatrix::greaterThanOrEqual(float f) const
 {
-	BlockSparseMatrix result(isRowSparse());
-	
-	for(auto& matrix : *this)
-	{
-		result.push_back(matrix.greaterThanOrEqual(f));
-	}
-	
-	return result;
+	return BlockSparseMatrix(_implementation->greaterThanOrEqual(f));
 }
 
 BlockSparseMatrix BlockSparseMatrix::equals(const BlockSparseMatrix& m) const
 {
-	BlockSparseMatrix result(isRowSparse());
-	
-	for(auto matrix = begin(), block = m.begin(); matrix != end(); ++matrix, ++block)
-	{
-		result.push_back(matrix->equals(*block));
-	}
-
-	return result;
+	return BlockSparseMatrix(_implementation->equals(m._implementation));
 }
 
 Matrix BlockSparseMatrix::toMatrix() const
@@ -529,79 +355,17 @@ Matrix BlockSparseMatrix::toMatrix() const
 
 float BlockSparseMatrix::reduceSum() const
 {
-	float sum = 0.0f;
-	
-	// TODO: in parallel
-	for(auto& matrix : *this)
-	{
-		sum += matrix.reduceSum();
-	}
-	
-	return sum;
+	return _implementation->reduceSum();
 }
 
 BlockSparseMatrix BlockSparseMatrix::reduceSumAlongColumns() const
 {
-	BlockSparseMatrix result(isRowSparse());
-	
-	// TODO: in parallel
-	if(isColumnSparse())
-	{
-		if(!empty())
-		{
-			auto matrix = begin();
-			
-			auto resultMatrix = matrix->reduceSumAlongColumns();
-
-			for(++matrix; matrix != end(); ++matrix)
-			{
-				resultMatrix = resultMatrix.add(matrix->reduceSumAlongColumns());
-			}
-			
-			result.push_back(resultMatrix);
-		}
-	}
-	else
-	{
-		for(auto& matrix : *this)
-		{
-			result.push_back(matrix.reduceSumAlongColumns());
-		}
-	}
-	
-	return result;
+	return BlockSparseMatrix(_implementation->reduceSumAlongColumns());
 }
 
 BlockSparseMatrix BlockSparseMatrix::reduceSumAlongRows() const
 {
-	BlockSparseMatrix result(isRowSparse());
-	
-	// TODO: in parallel
-	if(isRowSparse())
-	{
-		if(!empty())
-		{
-			auto matrix = begin();
-			
-			auto resultMatrix = matrix->reduceSumAlongRows();
-
-			for(++matrix; matrix != end(); ++matrix)
-			{
-				resultMatrix = resultMatrix.add(matrix->reduceSumAlongRows());
-			}
-			
-			result.push_back(resultMatrix);
-		}
-	}
-	else
-	{
-		for(auto& matrix : *this)
-		{
-			result.push_back(matrix.reduceSumAlongRows());
-		}
-	}
-	
-	return result;
+	return BlockSparseMatrix(_implementation->reduceSumAlongRows());
 }
 
 std::string BlockSparseMatrix::toString() const
@@ -619,6 +383,12 @@ std::string BlockSparseMatrix::toString() const
 std::string BlockSparseMatrix::debugString() const
 {
 	return toString();
+}
+
+BlockSparseMatrix::BlockSparseMatrix(BlockSparseMatrixImplementation* i)
+: _implementation(i)
+{
+
 }
 
 }

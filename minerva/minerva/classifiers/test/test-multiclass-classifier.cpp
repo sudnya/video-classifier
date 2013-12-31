@@ -218,6 +218,10 @@ static void visualizeModel(ClassificationModel& model,
 
 			neuronIndex = neuronIndex * oneLayerNetwork.front().getBlockingFactor();
 		}
+		else
+		{
+			break;
+		}
 
 		video::Image image(std::sqrt(xPixels), std::sqrt(xPixels), 3, 1);
 		
