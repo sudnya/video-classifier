@@ -20,7 +20,7 @@ class CudaSparseMatrixLibrary
 {
 public:
 	static void multiply(float* result, const float* left, const float* right,
-		size_t blocks, size_t rows, size_t columns, size_t isRowSparse);
+		size_t blocks, size_t rows, size_t columns, size_t rightRows, size_t rightColumns);
 	static void multiply(float* result, const float* left, float value, size_t size);
 	static void elementMultiply(float* result, const float* left, const float* right, size_t size);
 

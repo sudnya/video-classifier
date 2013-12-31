@@ -75,6 +75,9 @@ public:
     size_t columns() const;
 	size_t rows()	const;
 
+	size_t rowsPerBlock()    const;
+	size_t columnsPerBlock() const;
+
 	bool isRowSparse()    const;
 	bool isColumnSparse() const;
 

@@ -6,17 +6,23 @@
 
 // Minerva Includes 
 #include <minerva/matrix/interface/CudaBlockSparseCache.h>
+#include <minerva/matrix/interface/CudaRuntimeLibrary.h>
+#include <minerva/matrix/interface/CudaBlockSparseMatrix.h>
+#include <minerva/matrix/interface/CudaDriver.h>
+
+#include <minerva/matrix/interface/Matrix.h>
+
+#include <minerva/util/interface/Knobs.h>
 
 // Standard Library Includes
 #include <map>
+#include <cassert>
 
 namespace minerva
 {
 
 namespace matrix
 {
-
-typedef std::map<const BlockSparseMatrixImplementation*, Allocation> AllocationMap;
 
 class Allocation
 {
@@ -34,6 +40,8 @@ public:
 public:
 	bool dirty;
 };
+
+typedef std::map<const BlockSparseMatrixImplementation*, Allocation> AllocationMap;
 
 class CacheManager
 {
@@ -123,7 +131,7 @@ public:
 		
 		if(allocation != allocations.end())
 		{
-			totalSize -= allocation->size;
+			totalSize -= allocation->second.size;
 			
 			CudaRuntimeLibrary::cudaFree(allocation->second.address);
 
@@ -146,14 +154,14 @@ public:
 				
 				for(auto& block : cudaMatrix->rawData())
 				{
-					CudaRuntimeLibrary::cudaMemcpy(block.data(),
+					CudaRuntimeLibrary::cudaMemcpy(block.data().data(),
 						position + (uint8_t*)allocation->second.address,
 						sizeof(float) * block.size());
 					
 					position += sizeof(float) * block.size();
 				}
 				
-				allocation->dirty = false;
+				allocation->second.dirty = false;
 			}
 		}
 	}
@@ -180,11 +188,11 @@ private:
 		
 		auto cudaMatrix = static_cast<CudaBlockSparseMatrix*>(matrix);
 		
-		for(auto& block : matrix->rawData())
+		for(auto& block : cudaMatrix->rawData())
 		{
 			CudaRuntimeLibrary::cudaMemcpy(
-				position + (uint8_t*)allocation->second.address,
-				block.data(), sizeof(float) * block.size());
+				position + (uint8_t*)allocation->address,
+				block.data().data(), sizeof(float) * block.size());
 			
 			position += sizeof(float) * block.size();
 		}
@@ -206,9 +214,12 @@ private:
 		size_t percent = util::KnobDatabase::getKnobValue(
 			"CudaBlockSparseCache::CachePercentOfGPUMemory", 25);
 		
-		size_t available = CudaRuntimeLibrary::getTotalMemory();
+		size_t available = 0;
+		size_t total     = 0;
 		
-		maximumSize = available * percent / 100;
+		CudaDriver::cuMemGetInfo(&available, &total);
+		
+		maximumSize = total * percent / 100;
 	}
 
 
@@ -216,33 +227,45 @@ private:
 
 static std::unique_ptr<CacheManager> cacheManager(new CacheManager);
 
-float* CudaBlockSparseCache::acquire(BlockSparseMatrixImplementation* matrix) const
+float* CudaBlockSparseCache::acquire(const BlockSparseMatrixImplementation* m) const
 {
+	auto matrix = const_cast<BlockSparseMatrixImplementation*>(m);
+	
 	return cacheManager->acquire(matrix);
 }
 
-float* CudaBlockSparseCache::acquireReadyOnly(BlockSparseMatrixImplementation* matrix) const
+float* CudaBlockSparseCache::acquireReadyOnly(const BlockSparseMatrixImplementation* m) const
 {
-	return cacheManager->acquireReadyOnly(matrix);
+	auto matrix = const_cast<BlockSparseMatrixImplementation*>(m);
+	
+	return cacheManager->acquireReadOnly(matrix);
 }
 
-float* CudaBlockSparseCache::acquireClobber(BlockSparseMatrixImplementation* matrix) const
+float* CudaBlockSparseCache::acquireClobber(const BlockSparseMatrixImplementation* m) const
 {
+	auto matrix = const_cast<BlockSparseMatrixImplementation*>(m);
+	
 	return cacheManager->acquireClobber(matrix);
 }
 
-void CudaBlockSparseCache::release(BlockSparseMatrixImplementation* matrix) const
+void CudaBlockSparseCache::release(const BlockSparseMatrixImplementation* m) const
 {
+	auto matrix = const_cast<BlockSparseMatrixImplementation*>(m);
+	
 	return cacheManager->release(matrix);
 }
 
-void CudaBlockSparseCache::invalidate(BlockSparseMatrixImplementation* matrix) const
+void CudaBlockSparseCache::invalidate(const BlockSparseMatrixImplementation* m) const
 {
+	auto matrix = const_cast<BlockSparseMatrixImplementation*>(m);
+	
 	return cacheManager->invalidate(matrix);
 }
 
-void CudaBlockSparseCache::synchronize(BlockSparseMatrixImplementation* matrix) const
+void CudaBlockSparseCache::synchronize(const BlockSparseMatrixImplementation* m) const
 {
+	auto matrix = const_cast<BlockSparseMatrixImplementation*>(m);
+	
 	return cacheManager->synchronize(matrix);
 }
 

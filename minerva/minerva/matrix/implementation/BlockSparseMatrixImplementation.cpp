@@ -150,6 +150,20 @@ size_t BlockSparseMatrixImplementation::rows() const
 
 	return front().rows();
 }
+    
+size_t BlockSparseMatrixImplementation::columnsPerBlock() const
+{
+	if(empty()) return 0;
+	
+	return front().columns();
+}
+
+size_t BlockSparseMatrixImplementation::rowsPerBlock() const
+{
+	if(empty()) return 0;
+	
+	return front().rows();
+}
 
 MatrixVector& BlockSparseMatrixImplementation::data()
 {

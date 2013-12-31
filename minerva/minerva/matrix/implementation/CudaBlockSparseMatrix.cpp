@@ -7,6 +7,7 @@
 // Minerva Includes
 #include <minerva/matrix/interface/CudaBlockSparseMatrix.h>
 
+#include <minerva/matrix/interface/BlockSparseMatrixImplementation.h>
 #include <minerva/matrix/interface/CudaSparseMatrixLibrary.h>
 #include <minerva/matrix/interface/CudaBlockSparseCache.h>
 
@@ -34,6 +35,29 @@ CudaBlockSparseMatrix::CudaBlockSparseMatrix(size_t blocks, size_t rows,
 
 }
 
+CudaBlockSparseMatrix::CudaBlockSparseMatrix(const CudaBlockSparseMatrix& m, bool copyData)
+: BlockSparseMatrixImplementation(m.blocks(), rowsPerBlock(), columnsPerBlock(), isRowSparse())
+{
+	if(copyData)
+	{
+		auto copy = m.begin();
+		for(auto matrix = _matrices.begin(); matrix != _matrices.end(); ++matrix, ++copy)
+		{
+			*matrix = *copy;
+		}
+	}
+}
+
+CudaBlockSparseMatrix::CudaBlockSparseMatrix(const CudaBlockSparseMatrix& m)
+: BlockSparseMatrixImplementation(m.blocks(), rowsPerBlock(), columnsPerBlock(), isRowSparse())
+{
+	auto copy = m.begin();
+	for(auto matrix = _matrices.begin(); matrix != _matrices.end(); ++matrix, ++copy)
+	{
+		*matrix = *copy;
+	}
+}
+
 Value* CudaBlockSparseMatrix::multiply(const Value* m) const
 {
 	auto result = new CudaBlockSparseMatrix(*this, false);
@@ -43,7 +67,7 @@ Value* CudaBlockSparseMatrix::multiply(const Value* m) const
 	auto resultPointer = _cache->acquireClobber(result);
 	
 	CudaSparseMatrixLibrary::multiply(resultPointer, devicePointer, matrixPointer,
-		blocks(), rows(), columns(), isRowSparse());
+		blocks(), rows(), columns(), m->rows(), m->columns());
 
 	_cache->release(this);
 	_cache->release(result);
@@ -473,6 +497,11 @@ const MatrixVector& CudaBlockSparseMatrix::data() const
 {
 	_cache->synchronize(const_cast<CudaBlockSparseMatrix*>(this));
 	
+	return BlockSparseMatrixImplementation::data();
+}
+	
+MatrixVector& CudaBlockSparseMatrix::rawData()
+{
 	return BlockSparseMatrixImplementation::data();
 }
 

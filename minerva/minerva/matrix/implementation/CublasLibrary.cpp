@@ -106,6 +106,46 @@ void CublasLibrary::cublasSgemm(
 	}
 }
 
+void CublasLibrary::cublasSgemmBatched(
+	cublasOperation_t transa, cublasOperation_t transb,
+	int m, int n, int k, const float* alpha, const float *A, int lda, 
+	const float *B, int ldb, const float* beta, float *C, int ldc,
+	int batch)
+{
+	_check();
+	
+	util::log("CublasLibrary") << " CUBLAS SGEMM BATCH: ("
+		"handle: " << _interface.handle <<  ", "
+		"transa: " << transa <<  ", "
+		"transb: " << transb <<  ", "
+
+		"m: " << m <<  ", "
+		"n: " << n <<  ", "
+		"k: " << k <<  ", "
+
+		"alpha: " << alpha <<  " (" << *alpha << "), "
+		"A: " << A <<  ", "
+		"lda: " << lda <<  ", "
+
+		"B: " << B <<  ", "
+		"ldb: " << ldb <<  ", "
+		"beta: " << beta <<  " (" << *beta << "), "
+
+		"C: " << C <<  ", "
+		"ldc: " << ldc << ")"
+		"batch: " << batch << ")\n";
+	
+	cublasStatus_t status = (*_interface.cublasSgemmBatched_v2)(_interface.handle,
+		transa, transb, m, n, k, alpha, A, lda, B, ldb,
+		beta, C, ldc, batch);
+		
+	if(status != CUBLAS_STATUS_SUCCESS)
+	{
+		throw std::runtime_error("Cuda SGEMM failed: " +
+			cublasGetErrorString(status));
+	}
+}
+
 std::string CublasLibrary::cublasGetErrorString(cublasStatus_t error)
 {
 	switch(error)
@@ -220,6 +260,7 @@ void CublasLibrary::Interface::load()
 			
 		DynLink(cublasSgeam);
 		DynLink(cublasSgemm_v2);
+		DynLink(cublasSgemmBatched_v2);
 		
 		DynLink(cublasCreate_v2);
 		DynLink(cublasDestroy_v2);

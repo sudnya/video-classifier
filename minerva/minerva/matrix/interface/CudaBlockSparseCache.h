@@ -18,14 +18,14 @@ namespace matrix
 class CudaBlockSparseCache
 {
 public:
-	float* acquire(BlockSparseMatrixImplementation* matrix) const;
-	float* acquireReadyOnly(BlockSparseMatrixImplementation* matrix) const;
-	float* acquireClobber(BlockSparseMatrixImplementation* matrix) const;
-	void release(BlockSparseMatrixImplementation* matrix) const;
+	float* acquire(const BlockSparseMatrixImplementation* matrix) const;
+	float* acquireReadyOnly(const BlockSparseMatrixImplementation* matrix) const;
+	float* acquireClobber(const BlockSparseMatrixImplementation* matrix) const;
+	void release(const BlockSparseMatrixImplementation* matrix) const;
 
 public:
-	void invalidate(BlockSparseMatrixImplementation* matrix) const;
-	void synchronize(BlockSparseMatrixImplementation* matrix) const;
+	void invalidate(const BlockSparseMatrixImplementation* matrix) const;
+	void synchronize(const BlockSparseMatrixImplementation* matrix) const;
 
 };
 

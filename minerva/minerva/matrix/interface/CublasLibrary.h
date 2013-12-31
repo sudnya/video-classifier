@@ -70,6 +70,12 @@ public:
 		const float* alpha, const float *A, int lda, 
 		const float *B, int ldb, const float* beta, float *C, 
 		int ldc);
+	
+	static void cublasSgemmBatched(cublasOperation_t transa,
+		cublasOperation_t transb, int m, int n, int k, 
+		const float* alpha, const float *A, int lda, 
+		const float *B, int ldb, const float* beta, float *C, 
+		int ldc, int batches);
 
 public:
 	static std::string cublasGetErrorString(cublasStatus_t error); 
@@ -95,6 +101,10 @@ private:
 			cublasOperation_t transa, cublasOperation_t transb,
 			int m, int n, int k, const float* alpha, const float* A, int lda, 
 			const float* B, int ldb, const float* beta, float* C, int ldc);
+		cublasStatus_t (*cublasSgemmBatched_v2) (cublasHandle_t handle,
+			cublasOperation_t transa, cublasOperation_t transb,
+			int m, int n, int k, const float* alpha, const float* A, int lda, 
+			const float* B, int ldb, const float* beta, float* C, int ldc, int batch);
 
 	public:
 		cublasStatus_t (*cublasCreate_v2)  (cublasHandle_t* handle);

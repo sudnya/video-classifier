@@ -157,6 +157,16 @@ size_t BlockSparseMatrix::rows() const
 {
 	return _implementation->rows();
 }
+	
+size_t BlockSparseMatrix::rowsPerBlock() const
+{
+	return _implementation->rowsPerBlock();
+}
+
+size_t BlockSparseMatrix::columnsPerBlock() const
+{
+	return _implementation->columnsPerBlock();
+}
 
 bool BlockSparseMatrix::isRowSparse() const
 {
