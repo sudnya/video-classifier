@@ -135,7 +135,7 @@ void CublasLibrary::cublasSgemmBatched(
 		"ldc: " << ldc << ")"
 		"batch: " << batch << ")\n";
 	
-	cublasStatus_t status = (*_interface.cublasSgemmBatched_v2)(_interface.handle,
+	cublasStatus_t status = (*_interface.cublasSgemmBatched)(_interface.handle,
 		transa, transb, m, n, k, alpha, A, lda, B, ldb,
 		beta, C, ldc, batch);
 		
@@ -233,8 +233,8 @@ void CublasLibrary::Interface::load()
 	if(loaded()) return;
 	
     #ifdef __APPLE__
-    //const char* libraryName = "libcublas.dylib";
-    const char* libraryName = "libcublas-optimized.dylib";
+    const char* libraryName = "libcublas.dylib";
+    //const char* libraryName = "libcublas-optimized.dylib";
     #else
     const char* libraryName = "libcublas.so";
     #endif
@@ -260,7 +260,7 @@ void CublasLibrary::Interface::load()
 			
 		DynLink(cublasSgeam);
 		DynLink(cublasSgemm_v2);
-		DynLink(cublasSgemmBatched_v2);
+		DynLink(cublasSgemmBatched);
 		
 		DynLink(cublasCreate_v2);
 		DynLink(cublasDestroy_v2);
@@ -300,7 +300,8 @@ void CublasLibrary::Interface::_createHandle()
 
 	if(status != CUBLAS_STATUS_SUCCESS)
 	{
-		throw std::runtime_error("Failed to create cublas handle.");
+		throw std::runtime_error("Failed to create cublas handle with error '"
+			+ cublasGetErrorString(status) + "'.");
 	}
 }
 

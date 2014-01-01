@@ -101,7 +101,7 @@ private:
 			cublasOperation_t transa, cublasOperation_t transb,
 			int m, int n, int k, const float* alpha, const float* A, int lda, 
 			const float* B, int ldb, const float* beta, float* C, int ldc);
-		cublasStatus_t (*cublasSgemmBatched_v2) (cublasHandle_t handle,
+		cublasStatus_t (*cublasSgemmBatched) (cublasHandle_t handle,
 			cublasOperation_t transa, cublasOperation_t transb,
 			int m, int n, int k, const float* alpha, const float* A, int lda, 
 			const float* B, int ldb, const float* beta, float* C, int ldc, int batch);

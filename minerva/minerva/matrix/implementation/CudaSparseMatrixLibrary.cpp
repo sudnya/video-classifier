@@ -46,9 +46,13 @@ public:
 		
 		if(!CudaDriver::loaded()) return;
 		
+		CudaDriver::cuInit(0);
+		
 		CudaDriver::cuCtxCreate(&context, 0, 0);
 		
 		loadModule();
+		
+		isLoaded = true;
 	}
 
 	void loadModule()

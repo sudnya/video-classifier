@@ -105,7 +105,7 @@ size_t BlockSparseMatrixImplementation::size() const
 
 size_t BlockSparseMatrixImplementation::blocks() const
 {
-	if(blocks() == 0) return 0;
+	if(empty()) return 0;
 	
 	if(isRowSparse()) return front().rows();
 

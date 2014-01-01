@@ -447,6 +447,7 @@ void CudaDriver::Interface::load()
 
     if(!loaded())
 	{
+    	util::log("CudaDriver") << " loading library '" << libraryName << "' failed\n";
 		return;
 	}
 	

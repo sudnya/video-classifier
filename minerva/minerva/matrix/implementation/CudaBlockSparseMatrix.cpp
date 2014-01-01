@@ -512,7 +512,7 @@ Value* CudaBlockSparseMatrix::clone() const
 
 bool CudaBlockSparseMatrix::isSupported()
 {
-	if(!util::KnobDatabase::getKnobValue("CudaBlockSparseMatrix::Enable", false))
+	if(!util::KnobDatabase::getKnobValue("CudaBlockSparseMatrix::Enable", true))
 	{
 		return false;
 	}
