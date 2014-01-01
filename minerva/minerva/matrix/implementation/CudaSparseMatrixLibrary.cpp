@@ -269,7 +269,7 @@ void CudaSparseMatrixLibrary::addBroadcastRow(float* result, const float* left, 
 {
 	if(isRowSparse)
 	{
-		launchKernel("addBroadcastRow", left, right, blocks, rows, columns);
+		launchKernel("addBroadcastRowRowSparse", left, right, blocks, rows, columns);
 	}
 	else
 	{
@@ -309,7 +309,7 @@ void CudaSparseMatrixLibrary::negate(float* result, size_t size)
 
 void CudaSparseMatrixLibrary::log(float* result, size_t size)
 {
-	launchKernel("log", result, size);
+	launchKernel("logArray", result, size);
 }
 
 void CudaSparseMatrixLibrary::sigmoid(float* result, size_t size)
@@ -371,10 +371,13 @@ void CudaSparseMatrixLibrary::reduceSumAlongRows(float* result, const float* inp
 {
 	if(isRowSparse)
 	{
-		launchKernel("reduceSumAlongRows", result, input, blocks, rows, columns);
+		assert(false);
+		launchKernel("fillWithZero", result, columns);
+		launchKernel("reduceSumAlongRowsRowSparse", result, input, blocks, rows, columns);
 	}
 	else
 	{
+		launchKernel("fillWithZero", result, blocks * columns);
 		launchKernel("reduceSumAlongRowsColumnSparse", result, input, blocks, rows, columns);
 	}
 }
@@ -384,7 +387,7 @@ void CudaSparseMatrixLibrary::reduceSumAlongColumns(float* result, const float* 
 {
 	if(isRowSparse)
 	{
-		launchKernel("reduceSumAlongColumns", result, input, blocks, rows, columns);
+		launchKernel("reduceSumAlongColumnsRowSparse", result, input, blocks, rows, columns);
 	}
 	else
 	{

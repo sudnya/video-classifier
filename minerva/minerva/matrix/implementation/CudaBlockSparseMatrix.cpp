@@ -67,7 +67,7 @@ Value* CudaBlockSparseMatrix::multiply(const Value* m) const
 	auto resultPointer = _cache->acquireClobber(result);
 	
 	CudaSparseMatrixLibrary::multiply(resultPointer, devicePointer, matrixPointer,
-		blocks(), rows(), columns(), m->rows(), m->columns());
+		blocks(), rowsPerBlock(), columnsPerBlock(), m->rowsPerBlock(), m->columnsPerBlock());
 
 	_cache->release(this);
 	_cache->release(result);
@@ -134,7 +134,7 @@ Value* CudaBlockSparseMatrix::addBroadcastRow(const Value* m) const
 	auto resultPointer = _cache->acquireClobber(result);
 	
 	CudaSparseMatrixLibrary::addBroadcastRow(resultPointer, devicePointer, matrixPointer,
-		blocks(), rows(), columns(), isRowSparse());
+		blocks(), rowsPerBlock(), columnsPerBlock(), isRowSparse());
 
 	_cache->release(this);
 	_cache->release(result);
@@ -364,7 +364,7 @@ Value* CudaBlockSparseMatrix::reduceSumAlongColumns() const
 	auto resultPointer = _cache->acquireClobber(result);
 	
 	CudaSparseMatrixLibrary::reduceSumAlongColumns(resultPointer, devicePointer,
-		blocks(), rows(), columns(), isRowSparse());
+		blocks(), rowsPerBlock(), columnsPerBlock(), isRowSparse());
 	
 	_cache->release(result);
 	_cache->release(this);
@@ -380,7 +380,7 @@ Value* CudaBlockSparseMatrix::reduceSumAlongRows() const
 	auto resultPointer = _cache->acquireClobber(result);
 	
 	CudaSparseMatrixLibrary::reduceSumAlongRows(resultPointer, devicePointer,
-		blocks(), rows(), columns(), isRowSparse());
+		blocks(), rowsPerBlock(), columnsPerBlock(), isRowSparse());
 	
 	_cache->release(result);
 	_cache->release(this);
