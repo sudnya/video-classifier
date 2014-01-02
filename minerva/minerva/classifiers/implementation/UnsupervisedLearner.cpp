@@ -40,7 +40,7 @@ void UnsupervisedLearner::learn(const ImageVector& images)
 		std::sqrt(m_featureSelector.getBlockingFactor()));
     
 	auto inputReference = input.add(1.0f).multiply(0.5f);
-	auto layerInput = input;
+	auto layerInput = std::move(input);
 	
 	unsigned int counter = 0;
 
@@ -63,7 +63,7 @@ void UnsupervisedLearner::learn(const ImageVector& images)
 		layerInput = copy.runInputs(layerInput);
 		inputReference = layerInput;
 
-		*layer = copy.back();
+		*layer = std::move(copy.back());
 	}
 }
 

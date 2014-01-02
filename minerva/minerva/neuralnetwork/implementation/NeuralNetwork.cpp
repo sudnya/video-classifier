@@ -501,6 +501,11 @@ void NeuralNetwork::setUseSparseCostFunction(bool shouldUse)
 	_useSparseCostFunction = shouldUse;
 }
 
+bool NeuralNetwork::isUsingSparseCostFunction() const
+{
+	return _useSparseCostFunction;
+}
+
 }
 
 }

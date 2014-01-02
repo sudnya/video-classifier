@@ -124,6 +124,7 @@ class NeuralNetwork
 
 	public:
 		void setUseSparseCostFunction(bool shouldUse);
+		bool isUsingSparseCostFunction() const;
 	
 	private:
 		LayerVector m_layers;
