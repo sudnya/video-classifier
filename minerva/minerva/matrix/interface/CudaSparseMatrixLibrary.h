@@ -45,7 +45,8 @@ public:
 	static void sigmoidDerivative(float* result, size_t size);
 
 public:
-	static void assignUniformRandomValues(float* result, float min, float max, size_t size);
+	static void assignUniformRandomValues(float* result, float min, float max,
+		size_t size);
 
 public:
 	static void greaterThanOrEqual(float* result, const float* left, float f, size_t size);

@@ -132,7 +132,7 @@ void CublasLibrary::cublasSgemmBatched(
 		"beta: " << beta <<  " (" << *beta << "), "
 
 		"C: " << C <<  ", "
-		"ldc: " << ldc << ")"
+		"ldc: " << ldc << ", "
 		"batch: " << batch << ")\n";
 	
 	cublasStatus_t status = (*_interface.cublasSgemmBatched)(_interface.handle,
@@ -268,12 +268,15 @@ void CublasLibrary::Interface::load()
 		#undef DynLink	
 
 		util::log("CublasLibrary") << " Loaded library '" << libraryName
-			<< "' successfully\n";
+			<< "' successfully, creating handle...\n";
 			
 		_createHandle();
+
+		util::log("CublasLibrary") << "  success....\n";
 	}
 	catch(...)
 	{
+		util::log("CublasLibrary") << "  failed....\n";
 		unload();
 		throw;
 	}

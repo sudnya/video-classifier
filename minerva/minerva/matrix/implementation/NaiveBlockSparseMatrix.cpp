@@ -126,6 +126,7 @@ Value* NaiveBlockSparseMatrix::addBroadcastRow(const Value* matrix) const
 	
 	// TODO: in parallel
 	assert(m->blocks() == blocks());
+	assert(m->isRowSparse() == isRowSparse());
 
 	auto resultBlock = result->begin();
 	for(auto left = begin(), right = m->begin(); left != end(); ++left, ++right, ++resultBlock)

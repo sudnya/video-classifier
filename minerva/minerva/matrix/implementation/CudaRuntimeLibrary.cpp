@@ -30,6 +30,20 @@ bool CudaRuntimeLibrary::loaded()
 	return _interface.loaded();
 }
 
+void CudaRuntimeLibrary::cudaSetDevice(int device)
+{
+	_check();
+
+	int status = (*_interface.cudaSetDevice)(device);
+	
+	if(status != cudaSuccess)
+	{
+		throw std::runtime_error("Cuda malloc failed: " +
+			cudaGetErrorString(status));
+	}
+}
+
+
 void* CudaRuntimeLibrary::cudaMalloc(size_t bytes)
 {
 	_check();
@@ -147,12 +161,15 @@ void CudaRuntimeLibrary::Interface::load()
 			util::bit_cast(function, dlsym(_library, #function)); \
 			checkFunction((void*)function, #function)
 			
+		DynLink(cudaSetDevice);
 		DynLink(cudaMalloc);
 		DynLink(cudaFree);
 		DynLink(cudaMemcpy);
 		DynLink(cudaGetErrorString);
 		
 		#undef DynLink	
+
+		CudaRuntimeLibrary::cudaSetDevice(0);
 
 		util::log("CudaRuntimeLibrary") << " Loaded library '" << libraryName
 			<< "' successfully\n";

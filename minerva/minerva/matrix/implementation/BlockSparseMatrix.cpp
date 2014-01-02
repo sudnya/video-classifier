@@ -43,6 +43,7 @@ BlockSparseMatrix::BlockSparseMatrix(const BlockSparseMatrix& m)
 }
 
 BlockSparseMatrix::BlockSparseMatrix(BlockSparseMatrix&& m)
+: _implementation(nullptr)
 {
 	std::swap(_implementation, m._implementation);
 }
@@ -140,7 +141,7 @@ size_t BlockSparseMatrix::size() const
 
 size_t BlockSparseMatrix::blocks() const
 {
-	return _implementation->size();
+	return _implementation->blocks();
 }
 
 bool BlockSparseMatrix::empty() const

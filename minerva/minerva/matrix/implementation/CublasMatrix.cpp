@@ -9,6 +9,7 @@
 
 #include <minerva/matrix/interface/CublasLibrary.h>
 #include <minerva/matrix/interface/CudaRuntimeLibrary.h>
+#include <minerva/matrix/interface/CudaDriver.h>
 
 #include <minerva/util/interface/Knobs.h>
 
@@ -116,10 +117,10 @@ Value* CublasMatrix::transpose() const
 	{
 		result = new CublasMatrix(this->columns(), this->rows());
 		
-		a = (float*)CudaRuntimeLibrary::cudaMalloc(sizeof(float) * size()        );
-		c = (float*)CudaRuntimeLibrary::cudaMalloc(sizeof(float) * result->size());
+		CudaDriver::cuMemAlloc((CUdeviceptr*)&a, sizeof(float) * size()        );
+		CudaDriver::cuMemAlloc((CUdeviceptr*)&c, sizeof(float) * result->size());
 		
-		CudaRuntimeLibrary::cudaMemcpy(a, &_data[0],    sizeof(float) *    size());
+		CudaDriver::cuMemcpyHtoD((CUdeviceptr)a, &_data[0], sizeof(float) * size());
 	
 		float alpha = 1.0f;
 		float beta  = 0.0f;
@@ -143,22 +144,22 @@ Value* CublasMatrix::transpose() const
 		
 		CublasLibrary::cublasSgeam(CublasLibrary::CUBLAS_OP_T,
 			CublasLibrary::CUBLAS_OP_N, m, n, &alpha, a, lda, &beta, b, ldb, c, ldc);
-		
-		CudaRuntimeLibrary::cudaMemcpy(&result->_data[0], c,
-			sizeof(float) * result->size(), CudaRuntimeLibrary::cudaMemcpyDefault);
+	
+		CudaDriver::cuMemcpyDtoH(&result->_data[0], (CUdeviceptr)c,
+			sizeof(float) * result->size());
 	}
 	catch(...)
 	{
-		CudaRuntimeLibrary::cudaFree(a);
-		CudaRuntimeLibrary::cudaFree(c);
+		CudaDriver::cuMemFree((CUdeviceptr)a);
+		CudaDriver::cuMemFree((CUdeviceptr)c);
 		
 		delete result;
 		
 		throw;
 	}
 	
-	CudaRuntimeLibrary::cudaFree(a);
-	CudaRuntimeLibrary::cudaFree(c);
+	CudaDriver::cuMemFree((CUdeviceptr)a);
+	CudaDriver::cuMemFree((CUdeviceptr)c);
 	
 	return result;
 }
@@ -179,12 +180,12 @@ Value* CublasMatrix::multiply(const Value* matrix) const
 	{
 		result = new CublasMatrix(rows(), m->columns());
 	
-		a = (float*)CudaRuntimeLibrary::cudaMalloc(sizeof(float) * size()        );
-		b = (float*)CudaRuntimeLibrary::cudaMalloc(sizeof(float) * m->size()     );
-		c = (float*)CudaRuntimeLibrary::cudaMalloc(sizeof(float) * result->size());
+		CudaDriver::cuMemAlloc((CUdeviceptr*)&a, sizeof(float) * size()        );
+		CudaDriver::cuMemAlloc((CUdeviceptr*)&b, sizeof(float) * m->size()     );
+		CudaDriver::cuMemAlloc((CUdeviceptr*)&c, sizeof(float) * result->size());
 		
-		CudaRuntimeLibrary::cudaMemcpy(a, &_data[0],    sizeof(float) *    size());
-		CudaRuntimeLibrary::cudaMemcpy(b, &m->_data[0], sizeof(float) * m->size());
+		CudaDriver::cuMemcpyHtoD((CUdeviceptr)a, &_data[0],    sizeof(float) *    size());
+		CudaDriver::cuMemcpyHtoD((CUdeviceptr)b, &m->_data[0], sizeof(float) * m->size());
 		
 		float alpha = 1.0f;
 		float beta  = 0.0f;
@@ -222,25 +223,23 @@ Value* CublasMatrix::multiply(const Value* matrix) const
 			result->rows(), result->columns(), columns(), &alpha, a, columns(),
 			b, m->columns(), &beta, c, result->rows());
 		*/
-		CudaRuntimeLibrary::cudaMemcpy(&result->_data[0], c,
-			sizeof(float) * result->size(), CudaRuntimeLibrary::cudaMemcpyDefault);
+		CudaDriver::cuMemcpyDtoH(&result->_data[0], (CUdeviceptr)c,
+			sizeof(float) * result->size());
 	}
 	catch(...)
 	{
-		CudaRuntimeLibrary::cudaFree(a);
-		CudaRuntimeLibrary::cudaFree(b);
-		CudaRuntimeLibrary::cudaFree(c);
+		CudaDriver::cuMemFree((CUdeviceptr)a);
+		CudaDriver::cuMemFree((CUdeviceptr)b);
+		CudaDriver::cuMemFree((CUdeviceptr)c);
 		
 		delete result;
 		
 		throw;
 	}
-	
-	CudaRuntimeLibrary::cudaFree(a);
-	CudaRuntimeLibrary::cudaFree(b);
-	CudaRuntimeLibrary::cudaFree(c);
-	
-	//result->transposeSelf();
+
+	CudaDriver::cuMemFree((CUdeviceptr)a);
+	CudaDriver::cuMemFree((CUdeviceptr)b);
+	CudaDriver::cuMemFree((CUdeviceptr)c);
 	
 	return result;
 }
@@ -657,14 +656,16 @@ Value* CublasMatrix::clone() const
 
 bool CublasMatrix::isSupported()
 {
-	if(!util::KnobDatabase::getKnobValue("CublasMatrix::Enable", false))
+	if(!util::KnobDatabase::getKnobValue("CublasMatrix::Enable", true))
 	{
 		return false;
 	}
 	
+	CudaRuntimeLibrary::load();	
 	CublasLibrary::load();
-
-	return CublasLibrary::loaded();
+	CudaDriver::load();
+	
+	return CudaRuntimeLibrary::loaded() && CublasLibrary::loaded() && CudaDriver::loaded();
 }
 
 }

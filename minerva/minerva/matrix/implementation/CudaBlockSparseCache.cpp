@@ -6,13 +6,13 @@
 
 // Minerva Includes 
 #include <minerva/matrix/interface/CudaBlockSparseCache.h>
-#include <minerva/matrix/interface/CudaRuntimeLibrary.h>
 #include <minerva/matrix/interface/CudaBlockSparseMatrix.h>
 #include <minerva/matrix/interface/CudaDriver.h>
 
 #include <minerva/matrix/interface/Matrix.h>
 
 #include <minerva/util/interface/Knobs.h>
+#include <minerva/util/interface/debug.h>
 
 // Standard Library Includes
 #include <map>
@@ -54,7 +54,6 @@ public:
 
 	~CacheManager()
 	{
-		assert(allocations.empty());
 	}
 
 public:
@@ -131,9 +130,13 @@ public:
 		
 		if(allocation != allocations.end())
 		{
+			util::log("CudaBlockSparseCache") << "Invalidating cache entry for matrix " << matrix << " ("
+				<< matrix->rows() << " rows, " << matrix->columns()
+				<< " columns) on the GPU at (" << allocation->second.address << ", "
+				<< allocation->second.size << " bytes).\n";
 			totalSize -= allocation->second.size;
 			
-			CudaRuntimeLibrary::cudaFree(allocation->second.address);
+			CudaDriver::cuMemFree((CUdeviceptr)allocation->second.address);
 
 			allocations.erase(allocation);
 		}
@@ -154,8 +157,8 @@ public:
 				
 				for(auto& block : cudaMatrix->rawData())
 				{
-					CudaRuntimeLibrary::cudaMemcpy(block.data().data(),
-						position + (uint8_t*)allocation->second.address,
+					CudaDriver::cuMemcpyDtoH(block.data().data(),
+						(CUdeviceptr)(position + (uint8_t*)allocation->second.address),
 						sizeof(float) * block.size());
 					
 					position += sizeof(float) * block.size();
@@ -171,10 +174,20 @@ private:
 	{
 		size_t size = matrix->size() * sizeof(float);
 
-		void* newMemory = CudaRuntimeLibrary::cudaMalloc(matrix->size());
-		
+		void* newMemory = nullptr;
+
+		if(size > 0)
+		{
+			CudaDriver::cuMemAlloc((CUdeviceptr*)&newMemory, size);
+		}
+
 		auto newAllocation = allocations.insert(
 			std::make_pair(matrix, Allocation(newMemory, size))).first;		
+		
+		util::log("CudaBlockSparseCache") << "Creating device allocation for matrix "
+			<< matrix << " (" << matrix->rows() << " rows, " << matrix->columns()
+			<< " columns) on the GPU at (" << newAllocation->second.address << ", "
+			<< newAllocation->second.size << " bytes).\n";
 	
 		totalSize += size;
 	
@@ -183,6 +196,11 @@ private:
 
 	void cacheAllocation(BlockSparseMatrixImplementation* matrix, Allocation* allocation)
 	{
+		util::log("CudaBlockSparseCache") << "Caching matrix " << matrix << " ("
+			<< matrix->rows() << " rows, " << matrix->columns()
+			<< " columns) on the GPU at (" << allocation->address << ", "
+			<< allocation->size << " bytes).\n";
+		
 		// TODO: optimize this
 		size_t position = 0;
 		
@@ -190,12 +208,13 @@ private:
 		
 		for(auto& block : cudaMatrix->rawData())
 		{
-			CudaRuntimeLibrary::cudaMemcpy(
-				position + (uint8_t*)allocation->address,
+			CudaDriver::cuMemcpyHtoD(
+				(CUdeviceptr)(position + (uint8_t*)allocation->address),
 				block.data().data(), sizeof(float) * block.size());
 			
 			position += sizeof(float) * block.size();
 		}
+		util::log("CudaBlockSparseCache") << " finished...\n";
 	}
 
 	Allocation* findExisting(BlockSparseMatrixImplementation* matrix)
@@ -220,6 +239,9 @@ private:
 		CudaDriver::cuMemGetInfo(&available, &total);
 		
 		maximumSize = total * percent / 100;
+		
+		util::log("CudaBlockSparseCache") << "Initializing cache, using up to "
+			<< maximumSize << " bytes from GPU memory.\n";
 	}
 
 

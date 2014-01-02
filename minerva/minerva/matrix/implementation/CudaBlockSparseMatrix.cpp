@@ -30,13 +30,13 @@ typedef CudaBlockSparseMatrix::MatrixVector MatrixVector;
 
 CudaBlockSparseMatrix::CudaBlockSparseMatrix(size_t blocks, size_t rows,
 	size_t columns, bool rowSparse)
-: BlockSparseMatrixImplementation(blocks, rows, columns, rowSparse)
+: BlockSparseMatrixImplementation(blocks, rows, columns, rowSparse), _isTransposed(false)
 {
 
 }
 
 CudaBlockSparseMatrix::CudaBlockSparseMatrix(const CudaBlockSparseMatrix& m, bool copyData)
-: BlockSparseMatrixImplementation(m.blocks(), rowsPerBlock(), columnsPerBlock(), isRowSparse())
+: BlockSparseMatrixImplementation(m.blocks(), m.rowsPerBlock(), m.columnsPerBlock(), m.isRowSparse()), _isTransposed(m._isTransposed)
 {
 	if(copyData)
 	{
@@ -49,7 +49,7 @@ CudaBlockSparseMatrix::CudaBlockSparseMatrix(const CudaBlockSparseMatrix& m, boo
 }
 
 CudaBlockSparseMatrix::CudaBlockSparseMatrix(const CudaBlockSparseMatrix& m)
-: BlockSparseMatrixImplementation(m.blocks(), rowsPerBlock(), columnsPerBlock(), isRowSparse())
+: BlockSparseMatrixImplementation(m.blocks(), m.rowsPerBlock(), m.columnsPerBlock(), m.isRowSparse()), _isTransposed(m._isTransposed)
 {
 	auto copy = m.begin();
 	for(auto matrix = _matrices.begin(); matrix != _matrices.end(); ++matrix, ++copy)
@@ -60,7 +60,9 @@ CudaBlockSparseMatrix::CudaBlockSparseMatrix(const CudaBlockSparseMatrix& m)
 
 Value* CudaBlockSparseMatrix::multiply(const Value* m) const
 {
-	auto result = new CudaBlockSparseMatrix(*this, false);
+	assert(m->blocks() == blocks());
+
+	auto result = new CudaBlockSparseMatrix(blocks(), rowsPerBlock(), m->columnsPerBlock(), isRowSparse());
 
 	auto matrixPointer = _cache->acquire(m);
 	auto devicePointer = _cache->acquire(this);	
@@ -95,6 +97,8 @@ Value* CudaBlockSparseMatrix::elementMultiply(const Value* m) const
 {
 	auto result = new CudaBlockSparseMatrix(*this, false);
 
+	assert(m->size() == size());
+
 	auto matrixPointer = _cache->acquire(m);
 	auto devicePointer = _cache->acquire(this);	
 	auto resultPointer = _cache->acquireClobber(result);
@@ -111,6 +115,8 @@ Value* CudaBlockSparseMatrix::elementMultiply(const Value* m) const
 Value* CudaBlockSparseMatrix::add(const Value* m) const
 {
 	auto result = new CudaBlockSparseMatrix(*this, false);
+
+	assert(m->size() == size());
 
 	auto matrixPointer = _cache->acquire(m);
 	auto devicePointer = _cache->acquire(this);	
@@ -162,6 +168,8 @@ Value* CudaBlockSparseMatrix::subtract(const Value* m) const
 {
 	auto result = new CudaBlockSparseMatrix(*this, false);
 
+	assert(m->size() == size());
+	
 	auto matrixPointer = _cache->acquire(m);
 	auto devicePointer = _cache->acquire(this);	
 	auto resultPointer = _cache->acquireClobber(result);
@@ -305,12 +313,20 @@ void CudaBlockSparseMatrix::transposeSelf()
 void CudaBlockSparseMatrix::assignUniformRandomValues(
 	std::default_random_engine& engine, float min, float max)
 {
+	#if 1
 	auto devicePointer = _cache->acquireClobber(this);
 	
 	CudaSparseMatrixLibrary::assignUniformRandomValues(devicePointer,
 		min, max, size());
 	
 	_cache->release(this);
+	#else
+	
+	for(auto& matrix : *this)
+	{
+		matrix.assignUniformRandomValues(engine, min, max);
+	}
+	#endif
 }
 
 Value* CudaBlockSparseMatrix::greaterThanOrEqual(float f) const
@@ -331,6 +347,8 @@ Value* CudaBlockSparseMatrix::greaterThanOrEqual(float f) const
 Value* CudaBlockSparseMatrix::equals(const Value* m) const
 {
 	auto result = new CudaBlockSparseMatrix(*this, false);
+
+	assert(m->size() == size());
 	
 	auto devicePointer = _cache->acquire(this);
 	auto target        = _cache->acquire(m);

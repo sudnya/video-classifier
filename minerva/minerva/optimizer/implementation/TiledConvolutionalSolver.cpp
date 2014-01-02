@@ -59,11 +59,11 @@ public:
 	{
 		gradient = m_backPropDataPtr->computePartialDerivativesForNewFlattenedWeights(inputs);
 		
-		util::log("TiledConvolutionalSolver") << " new gradient is : " << gradient.toString();
+		util::log("TiledConvolutionalSolver::Detail") << " new gradient is : " << gradient.toString();
 		
 		float newCost = m_backPropDataPtr->computeCostForNewFlattenedWeights(inputs);
 	
-		util::log("TiledConvolutionalSolver") << " new cost is : " << newCost << "\n";
+		util::log("TiledConvolutionalSolver::Detail") << " new cost is : " << newCost << "\n";
 		
 		return newCost;
 	}
@@ -604,7 +604,7 @@ void TiledConvolutionalSolver::solve()
 	TileVector tiles;
 
 	getTiles(tiles, neuralNetwork, input, reference);
-	
+		
 	for(auto& tile : tiles)
 	{
 		NeuralNetwork     networkTile;
@@ -618,6 +618,9 @@ void TiledConvolutionalSolver::solve()
 		m_backPropDataPtr->setInput(&inputTile);
 		m_backPropDataPtr->setReferenceOutput(&referenceTile);
 		
+		util::log("TiledConvolutionalSolver") << " solving tile " << (&tile - &tiles[0])
+			<< " out of " << tiles.size() << "\n";
+
 		linearSolver(m_backPropDataPtr);
 		
 		restoreTile(neuralNetwork, input, reference,

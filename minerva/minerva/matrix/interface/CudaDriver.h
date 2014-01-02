@@ -59,6 +59,8 @@ public:
 	**
 	***********************************/
 
+	static void cuCtxGetCurrent(CUcontext* c);
+	static void cuCtxPushCurrent(CUcontext c);
 	static void cuCtxCreate(CUcontext* c, unsigned int flags, CUdevice dev);
 	static void cuCtxGetApiVersion(CUcontext ctx, unsigned int* version);
 	static void cuCtxDestroy(CUcontext ctx);
@@ -200,17 +202,19 @@ private:
 		CUresult (*cuDeviceGetName)(char* name, int len, CUdevice dev);
 		CUresult (*cuDeviceComputeCapability)(int* major,
 			int* minor, CUdevice dev);
-		CUresult (*cuDeviceTotalMem)(size_t* bytes, 
+		CUresult (*cuDeviceTotalMem_v2)(size_t* bytes, 
 			CUdevice dev);
 		CUresult (*cuDeviceGetProperties)(CUdevprop* prop, 
 			CUdevice dev);
 		CUresult (*cuDeviceGetAttribute)(int* pi, 
 			CUdevice_attribute attrib, CUdevice dev);
-		CUresult (*cuCtxCreate)(CUcontext* pctx, 
+		CUresult (*cuCtxCreate_v2)(CUcontext* pctx, 
 			unsigned int flags, CUdevice dev);
+		CUresult (*cuCtxGetCurrent)(CUcontext* pctx);
+		CUresult (*cuCtxPushCurrent_v2)(CUcontext pctx);
 		CUresult (*cuCtxGetApiVersion)(CUcontext ctx, unsigned int* version);
 		CUresult (*cuCtxSynchronize)(void);
-		CUresult (*cuCtxDestroy)(CUcontext ctx);
+		CUresult (*cuCtxDestroy_v2)(CUcontext ctx);
 
 		CUresult (*cuModuleLoadDataEx)(CUmodule* module, 
 			const void* image, unsigned int numOptions, 
@@ -218,21 +222,21 @@ private:
 		CUresult (*cuModuleUnload)(CUmodule hmod);
 		CUresult (*cuModuleGetFunction)(CUfunction* hfunc, 
 			CUmodule hmod, const char* name);
-		CUresult (*cuModuleGetGlobal)(CUdeviceptr* dptr, 
+		CUresult (*cuModuleGetGlobal_v2)(CUdeviceptr* dptr, 
 			size_t* bytes, CUmodule hmod, const char* name);
 		CUresult (*cuFuncSetBlockShape)(CUfunction hfunc, int x, 
 			int y, int z);
 		CUresult (*cuFuncSetSharedSize)(CUfunction hfunc, 
 			unsigned int bytes);
 
-		CUresult (*cuMemGetInfo)(size_t* free, 
+		CUresult (*cuMemGetInfo_v2)(size_t* free, 
 			size_t* total);
-		CUresult (*cuMemAlloc)(CUdeviceptr* dptr, 
+		CUresult (*cuMemAlloc_v2)(CUdeviceptr* dptr, 
 			unsigned int bytesize);
-		CUresult (*cuMemFree)(CUdeviceptr dptr);
-		CUresult (*cuMemGetAddressRange)(CUdeviceptr* pbase, 
+		CUresult (*cuMemFree_v2)(CUdeviceptr dptr);
+		CUresult (*cuMemGetAddressRange_v2)(CUdeviceptr* pbase, 
 			size_t* psize, CUdeviceptr dptr);
-		CUresult (*cuMemAllocHost)(void** pp, 
+		CUresult (*cuMemAllocHost_v2)(void** pp, 
 			unsigned int bytesize);
 		CUresult (*cuMemFreeHost)(void* p);
 		
@@ -241,13 +245,13 @@ private:
 		CUresult (*cuMemHostRegister)(void* pp, 
 			unsigned long long bytesize, unsigned int Flags);
 		CUresult (*cuMemHostUnregister)(void* pp);
-		CUresult (*cuMemHostGetDevicePointer)(CUdeviceptr* pdptr, 
+		CUresult (*cuMemHostGetDevicePointer_v2)(CUdeviceptr* pdptr, 
 			void* p, unsigned int Flags);
 		CUresult (*cuMemHostGetFlags)(unsigned int* pFlags, void* p);
 		
-		CUresult (*cuMemcpyHtoD)(CUdeviceptr dstDevice, 
+		CUresult (*cuMemcpyHtoD_v2)(CUdeviceptr dstDevice, 
 			const void* srcHost, unsigned int ByteCount);
-		CUresult (*cuMemcpyDtoH)(void* dstHost, 
+		CUresult (*cuMemcpyDtoH_v2)(void* dstHost, 
 			CUdeviceptr srcDevice, unsigned int ByteCount);
 		
 		CUresult (*cuParamSetSize)(CUfunction hfunc, 
@@ -263,7 +267,7 @@ private:
 			CUstream hStream);
 		CUresult (*cuEventQuery)(CUevent hEvent);
 		CUresult (*cuEventSynchronize)(CUevent hEvent);
-		CUresult (*cuEventDestroy)(CUevent hEvent);
+		CUresult (*cuEventDestroy_v2)(CUevent hEvent);
 		CUresult (*cuEventElapsedTime)(float* pMilliseconds, 
 			CUevent hStart, CUevent hEnd);
 		
@@ -279,7 +283,13 @@ private:
 		bool loaded() const;
 		/*! \brief unloads the library */
 		void unload();
-		
+	
+	public:
+		CUcontext context;
+	
+	private:
+		void _createContext();
+	
 	private:
 		void* _library;
 

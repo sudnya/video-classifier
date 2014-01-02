@@ -9,6 +9,7 @@
 #include <minerva/matrix/interface/CudaSparseMatrixLibraryPTX.h>
 #include <minerva/matrix/interface/CudaDriverTypes.h>
 #include <minerva/matrix/interface/CudaDriver.h>
+#include <minerva/matrix/interface/CudaRuntimeLibrary.h>
 #include <minerva/matrix/interface/CublasLibrary.h>
 #include <minerva/matrix/interface/CurandLibrary.h>
 
@@ -17,6 +18,10 @@
 
 // Standard Library Includes
 #include <vector>
+#include <random>
+
+// Preprocessor Macros
+#define USE_CURAND 1
 
 namespace minerva
 {
@@ -33,7 +38,6 @@ public:
 		
 	}
 
-
 public:
 	bool loaded() const
 	{
@@ -42,13 +46,17 @@ public:
 	
 	void load()
 	{
+		if(loaded()) return;
+	
+		CudaRuntimeLibrary::load();
+		CublasLibrary::load();
+		CurandLibrary::load();	
 		CudaDriver::load();
 		
+		if(!CudaRuntimeLibrary::loaded()) return;
+		if(!CublasLibrary::loaded()) return;
+		if(!CurandLibrary::loaded()) return;
 		if(!CudaDriver::loaded()) return;
-		
-		CudaDriver::cuInit(0);
-		
-		CudaDriver::cuCtxCreate(&context, 0, 0);
 		
 		loadModule();
 		
@@ -82,6 +90,7 @@ public:
 		{
 			CudaDriver::cuModuleLoadDataEx(&module, getCudaSparseMatrixLibraryPtx(),
 				2, options, optionValues);
+			util::log("CudaSparseMatrixLibrary") << " loaded binary successfully...\n";
 		}
 		catch(const std::exception& e)
 		{
@@ -128,11 +137,11 @@ static void launchKernel(const std::string& name, const ByteVector& parameters)
 	CudaDriver::cuParamSetv(function, 0, (void*)parameters.data(), parameters.size());
 	
 	// set the shape
-	CudaDriver::cuFuncSetBlockShape(function, 1, 1, 256);
+	CudaDriver::cuFuncSetBlockShape(function, 256, 1, 1);
 	CudaDriver::cuFuncSetSharedSize(function, 0);
 
 	// launch it
-	CudaDriver::cuLaunchGrid(function, 1, getGoodCtaCount());
+	CudaDriver::cuLaunchGrid(function, getGoodCtaCount(), 1);
 }
 
 /*
@@ -168,9 +177,32 @@ static void flatten(ByteVector& parameters, const T& value, Args... arguments)
 	flatten(parameters, arguments...);
 }
 
+template<typename T>
+static std::string flattenString(const T& value)
+{
+	std::stringstream stream;
+	
+	stream << value;
+	
+	return stream.str();
+}
+
+template<typename T, typename... Args>
+static std::string flattenString(const T& value, Args... arguments)
+{
+	std::stringstream stream;
+	
+	stream << value << ", " << flattenString(arguments...);
+	
+	return stream.str();
+}
+
 template<typename... Args>
 static void launchKernel(const std::string& name, Args... arguments)
 {
+	util::log("CudaSparseMatrixLibrary") << "launching kernel '" << name
+		<< "'(" << flattenString(arguments...) << ")\n";
+
 	ByteVector parameters;
 	
 	flatten(parameters, arguments...);
@@ -193,7 +225,7 @@ static float* getPointerArray(FloatPointerVector& data, const float* value, size
 		position += rows * columns;
 	}
 	
-	CudaDriver::cuMemHostRegister(data.data(), sizeof(float), CU_MEMHOSTREGISTER_DEVICEMAP);
+	CudaDriver::cuMemHostRegister(data.data(), sizeof(float**), CU_MEMHOSTREGISTER_DEVICEMAP);
 	
 	float* devicePointer = nullptr;
 	
@@ -236,21 +268,31 @@ void CudaSparseMatrixLibrary::multiply(float* result, const float* left, const f
 	// m = num_row_C
 	int m = rightColumns;
 
-	FloatPointerVector aData;
-	FloatPointerVector bData;
-	FloatPointerVector cData;
-		
-	float* a = getPointerArray(aData, left,   blocks, rows, columns);
-	float* b = getPointerArray(bData, right,  blocks, rightRows, rightColumns);
-	float* c = getPointerArray(cData, result, blocks, rows, rightColumns);
+	if(blocks == 1)
+	{
+		CublasLibrary::cublasSgemm(CublasLibrary::CUBLAS_OP_N,
+			CublasLibrary::CUBLAS_OP_N, m, n, k, &alpha,
+			right, ldb, left, lda, &beta, result, ldc);
+	}
+	else
+	{
+		FloatPointerVector aData;
+		FloatPointerVector bData;
+		FloatPointerVector cData;
+			
+		float* a = getPointerArray(aData, left,   blocks, rows, columns);
+		float* b = getPointerArray(bData, right,  blocks, rightRows, rightColumns);
+		float* c = getPointerArray(cData, result, blocks, rows, rightColumns);
 
-	CublasLibrary::cublasSgemmBatched(CublasLibrary::CUBLAS_OP_N,
-		CublasLibrary::CUBLAS_OP_N, m, n, k, &alpha,
-		b, ldb, a, lda, &beta, c, ldc, blocks);
+		CublasLibrary::cublasSgemmBatched(CublasLibrary::CUBLAS_OP_N,
+			CublasLibrary::CUBLAS_OP_N, m, n, k, &alpha,
+			b, ldb, a, lda, &beta, c, ldc, blocks);
 
-	freePointerArray(aData);
-	freePointerArray(bData);
-	freePointerArray(cData);
+		freePointerArray(aData);
+		freePointerArray(bData);
+		freePointerArray(cData);
+	}
+
 }
 
 void CudaSparseMatrixLibrary::multiply(float* result, const float* left, float value, size_t size)
@@ -273,11 +315,11 @@ void CudaSparseMatrixLibrary::addBroadcastRow(float* result, const float* left, 
 {
 	if(isRowSparse)
 	{
-		launchKernel("addBroadcastRowRowSparse", left, right, blocks, rows, columns);
+		launchKernel("addBroadcastRowRowSparse", result, left, right, blocks, rows, columns);
 	}
 	else
 	{
-		launchKernel("addBroadcastRowColumnSparse", left, right, blocks, rows, columns);
+		launchKernel("addBroadcastRowColumnSparse", result, left, right, blocks, rows, columns);
 	}
 }
 
@@ -401,19 +443,13 @@ void CudaSparseMatrixLibrary::reduceSumAlongColumns(float* result, const float* 
 
 void CudaSparseMatrixLibrary::load()
 {
-	CudaDriver::load();
-	
 	singleton->load();
-	
-	CublasLibrary::load();
-	
-	CurandLibrary::load();
 }
 
 bool CudaSparseMatrixLibrary::loaded()
 {
 	return singleton->loaded() && CudaDriver::loaded() &&
-		CublasLibrary::loaded() && CurandLibrary::loaded();
+		CublasLibrary::loaded();
 }
 
 }

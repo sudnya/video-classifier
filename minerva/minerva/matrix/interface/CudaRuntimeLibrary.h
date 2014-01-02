@@ -38,6 +38,8 @@ public:
 	static bool loaded();
 
 public:
+	static void cudaSetDevice(int device);
+	
 	static void* cudaMalloc(size_t bytes);
 	static void cudaFree(void* ptr);
 
@@ -54,6 +56,8 @@ private:
 	class Interface
 	{
 	public:
+		int (*cudaSetDevice)(int ptr);
+
 		int (*cudaMalloc)(void** ptr, size_t bytes);
 		int (*cudaFree)  (void*  ptr);
 		int (*cudaMemcpy)(void*  dest, const void* src, size_t bytes, 

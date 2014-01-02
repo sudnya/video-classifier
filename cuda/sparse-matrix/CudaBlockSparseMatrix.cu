@@ -53,7 +53,10 @@ extern "C" __global__ void addBroadcastRowRowSparse(float* result, float* left, 
 		uint64_t indexInBlock = i % blockSize;
 		uint64_t columnIndex  = indexInBlock % columns;
 		
-		result[i] = left[i] + right[columnIndex];
+		float leftValue  = left[i];
+		float rightValue = right[columnIndex];
+		
+		result[i] = leftValue + rightValue;
 	}
 }
 
@@ -69,9 +72,12 @@ extern "C" __global__ void addBroadcastRowColumnSparse(float* result, float* lef
 	for(uint64_t i = start; i < size; i += step)
 	{
 		// TODO: try to optimize these out
-		uint64_t columnIndex  = i % totalColumns;
+		uint64_t columnIndex = i % totalColumns;
 		
-		result[i] = left[i] + right[columnIndex];
+		float leftValue  = left[i];
+		float rightValue = right[columnIndex];
+		
+		result[i] = leftValue + rightValue;
 	}
 }
 

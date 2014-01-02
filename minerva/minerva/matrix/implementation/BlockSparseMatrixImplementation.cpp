@@ -23,7 +23,7 @@ BlockSparseMatrixImplementation::BlockSparseMatrixImplementation(size_t blocks, 
 	size_t columns, bool rowSparse)
 : _isRowSparse(rowSparse)
 {
-	
+	resize(blocks, rows, columns);
 }
 
 BlockSparseMatrixImplementation::~BlockSparseMatrixImplementation()
@@ -105,11 +105,7 @@ size_t BlockSparseMatrixImplementation::size() const
 
 size_t BlockSparseMatrixImplementation::blocks() const
 {
-	if(empty()) return 0;
-	
-	if(isRowSparse()) return front().rows();
-
-	return front().columns();
+	return _matrices.size();
 }
 
 bool BlockSparseMatrixImplementation::empty() const
@@ -131,6 +127,8 @@ size_t BlockSparseMatrixImplementation::columns() const
 		return c;
 	}
 	
+	if(empty()) return 0;
+	
 	return front().columns();
 }
 
@@ -147,7 +145,9 @@ size_t BlockSparseMatrixImplementation::rows() const
 
 		return r;
 	}
-
+	
+	if(empty()) return 0;
+	
 	return front().rows();
 }
     
