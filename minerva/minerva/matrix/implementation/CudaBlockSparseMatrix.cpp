@@ -61,6 +61,8 @@ CudaBlockSparseMatrix::CudaBlockSparseMatrix(const CudaBlockSparseMatrix& m)
 Value* CudaBlockSparseMatrix::multiply(const Value* m) const
 {
 	assert(m->blocks() == blocks());
+	assert(!_isTransposed);
+	assert(!static_cast<const CudaBlockSparseMatrix*>(m)->_isTransposed);
 
 	auto result = new CudaBlockSparseMatrix(blocks(), rowsPerBlock(), m->columnsPerBlock(), isRowSparse());
 
@@ -133,6 +135,9 @@ Value* CudaBlockSparseMatrix::add(const Value* m) const
 
 Value* CudaBlockSparseMatrix::addBroadcastRow(const Value* m) const
 {
+	assert(!_isTransposed);
+	assert(!static_cast<const CudaBlockSparseMatrix*>(m)->_isTransposed);
+
 	auto result = new CudaBlockSparseMatrix(*this, false);
 
 	auto matrixPointer = _cache->acquire(m);
@@ -376,6 +381,7 @@ float CudaBlockSparseMatrix::reduceSum() const
 
 Value* CudaBlockSparseMatrix::reduceSumAlongColumns() const
 {
+	assert(!_isTransposed);
 	auto result = new CudaBlockSparseMatrix(*this, false);
 	
 	auto devicePointer = _cache->acquire(this);
@@ -392,6 +398,7 @@ Value* CudaBlockSparseMatrix::reduceSumAlongColumns() const
 
 Value* CudaBlockSparseMatrix::reduceSumAlongRows() const
 {
+	assert(!_isTransposed);
 	auto result = new CudaBlockSparseMatrix(*this, false);
 	
 	auto devicePointer = _cache->acquire(this);

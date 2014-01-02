@@ -370,6 +370,8 @@ void CudaSparseMatrixLibrary::sigmoidDerivative(float* result, size_t size)
 
 void CudaSparseMatrixLibrary::assignUniformRandomValues(float* result, float min, float max, size_t size)
 {
+	util::log("CudaSparseMatrixLibrary") << "assigning uniform random values using cuRand\n";
+	
 	// curand
 	CurandLibrary::curandGenerator_t generator;
 	
