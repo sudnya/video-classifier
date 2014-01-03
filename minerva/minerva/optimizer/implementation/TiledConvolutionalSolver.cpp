@@ -158,9 +158,10 @@ public:
 public:
 	size_t totalConnections() const
 	{
-		if (isInput())     return (*input    )[blockId].size();
-		if (isReference()) return (*reference)[blockId].size();
-		return (*network)[layer-1][blockId].size();
+		if (isInput())     return (*input    ).blockSize();
+		if (isReference()) return (*reference).blockSize();
+		
+		return (*network)[layer-1].blockSize();
 	}
 
 	size_t tileBase() const;
@@ -604,33 +605,42 @@ void TiledConvolutionalSolver::solve()
 	TileVector tiles;
 
 	getTiles(tiles, neuralNetwork, input, reference);
-		
-	for(auto& tile : tiles)
+	
+	// Special case only 1 tile
+	if(tiles.size() > 1)
 	{
-		NeuralNetwork     networkTile;
-		BlockSparseMatrix inputTile(input->isRowSparse());
-		BlockSparseMatrix referenceTile(reference->isRowSparse());
-		
-		extractTile(&networkTile, &inputTile, &referenceTile,
-			neuralNetwork, input, reference, tile);
-		
-		m_backPropDataPtr->setNeuralNetwork(&networkTile);
-		m_backPropDataPtr->setInput(&inputTile);
-		m_backPropDataPtr->setReferenceOutput(&referenceTile);
-		
-		util::log("TiledConvolutionalSolver") << " solving tile " << (&tile - &tiles[0])
-			<< " out of " << tiles.size() << "\n";
+		for(auto& tile : tiles)
+		{
+			NeuralNetwork     networkTile;
+			BlockSparseMatrix inputTile(input->isRowSparse());
+			BlockSparseMatrix referenceTile(reference->isRowSparse());
+			
+			extractTile(&networkTile, &inputTile, &referenceTile,
+				neuralNetwork, input, reference, tile);
+			
+			m_backPropDataPtr->setNeuralNetwork(&networkTile);
+			m_backPropDataPtr->setInput(&inputTile);
+			m_backPropDataPtr->setReferenceOutput(&referenceTile);
+			
+			util::log("TiledConvolutionalSolver") << " solving tile " << (&tile - &tiles[0])
+				<< " out of " << tiles.size() << "\n";
 
-		linearSolver(m_backPropDataPtr);
+			linearSolver(m_backPropDataPtr);
+			
+			restoreTile(neuralNetwork, input, reference,
+				&networkTile, &inputTile, &referenceTile, tile);
+		}
 		
-		restoreTile(neuralNetwork, input, reference,
-			&networkTile, &inputTile, &referenceTile, tile);
+		// Restore the back prop parameters
+		m_backPropDataPtr->setNeuralNetwork(neuralNetwork);
+		m_backPropDataPtr->setInput(input);
+		m_backPropDataPtr->setReferenceOutput(reference);
 	}
-
-	// Restore the back prop parameters
-	m_backPropDataPtr->setNeuralNetwork(neuralNetwork);
-	m_backPropDataPtr->setInput(input);
-	m_backPropDataPtr->setReferenceOutput(reference);
+	else
+	{
+		util::log("TiledConvolutionalSolver") << " no need for tiling, solving entire network at once.\n";
+		linearSolver(m_backPropDataPtr);
+	}
 }
 
 }

@@ -77,6 +77,7 @@ static float computeCostForNetwork(const NeuralNetwork& network, const BlockSpar
 	// J = (1/m) .* sum(sum(-yOneHot .* log(hx) - (1 - yOneHot) .* log(1 - hx)));
 
 	unsigned m = input.rows();
+
 	
 	auto hx = network.runInputs(input);
 	
@@ -180,6 +181,8 @@ float DenseBackPropagation::getCost(const NeuralNetwork& network, const BlockSpa
 MatrixVector DenseBackPropagation::getDeltas(const NeuralNetwork& network, const MatrixVector& activations) const
 {
 	MatrixVector deltas;
+
+	deltas.reserve(activations.size() - 1);
 	
 	auto i = activations.rbegin();
 	auto delta = (*i).subtract(*_referenceOutput);
@@ -187,7 +190,7 @@ MatrixVector DenseBackPropagation::getDeltas(const NeuralNetwork& network, const
 
 	while (i != activations.rend())
 	{
-		deltas.push_back(delta);
+		deltas.push_back(std::move(delta));
 		
 		unsigned int layerNumber = std::distance(activations.begin(), --(i.base()));
 		//util::log ("DenseBackPropagation") << " Layer number: " << layerNumber << "\n";
@@ -204,11 +207,13 @@ MatrixVector DenseBackPropagation::getDeltas(const NeuralNetwork& network, const
 	}
 
 	std::reverse(deltas.begin(), deltas.end());
+	
 	for (auto& delta : deltas)
 	{
 		util::log("DenseBackPropagation") << " added delta of size ( " << delta.rows() << " ) rows and ( " << delta.columns() << " )\n" ;
-		util::log("DenseBackPropagation") << " delta contains " << delta.toString() << "\n";
+		//util::log("DenseBackPropagation") << " delta contains " << delta.toString() << "\n";
 	}
+	
 	return deltas;
 }
 
@@ -253,6 +258,8 @@ MatrixVector DenseBackPropagation::getActivations(const NeuralNetwork& network, 
 {
 	MatrixVector activations;
 
+	activations.reserve(network.size() + 1);
+
 	auto temp = input;
 
 	activations.push_back(temp);
@@ -268,8 +275,8 @@ MatrixVector DenseBackPropagation::getActivations(const NeuralNetwork& network, 
 		//<< " ) rows and ( " << activations.back().columns() << " )\n" ;
 	}
 
-	util::log("DenseBackPropagation") << " intermediate stage ( " << activations[activations.size() / 2].toString() << "\n";
-	util::log("DenseBackPropagation") << " final output ( " << activations.back().toString() << "\n";
+	//util::log("DenseBackPropagation") << " intermediate stage ( " << activations[activations.size() / 2].toString() << "\n";
+	//util::log("DenseBackPropagation") << " final output ( " << activations.back().toString() << "\n";
 
 	return activations;
 }
@@ -283,6 +290,8 @@ MatrixVector DenseBackPropagation::getCostDerivative(
 	auto deltas = getDeltas(network, activations);
 	
 	MatrixVector partialDerivative;
+
+	partialDerivative.reserve(deltas.size());
 	
 	unsigned int samples = _input->rows();
 
@@ -295,7 +304,7 @@ MatrixVector DenseBackPropagation::getCostDerivative(
 		transposedDelta.setRowSparse();
 
 		//there will be one less delta than activation
-		auto unnormalizedPartialDerivative = (transposedDelta.multiply(*j)).transpose();
+		auto unnormalizedPartialDerivative = (transposedDelta.multiply(*j));
 		auto normalizedPartialDerivative = unnormalizedPartialDerivative.multiply(1.0f/samples);
 		
 		// add in the regularization term
@@ -303,17 +312,17 @@ MatrixVector DenseBackPropagation::getCostDerivative(
 
 		auto lambdaTerm = weights.multiply(_lambda/samples);
 		
-		partialDerivative.push_back(lambdaTerm.add(normalizedPartialDerivative));
-	
-		util::log("DenseBackPropagation") << " computed derivative for layer " << std::distance(deltas.begin(), i)
-			<< " (" << partialDerivative.back().rows()
-			<< " rows, " << partialDerivative.back().columns() << " columns).\n";
-		util::log("DenseBackPropagation") << " PD contains " << partialDerivative.back().toString() << "\n";
+		partialDerivative.push_back(lambdaTerm.add(normalizedPartialDerivative.transpose()));
+
+		//util::log("DenseBackPropagation") << " computed derivative for layer " << std::distance(deltas.begin(), i)
+		//	<< " (" << partialDerivative.back().rows()
+		//	<< " rows, " << partialDerivative.back().columns() << " columns).\n";
+		//util::log("DenseBackPropagation") << " PD contains " << partialDerivative.back().toString() << "\n";
 	
 	}//this loop ends after all activations are done. and we don't need the last delta (ref-output anyway)
-	
+
 	bool performGradientChecking = util::KnobDatabase::getKnobValue("NeuralNetwork::DoGradientChecking", false);
-	
+
 	if (performGradientChecking)
 	{ 
 		float epsilon = util::KnobDatabase::getKnobValue("NeuralNetwork::GradientCheckingEpsilon", 0.05f);

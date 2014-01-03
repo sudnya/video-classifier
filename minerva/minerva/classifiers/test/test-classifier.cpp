@@ -35,7 +35,11 @@ neuralnetwork::NeuralNetwork createAndInitializeNeuralNetwork(unsigned networkSi
     // Layer 3
     ann.addLayer(Layer(1,networkSize,networkSize/2));
 
-    ann.initializeRandomly(epsilon);
+	std::default_random_engine engine;
+	
+	engine.seed(0);
+	
+    ann.initializeRandomly(engine, epsilon);
 
     return ann;
 }

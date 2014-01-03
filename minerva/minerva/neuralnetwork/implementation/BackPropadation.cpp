@@ -160,7 +160,13 @@ Matrix BackPropagation::getFlattenedCostDerivative() const
 static NeuralNetwork createNetworkFromWeights(
 	const NeuralNetwork* neuralNetwork, const Matrix& weights)
 {
-	NeuralNetwork newNetwork(*neuralNetwork);
+	NeuralNetwork newNetwork;
+	
+	for(auto& layer : *neuralNetwork)
+	{
+		newNetwork.addLayer(Layer(layer.blocks(),
+			layer.getBlockingFactor(), layer.getOutputBlockingFactor()));
+	}
 	
 	newNetwork.setFlattenedWeights(weights);
 		

@@ -36,55 +36,97 @@ CudaBlockSparseMatrix::CudaBlockSparseMatrix(size_t blocks, size_t rows,
 }
 
 CudaBlockSparseMatrix::CudaBlockSparseMatrix(const CudaBlockSparseMatrix& m, bool copyData)
-: BlockSparseMatrixImplementation(m.blocks(), m.rowsPerBlock(), m.columnsPerBlock(), m.isRowSparse()), _isTransposed(m._isTransposed)
+: BlockSparseMatrixImplementation(m.blocks(), m.rowsPerBlock(), m.columnsPerBlock(), m.isRowSparse()), _isTransposed(false)
 {
 	if(copyData)
 	{
 		auto copy = m.begin();
+		
+		assert(!m._isTransposed);
+		
 		for(auto matrix = _matrices.begin(); matrix != _matrices.end(); ++matrix, ++copy)
 		{
 			*matrix = *copy;
 		}
 	}
+	else
+	{
+		_isTransposed = m._isTransposed;
+	}
 }
 
 CudaBlockSparseMatrix::CudaBlockSparseMatrix(const CudaBlockSparseMatrix& m)
-: BlockSparseMatrixImplementation(m.blocks(), m.rowsPerBlock(), m.columnsPerBlock(), m.isRowSparse()), _isTransposed(m._isTransposed)
+: BlockSparseMatrixImplementation(m.blocks(), m.rowsPerBlock(), m.columnsPerBlock(), m.isRowSparse()), _isTransposed(false)
 {
 	auto copy = m.begin();
+	
+	assert(!m._isTransposed);
+	
 	for(auto matrix = _matrices.begin(); matrix != _matrices.end(); ++matrix, ++copy)
 	{
 		*matrix = *copy;
 	}
 }
 
+CudaBlockSparseMatrix::~CudaBlockSparseMatrix()
+{
+	_cache->invalidate(this);
+}
+
 Value* CudaBlockSparseMatrix::multiply(const Value* m) const
 {
+	// TODO: in parallel
+	#if 0
+	_performTransposeIfNecessary(m);
+	
+	assert(_isTransposed == static_cast<const CudaBlockSparseMatrix*>(m)->_isTransposed);
+
+	auto result = new CudaBlockSparseMatrix(*this, false);
+	
+	result->resize(blocks());
+
 	assert(m->blocks() == blocks());
-	assert(!_isTransposed);
-	assert(!static_cast<const CudaBlockSparseMatrix*>(m)->_isTransposed);
+	assertM(columns() == m->rows(), "Left columns " << columns() << " does not match right rows " << m->rows());
 
-	auto result = new CudaBlockSparseMatrix(blocks(), rowsPerBlock(), m->columnsPerBlock(), isRowSparse());
+	auto resultBlock = result->begin();
+	for(auto left = begin(), right = m->begin(); left != end(); ++left, ++right, ++resultBlock)
+	{
+		*resultBlock = std::move(left->multiply(*right));
+	}
+	
+	return result;
+	#else 
+	assert(m->blocks() == blocks());
 
-	auto matrixPointer = _cache->acquire(m);
-	auto devicePointer = _cache->acquire(this);	
+	auto matrixPointer = _cache->acquireReadOnly(m);
+	auto devicePointer = _cache->acquireReadOnly(this);	
+
+	size_t resultRows    = rowsPerBlock();
+	size_t resultColumns = m->columnsPerBlock();
+
+	auto result = new CudaBlockSparseMatrix(blocks(), resultRows, resultColumns, isRowSparse());
 	auto resultPointer = _cache->acquireClobber(result);
 	
-	CudaSparseMatrixLibrary::multiply(resultPointer, devicePointer, matrixPointer,
+	CudaSparseMatrixLibrary::multiply(resultPointer, devicePointer, _isTransposed, matrixPointer,
+		static_cast<const CudaBlockSparseMatrix*>(m)->_isTransposed,
 		blocks(), rowsPerBlock(), columnsPerBlock(), m->rowsPerBlock(), m->columnsPerBlock());
 
 	_cache->release(this);
 	_cache->release(result);
 	_cache->release(m);
-	
+
 	return result;
+	#endif
 }
 
 Value* CudaBlockSparseMatrix::multiply(float f) const
 {
+	auto devicePointer = _cache->acquireReadOnly(this);	
+	
 	auto result = new CudaBlockSparseMatrix(*this, false);
+	
+	assert(result->_isTransposed == _isTransposed);
 
-	auto devicePointer = _cache->acquire(this);	
 	auto resultPointer = _cache->acquireClobber(result);
 	
 	CudaSparseMatrixLibrary::multiply(resultPointer, devicePointer, f, size());
@@ -92,17 +134,22 @@ Value* CudaBlockSparseMatrix::multiply(float f) const
 	_cache->release(this);
 	_cache->release(result);
 	
+	assert(result->_isTransposed == _isTransposed);
+		
 	return result;
 }
 
 Value* CudaBlockSparseMatrix::elementMultiply(const Value* m) const
 {
+	_performTransposeIfNecessary(m);
+	assert(_isTransposed == static_cast<const CudaBlockSparseMatrix*>(m)->_isTransposed);
+	
 	auto result = new CudaBlockSparseMatrix(*this, false);
 
 	assert(m->size() == size());
 
-	auto matrixPointer = _cache->acquire(m);
-	auto devicePointer = _cache->acquire(this);	
+	auto matrixPointer = _cache->acquireReadOnly(m);
+	auto devicePointer = _cache->acquireReadOnly(this);	
 	auto resultPointer = _cache->acquireClobber(result);
 	
 	CudaSparseMatrixLibrary::elementMultiply(resultPointer, devicePointer, matrixPointer, size());
@@ -116,12 +163,16 @@ Value* CudaBlockSparseMatrix::elementMultiply(const Value* m) const
 
 Value* CudaBlockSparseMatrix::add(const Value* m) const
 {
+	_performTransposeIfNecessary(m);
+	
+	assert(_isTransposed == static_cast<const CudaBlockSparseMatrix*>(m)->_isTransposed);
+	
 	auto result = new CudaBlockSparseMatrix(*this, false);
 
 	assert(m->size() == size());
 
-	auto matrixPointer = _cache->acquire(m);
-	auto devicePointer = _cache->acquire(this);	
+	auto matrixPointer = _cache->acquireReadOnly(m);
+	auto devicePointer = _cache->acquireReadOnly(this);	
 	auto resultPointer = _cache->acquireClobber(result);
 	
 	CudaSparseMatrixLibrary::add(resultPointer, devicePointer, matrixPointer, size());
@@ -135,13 +186,16 @@ Value* CudaBlockSparseMatrix::add(const Value* m) const
 
 Value* CudaBlockSparseMatrix::addBroadcastRow(const Value* m) const
 {
+	_performTransposeIfNecessary();
+	_performTransposeIfNecessary(m);
+
 	assert(!_isTransposed);
 	assert(!static_cast<const CudaBlockSparseMatrix*>(m)->_isTransposed);
 
 	auto result = new CudaBlockSparseMatrix(*this, false);
 
-	auto matrixPointer = _cache->acquire(m);
-	auto devicePointer = _cache->acquire(this);	
+	auto matrixPointer = _cache->acquireReadOnly(m);
+	auto devicePointer = _cache->acquireReadOnly(this);	
 	auto resultPointer = _cache->acquireClobber(result);
 	
 	CudaSparseMatrixLibrary::addBroadcastRow(resultPointer, devicePointer, matrixPointer,
@@ -156,9 +210,9 @@ Value* CudaBlockSparseMatrix::addBroadcastRow(const Value* m) const
 
 Value* CudaBlockSparseMatrix::add(float f) const
 {
+	auto devicePointer = _cache->acquireReadOnly(this);	
+	
 	auto result = new CudaBlockSparseMatrix(*this, false);
-
-	auto devicePointer = _cache->acquire(this);	
 	auto resultPointer = _cache->acquireClobber(result);
 	
 	CudaSparseMatrixLibrary::add(resultPointer, devicePointer, f, size());
@@ -166,17 +220,22 @@ Value* CudaBlockSparseMatrix::add(float f) const
 	_cache->release(this);
 	_cache->release(result);
 	
+	assert(result->_isTransposed == _isTransposed);
+	
 	return result;
 }
 
 Value* CudaBlockSparseMatrix::subtract(const Value* m) const
 {
+	_performTransposeIfNecessary(m);
+	assert(_isTransposed == static_cast<const CudaBlockSparseMatrix*>(m)->_isTransposed);
+	
 	auto result = new CudaBlockSparseMatrix(*this, false);
 
 	assert(m->size() == size());
 	
-	auto matrixPointer = _cache->acquire(m);
-	auto devicePointer = _cache->acquire(this);	
+	auto matrixPointer = _cache->acquireReadOnly(m);
+	auto devicePointer = _cache->acquireReadOnly(this);	
 	auto resultPointer = _cache->acquireClobber(result);
 	
 	CudaSparseMatrixLibrary::subtract(resultPointer, devicePointer, matrixPointer, size());
@@ -190,9 +249,9 @@ Value* CudaBlockSparseMatrix::subtract(const Value* m) const
 }
 Value* CudaBlockSparseMatrix::subtract(float f) const
 {
+	auto devicePointer = _cache->acquireReadOnly(this);	
+	
 	auto result = new CudaBlockSparseMatrix(*this, false);
-
-	auto devicePointer = _cache->acquire(this);	
 	auto resultPointer = _cache->acquireClobber(result);
 	
 	CudaSparseMatrixLibrary::subtract(resultPointer, devicePointer, f, size());
@@ -200,41 +259,75 @@ Value* CudaBlockSparseMatrix::subtract(float f) const
 	_cache->release(this);
 	_cache->release(result);
 	
+	assert(result->_isTransposed == _isTransposed);
+	
 	return result;
 }
 
 Value* CudaBlockSparseMatrix::log() const
 {
-	auto result = new CudaBlockSparseMatrix(*this);
+	auto devicePointer = _cache->acquireReadOnly(this);	
 	
-	result->logSelf();
+	auto result = new CudaBlockSparseMatrix(*this, false);
+	auto resultPointer = _cache->acquireClobber(result);
+	
+	CudaSparseMatrixLibrary::log(resultPointer, devicePointer, size());
+
+	_cache->release(this);
+	_cache->release(result);
+	
+	assert(result->_isTransposed == _isTransposed);
 	
 	return result;
 }
 
 Value* CudaBlockSparseMatrix::negate() const
 {
-	auto result = new CudaBlockSparseMatrix(*this);
+	auto devicePointer = _cache->acquireReadOnly(this);	
 	
-	result->negateSelf();
+	auto result = new CudaBlockSparseMatrix(*this, false);
+	auto resultPointer = _cache->acquireClobber(result);
+	
+	CudaSparseMatrixLibrary::negate(resultPointer, devicePointer, size());
+
+	_cache->release(this);
+	_cache->release(result);
+	
+	assert(result->_isTransposed == _isTransposed);
 	
 	return result;
 }
 
 Value* CudaBlockSparseMatrix::sigmoid() const
 {
-	auto result = new CudaBlockSparseMatrix(*this);
+	auto devicePointer = _cache->acquireReadOnly(this);	
 	
-	result->sigmoidSelf();
+	auto result = new CudaBlockSparseMatrix(*this, false);
+	auto resultPointer = _cache->acquireClobber(result);
+	
+	CudaSparseMatrixLibrary::sigmoid(resultPointer, devicePointer, size());
+
+	_cache->release(this);
+	_cache->release(result);
+	
+	assert(result->_isTransposed == _isTransposed);
 	
 	return result;
 }
 
 Value* CudaBlockSparseMatrix::sigmoidDerivative() const
 {
-	auto result = new CudaBlockSparseMatrix(*this);
+	auto devicePointer = _cache->acquireReadOnly(this);	
 	
-	result->sigmoidDerivativeSelf();
+	auto result = new CudaBlockSparseMatrix(*this, false);
+	auto resultPointer = _cache->acquireClobber(result);
+	
+	CudaSparseMatrixLibrary::sigmoidDerivative(resultPointer, devicePointer, size());
+
+	_cache->release(this);
+	_cache->release(result);
+	
+	assert(result->_isTransposed == _isTransposed);
 	
 	return result;
 }
@@ -267,18 +360,42 @@ Value* CudaBlockSparseMatrix::klDivergenceDerivative(float sparsity) const
 
 Value* CudaBlockSparseMatrix::transpose() const
 {
+	util::log("CudaBlockSparseMatrix") << "Transposing matrix " << this << ": " << _isTransposed << "\n";
+	#if 0
 	auto result = new CudaBlockSparseMatrix(*this);
 	
 	result->transposeSelf();
 	
 	return result;
+	#else
+	
+	auto devicePointer = _cache->acquireReadOnly(this);	
+	assert(!_isTransposed);
+	util::log("CudaBlockSparseMatrix") << " pointer is " << devicePointer << "\n";
+	
+	auto result = new CudaBlockSparseMatrix(blocks(), columnsPerBlock(), rowsPerBlock(), isRowSparse());
+	auto resultPointer = _cache->acquireClobber(result);
+	
+	CudaSparseMatrixLibrary::transpose(resultPointer, devicePointer, blocks(), rowsPerBlock(), columnsPerBlock());
+	
+	//result->transposeSelf();
+	//assert(result->_isTransposed != _isTransposed);
+
+	_cache->release(this);
+	_cache->release(result);
+
+	//result->_performTransposeIfNecessary();
+	
+	return result;
+	
+	#endif
 }
 
 void CudaBlockSparseMatrix::negateSelf()
 {
 	auto devicePointer = _cache->acquire(this);
 	
-	CudaSparseMatrixLibrary::negate(devicePointer, size());
+	CudaSparseMatrixLibrary::negateSelf(devicePointer, size());
 	
 	_cache->release(this);
 }
@@ -287,7 +404,7 @@ void CudaBlockSparseMatrix::logSelf()
 {
 	auto devicePointer = _cache->acquire(this);
 	
-	CudaSparseMatrixLibrary::log(devicePointer, size());
+	CudaSparseMatrixLibrary::logSelf(devicePointer, size());
 	
 	_cache->release(this);
 }
@@ -296,7 +413,7 @@ void CudaBlockSparseMatrix::sigmoidSelf()
 {
 	auto devicePointer = _cache->acquire(this);
 	
-	CudaSparseMatrixLibrary::sigmoid(devicePointer, size());
+	CudaSparseMatrixLibrary::sigmoidSelf(devicePointer, size());
 	
 	_cache->release(this);
 }
@@ -305,7 +422,7 @@ void CudaBlockSparseMatrix::sigmoidDerivativeSelf()
 {
 	auto devicePointer = _cache->acquire(this);
 	
-	CudaSparseMatrixLibrary::sigmoidDerivative(devicePointer, size());
+	CudaSparseMatrixLibrary::sigmoidDerivativeSelf(devicePointer, size());
 	
 	_cache->release(this);
 }
@@ -323,8 +440,10 @@ void CudaBlockSparseMatrix::assignUniformRandomValues(
 	
 	CudaSparseMatrixLibrary::assignUniformRandomValues(devicePointer,
 		min, max, size());
-	
+		
 	_cache->release(this);
+	
+	//util::log("CudaBlockSparseMatrixLibrary") << " result is: " << toString();
 	#else
 	
 	for(auto& matrix : *this)
@@ -336,27 +455,32 @@ void CudaBlockSparseMatrix::assignUniformRandomValues(
 
 Value* CudaBlockSparseMatrix::greaterThanOrEqual(float f) const
 {
-	auto result = new CudaBlockSparseMatrix(*this, false);
+	auto devicePointer = _cache->acquireReadOnly(this);
 	
+	auto result = new CudaBlockSparseMatrix(*this, false);
 	auto resultPointer = _cache->acquireClobber(this);
-	auto devicePointer = _cache->acquire(this);
 	
 	CudaSparseMatrixLibrary::greaterThanOrEqual(resultPointer, devicePointer, f, size());
 	
 	_cache->release(result);
 	_cache->release(this);
 	
+	assert(result->_isTransposed == _isTransposed);
+	
 	return result;
 }
 
 Value* CudaBlockSparseMatrix::equals(const Value* m) const
 {
+	_performTransposeIfNecessary(m);
+	assert(_isTransposed == static_cast<const CudaBlockSparseMatrix*>(m)->_isTransposed);
+	
 	auto result = new CudaBlockSparseMatrix(*this, false);
 
 	assert(m->size() == size());
 	
-	auto devicePointer = _cache->acquire(this);
-	auto target        = _cache->acquire(m);
+	auto devicePointer = _cache->acquireReadOnly(this);
+	auto target        = _cache->acquireReadOnly(m);
 	auto resultPointer = _cache->acquireClobber(result);
 	
 	CudaSparseMatrixLibrary::equals(resultPointer, devicePointer, target, size());
@@ -370,7 +494,7 @@ Value* CudaBlockSparseMatrix::equals(const Value* m) const
 
 float CudaBlockSparseMatrix::reduceSum() const
 {
-	auto devicePointer = _cache->acquire(this);
+	auto devicePointer = _cache->acquireReadOnly(this);
 	
 	float result = CudaSparseMatrixLibrary::reduceSum(devicePointer, size());
 	
@@ -381,10 +505,12 @@ float CudaBlockSparseMatrix::reduceSum() const
 
 Value* CudaBlockSparseMatrix::reduceSumAlongColumns() const
 {
+	_performTransposeIfNecessary();
 	assert(!_isTransposed);
+
 	auto result = new CudaBlockSparseMatrix(*this, false);
 	
-	auto devicePointer = _cache->acquire(this);
+	auto devicePointer = _cache->acquireReadOnly(this);
 	auto resultPointer = _cache->acquireClobber(result);
 	
 	CudaSparseMatrixLibrary::reduceSumAlongColumns(resultPointer, devicePointer,
@@ -398,10 +524,11 @@ Value* CudaBlockSparseMatrix::reduceSumAlongColumns() const
 
 Value* CudaBlockSparseMatrix::reduceSumAlongRows() const
 {
+	_performTransposeIfNecessary();
 	assert(!_isTransposed);
 	auto result = new CudaBlockSparseMatrix(*this, false);
 	
-	auto devicePointer = _cache->acquire(this);
+	auto devicePointer = _cache->acquireReadOnly(this);
 	auto resultPointer = _cache->acquireClobber(result);
 	
 	CudaSparseMatrixLibrary::reduceSumAlongRows(resultPointer, devicePointer,
@@ -415,6 +542,8 @@ Value* CudaBlockSparseMatrix::reduceSumAlongRows() const
 
 CudaBlockSparseMatrix::iterator CudaBlockSparseMatrix::begin()
 {
+	_performTransposeIfNecessary();
+	assert(!_isTransposed);
 	_cache->synchronize(this);
 	
 	return BlockSparseMatrixImplementation::begin();
@@ -422,13 +551,17 @@ CudaBlockSparseMatrix::iterator CudaBlockSparseMatrix::begin()
 
 CudaBlockSparseMatrix::const_iterator CudaBlockSparseMatrix::begin() const
 {
-	_cache->synchronize(const_cast<CudaBlockSparseMatrix*>(this));
+	_performTransposeIfNecessary();
+	assert(!_isTransposed);
+	_cache->synchronizeHostReadOnly(const_cast<CudaBlockSparseMatrix*>(this));
 	
 	return BlockSparseMatrixImplementation::begin();
 }
 
 CudaBlockSparseMatrix::iterator CudaBlockSparseMatrix::end()
 {
+	_performTransposeIfNecessary();
+	assert(!_isTransposed);
 	_cache->synchronize(this);
 	
 	return BlockSparseMatrixImplementation::end();
@@ -436,13 +569,17 @@ CudaBlockSparseMatrix::iterator CudaBlockSparseMatrix::end()
 
 CudaBlockSparseMatrix::const_iterator CudaBlockSparseMatrix::end() const
 {
-	_cache->synchronize(const_cast<CudaBlockSparseMatrix*>(this));
+	_performTransposeIfNecessary();
+	assert(!_isTransposed);
+	_cache->synchronizeHostReadOnly(const_cast<CudaBlockSparseMatrix*>(this));
 	
 	return BlockSparseMatrixImplementation::end();
 }
 
 Matrix& CudaBlockSparseMatrix::front()
 {
+	_performTransposeIfNecessary();
+	assert(!_isTransposed);
 	_cache->synchronize(this);
 	
 	return BlockSparseMatrixImplementation::front();
@@ -450,13 +587,17 @@ Matrix& CudaBlockSparseMatrix::front()
 
 const Matrix& CudaBlockSparseMatrix::front() const
 {
-	_cache->synchronize(const_cast<CudaBlockSparseMatrix*>(this));
+	_performTransposeIfNecessary();
+	assert(!_isTransposed);
+	_cache->synchronizeHostReadOnly(const_cast<CudaBlockSparseMatrix*>(this));
 	
 	return BlockSparseMatrixImplementation::front();
 }
 
 Matrix& CudaBlockSparseMatrix::back()
 {
+	_performTransposeIfNecessary();
+	assert(!_isTransposed);
 	_cache->synchronize(this);
 	
 	return BlockSparseMatrixImplementation::back();
@@ -464,20 +605,26 @@ Matrix& CudaBlockSparseMatrix::back()
 
 const Matrix& CudaBlockSparseMatrix::back() const
 {
-	_cache->synchronize(const_cast<CudaBlockSparseMatrix*>(this));
+	_performTransposeIfNecessary();
+	assert(!_isTransposed);
+	_cache->synchronizeHostReadOnly(const_cast<CudaBlockSparseMatrix*>(this));
 	
 	return BlockSparseMatrixImplementation::back();
 }
 
 const Matrix& CudaBlockSparseMatrix::operator[](size_t position) const
 {
-	_cache->synchronize(const_cast<CudaBlockSparseMatrix*>(this));
+	_performTransposeIfNecessary();
+	assert(!_isTransposed);
+	_cache->synchronizeHostReadOnly(const_cast<CudaBlockSparseMatrix*>(this));
 	
 	return BlockSparseMatrixImplementation::operator[](position);
 }
 
 Matrix& CudaBlockSparseMatrix::operator[](size_t position)
 {
+	_performTransposeIfNecessary();
+	assert(!_isTransposed);
 	_cache->synchronize(this);
 	
 	return BlockSparseMatrixImplementation::operator[](position);
@@ -485,16 +632,64 @@ Matrix& CudaBlockSparseMatrix::operator[](size_t position)
 
 void CudaBlockSparseMatrix::pop_back()
 {
-	_cache->synchronize(this);
+	_cache->invalidate(this);
 	
 	return BlockSparseMatrixImplementation::pop_back();
 }
 
 void CudaBlockSparseMatrix::push_back(const Matrix& m)
 {
-	_cache->synchronize(this);
+	_cache->invalidate(this);
 	
 	return BlockSparseMatrixImplementation::push_back(m);
+}
+
+size_t CudaBlockSparseMatrix::columns() const
+{
+	if(isRowSparse())
+	{
+		return columnsPerBlock();
+	}
+	else
+	{
+		return blocks() * columnsPerBlock();
+	}
+}
+
+size_t CudaBlockSparseMatrix::rows() const
+{
+	if(isRowSparse())
+	{
+		return blocks() * rowsPerBlock();
+	}
+	else
+	{
+		return rowsPerBlock();
+	}
+}
+
+size_t CudaBlockSparseMatrix::columnsPerBlock() const
+{
+	if(_isTransposed)
+	{
+		return _matrices.front().rows();
+	}
+	else
+	{
+		return _matrices.front().columns();
+	}
+}
+
+size_t CudaBlockSparseMatrix::rowsPerBlock() const
+{
+	if(_isTransposed)
+	{
+		return _matrices.front().columns();
+	}
+	else
+	{
+		return _matrices.front().rows();
+	}
 }
 
 void CudaBlockSparseMatrix::resize(size_t blocks, size_t rowsPerBlock, size_t columnsPerBlock)
@@ -513,6 +708,8 @@ void CudaBlockSparseMatrix::resize(size_t blocks)
 
 MatrixVector& CudaBlockSparseMatrix::data()
 {
+	_performTransposeIfNecessary();
+	assert(!_isTransposed);
 	_cache->synchronize(this);
 	
 	return BlockSparseMatrixImplementation::data();
@@ -520,13 +717,16 @@ MatrixVector& CudaBlockSparseMatrix::data()
 
 const MatrixVector& CudaBlockSparseMatrix::data() const
 {
-	_cache->synchronize(const_cast<CudaBlockSparseMatrix*>(this));
+	_performTransposeIfNecessary();
+	assert(!_isTransposed);
+	_cache->synchronizeHostReadOnly(const_cast<CudaBlockSparseMatrix*>(this));
 	
 	return BlockSparseMatrixImplementation::data();
 }
 	
 MatrixVector& CudaBlockSparseMatrix::rawData()
 {
+	_performTransposeIfNecessary();
 	return BlockSparseMatrixImplementation::data();
 }
 
@@ -545,6 +745,33 @@ bool CudaBlockSparseMatrix::isSupported()
 	CudaSparseMatrixLibrary::load();
 
 	return CudaSparseMatrixLibrary::loaded();
+}
+	
+void CudaBlockSparseMatrix::_performTransposeIfNecessary() const
+{
+	if(!_isTransposed) return;
+
+	auto matrix = const_cast<CudaBlockSparseMatrix*>(this);
+	
+	matrix->_isTransposed = false;
+	
+	_cache->synchronize(this);
+	util::log("CudaBlockSparseMatrix") << "Explicitly transposing matrix " << matrix << "\n";
+	
+	for(auto& block : matrix->rawData())
+	{
+		block.transposeSelf();
+	}
+}
+
+void CudaBlockSparseMatrix::_performTransposeIfNecessary(const BlockSparseMatrixImplementation* matrix) const
+{
+	auto m = static_cast<const CudaBlockSparseMatrix*>(matrix);
+
+	if(_isTransposed == m->_isTransposed) return;
+
+	_performTransposeIfNecessary();
+	m->_performTransposeIfNecessary();
 }
 
 }

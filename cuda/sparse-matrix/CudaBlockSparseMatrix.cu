@@ -16,7 +16,7 @@ extern "C" __global__ void multiplyFloat(float* result, float* input, float valu
 	}
 }
 
-extern "C" __global__ void elementMultiply(float* result, float* left, float* right, float value, uint64_t size)
+extern "C" __global__ void elementMultiply(float* result, float* left, float* right, uint64_t size)
 {
 	uint64_t step  = blockDim.x * gridDim.x;
 	uint64_t start = blockIdx.x * blockDim.x + threadIdx.x;
@@ -27,7 +27,7 @@ extern "C" __global__ void elementMultiply(float* result, float* left, float* ri
 	}
 }
 
-extern "C" __global__ void add(float* result, float* left, float* right, float value, uint64_t size)
+extern "C" __global__ void add(float* result, float* left, float* right, uint64_t size)
 {
 	uint64_t step  = blockDim.x * gridDim.x;
 	uint64_t start = blockIdx.x * blockDim.x + threadIdx.x;
@@ -67,12 +67,14 @@ extern "C" __global__ void addBroadcastRowColumnSparse(float* result, float* lef
 	uint64_t start = blockIdx.x * blockDim.x + threadIdx.x;
 	uint64_t size  = blocks * rows * columns;
 
-	uint64_t totalColumns = blocks * columns;
+	uint64_t blockSize = rows * columns;
 
 	for(uint64_t i = start; i < size; i += step)
 	{
 		// TODO: try to optimize these out
-		uint64_t columnIndex = i % totalColumns;
+		uint64_t indexInBlock = i % blockSize;
+		uint64_t blockId = i / blockSize;
+		uint64_t columnIndex = blockId * columns + indexInBlock % columns;
 		
 		float leftValue  = left[i];
 		float rightValue = right[columnIndex];
@@ -92,7 +94,7 @@ extern "C" __global__ void addFloat(float* result, float* input, float value, ui
 	}
 }
 
-extern "C" __global__ void subtract(float* result, float* left, float* right, float value, uint64_t size)
+extern "C" __global__ void subtract(float* result, float* left, float* right, uint64_t size)
 {
 	uint64_t step  = blockDim.x * gridDim.x;
 	uint64_t start = blockIdx.x * blockDim.x + threadIdx.x;
@@ -165,7 +167,18 @@ extern "C" __global__ void klDivergenceDerivative(float* result, float* input, f
 	}
 }
 
-extern "C" __global__ void negate(float* result, uint64_t size)
+extern "C" __global__ void negate(float* result, const float* left, uint64_t size)
+{
+	uint64_t step  = blockDim.x * gridDim.x;
+	uint64_t start = blockIdx.x * blockDim.x + threadIdx.x;
+
+	for(uint64_t i = start; i < size; i += step)
+	{
+		result[i] = -left[i];
+	}
+}
+
+extern "C" __global__ void negateSelf(float* result, uint64_t size)
 {
 	uint64_t step  = blockDim.x * gridDim.x;
 	uint64_t start = blockIdx.x * blockDim.x + threadIdx.x;
@@ -176,7 +189,18 @@ extern "C" __global__ void negate(float* result, uint64_t size)
 	}
 }
 
-extern "C" __global__ void logArray(float* result, uint64_t size)
+extern "C" __global__ void logArray(float* result, const float* left, uint64_t size)
+{
+	uint64_t step  = blockDim.x * gridDim.x;
+	uint64_t start = blockIdx.x * blockDim.x + threadIdx.x;
+
+	for(uint64_t i = start; i < size; i += step)
+	{
+		result[i] = __logf(left[i]);
+	}
+}
+
+extern "C" __global__ void logArraySelf(float* result, uint64_t size)
 {
 	uint64_t step  = blockDim.x * gridDim.x;
 	uint64_t start = blockIdx.x * blockDim.x + threadIdx.x;
@@ -195,7 +219,7 @@ __device__ float computeSigmoid(float v)
     return 1.0f / (1.0f + __expf(-v)); 
 }
 
-extern "C" __global__ void sigmoid(float* result, uint64_t size)
+extern "C" __global__ void sigmoidSelf(float* result, uint64_t size)
 {
 	uint64_t step  = blockDim.x * gridDim.x;
 	uint64_t start = blockIdx.x * blockDim.x + threadIdx.x;
@@ -206,12 +230,34 @@ extern "C" __global__ void sigmoid(float* result, uint64_t size)
 	}
 }
 
+extern "C" __global__ void sigmoid(float* result, const float* left, uint64_t size)
+{
+	uint64_t step  = blockDim.x * gridDim.x;
+	uint64_t start = blockIdx.x * blockDim.x + threadIdx.x;
+
+	for(uint64_t i = start; i < size; i += step)
+	{
+		result[i] = computeSigmoid(left[i]);
+	}
+}
+
 __device__ float computeSigmoidDerivative(float v)
 {
 	return v * (1.0f - v);
 }
 
-extern "C" __global__ void sigmoidDerivative(float* result, uint64_t size)
+extern "C" __global__ void sigmoidDerivative(float* result, const float* left, uint64_t size)
+{
+	uint64_t step  = blockDim.x * gridDim.x;
+	uint64_t start = blockIdx.x * blockDim.x + threadIdx.x;
+
+	for(uint64_t i = start; i < size; i += step)
+	{
+		result[i] = computeSigmoidDerivative(left[i]);
+	}
+}
+
+extern "C" __global__ void sigmoidDerivativeSelf(float* result, uint64_t size)
 {
 	uint64_t step  = blockDim.x * gridDim.x;
 	uint64_t start = blockIdx.x * blockDim.x + threadIdx.x;
@@ -229,7 +275,7 @@ extern "C" __global__ void scaleRandom(float* result, float min, float max, uint
 	
 	float scale = max - min;
 	
-	float mean = (scale / 2.0f);
+	float mean = ((max + min) / 2.0f);
 	
 	for(uint64_t i = start; i < size; i += step)
 	{
@@ -266,7 +312,18 @@ extern "C" __global__ void equals(float* result, float* left, float* right, uint
 
 	for(uint64_t i = start; i < size; i += step)
 	{
-		result[i] = left[i] == right[i] ? 1.0f : 0.0f;
+		result[i] = (left[i] == right[i] ? 1.0f : 0.0f);
+	}
+}
+
+extern "C" __global__ void fillWithZero(float* result, uint64_t size)
+{
+	uint64_t step  = blockDim.x * gridDim.x;
+	uint64_t start = blockIdx.x * blockDim.x + threadIdx.x;
+
+	for(uint64_t i = start; i < size; i += step)
+	{
+		result[i] = 0.0f;
 	}
 }
 
@@ -289,9 +346,9 @@ __device__ float reduceCta(float value)
 		
 		buffer[threadIdx.x] += buffer[neighbor];
 	}
-
+	
 	__syncthreads();
-
+	
 	return buffer[0];
 }
 
@@ -313,7 +370,7 @@ extern "C" __global__ void reduceSum(float* result, float* input, uint64_t size)
 	// atomic add
 	if(threadIdx.x == 0)
 	{
-		atomicAdd(result, localValue);
+		atomicAdd(result, reducedValue);
 	}
 }
 

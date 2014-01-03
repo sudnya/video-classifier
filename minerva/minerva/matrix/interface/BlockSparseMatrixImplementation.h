@@ -109,13 +109,14 @@ public:
 	size_t blocks() const;
 	bool   empty()  const;
 
-    size_t columns() const;
-	size_t rows()	const;
-
-    size_t columnsPerBlock() const;
-	size_t rowsPerBlock()    const;
-
 	size_t getBlockingFactor() const;
+
+public:
+    virtual size_t columns() const;
+	virtual size_t rows()	const;
+
+    virtual size_t columnsPerBlock() const;
+	virtual size_t rowsPerBlock()    const;
 
 public:
 	virtual void resize(size_t blocks, size_t rowsPerBlock, size_t columnsPerBlock);
@@ -124,6 +125,10 @@ public:
 public:
 	virtual MatrixVector& data();
 	virtual const MatrixVector& data() const;
+
+public:
+	std::string toString()    const;
+	std::string debugString() const;
 
 public:
 	bool& isRowSparse();

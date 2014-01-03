@@ -656,7 +656,7 @@ Value* CublasMatrix::clone() const
 
 bool CublasMatrix::isSupported()
 {
-	if(!util::KnobDatabase::getKnobValue("CublasMatrix::Enable", true))
+	if(!util::KnobDatabase::getKnobValue("CublasMatrix::Enable", false))
 	{
 		return false;
 	}

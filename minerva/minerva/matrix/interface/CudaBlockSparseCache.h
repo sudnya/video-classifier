@@ -19,13 +19,14 @@ class CudaBlockSparseCache
 {
 public:
 	float* acquire(const BlockSparseMatrixImplementation* matrix) const;
-	float* acquireReadyOnly(const BlockSparseMatrixImplementation* matrix) const;
+	float* acquireReadOnly(const BlockSparseMatrixImplementation* matrix) const;
 	float* acquireClobber(const BlockSparseMatrixImplementation* matrix) const;
 	void release(const BlockSparseMatrixImplementation* matrix) const;
 
 public:
 	void invalidate(const BlockSparseMatrixImplementation* matrix) const;
 	void synchronize(const BlockSparseMatrixImplementation* matrix) const;
+	void synchronizeHostReadOnly(const BlockSparseMatrixImplementation* matrix) const;
 
 };
 

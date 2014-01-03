@@ -183,9 +183,14 @@ size_t BlockSparseMatrix::getBlockingFactor() const
 {
 	if(blocks() == 0) return 0;
 	
-	if(isRowSparse()) return front().rows();
+	if(isRowSparse()) return rowsPerBlock();
 
-	return front().columns();
+	return columnsPerBlock();
+}
+
+size_t BlockSparseMatrix::blockSize() const
+{
+	return rowsPerBlock() * columnsPerBlock();
 }
 
 void BlockSparseMatrix::resize(size_t blocks, size_t rowsPerBlock,
@@ -381,14 +386,7 @@ BlockSparseMatrix BlockSparseMatrix::reduceSumAlongRows() const
 
 std::string BlockSparseMatrix::toString() const
 {
-	if(empty()) return "(0 rows, 0 columns) []";
-
-	std::stringstream stream;
-
-	stream << "((" << blocks() << " blocks, " << rows()
-		<< " rows, " << columns() << " columns)) - [ " << front().toString();
-
-	return stream.str();
+	return _implementation->toString();
 }
 
 std::string BlockSparseMatrix::debugString() const

@@ -10,6 +10,9 @@
 #include <minerva/matrix/interface/CudaBlockSparseMatrix.h>
 #include <minerva/matrix/interface/Matrix.h>
 
+// Standard Library Includes
+#include <sstream>
+
 namespace minerva
 {
 
@@ -93,14 +96,7 @@ void BlockSparseMatrixImplementation::push_back(const Matrix& m)
 
 size_t BlockSparseMatrixImplementation::size() const
 {
-	size_t s = 0;
-
-	for(auto& m : *this)
-	{
-		s += m.size();
-	}
-
-	return s;
+	return blocks() * rowsPerBlock() * columnsPerBlock();
 }
 
 size_t BlockSparseMatrixImplementation::blocks() const
@@ -111,6 +107,18 @@ size_t BlockSparseMatrixImplementation::blocks() const
 bool BlockSparseMatrixImplementation::empty() const
 {
 	return _matrices.empty();
+}
+	
+size_t BlockSparseMatrixImplementation::getBlockingFactor() const
+{
+	if(isRowSparse())
+	{
+		return rowsPerBlock();
+	}
+	else
+	{
+		return columnsPerBlock();
+	}
 }
 
 size_t BlockSparseMatrixImplementation::columns() const
@@ -173,6 +181,23 @@ MatrixVector& BlockSparseMatrixImplementation::data()
 const MatrixVector& BlockSparseMatrixImplementation::data() const
 {
 	return _matrices;
+}
+
+std::string BlockSparseMatrixImplementation::toString() const
+{
+	if(empty()) return "(0 rows, 0 columns) []";
+
+	std::stringstream stream;
+
+	stream << "((" << blocks() << " blocks, " << rows()
+		<< " rows, " << columns() << " columns)) - [ " << front().toString();
+
+	return stream.str();
+}
+
+std::string BlockSparseMatrixImplementation::debugString() const
+{
+	return toString();
 }
 	
 void BlockSparseMatrixImplementation::resize(size_t blocks, size_t rowsPerBlock, size_t columnsPerBlock)

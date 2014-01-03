@@ -72,7 +72,9 @@ Layer::BlockSparseMatrix Layer::runInputs(const BlockSparseMatrix& m) const
 
 	auto unbiasedOutput = m.multiply(m_sparseMatrix);
 
-	auto output = unbiasedOutput.addBroadcastRow(m_bias).sigmoid();
+	auto output = unbiasedOutput.addBroadcastRow(m_bias);
+
+	output.sigmoidSelf();
 	
 	//util::log("Layer") << "  output: " << output.toString() << "\n";
 	
@@ -124,12 +126,12 @@ unsigned Layer::getOutputCount() const
 
 unsigned Layer::getBlockingFactor() const
 {
-	return m_sparseMatrix.front().rows();
+	return m_sparseMatrix.getBlockingFactor();
 }
 
 unsigned Layer::getOutputBlockingFactor() const
 {
-	return m_sparseMatrix.front().columns();
+	return m_sparseMatrix.columnsPerBlock();
 }
 
 size_t Layer::getFloatingPointOperationCount() const
@@ -146,6 +148,11 @@ size_t Layer::totalNeurons() const
 size_t Layer::totalConnections() const
 {
 	return totalWeights();
+}
+
+size_t Layer::blockSize() const
+{
+	return m_sparseMatrix.blockSize();
 }
 
 Layer::BlockSparseMatrix Layer::getWeightsWithoutBias() const

@@ -239,13 +239,21 @@ static void freePointerArray(FloatPointerVector& value)
 	CudaDriver::cuMemHostUnregister(value.data());
 }
 
-void CudaSparseMatrixLibrary::multiply(float* result, const float* left, const float* right,
-	size_t blocks, size_t rows, size_t columns, size_t rightRows, size_t rightColumns)
+void CudaSparseMatrixLibrary::multiply(float* result, const float* left, bool leftTransposed,
+	const float* right, bool rightTransposed, size_t blocks, size_t rows, size_t columns,
+	size_t rightRows, size_t rightColumns)
 {
 	float alpha = 1.0f;
 	float beta  = 0.0f;
+
+	util::log("CudaSparseMatrixLibrary") << "Multiply left " << left << " (" << rows
+		<< " rows, " << columns << " columns, " << leftTransposed << " transposed) x right " << right << " (" << rightRows
+		<< " rows, " << rightColumns << " columns, " << rightTransposed << " transposed) = " << result << ".\n";
 	
-	//lda = num_col_A = num_row_AT = N;
+	// c rows    = rows
+	// c columns = rightColumns
+	
+	// lda = num_col_A = num_row_AT = N;
 	int lda = columns;
 
 	// ldb = num_col_B = num_row_BT = N;
@@ -268,10 +276,30 @@ void CudaSparseMatrixLibrary::multiply(float* result, const float* left, const f
 	// m = num_row_C
 	int m = rightColumns;
 
+	// transposed
+	CublasLibrary::cublasOperation_t leftTransposedMode  = CublasLibrary::CUBLAS_OP_N;
+	CublasLibrary::cublasOperation_t rightTransposedMode = CublasLibrary::CUBLAS_OP_N;
+	
+	if(leftTransposed)
+	{
+		leftTransposedMode = CublasLibrary::CUBLAS_OP_T;
+		
+		lda = rows;
+	}
+	
+	if(rightTransposed)
+	{
+		rightTransposedMode = CublasLibrary::CUBLAS_OP_T;
+		
+		//m   = rightRows;
+		ldb = rightRows;
+		//ldc = rightRows;
+	}
+	
 	if(blocks == 1)
 	{
-		CublasLibrary::cublasSgemm(CublasLibrary::CUBLAS_OP_N,
-			CublasLibrary::CUBLAS_OP_N, m, n, k, &alpha,
+		CublasLibrary::cublasSgemm(rightTransposedMode,
+			leftTransposedMode, m, n, k, &alpha,
 			right, ldb, left, lda, &beta, result, ldc);
 	}
 	else
@@ -284,8 +312,8 @@ void CudaSparseMatrixLibrary::multiply(float* result, const float* left, const f
 		float* b = getPointerArray(bData, right,  blocks, rightRows, rightColumns);
 		float* c = getPointerArray(cData, result, blocks, rows, rightColumns);
 
-		CublasLibrary::cublasSgemmBatched(CublasLibrary::CUBLAS_OP_N,
-			CublasLibrary::CUBLAS_OP_N, m, n, k, &alpha,
+		CublasLibrary::cublasSgemmBatched(rightTransposedMode,
+			leftTransposedMode, m, n, k, &alpha,
 			b, ldb, a, lda, &beta, c, ldc, blocks);
 
 		freePointerArray(aData);
@@ -307,7 +335,7 @@ void CudaSparseMatrixLibrary::elementMultiply(float* result, const float* left, 
 
 void CudaSparseMatrixLibrary::add(float* result, const float* left, const float* right, size_t size)
 {
-	launchKernel("add", left, right, size);
+	launchKernel("add", result, left, right, size);
 }
 
 void CudaSparseMatrixLibrary::addBroadcastRow(float* result, const float* left, const float* right,
@@ -348,24 +376,79 @@ void CudaSparseMatrixLibrary::klDivergenceDerivative(float* result, float f, siz
 	launchKernel("klDivergenceDerivative", result, f, size);
 }
 
-void CudaSparseMatrixLibrary::negate(float* result, size_t size)
+void CudaSparseMatrixLibrary::transpose(float* result, const float* left, size_t blocks, size_t rows, size_t columns)
 {
-	launchKernel("negate", result, size);
+	if(blocks == 1)
+	{
+		float alpha = 1.0f;
+		float beta  = 0.0f;
+		
+		//lda = num_col_A = num_row_AT = N;
+		int lda = columns;
+
+		// ldb = num_col_B = num_row_BT = N;
+		int ldb = rows;//this->columns();
+
+		// ldc = num_col_C, num_row_CT = N;
+		int ldc = rows;
+
+		// m and n in the cuBLAS GEMM routine are the #rows and #cols of the result matrix C,
+
+		// m = num_row_C, num_col_CT
+		int m = rows;
+
+		// n = num_col_C, num_row_CT
+		int n = columns;
+		
+		CublasLibrary::cublasSgeam(CublasLibrary::CUBLAS_OP_T,
+			CublasLibrary::CUBLAS_OP_N, m, n, &alpha, left, lda, &beta, nullptr, ldb, result, ldc);
+
+	}
+	else
+	{
+		assert(false); // not implemented
+		launchKernel("transpose", result, left, blocks, rows, columns);
+	}
 }
 
-void CudaSparseMatrixLibrary::log(float* result, size_t size)
+void CudaSparseMatrixLibrary::negate(float* result, const float* left, size_t size)
 {
-	launchKernel("logArray", result, size);
+	launchKernel("negate", result, left, size);
 }
 
-void CudaSparseMatrixLibrary::sigmoid(float* result, size_t size)
+void CudaSparseMatrixLibrary::log(float* result, const float* left, size_t size)
 {
-	launchKernel("sigmoid", result, size);
+	launchKernel("logArray", result, left, size);
 }
 
-void CudaSparseMatrixLibrary::sigmoidDerivative(float* result, size_t size)
+void CudaSparseMatrixLibrary::sigmoid(float* result, const float* left, size_t size)
 {
-	launchKernel("sigmoidDerivative", result, size);
+	launchKernel("sigmoid", result, left, size);
+}
+
+void CudaSparseMatrixLibrary::sigmoidDerivative(float* result, const float* left, size_t size)
+{
+	launchKernel("sigmoidDerivative", result, left, size);
+}
+
+void CudaSparseMatrixLibrary::negateSelf(float* result, size_t size)
+{
+	launchKernel("negateSelf", result, size);
+}
+
+void CudaSparseMatrixLibrary::logSelf(float* result, size_t size)
+{
+	launchKernel("logArraySelf", result, size);
+}
+
+void CudaSparseMatrixLibrary::sigmoidSelf(float* result, size_t size)
+{
+	launchKernel("sigmoidSelf", result, size);
+}
+
+void CudaSparseMatrixLibrary::sigmoidDerivativeSelf(float* result, size_t size)
+{
+	launchKernel("sigmoidDerivativeSelf", result, size);
 }
 
 void CudaSparseMatrixLibrary::assignUniformRandomValues(float* result, float min, float max, size_t size)
@@ -399,19 +482,20 @@ void CudaSparseMatrixLibrary::equals(float* result, const float* left, const flo
 
 float CudaSparseMatrixLibrary::reduceSum(const float* input, size_t size)
 {
-	float result = 0.0f;
+	float* result = nullptr;
 
-	CudaDriver::cuMemHostRegister(&result, sizeof(float), CU_MEMHOSTREGISTER_DEVICEMAP);
+	CudaDriver::cuMemAlloc((CUdeviceptr*)&result, sizeof(float));
 	
-	float* devicePointer = nullptr;
+	launchKernel("fillWithZero", result, 1ULL);
+	launchKernel("reduceSum", result, input, size);
+
+	float resultValue = 0.0f;
+
+	CudaDriver::cuMemcpyDtoH(&resultValue, (CUdeviceptr)result, sizeof(float));
 	
-	CudaDriver::cuMemHostGetDevicePointer((CUdeviceptr*)&devicePointer, &result, 0);
+	CudaDriver::cuMemFree((CUdeviceptr)result);
 	
-	launchKernel("reduceSum", devicePointer, input, size);
-	
-	CudaDriver::cuMemHostUnregister(&result);
-	
-	return result;
+	return resultValue;
 }
 
 void CudaSparseMatrixLibrary::reduceSumAlongRows(float* result, const float* input,

@@ -6,6 +6,7 @@
 
 // Minerva Includes
 #include <minerva/matrix/interface/Matrix.h>
+#include <minerva/matrix/interface/BlockSparseMatrix.h>
 #include <minerva/util/interface/debug.h>
 
 // Standard Library Includes
@@ -13,6 +14,7 @@
 
 // Global Typedefs
 typedef minerva::matrix::Matrix Matrix;
+typedef minerva::matrix::BlockSparseMatrix BlockSparseMatrix;
 
 /*
 	A simple matrix test
@@ -109,6 +111,104 @@ bool testTranspose()
 
 }
 
+bool testSparseMultiply()
+{
+	BlockSparseMatrix a(1, 2, 3);
+	
+	BlockSparseMatrix b(1, 2, 3);
+	
+	BlockSparseMatrix c(1, 3, 3);
+	
+	
+	a[0](0, 0) = 1;
+	a[0](1, 0) = 2;
+	a[0](0, 1) = 3;
+	a[0](1, 1) = 4;
+	a[0](0, 2) = 5;
+	a[0](1, 2) = 6;
+
+	b[0](0, 0) = 1;
+	b[0](0, 1) = 2;
+	b[0](0, 2) = 3;
+	b[0](1, 0) = 4;
+	b[0](1, 1) = 5;
+	b[0](1, 2) = 6;
+
+	c[0](0, 0) = 9;
+	c[0](0, 1) = 12;
+	c[0](0, 2) = 15;
+	c[0](1, 0) = 19;
+	c[0](1, 1) = 26;
+	c[0](1, 2) = 33;
+	c[0](2, 0) = 29;
+	c[0](2, 1) = 40;
+	c[0](2, 2) = 51;
+	
+	BlockSparseMatrix computed = a.transpose().multiply(b);
+	
+	if(computed[0] != c[0])
+	{
+		std::cout << " Block Sparse Matrix Multiply Test Failed:\n";
+		std::cout << "  result matrix " << computed.toString();
+		std::cout << "  does not match reference matrix " << c.toString();
+	}
+	else
+	{
+		std::cout << " Block Sparse Matrix Multiply Test Passed\n";
+	}
+	
+	return computed[0] == c[0];
+
+}
+
+bool testSparseMultiply2()
+{
+	BlockSparseMatrix a(1, 3, 2);
+	
+	BlockSparseMatrix b(1, 3, 2);
+	
+	BlockSparseMatrix c(1, 3, 3);
+	
+	a[0](0, 0) = 1;
+	a[0](0, 1) = 2;
+	a[0](1, 0) = 3;
+	a[0](1, 1) = 4;
+	a[0](2, 0) = 5;
+	a[0](2, 1) = 6;
+
+	b[0](0, 0) = 1;
+	b[0](1, 0) = 2;
+	b[0](2, 0) = 3;
+	b[0](0, 1) = 4;
+	b[0](1, 1) = 5;
+	b[0](2, 1) = 6;
+
+	c[0](0, 0) = 9;
+	c[0](0, 1) = 12;
+	c[0](0, 2) = 15;
+	c[0](1, 0) = 19;
+	c[0](1, 1) = 26;
+	c[0](1, 2) = 33;
+	c[0](2, 0) = 29;
+	c[0](2, 1) = 40;
+	c[0](2, 2) = 51;
+	
+	BlockSparseMatrix computed = a.multiply(b.transpose());
+	
+	if(computed[0] != c[0])
+	{
+		std::cout << " Block Sparse Matrix Multiply Test Failed:\n";
+		std::cout << "  result matrix " << computed.toString();
+		std::cout << "  does not match reference matrix " << c.toString();
+	}
+	else
+	{
+		std::cout << " Block Sparse Matrix Multiply Test Passed\n";
+	}
+	
+	return computed[0] == c[0];
+
+}
 
 int main(int argc, char** argv)
 {
@@ -120,6 +220,8 @@ int main(int argc, char** argv)
     
     passed &= testMultiply();
 	passed &= testTranspose();
+    passed &= testSparseMultiply();
+    passed &= testSparseMultiply2();
 
 	if(not passed)
 	{

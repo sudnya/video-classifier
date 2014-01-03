@@ -82,6 +82,7 @@ public:
 	bool isColumnSparse() const;
 
 	size_t getBlockingFactor() const;
+	size_t blockSize() const;
 
 public:
 	void resize(size_t blocks, size_t rowsPerBlock, size_t columnsPerBlock);

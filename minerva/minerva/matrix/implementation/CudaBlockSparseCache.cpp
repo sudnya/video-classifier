@@ -28,7 +28,7 @@ class Allocation
 {
 public:
 	Allocation(void* a, size_t s)
-	: address(a), size(s), dirty(false)
+	: address(a), size(s), dirty(false), hostDirty(false)
 	{
 
 	}
@@ -39,6 +39,7 @@ public:
 
 public:
 	bool dirty;
+	bool hostDirty;
 };
 
 typedef std::map<const BlockSparseMatrixImplementation*, Allocation> AllocationMap;
@@ -74,6 +75,17 @@ public:
 			
 			cacheAllocation(matrix, allocation);
 		}
+		else
+		{
+			assert(allocation->size == matrix->size() * sizeof(float));
+			
+			if(allocation->hostDirty)
+			{
+				cacheAllocation(matrix, allocation);
+				
+				allocation->hostDirty = false;
+			}
+		}
 	
 		allocation->dirty = true;
 	
@@ -92,6 +104,17 @@ public:
 			
 			cacheAllocation(matrix, allocation);
 		}
+		else
+		{
+			assert(allocation->size == matrix->size() * sizeof(float));
+			
+			if(allocation->hostDirty)
+			{
+				cacheAllocation(matrix, allocation);
+				
+				allocation->hostDirty = false;
+			}
+		}
 	
 		return reinterpret_cast<float*>(allocation->address);
 	}
@@ -106,14 +129,21 @@ public:
 		{
 			allocation = createNewAllocation(matrix);
 		}
+		else
+		{
+			assert(allocation->size == matrix->size() * sizeof(float));
+		}
 		
-		allocation->dirty = false;
+		allocation->dirty = true;
+		allocation->hostDirty = false;
 		
 		return reinterpret_cast<float*>(allocation->address);
 	}
 	
 	void release(BlockSparseMatrixImplementation* matrix)
 	{
+		initialize();
+		
 		// Reclaim the memory immediately if the cache has exceeded the max size
 		if(totalSize > maximumSize)
 		{
@@ -144,6 +174,18 @@ public:
 	
 	void synchronize(BlockSparseMatrixImplementation* matrix)
 	{
+		synchronizeHostReadOnly(matrix);
+		
+		auto allocation = allocations.find(matrix);
+		
+		if(allocation != allocations.end())
+		{
+			allocation->second.hostDirty = true;
+		}
+	}
+	
+	void synchronizeHostReadOnly(BlockSparseMatrixImplementation* matrix)
+	{
 		auto allocation = allocations.find(matrix);
 		
 		auto cudaMatrix = static_cast<CudaBlockSparseMatrix*>(matrix);
@@ -151,7 +193,14 @@ public:
 		if(allocation != allocations.end())
 		{
 			if(allocation->second.dirty)
-			{
+			{	
+				allocation->second.dirty = false;
+			
+				util::log("CudaBlockSparseCache") << "Flushing dirty data back to host for matrix "
+					<< matrix << " (" << matrix->rows() << " rows, " << matrix->columns()
+					<< " columns) on the GPU at (" << allocation->second.address << ", "
+					<< allocation->second.size << " bytes).\n";
+				
 				// TODO: optimize this
 				size_t position = 0;
 				
@@ -163,8 +212,6 @@ public:
 					
 					position += sizeof(float) * block.size();
 				}
-				
-				allocation->second.dirty = false;
 			}
 		}
 	}
@@ -256,7 +303,7 @@ float* CudaBlockSparseCache::acquire(const BlockSparseMatrixImplementation* m) c
 	return cacheManager->acquire(matrix);
 }
 
-float* CudaBlockSparseCache::acquireReadyOnly(const BlockSparseMatrixImplementation* m) const
+float* CudaBlockSparseCache::acquireReadOnly(const BlockSparseMatrixImplementation* m) const
 {
 	auto matrix = const_cast<BlockSparseMatrixImplementation*>(m);
 	
@@ -289,6 +336,13 @@ void CudaBlockSparseCache::synchronize(const BlockSparseMatrixImplementation* m)
 	auto matrix = const_cast<BlockSparseMatrixImplementation*>(m);
 	
 	return cacheManager->synchronize(matrix);
+}
+
+void CudaBlockSparseCache::synchronizeHostReadOnly(const BlockSparseMatrixImplementation* m) const
+{
+	auto matrix = const_cast<BlockSparseMatrixImplementation*>(m);
+	
+	return cacheManager->synchronizeHostReadOnly(matrix);
 }
 
 }

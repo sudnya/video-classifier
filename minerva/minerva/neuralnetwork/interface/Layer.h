@@ -62,6 +62,8 @@ class Layer
 		size_t totalNeurons()     const;
 		size_t totalConnections() const;
 
+		size_t blockSize() const;
+
 	public:
 		BlockSparseMatrix getWeightsWithoutBias() const;
         

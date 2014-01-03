@@ -30,6 +30,9 @@ public:
 	explicit CudaBlockSparseMatrix(const CudaBlockSparseMatrix&, bool copyData);
 	explicit CudaBlockSparseMatrix(const CudaBlockSparseMatrix&);
 
+public:
+	virtual ~CudaBlockSparseMatrix();
+
 public: 
 	virtual Value* multiply(const Value* m) const;
 	virtual Value* multiply(float f) const;
@@ -96,6 +99,13 @@ public:
 	virtual void push_back(const Matrix& m);
 
 public:
+    virtual size_t columns() const;
+	virtual size_t rows()	const;
+
+    virtual size_t columnsPerBlock() const;
+	virtual size_t rowsPerBlock()    const;
+
+public:
 	virtual void resize(size_t blocks, size_t rowsPerBlock, size_t columnsPerBlock);
 	virtual void resize(size_t blocks);
 
@@ -111,6 +121,10 @@ public:
 
 public:
 	static bool isSupported();
+
+private:
+	void _performTransposeIfNecessary() const;
+	void _performTransposeIfNecessary(const BlockSparseMatrixImplementation*) const;
 
 private:
 	bool _isTransposed;

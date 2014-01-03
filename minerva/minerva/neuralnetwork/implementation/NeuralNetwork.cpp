@@ -380,9 +380,11 @@ NeuralNetwork::BlockSparseMatrix NeuralNetwork::convertToBlockSparseForLayerInpu
 	BlockSparseMatrix result;
 	size_t column = 0;
 
-	for(auto& block : layer)
+	size_t blocks = layer.blocks();
+	size_t blockInputsExceptBias = layer.getBlockingFactor();
+		
+	for(size_t i = 0; i < blocks; ++i)
 	{
-		size_t blockInputsExceptBias = block.rows();
 		result.push_back(m.slice(0, column, m.rows(), blockInputsExceptBias));
 		column += blockInputsExceptBias;
 	}
@@ -425,10 +427,13 @@ NeuralNetwork::BlockSparseMatrix NeuralNetwork::convertToBlockSparseForLayerOutp
 	BlockSparseMatrix result;
 	size_t column = 0;
 
-	for(auto& block : layer)
+	size_t blocks = layer.blocks();
+	size_t blockingFactor = layer.getOutputBlockingFactor();
+
+	for(size_t i = 0; i < blocks; ++i)
 	{
-		result.push_back(m.slice(0, column, m.rows(), block.columns()));
-		column += block.columns();
+		result.push_back(m.slice(0, column, m.rows(), blockingFactor));
+		column += blockingFactor;
 	}
 	
 	result.setColumnSparse();

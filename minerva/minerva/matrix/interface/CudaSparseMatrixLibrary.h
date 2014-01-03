@@ -19,8 +19,9 @@ namespace matrix
 class CudaSparseMatrixLibrary
 {
 public:
-	static void multiply(float* result, const float* left, const float* right,
-		size_t blocks, size_t rows, size_t columns, size_t rightRows, size_t rightColumns);
+	static void multiply(float* result, const float* left, bool leftTransposed,
+		const float* right, bool rightTranposed, size_t blocks, size_t rows,
+		size_t columns, size_t rightRows, size_t rightColumns);
 	static void multiply(float* result, const float* left, float value, size_t size);
 	static void elementMultiply(float* result, const float* left, const float* right, size_t size);
 
@@ -39,10 +40,17 @@ public:
 	static void klDivergenceDerivative(float* result, float f, size_t size);
 
 public:
-	static void negate(float* result, size_t size);
-	static void log(float* result, size_t size);
-	static void sigmoid(float* result, size_t size);
-	static void sigmoidDerivative(float* result, size_t size);
+	static void transpose(float* result, const float* left, size_t blocks, size_t rows, size_t columns);
+	static void negate(float* result, const float* left, size_t size);
+	static void log(float* result, const float* left, size_t size);
+	static void sigmoid(float* result, const float* left, size_t size);
+	static void sigmoidDerivative(float* result, const float* left, size_t size);
+
+public:
+	static void negateSelf(float* result, size_t size);
+	static void logSelf(float* result, size_t size);
+	static void sigmoidSelf(float* result, size_t size);
+	static void sigmoidDerivativeSelf(float* result, size_t size);
 
 public:
 	static void assignUniformRandomValues(float* result, float min, float max,
