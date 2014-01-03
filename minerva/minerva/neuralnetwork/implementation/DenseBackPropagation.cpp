@@ -46,7 +46,7 @@ static float computeCostForLayer(const Layer& layer, const BlockSparseMatrix& la
 	auto oneMinusHx = hx.negate().add(1.0f);
 	
 	// add an epsilon to avoid log(0)
-	auto logOneMinusHx = oneMinusHx.add(0.0001f).log();
+	auto logOneMinusHx = oneMinusHx.add(1e-15f).log();
 	
 	auto oneMinusY = layerOutput.negate().add(1.0f);
 
@@ -81,12 +81,12 @@ static float computeCostForNetwork(const NeuralNetwork& network, const BlockSpar
 	
 	auto hx = network.runInputs(input);
 	
-	auto logHx = hx.add(0.000001f).log();
+	auto logHx = hx.add(1e-15f).log();
 	auto yTemp = referenceOutput.elementMultiply(logHx);
 
 	auto oneMinusY = referenceOutput.negate().add(1.0f);
 	auto oneMinusHx = hx.negate().add(1.0f);
-	auto logOneMinusHx = oneMinusHx.add(0.000001f).log(); // add an epsilon to avoid log(0)
+	auto logOneMinusHx = oneMinusHx.add(1e-15f).log(); // add an epsilon to avoid log(0)
 	auto yMinusOneTemp = oneMinusY.elementMultiply(logOneMinusHx);
 
 	auto sum = yTemp.add(yMinusOneTemp);

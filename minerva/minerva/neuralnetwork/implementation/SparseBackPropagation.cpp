@@ -282,7 +282,7 @@ static MatrixVector computeCostDerivative(const NeuralNetwork& network, const Bl
 		transposedDelta.setRowSparse();
 
 		// there will be one less delta than activation
-		auto unnormalizedPartialDerivative = (transposedDelta.multiply(activation)).transpose();
+		auto unnormalizedPartialDerivative = (transposedDelta.multiply(activation));
 		auto normalizedPartialDerivative = unnormalizedPartialDerivative.multiply(1.0f/samples);
 		
 		// add in the regularization term
@@ -290,7 +290,7 @@ static MatrixVector computeCostDerivative(const NeuralNetwork& network, const Bl
 
 		auto lambdaTerm = weights.multiply(lambda/samples);
 		
-		auto regularizedPartialDerivative = lambdaTerm.add(normalizedPartialDerivative);
+		auto regularizedPartialDerivative = lambdaTerm.add(normalizedPartialDerivative.transpose());
 		
 		partialDerivative.push_back(regularizedPartialDerivative);
 	
