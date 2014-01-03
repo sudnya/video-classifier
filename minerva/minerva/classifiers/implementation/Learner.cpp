@@ -39,10 +39,13 @@ void Learner::loadClassifier()
 void Learner::trainClassifier(const ImageVector& images)
 {
 	size_t inputCount = m_featureSelectorNetwork.getInputCount();
+    
+    util::log("Learner") << "Loading feature selector with: " << inputCount << " inputs.\n";
 
 	if(m_featureSelectorNetwork.empty())
 	{
 		inputCount = m_classifierNetwork.getInputCount();
+        util::log("Learner") << " could not load feature selector.\n";
 	}
 
     auto matrix = images.convertToStandardizedMatrix(inputCount,
@@ -53,6 +56,7 @@ void Learner::trainClassifier(const ImageVector& images)
 	if (!m_featureSelectorNetwork.empty())
 	{
     	matrix = m_featureSelectorNetwork.runInputs(matrix);
+	    util::log("Learner") << "Feature selector produced input: " << matrix.toString();
 	}
 
 	auto reference = images.getReference(m_classifierNetwork);
@@ -60,6 +64,8 @@ void Learner::trainClassifier(const ImageVector& images)
 	util::log("Learner") << "Training classifier network with reference: " << reference.toString();
 
     m_classifierNetwork.train(matrix, reference);
+
+    //setThreshold();
 }
  
 void Learner::writeClassifier()

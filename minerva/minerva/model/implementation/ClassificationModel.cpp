@@ -126,6 +126,15 @@ void ClassificationModel::save() const
 		
 		stream << "\t\t\t\"name\": \"" << network->first << "\",\n";
 
+        std::string costFunctionType = "dense";
+
+        if(network->second.isUsingSparseCostFunction())
+        {
+            costFunctionType = "sparse";
+        }
+
+		stream << "\t\t\t\"costFunction\": \"" << costFunctionType << "\",\n";
+
 		stream << "\t\t\t\"layers\": [\n";
 		
 		for(auto layer = network->second.begin();
@@ -236,7 +245,7 @@ void ClassificationModel::save() const
 
 		auto data = matrix.second->data();
 
-		stream.write((const char*)data.data(), matrix.second->size());
+		stream.write((const char*)data.data(), matrix.second->size() * sizeof(float));
 		
 		tar.addFile(matrix.first, stream);
 	}
@@ -284,6 +293,7 @@ void ClassificationModel::load()
 			util::json::Visitor networkVisitor(*networkObject);
 			
 			std::string name = networkVisitor["name"];
+			std::string costFunctionType = networkVisitor["costFunction"];
 
 			util::log("ClassificationModel") << "  neural network '"
 				<< name << "'\n";
@@ -292,7 +302,16 @@ void ClassificationModel::load()
 			
 			auto network = _neuralNetworks.insert(std::make_pair(name,
 				neuralnetwork::NeuralNetwork())).first;
-			
+		
+            if(costFunctionType == "sparse")
+            {
+                network->second.setUseSparseCostFunction(true);
+            }
+            else
+            {
+                network->second.setUseSparseCostFunction(false);
+            }
+
 			for(auto layerObject = layersVisitor.begin_array();
 				layerObject != layersVisitor.end_array(); ++layerObject)
 			{
@@ -335,7 +354,7 @@ void ClassificationModel::load()
 					
 					matrix.resize(rows, columns);
 					
-					stream.read((char*)matrix.data().data(), rows * columns);
+					stream.read((char*)matrix.data().data(), rows * columns * sizeof(float));
 				}
 				
 				matrixArrayVisitor = util::json::Visitor(layerVisitor["biases"]);	
@@ -368,7 +387,7 @@ void ClassificationModel::load()
 					
 					matrix.resize(rows, columns);
 					
-					stream.read((char*)matrix.data().data(), rows * columns);
+					stream.read((char*)matrix.data().data(), rows * columns * sizeof(float));
 				}
 			}
 			

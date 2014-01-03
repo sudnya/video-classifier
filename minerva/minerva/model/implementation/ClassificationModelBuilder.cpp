@@ -211,7 +211,7 @@ static void tuneNeuralNetwork(NeuralNetwork& neuralNetwork)
 {
 	// The idea here is to pick random weights that are amenable for a network
 	// of this size.  
-	float weightEpsilon = util::KnobDatabase::getKnobValue("NeuralNetwork::InitializationEpsilon", 2.0f);
+	float weightEpsilon = util::KnobDatabase::getKnobValue("NeuralNetwork::InitializationEpsilon", 0.3f);
 
 	neuralNetwork.initializeRandomly(weightEpsilon);
 }
@@ -267,6 +267,8 @@ static void buildConvolutionalGPUModel(ClassificationModel* model, unsigned inpu
 	featureSelectorNetwork.addLayer(Layer(1024, 1024,  128));
 	featureSelectorNetwork.addLayer(Layer( 128, 1024, 1024));
 	featureSelectorNetwork.addLayer(Layer( 128, 1024,    8));
+    
+    featureSelectorNetwork.setUseSparseCostFunction(true);
 
 	tuneNeuralNetwork(featureSelectorNetwork);
 
@@ -277,6 +279,8 @@ static void buildConvolutionalGPUModel(ClassificationModel* model, unsigned inpu
 	classifierNetwork.addLayer(Layer(1, 1024, 600));
 	classifierNetwork.addLayer(Layer(1, 600,  200));
 	classifierNetwork.addLayer(Layer(1, 200,  outputSize));
+
+	tuneNeuralNetwork(classifierNetwork);
 
 	addLabels(classifierNetwork, "Classifier", outputSize);
 
@@ -303,6 +307,8 @@ static void buildConvolutionalCPUModel(ClassificationModel* model, unsigned inpu
 	featureSelectorNetwork.addLayer(Layer(1024, 256,  32));
 	featureSelectorNetwork.addLayer(Layer(  32, 256, 256));
 	featureSelectorNetwork.addLayer(Layer(  32, 256,   8));
+    
+    featureSelectorNetwork.setUseSparseCostFunction(true);
 
 	tuneNeuralNetwork(featureSelectorNetwork);
 
@@ -314,14 +320,25 @@ static void buildConvolutionalCPUModel(ClassificationModel* model, unsigned inpu
 	classifierNetwork.addLayer(Layer(1, 300, 100));
 	classifierNetwork.addLayer(Layer(1, 100, outputSize));
 
+	tuneNeuralNetwork(classifierNetwork);
+
 	addLabels(classifierNetwork, "Classifier", outputSize);
 
 	model->setNeuralNetwork("Classifier", classifierNetwork);
 }
 
-static void buildConvolutionalFastModel(ClassificationModel* model, unsigned inputSize, unsigned outputSize)
+static void buildConvolutionalFastModel(ClassificationModel* model, unsigned xPixels,
+	unsigned yPixels, unsigned colors, unsigned outputSize)
 {
-	NeuralNetwork featureSelectorNetwork;
+	unsigned totalPixels = xPixels * yPixels * colors;
+
+    unsigned reductionFactor = 4;
+
+	// derive parameters from image dimensions 
+	const unsigned blockSize = std::min(16U, xPixels) * colors;
+	const unsigned blocks    = totalPixels / blockSize;
+	
+    NeuralNetwork featureSelector;
 	
 	// For reference: Multi-Column Deep Neural Network (Topology) 
 	//                http://arxiv.org/pdf/1202.2745.pdf
@@ -335,21 +352,40 @@ static void buildConvolutionalFastModel(ClassificationModel* model, unsigned inp
 	// Layer 5: (1 300) fully connected         O(1e8) N/2 connections
 	// Layer 6: (1 100) fully connected         O(1e3) trivial
 	//
+	
+    // convolutional layer
+	featureSelector.addLayer(Layer(blocks, blockSize, blockSize));
+	
+	// pooling layer
+	featureSelector.addLayer(Layer(featureSelector.back().blocks(),
+		featureSelector.back().getBlockingFactor(),
+		featureSelector.back().getBlockingFactor() / reductionFactor));
+	
+	// convolutional layer
+	featureSelector.addLayer(Layer(featureSelector.back().blocks() / reductionFactor,
+		featureSelector.back().getBlockingFactor(),
+		featureSelector.back().getBlockingFactor()));
+	
+	// pooling layer
+	featureSelector.addLayer(Layer(featureSelector.back().blocks(),
+		featureSelector.back().getBlockingFactor(),
+		featureSelector.back().getBlockingFactor() / reductionFactor));
 
-	featureSelectorNetwork.addLayer(Layer(100, 25, 25));
-	featureSelectorNetwork.addLayer(Layer(100, 25,  4));
-	featureSelectorNetwork.addLayer(Layer( 16, 25, 25));
-	featureSelectorNetwork.addLayer(Layer( 16, 25,  5));
+    featureSelector.setUseSparseCostFunction(true);
+    
+	tuneNeuralNetwork(featureSelector);
 
-	tuneNeuralNetwork(featureSelectorNetwork);
-
-	model->setNeuralNetwork("FeatureSelector", featureSelectorNetwork);
+	model->setNeuralNetwork("FeatureSelector", featureSelector);
 
 	NeuralNetwork classifierNetwork;
+	
+    const size_t hiddenLayerSize = 300;
 
-	classifierNetwork.addLayer(Layer(1,  80, 300));
-	classifierNetwork.addLayer(Layer(1, 300, 100));
-	classifierNetwork.addLayer(Layer(1, 100, outputSize));
+	classifierNetwork.addLayer(Layer(1, featureSelector.getOutputCount(), hiddenLayerSize));
+	classifierNetwork.addLayer(Layer(1, hiddenLayerSize, hiddenLayerSize));
+	classifierNetwork.addLayer(Layer(1, hiddenLayerSize, outputSize));
+
+	tuneNeuralNetwork(classifierNetwork);
 
 	addLabels(classifierNetwork, "Classifier", outputSize);
 
@@ -360,9 +396,9 @@ ClassificationModel* ClassificationModelBuilder::create(const std::string& path)
 {
 	auto model = new ClassificationModel(path);
 
-	unsigned x         = util::KnobDatabase::getKnobValue("ResolutionX",     32       );
-	unsigned y         = util::KnobDatabase::getKnobValue("ResolutionY",     32       );
-	unsigned colors    = util::KnobDatabase::getKnobValue("ColorComponents", 3        );
+	unsigned x         = util::KnobDatabase::getKnobValue("ClassifictionModelBuilder::ResolutionX",     64       );
+	unsigned y         = util::KnobDatabase::getKnobValue("ClassifictionModelBuilder::ResolutionY",     64       );
+	unsigned colors    = util::KnobDatabase::getKnobValue("ClassifictionModelBuilder::ColorComponents", 3        );
 
 	model->setInputImageResolution(x, y, colors);
 
@@ -383,7 +419,7 @@ ClassificationModel* ClassificationModelBuilder::create(const std::string& path)
 	}
 	else if(modelType == "ConvolutionalFastModel")
 	{
-		buildConvolutionalFastModel(model, featureSelectorInputSize, classifierOutputSize);
+		buildConvolutionalFastModel(model, x, y, colors, classifierOutputSize);
 	}
 
 	return model;

@@ -99,7 +99,8 @@ static void parseLabeledPath(SampleDatabase* database, const std::string& line,
 			"(path, label, startFrame, endFrame).");
 	}
 	
-	auto filePath = util::getRelativePath(databaseDirectory, components[0]);
+	auto filePath = util::getRelativePath(databaseDirectory,
+		removeWhitespace(components[0]));
 	
 	auto label = removeWhitespace(components[1]);
 	
@@ -128,7 +129,8 @@ static void parseLabeledPath(SampleDatabase* database, const std::string& line,
 	}
 	else
 	{
-		throw std::runtime_error("Path '" + filePath +
+		throw std::runtime_error("Path '" + filePath + " with extension '" +
+			util::getExtension(filePath) +
 			"' is not an image or video.");
 	}
 }

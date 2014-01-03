@@ -156,7 +156,7 @@ static bool gradientChecking(const BlockSparseMatrix& partialDerivatives,
 DenseBackPropagation::DenseBackPropagation(NeuralNetwork* ann, BlockSparseMatrix* input, BlockSparseMatrix* ref)
  : BackPropagation(ann, input, ref), _lambda(0.0f)
 {
-	_lambda = util::KnobDatabase::getKnobValue("DenseBackPropagation::Lambda", 0.01f);
+	_lambda = util::KnobDatabase::getKnobValue("NeuralNetwork::Lambda", 0.01f);
 }
 
 MatrixVector DenseBackPropagation::getCostDerivative(const NeuralNetwork& network,

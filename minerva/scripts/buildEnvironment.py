@@ -314,7 +314,10 @@ def Environment():
 	env.AppendUnique(CPPPATH = env['BUILD_ROOT'])
 
 	# set minerva include path
-	env.AppendUnique(LIBPATH = os.path.abspath('.'))
+	if env['install']:
+		env.AppendUnique(LIBPATH = os.path.abspath(os.path.join(env['install_path'], 'lib')))
+	else:
+		env.AppendUnique(LIBPATH = os.path.abspath('.'))
 	
 	# we need librt on linux
 	if sys.platform == 'linux2':
