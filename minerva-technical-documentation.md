@@ -180,5 +180,5 @@ The idea behind a sparse autoencoder is that features in some data can be attrib
 
 ### The classification module
 
- This module uses both the neural network (the feature selector from the unsupervised learning step) and the classifier neural network (from the supervised learning step) to perform classification in test images.  It is really a convience interface that abstracts some of the low level operations involved in setting up the input data and training the networks contained in a model.  It presents a clean interface for feeding input labeled or unlabeled data to the model.  Operations like random sampling and input caching are automated using the classification module framework.  
+ This module uses both the neural network (the feature selector from the unsupervised learning step) and the classifier neural network (from the supervised learning step) to perform classification in test images.  It is really a convenience interface that abstracts some of the low level operations involved in setting up the input data and training the networks contained in a model.  It presents a clean interface for feeding input labeled or unlabeled data to the model.  Operations like random sampling and input caching are automated using the classification module framework.  
 
