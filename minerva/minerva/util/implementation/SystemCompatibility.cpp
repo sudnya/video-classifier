@@ -90,7 +90,7 @@ long long unsigned int getFreePhysicalMemory()
 		mib[1] = HW_USERMEM; // HW_MEMSIZE -> physical memory 
 		length = sizeof(uint64_t); 
 		sysctl(mib, 2, &physical_memory, &length, NULL, 0); 
-		return physical_memory;
+		return physical_memory / 10000;
 	#elif __GNUC__
 		return get_avphys_pages() * getpagesize();
 	#endif

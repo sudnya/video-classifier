@@ -15,6 +15,7 @@
 #include <minerva/matrix/interface/BlockSparseMatrix.h>
 
 #include <minerva/util/interface/Knobs.h>
+#include <minerva/util/interface/SystemCompatibility.h>
 #include <minerva/util/interface/debug.h>
 
 // Standard Libary Includes
@@ -417,19 +418,44 @@ static void formGraphOverNetwork(NeuronBlockGraph& graph,
 	}
 }
 
+static size_t divideRoundUp(size_t numerator, size_t denominator)
+{
+	return (numerator + denominator - 1) / denominator; 
+}
+
+static size_t getTargetReductionFactor(size_t connections)
+{
+	size_t networkBytes = connections * sizeof(float);
+	size_t freeBytes    = util::getFreePhysicalMemory();
+	
+	size_t optimizationExpansionFactor = 120; // TODO: get this from the optimizer
+
+	size_t targetBytes = freeBytes / 10;
+	size_t expandedBytes = networkBytes * optimizationExpansionFactor;
+
+	util::log("TiledConvolutionalSolver") << "  Target bytes:   " << (targetBytes   / 1e6f) << " MB\n";
+	util::log("TiledConvolutionalSolver") << "  Network bytes:  " << (networkBytes  / 1e6f) << " MB\n";
+	util::log("TiledConvolutionalSolver") << "  Expanded bytes: " << (expandedBytes / 1e6f) << " MB\n";
+	
+	size_t reductionFactor = divideRoundUp(expandedBytes, targetBytes);
+	
+	return std::max(4UL, reductionFactor);
+}
+
 static void coalesceTiles(const NeuralNetwork* neuralNetwork, TileVector& tiles)
 {
     util::log("TiledConvolutionalSolver") << " Coalescing tiles\n";
 	
 	size_t connections     = neuralNetwork->totalConnections();
-	size_t tileConnections = tiles.front().totalConnections();
+	size_t tileConnections = connections / tiles.size();
 	
 	util::log("TiledConvolutionalSolver") << "  Total connections: " << connections << "\n";
-    util::log("TiledConvolutionalSolver") << "  Tiled connections: " << tileConnections << "\n";
+    util::log("TiledConvolutionalSolver") << "  Tiled connections: " << tileConnections << " per tile\n";
 	
-	// TODO:
-	const size_t targetReductionFactor = 40;
+	const size_t targetReductionFactor = getTargetReductionFactor(connections);
 	
+    util::log("TiledConvolutionalSolver") << "  Target reduction factor: " << targetReductionFactor << "\n";
+
 	size_t tilingReductionFactor = connections / tileConnections;
 	
 	size_t coalescingRatio = tilingReductionFactor / targetReductionFactor;
@@ -483,7 +509,7 @@ static void getTiles(TileVector& tiles, const NeuralNetwork* neuralNetwork, cons
 	while(!unvisited.empty())
 	{
 		Tile newTile;
-    	util::log("TiledConvolutionalSolver") << " Forming new tile " << tiles.size() <<  "\n";
+    	util::log("TiledConvolutionalSolver::Detail") << " Forming new tile " << tiles.size() <<  "\n";
 		
 		NeuronBlockStack frontier;
 		
@@ -497,7 +523,7 @@ static void getTiles(TileVector& tiles, const NeuralNetwork* neuralNetwork, cons
 			auto node = frontier.top();
 			frontier.pop();
 			
-			util::log("TiledConvolutionalSolver") << "  added node ("
+			util::log("TiledConvolutionalSolver::Detail") << "  added node ("
 				<< node->block.layer << " layer, "
 				<< node->block.blockId <<  " block)\n";
 			newTile.push_back(node->block);
@@ -615,15 +641,15 @@ void TiledConvolutionalSolver::solve()
 			BlockSparseMatrix inputTile(input->isRowSparse());
 			BlockSparseMatrix referenceTile(reference->isRowSparse());
 			
+			util::log("TiledConvolutionalSolver") << " solving tile " << (&tile - &tiles[0])
+				<< " out of " << tiles.size() << " with " << tile.totalConnections() << " connections\n";
+			
 			extractTile(&networkTile, &inputTile, &referenceTile,
 				neuralNetwork, input, reference, tile);
 			
 			m_backPropDataPtr->setNeuralNetwork(&networkTile);
 			m_backPropDataPtr->setInput(&inputTile);
 			m_backPropDataPtr->setReferenceOutput(&referenceTile);
-			
-			util::log("TiledConvolutionalSolver") << " solving tile " << (&tile - &tiles[0])
-				<< " out of " << tiles.size() << "\n";
 
 			linearSolver(m_backPropDataPtr);
 			

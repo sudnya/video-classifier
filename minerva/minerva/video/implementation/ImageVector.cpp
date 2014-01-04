@@ -117,15 +117,15 @@ ImageVector::Matrix ImageVector::getReference(
 	
 	for(unsigned int imageId = 0; imageId != size(); ++imageId)
 	{
-//		util::log("ImageVector") << " For image" << imageId << " with label '"
-//			<< (*this)[imageId].label() << "'\n";
+		util::log("ImageVector") << " For image" << imageId << " with label '"
+			<< (*this)[imageId].label() << "'\n";
 		
 		for(unsigned int outputNeuron = 0;
 			outputNeuron != neuralNetwork.getOutputCount(); ++outputNeuron)
 		{
-//			util::log("ImageVector") << "  For output neuron" << outputNeuron
-//				<< " with label '"
-//				<< neuralNetwork.getLabelForOutputNeuron(outputNeuron) << "'\n";
+			util::log("ImageVector") << "  For output neuron" << outputNeuron
+				<< " with label '"
+				<< neuralNetwork.getLabelForOutputNeuron(outputNeuron) << "'\n";
 		
 			if((*this)[imageId].label() ==
 				neuralNetwork.getLabelForOutputNeuron(outputNeuron))

@@ -52,7 +52,7 @@ void UnsupervisedLearner::learn(const ImageVector& images)
     	
 		neuralnetwork::NeuralNetwork copy;
 		
-		copy.addLayer(*layer);
+		copy.addLayer(std::move(*layer));
 		
 		copy.mirror();
 		

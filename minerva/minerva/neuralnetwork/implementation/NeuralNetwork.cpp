@@ -179,12 +179,18 @@ std::string NeuralNetwork::getLabelForOutputNeuron(unsigned int i) const
 		return stream.str();
 	}
 	
+	util::log("NeuralNetwork") << "Getting output label for output neuron "
+		<< i << ", " << label->second << "\n";
+	
 	return label->second;
 }
 
 void NeuralNetwork::setLabelForOutputNeuron(unsigned int idx, const std::string& label)
 {
 	assert(idx < getOutputCount());
+
+	util::log("NeuralNetwork") << "Setting label for output neuron "
+		<< idx << " to " << label << "\n";
 
 	m_labels[idx] = label;
 }
