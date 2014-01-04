@@ -79,7 +79,7 @@ From this paper:
 >    extraction using a bank of Gabor energy filters. Proc. SPIE 8709, Detection and Sensing of
 >    Mines, Explosive Objects, and Obscured Targets XVIII, 87091B (June 7, 2013);
 
-The accompanying figure on the top-right shows the corresponding spatial domain representation (inpulse response) of each of the Gabor Filters.
+The accompanying figure on the top-right shows the corresponding spatial domain representation (impulse response) of each of the Gabor Filters.
 
 The details of sparse autoencoders are described here http://stanford.edu/class/cs294a/sparseAutoencoder.pdf .  
 
