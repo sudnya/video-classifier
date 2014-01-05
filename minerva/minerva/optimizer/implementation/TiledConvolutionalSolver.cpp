@@ -433,9 +433,9 @@ static size_t getTargetReductionFactor(size_t connections)
 	size_t targetBytes = freeBytes / 10;
 	size_t expandedBytes = networkBytes * optimizationExpansionFactor;
 
-	util::log("TiledConvolutionalSolver") << "  Target bytes:   " << (targetBytes   / 1e6f) << " MB\n";
-	util::log("TiledConvolutionalSolver") << "  Network bytes:  " << (networkBytes  / 1e6f) << " MB\n";
-	util::log("TiledConvolutionalSolver") << "  Expanded bytes: " << (expandedBytes / 1e6f) << " MB\n";
+	util::log("TiledConvolutionalSolver::Detail") << "  Target bytes:   " << (targetBytes   / 1e6f) << " MB\n";
+	util::log("TiledConvolutionalSolver::Detail") << "  Network bytes:  " << (networkBytes  / 1e6f) << " MB\n";
+	util::log("TiledConvolutionalSolver::Detail") << "  Expanded bytes: " << (expandedBytes / 1e6f) << " MB\n";
 	
 	size_t reductionFactor = divideRoundUp(expandedBytes, targetBytes);
 	
@@ -444,17 +444,17 @@ static size_t getTargetReductionFactor(size_t connections)
 
 static void coalesceTiles(const NeuralNetwork* neuralNetwork, TileVector& tiles)
 {
-    util::log("TiledConvolutionalSolver") << " Coalescing tiles\n";
+    util::log("TiledConvolutionalSolver::Detail") << " Coalescing tiles\n";
 	
 	size_t connections     = neuralNetwork->totalConnections();
 	size_t tileConnections = connections / tiles.size();
 	
-	util::log("TiledConvolutionalSolver") << "  Total connections: " << connections << "\n";
-    util::log("TiledConvolutionalSolver") << "  Tiled connections: " << tileConnections << " per tile\n";
+	util::log("TiledConvolutionalSolver::Detail") << "  Total connections: " << connections << "\n";
+    util::log("TiledConvolutionalSolver::Detail") << "  Tiled connections: " << tileConnections << " per tile\n";
 	
 	const size_t targetReductionFactor = getTargetReductionFactor(connections);
 	
-    util::log("TiledConvolutionalSolver") << "  Target reduction factor: " << targetReductionFactor << "\n";
+    util::log("TiledConvolutionalSolver::Detail") << "  Target reduction factor: " << targetReductionFactor << "\n";
 
 	size_t tilingReductionFactor = connections / tileConnections;
 	
@@ -465,7 +465,7 @@ static void coalesceTiles(const NeuralNetwork* neuralNetwork, TileVector& tiles)
 		return;
 	}
     
-	util::log("TiledConvolutionalSolver") << "  Coalescing tiles by " << coalescingRatio << "x\n";
+	util::log("TiledConvolutionalSolver::Detail") << "  Coalescing tiles by " << coalescingRatio << "x\n";
 
 	TileVector newTiles;
 
