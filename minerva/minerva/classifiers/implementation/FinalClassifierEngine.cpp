@@ -52,12 +52,12 @@ void FinalClassifierEngine::runOnImageBatch(const ImageVector& images)
 		if(image->hasLabel())
 		{
 			util::log("FinalClassifierEngine") << " Classified '" << image->path()
-				<< "' as '" << *label << "'\n";
+				<< "' with label '" << image->label() << "' as '" << *label << "'\n";
 		}
 		else
 		{
 			util::log("FinalClassifierEngine") << " Classified '" << image->path()
-				<< "' with label '" << image->label() << "' as '" << *label << "'\n";
+				<< "' as '" << *label << "'\n";
 		}
 
 		if(_shouldDisplayImages)

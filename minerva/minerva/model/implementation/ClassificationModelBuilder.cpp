@@ -207,13 +207,15 @@ static void tuneNeuralNetwork(NeuralNetwork& neuralNetwork)
 }
 #endif
 
+std::default_random_engine engine(0);
+
 static void tuneNeuralNetwork(NeuralNetwork& neuralNetwork)
 {
 	// The idea here is to pick random weights that are amenable for a network
 	// of this size.  
-	float weightEpsilon = util::KnobDatabase::getKnobValue("NeuralNetwork::InitializationEpsilon", 0.3f);
+	//float weightEpsilon = util::KnobDatabase::getKnobValue("NeuralNetwork::InitializationEpsilon", 0.3f);
 
-	neuralNetwork.initializeRandomly(weightEpsilon);
+	neuralNetwork.initializeRandomly(engine);//, weightEpsilon);
 }
 
 static void addLabels(NeuralNetwork& neuralNetwork, const std::string& name, unsigned outputSize)
@@ -421,9 +423,9 @@ ClassificationModel* ClassificationModelBuilder::create(const std::string& path)
 {
 	auto model = new ClassificationModel(path);
 
-	unsigned x         = util::KnobDatabase::getKnobValue("ClassifictionModelBuilder::ResolutionX",     64       );
-	unsigned y         = util::KnobDatabase::getKnobValue("ClassifictionModelBuilder::ResolutionY",     64       );
-	unsigned colors    = util::KnobDatabase::getKnobValue("ClassifictionModelBuilder::ColorComponents", 3        );
+	unsigned x         = util::KnobDatabase::getKnobValue("ClassificationModelBuilder::ResolutionX",     32       );
+	unsigned y         = util::KnobDatabase::getKnobValue("ClassificationModelBuilder::ResolutionY",     32       );
+	unsigned colors    = util::KnobDatabase::getKnobValue("ClassificationModelBuilder::ColorComponents", 3        );
 
 	model->setInputImageResolution(x, y, colors);
 
