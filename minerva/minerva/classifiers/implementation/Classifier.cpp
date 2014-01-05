@@ -60,19 +60,20 @@ Classifier::Matrix Classifier::detectLabels(const ImageVector& images)
 {
 	size_t classifierInputCount = m_classifierNetwork.getInputCount();
 	size_t     systemInputCount = m_classifierNetwork.getInputCount();
+    size_t       blockingFactor = m_classifierNetwork.getBlockingFactor();
 
 	if (!m_featureSelectorNetwork.empty())
 	{
 		classifierInputCount = m_featureSelectorNetwork.getOutputCount();
 		systemInputCount	 = m_featureSelectorNetwork.getInputCount();
+        blockingFactor       = m_featureSelectorNetwork.getBlockingFactor();
 	}
 
 	assert(m_classifierNetwork.getInputCount() == classifierInputCount);
 	
 	/* run classification using features, classifier network to emit label */
 	auto matrix = images.convertToStandardizedMatrix(systemInputCount,
-		std::sqrt(m_featureSelectorNetwork.getBlockingFactor()),
-		std::sqrt(m_featureSelectorNetwork.getBlockingFactor()));
+		std::sqrt(blockingFactor), std::sqrt(blockingFactor));
 
 	assert(matrix.columns() == systemInputCount);
 
