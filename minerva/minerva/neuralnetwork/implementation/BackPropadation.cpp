@@ -168,6 +168,7 @@ static NeuralNetwork createNetworkFromWeights(
 			layer.getBlockingFactor(), layer.getOutputBlockingFactor()));
 	}
 	
+	newNetwork.setLabelsForOutputNeurons(*neuralNetwork);
 	newNetwork.setFlattenedWeights(weights);
 		
 	return newNetwork;

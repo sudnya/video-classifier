@@ -137,6 +137,9 @@ namespace util
 	}		
 	#endif
 	
+	extern bool isLogEnabled(const std::string& logName);
+
+
 	extern void enableAllLogs();
 	extern void enableLog(const std::string& logName);
 

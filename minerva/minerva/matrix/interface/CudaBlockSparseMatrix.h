@@ -128,11 +128,6 @@ private:
 
 private:
 	bool _isTransposed;
-
-private:
-	std::unique_ptr<CudaBlockSparseCache> _cache;
-	
-
 };
 
 }

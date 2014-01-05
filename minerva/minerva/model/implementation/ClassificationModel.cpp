@@ -66,6 +66,8 @@ bool ClassificationModel::containsNeuralNetwork(const std::string& name) const
 void ClassificationModel::setNeuralNetwork(
 	const std::string& name, const NeuralNetwork& n)
 {
+	assert(n.areConnectionsValid());
+	
 	_neuralNetworks[name] = n;
 }
 
@@ -116,7 +118,7 @@ void ClassificationModel::save() const
 
 	for(auto network = _neuralNetworks.begin();
 		network != _neuralNetworks.end(); ++network)
-	{
+	{	
 		if(network != _neuralNetworks.begin())
 		{
 			stream << ",\n";

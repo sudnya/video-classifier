@@ -213,7 +213,8 @@ float LBFGSSolver::solve(Matrix& inputs, const CostAndGradient& callback)
 	{
 		if(status != LBFGSSolverLibrary::LBFGSERR_MAXIMUMITERATION &&
 			status != LBFGSSolverLibrary::LBFGSERR_ROUNDING_ERROR &&
-			status != LBFGSSolverLibrary::LBFGSERR_MAXIMUMLINESEARCH)
+			status != LBFGSSolverLibrary::LBFGSERR_MAXIMUMLINESEARCH &&
+			status != LBFGSSolverLibrary::LBFGSERR_MINIMUMSTEP)
 		{
 			LBFGSSolverLibrary::lbfgs_free(inputArray);
 		

@@ -111,6 +111,8 @@ std::string FinalClassifierEngine::Statistics::toString() const
 	stream << " aggregate statistics:\n";
 	stream << "  total samples: " << totalSamples << "\n";
 	stream << "  exact matches: " << exactMatches << "\n";
+	stream << "  accuracy:      " << ((100.0 * exactMatches) / totalSamples) << "\n";
+
 
 	return stream.str();
 }

@@ -12,6 +12,7 @@
 #include <minerva/matrix/interface/CudaRuntimeLibrary.h>
 #include <minerva/matrix/interface/CublasLibrary.h>
 #include <minerva/matrix/interface/CurandLibrary.h>
+#include <minerva/matrix/interface/CudaBlockSparseCache.h>
 
 #include <minerva/util/interface/debug.h>
 #include <minerva/util/interface/Casts.h>
@@ -214,6 +215,15 @@ typedef std::vector<float*> FloatPointerVector;
 
 static float* getPointerArray(FloatPointerVector& data, const float* value, size_t blocks, size_t rows, size_t columns)
 {
+
+	#if 1
+	float* devicePointer = (float*)CudaBlockSparseCache::fastDeviceAllocate(sizeof(CUdeviceptr*) * blocks);
+	
+	//CudaDriver::cuMemAlloc((CUdeviceptr*)&devicePointer, sizeof(CUdeviceptr*) * blocks);
+	//CudaDriver::cuMemcpyHtoD((CUdeviceptr)devicePointer, data.data(), sizeof(float*) * blocks);
+	launchKernel("setupBlocksForBatchedSgemm", devicePointer, value, blocks, rows * columns);
+
+	#else	
 	data.resize(blocks);
 	
 	size_t position = 0;
@@ -225,18 +235,21 @@ static float* getPointerArray(FloatPointerVector& data, const float* value, size
 		position += rows * columns;
 	}
 	
-	CudaDriver::cuMemHostRegister(data.data(), sizeof(float**), CU_MEMHOSTREGISTER_DEVICEMAP);
+	CudaDriver::cuMemHostRegister(data.data(), sizeof(float**) * blocks, CU_MEMHOSTREGISTER_DEVICEMAP);
 	
 	float* devicePointer = nullptr;
 	
 	CudaDriver::cuMemHostGetDevicePointer((CUdeviceptr*)&devicePointer, data.data(), 0);
+	#endif
 	
 	return devicePointer;	
 }
 
-static void freePointerArray(FloatPointerVector& value)
+static void freePointerArray(float* array, FloatPointerVector& value)
 {
-	CudaDriver::cuMemHostUnregister(value.data());
+	CudaBlockSparseCache::fastDeviceFree(array);
+	//CudaDriver::cuMemFree((CUdeviceptr)array);
+	//CudaDriver::cuMemHostUnregister(value.data());
 }
 
 void CudaSparseMatrixLibrary::multiply(float* result, const float* left, bool leftTransposed,
@@ -291,16 +304,27 @@ void CudaSparseMatrixLibrary::multiply(float* result, const float* left, bool le
 	{
 		rightTransposedMode = CublasLibrary::CUBLAS_OP_T;
 		
-		//m   = rightRows;
 		ldb = rightRows;
-		//ldc = rightRows;
 	}
 	
-	if(blocks == 1)
+	const size_t blockThreshold = 10;
+	const size_t stepThreshold  = 200 * 200;
+
+	size_t step = rows * columns;
+	
+	if(blocks <= blockThreshold || step > stepThreshold)
 	{
-		CublasLibrary::cublasSgemm(rightTransposedMode,
-			leftTransposedMode, m, n, k, &alpha,
-			right, ldb, left, lda, &beta, result, ldc);
+		size_t leftStep   = step;
+		size_t rightStep  = rightRows * rightColumns;
+		size_t resultStep = rows * rightColumns;
+
+		for(size_t i = 0; i < blocks; ++i)
+		{
+			CublasLibrary::cublasSgemm(rightTransposedMode,
+				leftTransposedMode, m, n, k, &alpha,
+				right + rightStep * i, ldb, left + leftStep * i, lda,
+				&beta, result + resultStep * i, ldc);
+		}
 	}
 	else
 	{
@@ -316,9 +340,9 @@ void CudaSparseMatrixLibrary::multiply(float* result, const float* left, bool le
 			leftTransposedMode, m, n, k, &alpha,
 			b, ldb, a, lda, &beta, c, ldc, blocks);
 
-		freePointerArray(aData);
-		freePointerArray(bData);
-		freePointerArray(cData);
+		freePointerArray(a, aData);
+		freePointerArray(b, bData);
+		freePointerArray(c, cData);
 	}
 
 }
@@ -378,35 +402,43 @@ void CudaSparseMatrixLibrary::klDivergenceDerivative(float* result, float f, siz
 
 void CudaSparseMatrixLibrary::transpose(float* result, const float* left, size_t blocks, size_t rows, size_t columns)
 {
-	if(blocks == 1)
+	const size_t maxBlocks = 10;
+	
+	if(blocks <= maxBlocks)
 	{
-		float alpha = 1.0f;
-		float beta  = 0.0f;
-		
-		//lda = num_col_A = num_row_AT = N;
-		int lda = columns;
+		size_t step = rows * columns;
 
-		// ldb = num_col_B = num_row_BT = N;
-		int ldb = rows;//this->columns();
+		for(size_t i = 0; i < blocks; ++i)
+		{
+			size_t index = step * i;
+			
+			float alpha = 1.0f;
+			float beta  = 0.0f;
+			
+			//lda = num_col_A = num_row_AT = N;
+			int lda = columns;
 
-		// ldc = num_col_C, num_row_CT = N;
-		int ldc = rows;
+			// ldb = num_col_B = num_row_BT = N;
+			int ldb = rows;//this->columns();
 
-		// m and n in the cuBLAS GEMM routine are the #rows and #cols of the result matrix C,
+			// ldc = num_col_C, num_row_CT = N;
+			int ldc = rows;
 
-		// m = num_row_C, num_col_CT
-		int m = rows;
+			// m and n in the cuBLAS GEMM routine are the #rows and #cols of the result matrix C,
 
-		// n = num_col_C, num_row_CT
-		int n = columns;
-		
-		CublasLibrary::cublasSgeam(CublasLibrary::CUBLAS_OP_T,
-			CublasLibrary::CUBLAS_OP_N, m, n, &alpha, left, lda, &beta, nullptr, ldb, result, ldc);
+			// m = num_row_C, num_col_CT
+			int m = rows;
 
+			// n = num_col_C, num_row_CT
+			int n = columns;
+			
+			CublasLibrary::cublasSgeam(CublasLibrary::CUBLAS_OP_T,
+				CublasLibrary::CUBLAS_OP_N, m, n, &alpha, left + index, lda, &beta,
+				nullptr, ldb, result + index, ldc);
+		}
 	}
 	else
 	{
-		assert(false); // not implemented
 		launchKernel("transpose", result, left, blocks, rows, columns);
 	}
 }
@@ -460,7 +492,7 @@ void CudaSparseMatrixLibrary::assignUniformRandomValues(float* result, float min
 	
 	CurandLibrary::curandCreateGenerator(&generator, CurandLibrary::CURAND_RNG_PSEUDO_DEFAULT);
 	
-	CurandLibrary::curandGenerateUniform(generator, result, size);
+		CurandLibrary::curandGenerateUniform(generator, result, size);
 
 	if(min != 0.0f || max != 1.0f)
 	{
@@ -482,9 +514,7 @@ void CudaSparseMatrixLibrary::equals(float* result, const float* left, const flo
 
 float CudaSparseMatrixLibrary::reduceSum(const float* input, size_t size)
 {
-	float* result = nullptr;
-
-	CudaDriver::cuMemAlloc((CUdeviceptr*)&result, sizeof(float));
+	float* result = (float*)CudaBlockSparseCache::fastDeviceAllocate(sizeof(float));
 	
 	launchKernel("fillWithZero", result, 1ULL);
 	launchKernel("reduceSum", result, input, size);
@@ -492,8 +522,10 @@ float CudaSparseMatrixLibrary::reduceSum(const float* input, size_t size)
 	float resultValue = 0.0f;
 
 	CudaDriver::cuMemcpyDtoH(&resultValue, (CUdeviceptr)result, sizeof(float));
+
+	CudaBlockSparseCache::fastDeviceFree(result);
 	
-	CudaDriver::cuMemFree((CUdeviceptr)result);
+	//CudaDriver::cuMemFree((CUdeviceptr)result);
 	
 	return resultValue;
 }

@@ -24,6 +24,201 @@ namespace minerva
 namespace matrix
 {
 
+class PoolAllocation
+{
+public:
+	PoolAllocation(void* a, size_t bytes)
+	: address(a), size(bytes)
+	{
+		
+	}
+
+public:
+	void* address;
+	size_t size;
+
+};
+
+typedef std::map<void*, PoolAllocation> PoolAllocationMap;
+
+class DeviceMemoryManager
+{
+public:
+	DeviceMemoryManager()
+	: isInitialized(false), memoryPoolBaseAddress(nullptr), memoryPoolSize(0)
+	{
+		
+	}
+	
+	~DeviceMemoryManager()
+	{
+		//slowDeviceFree(memoryPoolBaseAddress);
+	}
+	
+public:
+	DeviceMemoryManager(const DeviceMemoryManager&) = delete;
+	DeviceMemoryManager& operator=(const DeviceMemoryManager&) = delete;
+
+public:
+	void* fastDeviceAllocate(size_t bytes)
+	{
+		assert(isInitialized);
+		
+		#if 1
+		auto allocation = tryFastAllocation(bytes);
+		
+		if(allocation != nullptr)
+		{
+			util::log("CudaBlockSparseCache") << " fast allocate of "
+				<< allocation->address << " with " << bytes << " bytes\n";
+			
+			return allocation->address;
+		}
+		#endif
+		
+		return slowDeviceAllocate(bytes);
+	}
+
+	void fastDeviceFree(void* address)
+	{
+		assert(isInitialized);
+		
+		#if 1	
+		if(address == nullptr) return;
+		
+		auto allocation = poolAllocations.find(address);
+		
+		if(allocation != poolAllocations.end())
+		{
+			util::log("CudaBlockSparseCache") << " fast free of "
+				<< allocation->second.address << " with "
+				<< allocation->second.size << " bytes\n";
+			
+			poolAllocations.erase(allocation);
+			return;
+		}
+		#endif
+		
+		slowDeviceFree(address);
+	}
+	
+	void initialize(size_t cacheSize)
+	{
+		assert(!isInitialized);
+		
+		isInitialized = true;
+		
+		memoryPoolBaseAddress = slowDeviceAllocate(cacheSize);
+		
+		memoryPoolSize = cacheSize;
+	}
+
+public:
+	void* slowDeviceAllocate(size_t bytes)
+	{
+		void* address = nullptr;
+		
+		CudaDriver::cuMemAlloc((CUdeviceptr*)&address, bytes);
+		util::log("CudaBlockSparseCache") << " slow allocate of "
+			<< address << " with " << bytes << " bytes\n";
+		
+		return address;
+	}
+	
+	void slowDeviceFree(void* address)
+	{
+		util::log("CudaBlockSparseCache") << " slow free of " << address << "\n";
+		CudaDriver::cuMemFree((CUdeviceptr)address);
+	}
+
+	PoolAllocation* tryFastAllocation(size_t bytes)
+	{
+		// fast fail
+		if(bytes > memoryPoolSize)
+		{
+			util::log("CudaBlockSparseCache") << " failed, pool isn't big enough\n";
+			
+			return nullptr;
+		}
+		
+		// check the last entry
+		if(!poolAllocations.empty())
+		{
+			auto lastEntry = poolAllocations.rbegin();
+			
+			size_t endOffset = align(getOffset(lastEntry->second.address) + lastEntry->second.size);
+			size_t remaining = memoryPoolSize - endOffset;
+			
+			if(remaining >= bytes)
+			{
+				void* newAddress = (char*)memoryPoolBaseAddress + endOffset;
+				auto newAllocation = poolAllocations.insert(
+					std::make_pair(newAddress, PoolAllocation(newAddress, bytes))).first;
+				
+				return &newAllocation->second;
+			}
+			
+			util::log("CudaBlockSparseCache") << " last entry (" << lastEntry->second.address
+				<< ", " << lastEntry->second.size << ") doesn't have enough space.\n";
+		}
+		else
+		{
+			// trivial case
+			void* newAddress = memoryPoolBaseAddress;
+			auto newAllocation = poolAllocations.insert(
+				std::make_pair(newAddress, PoolAllocation(newAddress, bytes))).first;
+			
+			return &newAllocation->second;
+		}
+
+		// TODO: faster than in order
+
+		// scan in order
+		for(auto entry = poolAllocations.begin(); entry != poolAllocations.end(); ++entry)
+		{
+			auto nextEntry = entry; ++nextEntry;
+			if(nextEntry == poolAllocations.end()) break;
+			
+			size_t endOffset = align(getOffset(entry->second.address) + entry->second.size);
+			size_t remaining = getOffset(nextEntry->second.address) - endOffset;
+			
+			if(remaining >= bytes)
+			{
+				void* newAddress = (char*)memoryPoolBaseAddress + endOffset;
+				auto newAllocation = poolAllocations.insert(
+					std::make_pair(newAddress, PoolAllocation(newAddress, bytes))).first;
+				
+				return &newAllocation->second;
+			}
+		}
+		
+		return nullptr;
+	}
+	
+public:
+	size_t getOffset(void* address)
+	{
+		return (size_t)address - (size_t)memoryPoolBaseAddress;
+	}
+
+	size_t align(size_t address)
+	{
+		const size_t alignment = 16;
+		
+		size_t remainder = address % alignment;
+		return remainder == 0 ? address : address + alignment - remainder;
+	}
+
+public:
+	bool isInitialized;
+	
+	void*  memoryPoolBaseAddress;
+	size_t memoryPoolSize;
+	
+	PoolAllocationMap poolAllocations;
+
+};
+
 class Allocation
 {
 public:
@@ -165,9 +360,9 @@ public:
 				<< " columns) on the GPU at (" << allocation->second.address << ", "
 				<< allocation->second.size << " bytes).\n";
 			totalSize -= allocation->second.size;
-			
-			CudaDriver::cuMemFree((CUdeviceptr)allocation->second.address);
 
+			fastDeviceFree(allocation->second.address);
+			
 			allocations.erase(allocation);
 		}
 	}
@@ -216,6 +411,17 @@ public:
 		}
 	}
 
+public:
+	void* fastDeviceAllocate(size_t bytes)
+	{
+		return _memoryManager.fastDeviceAllocate(bytes);
+	}
+
+	void fastDeviceFree(void* address)
+	{
+		_memoryManager.fastDeviceFree(address);
+	}
+
 private:
 	Allocation* createNewAllocation(BlockSparseMatrixImplementation* matrix)
 	{
@@ -225,7 +431,7 @@ private:
 
 		if(size > 0)
 		{
-			CudaDriver::cuMemAlloc((CUdeviceptr*)&newMemory, size);
+			newMemory = fastDeviceAllocate(size);
 		}
 
 		auto newAllocation = allocations.insert(
@@ -289,60 +495,74 @@ private:
 		
 		util::log("CudaBlockSparseCache") << "Initializing cache, using up to "
 			<< maximumSize << " bytes from GPU memory.\n";
+		
+		_memoryManager.initialize(maximumSize);
 	}
 
+private:
+	DeviceMemoryManager _memoryManager;
 
 };
 
 static std::unique_ptr<CacheManager> cacheManager(new CacheManager);
 
-float* CudaBlockSparseCache::acquire(const BlockSparseMatrixImplementation* m) const
+float* CudaBlockSparseCache::acquire(const BlockSparseMatrixImplementation* m)
 {
 	auto matrix = const_cast<BlockSparseMatrixImplementation*>(m);
 	
 	return cacheManager->acquire(matrix);
 }
 
-float* CudaBlockSparseCache::acquireReadOnly(const BlockSparseMatrixImplementation* m) const
+float* CudaBlockSparseCache::acquireReadOnly(const BlockSparseMatrixImplementation* m)
 {
 	auto matrix = const_cast<BlockSparseMatrixImplementation*>(m);
 	
 	return cacheManager->acquireReadOnly(matrix);
 }
 
-float* CudaBlockSparseCache::acquireClobber(const BlockSparseMatrixImplementation* m) const
+float* CudaBlockSparseCache::acquireClobber(const BlockSparseMatrixImplementation* m)
 {
 	auto matrix = const_cast<BlockSparseMatrixImplementation*>(m);
 	
 	return cacheManager->acquireClobber(matrix);
 }
 
-void CudaBlockSparseCache::release(const BlockSparseMatrixImplementation* m) const
+void CudaBlockSparseCache::release(const BlockSparseMatrixImplementation* m)
 {
 	auto matrix = const_cast<BlockSparseMatrixImplementation*>(m);
 	
 	return cacheManager->release(matrix);
 }
 
-void CudaBlockSparseCache::invalidate(const BlockSparseMatrixImplementation* m) const
+void CudaBlockSparseCache::invalidate(const BlockSparseMatrixImplementation* m)
 {
 	auto matrix = const_cast<BlockSparseMatrixImplementation*>(m);
 	
 	return cacheManager->invalidate(matrix);
 }
 
-void CudaBlockSparseCache::synchronize(const BlockSparseMatrixImplementation* m) const
+void CudaBlockSparseCache::synchronize(const BlockSparseMatrixImplementation* m)
 {
 	auto matrix = const_cast<BlockSparseMatrixImplementation*>(m);
 	
 	return cacheManager->synchronize(matrix);
 }
 
-void CudaBlockSparseCache::synchronizeHostReadOnly(const BlockSparseMatrixImplementation* m) const
+void CudaBlockSparseCache::synchronizeHostReadOnly(const BlockSparseMatrixImplementation* m)
 {
 	auto matrix = const_cast<BlockSparseMatrixImplementation*>(m);
 	
 	return cacheManager->synchronizeHostReadOnly(matrix);
+}
+
+void* CudaBlockSparseCache::fastDeviceAllocate(size_t bytes)
+{
+	return cacheManager->fastDeviceAllocate(bytes);
+}
+
+void CudaBlockSparseCache::fastDeviceFree(void* address)
+{
+	cacheManager->fastDeviceFree(address);
 }
 
 }

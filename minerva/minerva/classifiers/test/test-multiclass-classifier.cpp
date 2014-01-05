@@ -83,7 +83,7 @@ static void createAndInitializeNeuralNetworks(
 		<< "Building feature selector network with "
 		<< featureSelector.getOutputCount() << " output neurons\n";
 
-	featureSelector.setUseSparseCostFunction(true);
+	featureSelector.setUseSparseCostFunction(false);
 
 	model.setNeuralNetwork("FeatureSelector", featureSelector);
 
@@ -356,14 +356,14 @@ int main(int argc, char** argv)
     parser.description("The minerva multiclass classifier test.");
 
 	parser.parse("-t", "--training-data-path", trainingPaths,
-		"examples/multiclass/multiclass-training-database.txt",
+		"examples/faces-training-database.txt",
         "The path to the training file.");
     parser.parse("-e", "--test-data-path", testPaths,
-		"examples/multiclass/multiclass-test-database.txt",
+		"examples/faces-test-database.txt",
         "The path to the test file.");
-    parser.parse("-i", "--iterations", iterations, 2,
+    parser.parse("-i", "--iterations", iterations, 60,
         "The number of iterations to run unsupervised learning for.");
-    parser.parse("-T", "--training-iterations", trainingIterations, 2,
+    parser.parse("-T", "--training-iterations", trainingIterations, 90,
         "The number of iterations to train for.");
     parser.parse("-b", "--batch-size", batchSize, 30,
         "The number of images to use for each iteration.");

@@ -6,6 +6,9 @@
 
 #pragma once
 
+// Standard Library Includes
+#include <cstdlib>
+
 // Forward Declarations
 namespace minerva { namespace matrix { class BlockSparseMatrixImplementation; } }
 
@@ -18,15 +21,19 @@ namespace matrix
 class CudaBlockSparseCache
 {
 public:
-	float* acquire(const BlockSparseMatrixImplementation* matrix) const;
-	float* acquireReadOnly(const BlockSparseMatrixImplementation* matrix) const;
-	float* acquireClobber(const BlockSparseMatrixImplementation* matrix) const;
-	void release(const BlockSparseMatrixImplementation* matrix) const;
+	static float* acquire(const BlockSparseMatrixImplementation* matrix) ;
+	static float* acquireReadOnly(const BlockSparseMatrixImplementation* matrix);
+	static float* acquireClobber(const BlockSparseMatrixImplementation* matrix);
+	static void release(const BlockSparseMatrixImplementation* matrix);
 
 public:
-	void invalidate(const BlockSparseMatrixImplementation* matrix) const;
-	void synchronize(const BlockSparseMatrixImplementation* matrix) const;
-	void synchronizeHostReadOnly(const BlockSparseMatrixImplementation* matrix) const;
+	static void invalidate(const BlockSparseMatrixImplementation* matrix);
+	static void synchronize(const BlockSparseMatrixImplementation* matrix);
+	static void synchronizeHostReadOnly(const BlockSparseMatrixImplementation* matrix);
+
+public:
+	static void* fastDeviceAllocate(size_t size);
+	static void fastDeviceFree(void*);
 
 };
 

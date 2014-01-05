@@ -141,6 +141,11 @@ namespace util
 
 		return *nullstream;
 	}
+	
+	bool isLogEnabled(const std::string& name)
+	{
+		return logDatabase.isEnabled(name);
+	}
 
 }
 
