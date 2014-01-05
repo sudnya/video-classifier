@@ -531,9 +531,20 @@ bool NeuralNetwork::areConnectionsValid() const
 		
 		if(layer->getOutputCount() != next->getInputCount())
 		{
+			util::log("NeuralNetwork") << " Layer " << std::distance(begin(), layer)
+				<< " (" << layer->blocks() << " blocks, "
+				<< layer->getBlockingFactor() << " blockInputs, "
+				<< layer->getOutputBlockingFactor() << " blockOutputs) /= "
+				 << " Layer " << std::distance(begin(), next)
+				<< " (" << next->blocks() << " blocks, "
+				<< next->getBlockingFactor() << " blockInputs, "
+				<< next->getOutputBlockingFactor() << " blockOutputs)\n";
 			return false;
 		}
 	}
+
+	util::log("NeuralNetwork") << "Verified network with " << getInputCount()
+		<< " inputs and " << getOutputCount() << " outputs\n";
 	
 	return true;
 }
