@@ -621,6 +621,14 @@ static void restoreTile(NeuralNetwork* network, BlockSparseMatrix* input,
 void TiledConvolutionalSolver::solve()
 {
     util::log("TiledConvolutionalSolver") << "Solve\n";
+	
+	// Accuracy 
+	if(util::isLogEnabled("TiledConvolutionalSolver"))
+	{
+		util::log("TiledConvolutionalSolver") << " accuracy before training: "
+			<< m_backPropDataPtr->getNeuralNetwork()->computeAccuracy(*m_backPropDataPtr->getInput(),
+				*m_backPropDataPtr->getReferenceOutput()) << "\n";
+	}
 
 	// Save the initial back prop parameters	
 	auto neuralNetwork = m_backPropDataPtr->getNeuralNetwork();

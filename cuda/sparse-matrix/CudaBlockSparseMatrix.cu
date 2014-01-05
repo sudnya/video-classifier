@@ -514,5 +514,39 @@ extern "C" __global__ void reduceSumAlongColumnsColumnSparse(float* result, floa
 	}
 }
 
+extern "C" __global__ void transpose(float* result, float* input, uint64_t blocks, uint64_t rows, uint64_t columns)
+{
+	// TODO: optimize this
+	uint64_t step  = blockDim.x * gridDim.x;
+	uint64_t start = blockIdx.x * blockDim.x + threadIdx.x;
+	
+	uint64_t blockSize = rows * columns;
+	uint64_t size      = blocks * blockSize;
 
+	for(uint64_t i = start; i < size; i += step)
+	{
+		uint64_t blockId = i / blockSize;
+		
+		uint64_t offsetInBlock = i % blockSize;
+		
+		uint64_t row    = offsetInBlock / columns;
+		uint64_t column = offsetInBlock % columns;
+		
+		size_t index = blockSize * blockId + column * rows + row;
+		
+		result[index] = input[i];
+	}
+}
+
+extern "C" __global__ void setupBlocksForBatchedSgemm(float** array, float* base, uint64_t blocks, uint64_t blockSize)
+{
+	uint64_t step  = blockDim.x * gridDim.x;
+	uint64_t start = blockIdx.x * blockDim.x + threadIdx.x;
+	uint64_t size  = blocks;	
+
+	for(uint64_t i = start; i < size; i += step)
+	{
+		array[i] = base + i * blockSize;
+	}	
+}
 
