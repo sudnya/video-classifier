@@ -332,7 +332,7 @@ static void buildConvolutionalFastModel(ClassificationModel* model, unsigned xPi
 {
 	unsigned totalPixels = xPixels * yPixels * colors;
 
-    unsigned reductionFactor = 4;
+    unsigned reductionFactor = 2;
 
 	// derive parameters from image dimensions 
 	const unsigned blockSize = std::min(16U, xPixels) * colors;
@@ -361,15 +361,40 @@ static void buildConvolutionalFastModel(ClassificationModel* model, unsigned xPi
 		featureSelector.back().getBlockingFactor(),
 		featureSelector.back().getBlockingFactor() / reductionFactor));
 	
-	// convolutional layer
+	// contrast normalization
 	featureSelector.addLayer(Layer(featureSelector.back().blocks() / reductionFactor,
 		featureSelector.back().getBlockingFactor(),
 		featureSelector.back().getBlockingFactor()));
+
+	// convolutional layer
+	featureSelector.addLayer(Layer(featureSelector.back().blocks(),
+		featureSelector.back().getOutputBlockingFactor(),
+		featureSelector.back().getOutputBlockingFactor()));
 	
 	// pooling layer
 	featureSelector.addLayer(Layer(featureSelector.back().blocks(),
 		featureSelector.back().getBlockingFactor(),
 		featureSelector.back().getBlockingFactor() / reductionFactor));
+	
+	// contrast normalization
+	featureSelector.addLayer(Layer(featureSelector.back().blocks() / reductionFactor,
+		featureSelector.back().getBlockingFactor(),
+		featureSelector.back().getBlockingFactor()));
+
+	// convolutional layer
+	featureSelector.addLayer(Layer(featureSelector.back().blocks(),
+		featureSelector.back().getOutputBlockingFactor(),
+		featureSelector.back().getOutputBlockingFactor()));
+	
+	// pooling layer
+	featureSelector.addLayer(Layer(featureSelector.back().blocks(),
+		featureSelector.back().getBlockingFactor(),
+		featureSelector.back().getBlockingFactor() / reductionFactor));
+	
+	// contrast normalization
+	featureSelector.addLayer(Layer(featureSelector.back().blocks() / reductionFactor,
+		featureSelector.back().getBlockingFactor(),
+		featureSelector.back().getBlockingFactor()));
 
     featureSelector.setUseSparseCostFunction(true);
     
@@ -379,7 +404,7 @@ static void buildConvolutionalFastModel(ClassificationModel* model, unsigned xPi
 
 	NeuralNetwork classifierNetwork;
 	
-    const size_t hiddenLayerSize = 300;
+    const size_t hiddenLayerSize = 512;
 
 	classifierNetwork.addLayer(Layer(1, featureSelector.getOutputCount(), hiddenLayerSize));
 	classifierNetwork.addLayer(Layer(1, hiddenLayerSize, hiddenLayerSize));

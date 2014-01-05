@@ -667,6 +667,14 @@ void TiledConvolutionalSolver::solve()
 		util::log("TiledConvolutionalSolver") << " no need for tiling, solving entire network at once.\n";
 		linearSolver(m_backPropDataPtr);
 	}
+	
+	// Accuracy 
+	if(util::isLogEnabled("TiledConvolutionalSolver"))
+	{
+		util::log("TiledConvolutionalSolver") << "  accuracy after training: "
+			<< m_backPropDataPtr->getNeuralNetwork()->computeAccuracy(*m_backPropDataPtr->getInput(),
+				*m_backPropDataPtr->getReferenceOutput()) << "\n";
+	}
 }
 
 }

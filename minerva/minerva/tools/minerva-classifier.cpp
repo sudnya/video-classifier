@@ -185,6 +185,29 @@ static void enableSpecificLogs(const std::string& modules)
 	}
 }
 
+static std::string toString(size_t value)
+{
+	std::stringstream stream;
+	
+	stream << value;
+
+	return stream.str();
+}
+
+static void setupKnobs(size_t maximumSamples, size_t batchSize)
+{
+	if(maximumSamples > 0)
+	{
+		util::KnobDatabase::addKnob("ClassifierEngine::MaximumVideoFrames",
+			toString(maximumSamples));
+	}
+	if(batchSize > 0)
+	{
+		util::KnobDatabase::addKnob("ClassifierEngine::ImageBatchSize",
+			toString(batchSize));
+	}
+}
+
 }
 
 int main(int argc, char** argv)
@@ -201,7 +224,10 @@ int main(int argc, char** argv)
 	bool shouldLearnFeatures = false;
 	bool createNewModel      = false;
 	bool visualizeNetwork    = false;
-
+	
+	size_t maximumSamples = 0;
+	size_t batchSize      = 0;
+	
 	std::string loggingEnabledModules;
 	
 	bool verbose = false;
@@ -230,12 +256,19 @@ int main(int argc, char** argv)
 	parser.parse("", "--options", options, "", 
 		"A comma separated list of options (option_name=option_value, ...).");
 
+	parser.parse("-s", "--maximum-samples", maximumSamples, 0, "Override the maximum "
+		"number of samples to process, otherwise it will process all samples.");
+	parser.parse("-b", "--batch-size", batchSize, 0, "Override the number of samples "
+		"to process in one training batch.");
+
 	parser.parse("-v", "--verbose", verbose, false,
 		"Print out log messages during execution");
 	parser.parse("-L", "--log-module", loggingEnabledModules, "",
 		"Print out log messages during execution for specified modules "
 		"(comma-separated list of modules, e.g. NeuralNetwork, Layer, ...).");
 	parser.parse();
+
+	minerva::setupKnobs(maximumSamples, batchSize);
 
 	if(verbose)
 	{

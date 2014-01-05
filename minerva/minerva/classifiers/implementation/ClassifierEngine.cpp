@@ -37,9 +37,9 @@ ClassifierEngine::ClassifierEngine()
 	_batchSize(0), _areMultipleSamplesAllowed(false), _shouldDisplayImages(false)
 {
 	_maximumSamplesToRun = util::KnobDatabase::getKnobValue<unsigned int>(
-		"ClassifierEngine::MaximumVideoFrames", 200);
+		"ClassifierEngine::MaximumVideoFrames", 20000000);
 	_batchSize = util::KnobDatabase::getKnobValue<unsigned int>(
-		"ClassifierEngine::ImageBatchSize", 50);
+		"ClassifierEngine::ImageBatchSize", 500);
 }
 
 ClassifierEngine::~ClassifierEngine()

@@ -55,6 +55,9 @@ class NeuralNetwork
 		void setLabelForOutputNeuron(unsigned int idx, const std::string& label);
 
 	public:
+		void setLabelsForOutputNeurons(const NeuralNetwork& network);
+
+	public:
 		void mirror();
 		void cutOffSecondHalf();
 
@@ -126,6 +129,9 @@ class NeuralNetwork
 		void setUseSparseCostFunction(bool shouldUse);
 		bool isUsingSparseCostFunction() const;
 	
+	public:
+		bool areConnectionsValid() const;
+
 	private:
 		LayerVector m_layers;
 		NeuronToLabelMap m_labels;

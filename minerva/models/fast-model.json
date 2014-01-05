@@ -1,0 +1,23 @@
+{
+	"name" : "fast-model",
+
+	"x" : "32",
+	"y" : "32",
+	"colors" : "3",
+
+	"outputs" : [ "cats", "dogs" ],
+
+	"networks" : [
+		{
+			"name" : "Classifier",
+			"layers" : [
+				{
+					
+				}	
+			]
+		},
+	]
+
+
+}
+

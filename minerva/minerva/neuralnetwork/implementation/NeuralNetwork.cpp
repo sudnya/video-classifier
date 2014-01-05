@@ -195,6 +195,11 @@ void NeuralNetwork::setLabelForOutputNeuron(unsigned int idx, const std::string&
 	m_labels[idx] = label;
 }
 
+void NeuralNetwork::setLabelsForOutputNeurons(const NeuralNetwork& network)
+{
+	m_labels = network.m_labels;
+}
+
 void NeuralNetwork::addLayer(Layer&& L)
 {
 	m_layers.push_back(L);
@@ -515,6 +520,22 @@ void NeuralNetwork::setUseSparseCostFunction(bool shouldUse)
 bool NeuralNetwork::isUsingSparseCostFunction() const
 {
 	return _useSparseCostFunction;
+}
+
+bool NeuralNetwork::areConnectionsValid() const
+{
+	for(auto layer = begin(); layer != end(); ++layer)
+	{
+		auto next = layer; ++next;
+		if(next == end()) break;
+		
+		if(layer->getOutputCount() != next->getInputCount())
+		{
+			return false;
+		}
+	}
+	
+	return true;
 }
 
 }
