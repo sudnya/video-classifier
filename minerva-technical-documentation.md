@@ -79,7 +79,7 @@ From this paper:
 >    extraction using a bank of Gabor energy filters. Proc. SPIE 8709, Detection and Sensing of
 >    Mines, Explosive Objects, and Obscured Targets XVIII, 87091B (June 7, 2013);
 
-The accompanying figure on the top-right shows the corresponding spatial domain representation (inpulse response) of each of the Gabor Filters.
+The accompanying figure on the top-right shows the corresponding spatial domain representation (impulse response) of each of the Gabor Filters.
 
 The details of sparse autoencoders are described here http://stanford.edu/class/cs294a/sparseAutoencoder.pdf .  
 
@@ -180,5 +180,5 @@ The idea behind a sparse autoencoder is that features in some data can be attrib
 
 ### The classification module
 
- This module uses both the neural network (the feature selector from the unsupervised learning step) and the classifier neural network (from the supervised learning step) to perform classification in test images.  It is really a convience interface that abstracts some of the low level operations involved in setting up the input data and training the networks contained in a model.  It presents a clean interface for feeding input labeled or unlabeled data to the model.  Operations like random sampling and input caching are automated using the classification module framework.  
+ This module uses both the neural network (the feature selector from the unsupervised learning step) and the classifier neural network (from the supervised learning step) to perform classification in test images.  It is really a convenience interface that abstracts some of the low level operations involved in setting up the input data and training the networks contained in a model.  It presents a clean interface for feeding input labeled or unlabeled data to the model.  Operations like random sampling and input caching are automated using the classification module framework.  
 
