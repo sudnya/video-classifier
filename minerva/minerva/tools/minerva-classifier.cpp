@@ -157,17 +157,25 @@ static void checkInputs(const std::string& inputFileNames,
 static classifiers::ClassifierEngine* createEngine(bool shouldClassify,
 	bool shouldTrain, bool shouldLearnFeatures)
 {
+	classifiers::ClassifierEngine* engine = nullptr;
+	
 	if(shouldTrain)
 	{
-		return classifiers::ClassifierFactory::create("LearnerEngine");
+		engine = classifiers::ClassifierFactory::create("LearnerEngine");
+		engine->setMultipleSamplesAllowed(true);
 	}
-	if(shouldLearnFeatures)
+	else if(shouldLearnFeatures)
 	{
-		return classifiers::ClassifierFactory::create(
+		engine = classifiers::ClassifierFactory::create(
 			"UnsupervisedLearnerEngine");
+		engine->setMultipleSamplesAllowed(true);
+	}
+	else
+	{
+		engine = classifiers::ClassifierFactory::create("FinalClassifierEngine");
 	}
 	
-	return classifiers::ClassifierFactory::create("FinalClassifierEngine");
+	return engine;
 }
 
 static StringVector getPaths(const std::string& pathlist)

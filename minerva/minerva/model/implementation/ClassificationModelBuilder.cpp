@@ -338,7 +338,7 @@ static void buildConvolutionalFastModel(ClassificationModel* model, unsigned xPi
 	const unsigned blockSize = std::min(64U, xPixels) * colors;
 	const unsigned blocks    = std::min(64U, totalPixels / blockSize);
     
-	unsigned reductionFactor = 8;
+	unsigned reductionFactor = 4;
 	
     NeuralNetwork featureSelector;
 	
@@ -383,7 +383,7 @@ static void buildConvolutionalFastModel(ClassificationModel* model, unsigned xPi
 		featureSelector.back().getBlockingFactor(),
 		featureSelector.back().getBlockingFactor()));
 
-	/*
+	
 	// convolutional layer
 	featureSelector.addLayer(Layer(featureSelector.back().blocks(),
 		featureSelector.back().getOutputBlockingFactor(),
@@ -398,7 +398,7 @@ static void buildConvolutionalFastModel(ClassificationModel* model, unsigned xPi
 	featureSelector.addLayer(Layer(featureSelector.back().blocks() / reductionFactor,
 		featureSelector.back().getBlockingFactor(),
 		featureSelector.back().getBlockingFactor()));
-	*/
+	
     featureSelector.setUseSparseCostFunction(true);
     
 	tuneNeuralNetwork(featureSelector);

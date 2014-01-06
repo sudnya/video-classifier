@@ -42,7 +42,7 @@ class Classifier
         void loadFeatureSelector();
         void loadClassifier();
         Matrix detectLabels(const ImageVector& images);
-        LabelVector pickMostLikelyLabel(const Matrix& m);
+        LabelVector pickMostLikelyLabel(const Matrix& m, const ImageVector& images);
     
     	
     private:

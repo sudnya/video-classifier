@@ -35,7 +35,7 @@ namespace visualization
 typedef matrix::Matrix Matrix;
 typedef neuralnetwork::NeuralNetwork NeuralNetwork;
 typedef video::Image Image;
-typedef neuralnetwork::DenseBackPropagation DenseBackPropagation;
+typedef neuralnetwork::BackPropagation BackPropagation;
 
 NeuronVisualizer::NeuronVisualizer(const NeuralNetwork* network)
 : _network(network)
@@ -79,7 +79,7 @@ void NeuronVisualizer::setNeuralNetwork(const NeuralNetwork* network)
 static Matrix generateRandomImage(const NeuralNetwork* network,
 	const Image& image, unsigned int seed, float range)
 {
-	std::uniform_real_distribution<float> distribution(-range, range);
+	std::uniform_real_distribution<float> distribution(-1.0f, -1.0f + 2 * range);
 	std::default_random_engine generator(seed);
 
 	Matrix::FloatVector data(network->getInputCount());
@@ -133,7 +133,7 @@ private:
 static Matrix optimizeWithoutDerivative(const NeuralNetwork* network,
 	const Image& image, unsigned int neuron)
 {
-	Matrix bestSoFar = generateRandomImage(network, image, 0, 0.1f);
+	Matrix bestSoFar = generateRandomImage(network, image, 0, 0.00f);
 	float  bestCost  = computeCost(network, neuron, bestSoFar);
 	
 	std::string solverType = util::KnobDatabase::getKnobValue(
@@ -156,7 +156,7 @@ static Matrix optimizeWithoutDerivative(const NeuralNetwork* network,
 class CostAndGradientFunction : public optimizer::LinearSolver::CostAndGradient
 {
 public:
-	CostAndGradientFunction(const DenseBackPropagation* d,
+	CostAndGradientFunction(const BackPropagation* d,
 		float initialCost, float costReductionFactor)
 	: CostAndGradient(initialCost, costReductionFactor), _backPropData(d)
 	{
@@ -182,7 +182,7 @@ public:
 	}
 
 private:
-	const DenseBackPropagation* _backPropData;
+	const BackPropagation* _backPropData;
 };
 
 static Matrix generateReferenceForNeuron(const NeuralNetwork* network,
@@ -201,12 +201,14 @@ static Matrix optimizeWithDerivative(float& bestCost, const NeuralNetwork* netwo
 	auto input     = network->convertToBlockSparseForLayerInput(network->front(), initialData);
 	auto reference = network->convertToBlockSparseForLayerOutput(network->back(),
 		generateReferenceForNeuron(network, neuron));
-
-	DenseBackPropagation data(const_cast<NeuralNetwork*>(network),
-		&input, &reference);
+	
+	auto data = network->createBackPropagation();
+	
+	data->setInput(&input);
+	data->setReferenceOutput(&reference);
 	
 	Matrix bestSoFar = initialData;
-	       bestCost  = data.computeCost();
+	       bestCost  = data->computeCost();
 
 	auto solver = optimizer::LinearSolverFactory::create("LBFGSSolver");
 	
@@ -219,7 +221,7 @@ static Matrix optimizeWithDerivative(float& bestCost, const NeuralNetwork* netwo
 	
 	try
 	{
-		CostAndGradientFunction costAndGradient(&data, bestCost, 0.002f);
+		CostAndGradientFunction costAndGradient(data, bestCost, 0.002f);
 	
 		bestCost = solver->solve(bestSoFar, costAndGradient);
 	}
@@ -227,10 +229,12 @@ static Matrix optimizeWithDerivative(float& bestCost, const NeuralNetwork* netwo
 	{
 		util::log("NeuronVisualizer") << "  solver produced an error.\n";
 		delete solver;
+		delete data;
 		throw;
 	}
 	
 	delete solver;
+	delete data;
 	
 	util::log("NeuronVisualizer") << "  solver produced new cost: "
 		<< bestCost << ".\n";
@@ -243,7 +247,7 @@ static Matrix optimizeWithDerivative(const NeuralNetwork* network,
 {
 	unsigned int iterations = util::KnobDatabase::getKnobValue(
 		"NeuronVisualizer::SolverIterations", 1);
-	float range = util::KnobDatabase::getKnobValue("NeuronVisualizer::InputRange", 0.1f);
+	float range = util::KnobDatabase::getKnobValue("NeuronVisualizer::InputRange", 0.005f);
 
 	float  bestCost = std::numeric_limits<float>::max();
 	Matrix bestInputs;

@@ -13,6 +13,9 @@
 #include <map>
 #include <random>
 
+// Forward Declaration
+namespace minerva { namespace neuralnetwork { class BackPropagation; } }
+
 namespace minerva
 {
 namespace neuralnetwork
@@ -128,6 +131,9 @@ class NeuralNetwork
 	public:
 		void setUseSparseCostFunction(bool shouldUse);
 		bool isUsingSparseCostFunction() const;
+
+	public:
+		BackPropagation* createBackPropagation() const;
 	
 	public:
 		bool areConnectionsValid() const;
