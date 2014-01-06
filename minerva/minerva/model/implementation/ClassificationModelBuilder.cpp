@@ -424,8 +424,8 @@ ClassificationModel* ClassificationModelBuilder::create(const std::string& path)
 {
 	auto model = new ClassificationModel(path);
 
-	unsigned x         = util::KnobDatabase::getKnobValue("ClassificationModelBuilder::ResolutionX",     32 );
-	unsigned y         = util::KnobDatabase::getKnobValue("ClassificationModelBuilder::ResolutionY",     32 );
+	unsigned x         = util::KnobDatabase::getKnobValue("ClassificationModelBuilder::ResolutionX",     64 );
+	unsigned y         = util::KnobDatabase::getKnobValue("ClassificationModelBuilder::ResolutionY",     64 );
 	unsigned colors    = util::KnobDatabase::getKnobValue("ClassificationModelBuilder::ColorComponents", 3  );
 
 	model->setInputImageResolution(x, y, colors);

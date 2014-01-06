@@ -13,9 +13,9 @@ namespace minerva
 namespace classifiers
 {
 
-void UnsupervisedLearner::doUnsupervisedLearning(const ImageVector& images)
+void UnsupervisedLearner::doUnsupervisedLearning(ImageVector&& images)
 {
-    learn(images);
+    learn(std::move(images));
 }
 
 unsigned UnsupervisedLearner::getInputFeatureCount()
@@ -32,12 +32,13 @@ void UnsupervisedLearner::loadFeatureSelector()
     m_featureSelector = m_classificationModelPtr->getNeuralNetwork("FeatureSelector");
 }
 
-void UnsupervisedLearner::learn(const ImageVector& images)
+void UnsupervisedLearner::learn(ImageVector&& images)
 {
 	/* using the feature NN & training images emit a NN for classifiers */
 	auto input = images.convertToStandardizedMatrix(m_featureSelector.getInputCount(),
 		std::sqrt(m_featureSelector.getBlockingFactor()),
 		std::sqrt(m_featureSelector.getBlockingFactor()));
+    images.clear();
     
 	auto inputReference = input.add(1.0f).multiply(0.5f);
 	auto layerInput = std::move(input);

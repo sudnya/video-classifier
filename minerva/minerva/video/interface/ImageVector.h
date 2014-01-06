@@ -58,6 +58,9 @@ public:
 	bool   empty() const;
 
 public:
+	void clear();
+
+public:
 	void push_back(const Image& image);
 
 public:

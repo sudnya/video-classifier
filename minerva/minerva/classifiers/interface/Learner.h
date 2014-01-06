@@ -25,7 +25,7 @@ class Learner
         {
         }
 
-        void learnAndTrain(const ImageVector& images);
+        void learnAndTrain(ImageVector&& images);
 
         size_t getInputFeatureCount() const;
 	
@@ -35,7 +35,7 @@ class Learner
         void writeClassifier();
     
 	private:
-        void trainClassifier(const ImageVector& images);
+        void trainClassifier(ImageVector&& images);
 
     private:
         ClassificationModel* m_classificationModel;

@@ -29,14 +29,14 @@ class UnsupervisedLearner
         }
 
         void loadFeatureSelector();
-        void doUnsupervisedLearning(const ImageVector& images);
+        void doUnsupervisedLearning(ImageVector&& images);
         void writeFeaturesNeuralNetwork();
 
         unsigned getInputFeatureCount();
    
    
     private:
-        void learn(const ImageVector& images);
+        void learn(ImageVector&& images);
         
     private:
         ClassificationModel* m_classificationModelPtr;

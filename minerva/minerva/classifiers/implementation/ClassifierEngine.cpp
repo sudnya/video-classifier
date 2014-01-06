@@ -283,7 +283,7 @@ static void runAllVideos(ClassifierEngine* engine, VideoVector& videos,
 			batch.push_back(videos[video].getSpecificFrame(frame));
 		}
 		
-		engine->runOnImageBatch(batch);
+		engine->runOnImageBatch(std::move(batch));
 
 		if(batch.size() < maxVideoFrames)
 		{
@@ -427,7 +427,7 @@ static void runAllImages(ClassifierEngine* engine, ImageVector& images,
 		util::log("ClassifierEngine") << " running batch with " << batch.size()
 			<< " images\n";
 		
-		engine->runOnImageBatch(batch);
+		engine->runOnImageBatch(std::move(batch));
 		
 		if(maxVideoFrames <= batch.size())
 		{

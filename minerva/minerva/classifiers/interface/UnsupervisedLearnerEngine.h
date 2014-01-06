@@ -33,7 +33,7 @@ private:
 	virtual void closeModel();
 	
 private:
-	virtual void runOnImageBatch(const ImageVector& images);
+	virtual void runOnImageBatch(ImageVector&& images);
 	virtual size_t getInputFeatureCount() const;
 
 private:

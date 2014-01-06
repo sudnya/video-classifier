@@ -75,7 +75,7 @@ protected:
 	void saveModel();
 
 public:
-	virtual void runOnImageBatch(const ImageVector& images) = 0;
+	virtual void runOnImageBatch(ImageVector&& images) = 0;
 	virtual size_t getInputFeatureCount() const = 0;
 	
 public:
