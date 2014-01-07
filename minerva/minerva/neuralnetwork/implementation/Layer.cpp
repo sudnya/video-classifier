@@ -155,16 +155,15 @@ size_t Layer::blockSize() const
 	return m_sparseMatrix.blockSize();
 }
 
-Layer::BlockSparseMatrix Layer::getWeightsWithoutBias() const
+const Layer::BlockSparseMatrix& Layer::getWeightsWithoutBias() const
 {
-	BlockSparseMatrix result;
+	return m_sparseMatrix;
+}
 
-	for(auto& matrix : *this)
-	{
-		result.push_back(matrix.slice(0, 0, matrix.rows(), matrix.columns()));
-	}
-	
-	return result;
+void Layer::setWeightsWithoutBias(const BlockSparseMatrix& weights)
+{
+	m_sparseMatrix = weights;
+	m_sparseMatrix.setRowSparse();
 }
 
 size_t Layer::totalWeights() const
@@ -319,6 +318,17 @@ size_t Layer::blocks() const
 bool Layer::empty() const
 {
 	return m_sparseMatrix.empty();
+}
+		
+void Layer::setBias(const BlockSparseMatrix& bias)
+{
+	m_bias = bias;
+	m_bias.setColumnSparse();
+}
+
+const Layer::BlockSparseMatrix& Layer::getBias() const
+{
+	return m_bias;
 }
 
 }

@@ -11,6 +11,9 @@
 #include <minerva/matrix/interface/Matrix.h>
 #include <minerva/matrix/interface/BlockSparseMatrix.h>
 
+// Standard Library Includes
+#include <cassert>
+
 namespace minerva
 {
 namespace neuralnetwork
@@ -47,6 +50,11 @@ BackPropagation::BlockSparseMatrix BackPropagation::computeInputDerivative() con
 float BackPropagation::computeCost() const
 {
 	return getCost(*getNeuralNetwork(), *getInput(), *getReferenceOutput());
+}
+
+float BackPropagation::computeAccuracy() const
+{
+	return getNeuralNetwork()->computeAccuracy(*getInput(), *getReferenceOutput());
 }
 
 BackPropagation::NeuralNetwork* BackPropagation::getNeuralNetwork()
@@ -166,6 +174,8 @@ static NeuralNetwork createNetworkFromWeights(
 	{
 		newNetwork.addLayer(Layer(layer.blocks(),
 			layer.getBlockingFactor(), layer.getOutputBlockingFactor()));
+		
+		newNetwork.back().setBias(layer.getBias());
 	}
 	
 	newNetwork.setLabelsForOutputNeurons(*neuralNetwork);
@@ -174,9 +184,70 @@ static NeuralNetwork createNetworkFromWeights(
 	return newNetwork;
 }
 
+static NeuralNetwork createNetworkFromWeights(
+	const NeuralNetwork* neuralNetwork, const MatrixVector& weights)
+{
+	NeuralNetwork newNetwork;
+
+	auto weight = weights.begin();	
+	for(auto& layer : *neuralNetwork)
+	{
+		newNetwork.addLayer(Layer(layer.blocks(),
+			layer.getBlockingFactor(), layer.getOutputBlockingFactor()));
+		
+		newNetwork.back().setBias(layer.getBias());
+		newNetwork.back().setWeightsWithoutBias(*weight);
+
+		++weight;
+	}
+	
+	newNetwork.setLabelsForOutputNeurons(*neuralNetwork);
+		
+	return newNetwork;
+}
+
 void BackPropagation::setFlattenedWeights(const Matrix& weights)
 {
 	*_neuralNetworkPtr = createNetworkFromWeights(getNeuralNetwork(), weights);
+}
+
+MatrixVector BackPropagation::getWeights() const
+{
+	MatrixVector weights;
+	
+	weights.reserve(getNeuralNetwork()->size());
+	
+	for(auto& layer : *getNeuralNetwork())
+	{
+		weights.push_back(layer.getWeightsWithoutBias());
+	}
+	
+	return weights;
+}
+
+void BackPropagation::setWeights(const MatrixVector& weights)
+{
+	assert(weights.size() == getNeuralNetwork()->size());
+	
+	auto weight = weights.begin();
+	for(auto layer = getNeuralNetwork()->begin(); layer != getNeuralNetwork()->end(); ++layer, ++weight)
+	{
+		layer->setWeightsWithoutBias(*weight);
+	}
+}
+
+float BackPropagation::computeCostForNewWeights(const MatrixVector& weights) const
+{
+	auto network = createNetworkFromWeights(getNeuralNetwork(), weights);
+
+	return getCost(network, *getInput(), *getReferenceOutput());
+}
+
+MatrixVector BackPropagation::computePartialDerivativesForNewWeights(const MatrixVector& weights) const
+{
+	auto network = createNetworkFromWeights(getNeuralNetwork(), weights);
+
+	return getCostDerivative(network, *getInput(), *getReferenceOutput());
 }
 
 float BackPropagation::computeCostForNewFlattenedWeights(const Matrix& weights) const
