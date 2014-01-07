@@ -53,8 +53,6 @@ void Learner::trainClassifier(ImageVector&& images)
     auto matrix = images.convertToStandardizedMatrix(inputCount,
 		std::sqrt(blockingFactor), std::sqrt(blockingFactor));
     
-    images.clear();
-    
 	// If there is a feature selector, do feature selection first
 	if (!m_featureSelectorNetwork.empty())
 	{
@@ -66,6 +64,8 @@ void Learner::trainClassifier(ImageVector&& images)
 
 	util::log("Learner") << "Training classifier network with reference: " << reference.toString();
 
+    images.clear();
+    
     m_classifierNetwork.train(matrix, reference);
 
     //setThreshold();
