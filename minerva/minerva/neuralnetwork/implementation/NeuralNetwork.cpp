@@ -187,7 +187,7 @@ void NeuralNetwork::setLabelsForOutputNeurons(const NeuralNetwork& network)
 
 void NeuralNetwork::addLayer(Layer&& L)
 {
-	m_layers.push_back(L);
+	m_layers.push_back(std::move(L));
 }
 
 void NeuralNetwork::addLayer(const Layer& L)

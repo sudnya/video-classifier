@@ -32,7 +32,8 @@ CudaBlockSparseMatrix::CudaBlockSparseMatrix(size_t blocks, size_t rows,
 	size_t columns, bool rowSparse)
 : BlockSparseMatrixImplementation(blocks, rows, columns, rowSparse), _isTransposed(false)
 {
-
+	CudaBlockSparseCache::acquireClobber(this);
+	CudaBlockSparseCache::release(this);
 }
 
 CudaBlockSparseMatrix::CudaBlockSparseMatrix(const CudaBlockSparseMatrix& m, bool copyData)
@@ -58,6 +59,24 @@ CudaBlockSparseMatrix::CudaBlockSparseMatrix(const CudaBlockSparseMatrix& m, boo
 CudaBlockSparseMatrix::CudaBlockSparseMatrix(const CudaBlockSparseMatrix& m)
 : BlockSparseMatrixImplementation(m.blocks(), m.rowsPerBlock(), m.columnsPerBlock(), m.isRowSparse()), _isTransposed(false)
 {
+	#if 1
+	auto devicePointer = CudaBlockSparseCache::acquireReadOnly(&m);	
+	
+	auto resultPointer = CudaBlockSparseCache::acquireClobber(this);
+
+	if(m._isTransposed)
+	{
+		CudaSparseMatrixLibrary::transpose(resultPointer, devicePointer, blocks(), rowsPerBlock(), columnsPerBlock());
+	}
+	else
+	{
+		CudaSparseMatrixLibrary::copy(resultPointer, devicePointer, size());
+	}
+
+	CudaBlockSparseCache::release(&m);
+	CudaBlockSparseCache::release(this);
+	
+	#else
 	auto copy = m.begin();
 	
 	assert(!m._isTransposed);
@@ -66,6 +85,7 @@ CudaBlockSparseMatrix::CudaBlockSparseMatrix(const CudaBlockSparseMatrix& m)
 	{
 		*matrix = *copy;
 	}
+	#endif
 }
 
 CudaBlockSparseMatrix::~CudaBlockSparseMatrix()
@@ -695,6 +715,8 @@ void CudaBlockSparseMatrix::push_back(const Matrix& m)
 
 size_t CudaBlockSparseMatrix::columns() const
 {
+	if(empty()) return 0;
+	
 	if(isRowSparse())
 	{
 		return columnsPerBlock();
@@ -707,6 +729,8 @@ size_t CudaBlockSparseMatrix::columns() const
 
 size_t CudaBlockSparseMatrix::rows() const
 {
+	if(empty()) return 0;
+	
 	if(isRowSparse())
 	{
 		return blocks() * rowsPerBlock();
@@ -719,6 +743,8 @@ size_t CudaBlockSparseMatrix::rows() const
 
 size_t CudaBlockSparseMatrix::columnsPerBlock() const
 {
+	if(empty()) return 0;
+	
 	if(_isTransposed)
 	{
 		return _matrices.front().rows();
@@ -731,6 +757,8 @@ size_t CudaBlockSparseMatrix::columnsPerBlock() const
 
 size_t CudaBlockSparseMatrix::rowsPerBlock() const
 {
+	if(empty()) return 0;
+	
 	if(_isTransposed)
 	{
 		return _matrices.front().columns();

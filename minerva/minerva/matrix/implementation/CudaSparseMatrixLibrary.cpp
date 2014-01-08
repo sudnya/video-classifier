@@ -445,6 +445,11 @@ void CudaSparseMatrixLibrary::transpose(float* result, const float* left, size_t
 	}
 }
 
+void CudaSparseMatrixLibrary::copy(float* result, const float* left, size_t size)
+{
+	launchKernel("addFloat", result, left, 0.0f, size);
+}
+
 void CudaSparseMatrixLibrary::negate(float* result, const float* left, size_t size)
 {
 	launchKernel("negate", result, left, size);

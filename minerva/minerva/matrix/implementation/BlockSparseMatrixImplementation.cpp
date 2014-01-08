@@ -96,6 +96,8 @@ void BlockSparseMatrixImplementation::push_back(const Matrix& m)
 
 size_t BlockSparseMatrixImplementation::size() const
 {
+	if(blocks() == 0) return 0;
+
 	return blocks() * rowsPerBlock() * columnsPerBlock();
 }
 
@@ -123,6 +125,8 @@ size_t BlockSparseMatrixImplementation::getBlockingFactor() const
 
 size_t BlockSparseMatrixImplementation::columns() const
 {
+	if(empty()) return 0;
+
 	if(isColumnSparse())
 	{
 		size_t c = 0;
@@ -135,13 +139,13 @@ size_t BlockSparseMatrixImplementation::columns() const
 		return c;
 	}
 	
-	if(empty()) return 0;
-	
 	return front().columns();
 }
 
 size_t BlockSparseMatrixImplementation::rows() const
 {
+	if(empty()) return 0;
+	
 	if(isRowSparse())
 	{
 		size_t r = 0;
@@ -153,8 +157,6 @@ size_t BlockSparseMatrixImplementation::rows() const
 
 		return r;
 	}
-	
-	if(empty()) return 0;
 	
 	return front().rows();
 }

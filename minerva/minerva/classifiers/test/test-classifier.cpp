@@ -136,14 +136,21 @@ void trainNeuralNetwork(neuralnetwork::NeuralNetwork& ann, unsigned trainingIter
         Matrix input = generateRandomMatrix(samplesPerIter, ann.getInputCount(), generator);
         Matrix referenceMatrix = matrixXor(input);
 
-        util::log("TestClassifier") << " Input is:     " << input.toString();
-        util::log("TestClassifier") << " Output is:    " << threshold(ann.runInputs(input)).toString();
-        util::log("TestClassifier") << "  Output entropy is " << computeEntropy(threshold(ann.runInputs(input))) << "\n";
-        util::log("TestClassifier") << " Reference is: " << referenceMatrix.toString();
+		if(util::isLogEnabled("TestClassifier"))
+		{
+			util::log("TestClassifier") << " Input is:     " << input.toString();
+			util::log("TestClassifier") << " Output is:    " << threshold(ann.runInputs(input)).toString();
+			util::log("TestClassifier") << "  Output entropy is " << computeEntropy(threshold(ann.runInputs(input))) << "\n";
+			util::log("TestClassifier") << " Reference is: " << referenceMatrix.toString();
+		}
 
         ann.train(input, referenceMatrix);
-        util::log("TestClassifier") << " After BackProp, output is:    " << threshold(ann.runInputs(input)).toString();
-    }    
+
+		if(util::isLogEnabled("TestClassifier"))
+		{
+        	util::log("TestClassifier") << " After BackProp, output is:    " << threshold(ann.runInputs(input)).toString();
+    	}
+	}    
 }
 
 unsigned compare(const Matrix& output, const Matrix& reference)

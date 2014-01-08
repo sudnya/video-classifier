@@ -28,13 +28,13 @@ typedef std::vector<BlockSparseMatrix> MatrixVector;
 void GradientDescentSolver::solve()
 {
    float learningRate = util::KnobDatabase::getKnobValue<float>(
-		"GradientDescentSolver::LearningRate", 2.4f/m_backPropDataPtr->getNeuralNetwork()->getInputCount());
+		"GradientDescentSolver::LearningRate", 2.4f);///m_backPropDataPtr->getNeuralNetwork()->getInputCount());
 	float convergenceRatio = util::KnobDatabase::getKnobValue<float>(
 		"GradientDescentSolver::ConvergenceRatio", 0.1f);
 	float learningRateBackoff = util::KnobDatabase::getKnobValue<float>(
 		"GradientDescentSolver::LearningRateBackoff", 0.5f);
 	unsigned iterations = util::KnobDatabase::getKnobValue<float>(
-		"GradientDescentSolver::Iterations", 10);
+		"GradientDescentSolver::Iterations", 1000000);
 	
 	auto weights = m_backPropDataPtr->getWeights();
 	

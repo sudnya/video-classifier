@@ -95,9 +95,11 @@ static float computeCostForNetwork(const NeuralNetwork& network, const BlockSpar
 
 	if(lambda > 0.0f)
 	{
-		auto weights = network.getFlattenedWeights();
-
-		costSum += (lambda / (2.0f * m)) * ((weights.elementMultiply(weights)).reduceSum());
+		for(auto& layer : network)
+		{
+			costSum += (lambda / (2.0f * m)) * ((layer.getWeightsWithoutBias().elementMultiply(
+				layer.getWeightsWithoutBias())).reduceSum());
+		}
 	}
 	
 	return costSum;

@@ -21,10 +21,9 @@ namespace neuralnetwork
 typedef minerva::matrix::Matrix::FloatVector FloatVector;
 
 Layer::Layer(unsigned totalBlocks, size_t blockInput, size_t blockOutput)
+: m_sparseMatrix(totalBlocks, blockInput, blockOutput, true), m_bias(totalBlocks, 1, blockOutput, false)
 {
-	m_sparseMatrix.resize(totalBlocks, blockInput, blockOutput);
-	m_bias.resize(totalBlocks, 1, blockOutput);
-	m_bias.setColumnSparse();
+
 }
 
 Layer::Layer(const Layer& l)

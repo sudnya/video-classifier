@@ -79,7 +79,7 @@ void NeuronVisualizer::setNeuralNetwork(const NeuralNetwork* network)
 static Matrix generateRandomImage(const NeuralNetwork* network,
 	const Image& image, unsigned int seed, float range)
 {
-	std::uniform_real_distribution<float> distribution(-1.0f, -1.0f + 2* range );
+	std::uniform_real_distribution<float> distribution(-range, range );
 	std::default_random_engine generator(seed);
 
 	Matrix::FloatVector data(network->getInputCount());
@@ -247,7 +247,7 @@ static Matrix optimizeWithDerivative(const NeuralNetwork* network,
 {
 	unsigned int iterations = util::KnobDatabase::getKnobValue(
 		"NeuronVisualizer::SolverIterations", 1);
-	float range = util::KnobDatabase::getKnobValue("NeuronVisualizer::InputRange", 0.005f);
+	float range = util::KnobDatabase::getKnobValue("NeuronVisualizer::InputRange", 0.01f);
 
 	float  bestCost = std::numeric_limits<float>::max();
 	Matrix bestInputs;

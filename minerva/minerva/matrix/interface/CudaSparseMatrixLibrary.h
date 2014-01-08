@@ -41,6 +41,7 @@ public:
 
 public:
 	static void transpose(float* result, const float* left, size_t blocks, size_t rows, size_t columns);
+	static void copy(float* result, const float* left, size_t size);
 	static void negate(float* result, const float* left, size_t size);
 	static void log(float* result, const float* left, size_t size);
 	static void sigmoid(float* result, const float* left, size_t size);

@@ -26,7 +26,8 @@ Solver* Solver::create(BackPropagation* d)
 {
 	auto solverName = util::KnobDatabase::getKnobValue("Solver::Type",
 		"TiledConvolutionalSolver");
-	
+		//"GradientDescentSolver");	
+
 	if(solverName == "TiledConvolutionalSolver")
 	{
 		return new TiledConvolutionalSolver(d);
