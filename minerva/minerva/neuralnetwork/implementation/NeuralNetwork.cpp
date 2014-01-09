@@ -74,29 +74,12 @@ void NeuralNetwork::train(BlockSparseMatrix& input, BlockSparseMatrix& reference
 	util::log("NeuralNetwork") << "Running back propagation on input matrix (" << input.rows() << ") rows, ("
 	   << input.columns() << ") columns. Using reference output of (" << reference.rows() << ") rows, ("
 	   << reference.columns() << ") columns. \n";
-	
-	std::string backPropagationType;
 
-	if(_useSparseCostFunction)
-	{
-		backPropagationType = "SparseBackPropagation";
-	}
-	else
-	{
-		backPropagationType = util::KnobDatabase::getKnobValue("BackPropagation::Type", "DenseBackPropagation");
-	}
-
-	auto backPropagation = BackPropagationFactory::create(backPropagationType);
+	auto backPropagation = createBackPropagation(); 
 
 	backPropagation->setNeuralNetwork(this);
 	backPropagation->setInput(&input);
 	backPropagation->setReferenceOutput(&reference);
-
-	if(backPropagation == nullptr)
-	{
-		throw std::runtime_error("Failed to create back propagation structure with type: " +
-			backPropagationType);
-	}
 
 	Solver* solver = Solver::create(backPropagation);
 	
@@ -107,11 +90,13 @@ void NeuralNetwork::train(BlockSparseMatrix& input, BlockSparseMatrix& reference
 	catch(...)
 	{
 		delete solver;
+		delete backPropagation;
 
 		throw;
 	}
 
 	delete solver;
+	delete backPropagation;
 }
 
 NeuralNetwork::Matrix NeuralNetwork::runInputs(const Matrix& m) const
@@ -522,6 +507,32 @@ bool NeuralNetwork::isUsingSparseCostFunction() const
 	return _useSparseCostFunction;
 }
 
+BackPropagation* NeuralNetwork::createBackPropagation() const
+{
+	std::string backPropagationType;
+
+	if(_useSparseCostFunction)
+	{
+		backPropagationType = "SparseBackPropagation";
+	}
+	else
+	{
+		backPropagationType = util::KnobDatabase::getKnobValue("BackPropagation::Type", "DenseBackPropagation");
+	}
+	
+	auto backPropagation = BackPropagationFactory::create(backPropagationType);
+	
+	if(backPropagation == nullptr)
+	{
+		throw std::runtime_error("Failed to create back propagation structure with type: " +
+			backPropagationType);
+	}
+	
+	backPropagation->setNeuralNetwork(const_cast<NeuralNetwork*>(this));
+	
+	return backPropagation;
+}
+
 bool NeuralNetwork::areConnectionsValid() const
 {
 	for(auto layer = begin(); layer != end(); ++layer)
@@ -531,9 +542,20 @@ bool NeuralNetwork::areConnectionsValid() const
 		
 		if(layer->getOutputCount() != next->getInputCount())
 		{
+			util::log("NeuralNetwork") << " Layer " << std::distance(begin(), layer)
+				<< " (" << layer->blocks() << " blocks, "
+				<< layer->getBlockingFactor() << " blockInputs, "
+				<< layer->getOutputBlockingFactor() << " blockOutputs) /= "
+				 << " Layer " << std::distance(begin(), next)
+				<< " (" << next->blocks() << " blocks, "
+				<< next->getBlockingFactor() << " blockInputs, "
+				<< next->getOutputBlockingFactor() << " blockOutputs)\n";
 			return false;
 		}
 	}
+
+	util::log("NeuralNetwork") << "Verified network with " << getInputCount()
+		<< " inputs and " << getOutputCount() << " outputs\n";
 	
 	return true;
 }

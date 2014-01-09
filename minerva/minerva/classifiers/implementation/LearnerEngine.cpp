@@ -47,12 +47,12 @@ void LearnerEngine::closeModel()
 	saveModel();
 }
 	
-void LearnerEngine::runOnImageBatch(const ImageVector& images)
+void LearnerEngine::runOnImageBatch(ImageVector&& images)
 {
 	util::log("LearnerEngine") << "Performing supervised "
 		"learning on batch of " << images.size() <<  " images...\n";
 	
-	_learner->learnAndTrain(images);
+	_learner->learnAndTrain(std::move(images));
 }
 
 size_t LearnerEngine::getInputFeatureCount() const

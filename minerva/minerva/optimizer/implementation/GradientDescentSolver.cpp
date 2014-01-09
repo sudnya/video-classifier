@@ -22,9 +22,8 @@ namespace minerva
 namespace optimizer
 {
 
-typedef minerva::matrix::Matrix Matrix;
-typedef Matrix::FloatVector FloatVector;
-typedef std::vector<Matrix> MatrixVector;
+typedef minerva::matrix::BlockSparseMatrix BlockSparseMatrix;
+typedef std::vector<BlockSparseMatrix> MatrixVector;
 
 void GradientDescentSolver::solve()
 {
@@ -37,21 +36,27 @@ void GradientDescentSolver::solve()
 	unsigned iterations = util::KnobDatabase::getKnobValue<float>(
 		"GradientDescentSolver::Iterations", 10);
 	
-	auto weights = m_backPropDataPtr->getFlattenedWeights();
+	auto weights = m_backPropDataPtr->getWeights();
 	
-	float originalCost = m_backPropDataPtr->computeCostForNewFlattenedWeights(
-		weights);
+	float originalCost = m_backPropDataPtr->computeCost();
 	float previousCost = originalCost;
 	
 	util::log("GradientDescentSolver") << "Solving for " << iterations << " iterations\n";
 	
 	for(unsigned i = 0; i < iterations; ++i)
 	{
-		auto derivative = m_backPropDataPtr->computePartialDerivativesForNewFlattenedWeights(weights);
+		auto derivative = m_backPropDataPtr->computePartialDerivativesForNewWeights(weights);
 		
-		auto newWeights = weights.subtract(derivative.multiply(learningRate));
+		MatrixVector newWeights;
+		
+		newWeights.reserve(derivative.size());
+
+		for(auto derivativeMatrix = derivative.begin(), weight = weights.begin(); derivativeMatrix != derivative.end(); ++weight, ++derivativeMatrix)
+		{
+			newWeights.push_back(weight->subtract(derivativeMatrix->multiply(learningRate)));
+		}
 	
-		float newCost = m_backPropDataPtr->computeCostForNewFlattenedWeights(newWeights);
+		float newCost = m_backPropDataPtr->computeCostForNewWeights(newWeights);
 
 		if(newCost <= previousCost)
 		{
@@ -69,7 +74,7 @@ void GradientDescentSolver::solve()
 		else
 		{
 			learningRate = learningRate * learningRateBackoff;
-			iterations = iterations * learningRateBackoff;
+			iterations   = iterations   * learningRateBackoff;
 			util::log("GradientDescentSolver") << " Backing off learning rate to " << learningRate << "\n";
 			/*
 			throw std::runtime_error("Gradient descent failed"
@@ -78,36 +83,9 @@ void GradientDescentSolver::solve()
 		}
 	}
 	
-	m_backPropDataPtr->setFlattenedWeights(weights);
+	m_backPropDataPtr->setWeights(weights);
 	
-	util::log("GradientDescentSolver") << " Accuracy is now " << m_backPropDataPtr->computeAccuracyForNewFlattenedWeights(weights) << "\n";
-
-	/*
-	
-	// doing batch descent, so dont need cost
-	MatrixVector partialDerivatives = m_backPropDataPtr->getCostDerivative();
-
-	//we have partial derivates, now subtract from each layer's activations
-	// for each layer we have one pd
-	// Li = Li + alpha*pd
-	assertM(m_backPropDataPtr->getNeuralNetworkPtr()->getTotalLayerSize() == partialDerivatives.size(), "each layer should be associated with a partial derivative");
-	auto deriv = partialDerivatives.begin();
-	for (auto layer = m_backPropDataPtr->getNeuralNetworkPtr()->begin(); layer != m_backPropDataPtr->getNeuralNetworkPtr()->end() && deriv != partialDerivatives.end(); ++layer, ++deriv)
-	{
-		assertM(layer->size() == 1, "Only dense matrices supported for now.");
-	
-		// change the neuron value for each matrix in this layer
-		for (auto layerWeight = layer->begin(); layerWeight != layer->end(); ++layerWeight)
-		{
-			auto weightUpdates = deriv->multiply(learningRate);
-			
-			// Don't change the bias weights
-			auto weightAndBiasUpdates = weightUpdates.appendRows(Matrix(1, weightUpdates.columns(), FloatVector(weightUpdates.columns(), 0.0f)));
-		
-			(*layerWeight) = (*layerWeight).subtract(weightAndBiasUpdates);
-		}
-	}
-	*/
+	util::log("GradientDescentSolver") << " Accuracy is now " << m_backPropDataPtr->computeAccuracy() << "\n";
 }
 
 }

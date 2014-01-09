@@ -82,6 +82,8 @@ long long unsigned int getFreePhysicalMemory()
 		GlobalMemoryStatusEx(&status);
 		return status.ullTotalPhys;
 	#elif __APPLE__
+
+		#if 0
 		int mib[2]; 
 		uint64_t physical_memory; 
 		size_t length; 
@@ -90,7 +92,12 @@ long long unsigned int getFreePhysicalMemory()
 		mib[1] = HW_USERMEM; // HW_MEMSIZE -> physical memory 
 		length = sizeof(uint64_t); 
 		sysctl(mib, 2, &physical_memory, &length, NULL, 0); 
-		return physical_memory / 10000;
+		return physical_memory;
+		#else
+		return (100ULL * (1ULL << 20));
+		#endif
+
+			
 	#elif __GNUC__
 		return get_avphys_pages() * getpagesize();
 	#endif

@@ -83,6 +83,11 @@ void ImageVector::push_back(const Image& image)
 	_images.push_back(image);
 }
 
+void ImageVector::clear()
+{
+	_images.clear();
+}
+
 ImageVector::Matrix ImageVector::convertToStandardizedMatrix(size_t sampleCount,
 	size_t xTileSize, size_t yTileSize) const
 {

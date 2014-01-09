@@ -33,7 +33,7 @@ public:
 	virtual void reportStatistics(std::ostream& stream) const;
 
 protected:
-	virtual void runOnImageBatch(const ImageVector& images);
+	virtual void runOnImageBatch(ImageVector&& images);
 	virtual size_t getInputFeatureCount() const;
 	
 	virtual bool requiresLabeledData() const;

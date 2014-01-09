@@ -334,11 +334,11 @@ static void buildConvolutionalFastModel(ClassificationModel* model, unsigned xPi
 {
 	unsigned totalPixels = xPixels * yPixels * colors;
 
-    unsigned reductionFactor = 2;
-
 	// derive parameters from image dimensions 
-	const unsigned blockSize = std::min(16U, xPixels) * colors;
-	const unsigned blocks    = totalPixels / blockSize;
+	const unsigned blockSize = std::min(64U, xPixels) * colors;
+	const unsigned blocks    = std::min(64U, totalPixels / blockSize);
+    
+	unsigned reductionFactor = 4;
 	
     NeuralNetwork featureSelector;
 	
@@ -383,6 +383,7 @@ static void buildConvolutionalFastModel(ClassificationModel* model, unsigned xPi
 		featureSelector.back().getBlockingFactor(),
 		featureSelector.back().getBlockingFactor()));
 
+	
 	// convolutional layer
 	featureSelector.addLayer(Layer(featureSelector.back().blocks(),
 		featureSelector.back().getOutputBlockingFactor(),
@@ -397,7 +398,7 @@ static void buildConvolutionalFastModel(ClassificationModel* model, unsigned xPi
 	featureSelector.addLayer(Layer(featureSelector.back().blocks() / reductionFactor,
 		featureSelector.back().getBlockingFactor(),
 		featureSelector.back().getBlockingFactor()));
-
+	
     featureSelector.setUseSparseCostFunction(true);
     
 	tuneNeuralNetwork(featureSelector);
@@ -406,7 +407,7 @@ static void buildConvolutionalFastModel(ClassificationModel* model, unsigned xPi
 
 	NeuralNetwork classifierNetwork;
 	
-    const size_t hiddenLayerSize = 512;
+    const size_t hiddenLayerSize = 256;
 
 	classifierNetwork.addLayer(Layer(1, featureSelector.getOutputCount(), hiddenLayerSize));
 	classifierNetwork.addLayer(Layer(1, hiddenLayerSize, hiddenLayerSize));
@@ -423,9 +424,9 @@ ClassificationModel* ClassificationModelBuilder::create(const std::string& path)
 {
 	auto model = new ClassificationModel(path);
 
-	unsigned x         = util::KnobDatabase::getKnobValue("ClassificationModelBuilder::ResolutionX",     32       );
-	unsigned y         = util::KnobDatabase::getKnobValue("ClassificationModelBuilder::ResolutionY",     32       );
-	unsigned colors    = util::KnobDatabase::getKnobValue("ClassificationModelBuilder::ColorComponents", 3        );
+	unsigned x         = util::KnobDatabase::getKnobValue("ClassificationModelBuilder::ResolutionX",     64 );
+	unsigned y         = util::KnobDatabase::getKnobValue("ClassificationModelBuilder::ResolutionY",     64 );
+	unsigned colors    = util::KnobDatabase::getKnobValue("ClassificationModelBuilder::ColorComponents", 3  );
 
 	model->setInputImageResolution(x, y, colors);
 

@@ -65,8 +65,9 @@ class Layer
 		size_t blockSize() const;
 
 	public:
-		BlockSparseMatrix getWeightsWithoutBias() const;
-        
+		const BlockSparseMatrix& getWeightsWithoutBias() const;
+		void setWeightsWithoutBias(const BlockSparseMatrix& );        
+
     public:
     	size_t totalWeights() const;
     	
@@ -119,6 +120,10 @@ class Layer
       
 	public:
 		size_t blocks() const;
+
+	public:
+		void setBias(const BlockSparseMatrix& bias);
+		const BlockSparseMatrix& getBias() const;
 
     private:
 		BlockSparseMatrix m_sparseMatrix;

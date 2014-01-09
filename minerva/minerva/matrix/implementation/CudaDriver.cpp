@@ -12,6 +12,7 @@
 
 // System Specific Includes
 #include <dlfcn.h>
+#include <stdexcept>
 
 namespace minerva 
 {

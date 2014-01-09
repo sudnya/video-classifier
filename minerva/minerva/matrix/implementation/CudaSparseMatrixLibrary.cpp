@@ -19,7 +19,9 @@
 
 // Standard Library Includes
 #include <vector>
+#include <stdexcept>
 #include <random>
+#include <memory>
 
 // Preprocessor Macros
 #define USE_CURAND 1

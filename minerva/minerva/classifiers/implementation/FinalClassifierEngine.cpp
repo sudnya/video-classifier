@@ -37,7 +37,7 @@ void FinalClassifierEngine::reportStatistics(std::ostream& stream) const
 	stream << _statistics.toString();
 }
 
-void FinalClassifierEngine::runOnImageBatch(const ImageVector& images)
+void FinalClassifierEngine::runOnImageBatch(ImageVector&& images)
 {
 	Classifier classifier(_model);
 	

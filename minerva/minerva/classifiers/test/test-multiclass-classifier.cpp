@@ -83,7 +83,7 @@ static void createAndInitializeNeuralNetworks(
 		<< "Building feature selector network with "
 		<< featureSelector.getOutputCount() << " output neurons\n";
 
-	featureSelector.setUseSparseCostFunction(false);
+	featureSelector.setUseSparseCostFunction(true);
 
 	model.setNeuralNetwork("FeatureSelector", featureSelector);
 

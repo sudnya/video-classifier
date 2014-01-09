@@ -13,9 +13,9 @@ namespace minerva
 namespace classifiers
 {
 
-void Learner::learnAndTrain(const ImageVector& images)
+void Learner::learnAndTrain(ImageVector&& images)
 {
-    trainClassifier(images);
+    trainClassifier(std::move(images));
 }
 
 size_t Learner::getInputFeatureCount() const
@@ -36,7 +36,7 @@ void Learner::loadClassifier()
     m_classifierNetwork = m_classificationModel->getNeuralNetwork("Classifier");
 }
 
-void Learner::trainClassifier(const ImageVector& images)
+void Learner::trainClassifier(ImageVector&& images)
 {
 	size_t inputCount = m_featureSelectorNetwork.getInputCount();
     size_t blockingFactor = m_featureSelectorNetwork.getBlockingFactor();
@@ -64,6 +64,8 @@ void Learner::trainClassifier(const ImageVector& images)
 
 	util::log("Learner") << "Training classifier network with reference: " << reference.toString();
 
+    images.clear();
+    
     m_classifierNetwork.train(matrix, reference);
 
     //setThreshold();

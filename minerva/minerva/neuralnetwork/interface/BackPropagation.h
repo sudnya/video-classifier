@@ -38,6 +38,7 @@ public:
 	MatrixVector computeCostDerivative() const;
 	BlockSparseMatrix computeInputDerivative() const;
 	float computeCost() const;
+	float computeAccuracy() const;
 
 public:
 	NeuralNetwork*     getNeuralNetwork();
@@ -59,6 +60,13 @@ public:
 	Matrix getFlattenedCostDerivative() const;
 	void   setFlattenedWeights(const Matrix& weights);
 
+public:
+	MatrixVector getWeights() const;
+	void setWeights(const MatrixVector& weights);
+	
+	float computeCostForNewWeights(const MatrixVector& weights) const;
+	MatrixVector computePartialDerivativesForNewWeights(const MatrixVector& weights) const;
+	
 public:
 	float  computeCostForNewFlattenedWeights(const Matrix& weights) const;
 	float  computeCostForNewFlattenedInputs(const Matrix& inputs) const;
