@@ -7,10 +7,6 @@
 
 #pragma once
 
-
-// Forward Declarations
-namespace minerva { namespace video { class CvCapture; } }
-
 namespace minerva
 {
 

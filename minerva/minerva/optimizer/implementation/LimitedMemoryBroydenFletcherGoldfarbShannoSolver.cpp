@@ -35,18 +35,51 @@ LBFGSSolver::~LimitedMemoryBroydenFletcherGoldfarbShannoSolver()
 
 }
 
-static void copyData(double* data, const Matrix& matrix)
+size_t getSize(const BlockSparseMatrixVector& vector)
 {
-	std::vector<double> matrixDataAsDoubles(matrix.begin(),
-		matrix.end());
+	size_t size = 0;
 	
-	std::memcpy(data, matrixDataAsDoubles.data(),
-		matrix.size() * sizeof(double));
+	for(auto& matrix : vector)
+	{
+		size += matrix.size();
+	}
+	
+	return size;
 }
 
-static void copyData(Matrix& matrix, const double* data)
+static void copyData(double* data, const BlockSparseMatrixVector& vector)
 {
-	matrix.data() = FloatVector(data, matrix.size() + data);
+	size_t position = 0;
+	
+	for(auto& matrix : vector)
+	{
+		for(auto& block : matrix)
+		{
+			std::vector<double> matrixDataAsDoubles(matrix.begin(),
+				matrix.end());
+				
+			std::memcpy(data + position, matrixDataAsDoubles.data(),
+				block.size() * sizeof(double));
+			
+			position += block.size();
+		}
+	}
+}
+
+static void copyData(BlockSparseMatrixVector& vector, const double* data)
+{
+	size_t position = 0;
+	
+	for(auto& matrix : vector)
+	{
+		for(auto& block : matrix)
+		{
+			block.data() = FloatVector(data + position,
+				block.size() + data + position);
+			
+			position += block.size();
+		}
+	}
 }
 
 static double lbfgsCallback(void* instance, const double* x, double* g,
@@ -55,9 +88,12 @@ static double lbfgsCallback(void* instance, const double* x, double* g,
 	const CostAndGradient* callback =
 		reinterpret_cast<const CostAndGradient*>(instance);
 
+	auto weights   = callback->getUninitializedDataStructure();
+	auto graidient = callback->getUninitializedDataStructure();
+
 	// TODO: get rid of these copies	
-	Matrix weights (1, n, FloatVector(x, x + n));
-	Matrix gradient(1, n);
+	copyData(weights,  x);
+	copyData(gradient, g); // can we comment this guy out?
 	
 	float cost = callback->computeCostAndGradient(gradient, weights);
 	
@@ -173,9 +209,9 @@ static std::string getMessage(int status)
 	return "unknown error";
 }
 
-float LBFGSSolver::solve(Matrix& inputs, const CostAndGradient& callback)
+float LBFGSSolver::solve(BlockSparseMatrixVector& inputs, const CostAndGradient& callback)
 {
-	double* inputArray = LBFGSSolverLibrary::lbfgs_malloc(inputs.size());
+	double* inputArray = LBFGSSolverLibrary::lbfgs_malloc(getSize(inputs));
 	
 	if(inputArray == nullptr)
 	{

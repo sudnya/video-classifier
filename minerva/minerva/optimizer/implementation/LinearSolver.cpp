@@ -6,6 +6,8 @@
 // Minerva Includes
 #include <minerva/optimizer/interface/LinearSolver.h>
 
+#include <minerva/matrix/interface/BlockSparseMatrix.h>
+
 namespace minerva
 {
 
@@ -17,8 +19,9 @@ LinearSolver::~LinearSolver()
 
 }
 
-LinearSolver::CostAndGradient::CostAndGradient(float i, float c)
-: initialCost(i), costReductionFactor(c)
+LinearSolver::CostAndGradient::CostAndGradient(float i, float c,
+	const DataStructureFormat& f)
+: initialCost(i), costReductionFactor(c), format(f)
 {
 
 }
@@ -26,6 +29,34 @@ LinearSolver::CostAndGradient::CostAndGradient(float i, float c)
 LinearSolver::CostAndGradient::~CostAndGradient()
 {
 
+}
+
+LinearSolver::SparseMatrixFormat::SparseMatrixFormat(size_t b, size_t r, size_t c)
+: blocks(b), rowsPerBlock(r), columnsPerBlock(c)
+{
+
+}
+
+LinearSolver::SparseMatrixFormat::SparseMatrixFormat(const BlockSparseMatrix& matrix)
+: blocks(matrix.blocks()), rowsPerBlock(matrix.rowsPerBlock()), columnsPerBlock(matrix.columnsPerBlock())
+{
+
+}
+
+BlockSparseMatrixVector LinearSolver::CostAndGradient::getUninitializedDataStructure() const
+{
+	BlockSparseMatrixVector vector;
+	
+	vector.reserve(sparseMatrixCount);
+	
+	for(auto& sparseMatrixFormat : format)
+	{
+		vector.push_back(BlockSparseMatrix(sparseMatrixFormat.blocks,
+			sparseMatrixFormat.rowsPerBlock,
+			sparseMatrixFormat.columnsPerBlock));
+	}
+	
+	return vector;
 }
 
 }

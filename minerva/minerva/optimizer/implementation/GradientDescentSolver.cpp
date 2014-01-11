@@ -22,10 +22,7 @@ namespace minerva
 namespace optimizer
 {
 
-typedef minerva::matrix::BlockSparseMatrix BlockSparseMatrix;
-typedef std::vector<BlockSparseMatrix> MatrixVector;
-
-void GradientDescentSolver::solve()
+float GradientDescentSolver::solve(BlockSparseMatrixVector& weights, const CostAndGradient& callback)
 {
    float learningRate = util::KnobDatabase::getKnobValue<float>(
 		"GradientDescentSolver::LearningRate", 2.4f);///m_backPropDataPtr->getNeuralNetwork()->getInputCount());
@@ -35,18 +32,16 @@ void GradientDescentSolver::solve()
 		"GradientDescentSolver::LearningRateBackoff", 0.5f);
 	unsigned iterations = util::KnobDatabase::getKnobValue<float>(
 		"GradientDescentSolver::Iterations", 1000000);
-	
-	auto weights = m_backPropDataPtr->getWeights();
-	
-	float originalCost = m_backPropDataPtr->computeCost();
+
+	auto derivative = callback.getUninitializedDataStructure();
+
+	float originalCost = callback.computeCostAndGradient(gradient, weights);
 	float previousCost = originalCost;
 	
-	util::log("GradientDescentSolver") << "Solving for " << iterations << " iterations\n";
+	util::log("GradientDescentSolver") << "Solving for at most " << iterations << " iterations\n";
 	
 	for(unsigned i = 0; i < iterations; ++i)
 	{
-		auto derivative = m_backPropDataPtr->computePartialDerivativesForNewWeights(weights);
-		
 		MatrixVector newWeights;
 		
 		newWeights.reserve(derivative.size());
@@ -56,7 +51,7 @@ void GradientDescentSolver::solve()
 			newWeights.push_back(weight->subtract(derivativeMatrix->multiply(learningRate)));
 		}
 	
-		float newCost = m_backPropDataPtr->computeCostForNewWeights(newWeights);
+		float newCost = callback.computeCostAndGradient(gradient, weights);
 
 		if(newCost <= previousCost)
 		{
@@ -82,10 +77,6 @@ void GradientDescentSolver::solve()
 			*/
 		}
 	}
-	
-	m_backPropDataPtr->setWeights(weights);
-	
-	util::log("GradientDescentSolver") << " Accuracy is now " << m_backPropDataPtr->computeAccuracy() << "\n";
 }
 
 }

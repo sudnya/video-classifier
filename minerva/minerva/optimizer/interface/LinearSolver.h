@@ -5,8 +5,11 @@
 
 #pragma once
 
+// Standard Library Includes
+#include <vector>
+
 // Forward Declarations
-namespace minerva { namespace matrix { class Matrix; } }
+namespace minerva { namespace matrix { class BlockSparseMatrix; } }
 
 namespace minerva
 {
@@ -17,7 +20,8 @@ namespace optimizer
 class LinearSolver
 {
 public:
-	typedef matrix::Matrix Matrix;
+	typedef std::vector<matrix::BlockSparseMatrix> BlockSparseMatrixVector;
+	
 	class CostAndGradient;
 
 public:
@@ -34,22 +38,46 @@ public:
 	
 		\return A floating point value representing the final cost.
 	 */
-	virtual float solve(Matrix& inputs, const CostAndGradient& callBack) = 0;
+	virtual float solve(BlockSparseMatrixVector& inputs, const CostAndGradient& callBack) = 0;
 
 public:
+	class SparseMatrixFormat
+	{
+	public:
+		explicit SparseMatrixFormat(size_t blocks = 0, size_t rowsPerBlock = 0, size_t columnsPerBlock = 0);
+		SparseMatrixFormat(const BlockSparseMatrix& );
+		
+	public:
+		size_t blocks;
+		size_t rowsPerBlock;
+		size_t columnsPerBlock;
+	};
+	
+	typedef std::vector<SparseMatrixFormat> DataStructureFormat;
+
 	class CostAndGradient
 	{
 	public:
-		CostAndGradient(float initialCost = 0.0f, float costReductionFactor = 0.0f);
+		CostAndGradient(float initialCost = 0.0f, float costReductionFactor = 0.0f,
+			const DataStructureFormat& format = DataStructureFormat());
 		virtual ~CostAndGradient();
 	
 	public:
-		virtual float computeCostAndGradient(Matrix& gradient,
-			const Matrix& inputs) const = 0;
+		virtual float computeCostAndGradient(BlockSparseMatrixVector& gradient,
+			const BlockSparseMatrix& inputs) const = 0;
+
+	public:
+		BlockSparseMatrixVector getUninitializedDataStructure() const;
 	
 	public:
+		/*! \brief The initial cost at the time the routine is called, can be ignored (set to 0.0f) */
 		float initialCost;
+		/*! \brief The stopping condition for the solver */
 		float costReductionFactor;
+
+	public:
+		/*! \brief Structural parameters of the data structure */
+		DataStructureFormat format;
 	
 	};
 

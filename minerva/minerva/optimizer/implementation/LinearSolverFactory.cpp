@@ -7,6 +7,7 @@
 // Minerva Includes
 #include <minerva/optimizer/interface/LinearSolverFactory.h>
 #include <minerva/optimizer/interface/LimitedMemoryBroydenFletcherGoldfarbShannoSolver.h>
+#include <minerva/optimizer/interface/GradientDescentSolver.h>
 
 namespace minerva
 {
@@ -25,6 +26,10 @@ LinearSolver* LinearSolverFactory::create(const std::string& name)
 		{
 			solver = new LBFGSSolver;
 		}
+	}
+	else if("GradientDescentSolver" == name || "GDSolver" == name)
+	{
+		solver = new GDSolver;
 	}
 	
 	return solver;

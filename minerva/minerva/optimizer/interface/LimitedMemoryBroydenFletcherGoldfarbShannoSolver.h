@@ -21,7 +21,7 @@ public:
 	virtual ~LimitedMemoryBroydenFletcherGoldfarbShannoSolver();
 
 public:
-	virtual float solve(Matrix& inputs, const CostAndGradient& callback);
+	virtual float solve(BlockSparseMatrixVector& inputs, const CostAndGradient& callback);
 
 public:
 	static bool isSupported();

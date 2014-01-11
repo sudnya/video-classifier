@@ -5,7 +5,6 @@
 
 
 #include <minerva/optimizer/interface/Solver.h>
-#include <minerva/optimizer/interface/GradientDescentSolver.h>
 #include <minerva/optimizer/interface/MultiLevelOptimizer.h>
 #include <minerva/optimizer/interface/TiledConvolutionalSolver.h>
 
@@ -28,17 +27,13 @@ Solver* Solver::create(BackPropagation* d)
 		"TiledConvolutionalSolver");
 		//"GradientDescentSolver");	
 
-	if(solverName == "TiledConvolutionalSolver")
-	{
-		return new TiledConvolutionalSolver(d);
-	}
 	if(solverName == "MultiLevelOptimizer")
 	{
 		return new MultiLevelOptimizer(d);
 	}
 
-	// Fall back to gradient descent
-    return new GradientDescentSolver(d);
+	// Fall back to tiled solver
+	return new TiledConvolutionalSolver(d);
 }
 
 }

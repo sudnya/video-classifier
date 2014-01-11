@@ -1,27 +1,31 @@
 /* Author: Sudnya Padalikar
  * Date  : 08/17/2013
- * The interface for the Gradient descent Solver class 
+ * The interface for the Gradient descent LinearSolver class 
  */
 
 #pragma once
 
-#include <minerva/neuralnetwork/interface/BackPropagation.h>
+// Minerva Includes
+#include <minerva/optimizer/interface/LinearSolver.h>
 
 namespace minerva
 {
+
 namespace optimizer
 {
 
-class GradientDescentSolver : public Solver
+class GradientDescentSolver : public LinearSolver
 {
 public:
-	GradientDescentSolver(BackPropagation* d) : Solver(d)
-	{
-	}
-	
-	void solve();
+	virtual ~LimitedMemoryBroydenFletcherGoldfarbShannoSolver();
 
+public:
+	virtual float solve(BlockSparseMatrix& inputs, const CostAndGradient& callback);
 };
 
+typedef GradientDescentSolver GDSolver;
+
 }
+
 }
+

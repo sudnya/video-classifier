@@ -44,7 +44,8 @@ class TiledNeuralNetworkCostAndGradient : public LinearSolver::CostAndGradient
 {
 public:
 	TiledNeuralNetworkCostAndGradient(const BackPropagation* b)
-	: m_backPropDataPtr(b)
+	: LinearSolver::CostAndGradient(0.0f, 0.0f, b->getSparseMatrixFormat()),
+		m_backPropDataPtr(b)
 	{
 	
 	}
@@ -55,15 +56,18 @@ public:
 	}
 	
 public:
-	virtual float computeCostAndGradient(Matrix& gradient,
-		const Matrix& inputs) const
+	virtual float computeCostAndGradient(BlockSparseMatrixVector& gradient,
+		const BlockSparseMatrixVector& inputs) const
 	{
 		gradient = m_backPropDataPtr->computePartialDerivativesForNewFlattenedWeights(inputs);
 		
-		util::log("TiledConvolutionalSolver::Detail") << " new gradient is : " << gradient.toString();
+		if(util::isLogEnabled("TiledConvolutionalSolver::Detail"))
+		{	
+			util::log("TiledConvolutionalSolver::Detail") << " new gradient is : " << gradient.toString();
+		}
 		
 		float newCost = m_backPropDataPtr->computeCostForNewFlattenedWeights(inputs);
-	
+		
 		util::log("TiledConvolutionalSolver::Detail") << " new cost is : " << newCost << "\n";
 		
 		return newCost;
@@ -87,7 +91,7 @@ static float linearSolver(BackPropagation* backPropData)
 		return newCost;
 	}
 	
-	auto weights = backPropData->getFlattenedWeights();
+	auto weights = backPropData->getWeights();
 
 	try
 	{
@@ -107,7 +111,7 @@ static float linearSolver(BackPropagation* backPropData)
 	util::log("TiledConvolutionalSolver") << "   solver produced new cost: "
 		<< newCost << ".\n";
 
-	backPropData->setFlattenedWeights(weights);
+	backPropData->setWeights(weights);
 
 	return newCost;
 }
@@ -125,7 +129,7 @@ public:
 	}
 
 public:
-	const NeuralNetwork* network;
+	const NeuralNetwork*     network;
 	const BlockSparseMatrix* input;
 	const BlockSparseMatrix* reference;
 	const Tile*              tile;
