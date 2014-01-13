@@ -33,6 +33,7 @@ namespace visualization
 {
 
 typedef matrix::Matrix Matrix;
+typedef matrix::BlockSparseMatrixVector BlockSparseMatrixVector;
 typedef neuralnetwork::NeuralNetwork NeuralNetwork;
 typedef video::Image Image;
 typedef neuralnetwork::BackPropagation BackPropagation;
@@ -158,23 +159,23 @@ class CostAndGradientFunction : public optimizer::LinearSolver::CostAndGradient
 public:
 	CostAndGradientFunction(const BackPropagation* d,
 		float initialCost, float costReductionFactor)
-	: CostAndGradient(initialCost, costReductionFactor), _backPropData(d)
+	: CostAndGradient(initialCost, costReductionFactor, d->getInputFormat()), _backPropData(d)
 	{
 	
 	}
 
 
 public:
-	virtual float computeCostAndGradient(Matrix& gradient,
-		const Matrix& inputs) const
+	virtual float computeCostAndGradient(BlockSparseMatrixVector& gradient,
+		const BlockSparseMatrixVector& inputs) const
 	{
-		util::log("NeuronVisualizer") << " inputs are : " << inputs.toString();
+		util::log("NeuronVisualizer") << " inputs are : " << inputs.front().toString();
 		
-		gradient = _backPropData->computePartialDerivativesForNewFlattenedInputs(inputs);
+		gradient = _backPropData->computePartialDerivativesForNewInputs(inputs);
 		
-		util::log("NeuronVisualizer") << " new gradient is : " << gradient.toString();
+		util::log("NeuronVisualizer") << " new gradient is : " << gradient.front().toString();
 		
-		float newCost = _backPropData->computeCostForNewFlattenedInputs(inputs);
+		float newCost = _backPropData->computeCostForNewInputs(inputs);
 	
 		util::log("NeuronVisualizer") << " new cost is : " << newCost << "\n";
 		
@@ -207,10 +208,10 @@ static Matrix optimizeWithDerivative(float& bestCost, const NeuralNetwork* netwo
 	data->setInput(&input);
 	data->setReferenceOutput(&reference);
 	
-	Matrix bestSoFar = initialData;
-	       bestCost  = data->computeCost();
+	auto bestSoFar = input;
+	     bestCost  = data->computeCost();
 
-	auto solver = optimizer::LinearSolverFactory::create("LBFGSSolver");
+	auto solver = optimizer::LinearSolverFactory::create();
 	
 	assert(solver != nullptr);
 	
@@ -239,7 +240,7 @@ static Matrix optimizeWithDerivative(float& bestCost, const NeuralNetwork* netwo
 	util::log("NeuronVisualizer") << "  solver produced new cost: "
 		<< bestCost << ".\n";
 	util::log("NeuronVisualizer") << "  final output is : " << network->runInputs(bestSoFar).toString();
-	return bestSoFar;
+	return bestSoFar.toMatrix();
 }
 
 static Matrix optimizeWithDerivative(const NeuralNetwork* network,

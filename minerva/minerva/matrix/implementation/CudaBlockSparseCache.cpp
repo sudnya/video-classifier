@@ -262,6 +262,8 @@ public:
 	{
 		initialize();
 		
+		if(matrix->size() == 0) return nullptr;
+		
 		auto allocation = findExisting(matrix);
 		
 		if(allocation == nullptr)
@@ -291,6 +293,8 @@ public:
 	{
 		initialize();
 		
+		if(matrix->size() == 0) return nullptr;
+		
 		auto allocation = findExisting(matrix);
 		
 		if(allocation == nullptr)
@@ -317,6 +321,8 @@ public:
 	float* acquireClobber(BlockSparseMatrixImplementation* matrix)
 	{
 		initialize();
+		
+		if(matrix->size() == 0) return nullptr;
 		
 		auto allocation = findExisting(matrix);
 		

@@ -15,6 +15,8 @@ namespace minerva { namespace neuralnetwork { class NeuralNetwork; } }
 namespace minerva { namespace matrix { class Matrix;            } }
 namespace minerva { namespace matrix { class BlockSparseMatrix; } }
 
+namespace minerva { namespace optimizer { class SparseMatrixFormat; } }
+
 namespace minerva
 {
 namespace neuralnetwork
@@ -27,6 +29,7 @@ public:
 	typedef minerva::matrix::Matrix Matrix;
 	typedef minerva::matrix::BlockSparseMatrix BlockSparseMatrix;
 	typedef std::vector<BlockSparseMatrix> MatrixVector;
+	typedef std::vector<optimizer::SparseMatrixFormat> DataStructureFormat;
 
 public:
 	BackPropagation(NeuralNetwork* ann = nullptr,
@@ -61,11 +64,18 @@ public:
 	void   setFlattenedWeights(const Matrix& weights);
 
 public:
+	DataStructureFormat getWeightFormat() const;
+	DataStructureFormat getInputFormat() const;
+
+public:
 	MatrixVector getWeights() const;
 	void setWeights(const MatrixVector& weights);
 	
 	float computeCostForNewWeights(const MatrixVector& weights) const;
+	float computeCostForNewInputs(const MatrixVector& inputs) const;
+	float computeAccuracyForNewWeights(const MatrixVector& weights) const;
 	MatrixVector computePartialDerivativesForNewWeights(const MatrixVector& weights) const;
+	MatrixVector computePartialDerivativesForNewInputs(const MatrixVector& inputs) const;
 	
 public:
 	float  computeCostForNewFlattenedWeights(const Matrix& weights) const;

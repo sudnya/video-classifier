@@ -210,10 +210,13 @@ MatrixVector DenseBackPropagation::getDeltas(const NeuralNetwork& network, const
 
 	std::reverse(deltas.begin(), deltas.end());
 	
-	for (auto& delta : deltas)
+	if (util::isLogEnabled("DenseBackPropagation::Detail"))
 	{
-		util::log("DenseBackPropagation") << " added delta of size ( " << delta.rows() << " ) rows and ( " << delta.columns() << " )\n" ;
-		//util::log("DenseBackPropagation") << " delta contains " << delta.toString() << "\n";
+		for (auto& delta : deltas)
+		{
+			util::log("DenseBackPropagation::Detail") << " added delta of size ( " << delta.rows() << " ) rows and ( " << delta.columns() << " )\n" ;
+			util::log("DenseBackPropagation::Detail") << " delta contains " << delta.toString() << "\n";
+		}
 	}
 	
 	return deltas;

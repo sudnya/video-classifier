@@ -17,10 +17,14 @@ namespace optimizer
 class GradientDescentSolver : public LinearSolver
 {
 public:
-	virtual ~LimitedMemoryBroydenFletcherGoldfarbShannoSolver();
+	virtual ~GradientDescentSolver();
 
 public:
-	virtual float solve(BlockSparseMatrix& inputs, const CostAndGradient& callback);
+	virtual float solve(BlockSparseMatrixVector& inputs, const CostAndGradient& callback);
+
+public:
+	static double getMemoryOverhead();
+
 };
 
 typedef GradientDescentSolver GDSolver;

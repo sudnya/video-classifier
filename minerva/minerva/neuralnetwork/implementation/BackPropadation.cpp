@@ -11,6 +11,8 @@
 #include <minerva/matrix/interface/Matrix.h>
 #include <minerva/matrix/interface/BlockSparseMatrix.h>
 
+#include <minerva/optimizer/interface/LinearSolver.h>
+
 // Standard Library Includes
 #include <cassert>
 
@@ -23,6 +25,8 @@ typedef matrix::Matrix Matrix;
 typedef matrix::BlockSparseMatrix BlockSparseMatrix;
 typedef Matrix::FloatVector FloatVector;
 typedef BackPropagation::MatrixVector MatrixVector;
+typedef optimizer::LinearSolver::DataStructureFormat DataStructureFormat;
+typedef optimizer::SparseMatrixFormat SparseMatrixFormat;
 
 BackPropagation::BackPropagation(NeuralNetwork* ann,
 	BlockSparseMatrix* input,
@@ -211,6 +215,30 @@ void BackPropagation::setFlattenedWeights(const Matrix& weights)
 	*_neuralNetworkPtr = createNetworkFromWeights(getNeuralNetwork(), weights);
 }
 
+DataStructureFormat BackPropagation::getWeightFormat() const
+{
+	DataStructureFormat format;
+	
+	for(auto& layer : *getNeuralNetwork())
+	{
+		format.push_back(SparseMatrixFormat(layer.blocks(), layer.getBlockingFactor(),
+			layer.getOutputBlockingFactor()));
+	}
+	
+	return format;
+}
+
+DataStructureFormat BackPropagation::getInputFormat() const
+{
+	DataStructureFormat format;
+	
+	format.push_back(SparseMatrixFormat(getInput()->blocks(),
+		getInput()->rowsPerBlock(), getInput()->columnsPerBlock(),
+		getInput()->isRowSparse()));
+	
+	return format;
+}
+
 MatrixVector BackPropagation::getWeights() const
 {
 	MatrixVector weights;
@@ -243,11 +271,28 @@ float BackPropagation::computeCostForNewWeights(const MatrixVector& weights) con
 	return getCost(network, *getInput(), *getReferenceOutput());
 }
 
+float BackPropagation::computeCostForNewInputs(const MatrixVector& inputs) const
+{
+	return getCost(*getNeuralNetwork(), inputs[0], *getReferenceOutput());
+}
+
+float BackPropagation::computeAccuracyForNewWeights(const MatrixVector& weights) const
+{
+	auto network = createNetworkFromWeights(getNeuralNetwork(), weights);
+
+	return network.computeAccuracy(*getInput(), *getReferenceOutput());
+}
+
 MatrixVector BackPropagation::computePartialDerivativesForNewWeights(const MatrixVector& weights) const
 {
 	auto network = createNetworkFromWeights(getNeuralNetwork(), weights);
 
 	return getCostDerivative(network, *getInput(), *getReferenceOutput());
+}
+
+MatrixVector BackPropagation::computePartialDerivativesForNewInputs(const MatrixVector& inputs) const
+{
+	return MatrixVector(1, getInputDerivative(*getNeuralNetwork(), inputs[0], *getReferenceOutput()));
 }
 
 float BackPropagation::computeCostForNewFlattenedWeights(const Matrix& weights) const

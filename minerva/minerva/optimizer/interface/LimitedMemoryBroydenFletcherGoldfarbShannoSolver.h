@@ -24,6 +24,9 @@ public:
 	virtual float solve(BlockSparseMatrixVector& inputs, const CostAndGradient& callback);
 
 public:
+	static double getMemoryOverhead();
+
+public:
 	static bool isSupported();
 
 };

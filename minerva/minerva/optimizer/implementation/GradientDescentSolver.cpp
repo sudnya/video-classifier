@@ -22,6 +22,11 @@ namespace minerva
 namespace optimizer
 {
 
+GradientDescentSolver::~GradientDescentSolver()
+{
+
+}
+
 float GradientDescentSolver::solve(BlockSparseMatrixVector& weights, const CostAndGradient& callback)
 {
    float learningRate = util::KnobDatabase::getKnobValue<float>(
@@ -31,34 +36,40 @@ float GradientDescentSolver::solve(BlockSparseMatrixVector& weights, const CostA
 	float learningRateBackoff = util::KnobDatabase::getKnobValue<float>(
 		"GradientDescentSolver::LearningRateBackoff", 0.5f);
 	unsigned iterations = util::KnobDatabase::getKnobValue<float>(
-		"GradientDescentSolver::Iterations", 1000000);
+		"GradientDescentSolver::Iterations", 10000000);
 
 	auto derivative = callback.getUninitializedDataStructure();
 
-	float originalCost = callback.computeCostAndGradient(gradient, weights);
+	float originalCost = callback.computeCostAndGradient(derivative, weights);
 	float previousCost = originalCost;
+
+	float learningRateBaseline = learningRate;
 	
 	util::log("GradientDescentSolver") << "Solving for at most " << iterations << " iterations\n";
-	
+		
 	for(unsigned i = 0; i < iterations; ++i)
 	{
-		MatrixVector newWeights;
+		BlockSparseMatrixVector newWeights;
 		
 		newWeights.reserve(derivative.size());
-
-		for(auto derivativeMatrix = derivative.begin(), weight = weights.begin(); derivativeMatrix != derivative.end(); ++weight, ++derivativeMatrix)
+		
+		for(auto derivativeMatrix = derivative.begin(), weight = weights.begin();
+			derivativeMatrix != derivative.end(); ++weight, ++derivativeMatrix)
 		{
 			newWeights.push_back(weight->subtract(derivativeMatrix->multiply(learningRate)));
 		}
 	
-		float newCost = callback.computeCostAndGradient(gradient, weights);
+		float newCost = callback.computeCostAndGradient(derivative, newWeights);
 
-		if(newCost <= previousCost)
+		if(newCost < previousCost)
 		{
 			util::log("GradientDescentSolver") << " Cost is now " << (newCost) << " (changed by " << (newCost - previousCost) << ")\n";
 			
-			weights = newWeights;
+			weights      = newWeights;
 			previousCost = newCost;
+			
+			// linear increase
+			learningRate += learningRateBaseline / 10.0f;
 			
 			// Early exit if the cost was reduced significantly enough
 			if(newCost <= originalCost * convergenceRatio)
@@ -68,15 +79,22 @@ float GradientDescentSolver::solve(BlockSparseMatrixVector& weights, const CostA
 		}
 		else
 		{
+			// Multiplicative decrease
 			learningRate = learningRate * learningRateBackoff;
 			iterations   = iterations   * learningRateBackoff;
+
+			learningRateBaseline = learningRate;
+			
 			util::log("GradientDescentSolver") << " Backing off learning rate to " << learningRate << "\n";
-			/*
-			throw std::runtime_error("Gradient descent failed"
-				" to decrease cost at all.");
-			*/
 		}
 	}
+	
+	return previousCost;
+}
+
+double GradientDescentSolver::getMemoryOverhead()
+{
+	return 4.0;
 }
 
 }

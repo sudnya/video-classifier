@@ -24,6 +24,14 @@ class LinearSolverFactory
 public:
 	static LinearSolver* create(const std::string& solverName);
 
+public:
+	static LinearSolver* create();
+
+public:
+	static double getMemoryOverheadForSolver(const std::string& solverName);
+	static double getMemoryOverheadForSolver();
+
+
 };
 
 }

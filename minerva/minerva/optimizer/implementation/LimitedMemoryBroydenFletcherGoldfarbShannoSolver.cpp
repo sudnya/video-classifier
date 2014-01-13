@@ -9,6 +9,7 @@
 #include <minerva/optimizer/interface/LimitedMemoryBroydenFletcherGoldfarbShannoSolverLibrary.h>
 
 #include <minerva/matrix/interface/Matrix.h>
+#include <minerva/matrix/interface/BlockSparseMatrix.h>
 
 #include <minerva/util/interface/Knobs.h>
 #include <minerva/util/interface/debug.h>
@@ -28,6 +29,7 @@ namespace optimizer
 typedef matrix::Matrix Matrix;
 typedef Matrix::FloatVector FloatVector;
 
+typedef LBFGSSolver::BlockSparseMatrixVector BlockSparseMatrixVector;
 typedef LBFGSSolver::CostAndGradient CostAndGradient;
 
 LBFGSSolver::~LimitedMemoryBroydenFletcherGoldfarbShannoSolver()
@@ -55,8 +57,8 @@ static void copyData(double* data, const BlockSparseMatrixVector& vector)
 	{
 		for(auto& block : matrix)
 		{
-			std::vector<double> matrixDataAsDoubles(matrix.begin(),
-				matrix.end());
+			std::vector<double> matrixDataAsDoubles(block.begin(),
+				block.end());
 				
 			std::memcpy(data + position, matrixDataAsDoubles.data(),
 				block.size() * sizeof(double));
@@ -88,12 +90,15 @@ static double lbfgsCallback(void* instance, const double* x, double* g,
 	const CostAndGradient* callback =
 		reinterpret_cast<const CostAndGradient*>(instance);
 
-	auto weights   = callback->getUninitializedDataStructure();
-	auto graidient = callback->getUninitializedDataStructure();
-
+	auto weights  = callback->getUninitializedDataStructure();
+	auto gradient = callback->getUninitializedDataStructure();
+	
+	assert(weights.size() > 0);
+	assert(gradient.size() > 0);
+	
 	// TODO: get rid of these copies	
 	copyData(weights,  x);
-	copyData(gradient, g); // can we comment this guy out?
+	//copyData(gradient, g); // can we comment this guy out?
 	
 	float cost = callback->computeCostAndGradient(gradient, weights);
 	
@@ -241,7 +246,7 @@ float LBFGSSolver::solve(BlockSparseMatrixVector& inputs, const CostAndGradient&
 	parameters.max_iterations =
 		util::KnobDatabase::getKnobValue("LBFGSSolver::MaxIterations", 0);
 	
-	int status = LBFGSSolverLibrary::lbfgs(inputs.size(), inputArray,
+	int status = LBFGSSolverLibrary::lbfgs(getSize(inputs), inputArray,
 		&finalCost, lbfgsCallback, lbfgsProgress,
 		const_cast<CostAndGradient*>(&callback), &parameters);
 	
@@ -271,6 +276,11 @@ float LBFGSSolver::solve(BlockSparseMatrixVector& inputs, const CostAndGradient&
 	LBFGSSolverLibrary::lbfgs_free(inputArray);
 		
 	return finalCost;
+}
+
+double LBFGSSolver::getMemoryOverhead()
+{
+	return 120.0;
 }
 
 bool LBFGSSolver::isSupported()

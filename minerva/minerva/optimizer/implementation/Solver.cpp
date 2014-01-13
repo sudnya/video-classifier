@@ -25,7 +25,7 @@ Solver* Solver::create(BackPropagation* d)
 {
 	auto solverName = util::KnobDatabase::getKnobValue("Solver::Type",
 		"TiledConvolutionalSolver");
-		//"GradientDescentSolver");	
+		//"MultiLevelOptimizer");	
 
 	if(solverName == "MultiLevelOptimizer")
 	{

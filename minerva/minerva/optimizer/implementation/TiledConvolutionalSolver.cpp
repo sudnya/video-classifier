@@ -33,6 +33,7 @@ typedef neuralnetwork::BackPropagation BackPropagation;
 typedef neuralnetwork::NeuralNetwork NeuralNetwork;
 typedef matrix::Matrix Matrix;
 typedef matrix::BlockSparseMatrix BlockSparseMatrix;
+typedef LinearSolver::BlockSparseMatrixVector BlockSparseMatrixVector;
 
 TiledConvolutionalSolver::TiledConvolutionalSolver(BackPropagation* b)
 : Solver(b)
@@ -44,7 +45,7 @@ class TiledNeuralNetworkCostAndGradient : public LinearSolver::CostAndGradient
 {
 public:
 	TiledNeuralNetworkCostAndGradient(const BackPropagation* b)
-	: LinearSolver::CostAndGradient(0.0f, 0.0f, b->getSparseMatrixFormat()),
+	: LinearSolver::CostAndGradient(0.0f, 0.0f, b->getWeightFormat()),
 		m_backPropDataPtr(b)
 	{
 	
@@ -59,14 +60,14 @@ public:
 	virtual float computeCostAndGradient(BlockSparseMatrixVector& gradient,
 		const BlockSparseMatrixVector& inputs) const
 	{
-		gradient = m_backPropDataPtr->computePartialDerivativesForNewFlattenedWeights(inputs);
+		gradient = m_backPropDataPtr->computePartialDerivativesForNewWeights(inputs);
 		
 		if(util::isLogEnabled("TiledConvolutionalSolver::Detail"))
 		{	
-			util::log("TiledConvolutionalSolver::Detail") << " new gradient is : " << gradient.toString();
+			util::log("TiledConvolutionalSolver::Detail") << " new gradient is : " << gradient.front().toString();
 		}
 		
-		float newCost = m_backPropDataPtr->computeCostForNewFlattenedWeights(inputs);
+		float newCost = m_backPropDataPtr->computeCostForNewWeights(inputs);
 		
 		util::log("TiledConvolutionalSolver::Detail") << " new cost is : " << newCost << "\n";
 		
@@ -81,7 +82,7 @@ static float linearSolver(BackPropagation* backPropData)
 {
 	util::log("TiledConvolutionalSolver") << "  starting linear solver\n";
 		
-	auto solver = LinearSolverFactory::create("LBFGSSolver");
+	auto solver = LinearSolverFactory::create();
 	
 	float newCost = std::numeric_limits<float>::infinity();
 	
@@ -432,7 +433,7 @@ static size_t getTargetReductionFactor(size_t connections)
 	size_t networkBytes = connections * sizeof(float);
 	size_t freeBytes    = util::getFreePhysicalMemory();
 	
-	size_t optimizationExpansionFactor = 120; // TODO: get this from the optimizer
+	size_t optimizationExpansionFactor = LinearSolverFactory::getMemoryOverheadForSolver();
 
 	size_t targetBytes = freeBytes / 10;
 	size_t expandedBytes = networkBytes * optimizationExpansionFactor;
@@ -627,9 +628,9 @@ void TiledConvolutionalSolver::solve()
     util::log("TiledConvolutionalSolver") << "Solve\n";
 	
 	// Accuracy 
-	if(util::isLogEnabled("TiledConvolutionalSolver"))
+	if(util::isLogEnabled("TiledConvolutionalSolver::Detail"))
 	{
-		util::log("TiledConvolutionalSolver") << " accuracy before training: "
+		util::log("TiledConvolutionalSolver::Detail") << " accuracy before training: "
 			<< m_backPropDataPtr->getNeuralNetwork()->computeAccuracy(*m_backPropDataPtr->getInput(),
 				*m_backPropDataPtr->getReferenceOutput()) << "\n";
 	}
@@ -681,9 +682,9 @@ void TiledConvolutionalSolver::solve()
 	}
 	
 	// Accuracy 
-	if(util::isLogEnabled("TiledConvolutionalSolver"))
+	if(util::isLogEnabled("TiledConvolutionalSolver::Detail"))
 	{
-		util::log("TiledConvolutionalSolver") << "  accuracy after training: "
+		util::log("TiledConvolutionalSolver::Detail") << "  accuracy after training: "
 			<< m_backPropDataPtr->getNeuralNetwork()->computeAccuracy(*m_backPropDataPtr->getInput(),
 				*m_backPropDataPtr->getReferenceOutput()) << "\n";
 	}
