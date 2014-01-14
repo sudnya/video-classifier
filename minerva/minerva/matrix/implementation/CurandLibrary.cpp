@@ -183,7 +183,7 @@ void CurandLibrary::Interface::load()
     //const char* libraryName = "libcurand-optimized.dylib";
     const char* libraryName = "libcurand.dylib";
     #else
-    const char* libraryName = "libcublas.so";
+    const char* libraryName = "libcurand.so";
     #endif
 
 	_library = dlopen(libraryName, RTLD_LAZY);

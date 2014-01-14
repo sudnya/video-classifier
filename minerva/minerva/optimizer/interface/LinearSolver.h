@@ -7,6 +7,7 @@
 
 // Standard Library Includes
 #include <vector>
+#include <cstdlib>
 
 // Forward Declarations
 namespace minerva { namespace matrix    { class Matrix;             } }
