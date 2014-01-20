@@ -8,6 +8,7 @@
 #include <minerva/classifiers/interface/ClassifierFactory.h>
 
 #include <minerva/classifiers/interface/FinalClassifierEngine.h>
+#include <minerva/classifiers/interface/FeatureExtractorEngine.h>
 #include <minerva/classifiers/interface/LearnerEngine.h>
 #include <minerva/classifiers/interface/UnsupervisedLearnerEngine.h>
 
@@ -32,6 +33,11 @@ ClassifierEngine* ClassifierFactory::create(const std::string& classifierName)
 	if(classifierName == "UnsupervisedLearnerEngine")
 	{
 		return new UnsupervisedLearnerEngine;
+	}
+	
+	if(classifierName == "FeatureExtractorEngine")
+	{
+		return new FeatureExtractorEngine;
 	}
 
 	return nullptr;

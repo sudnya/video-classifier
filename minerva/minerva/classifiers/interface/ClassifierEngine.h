@@ -49,6 +49,9 @@ public:
 	/*! \brief Run the classifier on all of the contained paths */
 	void runOnPaths(const StringVector& paths);
 
+	/*! \brief Set the output file name */
+	void setOutputFilename(const std::string& filename);
+
 public:
 	/*! \brief Set the maximum samples to be run by the engine */
 	void setMaximumSamplesToRun(unsigned int samples);
@@ -66,9 +69,12 @@ public:
 	virtual void reportStatistics(std::ostream& stream) const;
 
 protected:
+	/*! \brief Called before the engine starts running on a given model */
 	virtual void registerModel();
+	/*! \brief Called after the engine finishes running on a given model */
 	virtual void closeModel();
-	
+
+	/*! \brief Determines whether or not the engine must use labeled data */	
 	virtual bool requiresLabeledData() const;
 
 protected:
@@ -94,6 +100,9 @@ protected:
 	unsigned int _batchSize;
 	bool         _areMultipleSamplesAllowed;
 	bool         _shouldDisplayImages;
+
+protected:
+	std::string _outputFilename;
 
 
 };

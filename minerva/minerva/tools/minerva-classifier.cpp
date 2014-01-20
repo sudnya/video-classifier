@@ -28,11 +28,17 @@ namespace minerva
 typedef minerva::util::StringVector StringVector;
 
 static void setOptions(const std::string& options);
+
 static void checkInputs(const std::string& inputFileNames,
 	const std::string& modelFileName, bool& shouldClassify,
-	bool& shouldTrain, bool& shouldLearnFeatures);
-static classifiers::ClassifierEngine* createEngine(bool shouldClassify,
-	bool shouldTrain, bool shouldLearnFeatures); 
+	bool& shouldTrain, bool& shouldLearnFeatures,
+	bool& shouldExtractFeatures);
+
+static classifiers::ClassifierEngine* createEngine(
+	const std::string& outputFilename, bool shouldClassify,
+	bool shouldTrain, bool shouldLearnFeatures,
+	bool shouldExtractFeatures);
+
 static StringVector getPaths(const std::string& pathlist);
 
 static void createNewModel(const std::string& modelFileName)
@@ -76,9 +82,10 @@ static void visualizeNeurons(const std::string& modelFileName,
 	}
 }
 
-static void runClassifier(const std::string& inputFileNames,
+static void runClassifier(const std::string& outputFilename,
+	const std::string& inputFileNames,
 	const std::string& modelFileName, bool shouldClassify,
-	bool shouldTrain, bool shouldLearnFeatures)
+	bool shouldTrain, bool shouldLearnFeatures, bool shouldExtractFeatures)
 {
 	util::log("minerva-classifier") << "Loading classifier.\n";
 
@@ -87,9 +94,10 @@ static void runClassifier(const std::string& inputFileNames,
 	try
 	{
 		checkInputs(inputFileNames, modelFileName, shouldClassify,
-			shouldTrain, shouldLearnFeatures);
+			shouldTrain, shouldLearnFeatures, shouldExtractFeatures);
 	
-		engine = createEngine(shouldClassify, shouldTrain, shouldLearnFeatures);
+		engine = createEngine(outputFilename, shouldClassify, shouldTrain,
+			shouldLearnFeatures, shouldExtractFeatures);
 		
 		if(engine == nullptr)
 		{
@@ -134,13 +142,15 @@ static void setOptions(const std::string& options)
 
 static void checkInputs(const std::string& inputFileNames,
 	const std::string& modelFileName, bool& shouldClassify,
-	bool& shouldTrain, bool& shouldLearnFeatures)
+	bool& shouldTrain, bool& shouldLearnFeatures,
+	bool& shouldExtractFeatures)
 {
 	unsigned int count = 0;
 	
-	if(shouldClassify)      count += 1;
-	if(shouldTrain)         count += 1;
-	if(shouldLearnFeatures) count += 1;
+	if(shouldClassify)        count += 1;
+	if(shouldTrain)           count += 1;
+	if(shouldLearnFeatures)   count += 1;
+	if(shouldExtractFeatures) count += 1;
 	
 	if(count == 0)
 	{
@@ -154,8 +164,9 @@ static void checkInputs(const std::string& inputFileNames,
 	}
 }
 
-static classifiers::ClassifierEngine* createEngine(bool shouldClassify,
-	bool shouldTrain, bool shouldLearnFeatures)
+static classifiers::ClassifierEngine* createEngine(
+	const std::string& outputFilename, bool shouldClassify,
+	bool shouldTrain, bool shouldLearnFeatures, bool shouldExtractFeatures)
 {
 	classifiers::ClassifierEngine* engine = nullptr;
 	
@@ -168,11 +179,26 @@ static classifiers::ClassifierEngine* createEngine(bool shouldClassify,
 	{
 		engine = classifiers::ClassifierFactory::create(
 			"UnsupervisedLearnerEngine");
-		engine->setMultipleSamplesAllowed(true);
+		
+		if(engine != nullptr)
+		{
+			engine->setMultipleSamplesAllowed(true);
+		}
+	}
+	else if(shouldExtractFeatures)
+	{
+		engine = classifiers::ClassifierFactory::create(
+			"FeatureExtractorEngine");
+		
+		if(engine != nullptr)
+		{
+			engine->setOutputFilename(outputFilename);
+		}
 	}
 	else
 	{
-		engine = classifiers::ClassifierFactory::create("FinalClassifierEngine");
+		engine = classifiers::ClassifierFactory::create(
+			"FinalClassifierEngine");
 	}
 	
 	return engine;
@@ -227,11 +253,12 @@ int main(int argc, char** argv)
 	std::string outputPath;
 	std::string options;
 
-	bool shouldClassify      = false;
-	bool shouldTrain         = false;
-	bool shouldLearnFeatures = false;
-	bool createNewModel      = false;
-	bool visualizeNetwork    = false;
+	bool shouldClassify        = false;
+	bool shouldTrain           = false;
+	bool shouldLearnFeatures   = false;
+	bool shouldExtractFeatures = false;
+	bool createNewModel        = false;
+	bool visualizeNetwork      = false;
 	
 	size_t maximumSamples = 0;
 	size_t batchSize      = 0;
@@ -240,13 +267,13 @@ int main(int argc, char** argv)
 	
 	bool verbose = false;
 
-	parser.description("The Minerva image classifier.");
+	parser.description("The Minerva image and video classifier.");
 
 	parser.parse("-i", "--input",  inputFileNames,
 		"", "The input image or video file path or list of paths.");
 	parser.parse("-o", "--output",  outputPath,
 		"", "The output path to store generated files "
-			"(currently only for visualization).");
+			"(for visualization or feature extraction).");
 	
 	parser.parse("-m", "--model",  modelFileName,
 		"", "The path to the model to use for classification (or to update).");
@@ -255,6 +282,8 @@ int main(int argc, char** argv)
 		"Create a new model.");
 	parser.parse("-c", "--classify", shouldClassify, false,
 		"Perform classification (report accuracy if labeled data is given).");
+	parser.parse("-e", "--extract-features", shouldExtractFeatures, false,
+		"Extract features and store them to the output file.");
 	parser.parse("-t", "--train", shouldTrain, false,
 		"Perform supervised learning and labeled input data.");
 	parser.parse("-l", "--learn", shouldLearnFeatures, false,
@@ -301,8 +330,9 @@ int main(int argc, char** argv)
 		}
 		else
 		{
-			minerva::runClassifier(inputFileNames, modelFileName,
-				shouldClassify, shouldTrain, shouldLearnFeatures);
+			minerva::runClassifier(outputPath, inputFileNames, modelFileName,
+				shouldClassify, shouldTrain, shouldLearnFeatures,
+				shouldExtractFeatures);
 		}
 	}
 	catch(const std::exception& e)

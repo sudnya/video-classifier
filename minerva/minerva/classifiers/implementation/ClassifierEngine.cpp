@@ -162,6 +162,11 @@ void ClassifierEngine::setDisplayImages(bool shouldDisplay)
 	_shouldDisplayImages = shouldDisplay;
 }
 
+void ClassifierEngine::setOutputFilename(const std::string& filename)
+{
+	_outputFilename = filename;
+}
+
 std::string ClassifierEngine::reportStatisticsString() const
 {
 	std::stringstream stream;
