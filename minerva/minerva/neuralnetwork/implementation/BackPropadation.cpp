@@ -12,6 +12,8 @@
 #include <minerva/matrix/interface/BlockSparseMatrix.h>
 
 #include <minerva/optimizer/interface/LinearSolver.h>
+#include <minerva/optimizer/interface/CostAndGradientFunction.h>
+#include <minerva/optimizer/interface/SparseMatrixFormat.h>
 
 // Standard Library Includes
 #include <cassert>
@@ -25,8 +27,8 @@ typedef matrix::Matrix Matrix;
 typedef matrix::BlockSparseMatrix BlockSparseMatrix;
 typedef Matrix::FloatVector FloatVector;
 typedef BackPropagation::MatrixVector MatrixVector;
-typedef optimizer::LinearSolver::DataStructureFormat DataStructureFormat;
 typedef optimizer::SparseMatrixFormat SparseMatrixFormat;
+typedef optimizer::SparseMatrixVectorFormat SparseMatrixVectorFormat;
 
 BackPropagation::BackPropagation(NeuralNetwork* ann,
 	BlockSparseMatrix* input,
@@ -215,9 +217,9 @@ void BackPropagation::setFlattenedWeights(const Matrix& weights)
 	*_neuralNetworkPtr = createNetworkFromWeights(getNeuralNetwork(), weights);
 }
 
-DataStructureFormat BackPropagation::getWeightFormat() const
+SparseMatrixVectorFormat BackPropagation::getWeightFormat() const
 {
-	DataStructureFormat format;
+	SparseMatrixVectorFormat format;
 	
 	for(auto& layer : *getNeuralNetwork())
 	{
@@ -228,9 +230,9 @@ DataStructureFormat BackPropagation::getWeightFormat() const
 	return format;
 }
 
-DataStructureFormat BackPropagation::getInputFormat() const
+SparseMatrixVectorFormat BackPropagation::getInputFormat() const
 {
-	DataStructureFormat format;
+	SparseMatrixVectorFormat format;
 	
 	format.push_back(SparseMatrixFormat(getInput()->blocks(),
 		getInput()->rowsPerBlock(), getInput()->columnsPerBlock(),

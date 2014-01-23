@@ -8,6 +8,8 @@
 #include <minerva/optimizer/interface/TiledConvolutionalSolver.h>
 #include <minerva/optimizer/interface/LinearSolver.h>
 #include <minerva/optimizer/interface/LinearSolverFactory.h>
+#include <minerva/optimizer/interface/CostAndGradientFunction.h>
+#include <minerva/optimizer/interface/SparseMatrixFormat.h>
 
 #include <minerva/neuralnetwork/interface/NeuralNetwork.h>
 
@@ -41,12 +43,11 @@ TiledConvolutionalSolver::TiledConvolutionalSolver(BackPropagation* b)
 
 }
 
-class TiledNeuralNetworkCostAndGradient : public LinearSolver::CostAndGradient
+class TiledNeuralNetworkCostAndGradient : public CostAndGradientFunction
 {
 public:
 	TiledNeuralNetworkCostAndGradient(const BackPropagation* b)
-	: LinearSolver::CostAndGradient(0.0f, 0.0f, b->getWeightFormat()),
-		m_backPropDataPtr(b)
+	: CostAndGradientFunction(0.0f, 0.0f, b->getWeightFormat()), _backPropDataPtr(b)
 	{
 	
 	}
@@ -60,14 +61,14 @@ public:
 	virtual float computeCostAndGradient(BlockSparseMatrixVector& gradient,
 		const BlockSparseMatrixVector& inputs) const
 	{
-		gradient = m_backPropDataPtr->computePartialDerivativesForNewWeights(inputs);
+		gradient = _backPropDataPtr->computePartialDerivativesForNewWeights(inputs);
 		
 		if(util::isLogEnabled("TiledConvolutionalSolver::Detail"))
 		{	
 			util::log("TiledConvolutionalSolver::Detail") << " new gradient is : " << gradient.front().toString();
 		}
 		
-		float newCost = m_backPropDataPtr->computeCostForNewWeights(inputs);
+		float newCost = _backPropDataPtr->computeCostForNewWeights(inputs);
 		
 		util::log("TiledConvolutionalSolver::Detail") << " new cost is : " << newCost << "\n";
 		
@@ -75,7 +76,7 @@ public:
 	}
 
 private:
-	const BackPropagation* m_backPropDataPtr;
+	const BackPropagation* _backPropDataPtr;
 };
 
 static float linearSolver(BackPropagation* backPropData)

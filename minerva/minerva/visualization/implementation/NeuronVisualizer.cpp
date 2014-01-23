@@ -16,6 +16,9 @@
 #include <minerva/optimizer/interface/LinearSolver.h>
 #include <minerva/optimizer/interface/LinearSolverFactory.h>
 
+#include <minerva/optimizer/interface/CostAndGradientFunction.h>
+#include <minerva/optimizer/interface/SparseMatrixFormat.h>
+
 #include <minerva/video/interface/Image.h>
 
 #include <minerva/util/interface/Knobs.h>
@@ -154,12 +157,12 @@ static Matrix optimizeWithoutDerivative(const NeuralNetwork* network,
 	return bestSoFar;
 }
 
-class CostAndGradientFunction : public optimizer::LinearSolver::CostAndGradient
+class CostAndGradientFunction : public optimizer::CostAndGradientFunction
 {
 public:
 	CostAndGradientFunction(const BackPropagation* d,
 		float initialCost, float costReductionFactor)
-	: CostAndGradient(initialCost, costReductionFactor, d->getInputFormat()), _backPropData(d)
+	: optimizer::CostAndGradientFunction(initialCost, costReductionFactor, d->getInputFormat()), _backPropData(d)
 	{
 	
 	}
@@ -196,6 +199,12 @@ static Matrix generateReferenceForNeuron(const NeuralNetwork* network,
 	return reference;
 }
 
+static void addConstraints(optimizer::LinearSolver* solver)
+{
+	// TODO
+	assert(false); // not implemented
+}
+
 static Matrix optimizeWithDerivative(float& bestCost, const NeuralNetwork* network,
 	const Matrix& initialData, unsigned int neuron)
 {
@@ -214,6 +223,8 @@ static Matrix optimizeWithDerivative(float& bestCost, const NeuralNetwork* netwo
 	auto solver = optimizer::LinearSolverFactory::create();
 	
 	assert(solver != nullptr);
+
+	addConstraints(solver);
 	
 	util::log("NeuronVisualizer") << " Initial inputs are   : " << initialData.toString();
 	util::log("NeuronVisualizer") << " Initial reference is : " << generateReferenceForNeuron(network, neuron).toString();

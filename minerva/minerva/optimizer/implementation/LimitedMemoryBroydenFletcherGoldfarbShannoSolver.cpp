@@ -7,6 +7,7 @@
 // Minvera Includes
 #include <minerva/optimizer/interface/LimitedMemoryBroydenFletcherGoldfarbShannoSolver.h>
 #include <minerva/optimizer/interface/LimitedMemoryBroydenFletcherGoldfarbShannoSolverLibrary.h>
+#include <minerva/optimizer/interface/CostAndGradientFunction.h>
 
 #include <minerva/matrix/interface/Matrix.h>
 #include <minerva/matrix/interface/BlockSparseMatrix.h>
@@ -30,7 +31,6 @@ typedef matrix::Matrix Matrix;
 typedef Matrix::FloatVector FloatVector;
 
 typedef LBFGSSolver::BlockSparseMatrixVector BlockSparseMatrixVector;
-typedef LBFGSSolver::CostAndGradient CostAndGradient;
 
 LBFGSSolver::~LimitedMemoryBroydenFletcherGoldfarbShannoSolver()
 {
@@ -87,8 +87,8 @@ static void copyData(BlockSparseMatrixVector& vector, const double* data)
 static double lbfgsCallback(void* instance, const double* x, double* g,
 	const int n, const double step)
 {
-	const CostAndGradient* callback =
-		reinterpret_cast<const CostAndGradient*>(instance);
+	const CostAndGradientFunction* callback =
+		reinterpret_cast<const CostAndGradientFunction*>(instance);
 
 	auto weights  = callback->getUninitializedDataStructure();
 	auto gradient = callback->getUninitializedDataStructure();
@@ -111,8 +111,8 @@ static int lbfgsProgress(void* instance, const double* x,
 	const double* g, const double fx, const double xnorm, const double gnorm,
 	const double step, int n, int k, int ls)
 {
-	const CostAndGradient* callback =
-		reinterpret_cast<const CostAndGradient*>(instance);
+	const CostAndGradientFunction* callback =
+		reinterpret_cast<const CostAndGradientFunction*>(instance);
 
 	util::log("LBFGSSolver") << "LBFGS Update (cost " << fx << ", xnorm "
 		<< xnorm << ", gnorm " << gnorm << ", step " << step << ", n " << n
@@ -214,7 +214,7 @@ static std::string getMessage(int status)
 	return "unknown error";
 }
 
-float LBFGSSolver::solve(BlockSparseMatrixVector& inputs, const CostAndGradient& callback)
+float LBFGSSolver::solve(BlockSparseMatrixVector& inputs, const CostAndGradientFunction& callback)
 {
 	double* inputArray = LBFGSSolverLibrary::lbfgs_malloc(getSize(inputs));
 	
@@ -248,7 +248,7 @@ float LBFGSSolver::solve(BlockSparseMatrixVector& inputs, const CostAndGradient&
 	
 	int status = LBFGSSolverLibrary::lbfgs(getSize(inputs), inputArray,
 		&finalCost, lbfgsCallback, lbfgsProgress,
-		const_cast<CostAndGradient*>(&callback), &parameters);
+		const_cast<CostAndGradientFunction*>(&callback), &parameters);
 	
 	if(status < 0)
 	{

@@ -11,6 +11,8 @@ namespace minerva
 {
 namespace optimizer
 {
+
+/*! \brief A general purpose solver for a neural network */
 class Solver
 {
     public:

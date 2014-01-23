@@ -10,6 +10,7 @@
 #include <minerva/optimizer/interface/MultiLevelOptimizer.h>
 #include <minerva/optimizer/interface/LinearSolverFactory.h>
 #include <minerva/optimizer/interface/LinearSolver.h>
+#include <minerva/optimizer/interface/CostAndGradientFunction.h>
 
 #include <minerva/matrix/interface/Matrix.h>
 
@@ -238,12 +239,12 @@ static float computeEpsilon(const BlockSparseMatrixVector& weights)
 	return (maxCost - minCost) / 2.0f;
 }
 
-class NeuralNetworkCostAndGradient : public LinearSolver::CostAndGradient
+class NeuralNetworkCostAndGradient : public CostAndGradientFunction
 {
 public:
 	NeuralNetworkCostAndGradient(const BackPropagation* b,
 		float initialCost, float costReductionFactor, const BlockSparseMatrixVector& weights)
-	: CostAndGradient(initialCost, costReductionFactor, weights), m_backPropDataPtr(b)
+	: CostAndGradientFunction(initialCost, costReductionFactor, weights), m_backPropDataPtr(b)
 	{
 	
 	}

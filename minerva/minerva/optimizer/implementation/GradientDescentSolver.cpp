@@ -6,6 +6,7 @@
 // Minerva Includes
 #include <minerva/optimizer/interface/Solver.h>
 #include <minerva/optimizer/interface/GradientDescentSolver.h>
+#include <minerva/optimizer/interface/CostAndGradientFunction.h>
 
 #include <minerva/matrix/interface/Matrix.h>
 
@@ -27,7 +28,7 @@ GradientDescentSolver::~GradientDescentSolver()
 
 }
 
-float GradientDescentSolver::solve(BlockSparseMatrixVector& weights, const CostAndGradient& callback)
+float GradientDescentSolver::solve(BlockSparseMatrixVector& weights, const CostAndGradientFunction& callback)
 {
    float learningRate = util::KnobDatabase::getKnobValue<float>(
 		"GradientDescentSolver::LearningRate", 2.4f);///m_backPropDataPtr->getNeuralNetwork()->getInputCount());
