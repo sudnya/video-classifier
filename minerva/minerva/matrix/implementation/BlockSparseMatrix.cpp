@@ -408,6 +408,27 @@ std::string BlockSparseMatrix::debugString() const
 	return toString();
 }
 
+std::string BlockSparseMatrix::shapeString() const
+{
+	std::stringstream stream;
+
+	stream << "(" << blocks() << " blocks, " << rowsPerBlock() << " rows per block, "
+		<< columnsPerBlock() << " columns per block";
+	
+	if(isRowSparse())
+	{
+		stream << "row-sparse";
+	}
+	else
+	{
+		stream << "column-sparse";
+	}
+	
+	stream << ")";
+
+	return stream.str();
+}
+
 BlockSparseMatrix::BlockSparseMatrix(BlockSparseMatrixImplementation* i)
 : _implementation(i)
 {

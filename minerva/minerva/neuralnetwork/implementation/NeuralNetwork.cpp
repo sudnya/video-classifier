@@ -115,6 +115,8 @@ NeuralNetwork::BlockSparseMatrix NeuralNetwork::runInputs(const BlockSparseMatri
 
 	for (auto i = m_layers.begin(); i != m_layers.end(); ++i)
 	{
+		util::log("NeuralNetwork") << " Running forward propagation through layer "
+			<< std::distance(m_layers.begin(), i) << "\n";
 		formatInputForLayer(*i, temp);
 		temp = (*i).runInputs(temp);
 	}

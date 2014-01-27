@@ -124,11 +124,7 @@ namespace util
 		logDatabase.enabledLogs.insert(name);
 	}
     
-    #if 0
-    static NullStream* nullstream = new NullStream;
-    #else
 	static std::unique_ptr<NullStream> nullstream;
-    #endif
 
 	std::ostream& _getStream(const std::string& name)
 	{

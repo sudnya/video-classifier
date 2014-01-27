@@ -141,6 +141,7 @@ public:
 public:
 	std::string toString()    const;
 	std::string debugString() const;
+	std::string shapeString() const;
 
 private:
 	explicit BlockSparseMatrix(BlockSparseMatrixImplementation*);

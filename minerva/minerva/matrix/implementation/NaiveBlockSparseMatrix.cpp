@@ -154,8 +154,8 @@ Value* NaiveBlockSparseMatrix::addBroadcastRow(const Value* matrix) const
 
 Value* NaiveBlockSparseMatrix::convolutionalAddBroadcastRow(const Value* matrix, size_t step) const
 {
-	// Just multiply if there is a 1 to 1 match between blocks
-	if(rows() == step)
+	// Just add if there is a 1 to 1 match between blocks
+	if(columnsPerBlock() == step)
 	{
 		return addBroadcastRow(matrix);
 	}

@@ -71,13 +71,13 @@ Layer::BlockSparseMatrix Layer::runInputs(const BlockSparseMatrix& m) const
 			<< " rows, " << m.columns() << " columns) through layer with dimensions ("
 			<< blocks() << " blocks, "
 			<< getInputCount() << " inputs, " << getOutputCount()
-			<< " outputs).\n";
+			<< " outputs, " << blockStep() << " block step).\n";
 		util::log("Layer") << "  layer: " << m_sparseMatrix.toString() << "\n";
 	}
 
 	auto unbiasedOutput = m.convolutionalMultiply(m_sparseMatrix, blockStep());
 
-	auto output = unbiasedOutput.convolutionalAddBroadcastRow(m_bias, blockStep());
+	auto output = unbiasedOutput.addBroadcastRow(m_bias);
 
 	output.sigmoidSelf();
 	
@@ -99,7 +99,7 @@ Layer::BlockSparseMatrix Layer::runReverse(const BlockSparseMatrix& m) const
 			<< " rows, " << m.columns() << " columns) through layer with dimensions ("
 			<< blocks() << " blocks, "
 			<< getInputCount() << " inputs, " << getOutputCount()
-			<< " outputs).\n";
+			<< " outputs, " << blockStep() << " block step).\n";
 		util::log("Layer") << "  layer: " << m_sparseMatrix.toString() << "\n";
   	}
  
@@ -127,7 +127,7 @@ unsigned Layer::getInputCount() const
 
 unsigned Layer::getOutputCount() const
 {
-	return m_sparseMatrix.columns() * blocks();
+	return (getInputCount() / blockStep()) * (m_sparseMatrix.columnsPerBlock());
 }
 
 unsigned Layer::getBlockingFactor() const
