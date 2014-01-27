@@ -139,6 +139,16 @@ Value* CudaBlockSparseMatrix::multiply(const Value* m) const
 	#endif
 }
 
+Value* CudaBlockSparseMatrix::convolutionalMultiply(const Value* m, size_t step) const
+{
+	if(columnsPerBlock() == step)
+	{
+		return multiply(m);
+	}
+
+	assertM(false, "Not implemented.");
+}
+
 Value* CudaBlockSparseMatrix::multiply(float f) const
 {
 	auto devicePointer = CudaBlockSparseCache::acquireReadOnly(this);	
@@ -226,6 +236,16 @@ Value* CudaBlockSparseMatrix::addBroadcastRow(const Value* m) const
 	CudaBlockSparseCache::release(m);
 	
 	return result;
+}
+
+Value* CudaBlockSparseMatrix::convolutionalAddBroadcastRow(const Value* m, size_t step) const
+{
+	if(columnsPerBlock() == step)
+	{
+		return multiply(m);
+	}
+
+	assertM(false, "Not implemented.");
 }
 
 Value* CudaBlockSparseMatrix::add(float f) const

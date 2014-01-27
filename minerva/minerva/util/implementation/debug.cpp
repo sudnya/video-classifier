@@ -124,10 +124,10 @@ namespace util
 		logDatabase.enabledLogs.insert(name);
 	}
     
-    #ifdef __APPLE__
+    #if 0
     static NullStream* nullstream = new NullStream;
     #else
-	static std::unique_ptr<NullStream> nullstream(new NullStream);
+	static std::unique_ptr<NullStream> nullstream;
     #endif
 
 	std::ostream& _getStream(const std::string& name)
@@ -137,6 +137,11 @@ namespace util
 			std::cout << "(" << _debugTime() << "): " << name << ": ";
 			
 			return std::cout;
+		}
+		
+		if(!nullstream)
+		{
+			nullstream.reset(new NullStream);
 		}
 
 		return *nullstream;

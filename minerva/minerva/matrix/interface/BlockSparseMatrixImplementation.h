@@ -38,11 +38,13 @@ public:
 
 public: 
 	virtual Value* multiply(const Value* m) const = 0;
+	virtual Value* convolutionalMultiply(const Value* m, size_t step) const = 0;
 	virtual Value* multiply(float f) const = 0;
 	virtual Value* elementMultiply(const Value* m) const = 0;
 
 	virtual Value* add(const Value* m) const = 0;
 	virtual Value* addBroadcastRow(const Value* m) const = 0;
+	virtual Value* convolutionalAddBroadcastRow(const Value* m, size_t step) const = 0;
 	virtual Value* add(float f) const = 0;
 
 	virtual Value* subtract(const Value* m) const = 0;

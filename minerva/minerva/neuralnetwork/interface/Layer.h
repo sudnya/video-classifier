@@ -34,7 +34,7 @@ class Layer
 
     public:
         Layer(unsigned totalBlocks = 0, size_t blockInput = 0,
-        	size_t blockOutput = 0);
+        	size_t blockOutput = 0, size_t blockStep = 0);
 
 		Layer(const Layer&);
 		Layer& operator=(const Layer&);
@@ -120,6 +120,7 @@ class Layer
       
 	public:
 		size_t blocks() const;
+		size_t blockStep() const;
 
 	public:
 		void setBias(const BlockSparseMatrix& bias);
@@ -128,6 +129,10 @@ class Layer
     private:
 		BlockSparseMatrix m_sparseMatrix;
 		BlockSparseMatrix m_bias;
+		
+	private:
+		size_t m_blockStep;
+		
 
 };
 

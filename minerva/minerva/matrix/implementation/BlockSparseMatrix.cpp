@@ -220,6 +220,13 @@ BlockSparseMatrix BlockSparseMatrix::multiply(
 	return BlockSparseMatrix(_implementation->multiply(m._implementation));
 }
 
+BlockSparseMatrix BlockSparseMatrix::convolutionalMultiply(
+	const BlockSparseMatrix& m, size_t step) const
+{
+	return BlockSparseMatrix(_implementation->convolutionalMultiply(
+		m._implementation, step));
+}
+
 BlockSparseMatrix BlockSparseMatrix::multiply(float f) const
 {
 	return BlockSparseMatrix(_implementation->multiply(f));
@@ -238,6 +245,13 @@ BlockSparseMatrix BlockSparseMatrix::add(const BlockSparseMatrix& m) const
 BlockSparseMatrix BlockSparseMatrix::addBroadcastRow(const BlockSparseMatrix& m) const
 {
 	return BlockSparseMatrix(_implementation->addBroadcastRow(m._implementation));
+}
+
+BlockSparseMatrix BlockSparseMatrix::convolutionalAddBroadcastRow(
+	const BlockSparseMatrix& m, size_t step) const
+{
+	return BlockSparseMatrix(_implementation->convolutionalAddBroadcastRow(
+		m._implementation, step));
 }
 
 BlockSparseMatrix BlockSparseMatrix::add(float f) const

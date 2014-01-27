@@ -6,6 +6,9 @@
 
 // Minerva Includes
 #include <minerva/util/interface/Knobs.h>
+#include <minerva/util/interface/KnobFile.h>
+
+#include <minerva/util/interface/SystemCompatibility.h>
 
 // Standard Library Includes
 #include <stdexcept>
@@ -21,12 +24,34 @@ class KnobDatabaseImplementation
 {
 public:
 	typedef std::map<std::string, std::string> StringMap;
+
+public:
+	KnobDatabaseImplementation();
 	
+private:
+	void loadKnobFiles(); 
+
 public:
 	StringMap knobs;
 };
 
 static KnobDatabaseImplementation database;
+
+KnobDatabaseImplementation::KnobDatabaseImplementation()
+{
+	loadKnobFiles();
+}
+
+void KnobDatabaseImplementation::loadKnobFiles()
+{
+	// Check for an environment variable
+	if(isEnvironmentVariableDefined("MINERVA_KNOB_FILE"))
+	{
+		KnobFile knobFile(getEnvironmentVariable("MINERVA_KNOB_FILE"));
+		
+		knobFile.loadKnobs();
+	}
+}
 
 void KnobDatabase::addKnob(const std::string& name, const std::string& value)
 {

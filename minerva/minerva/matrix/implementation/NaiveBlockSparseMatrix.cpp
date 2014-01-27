@@ -46,7 +46,8 @@ Value* NaiveBlockSparseMatrix::multiply(const Value* matrix) const
 	result->resize(blocks());
 
 	assert(m->blocks() == blocks());
-	assertM(columns() == m->rows(), "Left columns " << columns() << " does not match right rows " << m->rows());
+	assertM(columns() == m->rows(), "Left columns " << columns()
+		<< " does not match right rows " << m->rows());
 
 	auto resultBlock = result->begin();
 	for(auto left = begin(), right = m->begin(); left != end(); ++left, ++right, ++resultBlock)
@@ -55,6 +56,20 @@ Value* NaiveBlockSparseMatrix::multiply(const Value* matrix) const
 	}
 
 	return result;
+}
+
+Value* NaiveBlockSparseMatrix::convolutionalMultiply(const Value* matrix, size_t step) const
+{
+	// Just multiply if there is a 1 to 1 match between blocks
+	if(columnsPerBlock() == step)
+	{
+		return multiply(matrix);
+	}
+
+	auto m = dynamic_cast<const NaiveBlockSparseMatrix*>(matrix);
+	assert(m != nullptr);
+	
+	assertM(false, "Not implemented.");
 }
 
 Value* NaiveBlockSparseMatrix::multiply(float f) const
@@ -135,6 +150,21 @@ Value* NaiveBlockSparseMatrix::addBroadcastRow(const Value* matrix) const
 	}
 
 	return result;
+}
+
+Value* NaiveBlockSparseMatrix::convolutionalAddBroadcastRow(const Value* matrix, size_t step) const
+{
+	// Just multiply if there is a 1 to 1 match between blocks
+	if(rows() == step)
+	{
+		return addBroadcastRow(matrix);
+	}
+	
+	auto m = dynamic_cast<const NaiveBlockSparseMatrix*>(matrix);
+	assert(m != nullptr);
+	
+	assertM(false, "Not implemented.");
+	
 }
 
 Value* NaiveBlockSparseMatrix::add(float f) const

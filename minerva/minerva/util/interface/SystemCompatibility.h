@@ -18,8 +18,6 @@ namespace minerva
 namespace util
 {
 
-
-
 /*! \brief Get the number of hardware threads */
 unsigned int getHardwareThreadCount();
 /*! \brief Get the full path to the named executable */
@@ -38,6 +36,11 @@ bool isAnOpenGLContextAvailable();
 bool isMangledCXXString(const std::string& string);
 /*! \brief Demangle a string */
 std::string demangleCXXString(const std::string& string);
+/*! \brief Get the value of an environment variable */
+std::string getEnvironmentVariable(const std::string& string);
+/*! \brief Is an environment variable defined? */
+bool isEnvironmentVariableDefined(const std::string& name);
+
 
 }
 

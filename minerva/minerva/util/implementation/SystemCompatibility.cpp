@@ -31,6 +31,7 @@
 
 // Standard Library Includes
 #include <algorithm>
+#include <cstdlib>
 
 namespace minerva
 {
@@ -163,6 +164,23 @@ std::string demangleCXXString(const std::string& string)
 		
 		return name;
 	#endif
+}
+
+std::string getEnvironmentVariable(const std::string& string)
+{
+	if(!isEnvironmentVariableDefined(string))
+	{
+		throw std::runtime_error(
+			"Tried to access undefined environment variable '" +
+			string + "'");
+	}
+	
+	return std::getenv(string.c_str());
+}
+
+bool isEnvironmentVariableDefined(const std::string& name)
+{
+	return std::getenv(name.c_str()) != nullptr;
 }
 
 }

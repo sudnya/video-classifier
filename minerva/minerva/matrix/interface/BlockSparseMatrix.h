@@ -92,10 +92,12 @@ public:
 
 public: 
 	BlockSparseMatrix multiply(const BlockSparseMatrix& m) const;
+	BlockSparseMatrix convolutionalMultiply(const BlockSparseMatrix& m, size_t step) const;
 	BlockSparseMatrix multiply(float f) const;
 	BlockSparseMatrix elementMultiply(const BlockSparseMatrix& m) const;
 
 	BlockSparseMatrix add(const BlockSparseMatrix& m) const;
+	BlockSparseMatrix convolutionalAddBroadcastRow(const BlockSparseMatrix& m, size_t step) const;
 	BlockSparseMatrix addBroadcastRow(const BlockSparseMatrix& m) const;
 	BlockSparseMatrix add(float f) const;
 

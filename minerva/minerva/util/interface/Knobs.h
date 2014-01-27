@@ -8,7 +8,7 @@
 
 // Standard Library Includes
 #include <string>
-#include<sstream>
+#include <sstream>
 
 namespace minerva
 {
