@@ -25,17 +25,18 @@ neuralnetwork::NeuralNetwork createAndInitializeNeuralNetwork(unsigned networkSi
 	size_t convolutionalLayers = 1;//std::min(networkSize/4, 1U);
 
     // Layer 1
-    ann.addLayer(Layer(convolutionalLayers,networkSize/convolutionalLayers,networkSize/convolutionalLayers));
+    ann.addLayer(Layer(convolutionalLayers,networkSize/convolutionalLayers,
+		networkSize/convolutionalLayers));
 	
 	size_t convolutionalLayersTwo = 1;//std::min(networkSize/4, 1U);
-	size_t layerTwoStep = networkSize / convolutionalLayersTwo;
+	size_t layerTwoStep = (networkSize / convolutionalLayersTwo) / 8;
 
     // Layer 2
     ann.addLayer(Layer(convolutionalLayersTwo, networkSize/convolutionalLayersTwo,
 		networkSize/convolutionalLayersTwo, layerTwoStep));
 
     // Layer 3
-    ann.addLayer(Layer(1,networkSize,networkSize/2));
+    ann.addLayer(Layer(1,networkSize * 8,networkSize/2));
 
 	std::default_random_engine engine;
 	
@@ -145,9 +146,9 @@ void trainNeuralNetwork(neuralnetwork::NeuralNetwork& ann, unsigned trainingIter
 			util::log("TestClassifier") << "  Output entropy is " << computeEntropy(threshold(ann.runInputs(input))) << "\n";
 			util::log("TestClassifier") << " Reference is: " << referenceMatrix.toString();
 		}
-
-        ann.train(input, referenceMatrix);
-
+		
+		ann.train(input, referenceMatrix);
+		
 		if(util::isLogEnabled("TestClassifier"))
 		{
         	util::log("TestClassifier") << " After BackProp, output is:    " << threshold(ann.runInputs(input)).toString();
@@ -212,9 +213,9 @@ void runTest(unsigned iterations, bool seed, unsigned networkSize, float epsilon
     // Train network against reference XOR function
 
     std::default_random_engine generator(seed ? std::time(0) : 0);
-    
-    trainNeuralNetwork(ann, iterations, generator);
-
+	
+	trainNeuralNetwork(ann, iterations, generator);
+	
     // Run classifier and record accuracy
 
     float accuracy = classify(ann, std::max(1U, iterations/10), generator);

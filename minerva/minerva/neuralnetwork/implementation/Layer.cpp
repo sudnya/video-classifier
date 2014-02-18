@@ -22,7 +22,7 @@ typedef minerva::matrix::Matrix::FloatVector FloatVector;
 
 Layer::Layer(unsigned totalBlocks, size_t blockInput, size_t blockOutput, size_t blockStep)
 : m_sparseMatrix(totalBlocks, blockInput, blockOutput, true),
-  m_bias(totalBlocks, 1, blockOutput, false), m_blockStep(blockStep > 0 ? blockStep : blockInput)
+  m_bias(totalBlocks, 1, blockOutput, false), m_blockStep((blockStep > 0) ? blockStep : blockInput)
 {
 
 }
@@ -77,7 +77,7 @@ Layer::BlockSparseMatrix Layer::runInputs(const BlockSparseMatrix& m) const
 
 	auto unbiasedOutput = m.convolutionalMultiply(m_sparseMatrix, blockStep());
 
-	auto output = unbiasedOutput.addBroadcastRow(m_bias);
+	auto output = unbiasedOutput.convolutionalAddBroadcastRow(m_bias, blockStep());
 
 	output.sigmoidSelf();
 	
@@ -103,7 +103,7 @@ Layer::BlockSparseMatrix Layer::runReverse(const BlockSparseMatrix& m) const
 		util::log("Layer") << "  layer: " << m_sparseMatrix.toString() << "\n";
   	}
  
-	auto result = m.convolutionalMultiply(m_sparseMatrix.transpose(), blockStep());
+	auto result = m.reverseConvolutionalMultiply(m_sparseMatrix.transpose());
 
 	if(util::isLogEnabled("Layer"))
 	{
@@ -325,6 +325,11 @@ size_t Layer::blocks() const
 size_t Layer::blockStep() const
 {
 	return m_blockStep;
+}
+
+void Layer::setBlockStep(size_t step)
+{
+	m_blockStep = step;
 }
 
 bool Layer::empty() const

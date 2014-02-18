@@ -93,6 +93,7 @@ public:
 public: 
 	BlockSparseMatrix multiply(const BlockSparseMatrix& m) const;
 	BlockSparseMatrix convolutionalMultiply(const BlockSparseMatrix& m, size_t step) const;
+	BlockSparseMatrix reverseConvolutionalMultiply(const BlockSparseMatrix& m) const;
 	BlockSparseMatrix multiply(float f) const;
 	BlockSparseMatrix elementMultiply(const BlockSparseMatrix& m) const;
 
@@ -137,6 +138,7 @@ public:
     float reduceSum() const;
 	BlockSparseMatrix reduceSumAlongColumns() const;
 	BlockSparseMatrix reduceSumAlongRows() const;
+	BlockSparseMatrix reduceTileSumAlongRows(size_t rowsPerTile) const;
 
 public:
 	std::string toString()    const;

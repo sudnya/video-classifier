@@ -212,6 +212,44 @@ void BlockSparseMatrixImplementation::resize(size_t blocks, size_t rowsPerBlock,
 	}
 }
 
+Matrix BlockSparseMatrixImplementation::toMatrix() const
+{
+	Matrix result(rows(), columns());
+
+	if(isColumnSparse())
+	{
+		size_t column = 0;
+		
+		for(auto& matrix : *this)
+		{
+			// TODO: faster	
+			
+			size_t rows = matrix.rows();
+
+			for(size_t row = 0; row < rows; ++row)
+			{
+				std::memcpy(&result.data()[result.getPosition(row, column)],
+					&matrix.data()[matrix.getPosition(row, 0)],
+					matrix.columns() * sizeof(float));
+			}
+			column += matrix.columns();
+		}
+	}
+	else
+	{
+		size_t row = 0;
+
+		for(auto& matrix : *this)
+		{
+			std::memcpy(&result.data()[result.getPosition(row, 0)],
+				matrix.data().data(), matrix.size() * sizeof(float));
+			row += matrix.rows();
+		}
+	}
+	
+	return result;
+}
+
 void BlockSparseMatrixImplementation::resize(size_t blocks)
 {
 	_matrices.resize(blocks);

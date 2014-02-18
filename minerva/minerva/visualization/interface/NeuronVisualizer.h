@@ -27,6 +27,8 @@ public:
 
 public:
 	void visualizeNeuron(Image& image, unsigned int outputNeuron);
+	Image visualizeInputTileForNeuron(unsigned int outputNeuron);
+	Image visualizeInputTilesForAllNeurons();
 
 public:
 	void setNeuralNetwork(const NeuralNetwork* network);

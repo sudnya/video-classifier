@@ -286,6 +286,17 @@ MatrixVector DenseBackPropagation::getActivations(const NeuralNetwork& network, 
 	return activations;
 }
 
+void coalesceNeuronOutputs(BlockSparseMatrix& derivative, const BlockSparseMatrix& skeleton)
+{
+	if(derivative.rows() == skeleton.columns()) return;
+	
+	// Must be evenly divisible
+	assert(derivative.rows() % skeleton.columns() == 0);
+	
+	// Add the rows together in a block-step fasion
+	derivative = derivative.reduceTileSumAlongRows(skeleton.columns());
+}
+
 MatrixVector DenseBackPropagation::getCostDerivative(
 	const NeuralNetwork& network) const
 {
@@ -305,18 +316,23 @@ MatrixVector DenseBackPropagation::getCostDerivative(
 	for (auto i = deltas.begin(), j = activations.begin(); i != deltas.end() && j != activations.end(); ++i, ++j, ++layer)
 	{
 		auto transposedDelta = (*i).transpose();
+		auto& activation = *j;
 
 		transposedDelta.setRowSparse();
 
 		//there will be one less delta than activation
-		auto unnormalizedPartialDerivative = (transposedDelta.multiply(*j));
+		auto unnormalizedPartialDerivative = (transposedDelta.multiply(activation));
 		auto normalizedPartialDerivative = unnormalizedPartialDerivative.multiply(1.0f/samples);
 		
 		// add in the regularization term
 		auto weights = layer->getWeightsWithoutBias();
 
 		auto lambdaTerm = weights.multiply(_lambda/samples);
-		
+
+		// Account for cases where the same neuron produced multiple outputs
+		coalesceNeuronOutputs(normalizedPartialDerivative, lambdaTerm);
+	
+		// Compute the partial derivatives
 		partialDerivative.push_back(lambdaTerm.add(normalizedPartialDerivative.transpose()));
 
 		//util::log("DenseBackPropagation") << " computed derivative for layer " << std::distance(deltas.begin(), i)

@@ -58,10 +58,18 @@ Value* NaiveBlockSparseMatrix::multiply(const Value* matrix) const
 	return result;
 }
 
+static void zeroExtendColumns(Matrix& m, size_t columns)
+{
+	if(m.columns() < columns)
+	{
+		m = m.appendColumns(Matrix(m.rows(), columns - m.columns()));
+	}
+}
+
 Value* NaiveBlockSparseMatrix::convolutionalMultiply(const Value* matrix, size_t step) const
 {
 	// Just multiply if there is a 1 to 1 match between blocks
-	if(columnsPerBlock() == step)
+	if(matrix->rowsPerBlock() == step && matrix->blocks() == blocks())
 	{
 		return multiply(matrix);
 	}
@@ -69,7 +77,68 @@ Value* NaiveBlockSparseMatrix::convolutionalMultiply(const Value* matrix, size_t
 	auto m = dynamic_cast<const NaiveBlockSparseMatrix*>(matrix);
 	assert(m != nullptr);
 	
-	assertM(false, "Not implemented.");
+	// TODO: in parallel
+	auto result = new NaiveBlockSparseMatrix(isRowSparse());
+
+	auto flattened = toMatrix();
+	
+	for(size_t leftBegin = 0; leftBegin < flattened.columns(); leftBegin += step)
+	{
+		size_t extent = std::min(flattened.columns(), leftBegin + m->rowsPerBlock());
+		
+		auto temp = flattened.slice(0, leftBegin, flattened.rows(), extent - leftBegin);
+		
+		zeroExtendColumns(temp, m->rowsPerBlock());
+		
+		size_t rightBlockIndex = (leftBegin * flattened.columns()) / (m->rowsPerBlock() * m->rows());
+		assert(rightBlockIndex < m->blocks());		
+
+		result->push_back(temp.multiply((*m)[rightBlockIndex]));
+	}
+	
+	return result;
+}
+
+Value* NaiveBlockSparseMatrix::reverseConvolutionalMultiply(const Value* matrix) const
+{
+	// Just multiply if there is a 1 to 1 match between blocks
+	if(columnsPerBlock() == matrix->rowsPerBlock() && matrix->blocks() == blocks())
+	{
+		return multiply(matrix);
+	}
+
+	auto m = dynamic_cast<const NaiveBlockSparseMatrix*>(matrix);
+	assert(m != nullptr);
+	
+	// TODO: in parallel
+	auto result = new NaiveBlockSparseMatrix(isRowSparse());
+	
+	size_t leftColumnStep = (columns() + m->rowsPerBlock() - 1) / m->rowsPerBlock(); 
+	size_t leftColumn     = 0;
+
+	auto flattened = toMatrix();
+
+	for(auto& right : *m)
+	{
+		size_t leftColumnEnd = std::min(flattened.columns(), leftColumn + leftColumnStep);
+		
+		Matrix temp(flattened.rows(), right.columns());
+		
+		for(size_t leftBegin = leftColumn; leftBegin < leftColumnEnd; leftBegin += right.rows())
+		{
+			auto leftSlice = flattened.slice(0, leftBegin, flattened.rows(), leftColumnEnd - leftBegin);
+			
+			zeroExtendColumns(leftSlice, m->rowsPerBlock());
+			
+			temp = temp.add(leftSlice.multiply(right));
+		}
+		
+		result->push_back(temp);
+		
+		leftColumn += leftColumnStep;
+	}
+	
+	return result;
 }
 
 Value* NaiveBlockSparseMatrix::multiply(float f) const
@@ -163,8 +232,22 @@ Value* NaiveBlockSparseMatrix::convolutionalAddBroadcastRow(const Value* matrix,
 	auto m = dynamic_cast<const NaiveBlockSparseMatrix*>(matrix);
 	assert(m != nullptr);
 	
-	assertM(false, "Not implemented.");
+	auto result = new NaiveBlockSparseMatrix(isRowSparse());
 	
+	result->resize(blocks());
+	
+	// TODO: in parallel
+	assert(m->isRowSparse() == isRowSparse());
+
+	auto resultBlock = result->begin();
+	for(auto left = begin(); left != end(); ++left, ++resultBlock)
+	{
+		size_t rightIndex = (std::distance(begin(), left) * m->blocks()) / blocks();
+		
+		*resultBlock = std::move(left->addBroadcastRow((*m)[rightIndex]));
+	}
+
+	return result;
 }
 
 Value* NaiveBlockSparseMatrix::add(float f) const
@@ -512,6 +595,93 @@ Value* NaiveBlockSparseMatrix::reduceSumAlongRows() const
 	
 	return result;
 
+}
+
+static Matrix extractBlockByRow(const NaiveBlockSparseMatrix& matrix, size_t block, size_t row, size_t rows)
+{
+	Matrix result;
+	
+	size_t remainingRows = std::min(rows, matrix.rowsPerBlock() - row);
+	
+	result = matrix[block].slice(row, 0, remainingRows, matrix.columnsPerBlock());
+	
+	if(remainingRows < rows)
+	{
+		remainingRows = rows - remainingRows;
+		block = block + 1;
+		row   = 0;
+
+		assert(remainingRows < matrix.rowsPerBlock());
+		
+		result = result.appendRows(matrix[block].slice(row, 0, remainingRows, matrix.columnsPerBlock()));
+	}
+
+	return result;
+}
+
+Value* NaiveBlockSparseMatrix::reduceTileSumAlongRows(size_t rowsPerTile) const
+{
+	auto result = new NaiveBlockSparseMatrix(isRowSparse());
+	
+	if(isRowSparse())
+	{
+		// step one tile at a time
+		for(size_t row = 0; row < rows(); row += rowsPerTile)
+		{
+			size_t endingRow = row + rowsPerTile;
+			
+			assert(endingRow <= rows());
+			
+			if(result->empty())
+			{
+				for(size_t currentRow = row; currentRow < endingRow; currentRow += rowsPerBlock())
+				{
+					size_t block    = row / rowsPerBlock();
+					size_t blockEnd = currentRow + rowsPerBlock();
+
+					if(blockEnd <= rowsPerTile)
+					{
+						result->push_back((*this)[block]);
+					}
+					else
+					{
+						size_t rows = std::min(rowsPerBlock(), endingRow - currentRow);
+
+						result->push_back((*this)[block].slice(0, 0, rows, columnsPerBlock()));
+					}
+				}
+			}
+			else
+			{
+				for(size_t currentRow = row; currentRow < endingRow; currentRow += rowsPerBlock())
+				{
+					size_t block       = row / rowsPerBlock();
+					size_t blockOffset = row % rowsPerBlock();
+
+					size_t blockEnd = (block + 1) * rowsPerBlock();
+					
+					size_t resultBlock = currentRow / rowsPerBlock();
+
+					if(blockEnd <= rowsPerTile && blockOffset == 0)
+					{
+						(*result)[resultBlock] = (*result)[resultBlock].add((*this)[block]);
+					}
+					else
+					{
+						size_t rows = std::min(rowsPerBlock(), endingRow - currentRow);
+
+						(*result)[resultBlock] = (*result)[resultBlock].add(extractBlockByRow(*this, block, blockOffset, rows));
+					}
+				}
+			}
+		}
+	}
+	else
+	{
+		assertM(false, "Not implemented.");
+	}
+
+	return result;
 }
 
 Value* NaiveBlockSparseMatrix::clone() const

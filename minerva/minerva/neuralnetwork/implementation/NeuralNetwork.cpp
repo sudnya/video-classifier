@@ -117,7 +117,7 @@ NeuralNetwork::BlockSparseMatrix NeuralNetwork::runInputs(const BlockSparseMatri
 	{
 		util::log("NeuralNetwork") << " Running forward propagation through layer "
 			<< std::distance(m_layers.begin(), i) << "\n";
-		formatInputForLayer(*i, temp);
+		//formatInputForLayer(*i, temp);
 		temp = (*i).runInputs(temp);
 	}
 
@@ -394,9 +394,9 @@ NeuralNetwork::BlockSparseMatrix NeuralNetwork::convertToBlockSparseForLayerInpu
 
 void NeuralNetwork::formatInputForLayer(const Layer& layer, BlockSparseMatrix& m) const
 {
-	assertM(layer.getInputCount() == m.columns(), "Layer input count "
-		<< layer.getInputCount() << " does not match the input count "
-		<< m.columns());
+	//assertM(layer.getInputCount() == m.columns(), "Layer input count "
+	//	<< layer.getInputCount() << " does not match the input count "
+	//	<< m.columns());
 	
 	if(layer.blocks() == m.blocks()) return;
 

@@ -26,6 +26,7 @@ public:
 public: 
 	virtual Value* multiply(const Value* m) const;
 	virtual Value* convolutionalMultiply(const Value* m, size_t step) const;
+	virtual Value* reverseConvolutionalMultiply(const Value* m) const;
 	virtual Value* multiply(float f) const;
 	virtual Value* elementMultiply(const Value* m) const;
 
@@ -67,6 +68,7 @@ public:
     virtual float reduceSum() const;
 	virtual Value* reduceSumAlongColumns() const;
 	virtual Value* reduceSumAlongRows() const;
+	virtual Value* reduceTileSumAlongRows(size_t tilesPerRow) const;
 
 public:
 	virtual Value* clone() const;

@@ -47,11 +47,40 @@ NeuronVisualizer::NeuronVisualizer(const NeuralNetwork* network)
 
 }
 
+static void visualizeNeuron(const NeuralNetwork& , Image& , unsigned int);
+
+void NeuronVisualizer::visualizeNeuron(Image& image, unsigned int outputNeuron)
+{
+	visualizeNeuron(*_network, image, outputNeuron);
+}
+
+Image NeuronVisualizer::visualizeInputTileForNeuron(unsigned int outputNeuron)
+{
+	auto tile = extractTileFromNetwork(*_neuralNetwork, outputNeuron);
+	
+	size_t x      = 0;
+	size_t y      = 0;
+	size_t colors = 0;
+	
+	getTileDimensions(x, y, colors, tile);
+		
+	Image image(x, y, colors);
+	
+	visualizeNeuron(tile, image, outputNeuron);
+	
+	return image;
+}
+
+Image NeuronVisualizer::visualizeInputTilesForAllNeurons()
+{
+	// TODO
+}
+
 static Matrix optimizeWithoutDerivative(const NeuralNetwork*, const Image& , unsigned int);
 static Matrix optimizeWithDerivative(const NeuralNetwork*, const Image& , unsigned int);
 static void updateImage(Image& , const Matrix& , size_t xTileSize, size_t yTileSize);
 
-void NeuronVisualizer::visualizeNeuron(Image& image, unsigned int outputNeuron)
+static void visualizeNeuron(const NeuralNetwork& network)
 {
 	Matrix matrix;
 
@@ -60,19 +89,19 @@ void NeuronVisualizer::visualizeNeuron(Image& image, unsigned int outputNeuron)
 	
 	if(solverClass == "Differentiable")
 	{
-		matrix = optimizeWithDerivative(_network, image, outputNeuron);
+		matrix = optimizeWithDerivative(&network, image, outputNeuron);
 	}
 	else if(solverClass == "NonDifferentiable")
 	{
-		matrix = optimizeWithoutDerivative(_network, image, outputNeuron);
+		matrix = optimizeWithoutDerivative(&network, image, outputNeuron);
 	}
 	else
 	{
 		throw std::runtime_error("Invalid neuron visializer solver class " + solverClass);
 	}
 
-	updateImage(image, matrix, std::sqrt(_network->getBlockingFactor()),
-		std::sqrt(_network->getBlockingFactor()));
+	updateImage(image, matrix, std::sqrt(network.getBlockingFactor()),
+		std::sqrt(network.getBlockingFactor()));
 }
 
 void NeuronVisualizer::setNeuralNetwork(const NeuralNetwork* network)

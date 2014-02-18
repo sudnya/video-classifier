@@ -139,11 +139,21 @@ Value* CudaBlockSparseMatrix::multiply(const Value* m) const
 	#endif
 }
 
-Value* CudaBlockSparseMatrix::convolutionalMultiply(const Value* m, size_t step) const
+Value* CudaBlockSparseMatrix::convolutionalMultiply(const Value* matrix, size_t step) const
 {
-	if(columnsPerBlock() == step)
+	if(matrix->columnsPerBlock() == step)
 	{
-		return multiply(m);
+		return multiply(matrix);
+	}
+
+	assertM(false, "Not implemented.");
+}
+
+Value* CudaBlockSparseMatrix::reverseConvolutionalMultiply(const Value* matrix) const
+{
+	if(matrix->rowsPerBlock() == columnsPerBlock())
+	{
+		return multiply(matrix);
 	}
 
 	assertM(false, "Not implemented.");
@@ -627,6 +637,13 @@ Value* CudaBlockSparseMatrix::reduceSumAlongRows() const
 	CudaBlockSparseCache::release(this);
 	
 	return result;
+}
+
+Value* CudaBlockSparseMatrix::reduceTileSumAlongRows(size_t tilesPerRow) const
+{
+	assertM(false, "Not implemented.");
+	
+	return nullptr;
 }
 
 CudaBlockSparseMatrix::iterator CudaBlockSparseMatrix::begin()

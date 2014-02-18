@@ -331,33 +331,30 @@ static IdVector getPredecessors(const NeuralNetwork* neuralNetwork,
 		return predecessors;
 	}
 	
-	size_t blockingFactor = 0;
+	size_t blocks = 0;
 
 	if(layerId == (neuralNetwork->size() + 1))
 	{
-		blockingFactor = reference->getBlockingFactor();
+		blocks = reference->blocks();
 	}
 	else
 	{
-		blockingFactor = (*neuralNetwork)[layerId - 1].getBlockingFactor();
+		blocks = (*neuralNetwork)[layerId - 1].blocks();
 	}
 	
-	size_t beginRange = blockingFactor * blockId;
-	size_t endRange   = beginRange + blockingFactor;
-	
-	size_t previousBlockingFactor = 0;
+	size_t previousBlocks = 0;
 	
 	if(layerId == 1)
 	{
-		previousBlockingFactor = input->getBlockingFactor();
+		previousBlocks = input->blocks();
 	}
 	else
 	{
-		previousBlockingFactor = (*neuralNetwork)[layerId - 2].getOutputBlockingFactor();
+		previousBlocks = (*neuralNetwork)[layerId - 2].blocks();
 	}
 	
-	size_t beginId = beginRange / previousBlockingFactor;
-	size_t endId   = (endRange + previousBlockingFactor - 1) / previousBlockingFactor;
+	size_t beginId = blockId * previousBlocks / blocks;
+	size_t endId   = (blockId + 1) * previousBlocks / blocks;
 	
 	for(size_t id = beginId; id < endId; ++id)
 	{
@@ -596,6 +593,8 @@ static void extractTile(NeuralNetwork* networkTile, BlockSparseMatrix* inputTile
 		}
 		else
 		{
+			// TODO: Encapsulate
+			(*networkTile)[block.layer - 1].setBlockStep((*network)[block.layer - 1].blockStep());
 			(*networkTile)[block.layer - 1][block.blockInTile()] = std::move((*network)[block.layer - 1][block.blockInLayer()]);
 			(*networkTile)[block.layer - 1].at_bias(block.blockInTile()) = std::move((*network)[block.layer - 1].at_bias(block.blockInLayer()));
 		}
@@ -618,6 +617,7 @@ static void restoreTile(NeuralNetwork* network, BlockSparseMatrix* input,
 		}
 		else
 		{
+			(*network)[block.layer - 1].setBlockStep((*networkTile)[block.layer - 1].blockStep());
 			(*network)[block.layer - 1][block.blockInLayer()] = std::move((*networkTile)[block.layer - 1][block.blockInTile()]);
 			(*network)[block.layer - 1].at_bias(block.blockInLayer()) = std::move((*networkTile)[block.layer - 1].at_bias(block.blockInTile()));
 		}
@@ -678,7 +678,8 @@ void TiledConvolutionalSolver::solve()
 	}
 	else
 	{
-		util::log("TiledConvolutionalSolver") << " no need for tiling, solving entire network at once.\n";
+		util::log("TiledConvolutionalSolver")
+			<< " no need for tiling, solving entire network at once.\n";
 		linearSolver(m_backPropDataPtr);
 	}
 	

@@ -123,6 +123,9 @@ class Layer
 		size_t blockStep() const;
 
 	public:
+		void setBlockStep(size_t s);
+
+	public:
 		void setBias(const BlockSparseMatrix& bias);
 		const BlockSparseMatrix& getBias() const;
 

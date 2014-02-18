@@ -179,7 +179,8 @@ static NeuralNetwork createNetworkFromWeights(
 	for(auto& layer : *neuralNetwork)
 	{
 		newNetwork.addLayer(Layer(layer.blocks(),
-			layer.getBlockingFactor(), layer.getOutputBlockingFactor()));
+			layer.getBlockingFactor(), layer.getOutputBlockingFactor(),
+			layer.blockStep()));
 		
 		newNetwork.back().setBias(layer.getBias());
 	}
@@ -199,7 +200,8 @@ static NeuralNetwork createNetworkFromWeights(
 	for(auto& layer : *neuralNetwork)
 	{
 		newNetwork.addLayer(Layer(layer.blocks(),
-			layer.getBlockingFactor(), layer.getOutputBlockingFactor()));
+			layer.getBlockingFactor(), layer.getOutputBlockingFactor(),
+			layer.blockStep()));
 		
 		newNetwork.back().setBias(layer.getBias());
 		newNetwork.back().setWeightsWithoutBias(*weight);

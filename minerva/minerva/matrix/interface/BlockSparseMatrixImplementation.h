@@ -39,6 +39,7 @@ public:
 public: 
 	virtual Value* multiply(const Value* m) const = 0;
 	virtual Value* convolutionalMultiply(const Value* m, size_t step) const = 0;
+	virtual Value* reverseConvolutionalMultiply(const Value* m) const = 0;
 	virtual Value* multiply(float f) const = 0;
 	virtual Value* elementMultiply(const Value* m) const = 0;
 
@@ -80,6 +81,7 @@ public:
     virtual float reduceSum() const = 0;
 	virtual Value* reduceSumAlongColumns() const = 0;
 	virtual Value* reduceSumAlongRows() const = 0;
+	virtual Value* reduceTileSumAlongRows(size_t tilesPerRow) const = 0;
 
 public:
 	virtual Value* clone() const = 0;
@@ -123,6 +125,9 @@ public:
 public:
 	virtual void resize(size_t blocks, size_t rowsPerBlock, size_t columnsPerBlock);
 	virtual void resize(size_t blocks);
+
+public:
+	Matrix toMatrix() const;
 
 public:
 	virtual MatrixVector& data();
