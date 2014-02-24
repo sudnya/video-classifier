@@ -288,10 +288,11 @@ MatrixVector DenseBackPropagation::getActivations(const NeuralNetwork& network, 
 
 void coalesceNeuronOutputs(BlockSparseMatrix& derivative, const BlockSparseMatrix& skeleton)
 {
-	if(derivative.rows() == skeleton.columns()) return;
+	if(derivative.rowsPerBlock() == skeleton.columnsPerBlock() && derivative.blocks() == skeleton.blocks()) return;
 	
 	// Must be evenly divisible
 	assert(derivative.rows() % skeleton.columns() == 0);
+	assert(derivative.columns() == skeleton.rows());
 	
 	// Add the rows together in a block-step fasion
 	derivative = derivative.reduceTileSumAlongRows(skeleton.columns());
@@ -312,11 +313,12 @@ MatrixVector DenseBackPropagation::getCostDerivative(
 	unsigned int samples = _input->rows();
 
 	//derivative of layer = activation[i] * delta[i+1] - for some layer i
-	auto layer = network.begin();
-	for (auto i = deltas.begin(), j = activations.begin(); i != deltas.end() && j != activations.end(); ++i, ++j, ++layer)
+	auto l = network.begin();
+	for (auto i = deltas.begin(), j = activations.begin(); i != deltas.end() && j != activations.end(); ++i, ++j, ++l)
 	{
 		auto transposedDelta = (*i).transpose();
-		auto& activation = *j;
+		auto& activation     = *j;
+		auto& layer          = *l;
 
 		transposedDelta.setRowSparse();
 
@@ -325,11 +327,12 @@ MatrixVector DenseBackPropagation::getCostDerivative(
 		auto normalizedPartialDerivative = unnormalizedPartialDerivative.multiply(1.0f/samples);
 		
 		// add in the regularization term
-		auto weights = layer->getWeightsWithoutBias();
+		auto weights = layer.getWeightsWithoutBias();
 
 		auto lambdaTerm = weights.multiply(_lambda/samples);
 
 		// Account for cases where the same neuron produced multiple outputs
+		//  or not enough inputs existed
 		coalesceNeuronOutputs(normalizedPartialDerivative, lambdaTerm);
 	
 		// Compute the partial derivatives

@@ -66,11 +66,6 @@ public:
 static void createModel(ClassificationModel& model, const Parameters& parameters,
 	std::default_random_engine& engine)
 {
-	size_t reductionFactor = 16;
-
-	assert(parameters.xPixels > reductionFactor);
-	assert(parameters.yPixels > reductionFactor);
-	
 	NeuralNetwork featureSelector;
 	
 	size_t totalPixels = parameters.xPixels * parameters.yPixels * parameters.colors;
@@ -79,6 +74,11 @@ static void createModel(ClassificationModel& model, const Parameters& parameters
 	const size_t blockSize = parameters.blockX * parameters.blockY * parameters.colors;
 	const size_t blocks    = totalPixels / blockSize;
 	const size_t blockStep = blockSize / parameters.blockStep;
+
+	size_t reductionFactor = std::min(16UL, blocks);
+
+	assert(parameters.xPixels > reductionFactor);
+	assert(parameters.yPixels > reductionFactor);
 	
 	// convolutional layer
 	featureSelector.addLayer(Layer(blocks, blockSize, blockSize, blockStep));
@@ -114,6 +114,7 @@ static void trainNetwork(ClassificationModel& model, const Parameters& parameter
 	unsupervisedLearnerEngine->setMultipleSamplesAllowed(true);
 	unsupervisedLearnerEngine->setModel(&model);
 	unsupervisedLearnerEngine->setBatchSize(parameters.batchSize);
+	unsupervisedLearnerEngine->setLayersPerIteration(3);
 
 	// read from database and use model to train
     unsupervisedLearnerEngine->runOnDatabaseFile(parameters.inputPath);
@@ -181,9 +182,9 @@ int main(int argc, char** argv)
 
     parser.parse("-s", "--seed", parameters.seed, false, "Seed with time.");
 	
-    parser.parse("-x", "--x-pixels", parameters.xPixels, 64,
+    parser.parse("-x", "--x-pixels", parameters.xPixels, 32,
         "The number of X pixels to consider from the input image.");
-	parser.parse("-y", "--y-pixels", parameters.yPixels, 64,
+	parser.parse("-y", "--y-pixels", parameters.yPixels, 32,
 		"The number of Y pixels to consider from the input image");
 	parser.parse("-c", "--colors", parameters.colors, 3,
 		"The number of color components (e.g. RGB) to consider from the input image");

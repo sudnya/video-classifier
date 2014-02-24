@@ -17,35 +17,41 @@ namespace classifiers
 
 class UnsupervisedLearner
 {
-    public:
-        typedef minerva::model::ClassificationModel ClassificationModel;
-        typedef minerva::neuralnetwork::NeuralNetwork NeuralNetwork;
-        typedef minerva::video::ImageVector ImageVector;
+public:
+	typedef minerva::model::ClassificationModel ClassificationModel;
+	typedef minerva::neuralnetwork::NeuralNetwork NeuralNetwork;
+	typedef minerva::video::ImageVector ImageVector;
 
 
-    public:
-        UnsupervisedLearner(ClassificationModel* model) : m_classificationModelPtr(model)
-        {
-        }
+public:
+	UnsupervisedLearner(ClassificationModel* model, size_t layers);
 
-        void loadFeatureSelector();
-        void doUnsupervisedLearning(ImageVector&& images);
-        void writeFeaturesNeuralNetwork();
+	void loadFeatureSelector();
+	void doUnsupervisedLearning(ImageVector&& images);
+	void writeFeaturesNeuralNetwork();
 
-        unsigned getInputFeatureCount();
-   
-   
-    private:
-        void learn(ImageVector&& images);
-        
-    private:
-        ClassificationModel* m_classificationModelPtr;
-        /* The input is a bunch of training images */
-        ImageVector m_videoImages;
-        /* The output of the unsupervised learning step is a neural network of features */
-        NeuralNetwork m_featureSelector;
-        //should be written to a file
+	unsigned getInputFeatureCount();
+
+
+private:
+	void learn(ImageVector&& images);
+	
+private:
+	ClassificationModel* m_classificationModelPtr;
+
+private:
+	/* The input is a bunch of training images */
+	ImageVector m_videoImages;
+
+private:	
+	/* The output of the unsupervised learning step is a neural network of features */
+	NeuralNetwork m_featureSelector;
+
+private:
+	/*! The number of layers to process simulateously */
+	size_t m_layersPerIteration;
 };
+
 } //end classifiers
 
 }//end minerva

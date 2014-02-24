@@ -35,6 +35,9 @@ public:
 		const ByteVector& data = ByteVector());
 
 public:
+	void setTile(size_t x, size_t y, const Image& image);
+
+public:
 	size_t x() const;
 	size_t y() const;
 	

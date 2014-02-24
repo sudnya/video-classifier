@@ -89,8 +89,9 @@ Value* NaiveBlockSparseMatrix::convolutionalMultiply(const Value* matrix, size_t
 		auto temp = flattened.slice(0, leftBegin, flattened.rows(), extent - leftBegin);
 		
 		zeroExtendColumns(temp, m->rowsPerBlock());
-		
-		size_t rightBlockIndex = (leftBegin * flattened.columns()) / (m->rowsPerBlock() * m->rows());
+	
+		// TODO:	
+		size_t rightBlockIndex = leftBegin * m->blocks() / flattened.columns();//(leftBegin * flattened.columns()) / (m->rowsPerBlock() * m->rows());
 		assert(rightBlockIndex < m->blocks());		
 
 		result->push_back(temp.multiply((*m)[rightBlockIndex]));
@@ -660,7 +661,9 @@ Value* NaiveBlockSparseMatrix::reduceTileSumAlongRows(size_t rowsPerTile) const
 
 					size_t blockEnd = (block + 1) * rowsPerBlock();
 					
-					size_t resultBlock = currentRow / rowsPerBlock();
+					size_t resultBlock = (currentRow / rowsPerBlock()) % result->blocks();
+					
+					assert(resultBlock < result->blocks());
 
 					if(blockEnd <= rowsPerTile && blockOffset == 0)
 					{

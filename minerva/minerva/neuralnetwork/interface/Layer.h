@@ -10,6 +10,7 @@
 
 // Standard Library Includes
 #include <random>
+#include <set>
 
 namespace minerva
 {
@@ -31,6 +32,8 @@ class Layer
         
         typedef BlockSparseMatrix::iterator       iterator;
         typedef BlockSparseMatrix::const_iterator const_iterator;
+		
+		typedef std::set<size_t> NeuronSet;
 
     public:
         Layer(unsigned totalBlocks = 0, size_t blockInput = 0,
@@ -128,6 +131,12 @@ class Layer
 	public:
 		void setBias(const BlockSparseMatrix& bias);
 		const BlockSparseMatrix& getBias() const;
+
+	public:
+		NeuronSet getInputNeuronsConnectedToTheseOutputs(
+			const NeuronSet& outputs) const;
+		Layer getSubgraphConnectedToTheseOutputs(
+			const NeuronSet& outputs) const;
 
     private:
 		BlockSparseMatrix m_sparseMatrix;

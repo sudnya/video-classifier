@@ -17,7 +17,7 @@ namespace classifiers
 {
 
 UnsupervisedLearnerEngine::UnsupervisedLearnerEngine()
-: _learner(nullptr)
+: _learner(nullptr), _layersPerIteration(1)
 {
 
 }
@@ -27,11 +27,16 @@ UnsupervisedLearnerEngine::~UnsupervisedLearnerEngine()
 	delete _learner;
 }
 
+void UnsupervisedLearnerEngine::setLayersPerIteration(size_t l)
+{
+	_layersPerIteration = l;
+}
+
 void UnsupervisedLearnerEngine::registerModel()
 {
 	assert(_learner == nullptr);
 
-	_learner = new UnsupervisedLearner(_model);
+	_learner = new UnsupervisedLearner(_model, _layersPerIteration);
 	
 	_learner->loadFeatureSelector();
 }

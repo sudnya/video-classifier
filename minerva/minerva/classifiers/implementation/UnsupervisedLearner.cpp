@@ -13,23 +13,29 @@ namespace minerva
 namespace classifiers
 {
 
+UnsupervisedLearner::UnsupervisedLearner(ClassificationModel* model, size_t layers)
+: m_classificationModelPtr(model), m_layersPerIteration(layers)
+{
+
+}
+
 void UnsupervisedLearner::doUnsupervisedLearning(ImageVector&& images)
 {
-    learn(std::move(images));
+	learn(std::move(images));
 }
 
 unsigned UnsupervisedLearner::getInputFeatureCount()
 {
-    // TODO
-    loadFeatureSelector();
-    
-    return m_featureSelector.getInputCount();
+	// TODO
+	loadFeatureSelector();
+	
+	return m_featureSelector.getInputCount();
 }
 
 void UnsupervisedLearner::loadFeatureSelector()
 {
-    /* read from the feature file into memory/variable */
-    m_featureSelector = m_classificationModelPtr->getNeuralNetwork("FeatureSelector");
+	/* read from the feature file into memory/variable */
+	m_featureSelector = m_classificationModelPtr->getNeuralNetwork("FeatureSelector");
 }
 
 void UnsupervisedLearner::learn(ImageVector&& images)
@@ -38,40 +44,47 @@ void UnsupervisedLearner::learn(ImageVector&& images)
 	auto input = images.convertToStandardizedMatrix(m_featureSelector.getInputCount(),
 		std::sqrt(m_featureSelector.getBlockingFactor()),
 		std::sqrt(m_featureSelector.getBlockingFactor()));
-    images.clear();
-    
+	images.clear();
+	
 	auto inputReference = input.add(1.0f).multiply(0.5f);
 	auto layerInput = std::move(input);
-	
-	unsigned int counter = 0;
 
-	for(auto layer = m_featureSelector.begin();
-		layer != m_featureSelector.end(); ++layer, ++counter)
+	for(size_t counter = 0; counter < m_featureSelector.size(); counter += m_layersPerIteration)
 	{
-		util::log("UnsupervisedLearner") << "Training feature selector layer "
-			<< (counter) << "\n";
-    	
-		neuralnetwork::NeuralNetwork copy;
+		unsigned int counterEnd = std::min(counter + m_layersPerIteration,
+			m_featureSelector.size());
+
+		util::log("UnsupervisedLearner") << "Training feature selector layers "
+			<< counter << " to " << counterEnd << "\n";
 		
-		copy.addLayer(std::move(*layer));
+		neuralnetwork::NeuralNetwork copy;
+	
+		for(size_t layerId = counter; layerId != counterEnd; ++layerId)
+		{	
+			copy.addLayer(std::move(m_featureSelector[layerId]));
+		}
 		
 		copy.mirror();
 		
 		copy.train(layerInput, inputReference);
-		
+	
 		copy.cutOffSecondHalf();
 	
 		layerInput = copy.runInputs(layerInput);
+
 		inputReference = layerInput;
 
-		*layer = std::move(copy.back());
+		for(size_t layerId = counter; layerId != counterEnd; ++layerId)
+		{	
+			m_featureSelector[layerId] = copy[layerId - counter];
+		}
 	}
 }
 
 void UnsupervisedLearner::writeFeaturesNeuralNetwork()
 {
 	// save it
-    m_classificationModelPtr->setNeuralNetwork("FeatureSelector", m_featureSelector);
+	m_classificationModelPtr->setNeuralNetwork("FeatureSelector", m_featureSelector);
 }
 
 } //end classifiers

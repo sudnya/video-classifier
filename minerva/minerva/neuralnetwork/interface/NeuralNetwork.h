@@ -29,11 +29,14 @@ class NeuralNetwork
 		typedef minerva::neuralnetwork::Layer Layer;
 
 		typedef std::map<unsigned, std::string> NeuronToLabelMap;
+		typedef Layer::NeuronSet NeuronSet;
 		
 		typedef std::vector<Layer> LayerVector;
 
-		typedef LayerVector::iterator	   iterator;
-		typedef LayerVector::const_iterator const_iterator;
+		typedef LayerVector::reverse_iterator	    reverse_iterator;
+		typedef LayerVector::iterator	            iterator;
+		typedef LayerVector::const_iterator         const_iterator;
+		typedef LayerVector::const_reverse_iterator const_reverse_iterator;
 
 	public:
 		NeuralNetwork();
@@ -113,6 +116,13 @@ class NeuralNetwork
 		const_iterator end() const;
 
 	public:
+		reverse_iterator       rbegin();
+		const_reverse_iterator rbegin() const;
+
+		reverse_iterator       rend();
+		const_reverse_iterator rend() const;
+
+	public:
 		      Layer& operator[](size_t index);
 		const Layer& operator[](size_t index) const;
 
@@ -137,6 +147,10 @@ class NeuralNetwork
 	
 	public:
 		bool areConnectionsValid() const;
+
+	public:
+		NeuronSet getInputNeuronsConnectedToThisOutput(unsigned neuron) const;
+		NeuralNetwork getSubgraphConnectedToThisOutput(unsigned neuron) const;
 
 	private:
 		LayerVector m_layers;

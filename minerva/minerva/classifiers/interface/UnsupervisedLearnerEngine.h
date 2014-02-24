@@ -27,6 +27,9 @@ public:
 public:
 	UnsupervisedLearnerEngine(const UnsupervisedLearnerEngine&) = delete;
 	UnsupervisedLearnerEngine& operator=(const UnsupervisedLearnerEngine&) = delete;
+
+public:
+	void setLayersPerIteration(size_t layers);
 	
 private:
 	virtual void registerModel();
@@ -38,6 +41,9 @@ private:
 
 private:
 	UnsupervisedLearner* _learner;
+
+private:
+	size_t _layersPerIteration;
 
 };
 

@@ -51,12 +51,21 @@ static void visualizeNeuron(const NeuralNetwork& , Image& , unsigned int);
 
 void NeuronVisualizer::visualizeNeuron(Image& image, unsigned int outputNeuron)
 {
-	visualizeNeuron(*_network, image, outputNeuron);
+	visualization::visualizeNeuron(*_network, image, outputNeuron);
 }
+
+static void getTileDimensions(size_t& x, size_t& y, size_t& colors,
+	const NeuralNetwork& tile);
+static NeuralNetwork extractTileFromNetwork(const NeuralNetwork& network,
+	unsigned int outputNeuron);
+static size_t sqrtRoundUp(size_t);
+static size_t getXPixelsPerTile(const NeuralNetwork& );
+static size_t getYPixelsPerTile(const NeuralNetwork& );
+static size_t getColorsPerTile(const NeuralNetwork& );
 
 Image NeuronVisualizer::visualizeInputTileForNeuron(unsigned int outputNeuron)
 {
-	auto tile = extractTileFromNetwork(*_neuralNetwork, outputNeuron);
+	auto tile = extractTileFromNetwork(*_network, outputNeuron);
 	
 	size_t x      = 0;
 	size_t y      = 0;
@@ -66,21 +75,94 @@ Image NeuronVisualizer::visualizeInputTileForNeuron(unsigned int outputNeuron)
 		
 	Image image(x, y, colors);
 	
-	visualizeNeuron(tile, image, outputNeuron);
+	visualization::visualizeNeuron(tile, image, outputNeuron);
 	
 	return image;
 }
 
 Image NeuronVisualizer::visualizeInputTilesForAllNeurons()
 {
-	// TODO
+	assert(_network->getOutputCount() > 0);
+	
+	size_t xTiles = sqrtRoundUp(_network->getOutputCount());
+	size_t yTiles = sqrtRoundUp(_network->getOutputCount());
+
+	size_t xPixelsPerTile = getXPixelsPerTile(*_network);
+	size_t yPixelsPerTile = getYPixelsPerTile(*_network);
+
+	size_t colors = getColorsPerTile(*_network);
+	
+	size_t xPadding = xPixelsPerTile / 5;
+	size_t yPadding = yPixelsPerTile / 5;
+	
+	size_t x = xTiles * (xPixelsPerTile + xPadding);
+	size_t y = yTiles * (yPixelsPerTile + yPadding);
+	
+	Image image(x, y, colors);
+	
+	for(size_t neuron = 0; neuron != _network->getOutputCount(); ++neuron)
+	{
+		size_t xTile = neuron % xTiles;
+		size_t yTile = neuron / xTiles;
+		
+		size_t xPosition = xTile * (xPixelsPerTile + xPadding);
+		size_t yPosition = yTile * (yPixelsPerTile + yPadding);
+		
+		image.setTile(xPosition, yPosition, visualizeInputTileForNeuron(neuron));
+	}
+	
+	return image;	
+}
+
+static void getTileDimensions(size_t& x, size_t& y, size_t& colors,
+	const NeuralNetwork& tile)
+{
+	x = getXPixelsPerTile(tile);
+	y = getYPixelsPerTile(tile);
+	
+	colors = getColorsPerTile(tile);
+}
+
+static NeuralNetwork extractTileFromNetwork(const NeuralNetwork& network,
+	unsigned int outputNeuron)
+{
+	return network.getSubgraphConnectedToThisOutput(outputNeuron); 
+}
+
+static size_t sqrtRoundUp(size_t value)
+{
+	size_t result = std::sqrt((double) value);
+	
+	if(result * result < value)
+	{
+		result += 1;
+	}
+	
+	return result;
+}
+
+static size_t getXPixelsPerTile(const NeuralNetwork& network)
+{
+	return getYPixelsPerTile(network);
+}
+
+static size_t getYPixelsPerTile(const NeuralNetwork& network)
+{
+	size_t inputs = network.getInputNeuronsConnectedToThisOutput(0).size();
+	
+	return sqrtRoundUp(inputs / getColorsPerTile(network));
+}
+
+static size_t getColorsPerTile(const NeuralNetwork& network)
+{
+	return 3;
 }
 
 static Matrix optimizeWithoutDerivative(const NeuralNetwork*, const Image& , unsigned int);
 static Matrix optimizeWithDerivative(const NeuralNetwork*, const Image& , unsigned int);
 static void updateImage(Image& , const Matrix& , size_t xTileSize, size_t yTileSize);
 
-static void visualizeNeuron(const NeuralNetwork& network)
+static void visualizeNeuron(const NeuralNetwork& network, Image& image, unsigned int outputNeuron)
 {
 	Matrix matrix;
 

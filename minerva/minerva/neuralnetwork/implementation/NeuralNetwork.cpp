@@ -245,7 +245,10 @@ void NeuralNetwork::mirror()
 
 	size_t newInputs  = getOutputCount() / blocks;
 	size_t newOutputs = getInputCount()  / blocks;
-
+	
+	assert(newInputs  > 0);
+	assert(newOutputs > 0);
+	
 	util::log("NeuralNetwork") << "Mirroring neural network output layer ("
 		<< back().blocks() << " blocks, " << back().getBlockingFactor()
 		<< " inputs, " << back().getOutputBlockingFactor()
@@ -371,7 +374,8 @@ void NeuralNetwork::setFlattenedWeights(const Matrix& m)
 	}
 }
 
-NeuralNetwork::BlockSparseMatrix NeuralNetwork::convertToBlockSparseForLayerInput(const Layer& layer, const Matrix& m) const
+NeuralNetwork::BlockSparseMatrix NeuralNetwork::convertToBlockSparseForLayerInput(
+	const Layer& layer, const Matrix& m) const
 {
 	assert(m.columns() == layer.getInputCount());
 	
@@ -418,7 +422,8 @@ void NeuralNetwork::formatOutputForLayer(const Layer& layer, BlockSparseMatrix& 
 	m = convertToBlockSparseForLayerOutput(layer, m.toMatrix());
 }
 
-NeuralNetwork::BlockSparseMatrix NeuralNetwork::convertToBlockSparseForLayerOutput(const Layer& layer, const Matrix& m) const
+NeuralNetwork::BlockSparseMatrix NeuralNetwork::convertToBlockSparseForLayerOutput(
+	const Layer& layer, const Matrix& m) const
 {
 	assert(m.columns() == layer.getOutputCount());
 	
@@ -457,6 +462,26 @@ NeuralNetwork::iterator NeuralNetwork::end()
 NeuralNetwork::const_iterator NeuralNetwork::end() const
 {
 	return m_layers.end();
+}
+
+NeuralNetwork::reverse_iterator NeuralNetwork::rbegin()
+{
+	return m_layers.rbegin();
+}
+
+NeuralNetwork::const_reverse_iterator NeuralNetwork::rbegin() const
+{
+	return m_layers.rbegin();
+}
+
+NeuralNetwork::reverse_iterator NeuralNetwork::rend()
+{
+	return m_layers.rend();
+}
+
+NeuralNetwork::const_reverse_iterator NeuralNetwork::rend() const
+{
+	return m_layers.rend();
 }
 
 NeuralNetwork::Layer& NeuralNetwork::operator[](size_t index)
@@ -519,15 +544,16 @@ BackPropagation* NeuralNetwork::createBackPropagation() const
 	}
 	else
 	{
-		backPropagationType = util::KnobDatabase::getKnobValue("BackPropagation::Type", "DenseBackPropagation");
+		backPropagationType = util::KnobDatabase::getKnobValue(
+			"BackPropagation::Type", "DenseBackPropagation");
 	}
 	
 	auto backPropagation = BackPropagationFactory::create(backPropagationType);
 	
 	if(backPropagation == nullptr)
 	{
-		throw std::runtime_error("Failed to create back propagation structure with type: " +
-			backPropagationType);
+		throw std::runtime_error("Failed to create back propagation "
+			"structure with type: " + backPropagationType);
 	}
 	
 	backPropagation->setNeuralNetwork(const_cast<NeuralNetwork*>(this));
@@ -537,6 +563,10 @@ BackPropagation* NeuralNetwork::createBackPropagation() const
 
 bool NeuralNetwork::areConnectionsValid() const
 {
+
+	/*
+	Is this necessary anymore?
+	
 	for(auto layer = begin(); layer != end(); ++layer)
 	{
 		auto next = layer; ++next;
@@ -555,11 +585,61 @@ bool NeuralNetwork::areConnectionsValid() const
 			return false;
 		}
 	}
+	*/
 
 	util::log("NeuralNetwork") << "Verified network with " << getInputCount()
 		<< " inputs and " << getOutputCount() << " outputs\n";
 	
 	return true;
+}
+
+NeuralNetwork::NeuronSet NeuralNetwork::getInputNeuronsConnectedToThisOutput(
+	unsigned neuron) const
+{
+	NeuronSet inputs;
+	
+	NeuronSet outputs;
+
+	inputs.insert(neuron);
+	
+	for(auto layer = rbegin(); layer != rend(); ++layer)
+	{
+		std::swap(inputs, outputs);
+		
+		inputs = layer->getInputNeuronsConnectedToTheseOutputs(outputs);
+	}
+	
+	return inputs;
+}
+
+NeuralNetwork NeuralNetwork::getSubgraphConnectedToThisOutput(
+	unsigned neuron) const
+{
+	NeuralNetwork network;
+	
+	NeuronSet inputs;
+	
+	NeuronSet outputs;
+
+	inputs.insert(neuron);
+
+	LayerVector layers;
+	
+	for(auto layer = rbegin(); layer != rend(); ++layer)
+	{
+		std::swap(inputs, outputs);
+		
+		inputs = layer->getInputNeuronsConnectedToTheseOutputs(outputs);
+		
+		layers.push_back(layer->getSubgraphConnectedToTheseOutputs(outputs));
+	}
+	
+	for(auto layer = layers.rbegin(); layer != layers.rend(); ++layer)
+	{
+		network.addLayer(std::move(*layer));
+	}
+	
+	return network;
 }
 
 }

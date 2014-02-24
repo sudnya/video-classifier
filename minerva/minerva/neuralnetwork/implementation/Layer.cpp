@@ -75,10 +75,14 @@ Layer::BlockSparseMatrix Layer::runInputs(const BlockSparseMatrix& m) const
 		util::log("Layer") << "  layer: " << m_sparseMatrix.toString() << "\n";
 	}
 
+	#if 0
+	auto unbiasedOutput = m.multiply(m_sparseMatrix);
+	auto output = unbiasedOutput.addBroadcastRow(m_bias);
+	#else
 	auto unbiasedOutput = m.convolutionalMultiply(m_sparseMatrix, blockStep());
-
 	auto output = unbiasedOutput.convolutionalAddBroadcastRow(m_bias, blockStep());
-
+	#endif
+	
 	output.sigmoidSelf();
 	
 	if(util::isLogEnabled("Layer"))
@@ -103,7 +107,11 @@ Layer::BlockSparseMatrix Layer::runReverse(const BlockSparseMatrix& m) const
 		util::log("Layer") << "  layer: " << m_sparseMatrix.toString() << "\n";
   	}
  
+	#if 0
+	auto result = m.multiply(m_sparseMatrix.transpose());
+	#else
 	auto result = m.reverseConvolutionalMultiply(m_sparseMatrix.transpose());
+	#endif
 
 	if(util::isLogEnabled("Layer"))
 	{
@@ -346,6 +354,58 @@ void Layer::setBias(const BlockSparseMatrix& bias)
 const Layer::BlockSparseMatrix& Layer::getBias() const
 {
 	return m_bias;
+}
+		
+Layer::NeuronSet Layer::getInputNeuronsConnectedToTheseOutputs(
+	const NeuronSet& outputs) const
+{
+	NeuronSet inputs;
+
+	for(auto& output : outputs)
+	{
+		size_t block = output / getOutputBlockingFactor();
+		size_t blockStart = block * blockStep();
+		
+		size_t begin = blockStart;
+		size_t end   = blockStart + getBlockingFactor();
+		
+		// TODO: eliminate the reundant inserts
+		for(size_t i = begin; i < end; ++i)
+		{
+			inputs.insert(i);
+		}
+	}
+	
+	return inputs;
+}
+
+Layer Layer::getSubgraphConnectedToTheseOutputs(
+	const NeuronSet& outputs) const
+{
+	typedef std::set<size_t> BlockSet;
+	
+	BlockSet blocks;
+
+	// TODO: eliminate the reundant inserts
+	for(auto& output : outputs)
+	{
+		size_t block = output / getOutputBlockingFactor();
+		
+		blocks.insert(block);
+	}
+	
+	Layer layer(blocks.size(), getBlockingFactor(),
+		getOutputBlockingFactor(), blockStep());
+	
+	for(auto& block : blocks)
+	{
+		size_t blockIndex = block - *blocks.begin();
+		
+		layer[blockIndex] = (*this)[block];
+		layer.at_bias(blockIndex) = at_bias(block);
+	}
+	
+	return layer;
 }
 
 }

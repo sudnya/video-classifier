@@ -39,6 +39,29 @@ Image::Image(size_t x, size_t y, size_t c, size_t p, const std::string& path,
 	_pixels.resize(totalSize() * pixelSize());
 }
 
+void Image::setTile(size_t xStart, size_t yStart, const Image& image)
+{
+	// TODO faster
+	size_t xSize     = image.x();
+	size_t ySize     = image.y();
+	size_t colorSize = image.colorComponents();
+	
+	assert(xStart + xSize <= x());
+	assert(yStart + ySize <= y());
+	assert(colorSize <= colorComponents());
+	
+	for(size_t y = 0; y < ySize; ++y)
+	{
+		for(size_t x = 0; x < xSize; ++x)
+		{
+			for(size_t c = 0; c < colorSize; ++c)
+			{
+				setComponentAt(xStart + x, yStart + y, c, image.getComponentAt(x, y, c));
+			}
+		}
+	}
+}
+
 size_t Image::x() const
 {
 	assert(_headerLoaded);

@@ -148,7 +148,7 @@ public:
 
 	size_t blockInTile() const
 	{
-		return blockId - tileBase();
+		return blockId - tileBase(layer);
 	}
 
 public:
@@ -171,7 +171,7 @@ public:
 		return (*network)[layer-1].blockSize();
 	}
 
-	size_t tileBase() const;
+	size_t tileBase(size_t layer) const;
 
 };
 
@@ -247,12 +247,12 @@ public:
 };
 
 typedef std::vector<NeuronBlock> NeuronBlockVector;
+typedef std::vector<size_t> BaseIdVector;
 
 class Tile
 {
 public:
 	Tile()
-	: baseId(std::numeric_limits<size_t>::max())
 	{
 
 	}
@@ -261,14 +261,14 @@ public:
 	NeuronBlockVector blocks;
 
 public:
-	size_t baseId;
+	BaseIdVector baseIds;
 
 public:
 	void merge(const Tile& tile)
 	{
 		for(auto& block : tile.blocks)
 		{
-			baseId = std::min(baseId, block.blockId);
+			addBaseId(block.layer, block.blockId);
 		}
 
 		blocks.insert(blocks.end(), tile.blocks.begin(), tile.blocks.end());
@@ -286,16 +286,28 @@ public:
 		
 		return connections;
 	}
-
-	size_t baseBlock() const
+	
+	void addBaseId(size_t layer, size_t blockId)
 	{
-		return baseId;
+		for(size_t l = baseIds.size(); l <= layer; ++l)
+		{
+			baseIds.push_back(std::numeric_limits<size_t>::max());
+		}
+		
+		baseIds[layer] = std::min(baseIds[layer], blockId);
+	}
+
+	size_t baseBlock(size_t layer) const
+	{
+		if(baseIds.size() < layer) return 0;
+		
+		return baseIds[layer];
 	}
 
 public:
 	void push_back(const NeuronBlock& block)
 	{
-		baseId = std::min(baseId, block.blockId);
+		addBaseId(block.layer, block.blockId);
 		blocks.push_back(block);
 	}
 
@@ -310,11 +322,11 @@ public:
 
 };
 
-size_t NeuronBlock::tileBase() const
+size_t NeuronBlock::tileBase(size_t layer) const
 {
 	assert(tile != nullptr);
 
-	return tile->baseBlock();
+	return tile->baseBlock(layer);
 }
 
 typedef std::vector<Tile>   TileVector;
@@ -353,8 +365,8 @@ static IdVector getPredecessors(const NeuralNetwork* neuralNetwork,
 		previousBlocks = (*neuralNetwork)[layerId - 2].blocks();
 	}
 	
-	size_t beginId = blockId * previousBlocks / blocks;
-	size_t endId   = (blockId + 1) * previousBlocks / blocks;
+	size_t beginId = (blockId * previousBlocks) / blocks;
+	size_t endId   = std::max(beginId + 1, ((blockId + 1) * previousBlocks) / blocks);
 	
 	for(size_t id = beginId; id < endId; ++id)
 	{
