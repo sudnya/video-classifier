@@ -294,7 +294,7 @@ void coalesceNeuronOutputs(BlockSparseMatrix& derivative, const BlockSparseMatri
 	assert(derivative.rows() % skeleton.columns() == 0);
 	assert(derivative.columns() == skeleton.rows());
 	
-	// Add the rows together in a block-step fasion
+	// Add the rows together in a block-cyclic fasion
 	derivative = derivative.reduceTileSumAlongRows(skeleton.columns());
 }
 

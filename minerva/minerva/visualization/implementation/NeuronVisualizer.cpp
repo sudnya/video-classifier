@@ -73,35 +73,37 @@ Image NeuronVisualizer::visualizeInputTileForNeuron(unsigned int outputNeuron)
 	
 	getTileDimensions(x, y, colors, tile);
 		
-	Image image(x, y, colors);
+	Image image(x, y, colors, 1);
 	
-	visualization::visualizeNeuron(tile, image, outputNeuron);
+	visualization::visualizeNeuron(*_network, image, outputNeuron);
 	
 	return image;
 }
 
 Image NeuronVisualizer::visualizeInputTilesForAllNeurons()
 {
-	assert(_network->getOutputCount() > 0);
-	
-	size_t xTiles = sqrtRoundUp(_network->getOutputCount());
-	size_t yTiles = sqrtRoundUp(_network->getOutputCount());
+	assert(_network->getOutputNeurons() > 0);
+
+	size_t xTiles = sqrtRoundUp(_network->getOutputNeurons());
+	size_t yTiles = sqrtRoundUp(_network->getOutputNeurons());
 
 	size_t xPixelsPerTile = getXPixelsPerTile(*_network);
 	size_t yPixelsPerTile = getYPixelsPerTile(*_network);
 
 	size_t colors = getColorsPerTile(*_network);
 	
-	size_t xPadding = xPixelsPerTile / 5;
-	size_t yPadding = yPixelsPerTile / 5;
+	size_t xPadding = std::max(xPixelsPerTile / 8, 1UL);
+	size_t yPadding = std::max(yPixelsPerTile / 8, 1UL);
 	
 	size_t x = xTiles * (xPixelsPerTile + xPadding);
 	size_t y = yTiles * (yPixelsPerTile + yPadding);
 	
-	Image image(x, y, colors);
+	Image image(x, y, colors, 1);
 	
-	for(size_t neuron = 0; neuron != _network->getOutputCount(); ++neuron)
+	for(size_t neuron = 0; neuron != _network->getOutputNeurons(); ++neuron)
 	{
+		util::log("NeuronVisualizer") << "Solving for neuron " << neuron << " / " << _network->getOutputNeurons() << "\n";
+
 		size_t xTile = neuron % xTiles;
 		size_t yTile = neuron / xTiles;
 		
@@ -216,7 +218,7 @@ static float computeCost(const NeuralNetwork* network, unsigned int neuron,
 	float cost = result.slice(0, neuron, result.rows(),
 		1).negate().add(1.0f).reduceSum();
 	
-	util::log("NeuronVisualizer")
+	util::log("NeuronVisualizer::Detail")
 		<< "Updating cost function for neuron " << neuron
 		<<  " to " << cost << ".\n";
 
@@ -283,15 +285,15 @@ public:
 	virtual float computeCostAndGradient(BlockSparseMatrixVector& gradient,
 		const BlockSparseMatrixVector& inputs) const
 	{
-		util::log("NeuronVisualizer") << " inputs are : " << inputs.front().toString();
+		util::log("NeuronVisualizer::Detail") << " inputs are : " << inputs.front().toString();
 		
 		gradient = _backPropData->computePartialDerivativesForNewInputs(inputs);
 		
-		util::log("NeuronVisualizer") << " new gradient is : " << gradient.front().toString();
+		util::log("NeuronVisualizer::Detail") << " new gradient is : " << gradient.front().toString();
 		
 		float newCost = _backPropData->computeCostForNewInputs(inputs);
 	
-		util::log("NeuronVisualizer") << " new cost is : " << newCost << "\n";
+		util::log("NeuronVisualizer::Detail") << " new cost is : " << newCost << "\n";
 		
 		return newCost;
 	}
@@ -313,7 +315,7 @@ static Matrix generateReferenceForNeuron(const NeuralNetwork* network,
 static void addConstraints(optimizer::LinearSolver* solver)
 {
 	// TODO
-	assert(false); // not implemented
+	//assert(false); // not implemented
 }
 
 static Matrix optimizeWithDerivative(float& bestCost, const NeuralNetwork* network,

@@ -56,7 +56,7 @@ public:
 
 public:
 	Parameters()
-	: blockX(16), blockY(16), blockStep(2)
+	: blockX(16), blockY(16), blockStep(4)
 	{
 		
 	}
@@ -71,14 +71,14 @@ static void createModel(ClassificationModel& model, const Parameters& parameters
 	size_t totalPixels = parameters.xPixels * parameters.yPixels * parameters.colors;
 
 	// derive parameters from image dimensions 
-	const size_t blockSize = parameters.blockX * parameters.blockY * parameters.colors;
+	const size_t blockSize = std::min(parameters.xPixels, parameters.blockX) * std::min(parameters.yPixels, parameters.blockY) * parameters.colors;
 	const size_t blocks    = totalPixels / blockSize;
 	const size_t blockStep = blockSize / parameters.blockStep;
 
-	size_t reductionFactor = std::min(16UL, blocks);
+	size_t reductionFactor = std::min(parameters.xPixels, std::min(16UL, blocks)) * parameters.blockStep;
 
-	assert(parameters.xPixels > reductionFactor);
-	assert(parameters.yPixels > reductionFactor);
+	assert(parameters.xPixels >= reductionFactor);
+	assert(parameters.yPixels >= reductionFactor);
 	
 	// convolutional layer
 	featureSelector.addLayer(Layer(blocks, blockSize, blockSize, blockStep));
@@ -91,7 +91,7 @@ static void createModel(ClassificationModel& model, const Parameters& parameters
 	// contrast normalization
 	featureSelector.addLayer(Layer(featureSelector.back().blocks() / reductionFactor,
 		featureSelector.back().getBlockingFactor(),
-		featureSelector.back().getBlockingFactor()));
+		featureSelector.back().getBlockingFactor() / reductionFactor));
 
 	featureSelector.initializeRandomly(engine);
 	minerva::util::log("TestFirstLayerFeatures")
@@ -110,7 +110,7 @@ static void trainNetwork(ClassificationModel& model, const Parameters& parameter
 		static_cast<UnsupervisedLearnerEngine*>(
 		minerva::classifiers::ClassifierFactory::create("UnsupervisedLearnerEngine")));
 
-	unsupervisedLearnerEngine->setMaximumSamplesToRun(parameters.trainingIterations);
+	unsupervisedLearnerEngine->setMaximumSamplesToRun(parameters.trainingIterations * parameters.batchSize);
 	unsupervisedLearnerEngine->setMultipleSamplesAllowed(true);
 	unsupervisedLearnerEngine->setModel(&model);
 	unsupervisedLearnerEngine->setBatchSize(parameters.batchSize);

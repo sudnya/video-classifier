@@ -283,6 +283,14 @@ size_t NeuralNetwork::getOutputCount() const
 	return getOutputCountForInputCount(getInputCount());
 }
 
+size_t NeuralNetwork::getOutputNeurons() const
+{
+	if(empty())
+		return 0;
+
+	return back().getOutputCount();
+}
+
 size_t NeuralNetwork::getOutputCountForInputCount(
 	size_t inputCount) const
 {
@@ -391,20 +399,19 @@ void NeuralNetwork::setFlattenedWeights(const Matrix& m)
 NeuralNetwork::BlockSparseMatrix NeuralNetwork::convertToBlockSparseForLayerInput(
 	const Layer& layer, const Matrix& m) const
 {
-	assert(m.columns() == layer.getInputCount());
+	assert(m.columns() % layer.getInputCount() == 0);
 	
 	BlockSparseMatrix result;
-	size_t column = 0;
 
-	size_t blocks = layer.blocks();
-	size_t blockInputsExceptBias = layer.getBlockingFactor();
-		
-	for(size_t i = 0; i < blocks; ++i)
+	size_t blockingFactor = layer.getBlockingFactor();
+
+	for(size_t column = 0; column < m.columns(); column += blockingFactor)
 	{
-		result.push_back(m.slice(0, column, m.rows(), blockInputsExceptBias));
-		column += blockInputsExceptBias;
+		size_t columns = std::min(m.columns() - column, blockingFactor);
+		
+		result.push_back(m.slice(0, column, m.rows(), columns));
 	}
-
+	
 	result.setColumnSparse();
 
 	return result;
@@ -415,6 +422,7 @@ void NeuralNetwork::formatInputForLayer(const Layer& layer, BlockSparseMatrix& m
 	//assertM(layer.getInputCount() == m.columns(), "Layer input count "
 	//	<< layer.getInputCount() << " does not match the input count "
 	//	<< m.columns());
+	assert(m.columns() % layer.getInputCount() == 0);
 	
 	if(layer.blocks() == m.blocks()) return;
 
@@ -426,7 +434,7 @@ void NeuralNetwork::formatInputForLayer(const Layer& layer, BlockSparseMatrix& m
 
 void NeuralNetwork::formatOutputForLayer(const Layer& layer, BlockSparseMatrix& m) const
 {
-	assert(layer.getOutputCount() == m.columns());
+	assert(m.columns() % layer.getOutputCount() == 0);
 	
 	if(layer.blocks() == m.blocks()) return;
 

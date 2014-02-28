@@ -389,8 +389,8 @@ Layer Layer::getSubgraphConnectedToTheseOutputs(
 	// TODO: eliminate the reundant inserts
 	for(auto& output : outputs)
 	{
-		size_t block = output / getOutputBlockingFactor();
-		
+		size_t block = (output / getOutputBlockingFactor()) % this->blocks();
+
 		blocks.insert(block);
 	}
 	

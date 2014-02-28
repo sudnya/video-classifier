@@ -73,6 +73,8 @@ class NeuralNetwork
 
 		size_t getOutputCountForInputCount(size_t inputCount) const;
 
+		size_t getOutputNeurons() const;
+
 		size_t getBlockingFactor() const;
 	
 	public:
