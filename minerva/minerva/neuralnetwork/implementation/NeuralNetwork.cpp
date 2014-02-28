@@ -278,20 +278,34 @@ size_t NeuralNetwork::getInputCount() const
 	return front().getInputCount();
 }
 
+size_t NeuralNetwork::getOutputCount() const
+{
+	return getOutputCountForInputCount(getInputCount());
+}
+
+size_t NeuralNetwork::getOutputCountForInputCount(
+	size_t inputCount) const
+{
+	if(empty())
+		return 0;
+	
+	// TODO: memoize
+	size_t outputCount = inputCount;
+	
+	for(auto& layer : *this)
+	{
+		outputCount = layer.getOutputCountForInputCount(outputCount);
+	}
+	
+	return outputCount;
+}
+
 size_t NeuralNetwork::getBlockingFactor() const
 {
 	if(empty())
 		return 0;
 
 	return front().getBlockingFactor();
-}
-
-size_t NeuralNetwork::getOutputCount() const
-{
-	if(empty())
-		return 0;
-
-	return back().getOutputCount();
 }
 
 size_t NeuralNetwork::totalConnections() const
@@ -425,18 +439,17 @@ void NeuralNetwork::formatOutputForLayer(const Layer& layer, BlockSparseMatrix& 
 NeuralNetwork::BlockSparseMatrix NeuralNetwork::convertToBlockSparseForLayerOutput(
 	const Layer& layer, const Matrix& m) const
 {
-	assert(m.columns() == layer.getOutputCount());
+	assert(m.columns() % layer.getOutputCount() == 0);
 	
 	BlockSparseMatrix result;
-	size_t column = 0;
 
-	size_t blocks = layer.blocks();
 	size_t blockingFactor = layer.getOutputBlockingFactor();
 
-	for(size_t i = 0; i < blocks; ++i)
+	for(size_t column = 0; column < m.columns(); column += blockingFactor)
 	{
-		result.push_back(m.slice(0, column, m.rows(), blockingFactor));
-		column += blockingFactor;
+		size_t columns = std::min(m.columns() - column, blockingFactor);
+		
+		result.push_back(m.slice(0, column, m.rows(), columns));
 	}
 	
 	result.setColumnSparse();

@@ -142,6 +142,7 @@ public:
 public:
     std::string toString(size_t maxRows = 10, size_t maxColumns = 10) const;
 	std::string debugString() const;
+	std::string shapeString() const;
 
 private:
 	Matrix(MatrixImplementation* implementation);

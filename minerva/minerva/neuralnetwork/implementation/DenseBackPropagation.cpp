@@ -215,7 +215,7 @@ MatrixVector DenseBackPropagation::getDeltas(const NeuralNetwork& network, const
 		for (auto& delta : deltas)
 		{
 			util::log("DenseBackPropagation::Detail") << " added delta of size ( " << delta.rows() << " ) rows and ( " << delta.columns() << " )\n" ;
-			util::log("DenseBackPropagation::Detail") << " delta contains " << delta.toString() << "\n";
+			//util::log("DenseBackPropagation::Detail") << " delta contains " << delta.toString() << "\n";
 		}
 	}
 	
@@ -321,9 +321,13 @@ MatrixVector DenseBackPropagation::getCostDerivative(
 		auto& layer          = *l;
 
 		transposedDelta.setRowSparse();
+		
+		util::log("DenseBackPropagation::Detail") << " computing derivative for layer " << std::distance(deltas.begin(), i) << "\n";
+		util::log("DenseBackPropagation::Detail") << "  activation: " << activation.shapeString() << "\n";
+		util::log("DenseBackPropagation::Detail") << "  delta-transposed: " << transposedDelta.shapeString() << "\n";
 
 		//there will be one less delta than activation
-		auto unnormalizedPartialDerivative = (transposedDelta.multiply(activation));
+		auto unnormalizedPartialDerivative = (transposedDelta.reverseConvolutionalMultiply(activation));
 		auto normalizedPartialDerivative = unnormalizedPartialDerivative.multiply(1.0f/samples);
 		
 		// add in the regularization term
@@ -338,11 +342,6 @@ MatrixVector DenseBackPropagation::getCostDerivative(
 		// Compute the partial derivatives
 		partialDerivative.push_back(lambdaTerm.add(normalizedPartialDerivative.transpose()));
 
-		//util::log("DenseBackPropagation") << " computed derivative for layer " << std::distance(deltas.begin(), i)
-		//	<< " (" << partialDerivative.back().rows()
-		//	<< " rows, " << partialDerivative.back().columns() << " columns).\n";
-		//util::log("DenseBackPropagation") << " PD contains " << partialDerivative.back().toString() << "\n";
-	
 	}//this loop ends after all activations are done. and we don't need the last delta (ref-output anyway)
 
 	bool performGradientChecking = util::KnobDatabase::getKnobValue("NeuralNetwork::DoGradientChecking", false);

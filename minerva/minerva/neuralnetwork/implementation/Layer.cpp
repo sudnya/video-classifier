@@ -72,7 +72,7 @@ Layer::BlockSparseMatrix Layer::runInputs(const BlockSparseMatrix& m) const
 			<< blocks() << " blocks, "
 			<< getInputCount() << " inputs, " << getOutputCount()
 			<< " outputs, " << blockStep() << " block step).\n";
-		util::log("Layer") << "  layer: " << m_sparseMatrix.toString() << "\n";
+		util::log("Layer") << "  layer: " << m_sparseMatrix.shapeString() << "\n";
 	}
 
 	#if 0
@@ -87,10 +87,7 @@ Layer::BlockSparseMatrix Layer::runInputs(const BlockSparseMatrix& m) const
 	
 	if(util::isLogEnabled("Layer"))
 	{
-		util::log("Layer") << "  output: " << output.toString() << "\n";
-		
-		util::log("Layer") << "  layer output is a matrix (" << output.rows()
-				<< " rows, " << output.columns() << " columns).\n";
+		util::log("Layer") << "  output: " << output.shapeString() << "\n";
 	}	
 	return output;
 }
@@ -104,7 +101,7 @@ Layer::BlockSparseMatrix Layer::runReverse(const BlockSparseMatrix& m) const
 			<< blocks() << " blocks, "
 			<< getInputCount() << " inputs, " << getOutputCount()
 			<< " outputs, " << blockStep() << " block step).\n";
-		util::log("Layer") << "  layer: " << m_sparseMatrix.toString() << "\n";
+		util::log("Layer") << "  layer: " << m_sparseMatrix.shapeString() << "\n";
   	}
  
 	#if 0
@@ -115,9 +112,7 @@ Layer::BlockSparseMatrix Layer::runReverse(const BlockSparseMatrix& m) const
 
 	if(util::isLogEnabled("Layer"))
 	{
-		util::log("Layer") << "  output: " << result.toString() << "\n";
-		util::log("Layer") << "  layer output is a matrix (" << result.rows()
-				<< " rows, " << result.columns() << " columns).\n";
+		util::log("Layer") << "  output: " << result.shapeString() << "\n";
 	}
 
 	return result;
@@ -128,24 +123,29 @@ void Layer::transpose()
 	m_sparseMatrix.transposeSelf();
 }
 
-unsigned Layer::getInputCount() const
+size_t Layer::getInputCount() const
 {
 	return m_sparseMatrix.rows();
 }
 
-unsigned Layer::getOutputCount() const
+size_t Layer::getOutputCount() const
 {
-	return (getInputCount() / blockStep()) * (m_sparseMatrix.columnsPerBlock());
+	return getOutputCountForInputCount(getInputCount());	
 }
 
-unsigned Layer::getBlockingFactor() const
+size_t Layer::getBlockingFactor() const
 {
 	return m_sparseMatrix.getBlockingFactor();
 }
 
-unsigned Layer::getOutputBlockingFactor() const
+size_t Layer::getOutputBlockingFactor() const
 {
 	return m_sparseMatrix.columnsPerBlock();
+}
+
+size_t Layer::getOutputCountForInputCount(size_t inputCount) const
+{
+	return (inputCount / blockStep()) * (m_sparseMatrix.columnsPerBlock());
 }
 
 size_t Layer::getFloatingPointOperationCount() const

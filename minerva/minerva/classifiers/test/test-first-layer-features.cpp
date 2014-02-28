@@ -182,9 +182,9 @@ int main(int argc, char** argv)
 
     parser.parse("-s", "--seed", parameters.seed, false, "Seed with time.");
 	
-    parser.parse("-x", "--x-pixels", parameters.xPixels, 32,
+    parser.parse("-x", "--x-pixels", parameters.xPixels, 16,
         "The number of X pixels to consider from the input image.");
-	parser.parse("-y", "--y-pixels", parameters.yPixels, 32,
+	parser.parse("-y", "--y-pixels", parameters.yPixels, 16,
 		"The number of Y pixels to consider from the input image");
 	parser.parse("-c", "--colors", parameters.colors, 3,
 		"The number of color components (e.g. RGB) to consider from the input image");

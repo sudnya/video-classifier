@@ -52,11 +52,14 @@ class Layer
  		void transpose();
     
     public:
-        unsigned getInputCount()  const;
-        unsigned getOutputCount() const;
+        size_t getInputCount()  const;
+        size_t getOutputCount() const;
 
-		unsigned getBlockingFactor() const;
-		unsigned getOutputBlockingFactor() const;
+		size_t getBlockingFactor() const;
+		size_t getOutputBlockingFactor() const;
+
+	public:
+		size_t getOutputCountForInputCount(size_t inputCount) const;
 
 	public:
 		size_t getFloatingPointOperationCount() const;

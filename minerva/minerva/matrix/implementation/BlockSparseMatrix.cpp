@@ -392,7 +392,7 @@ std::string BlockSparseMatrix::shapeString() const
 	std::stringstream stream;
 
 	stream << "(" << blocks() << " blocks, " << rowsPerBlock() << " rows per block, "
-		<< columnsPerBlock() << " columns per block";
+		<< columnsPerBlock() << " columns per block, ";
 	
 	if(isRowSparse())
 	{

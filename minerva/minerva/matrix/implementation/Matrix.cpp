@@ -447,7 +447,7 @@ std::string Matrix::toString(size_t maxRows, size_t maxColumns) const
 {
     std::stringstream stream;
 
-	stream << "(" << rows() << " rows, " << columns() << " columns) ";
+	stream << shapeString() << " ";
 
     stream << "[ ";
 
@@ -473,6 +473,15 @@ std::string Matrix::toString(size_t maxRows, size_t maxColumns) const
 std::string Matrix::debugString() const
 {
 	return toString();
+}
+
+std::string Matrix::shapeString() const
+{
+    std::stringstream stream;
+	
+	stream << "(" << rows() << " rows, " << columns() << " columns)";
+
+    return stream.str();
 }
 
 }
