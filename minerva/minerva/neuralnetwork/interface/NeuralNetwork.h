@@ -76,6 +76,7 @@ class NeuralNetwork
 		size_t getOutputNeurons() const;
 
 		size_t getBlockingFactor() const;
+		size_t getOutputBlockingFactor() const;
 	
 	public:
 		size_t totalNeurons()     const;

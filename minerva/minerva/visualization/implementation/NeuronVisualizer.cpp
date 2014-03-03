@@ -75,7 +75,7 @@ Image NeuronVisualizer::visualizeInputTileForNeuron(unsigned int outputNeuron)
 		
 	Image image(x, y, colors, 1);
 	
-	visualization::visualizeNeuron(*_network, image, outputNeuron);
+	visualization::visualizeNeuron(tile, image, outputNeuron);
 	
 	return image;
 }
@@ -102,7 +102,8 @@ Image NeuronVisualizer::visualizeInputTilesForAllNeurons()
 	
 	for(size_t neuron = 0; neuron != _network->getOutputNeurons(); ++neuron)
 	{
-		util::log("NeuronVisualizer") << "Solving for neuron " << neuron << " / " << _network->getOutputNeurons() << "\n";
+		util::log("NeuronVisualizer") << "Solving for neuron " << neuron << " / "
+			<< _network->getOutputNeurons() << "\n";
 
 		size_t xTile = neuron % xTiles;
 		size_t yTile = neuron / xTiles;

@@ -5,6 +5,7 @@
 
 // Minerva Includes
 #include <minerva/neuralnetwork/interface/NeuralNetwork.h>
+#include <minerva/neuralnetwork/interface/NeuralNetworkSubgraphExtractor.h>
 #include <minerva/neuralnetwork/interface/BackPropagation.h>
 #include <minerva/neuralnetwork/interface/BackPropagationFactory.h>
 
@@ -314,6 +315,14 @@ size_t NeuralNetwork::getBlockingFactor() const
 		return 0;
 
 	return front().getBlockingFactor();
+}
+
+size_t NeuralNetwork::getOutputBlockingFactor() const
+{
+	if(empty())
+		return 0;
+
+	return back().getOutputBlockingFactor();
 }
 
 size_t NeuralNetwork::totalConnections() const
@@ -636,6 +645,10 @@ NeuralNetwork::NeuronSet NeuralNetwork::getInputNeuronsConnectedToThisOutput(
 NeuralNetwork NeuralNetwork::getSubgraphConnectedToThisOutput(
 	unsigned neuron) const
 {
+	NeuralNetworkSubgraphExtractor extractor(const_cast<NeuralNetwork*>(this));
+	
+	return extractor.copySubgraphConnectedToThisOutput(neuron);
+	/*
 	NeuralNetwork network;
 	
 	NeuronSet inputs;
@@ -659,8 +672,12 @@ NeuralNetwork NeuralNetwork::getSubgraphConnectedToThisOutput(
 	{
 		network.addLayer(std::move(*layer));
 	}
-	
+
+	network.setLabelsForOutputNeurons(*this);
+	network.setUseSparseCostFunction(isUsingSparseCostFunction());
+		
 	return network;
+	*/
 }
 
 }
