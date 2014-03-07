@@ -56,7 +56,7 @@ public:
 
 public:
 	Parameters()
-	: blockX(16), blockY(16), blockStep(4)
+	: blockX(4), blockY(4), blockStep(2)
 	{
 		
 	}
@@ -75,11 +75,8 @@ static void createModel(ClassificationModel& model, const Parameters& parameters
 	const size_t blocks    = totalPixels / blockSize;
 	const size_t blockStep = blockSize / parameters.blockStep;
 
-	size_t reductionFactor = std::min(parameters.xPixels, std::min(16UL, blocks)) * parameters.blockStep;
+	size_t reductionFactor = std::min(blocks, std::min(parameters.xPixels, parameters.blockX)) * parameters.blockStep;
 
-	assert(parameters.xPixels >= reductionFactor);
-	assert(parameters.yPixels >= reductionFactor);
-	
 	// convolutional layer
 	featureSelector.addLayer(Layer(blocks, blockSize, blockSize, blockStep));
 	

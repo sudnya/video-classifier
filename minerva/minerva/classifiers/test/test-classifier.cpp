@@ -219,7 +219,6 @@ void runTest(unsigned iterations, bool seed, unsigned networkSize, float epsilon
 	trainNeuralNetwork(ann, iterations, generator);
 	
     // Run classifier and record accuracy
-
     float accuracy = classify(ann, std::max(1U, iterations/10), generator);
 
     // Test if accuracy is greater than threshold
@@ -264,7 +263,7 @@ int main(int argc, char** argv)
 
     parser.description("The Minerva image classifier.");
 
-    parser.parse("-i", "--iterations", iterations, 4,
+    parser.parse("-i", "--iterations", iterations, 15,
         "The number of iterations to train for");
     parser.parse("-L", "--log-module", loggingEnabledModules, "",
 		"Print out log messages during execution for specified modules "

@@ -620,33 +620,37 @@ static Matrix extractBlockByRow(const NaiveBlockSparseMatrix& matrix, size_t blo
 	return result;
 }
 
-Value* NaiveBlockSparseMatrix::reduceTileSumAlongRows(size_t rowsPerTile) const
+Value* NaiveBlockSparseMatrix::reduceTileSumAlongRows(size_t rowsPerTile, size_t blocks) const
 {
 	auto result = new NaiveBlockSparseMatrix(isRowSparse());
+
+	size_t rowsPerStep = rowsPerTile * blocks;
 	
 	if(isRowSparse())
 	{
 		// step one tile at a time
-		for(size_t row = 0; row < rows(); row += rowsPerTile)
+		for(size_t row = 0; row < rows(); row += rowsPerStep)
 		{
-			size_t endingRow = row + rowsPerTile;
+			size_t endingRow = row + rowsPerStep;
 			
 			assert(endingRow <= rows());
 			
 			if(result->empty())
 			{
-				for(size_t currentRow = row; currentRow < endingRow; currentRow += rowsPerBlock())
+				for(size_t currentRow = row; currentRow < endingRow; currentRow += rowsPerTile)
 				{
-					size_t block    = row / rowsPerBlock();
-					size_t blockEnd = currentRow + rowsPerBlock();
+					size_t block       = row / this->rowsPerBlock();
+					size_t blockOffset = row % this->rowsPerBlock();
 
-					if(blockEnd <= rowsPerTile)
+					assert(block < this->blocks());
+
+					if(blockOffset == 0 && this->rowsPerBlock() == rowsPerTile)
 					{
 						result->push_back((*this)[block]);
 					}
 					else
 					{
-						size_t rows = std::min(rowsPerBlock(), endingRow - currentRow);
+						size_t rows = std::min(rowsPerTile, endingRow - currentRow);
 
 						result->push_back((*this)[block].slice(0, 0, rows, columnsPerBlock()));
 					}
@@ -654,24 +658,23 @@ Value* NaiveBlockSparseMatrix::reduceTileSumAlongRows(size_t rowsPerTile) const
 			}
 			else
 			{
-				for(size_t currentRow = row; currentRow < endingRow; currentRow += rowsPerBlock())
+				for(size_t currentRow = row; currentRow < endingRow; currentRow += rowsPerTile)
 				{
-					size_t block       = row / rowsPerBlock();
-					size_t blockOffset = row % rowsPerBlock();
+					size_t block       = row / this->rowsPerBlock();
+					size_t blockOffset = row % this->rowsPerBlock();
 
-					size_t blockEnd = (block + 1) * rowsPerBlock();
-					
 					size_t resultBlock = (currentRow / rowsPerBlock()) % result->blocks();
 					
 					assert(resultBlock < result->blocks());
+					assert(block < this->blocks());
 
-					if(blockEnd <= rowsPerTile && blockOffset == 0)
+					if(blockOffset == 0 && this->rowsPerBlock() == rowsPerTile)
 					{
 						(*result)[resultBlock] = (*result)[resultBlock].add((*this)[block]);
 					}
 					else
 					{
-						size_t rows = std::min(rowsPerBlock(), endingRow - currentRow);
+						size_t rows = std::min(rowsPerTile, endingRow - currentRow);
 
 						(*result)[resultBlock] = (*result)[resultBlock].add(extractBlockByRow(*this, block, blockOffset, rows));
 					}

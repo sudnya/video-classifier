@@ -138,7 +138,7 @@ public:
     float reduceSum() const;
 	BlockSparseMatrix reduceSumAlongColumns() const;
 	BlockSparseMatrix reduceSumAlongRows() const;
-	BlockSparseMatrix reduceTileSumAlongRows(size_t rowsPerTile) const;
+	BlockSparseMatrix reduceTileSumAlongRows(size_t rowsPerTile, size_t blocks) const;
 
 public:
 	std::string toString()    const;

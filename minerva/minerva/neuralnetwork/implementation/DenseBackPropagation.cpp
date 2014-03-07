@@ -210,9 +210,9 @@ MatrixVector DenseBackPropagation::getDeltas(const NeuralNetwork& network, const
 
 	std::reverse(deltas.begin(), deltas.end());
 	
-	if (util::isLogEnabled("DenseBackPropagation::Detail"))
+	if(util::isLogEnabled("DenseBackPropagation::Detail"))
 	{
-		for (auto& delta : deltas)
+		for(auto& delta : deltas)
 		{
 			util::log("DenseBackPropagation::Detail") << " added delta of size ( " << delta.rows() << " ) rows and ( " << delta.columns() << " )\n" ;
 			//util::log("DenseBackPropagation::Detail") << " delta contains " << delta.toString() << "\n";
@@ -286,16 +286,16 @@ MatrixVector DenseBackPropagation::getActivations(const NeuralNetwork& network, 
 	return activations;
 }
 
-void coalesceNeuronOutputs(BlockSparseMatrix& derivative, const BlockSparseMatrix& skeleton)
+static void coalesceNeuronOutputs(BlockSparseMatrix& derivative, const BlockSparseMatrix& skeleton)
 {
 	if(derivative.rowsPerBlock() == skeleton.columnsPerBlock() && derivative.blocks() == skeleton.blocks()) return;
 	
 	// Must be evenly divisible
 	assert(derivative.rows() % skeleton.columns() == 0);
-	assert(derivative.columns() == skeleton.rows());
+	assert(derivative.columns() == skeleton.rowsPerBlock());
 	
 	// Add the rows together in a block-cyclic fasion
-	derivative = derivative.reduceTileSumAlongRows(skeleton.columns());
+	derivative = derivative.reduceTileSumAlongRows(skeleton.columns(), skeleton.blocks());
 }
 
 MatrixVector DenseBackPropagation::getCostDerivative(

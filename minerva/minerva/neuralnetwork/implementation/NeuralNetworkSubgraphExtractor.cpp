@@ -313,7 +313,14 @@ public:
 		
 		return baseIds[layer];
 	}
-
+	
+	const NeuralNetwork* network() const
+	{
+		if(blocks.empty()) return nullptr;
+		
+		return blocks.front().network;
+	}
+	
 public:
 	void push_back(const NeuronBlock& block)
 	{
@@ -612,6 +619,11 @@ static void getTiles(TileVector& tiles, const NeuralNetwork* neuralNetwork, cons
 static void configureTile(NeuralNetwork* networkTile, BlockSparseMatrix* inputTile,
 	BlockSparseMatrix* referenceTile, const Tile& tile)
 {
+	if(tile.network() != nullptr)
+	{
+		networkTile->setUseSparseCostFunction(tile.network()->isUsingSparseCostFunction());
+	}
+	
 	for(auto& block : tile.blocks)
 	{
 		if(block.isInput() && inputTile != nullptr)

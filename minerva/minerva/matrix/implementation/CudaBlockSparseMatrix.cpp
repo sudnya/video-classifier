@@ -639,7 +639,7 @@ Value* CudaBlockSparseMatrix::reduceSumAlongRows() const
 	return result;
 }
 
-Value* CudaBlockSparseMatrix::reduceTileSumAlongRows(size_t tilesPerRow) const
+Value* CudaBlockSparseMatrix::reduceTileSumAlongRows(size_t tilesPerRow, size_t rowsPerBlock) const
 {
 	assertM(false, "Not implemented.");
 	

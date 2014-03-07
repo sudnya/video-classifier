@@ -68,7 +68,7 @@ public:
     virtual float reduceSum() const;
 	virtual Value* reduceSumAlongColumns() const;
 	virtual Value* reduceSumAlongRows() const;
-	virtual Value* reduceTileSumAlongRows(size_t tilesPerRow) const;
+	virtual Value* reduceTileSumAlongRows(size_t tilesPerRow, size_t blocks) const;
 
 public:
 	virtual Value* clone() const;

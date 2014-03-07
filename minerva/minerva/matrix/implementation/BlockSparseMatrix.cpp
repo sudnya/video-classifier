@@ -372,9 +372,9 @@ BlockSparseMatrix BlockSparseMatrix::reduceSumAlongRows() const
 	return BlockSparseMatrix(_implementation->reduceSumAlongRows());
 }
 
-BlockSparseMatrix BlockSparseMatrix::reduceTileSumAlongRows(size_t tilesPerRow) const
+BlockSparseMatrix BlockSparseMatrix::reduceTileSumAlongRows(size_t tilesPerRow, size_t rowsPerBlock) const
 {
-	return BlockSparseMatrix(_implementation->reduceTileSumAlongRows(tilesPerRow));
+	return BlockSparseMatrix(_implementation->reduceTileSumAlongRows(tilesPerRow, rowsPerBlock));
 }
 
 std::string BlockSparseMatrix::toString() const

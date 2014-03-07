@@ -64,6 +64,8 @@ void UnsupervisedLearner::learn(ImageVector&& images)
 			copy.addLayer(std::move(m_featureSelector[layerId]));
 		}
 		
+		copy.setUseSparseCostFunction(m_featureSelector.isUsingSparseCostFunction());
+		
 		copy.mirror();
 		
 		copy.train(layerInput, inputReference);

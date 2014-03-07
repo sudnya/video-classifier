@@ -45,7 +45,7 @@ gCompilerOptions = {
 			'standard': ['-stdlib=libc++', '-std=c++0x', '-pthread']},
 		'clang++' : {'warn_all' : '-Wall',
 			'warn_errors' : '-Werror',
-			'optimization' : ['-O3'], 'debug' : '-g',
+			'optimization' : ['-O3'], 'debug' : ['-g'],
 			'exception_handling' : '',
 			'standard': ['-stdlib=libc++', '-std=c++0x', '-pthread']},
 		'cl'  : {'warn_all' : '/Wall',
