@@ -41,9 +41,9 @@ SparseBackPropagation::SparseBackPropagation(NeuralNetwork* ann,
 	BlockSparseMatrix* ref)
 : BackPropagation(ann, input, ref), _lambda(0.0f), _sparsity(0.0f), _sparsityWeight(0.0f)
 {
-	_lambda         = util::KnobDatabase::getKnobValue("NeuralNetwork::Lambda",         0.05f);
-	_sparsity       = util::KnobDatabase::getKnobValue("NeuralNetwork::Sparsity",       0.05f);
-	_sparsityWeight = util::KnobDatabase::getKnobValue("NeuralNetwork::SparsityWeight", 0.20f);
+	_lambda         = util::KnobDatabase::getKnobValue("NeuralNetwork::Lambda",         0.050f);
+	_sparsity       = util::KnobDatabase::getKnobValue("NeuralNetwork::Sparsity",       0.005f);
+	_sparsityWeight = util::KnobDatabase::getKnobValue("NeuralNetwork::SparsityWeight", 0.600f);
 }
 
 MatrixVector SparseBackPropagation::getCostDerivative(const NeuralNetwork& neuralNetwork,

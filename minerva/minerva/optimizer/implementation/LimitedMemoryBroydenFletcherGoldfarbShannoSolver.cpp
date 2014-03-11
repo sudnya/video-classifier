@@ -280,6 +280,7 @@ float LBFGSSolver::solve(BlockSparseMatrixVector& inputs, const CostAndGradientF
 
 double LBFGSSolver::getMemoryOverhead()
 {
+	// something like 120x the size of the inputs
 	return 120.0;
 }
 

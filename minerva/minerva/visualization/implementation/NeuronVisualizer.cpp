@@ -10,13 +10,14 @@
 #include <minerva/neuralnetwork/interface/NeuralNetwork.h>
 #include <minerva/neuralnetwork/interface/DenseBackPropagation.h>
 
-#include <minerva/optimizer/interface/NonDifferentiableLinearSolver.h>
-#include <minerva/optimizer/interface/NonDifferentiableLinearSolverFactory.h>
+#include <minerva/optimizer/interface/GeneralNondifferentiableSolver.h>
+#include <minerva/optimizer/interface/GeneralNondifferentiableSolverFactory.h>
 
-#include <minerva/optimizer/interface/LinearSolver.h>
-#include <minerva/optimizer/interface/LinearSolverFactory.h>
+#include <minerva/optimizer/interface/GeneralDifferentiableSolver.h>
+#include <minerva/optimizer/interface/GeneralDifferentiableSolverFactory.h>
 
 #include <minerva/optimizer/interface/CostAndGradientFunction.h>
+#include <minerva/optimizer/interface/CostFunction.h>
 #include <minerva/optimizer/interface/SparseMatrixFormat.h>
 
 #include <minerva/video/interface/Image.h>
@@ -75,7 +76,7 @@ Image NeuronVisualizer::visualizeInputTileForNeuron(unsigned int outputNeuron)
 		
 	Image image(x, y, colors, 1);
 	
-	visualization::visualizeNeuron(tile, image, outputNeuron);
+	visualization::visualizeNeuron(tile, image, outputNeuron % tile.getOutputNeurons());
 	
 	return image;
 }
@@ -226,12 +227,12 @@ static float computeCost(const NeuralNetwork* network, unsigned int neuron,
 	return cost;
 }
 
-class CostFunction : public optimizer::NonDifferentiableLinearSolver::Cost
+class CostFunction : public optimizer::CostFunction
 {
 public:
 	CostFunction(const NeuralNetwork* network, unsigned int neuron,
 		float initialCost, float costReductionFactor = 0.2f)
-	: Cost(initialCost, costReductionFactor), _network(network), _neuron(neuron)
+	: optimizer::CostFunction(initialCost, costReductionFactor), _network(network), _neuron(neuron)
 	{
 	
 	}
@@ -258,7 +259,7 @@ static Matrix optimizeWithoutDerivative(const NeuralNetwork* network,
 		"NeuronVisualizer::SolverType", "SimulatedAnnealingSolver");
 	
 	auto solver =
-		optimizer::NonDifferentiableLinearSolverFactory::create(solverType);
+		optimizer::GeneralNondifferentiableSolverFactory::create(solverType);
 	
 	assert(solver != nullptr);
 
@@ -313,7 +314,7 @@ static Matrix generateReferenceForNeuron(const NeuralNetwork* network,
 	return reference;
 }
 
-static void addConstraints(optimizer::LinearSolver* solver)
+static void addConstraints(optimizer::GeneralDifferentiableSolver* solver)
 {
 	// TODO
 	//assert(false); // not implemented
@@ -334,7 +335,7 @@ static Matrix optimizeWithDerivative(float& bestCost, const NeuralNetwork* netwo
 	auto bestSoFar = input;
 	     bestCost  = data->computeCost();
 
-	auto solver = optimizer::LinearSolverFactory::create();
+	auto solver = optimizer::GeneralDifferentiableSolverFactory::create();
 	
 	assert(solver != nullptr);
 

@@ -6,8 +6,8 @@
 
 // Minerva Includes
 #include <minerva/optimizer/interface/TiledConvolutionalSolver.h>
-#include <minerva/optimizer/interface/LinearSolver.h>
-#include <minerva/optimizer/interface/LinearSolverFactory.h>
+#include <minerva/optimizer/interface/GeneralDifferentiableSolver.h>
+#include <minerva/optimizer/interface/GeneralDifferentiableSolverFactory.h>
 #include <minerva/optimizer/interface/CostAndGradientFunction.h>
 #include <minerva/optimizer/interface/SparseMatrixFormat.h>
 
@@ -37,10 +37,10 @@ typedef neuralnetwork::NeuralNetwork NeuralNetwork;
 typedef neuralnetwork::NeuralNetworkSubgraphExtractor NeuralNetworkSubgraphExtractor;
 typedef matrix::Matrix Matrix;
 typedef matrix::BlockSparseMatrix BlockSparseMatrix;
-typedef LinearSolver::BlockSparseMatrixVector BlockSparseMatrixVector;
+typedef GeneralDifferentiableSolver::BlockSparseMatrixVector BlockSparseMatrixVector;
 
 TiledConvolutionalSolver::TiledConvolutionalSolver(BackPropagation* b)
-: Solver(b)
+: NeuralNetworkSolver(b)
 {
 
 }
@@ -85,7 +85,7 @@ static float linearSolver(BackPropagation* backPropData)
 {
 	util::log("TiledConvolutionalSolver") << "  starting linear solver\n";
 		
-	auto solver = LinearSolverFactory::create();
+	auto solver = GeneralDifferentiableSolverFactory::create();
 	
 	float newCost = std::numeric_limits<float>::infinity();
 	

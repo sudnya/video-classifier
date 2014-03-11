@@ -9,7 +9,7 @@
 #include <minerva/neuralnetwork/interface/BackPropagation.h>
 #include <minerva/neuralnetwork/interface/BackPropagationFactory.h>
 
-#include <minerva/optimizer/interface/Solver.h>
+#include <minerva/optimizer/interface/NeuralNetworkSolver.h>
 
 #include <minerva/util/interface/Knobs.h>
 #include <minerva/util/interface/debug.h>
@@ -19,7 +19,7 @@
 #include <vector>
 #include <ctime>
 
-typedef minerva::optimizer::Solver Solver;
+typedef minerva::optimizer::NeuralNetworkSolver NeuralNetworkSolver;
 
 namespace minerva
 {
@@ -82,7 +82,7 @@ void NeuralNetwork::train(BlockSparseMatrix& input, BlockSparseMatrix& reference
 	backPropagation->setInput(&input);
 	backPropagation->setReferenceOutput(&reference);
 
-	Solver* solver = Solver::create(backPropagation);
+	auto solver = NeuralNetworkSolver::create(backPropagation);
 	
 	try
 	{
@@ -141,7 +141,7 @@ float NeuralNetwork::computeAccuracy(const BlockSparseMatrix& input,
 
 	float threshold = 0.5f;
 
-	auto resultActivations	= result.greaterThanOrEqual(threshold);
+	auto resultActivations	  = result.greaterThanOrEqual(threshold);
 	auto referenceActivations = reference.greaterThanOrEqual(threshold);
 
 	util::log("NeuralNetwork") << "Result activations " << resultActivations.toString();

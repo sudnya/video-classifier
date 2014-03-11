@@ -331,6 +331,11 @@ void BlockSparseMatrix::sigmoidDerivativeSelf()
 	_implementation->sigmoidDerivativeSelf();
 }
 
+void BlockSparseMatrix::minSelf(float value)
+{
+	_implementation->minSelf(value);
+}
+
 void BlockSparseMatrix::transposeSelf()
 {
 	_implementation->transposeSelf();

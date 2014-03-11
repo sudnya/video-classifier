@@ -8,8 +8,8 @@
 // Minerva Includes
 #include <minerva/optimizer/interface/Solver.h>
 #include <minerva/optimizer/interface/MultiLevelOptimizer.h>
-#include <minerva/optimizer/interface/LinearSolverFactory.h>
-#include <minerva/optimizer/interface/LinearSolver.h>
+#include <minerva/optimizer/interface/GeneralDifferentiableSolverFactory.h>
+#include <minerva/optimizer/interface/GeneralDifferentiableSolver.h>
 #include <minerva/optimizer/interface/CostAndGradientFunction.h>
 
 #include <minerva/matrix/interface/Matrix.h>
@@ -25,7 +25,7 @@
 #include <cmath>
 
 typedef minerva::matrix::BlockSparseMatrix BlockSparseMatrix;
-typedef minerva::optimizer::LinearSolver::BlockSparseMatrixVector BlockSparseMatrixVector;
+typedef minerva::optimizer::GeneralDifferentiableSolver::BlockSparseMatrixVector BlockSparseMatrixVector;
 typedef minerva::matrix::Matrix Matrix;
 typedef minerva::matrix::Matrix::FloatVector FloatVector;
 
@@ -36,7 +36,7 @@ namespace minerva
 namespace optimizer
 {
 
-MultiLevelOptimizer::MultiLevelOptimizer(BackPropagation* d) : Solver(d), generator(std::time(0))
+MultiLevelOptimizer::MultiLevelOptimizer(BackPropagation* d) : NeuralNetworkSolver(d), generator(std::time(0))
 {
 
 }
@@ -278,7 +278,7 @@ static float approximateSearch(BlockSparseMatrixVector& weights, float currentCo
 	util::log("MultiLevelOptimizer")
 		<< "  starting approximate search with cost : " << currentCost << "\n";
 		
-	auto solver = LinearSolverFactory::create();
+	auto solver = GeneralDifferentiableSolverFactory::create();
 	
 	if(solver == nullptr)
 	{

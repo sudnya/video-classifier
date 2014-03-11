@@ -114,7 +114,7 @@ Value* NaiveBlockSparseMatrix::reverseConvolutionalMultiply(const Value* matrix)
 	// TODO: in parallel
 	auto result = new NaiveBlockSparseMatrix(isRowSparse());
 	
-	size_t leftColumnStep = (columns() + m->rowsPerBlock() - 1) / m->rowsPerBlock(); 
+	size_t leftColumnStep = (columns() + m->rows() - 1) / m->rows(); 
 	size_t leftColumn     = 0;
 
 	auto flattened = toMatrix();
@@ -450,6 +450,15 @@ void NaiveBlockSparseMatrix::sigmoidDerivativeSelf()
 	for(auto& matrix : *this)
 	{
 		matrix.sigmoidDerivativeSelf();
+	}
+}
+
+void NaiveBlockSparseMatrix::minSelf(float v)
+{
+	// TODO: in parallel
+	for(auto& matrix : *this)
+	{
+		matrix.minSelf(v);
 	}
 }
 

@@ -54,6 +54,8 @@ public:
 	virtual void logSelf();
     virtual void sigmoidSelf();
     virtual void sigmoidDerivativeSelf();
+    
+	virtual void minSelf(float value);
 
 	virtual void transposeSelf();
 

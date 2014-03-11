@@ -445,6 +445,14 @@ void NaiveMatrix::klDivergenceDerivativeSelf(float sparsity)
 	}
 }
 
+void NaiveMatrix::minSelf(float value)
+{
+	for(auto& f : _data)
+	{
+		f = std::min(f, value);
+	}
+}
+
 void NaiveMatrix::assignUniformRandomValues(
 	std::default_random_engine& generator, float min, float max)
 {
@@ -477,6 +485,19 @@ Value* NaiveMatrix::greaterThanOrEqual(float f) const
 	for(auto& value : result->_data)
 	{
 		value = (value >= f) ? 1.0f : 0.0f;
+	}
+	
+	return result;
+}
+
+Value* NaiveMatrix::lessThanOrEqual(float f) const
+{
+	NaiveMatrix* result = new NaiveMatrix(*this);
+	
+	// TODO: faster
+	for(auto& value : result->_data)
+	{
+		value = (value <= f) ? 1.0f : 0.0f;
 	}
 	
 	return result;

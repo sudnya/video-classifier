@@ -84,7 +84,9 @@ public:
 	
     Image sample(size_t samples) const;
 	Image downsample(size_t x, size_t y, size_t colors) const;
- 
+	
+	Image crop();
+	 
 public:
 	float getComponentAt(size_t position) const;
 	float getComponentAt(size_t x, size_t y, size_t color) const;

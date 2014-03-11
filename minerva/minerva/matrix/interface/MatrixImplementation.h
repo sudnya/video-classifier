@@ -76,6 +76,7 @@ public:
     virtual void sigmoidDerivativeSelf() = 0;
     virtual void klDivergenceSelf(float sparsity) = 0;
     virtual void klDivergenceDerivativeSelf(float sparsity) = 0;
+    virtual void minSelf(float f) = 0;
 
 	virtual void assignUniformRandomValues(
 		std::default_random_engine& engine, float min, float max) = 0;
@@ -84,6 +85,7 @@ public:
 public:
 	virtual Value* greaterThanOrEqual(float f) const = 0;
 	virtual Value* equals(const Value* m) const = 0;
+	virtual Value* lessThanOrEqual(float f) const = 0;
 
 public:
     virtual float  reduceSum() const = 0;

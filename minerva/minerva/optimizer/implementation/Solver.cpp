@@ -1,41 +1,37 @@
-/* Author: Sudnya Padalikar
- * Date  : 08/17/2013
- * The interface for the Solver class 
- */
+/*! \file   Solver.cpp
+	\author Gregory Diamos <gregory.diamos@gmail.com>
+	\date   Saturday March 8, 2014
+	\brief  The source file for the Solver class.
+*/
 
-
+// Minerva Includes
 #include <minerva/optimizer/interface/Solver.h>
-#include <minerva/optimizer/interface/MultiLevelOptimizer.h>
-#include <minerva/optimizer/interface/TiledConvolutionalSolver.h>
-
-#include <minerva/util/interface/debug.h>
-#include <minerva/util/interface/Knobs.h>
+#include <minerva/optimizer/interface/Constraint.h>
 
 namespace minerva
 {
+
 namespace optimizer
 {
 
-void Solver::solve()
+Solver::Solver()
 {
-    assertM(false, "Not implemented yet");
+
 }
 
-Solver* Solver::create(BackPropagation* d)
+Solver::~Solver()
 {
-	auto solverName = util::KnobDatabase::getKnobValue("Solver::Type",
-		"TiledConvolutionalSolver");
-		//"MultiLevelOptimizer");	
-
-	if(solverName == "MultiLevelOptimizer")
+	for(auto constraint : _constraints)
 	{
-		return new MultiLevelOptimizer(d);
+		delete constraint;
 	}
+}
 
-	// Fall back to tiled solver
-	return new TiledConvolutionalSolver(d);
+void Solver::addConstraint(const Constraint& constraint)
+{
+	_constraints.push_back(constraint.clone());
 }
 
 }
-}
 
+}

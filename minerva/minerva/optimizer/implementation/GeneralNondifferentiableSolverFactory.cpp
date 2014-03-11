@@ -1,11 +1,11 @@
-/*	\file   NonDifferentiableLinearSolverFactory.cpp
+/*	\file   GeneralNondifferentiableSolverFactory.cpp
 	\date   Saturday August 10, 2013
 	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The source file for the NonDifferentiableLinearSolverFactory class.
+	\brief  The source file for the GeneralNondifferentiableSolverFactory class.
 */
 
 // Minerva Includes
-#include <minerva/optimizer/interface/NonDifferentiableLinearSolverFactory.h>
+#include <minerva/optimizer/interface/GeneralNondifferentiableSolverFactory.h>
 
 #include <minerva/optimizer/interface/SimulatedAnnealingSolver.h>
 
@@ -15,10 +15,10 @@ namespace minerva
 namespace optimizer
 {
 
-NonDifferentiableLinearSolver* NonDifferentiableLinearSolverFactory::create(
+GeneralNondifferentiableSolver* GeneralNondifferentiableSolverFactory::create(
 	const std::string& name)
 {
-	NonDifferentiableLinearSolver* solver = nullptr;
+	GeneralNondifferentiableSolver* solver = nullptr;
 	
 	if(name == "SimulatedAnnealingSolver")
 	{

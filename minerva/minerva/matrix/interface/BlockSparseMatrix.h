@@ -121,6 +121,7 @@ public:
 	void logSelf();
     void sigmoidSelf();
     void sigmoidDerivativeSelf();
+	void minSelf(float f);
 
 	void transposeSelf();
 

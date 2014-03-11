@@ -1,7 +1,7 @@
-/*	\file   NonDifferentiableLinearSolverFactory.h
+/*	\file   GeneralNondifferentiableSolverFactory.h
 	\date   Saturday August 10, 2013
 	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The header file for the NonDifferentiableLinearSolverFactory class.
+	\brief  The header file for the GeneralNondifferentiableSolverFactory class.
 */
 
 #pragma once
@@ -12,7 +12,7 @@
 // Forward Declarations
 namespace minerva
 {
-	namespace optimizer { class NonDifferentiableLinearSolver; }
+	namespace optimizer { class GeneralNondifferentiableSolver; }
 }
 
 namespace minerva
@@ -22,10 +22,10 @@ namespace optimizer
 {
 
 /*! \brief A factory for linear optimizers */
-class NonDifferentiableLinearSolverFactory
+class GeneralNondifferentiableSolverFactory
 {
 public:
-	static NonDifferentiableLinearSolver* create(const std::string& name);
+	static GeneralNondifferentiableSolver* create(const std::string& name);
 
 };
 

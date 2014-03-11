@@ -466,6 +466,14 @@ void AtlasMatrix::klDivergenceDerivativeSelf(float sparsity)
 	}
 }
 
+void AtlasMatrix::minSelf(float value)
+{
+	for(auto& f : _data)
+	{
+		f = std::min(f, value);
+	}
+}
+
 void AtlasMatrix::assignUniformRandomValues(
 	std::default_random_engine& generator, float min, float max)
 {
@@ -502,6 +510,19 @@ Value* AtlasMatrix::equals(const Value* m) const
 		++resultValue, ++value)
 	{
 		*resultValue = (*resultValue == *value) ? 1.0f : 0.0f;
+	}
+	
+	return result;
+}
+
+Value* AtlasMatrix::lessThanOrEqual(float f) const
+{
+	AtlasMatrix* result = new AtlasMatrix(*this);
+	
+	// TODO: faster
+	for(auto& value : result->_data)
+	{
+		value = (value <= f) ? 1.0f : 0.0f;
 	}
 	
 	return result;

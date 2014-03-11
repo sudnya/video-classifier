@@ -7,7 +7,7 @@
 #pragma once
 
 // Minvera Includes
-#include <minerva/optimizer/interface/LinearSolver.h>
+#include <minerva/optimizer/interface/GeneralDifferentiableSolver.h>
 
 namespace minerva
 {
@@ -15,7 +15,7 @@ namespace minerva
 namespace optimizer
 {
 
-class LimitedMemoryBroydenFletcherGoldfarbShannoSolver : public LinearSolver
+class LimitedMemoryBroydenFletcherGoldfarbShannoSolver : public GeneralDifferentiableSolver
 {
 public:
 	virtual ~LimitedMemoryBroydenFletcherGoldfarbShannoSolver();

@@ -8,7 +8,7 @@
 #pragma once
 
 // Minerva Includes
-#include <minerva/optimizer/interface/Solver.h>
+#include <minerva/optimizer/interface/NeuralNetworkSolver.h>
 
 // Standard Library Includes
 #include <random>
@@ -20,21 +20,21 @@ namespace minerva
 {
 namespace optimizer
 {
-class MultiLevelOptimizer : public Solver
+class MultiLevelOptimizer : public NeuralNetworkSolver
 {
-    public:
-        typedef minerva::matrix::Matrix Matrix;
-        
-    public:
-        MultiLevelOptimizer(BackPropagation* d);
-        void solve();
-    
-    private:
-        void greedy();
-        void addToTabuList();
+public:
+	typedef minerva::matrix::Matrix Matrix;
+	
+public:
+	MultiLevelOptimizer(BackPropagation* d);
+	void solve();
 
-	private:
-		std::default_random_engine generator;
+private:
+	void greedy();
+	void addToTabuList();
+
+private:
+	std::default_random_engine generator;
 
 };
 

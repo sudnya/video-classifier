@@ -526,6 +526,11 @@ void CudaBlockSparseMatrix::sigmoidDerivativeSelf()
 	CudaBlockSparseCache::release(this);
 }
 
+void CudaBlockSparseMatrix::minSelf(float value)
+{
+	assertM(false, "Not implemented.");
+}
+
 void CudaBlockSparseMatrix::transposeSelf()
 {
 	_isTransposed = !_isTransposed;

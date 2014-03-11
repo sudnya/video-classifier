@@ -6,9 +6,9 @@
 
 // Minerva Includes
 #include <minerva/neuralnetwork/interface/NeuralNetworkSubgraphExtractor.h>
-#include <minerva/neuralnetwork/interface/neuralnetwork.h>
+#include <minerva/neuralnetwork/interface/NeuralNetwork.h>
 
-#include <minerva/optimizer/interface/LinearSolverFactory.h>
+#include <minerva/optimizer/interface/GeneralDifferentiableSolverFactory.h>
 
 #include <minerva/util/interface/SystemCompatibility.h>
 #include <minerva/util/interface/debug.h>
@@ -26,7 +26,7 @@ namespace neuralnetwork
 typedef NeuralNetworkTile Tile;
 typedef NeuralNetworkSubgraphExtractor::TileVector TileVector;
 typedef matrix::BlockSparseMatrix BlockSparseMatrix;
-typedef optimizer::LinearSolverFactory LinearSolverFactory;
+typedef optimizer::GeneralDifferentiableSolverFactory GeneralDifferentiableSolverFactory;
 
 static void getTiles(TileVector& tiles, const NeuralNetwork* neuralNetwork, const BlockSparseMatrix* input,
 	const BlockSparseMatrix* reference);
@@ -481,7 +481,7 @@ static size_t getTargetReductionFactor(size_t connections)
 	size_t networkBytes = connections * sizeof(float);
 	size_t freeBytes    = util::getFreePhysicalMemory();
 	
-	size_t optimizationExpansionFactor = LinearSolverFactory::getMemoryOverheadForSolver();
+	size_t optimizationExpansionFactor = GeneralDifferentiableSolverFactory::getMemoryOverheadForSolver();
 
 	size_t targetBytes = freeBytes / 10;
 	size_t expandedBytes = networkBytes * optimizationExpansionFactor;

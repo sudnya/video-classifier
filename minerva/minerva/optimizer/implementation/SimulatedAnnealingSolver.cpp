@@ -6,6 +6,7 @@
 
 // Minvera Includes
 #include <minerva/optimizer/interface/SimulatedAnnealingSolver.h>
+#include <minerva/optimizer/interface/CostFunction.h>
 
 #include <minerva/matrix/interface/Matrix.h>
 
@@ -29,11 +30,9 @@ SimulatedAnnealingSolver::~SimulatedAnnealingSolver()
 
 }
 
-typedef SimulatedAnnealingSolver::Cost Cost;
+static float simulatedAnnealing(Matrix& inputs, const CostFunction& callback);
 
-static float simulatedAnnealing(Matrix& inputs, const Cost& callback);
-
-float SimulatedAnnealingSolver::solve(Matrix& inputs, const Cost& callBack)
+float SimulatedAnnealingSolver::solve(Matrix& inputs, const CostFunction& callBack)
 {
 	return simulatedAnnealing(inputs, callBack);
 }
@@ -75,7 +74,7 @@ static Matrix pickNeighbouringState(const Matrix& inputs,
 	return newInputs;
 }
 
-static float simulatedAnnealing(Matrix& inputs, const Cost& callback)
+static float simulatedAnnealing(Matrix& inputs, const CostFunction& callback)
 {
 	std::uniform_real_distribution<float> distribution(0.0f, 1.0f);
 	std::default_random_engine generator(std::time(0));

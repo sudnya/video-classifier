@@ -357,6 +357,13 @@ void Matrix::klDivergenceDerivativeSelf(float sparsity)
 	_matrix->klDivergenceDerivativeSelf(sparsity);
 }
 
+void Matrix::minSelf(float f)
+{
+	assert(_matrix != nullptr);
+	
+	_matrix->minSelf(f);
+}
+
 void Matrix::assignUniformRandomValues(
 	std::default_random_engine& engine, float min, float max)
 {
@@ -377,6 +384,13 @@ Matrix Matrix::equals(const Matrix& m) const
 	assert(_matrix != nullptr);
 
 	return Matrix(_matrix->equals(m._matrix));
+}
+
+Matrix Matrix::lessThanOrEqual(float f) const
+{
+	assert(_matrix != nullptr);
+
+	return Matrix(_matrix->lessThanOrEqual(f));
 }
 
 void Matrix::transposeSelf()

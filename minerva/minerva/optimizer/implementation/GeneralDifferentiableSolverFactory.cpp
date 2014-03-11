@@ -1,11 +1,11 @@
-/*	\file   LinearSolverFactory.cpp
+/*	\file   GeneralDifferentiableSolverFactory.cpp
 	\date   Saturday August 10, 2013
 	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The source file for the LinearSolverFactory class.
+	\brief  The source file for the GeneralDifferentiableSolverFactory class.
 */
 
 // Minerva Includes
-#include <minerva/optimizer/interface/LinearSolverFactory.h>
+#include <minerva/optimizer/interface/GeneralDifferentiableSolverFactory.h>
 #include <minerva/optimizer/interface/LimitedMemoryBroydenFletcherGoldfarbShannoSolver.h>
 #include <minerva/optimizer/interface/GradientDescentSolver.h>
 
@@ -17,9 +17,9 @@ namespace minerva
 namespace optimizer
 {
 
-LinearSolver* LinearSolverFactory::create(const std::string& name)
+GeneralDifferentiableSolver* GeneralDifferentiableSolverFactory::create(const std::string& name)
 {
-	LinearSolver* solver = nullptr;
+	GeneralDifferentiableSolver* solver = nullptr;
 	
 	if("LimitedMemoryBroydenFletcherGoldfarbShannoSolver" == name ||
 		"LBFGSSolver" == name)
@@ -39,19 +39,19 @@ LinearSolver* LinearSolverFactory::create(const std::string& name)
 
 static std::string getSolverName()
 {
-	return util::KnobDatabase::getKnobValue("LinearSolver::Type",
+	return util::KnobDatabase::getKnobValue("GeneralDifferentiableSolver::Type",
 		//"LBFGSSolver");
 		"GradientDescentSolver");	
 }
 
-LinearSolver* LinearSolverFactory::create()
+GeneralDifferentiableSolver* GeneralDifferentiableSolverFactory::create()
 {
 	auto solverName = getSolverName();
 	
 	return create(solverName);
 }
 
-double LinearSolverFactory::getMemoryOverheadForSolver(const std::string& name)
+double GeneralDifferentiableSolverFactory::getMemoryOverheadForSolver(const std::string& name)
 {
 	if("LimitedMemoryBroydenFletcherGoldfarbShannoSolver" == name ||
 		"LBFGSSolver" == name)
@@ -69,7 +69,7 @@ double LinearSolverFactory::getMemoryOverheadForSolver(const std::string& name)
 	return 2.0;
 }
 
-double LinearSolverFactory::getMemoryOverheadForSolver()
+double GeneralDifferentiableSolverFactory::getMemoryOverheadForSolver()
 {
 	auto solverName = getSolverName();
 	 

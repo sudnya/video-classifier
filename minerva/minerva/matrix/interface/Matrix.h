@@ -113,6 +113,8 @@ public:
     void sigmoidDerivativeSelf();
     void klDivergenceSelf(float sparsity);
     void klDivergenceDerivativeSelf(float sparsity);
+    
+	void minSelf(float sparsity);
 
 	void transposeSelf();
 
@@ -122,6 +124,7 @@ public:
 public:
 	Matrix greaterThanOrEqual(float f) const;
 	Matrix equals(const Matrix& m) const;
+	Matrix lessThanOrEqual(float f) const;
 
 public:
     float  reduceSum()             const;

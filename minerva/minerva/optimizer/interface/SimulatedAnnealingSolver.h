@@ -7,7 +7,7 @@
 #pragma once
 
 // Minvera Includes
-#include <minerva/optimizer/interface/NonDifferentiableLinearSolver.h>
+#include <minerva/optimizer/interface/GeneralNondifferentiableSolver.h>
 
 namespace minerva
 {
@@ -15,13 +15,13 @@ namespace minerva
 namespace optimizer
 {
 
-class SimulatedAnnealingSolver : public NonDifferentiableLinearSolver
+class SimulatedAnnealingSolver : public GeneralNondifferentiableSolver
 {
 public:
 	virtual ~SimulatedAnnealingSolver();
 
 public:
-	virtual float solve(Matrix& inputs, const Cost& callBack);
+	virtual float solve(Matrix& inputs, const CostFunction& callBack);
 
 };
 

@@ -67,7 +67,8 @@ public:
 	virtual void logSelf() = 0;
     virtual void sigmoidSelf() = 0;
     virtual void sigmoidDerivativeSelf() = 0;
-
+	virtual void minSelf(float v) = 0;
+	
 	virtual void transposeSelf() = 0;
 
 	virtual void assignUniformRandomValues(std::default_random_engine& engine,

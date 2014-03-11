@@ -118,7 +118,7 @@ namespace util
 		return result;
 	}
 
-	struct NullStream : std::ostream {};
+	struct NullStream : std::stringstream {};
 
 	/*! \brief Return the stream with the current name */
 	extern std::ostream& _getStream(const std::string& name);

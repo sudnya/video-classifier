@@ -1,45 +1,47 @@
-/* Author: Sudnya Padalikar
- * Date  : 08/17/2013
- * The interface for the Solver class 
- */
+/*! \file   Solver.h
+	\author Gregory Diamos <gregory.diamos@gmail.com>
+	\date   Saturday March 8, 2014
+	\brief  The header file for the Solver class.
+*/
 
 #pragma once
 
-#include <minerva/neuralnetwork/interface/BackPropagation.h>
+// Standard Library Includes
+#include <vector>
+
+// Forward Declarations
+namespace minerva { namespace matrix    { class Matrix;     } }
+namespace minerva { namespace optimizer { class Constraint; } }
 
 namespace minerva
 {
+
 namespace optimizer
 {
 
-/*! \brief A general purpose solver for a neural network */
+/*! \brief A general interface for an optimization problem solver */
 class Solver
 {
-    public:
-        typedef minerva::neuralnetwork::BackPropagation BackPropagation;
+public:
+	Solver();
+	virtual ~Solver();
 
-    public:
-        Solver(BackPropagation* d)
-        : m_backPropDataPtr(d)
-        {
-        
-        }
-        
-        virtual ~Solver()
-        {
-        
-        }
+public:
+	virtual void addConstraint(const Constraint& constraint);
 
-    public:
-        virtual void solve() = 0;
+public:
+	Solver(const Solver&) = delete;
+	Solver& operator=(const Solver&) = delete;
 
-    public: 
-        static Solver* create(BackPropagation* d);
+protected:
+	typedef std::vector<Constraint*> ConstraintVector;
 
-    protected:
-        BackPropagation* m_backPropDataPtr;
+protected:
+	ConstraintVector _constraints;
+	
 };
 
 }
+
 }
 

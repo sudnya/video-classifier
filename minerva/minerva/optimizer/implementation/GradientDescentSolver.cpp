@@ -7,6 +7,7 @@
 #include <minerva/optimizer/interface/Solver.h>
 #include <minerva/optimizer/interface/GradientDescentSolver.h>
 #include <minerva/optimizer/interface/CostAndGradientFunction.h>
+#include <minerva/optimizer/interface/Constraint.h>
 
 #include <minerva/matrix/interface/Matrix.h>
 
@@ -28,10 +29,15 @@ GradientDescentSolver::~GradientDescentSolver()
 
 }
 
+typedef std::vector<Constraint*> ConstraintVector;
+typedef GradientDescentSolver::BlockSparseMatrixVector BlockSparseMatrixVector;
+
+static void applyConstraints(BlockSparseMatrixVector& weights, const ConstraintVector& constraints);
+
 float GradientDescentSolver::solve(BlockSparseMatrixVector& weights, const CostAndGradientFunction& callback)
 {
    float learningRate = util::KnobDatabase::getKnobValue<float>(
-		"GradientDescentSolver::LearningRate", 2.4f);///m_backPropDataPtr->getNeuralNetwork()->getInputCount());
+		"GradientDescentSolver::LearningRate", 2.4f);
 	float convergenceRatio = util::KnobDatabase::getKnobValue<float>(
 		"GradientDescentSolver::ConvergenceRatio", 0.1f);
 	float learningRateBackoff = util::KnobDatabase::getKnobValue<float>(
@@ -59,6 +65,8 @@ float GradientDescentSolver::solve(BlockSparseMatrixVector& weights, const CostA
 		{
 			newWeights.push_back(weight->subtract(derivativeMatrix->multiply(learningRate)));
 		}
+
+		applyConstraints(newWeights, _constraints);
 	
 		float newCost = callback.computeCostAndGradient(derivative, newWeights);
 
@@ -95,7 +103,19 @@ float GradientDescentSolver::solve(BlockSparseMatrixVector& weights, const CostA
 
 double GradientDescentSolver::getMemoryOverhead()
 {
+	// something like 4x the size of the inputs
 	return 4.0;
+}
+
+static void applyConstraints(BlockSparseMatrixVector& weights, const ConstraintVector& constraints)
+{
+	for(auto& matrix : weights)
+	{
+		for(auto constraint : constraints)
+		{
+			constraint->apply(matrix);
+		}
+	}
 }
 
 }

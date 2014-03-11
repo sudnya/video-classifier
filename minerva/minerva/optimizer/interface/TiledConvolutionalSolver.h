@@ -7,7 +7,7 @@
 #pragma once
 
 // Minerva Includes
-#include <minerva/optimizer/interface/Solver.h>
+#include <minerva/optimizer/interface/NeuralNetworkSolver.h>
 
 namespace minerva
 {
@@ -15,7 +15,7 @@ namespace minerva
 namespace optimizer
 {
 
-class TiledConvolutionalSolver : public Solver
+class TiledConvolutionalSolver : public NeuralNetworkSolver
 {
 public:
 	TiledConvolutionalSolver(BackPropagation* );

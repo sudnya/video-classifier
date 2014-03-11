@@ -1,13 +1,16 @@
-/*	\file   LinearSolver.h
+/*	\file   GeneralNondifferentiableSolver.h
 	\date   Sunday August 11, 2013
 	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The header file for the LinearSolver class.
+	\brief  The header file for the GeneralNondifferentiableSolver class.
 */
 
 #pragma once
 
 // Minerva Includes
-#include <minerva/optimizer/interface/GeneralNondifferentiableSolver.h>
+#include <minerva/optimizer/interface/Solver.h>
+
+// Forward Declarations
+namespace minerva { namespace optimizer { class CostFunction; } }
 
 namespace minerva
 {
@@ -15,17 +18,17 @@ namespace minerva
 namespace optimizer
 {
 
-class LinearSolver : public GeneralNondifferentiableSolver
+class GeneralNondifferentiableSolver: public Solver
 {
 public:
 	typedef matrix::Matrix Matrix;
 
 public:
-	virtual ~LinearSolver();
+	virtual ~GeneralNondifferentiableSolver();
 
 public:
-	/*! \brief Performs constrained optimization on a
-		non-differentiable linear function.
+	/*! \brief Performs unconstrained optimization on a
+		non-differentiable function.
 	
 		\input inputs - The initial parameter values being optimized.
 		\input callBack - A Cost object that is used
@@ -41,4 +44,5 @@ public:
 }
 
 }
+
 

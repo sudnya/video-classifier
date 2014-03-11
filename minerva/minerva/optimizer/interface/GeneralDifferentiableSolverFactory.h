@@ -1,7 +1,7 @@
-/*	\file   LinearSolverFactory.h
+/*	\file   GeneralDifferentiableSolverFactory.h
 	\date   Saturday August 10, 2013
 	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The header file for the LinearSolverFactory class.
+	\brief  The header file for the GeneralDifferentiableSolverFactory class.
 */
 
 #pragma once
@@ -10,7 +10,7 @@
 #include <string>
 
 // Forward Declarations
-namespace minerva { namespace optimizer { class LinearSolver; } }
+namespace minerva { namespace optimizer { class GeneralDifferentiableSolver; } }
 
 namespace minerva
 {
@@ -19,18 +19,17 @@ namespace optimizer
 {
 
 /*! \brief A factory for linear optimizers */
-class LinearSolverFactory
+class GeneralDifferentiableSolverFactory
 {
 public:
-	static LinearSolver* create(const std::string& solverName);
+	static GeneralDifferentiableSolver* create(const std::string& solverName);
 
 public:
-	static LinearSolver* create();
+	static GeneralDifferentiableSolver* create();
 
 public:
 	static double getMemoryOverheadForSolver(const std::string& solverName);
 	static double getMemoryOverheadForSolver();
-
 
 };
 

@@ -550,6 +550,14 @@ void CublasMatrix::klDivergenceDerivativeSelf(float sparsity)
 	}
 }
 
+void CublasMatrix::minSelf(float value)
+{
+	for(auto& f : _data)
+	{
+		f = std::min(f, value);
+	}
+}
+
 void CublasMatrix::assignUniformRandomValues(
 	std::default_random_engine& generator, float min, float max)
 {
@@ -587,6 +595,19 @@ Value* CublasMatrix::equals(const Value* m) const
 		++resultValue, ++value)
 	{
 		*resultValue = (*resultValue == *value) ? 1.0f : 0.0f;
+	}
+	
+	return result;
+}
+
+Value* CublasMatrix::lessThanOrEqual(float f) const
+{
+	CublasMatrix* result = new CublasMatrix(*this);
+	
+	// TODO: faster
+	for(auto& value : result->_data)
+	{
+		value = (value <= f) ? 1.0f : 0.0f;
 	}
 	
 	return result;
