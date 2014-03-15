@@ -41,7 +41,7 @@ FeatureExtractor::Matrix FeatureExtractor::extract(ImageVector&& images)
 	size_t blockingFactor = neuralNetwork.getBlockingFactor();
 	
 	auto matrix = images.convertToStandardizedMatrix(neuralNetwork.getInputCount(),
-		std::sqrt(blockingFactor), std::sqrt(blockingFactor));
+		blockingFactor);
 	
 	return neuralNetwork.runInputs(matrix);
 }

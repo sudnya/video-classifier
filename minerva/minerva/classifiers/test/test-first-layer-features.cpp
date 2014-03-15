@@ -88,7 +88,7 @@ static void createModel(ClassificationModel& model, const Parameters& parameters
 	// contrast normalization
 	featureSelector.addLayer(Layer(featureSelector.back().blocks() / reductionFactor,
 		featureSelector.back().getBlockingFactor(),
-		featureSelector.back().getBlockingFactor() / reductionFactor));
+		1));
 
 	featureSelector.initializeRandomly(engine);
 	minerva::util::log("TestFirstLayerFeatures")

@@ -65,6 +65,7 @@ public:
     virtual void sigmoidSelf();
     virtual void sigmoidDerivativeSelf();
 	virtual void minSelf(float value);
+	virtual void maxSelf(float value);
 
 	virtual void transposeSelf();
 

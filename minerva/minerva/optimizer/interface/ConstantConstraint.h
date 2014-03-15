@@ -19,7 +19,14 @@ namespace optimizer
 class ConstantConstraint : public LinearConstraint
 {
 public:
-	ConstantConstraint(float value);
+	enum Comparison
+	{
+		GreaterThanOrEqual,
+		LessThanOrEqual
+	};
+
+public:
+	ConstantConstraint(float value, Comparison c = LessThanOrEqual);
 
 public:
 	virtual ~ConstantConstraint();
@@ -35,7 +42,8 @@ public:
 	virtual Constraint* clone() const;
 
 private:
-	float _value;
+	float      _value;
+	Comparison _comparison;
 
 };
 

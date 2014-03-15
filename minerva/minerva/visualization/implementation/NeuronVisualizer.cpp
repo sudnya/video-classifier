@@ -19,10 +19,12 @@
 #include <minerva/optimizer/interface/CostAndGradientFunction.h>
 #include <minerva/optimizer/interface/CostFunction.h>
 #include <minerva/optimizer/interface/SparseMatrixFormat.h>
+#include <minerva/optimizer/interface/ConstantConstraint.h>
 
 #include <minerva/video/interface/Image.h>
 
 #include <minerva/util/interface/Knobs.h>
+#include <minerva/util/interface/math.h>
 #include <minerva/util/interface/debug.h>
 
 // Standard Library Includes
@@ -41,6 +43,7 @@ typedef matrix::BlockSparseMatrixVector BlockSparseMatrixVector;
 typedef neuralnetwork::NeuralNetwork NeuralNetwork;
 typedef video::Image Image;
 typedef neuralnetwork::BackPropagation BackPropagation;
+typedef optimizer::ConstantConstraint ConstantConstraint;
 
 NeuronVisualizer::NeuronVisualizer(const NeuralNetwork* network)
 : _network(network)
@@ -186,8 +189,12 @@ static void visualizeNeuron(const NeuralNetwork& network, Image& image, unsigned
 		throw std::runtime_error("Invalid neuron visializer solver class " + solverClass);
 	}
 
-	updateImage(image, matrix, std::sqrt(network.getBlockingFactor()),
-		std::sqrt(network.getBlockingFactor()));
+	size_t x = 0;
+	size_t y = 0;
+	
+	util::getNearestToSquareFactors(x, y, network.getBlockingFactor());
+
+	updateImage(image, matrix, x, y);
 }
 
 void NeuronVisualizer::setNeuralNetwork(const NeuralNetwork* network)
@@ -316,8 +323,9 @@ static Matrix generateReferenceForNeuron(const NeuralNetwork* network,
 
 static void addConstraints(optimizer::GeneralDifferentiableSolver* solver)
 {
-	// TODO
-	//assert(false); // not implemented
+	// constrain values between 0.0f and 255.0f
+	solver->addConstraint(ConstantConstraint( 1.0f));
+	solver->addConstraint(ConstantConstraint(-1.0f, ConstantConstraint::GreaterThanOrEqual));
 }
 
 static Matrix optimizeWithDerivative(float& bestCost, const NeuralNetwork* network,

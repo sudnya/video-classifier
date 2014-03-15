@@ -113,6 +113,16 @@ ImageVector::Matrix ImageVector::convertToStandardizedMatrix(size_t sampleCount,
 	return matrix;
 }
 
+ImageVector::Matrix ImageVector::convertToStandardizedMatrix(size_t sampleCount, size_t tileSize) const
+{
+	size_t x = 0;
+	size_t y = 0;
+	
+	util::getNearestToSquareFactors(x, y, tileSize);
+
+	return convertToStandardizedMatrix(x, y, tileSize);
+}
+
 ImageVector::Matrix ImageVector::getReference(
 	const NeuralNetwork& neuralNetwork) const
 {

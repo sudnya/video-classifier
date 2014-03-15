@@ -62,6 +62,26 @@ void Image::setTile(size_t xStart, size_t yStart, const Image& image)
 	}
 }
 
+Image Image::getTile(size_t xStart, size_t yStart, size_t xPixels, size_t yPixels) const
+{
+	Image result(xPixels, yPixels, colorComponents(), pixelSize(), path(), label());
+	
+	// TODO faster
+
+	for(size_t y = 0; y < ySize; ++y)
+	{
+		for(size_t x = 0; x < xSize; ++x)
+		{
+			for(size_t c = 0; c < colorComponents(); ++c)
+			{
+				result.setComponentAt(x, y, c, getComponentAt(x + xStart, y + yStart, c));
+			}
+		}
+	}
+	
+	return result;
+}
+
 size_t Image::x() const
 {
 	assert(_headerLoaded);

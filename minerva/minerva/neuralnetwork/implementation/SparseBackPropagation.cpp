@@ -310,7 +310,7 @@ static MatrixVector computeCostDerivative(const NeuralNetwork& network, const Bl
 		
 		// add in the regularization term
 		auto weights = layer->getWeightsWithoutBias();
-
+		
 		auto lambdaTerm = weights.multiply(lambda/samples);
 		
 		// Account for cases where the same neuron produced multiple outputs
@@ -319,7 +319,7 @@ static MatrixVector computeCostDerivative(const NeuralNetwork& network, const Bl
 		
 		auto regularizedPartialDerivative = lambdaTerm.add(normalizedPartialDerivative.transpose());
 		
-		partialDerivative.push_back(regularizedPartialDerivative);
+		partialDerivative.push_back(std::move(regularizedPartialDerivative));
 	
 		util::log("SparseBackPropagation") << " computed derivative for layer "
 			<< std::distance(deltas.begin(), i)

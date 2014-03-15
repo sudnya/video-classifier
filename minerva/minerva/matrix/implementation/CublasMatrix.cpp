@@ -558,6 +558,14 @@ void CublasMatrix::minSelf(float value)
 	}
 }
 
+void CublasMatrix::maxSelf(float value)
+{
+	for(auto& f : _data)
+	{
+		f = std::max(f, value);
+	}
+}
+
 void CublasMatrix::assignUniformRandomValues(
 	std::default_random_engine& generator, float min, float max)
 {
@@ -677,7 +685,7 @@ Value* CublasMatrix::clone() const
 
 bool CublasMatrix::isSupported()
 {
-	if(!util::KnobDatabase::getKnobValue("CublasMatrix::Enable", false))
+	if(!util::KnobDatabase::getKnobValue("CublasMatrix::Enable", true))
 	{
 		return false;
 	}

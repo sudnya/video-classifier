@@ -60,7 +60,7 @@ void Layer::initializeRandomly(std::default_random_engine& engine, float e)
 	epsilon = (e / std::sqrt(getInputCount() + 1));
 	
 	m_sparseMatrix.assignUniformRandomValues(engine, -epsilon, epsilon);
-	        m_bias.assignUniformRandomValues(engine, -epsilon, epsilon);
+			m_bias.assignUniformRandomValues(engine, -epsilon, epsilon);
 }
 
 Layer::BlockSparseMatrix Layer::runInputs(const BlockSparseMatrix& m) const

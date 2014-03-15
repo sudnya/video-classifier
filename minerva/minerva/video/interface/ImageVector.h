@@ -66,6 +66,8 @@ public:
 public:
 	Matrix convertToStandardizedMatrix(size_t sampleCount,
 		size_t xTileSize, size_t yTileSize) const;
+	Matrix convertToStandardizedMatrix(size_t sampleCount,
+		size_t tileSize) const;
     Matrix getReference(const NeuralNetwork& network) const;
 
 private:

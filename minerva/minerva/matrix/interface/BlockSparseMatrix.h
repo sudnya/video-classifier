@@ -122,6 +122,7 @@ public:
     void sigmoidSelf();
     void sigmoidDerivativeSelf();
 	void minSelf(float f);
+	void maxSelf(float f);
 
 	void transposeSelf();
 

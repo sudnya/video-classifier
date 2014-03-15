@@ -10,14 +10,16 @@
 #include <minerva/matrix/interface/Matrix.h>
 #include <minerva/matrix/interface/BlockSparseMatrix.h>
 
+#include <minerva/util/interface/debug.h>
+
 namespace minerva
 {
 
 namespace optimizer
 {
 
-ConstantConstraint::ConstantConstraint(float value)
-: _value(value)
+ConstantConstraint::ConstantConstraint(float value, Comparison c)
+: _value(value), _comparison(c)
 {
 
 }
@@ -29,12 +31,36 @@ ConstantConstraint::~ConstantConstraint()
 
 bool ConstantConstraint::isSatisfied(const Matrix& m) const
 {
-	return m.lessThanOrEqual(_value).reduceSum() == 0;
+	if(_comparison == LessThanOrEqual)
+	{
+		return m.greaterThanOrEqual(_value).reduceSum() == 0;
+	}
+	else if(_comparison == GreaterThanOrEqual)
+	{
+		return m.lessThanOrEqual(_value).reduceSum() == 0;
+	}
+	else
+	{
+		assertM(false, "not implemented");
+	}
+	
+	return false;
 } 
 
 void ConstantConstraint::apply(BlockSparseMatrix& m) const
 {
-	m.minSelf(_value);
+	if(_comparison == LessThanOrEqual)
+	{
+		m.minSelf(_value);
+	}
+	else if(_comparison == GreaterThanOrEqual)
+	{
+		m.maxSelf(_value);
+	}
+	else
+	{
+		assertM(false, "not implemented");
+	}
 }
 
 Constraint* ConstantConstraint::clone() const

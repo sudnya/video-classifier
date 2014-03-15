@@ -6,9 +6,6 @@
 
 #pragma once
 
-// Minerva Includes
-#include <minerva/matrix/interface/Vector.h>
-
 // Standard Library Includes
 #include <string>
 #include <cstddef>
@@ -113,8 +110,8 @@ public:
     void sigmoidDerivativeSelf();
     void klDivergenceSelf(float sparsity);
     void klDivergenceDerivativeSelf(float sparsity);
-    
 	void minSelf(float sparsity);
+	void maxSelf(float sparsity);
 
 	void transposeSelf();
 

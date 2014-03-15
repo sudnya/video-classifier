@@ -17,6 +17,7 @@
 
 #include <minerva/util/interface/debug.h>
 #include <minerva/util/interface/paths.h>
+#include <minerva/util/interface/math.h>
 #include <minerva/util/interface/Knobs.h>
 
 // Standard Library Includes
@@ -404,6 +405,27 @@ IntVector getRandomOrder(unsigned int size)
 	return order;
 }
 
+static void sliceOutTilesToFitTheNetwork(ClassifierEngine* engine, ImageVector& images)
+{
+	bool shouldSlice = util::KnobDatabase::getKnobValue(
+		"ClassifierEngine::SliceInputImagesToFitNetwork", false);
+
+	if(!shouldSlice)
+	{
+		return;
+	}
+	
+	size_t xTile = 0;
+	size_t yTile = 0;
+	
+	util::getNearestToSquareFactors(xTile, yTile, engine->getInputFeatureCount());
+	
+	for(auto& image : images)
+	{
+		image = image.getTile(image.x()/2, image.y()/2, xTile, yTile);
+	}
+}
+
 static void runAllImages(ClassifierEngine* engine, ImageVector& images,
 	unsigned int maxBatchSize, unsigned int& maxVideoFrames)
 {
@@ -428,7 +450,9 @@ static void runAllImages(ClassifierEngine* engine, ImageVector& images,
 		{
 			image.load();
 		}
-
+		
+		sliceOutTilesToFitTheNetwork(engine, batch);
+		
 		util::log("ClassifierEngine") << " running batch with " << batch.size()
 			<< " images\n";
 		

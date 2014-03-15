@@ -61,7 +61,7 @@ public:
 	void setMultipleSamplesAllowed(bool);
 	/*! \brief Should the engine display images and their labels after running them? */
 	void setDisplayImages(bool);
-
+	
 public:
 	std::string reportStatisticsString() const;
 

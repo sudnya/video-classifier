@@ -336,6 +336,11 @@ void BlockSparseMatrix::minSelf(float value)
 	_implementation->minSelf(value);
 }
 
+void BlockSparseMatrix::maxSelf(float value)
+{
+	_implementation->maxSelf(value);
+}
+
 void BlockSparseMatrix::transposeSelf()
 {
 	_implementation->transposeSelf();
