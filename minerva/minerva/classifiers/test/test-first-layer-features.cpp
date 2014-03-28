@@ -56,7 +56,7 @@ public:
 
 public:
 	Parameters()
-	: blockX(4), blockY(4), blockStep(2)
+	: blockX(8), blockY(8), blockStep(2)
 	{
 		
 	}
@@ -86,9 +86,9 @@ static void createModel(ClassificationModel& model, const Parameters& parameters
 		featureSelector.back().getBlockingFactor() / reductionFactor));
 	
 	// contrast normalization
-	featureSelector.addLayer(Layer(featureSelector.back().blocks() / reductionFactor,
-		featureSelector.back().getBlockingFactor(),
-		1));
+	featureSelector.addLayer(Layer(featureSelector.back().blocks(),
+		featureSelector.back().getBlockingFactor() / reductionFactor,
+		featureSelector.back().getBlockingFactor() / reductionFactor));
 
 	featureSelector.initializeRandomly(engine);
 	minerva::util::log("TestFirstLayerFeatures")

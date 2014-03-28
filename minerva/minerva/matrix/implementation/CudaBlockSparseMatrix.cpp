@@ -139,24 +139,75 @@ Value* CudaBlockSparseMatrix::multiply(const Value* m) const
 	#endif
 }
 
-Value* CudaBlockSparseMatrix::convolutionalMultiply(const Value* matrix, size_t step) const
+const size_t divideRoundUp(size_t numerator, size_t denominator)
 {
-	if(matrix->columnsPerBlock() == step)
-	{
-		return multiply(matrix);
-	}
-
-	assertM(false, "Not implemented.");
+	return (numerator + denominator - 1) / denominator;
 }
 
-Value* CudaBlockSparseMatrix::reverseConvolutionalMultiply(const Value* matrix) const
+Value* CudaBlockSparseMatrix::convolutionalMultiply(const Value* m, size_t step) const
 {
-	if(matrix->rowsPerBlock() == columnsPerBlock())
+	if(m->columnsPerBlock() == step)
 	{
-		return multiply(matrix);
+		return multiply(m);
 	}
+	
+	assert(!_isTransposed);
+	
+	auto copy = std::unique_ptr<Value>(transpose());
 
-	assertM(false, "Not implemented.");
+	float* matrixPointer = CudaBlockSparseCache::acquireReadOnly(m);
+	float* devicePointer = CudaBlockSparseCache::acquireReadOnly(copy.get());	
+
+	size_t resultBlocks          = divideRoundUp(columns(), step);
+	size_t resultRowsPerBlock    = rowsPerBlock();
+	size_t resultColumnsPerBlock = m->columnsPerBlock();
+
+	auto result        = new CudaBlockSparseMatrix(resultBlocks, resultRowsPerBlock, resultColumnsPerBlock, isRowSparse());
+	auto resultPointer = CudaBlockSparseCache::acquireClobber(result);
+	
+	CudaSparseMatrixLibrary::convolutionalMultiply(
+		resultPointer, devicePointer, matrixPointer,
+		static_cast<const CudaBlockSparseMatrix*>(m)->_isTransposed,
+		resultBlocks,
+		blocks(), rowsPerBlock(), columnsPerBlock(),
+		m->blocks(), m->rowsPerBlock(), m->columnsPerBlock(), step);
+
+	CudaBlockSparseCache::release(copy.get());
+	CudaBlockSparseCache::release(result);
+	CudaBlockSparseCache::release(m);
+
+	return result;
+}
+
+Value* CudaBlockSparseMatrix::reverseConvolutionalMultiply(const Value* m) const
+{
+	if(m->rowsPerBlock() == columnsPerBlock())
+	{
+		return multiply(m);
+	}
+	
+	auto matrixPointer = CudaBlockSparseCache::acquireReadOnly(m);
+	auto devicePointer = CudaBlockSparseCache::acquireReadOnly(this);	
+
+	size_t resultBlocks          = m->blocks();
+	size_t resultRowsPerBlock    = rowsPerBlock();
+	size_t resultColumnsPerBlock = m->columnsPerBlock();
+
+	auto result        = new CudaBlockSparseMatrix(resultBlocks, resultRowsPerBlock, resultColumnsPerBlock, isRowSparse());
+	auto resultPointer = CudaBlockSparseCache::acquireClobber(result);
+	
+	CudaSparseMatrixLibrary::reverseConvolutionalMultiply(
+		resultPointer, devicePointer, _isTransposed, matrixPointer,
+		static_cast<const CudaBlockSparseMatrix*>(m)->_isTransposed,
+		resultBlocks,
+		blocks(), rowsPerBlock(), columnsPerBlock(),
+		m->blocks(), m->rowsPerBlock(), m->columnsPerBlock());
+
+	CudaBlockSparseCache::release(this);
+	CudaBlockSparseCache::release(result);
+	CudaBlockSparseCache::release(m);
+
+	return result;
 }
 
 Value* CudaBlockSparseMatrix::multiply(float f) const

@@ -239,6 +239,15 @@ public:
 
 typedef std::map<const BlockSparseMatrixImplementation*, Allocation> AllocationMap;
 
+static size_t getMatrixSize(const BlockSparseMatrixImplementation* matrix)
+{
+	size_t size = matrix->size() * sizeof(float);
+	
+	// TODO: add buffer space for the last block
+	
+	return size;
+}
+
 class CacheManager
 {
 public:
@@ -274,7 +283,7 @@ public:
 		}
 		else
 		{
-			assert(allocation->size == matrix->size() * sizeof(float));
+			assert(allocation->size == getMatrixSize(matrix));
 			
 			if(allocation->hostDirty)
 			{
@@ -305,7 +314,7 @@ public:
 		}
 		else
 		{
-			assert(allocation->size == matrix->size() * sizeof(float));
+			assert(allocation->size == getMatrixSize(matrix));
 			
 			if(allocation->hostDirty)
 			{
@@ -332,7 +341,7 @@ public:
 		}
 		else
 		{
-			assert(allocation->size == matrix->size() * sizeof(float));
+			assert(allocation->size == getMatrixSize(matrix));
 		}
 		
 		allocation->dirty = true;
@@ -431,7 +440,7 @@ public:
 private:
 	Allocation* createNewAllocation(BlockSparseMatrixImplementation* matrix)
 	{
-		size_t size = matrix->size() * sizeof(float);
+		size_t size = getMatrixSize(matrix);
 
 		void* newMemory = nullptr;
 

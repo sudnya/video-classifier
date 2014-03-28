@@ -215,7 +215,7 @@ static void launchKernel(const std::string& name, Args... arguments)
 
 typedef std::vector<float*> FloatPointerVector;
 
-static float* getPointerArray(FloatPointerVector& data, const float* value, size_t blocks, size_t rows, size_t columns)
+static float* getPointerArray(FloatPointerVector& data, const float* value, size_t blocks, size_t rows, size_t columns, size_t step = 0)
 {
 
 	#if 1
@@ -223,7 +223,12 @@ static float* getPointerArray(FloatPointerVector& data, const float* value, size
 	
 	//CudaDriver::cuMemAlloc((CUdeviceptr*)&devicePointer, sizeof(CUdeviceptr*) * blocks);
 	//CudaDriver::cuMemcpyHtoD((CUdeviceptr)devicePointer, data.data(), sizeof(float*) * blocks);
-	launchKernel("setupBlocksForBatchedSgemm", devicePointer, value, blocks, rows * columns);
+	if(step == 0)
+	{
+		step = columns;
+	}
+
+	launchKernel("setupBlocksForBatchedSgemm", devicePointer, value, blocks, rows * step);
 
 	#else	
 	data.resize(blocks);
@@ -308,7 +313,8 @@ void CudaSparseMatrixLibrary::multiply(float* result, const float* left, bool le
 		
 		ldb = rightRows;
 	}
-	
+
+	// TODO	
 	const size_t blockThreshold = 10;
 	const size_t stepThreshold  = 200 * 200;
 
@@ -341,6 +347,96 @@ void CudaSparseMatrixLibrary::multiply(float* result, const float* left, bool le
 		CublasLibrary::cublasSgemmBatched(rightTransposedMode,
 			leftTransposedMode, m, n, k, &alpha,
 			b, ldb, a, lda, &beta, c, ldc, blocks);
+
+		freePointerArray(a, aData);
+		freePointerArray(b, bData);
+		freePointerArray(c, cData);
+	}
+
+}
+
+void CudaSparseMatrixLibrary::convolutionalMultiply(float* result, const float* left,
+	const float* right, bool rightTransposed, size_t resultBlocks, size_t leftBlocks,
+	size_t leftRowsPerBlock, size_t leftColumnsPerBlock, size_t rightBlocks,
+	size_t rightRowsPerBlock, size_t rightColumnsPerBlock, size_t step)
+{
+	float alpha = 1.0f;
+	float beta  = 0.0f;
+
+	util::log("CudaSparseMatrixLibrary") << "Convolutional Multiply left " << left << " (" << leftRowsPerBlock
+		<< " rows, " << leftColumnsPerBlock << " columns) x right " << right << " (" << rightRowsPerBlock
+		<< " rows, " << rightColumnsPerBlock << " columns, " << rightTransposed << " transposed) = " << result << ".\n";
+	
+	// c rows    = rows
+	// c columns = rightColumns
+	
+	// lda = num_col_A = num_row_AT = N;
+	int lda = leftColumnsPerBlock;
+
+	// ldb = num_col_B = num_row_BT = N;
+	int ldb = rightColumnsPerBlock; 
+
+	// ldc = num_col_C = N;
+	int ldc = rightColumnsPerBlock;
+
+	// m and n in the cuBLAS GEMM routine are the #rows and #cols of
+	// the result matrix C,
+
+	// k is the common dimension of A^T and B,
+
+	// k = num_col_AT = num_row_B = M;
+	int k = leftColumnsPerBlock;
+
+	// n = num_col_C
+	int n = leftRowsPerBlock;
+
+	// m = num_row_C
+	int m = rightColumnsPerBlock;
+
+	// transposed
+	CublasLibrary::cublasOperation_t leftTransposedMode  = CublasLibrary::CUBLAS_OP_T;
+	CublasLibrary::cublasOperation_t rightTransposedMode = CublasLibrary::CUBLAS_OP_N;
+	
+	if(rightTransposed)
+	{
+		rightTransposedMode = CublasLibrary::CUBLAS_OP_T;
+		
+		ldb = rightRowsPerBlock;
+	}
+
+	// TODO	
+	const size_t blockThreshold   = 10;
+	const size_t elementThreshold = 200 * 200;
+
+	size_t elements = leftRowsPerBlock * leftColumnsPerBlock;
+	
+	if(resultBlocks <= blockThreshold || elements > elementThreshold)
+	{
+		size_t leftStep   = step * leftRowsPerBlock;
+		size_t rightStep  = rightRowsPerBlock * rightColumnsPerBlock;
+		size_t resultStep = leftRowsPerBlock * rightColumnsPerBlock;
+
+		for(size_t i = 0; i < resultBlocks; ++i)
+		{
+			CublasLibrary::cublasSgemm(rightTransposedMode,
+				leftTransposedMode, m, n, k, &alpha,
+				right + rightStep * (i % rightBlocks), ldb, left + leftStep * i, lda,
+				&beta, result + resultStep * i, ldc);
+		}
+	}
+	else
+	{
+		FloatPointerVector aData;
+		FloatPointerVector bData;
+		FloatPointerVector cData;
+			
+		float* a = getPointerArray(aData, left,   resultBlocks, leftRowsPerBlock,  leftColumnsPerBlock, step);
+		float* b = getPointerArray(bData, right,  resultBlocks, rightRowsPerBlock, rightColumnsPerBlock);
+		float* c = getPointerArray(cData, result, resultBlocks, leftRowsPerBlock,  rightColumnsPerBlock);
+
+		CublasLibrary::cublasSgemmBatched(rightTransposedMode,
+			leftTransposedMode, m, n, k, &alpha,
+			b, ldb, a, lda, &beta, c, ldc, resultBlocks);
 
 		freePointerArray(a, aData);
 		freePointerArray(b, bData);

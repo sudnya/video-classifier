@@ -26,6 +26,16 @@ public:
 	static void elementMultiply(float* result, const float* left, const float* right, size_t size);
 
 public:
+	static void convolutionalMultiply(float* result, const float* left, 
+		const float* right, bool rightTransposed, size_t resultBlocks, size_t leftBlocks,
+		size_t leftRowsPerBlock, size_t leftColumnsPerBlock, size_t rightBlocks,
+		size_t rightRowsPerBlock, size_t rightColumnsPerBlock, size_t step);
+	static void reverseConvolutionalMultiply(float* result, const float* left, bool leftTransposed,
+		const float* right, bool rightTransposed, size_t resultBlocks, size_t leftBlocks,
+		size_t leftRowsPerBlock, size_t leftColumnsPerBlock, size_t rightBlocks,
+		size_t rightRowsPerBlock, size_t rightColumnsPerBlock);
+
+public:
 	static void add(float* result, const float* left, const float* right, size_t size);
 	static void addBroadcastRow(float* result, const float* left, const float* right,
 		size_t blocks, size_t rows, size_t columns, size_t isRowSparse);

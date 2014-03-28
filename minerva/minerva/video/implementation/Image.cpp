@@ -68,9 +68,9 @@ Image Image::getTile(size_t xStart, size_t yStart, size_t xPixels, size_t yPixel
 	
 	// TODO faster
 
-	for(size_t y = 0; y < ySize; ++y)
+	for(size_t y = 0; y < yPixels; ++y)
 	{
-		for(size_t x = 0; x < xSize; ++x)
+		for(size_t x = 0; x < xPixels; ++x)
 		{
 			for(size_t c = 0; c < colorComponents(); ++c)
 			{

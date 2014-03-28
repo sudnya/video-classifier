@@ -10,6 +10,7 @@
 #include <minerva/neuralnetwork/interface/NeuralNetwork.h>
 
 #include <minerva/util/interface/debug.h>
+#include <minerva/util/interface/math.h>
 
 namespace minerva
 {
@@ -120,7 +121,7 @@ ImageVector::Matrix ImageVector::convertToStandardizedMatrix(size_t sampleCount,
 	
 	util::getNearestToSquareFactors(x, y, tileSize);
 
-	return convertToStandardizedMatrix(x, y, tileSize);
+	return convertToStandardizedMatrix(sampleCount, x, y);
 }
 
 ImageVector::Matrix ImageVector::getReference(

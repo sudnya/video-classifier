@@ -418,11 +418,30 @@ static void sliceOutTilesToFitTheNetwork(ClassifierEngine* engine, ImageVector& 
 	size_t xTile = 0;
 	size_t yTile = 0;
 	
-	util::getNearestToSquareFactors(xTile, yTile, engine->getInputFeatureCount());
+	util::getNearestToSquareFactors(xTile, yTile,
+		engine->getInputFeatureCount() / images.back().colorComponents());
 	
 	for(auto& image : images)
 	{
-		image = image.getTile(image.x()/2, image.y()/2, xTile, yTile);
+		size_t newX = xTile;
+		size_t newY = yTile;
+
+		size_t startX = image.x() / 4;
+		size_t startY = image.y() / 4;
+		
+		if(newX + startX > image.x())
+		{
+			newX   = image.x();
+			startX = 0;
+		}
+		
+		if(newY + startY > image.y())
+		{
+			newY   = image.y();
+			startY = 0;
+		}
+		
+		image = image.getTile(startX, startY, newX, newY);
 	}
 }
 
