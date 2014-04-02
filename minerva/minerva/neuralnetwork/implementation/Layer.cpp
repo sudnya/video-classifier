@@ -74,14 +74,9 @@ Layer::BlockSparseMatrix Layer::runInputs(const BlockSparseMatrix& m) const
 			<< " outputs, " << blockStep() << " block step).\n";
 		util::log("Layer") << "  layer: " << m_sparseMatrix.shapeString() << "\n";
 	}
-
-	#if 0
-	auto unbiasedOutput = m.multiply(m_sparseMatrix);
-	auto output = unbiasedOutput.addBroadcastRow(m_bias);
-	#else
+	
 	auto unbiasedOutput = m.convolutionalMultiply(m_sparseMatrix, blockStep());
-	auto output = unbiasedOutput.convolutionalAddBroadcastRow(m_bias, blockStep());
-	#endif
+	auto output = unbiasedOutput.convolutionalAddBroadcastRow(m_bias);
 	
 	output.sigmoidSelf();
 	
@@ -104,11 +99,7 @@ Layer::BlockSparseMatrix Layer::runReverse(const BlockSparseMatrix& m) const
 		util::log("Layer") << "  layer: " << m_sparseMatrix.shapeString() << "\n";
   	}
  
-	#if 0
-	auto result = m.multiply(m_sparseMatrix.transpose());
-	#else
 	auto result = m.reverseConvolutionalMultiply(m_sparseMatrix.transpose());
-	#endif
 
 	if(util::isLogEnabled("Layer"))
 	{

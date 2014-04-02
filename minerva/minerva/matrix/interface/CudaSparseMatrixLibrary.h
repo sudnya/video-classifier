@@ -34,11 +34,14 @@ public:
 		const float* right, bool rightTransposed, size_t resultBlocks, size_t leftBlocks,
 		size_t leftRowsPerBlock, size_t leftColumnsPerBlock, size_t rightBlocks,
 		size_t rightRowsPerBlock, size_t rightColumnsPerBlock);
+	static void convolutionalAddBroadcastRow(float* result, const float* left, const float* right,
+		size_t leftBlocks, size_t rightBlocks, size_t rows, size_t columns);
+	
 
 public:
 	static void add(float* result, const float* left, const float* right, size_t size);
 	static void addBroadcastRow(float* result, const float* left, const float* right,
-		size_t blocks, size_t rows, size_t columns, size_t isRowSparse);
+		size_t blocks, size_t rows, size_t columns, bool isRowSparse);
 	static void add(float* result, const float* left, float f, size_t size);
 
 public:

@@ -255,10 +255,10 @@ BlockSparseMatrix BlockSparseMatrix::addBroadcastRow(const BlockSparseMatrix& m)
 }
 
 BlockSparseMatrix BlockSparseMatrix::convolutionalAddBroadcastRow(
-	const BlockSparseMatrix& m, size_t step) const
+	const BlockSparseMatrix& m) const
 {
 	return BlockSparseMatrix(_implementation->convolutionalAddBroadcastRow(
-		m._implementation, step));
+		m._implementation));
 }
 
 BlockSparseMatrix BlockSparseMatrix::add(float f) const

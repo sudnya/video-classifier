@@ -228,10 +228,10 @@ Value* NaiveBlockSparseMatrix::addBroadcastRow(const Value* matrix) const
 	return result;
 }
 
-Value* NaiveBlockSparseMatrix::convolutionalAddBroadcastRow(const Value* matrix, size_t step) const
+Value* NaiveBlockSparseMatrix::convolutionalAddBroadcastRow(const Value* matrix) const
 {
 	// Just add if there is a 1 to 1 match between blocks
-	if(columnsPerBlock() == step && blocks() == matrix->blocks())
+	if(blocks() == matrix->blocks())
 	{
 		return addBroadcastRow(matrix);
 	}
@@ -243,9 +243,10 @@ Value* NaiveBlockSparseMatrix::convolutionalAddBroadcastRow(const Value* matrix,
 	
 	result->resize(blocks());
 	
-	// TODO: in parallel
+	assert(!isRowSparse());
 	assert(m->isRowSparse() == isRowSparse());
 
+	// TODO: in parallel
 	auto resultBlock = result->begin();
 	for(auto left = begin(); left != end(); ++left, ++resultBlock)
 	{

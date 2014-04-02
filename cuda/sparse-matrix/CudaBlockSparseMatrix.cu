@@ -74,10 +74,34 @@ extern "C" __global__ void addBroadcastRowColumnSparse(float* result, float* lef
 		// TODO: try to optimize these out
 		uint64_t indexInBlock = i % blockSize;
 		uint64_t blockId = i / blockSize;
-		uint64_t columnIndex = blockId * columns + indexInBlock % columns;
+		uint64_t columnIndex = blockId * columns + (indexInBlock % columns);
 		
 		float leftValue  = left[i];
 		float rightValue = right[columnIndex];
+		
+		result[i] = leftValue + rightValue;
+	}
+}
+
+extern "C" __global__ void convolutionalAddBroadcastRow(float* result, float* left, float* right,
+	uint64_t leftBlocks, uint64_t rightBlocks, uint64_t rows, uint64_t columns)
+{
+	uint64_t step  = blockDim.x * gridDim.x;
+	uint64_t start = blockIdx.x * blockDim.x + threadIdx.x;
+	uint64_t size  = leftBlocks * rows * columns;
+
+	uint64_t blockSize = rows * columns;
+
+	for(uint64_t i = start; i < size; i += step)
+	{
+		// TODO: try to optimize these out
+		uint64_t indexInBlock = i % blockSize;
+		uint64_t leftBlockId  = i / blockSize;
+		uint64_t rightBlockId = (leftBlockId * rightBlocks) / leftBlocks;
+		uint64_t rightColumnIndex = rightBlockId * columns + (indexInBlock % columns);
+		
+		float leftValue  = left[i];
+		float rightValue = right[rightColumnIndex];
 		
 		result[i] = leftValue + rightValue;
 	}
@@ -538,7 +562,7 @@ extern "C" __global__ void transpose(float* result, float* input, uint64_t block
 	}
 }
 
-extern "C" __global__ void setupBlocksForBatchedSgemm(float** array, float* base, uint64_t blocks, uint64_t blockSize)
+extern "C" __global__ void setupBlocksForBatchedSgemm(float** array, float* base, uint64_t blocks, uint64_t blockSize, size_t repeat)
 {
 	uint64_t step  = blockDim.x * gridDim.x;
 	uint64_t start = blockIdx.x * blockDim.x + threadIdx.x;
@@ -546,7 +570,9 @@ extern "C" __global__ void setupBlocksForBatchedSgemm(float** array, float* base
 
 	for(uint64_t i = start; i < size; i += step)
 	{
-		array[i] = base + i * blockSize;
+		uint64_t blockId = i / repeat;
+
+		array[i] = base + blockId * blockSize;
 	}	
 }
 

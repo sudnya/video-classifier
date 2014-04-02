@@ -215,39 +215,12 @@ static void launchKernel(const std::string& name, Args... arguments)
 
 typedef std::vector<float*> FloatPointerVector;
 
-static float* getPointerArray(FloatPointerVector& data, const float* value, size_t blocks, size_t rows, size_t columns, size_t step = 0)
+static float* getPointerArray(FloatPointerVector& data, const float* value, size_t blocks,
+	size_t rows, size_t columns, size_t step, size_t repeat)
 {
-
-	#if 1
 	float* devicePointer = (float*)CudaBlockSparseCache::fastDeviceAllocate(sizeof(CUdeviceptr*) * blocks);
-	
-	//CudaDriver::cuMemAlloc((CUdeviceptr*)&devicePointer, sizeof(CUdeviceptr*) * blocks);
-	//CudaDriver::cuMemcpyHtoD((CUdeviceptr)devicePointer, data.data(), sizeof(float*) * blocks);
-	if(step == 0)
-	{
-		step = columns;
-	}
 
-	launchKernel("setupBlocksForBatchedSgemm", devicePointer, value, blocks, rows * step);
-
-	#else	
-	data.resize(blocks);
-	
-	size_t position = 0;
-	
-	for(auto& pointer : data)
-	{
-		pointer = const_cast<float*>(value + position);
-		
-		position += rows * columns;
-	}
-	
-	CudaDriver::cuMemHostRegister(data.data(), sizeof(float**) * blocks, CU_MEMHOSTREGISTER_DEVICEMAP);
-	
-	float* devicePointer = nullptr;
-	
-	CudaDriver::cuMemHostGetDevicePointer((CUdeviceptr*)&devicePointer, data.data(), 0);
-	#endif
+	launchKernel("setupBlocksForBatchedSgemm", devicePointer, value, blocks, step, repeat);
 	
 	return devicePointer;	
 }
@@ -255,117 +228,16 @@ static float* getPointerArray(FloatPointerVector& data, const float* value, size
 static void freePointerArray(float* array, FloatPointerVector& value)
 {
 	CudaBlockSparseCache::fastDeviceFree(array);
-	//CudaDriver::cuMemFree((CUdeviceptr)array);
-	//CudaDriver::cuMemHostUnregister(value.data());
 }
 
-void CudaSparseMatrixLibrary::multiply(float* result, const float* left, bool leftTransposed,
-	const float* right, bool rightTransposed, size_t blocks, size_t rows, size_t columns,
-	size_t rightRows, size_t rightColumns)
+static void batchedMultiply(float* result, size_t blocks,
+	const float* left,  bool transposeLeft,  size_t leftRowsPerBlock,  size_t leftColumnsPerBlock,  size_t leftStep,  size_t leftRepeat,
+	const float* right, bool transposeRight, size_t rightRowsPerBlock, size_t rightColumnsPerBlock, size_t rightStep, size_t rightRepeat,
+	float alpha, float beta)
 {
-	float alpha = 1.0f;
-	float beta  = 0.0f;
-
-	util::log("CudaSparseMatrixLibrary") << "Multiply left " << left << " (" << rows
-		<< " rows, " << columns << " columns, " << leftTransposed << " transposed) x right " << right << " (" << rightRows
-		<< " rows, " << rightColumns << " columns, " << rightTransposed << " transposed) = " << result << ".\n";
-	
-	// c rows    = rows
-	// c columns = rightColumns
-	
-	// lda = num_col_A = num_row_AT = N;
-	int lda = columns;
-
-	// ldb = num_col_B = num_row_BT = N;
-	int ldb = rightColumns; 
-
-	// ldc = num_col_C = N;
-	int ldc = rightColumns;
-
-	// m and n in the cuBLAS GEMM routine are the #rows and #cols of
-	// the result matrix C,
-
-	// k is the common dimension of A^T and B,
-
-	// k = num_col_AT = num_row_B = M;
-	int k = columns;
-
-	// n = num_col_C
-	int n = rows;
-
-	// m = num_row_C
-	int m = rightColumns;
-
-	// transposed
-	CublasLibrary::cublasOperation_t leftTransposedMode  = CublasLibrary::CUBLAS_OP_N;
-	CublasLibrary::cublasOperation_t rightTransposedMode = CublasLibrary::CUBLAS_OP_N;
-	
-	if(leftTransposed)
-	{
-		leftTransposedMode = CublasLibrary::CUBLAS_OP_T;
-		
-		lda = rows;
-	}
-	
-	if(rightTransposed)
-	{
-		rightTransposedMode = CublasLibrary::CUBLAS_OP_T;
-		
-		ldb = rightRows;
-	}
-
-	// TODO	
-	const size_t blockThreshold = 10;
-	const size_t stepThreshold  = 200 * 200;
-
-	size_t step = rows * columns;
-	
-	if(blocks <= blockThreshold || step > stepThreshold)
-	{
-		size_t leftStep   = step;
-		size_t rightStep  = rightRows * rightColumns;
-		size_t resultStep = rows * rightColumns;
-
-		for(size_t i = 0; i < blocks; ++i)
-		{
-			CublasLibrary::cublasSgemm(rightTransposedMode,
-				leftTransposedMode, m, n, k, &alpha,
-				right + rightStep * i, ldb, left + leftStep * i, lda,
-				&beta, result + resultStep * i, ldc);
-		}
-	}
-	else
-	{
-		FloatPointerVector aData;
-		FloatPointerVector bData;
-		FloatPointerVector cData;
-			
-		float* a = getPointerArray(aData, left,   blocks, rows, columns);
-		float* b = getPointerArray(bData, right,  blocks, rightRows, rightColumns);
-		float* c = getPointerArray(cData, result, blocks, rows, rightColumns);
-
-		CublasLibrary::cublasSgemmBatched(rightTransposedMode,
-			leftTransposedMode, m, n, k, &alpha,
-			b, ldb, a, lda, &beta, c, ldc, blocks);
-
-		freePointerArray(a, aData);
-		freePointerArray(b, bData);
-		freePointerArray(c, cData);
-	}
-
-}
-
-void CudaSparseMatrixLibrary::convolutionalMultiply(float* result, const float* left,
-	const float* right, bool rightTransposed, size_t resultBlocks, size_t leftBlocks,
-	size_t leftRowsPerBlock, size_t leftColumnsPerBlock, size_t rightBlocks,
-	size_t rightRowsPerBlock, size_t rightColumnsPerBlock, size_t step)
-{
-	float alpha = 1.0f;
-	float beta  = 0.0f;
-
-	util::log("CudaSparseMatrixLibrary") << "Convolutional Multiply left " << left << " (" << leftRowsPerBlock
-		<< " rows, " << leftColumnsPerBlock << " columns) x right " << right << " (" << rightRowsPerBlock
-		<< " rows, " << rightColumnsPerBlock << " columns, " << rightTransposed << " transposed) = " << result << ".\n";
+	util::log("CudaSparseMatrixLibrary") << "Batched multiply left " << left << " (" << leftRowsPerBlock
+		<< " rows, " << leftColumnsPerBlock << " columns, " << transposeLeft << " transposed) x right " << right << " (" << rightRowsPerBlock
+		<< " rows, " << rightColumnsPerBlock << " columns, " << transposeRight << " transposed) = " << result << ".\n";
 	
 	// c rows    = rows
 	// c columns = rightColumns
@@ -394,55 +266,180 @@ void CudaSparseMatrixLibrary::convolutionalMultiply(float* result, const float* 
 	int m = rightColumnsPerBlock;
 
 	// transposed
-	CublasLibrary::cublasOperation_t leftTransposedMode  = CublasLibrary::CUBLAS_OP_T;
+	CublasLibrary::cublasOperation_t leftTransposedMode  = CublasLibrary::CUBLAS_OP_N;
 	CublasLibrary::cublasOperation_t rightTransposedMode = CublasLibrary::CUBLAS_OP_N;
 	
-	if(rightTransposed)
+	if(transposeLeft)
+	{
+		leftTransposedMode = CublasLibrary::CUBLAS_OP_T;
+		
+		lda = leftRowsPerBlock;
+	}
+	
+	if(transposeRight)
 	{
 		rightTransposedMode = CublasLibrary::CUBLAS_OP_T;
 		
 		ldb = rightRowsPerBlock;
 	}
 
-	// TODO	
-	const size_t blockThreshold   = 10;
-	const size_t elementThreshold = 200 * 200;
-
-	size_t elements = leftRowsPerBlock * leftColumnsPerBlock;
+	FloatPointerVector aData;
+	FloatPointerVector bData;
+	FloatPointerVector cData;
 	
-	if(resultBlocks <= blockThreshold || elements > elementThreshold)
+	size_t resultStep = leftRowsPerBlock * rightColumnsPerBlock;
+	
+	size_t resultRepeat = 1;
+
+	float* a = getPointerArray(aData, left,   blocks, leftRowsPerBlock,  leftColumnsPerBlock,  leftStep,   leftRepeat  );
+	float* b = getPointerArray(bData, right,  blocks, rightRowsPerBlock, rightColumnsPerBlock, rightStep,  rightRepeat );
+	float* c = getPointerArray(cData, result, blocks, leftRowsPerBlock,  rightColumnsPerBlock, resultStep, resultRepeat);
+
+	CublasLibrary::cublasSgemmBatched(rightTransposedMode,
+		leftTransposedMode, m, n, k, &alpha,
+		b, ldb, a, lda, &beta, c, ldc, blocks);
+
+	freePointerArray(a, aData);
+	freePointerArray(b, bData);
+	freePointerArray(c, cData);
+}
+
+void CudaSparseMatrixLibrary::multiply(float* result, const float* left, bool leftTransposed,
+	const float* right, bool rightTransposed, size_t blocks, size_t rows, size_t columns,
+	size_t rightRows, size_t rightColumns)
+{
+	batchedMultiply(result, blocks,
+		left,  leftTransposed,  rows,      columns,      rows * columns,           1,
+		right, rightTransposed, rightRows, rightColumns, rightRows * rightColumns, 1,
+		1.0f, 0.0f);
+}
+
+void CudaSparseMatrixLibrary::convolutionalMultiply(float* result, const float* left,
+	const float* right, bool rightTransposed, size_t resultBlocks, size_t leftBlocks,
+	size_t leftRowsPerBlock, size_t leftColumnsPerBlock, size_t rightBlocks,
+	size_t rightRowsPerBlock, size_t rightColumnsPerBlock, size_t step)
+{
+	size_t rightRepeat = resultBlocks / rightBlocks;
+	
+	assert(resultBlocks % rightBlocks == 0);
+	
+	batchedMultiply(result, resultBlocks,
+		left,  true,            leftColumnsPerBlock, leftRowsPerBlock,     step * leftRowsPerBlock,                  1,
+		right, rightTransposed, rightRowsPerBlock,   rightColumnsPerBlock, rightRowsPerBlock * rightColumnsPerBlock, rightRepeat,
+		1.0f, 0.0f);
+}
+
+static void reverseConvolutionalMultiplyCompleteBlocks(size_t resultBlocks, float* result,
+	const float* left, bool leftTransposed, size_t leftRowsPerBlock, size_t leftColumnsPerBlock,
+	const float* right, bool rightTransposed, size_t rightRowsPerBlock, size_t rightColumnsPerBlock,
+	size_t leftColumnStep, size_t completeBlockId)
+{
+	size_t leftStep  = leftRowsPerBlock  * leftColumnStep;
+	size_t rightStep = rightRowsPerBlock * leftColumnsPerBlock;
+
+	size_t leftStart = completeBlockId * rightRowsPerBlock;
+
+	float beta  = 1.0f;
+	float alpha = completeBlockId == 0 ? 0.0f : 1.0f;
+
+	batchedMultiply(result, resultBlocks,
+		left + leftStart, leftTransposed,  leftRowsPerBlock,  leftColumnsPerBlock,  leftStep,  1,
+		right,            rightTransposed, rightRowsPerBlock, rightColumnsPerBlock, rightStep, 1,
+		beta, alpha);
+}
+
+static void reverseConvolutionalMultiplyDanglingBlocks(size_t blocks, float* result,
+	const float* left, bool leftTransposed, size_t leftRowsPerBlock, size_t leftColumnsPerBlock,
+	const float* right, bool rightTransposed, size_t rightRowsPerBlock, size_t rightColumnsPerBlock,
+	size_t leftColumnStep, size_t completeBlockId, size_t leftColumnRemainder)
+{
+	if(leftColumnRemainder == 0) return;
+
+	size_t leftStep  = leftRowsPerBlock  * leftColumnStep;
+	size_t rightStep = rightRowsPerBlock * leftColumnsPerBlock;
+
+	size_t leftStart = completeBlockId * rightRowsPerBlock;
+
+	float beta  = 1.0f;
+	float alpha = completeBlockId == 0 ? 0.0f : 1.0f;
+	
+	rightRowsPerBlock   = leftColumnRemainder;
+	leftColumnsPerBlock = leftColumnRemainder;
+	
+	batchedMultiply(result, blocks,
+		left + leftStart,   leftTransposed,  leftRowsPerBlock,  leftColumnsPerBlock,  leftStep,  1,
+		right,              rightTransposed, rightRowsPerBlock, rightColumnsPerBlock, rightStep, 1,
+		beta, alpha);
+}
+
+static void reverseConvolutionalMultiplyFinalBlock(size_t resultBlocks, float* result,
+	const float* left, bool leftTransposed, size_t leftRowsPerBlock, size_t leftColumnsPerBlock,
+	const float* right, bool rightTransposed, size_t rightRowsPerBlock, size_t rightColumnsPerBlock,
+	size_t leftColumnStep)
+{
+	if(leftColumnStep == 0) return;
+	
+	// Step 1: loop over complete blocks
+	size_t completeBlocks      = leftColumnStep / rightRowsPerBlock;
+	size_t leftColumnRemainder = leftColumnStep % rightRowsPerBlock;
+	
+	for(size_t completeBlock = 0; completeBlock < completeBlocks; ++completeBlock)
 	{
-		size_t leftStep   = step * leftRowsPerBlock;
-		size_t rightStep  = rightRowsPerBlock * rightColumnsPerBlock;
-		size_t resultStep = leftRowsPerBlock * rightColumnsPerBlock;
-
-		for(size_t i = 0; i < resultBlocks; ++i)
-		{
-			CublasLibrary::cublasSgemm(rightTransposedMode,
-				leftTransposedMode, m, n, k, &alpha,
-				right + rightStep * (i % rightBlocks), ldb, left + leftStep * i, lda,
-				&beta, result + resultStep * i, ldc);
-		}
+		reverseConvolutionalMultiplyCompleteBlocks(resultBlocks, result,
+			left, leftTransposed, leftRowsPerBlock, leftColumnsPerBlock,
+			right, rightTransposed, rightRowsPerBlock, rightColumnsPerBlock,
+			leftColumnStep, completeBlock);
 	}
-	else
+	
+	// Step 2: handle the dangling elements for each block
+	reverseConvolutionalMultiplyDanglingBlocks(resultBlocks, result,
+		left, leftTransposed, leftRowsPerBlock, leftColumnsPerBlock, 
+		right, rightTransposed, rightRowsPerBlock, rightColumnsPerBlock,
+		leftColumnStep, completeBlocks, leftColumnRemainder);
+}
+
+void CudaSparseMatrixLibrary::reverseConvolutionalMultiply(float* result, const float* left, bool leftTransposed,
+	const float* right, bool rightTransposed, size_t resultBlocks, size_t leftBlocks,
+	size_t leftRowsPerBlock, size_t leftColumnsPerBlock, size_t rightBlocks,
+	size_t rightRowsPerBlock, size_t rightColumnsPerBlock)
+{
+	size_t leftColumns = leftColumnsPerBlock * leftBlocks;
+	size_t rightRows   = rightRowsPerBlock * rightBlocks;
+
+	size_t leftColumnStep = (leftColumns + rightRows - 1) / rightRows; 
+	
+	size_t blocks = resultBlocks;
+	
+	// Step 1: loop over complete blocks
+	size_t completeBlocks      = leftColumnStep / rightRowsPerBlock;
+	size_t leftColumnRemainder = leftColumnStep % rightRowsPerBlock;
+
+	for(size_t completeBlock = 0; completeBlock < completeBlocks; ++completeBlock)
 	{
-		FloatPointerVector aData;
-		FloatPointerVector bData;
-		FloatPointerVector cData;
-			
-		float* a = getPointerArray(aData, left,   resultBlocks, leftRowsPerBlock,  leftColumnsPerBlock, step);
-		float* b = getPointerArray(bData, right,  resultBlocks, rightRowsPerBlock, rightColumnsPerBlock);
-		float* c = getPointerArray(cData, result, resultBlocks, leftRowsPerBlock,  rightColumnsPerBlock);
-
-		CublasLibrary::cublasSgemmBatched(rightTransposedMode,
-			leftTransposedMode, m, n, k, &alpha,
-			b, ldb, a, lda, &beta, c, ldc, resultBlocks);
-
-		freePointerArray(a, aData);
-		freePointerArray(b, bData);
-		freePointerArray(c, cData);
+		reverseConvolutionalMultiplyCompleteBlocks(blocks, result,
+			left, leftTransposed, leftRowsPerBlock, leftColumnsPerBlock,
+			right, rightTransposed, rightRowsPerBlock, rightColumnsPerBlock,
+			leftColumnStep, completeBlock);
 	}
+	
+	// Step 2: handle the dangling elements for each block
+	reverseConvolutionalMultiplyDanglingBlocks(blocks, result,
+		left, leftTransposed, leftRowsPerBlock, leftColumnsPerBlock,
+		right, rightTransposed, rightRowsPerBlock, rightColumnsPerBlock,
+		leftColumnStep, completeBlocks, leftColumnRemainder);
 
+	// Step 3: handle the final block
+	size_t finalLeftColumns = leftColumns % leftColumnStep;
+
+	reverseConvolutionalMultiplyFinalBlock(1, result,
+		left, leftTransposed, leftRowsPerBlock, leftColumnsPerBlock,
+		right, rightTransposed, rightRowsPerBlock, rightColumnsPerBlock, finalLeftColumns);
+}
+	
+void CudaSparseMatrixLibrary::convolutionalAddBroadcastRow(float* result, const float* left, const float* right,
+	size_t leftBlocks, size_t rightBlocks, size_t rows, size_t columns)
+{
+	launchKernel("convolutionalAddBroadcastRow", result, left, right, leftBlocks, rightBlocks, rows, columns);
 }
 
 void CudaSparseMatrixLibrary::multiply(float* result, const float* left, float value, size_t size)
@@ -461,7 +458,7 @@ void CudaSparseMatrixLibrary::add(float* result, const float* left, const float*
 }
 
 void CudaSparseMatrixLibrary::addBroadcastRow(float* result, const float* left, const float* right,
-	size_t blocks, size_t rows, size_t columns, size_t isRowSparse)
+	size_t blocks, size_t rows, size_t columns, bool isRowSparse)
 {
 	if(isRowSparse)
 	{

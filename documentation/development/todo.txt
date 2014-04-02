@@ -1,0 +1,12 @@
+
+# in priority order
+
+ 1) make the random initialization sparse
+ 2) cuda implementation of LBFGS
+ 3) refactor the block sparse format to make it a single allocation
+ 4) cuda implementation of convolutional ops
+
+
+
+
+

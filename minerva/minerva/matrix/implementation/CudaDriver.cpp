@@ -560,14 +560,6 @@ void CudaDriver::Interface::_createContext()
 			cuCtxGetApiVersion(context, &version);
 
 			util::log("CudaDriver") << " extracted existing context with version " << version << "\n";
-			
-			/*
-				int driverVersion = 0;
-				cuDriverGetVersion(&driverVersion);
-				util::log("CudaDriver") << " compared to version " << driverVersion << "\n";
-				
-				assert(version == driverVersion);
-			*/
 		}
 	}
 	catch(...)
