@@ -646,6 +646,13 @@ void CudaSparseMatrixLibrary::reduceSumAlongRows(float* result, const float* inp
 	}
 }
 
+void CudaSparseMatrixLibrary::reduceTileSumAlongRows(float* result, const float* input,
+	size_t blocks, size_t rows, size_t columns,
+	size_t rowsPerTile, size_t tiles)
+{
+	launchKernel("reduceTileSumAlongRows", result, input, blocks, rows, columns, rowsPerTile, tiles);
+}
+
 void CudaSparseMatrixLibrary::reduceSumAlongColumns(float* result, const float* input,
 	size_t blocks, size_t rows, size_t columns, size_t isRowSparse)
 {

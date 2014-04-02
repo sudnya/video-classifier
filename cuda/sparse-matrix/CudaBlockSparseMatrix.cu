@@ -562,6 +562,28 @@ extern "C" __global__ void transpose(float* result, float* input, uint64_t block
 	}
 }
 
+extern "C" __global__ void reduceTileSumAlongRows(float* result, float* input, uint64_t blocks, uint64_t rows, uint64_t columns,
+	uint64_t rowsPerTile, uint64_t tiles)
+{
+	uint64_t step  = blockDim.x * gridDim.x;
+	uint64_t start = blockIdx.x * blockDim.x + threadIdx.x;
+	
+	uint64_t totalSize = tiles  * rowsPerTile * columns;
+	uint64_t inputSize = blocks * rows * columns;	
+
+	for(uint64_t i = start; i < totalSize; i += step)
+	{
+		float value = 0.0f;
+		
+		for(uint64_t position = i; position < inputSize; i += totalSize)
+		{
+			value += input[position];
+		}
+		
+		result[i] = value;
+	}
+}
+
 extern "C" __global__ void setupBlocksForBatchedSgemm(float** array, float* base, uint64_t blocks, uint64_t blockSize, size_t repeat)
 {
 	uint64_t step  = blockDim.x * gridDim.x;

@@ -79,6 +79,9 @@ public:
 	
 	static void reduceSumAlongRows(float* result, const float* input,
 		size_t blocks, size_t rows, size_t columns, size_t isRowSparse);
+	static void reduceTileSumAlongRows(float* result, const float* input,
+		size_t blocks, size_t rows, size_t columns,
+		size_t tilesPerRow, size_t rowsPerBlock);
 	static void reduceSumAlongColumns(float* result, const float* input,
 		size_t blocks, size_t rows, size_t columns, size_t isRowSparse);
 

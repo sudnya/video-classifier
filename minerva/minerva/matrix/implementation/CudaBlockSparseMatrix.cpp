@@ -724,11 +724,25 @@ Value* CudaBlockSparseMatrix::reduceSumAlongRows() const
 	return result;
 }
 
-Value* CudaBlockSparseMatrix::reduceTileSumAlongRows(size_t tilesPerRow, size_t rowsPerBlock) const
+Value* CudaBlockSparseMatrix::reduceTileSumAlongRows(size_t rowsPerTile, size_t tiles) const
 {
-	assertM(false, "Not implemented.");
+	_performTransposeIfNecessary();
+	assert(!_isTransposed);
+	auto result = new CudaBlockSparseMatrix(*this, false);
 	
-	return nullptr;
+	auto devicePointer = CudaBlockSparseCache::acquireReadOnly(this);
+	auto resultPointer = CudaBlockSparseCache::acquireClobber(result);
+
+	assert(isRowSparse());
+	
+	CudaSparseMatrixLibrary::reduceTileSumAlongRows(resultPointer, devicePointer,
+		blocks(), rowsPerBlock(), columnsPerBlock(),
+		rowsPerTile, tiles);
+	
+	CudaBlockSparseCache::release(result);
+	CudaBlockSparseCache::release(this);
+	
+	return result;
 }
 
 CudaBlockSparseMatrix::iterator CudaBlockSparseMatrix::begin()
