@@ -158,7 +158,6 @@ bool testSparseMultiply()
 	}
 	
 	return computed[0] == c[0];
-
 }
 
 bool testSparseMultiply2()
@@ -197,17 +196,229 @@ bool testSparseMultiply2()
 	
 	if(computed[0] != c[0])
 	{
-		std::cout << " Block Sparse Matrix Multiply Test Failed:\n";
+		std::cout << " Block Sparse Matrix Multiply Test 2 Failed:\n";
 		std::cout << "  result matrix " << computed.toString();
 		std::cout << "  does not match reference matrix " << c.toString();
 	}
 	else
 	{
-		std::cout << " Block Sparse Matrix Multiply Test Passed\n";
+		std::cout << " Block Sparse Matrix Multiply Test 2 Passed\n";
 	}
 	
 	return computed[0] == c[0];
+}
 
+bool testSparseConvolutionalMultiply()
+{
+	BlockSparseMatrix a(2, 3, 2, false);
+	
+	BlockSparseMatrix b(1, 2, 3, true);
+	
+	BlockSparseMatrix c(4, 3, 3, false);
+	
+	
+	a[0](0, 0) = 1;
+	a[0](0, 1) = 2;
+	a[0](1, 0) = 3;
+	a[0](1, 1) = 4;
+	a[0](2, 0) = 5;
+	a[0](2, 1) = 6;
+	
+	a[1](0, 0) = 7;
+	a[1](0, 1) = 8;
+	a[1](1, 0) = 9;
+	a[1](1, 1) = 10;
+	a[1](2, 0) = 11;
+	a[1](2, 1) = 12;
+
+	b[0](0, 0) = 1;
+	b[0](0, 1) = 2;
+	b[0](0, 2) = 3;
+	b[0](1, 0) = 4;
+	b[0](1, 1) = 5;
+	b[0](1, 2) = 6;
+
+	c[0](0, 0) = 9;
+	c[0](0, 1) = 12;
+	c[0](0, 2) = 15;
+
+	c[0](1, 0) = 19;
+	c[0](1, 1) = 26;
+	c[0](1, 2) = 33;
+
+	c[0](2, 0) = 29;
+	c[0](2, 1) = 40;
+	c[0](2, 2) = 51;
+
+	c[1](0, 0) = 30;
+	c[1](0, 1) = 39;
+	c[1](0, 2) = 48;
+
+	c[1](1, 0) = 40;
+	c[1](1, 1) = 53;
+	c[1](1, 2) = 66;
+
+	c[1](2, 0) = 50;
+	c[1](2, 1) = 67;
+	c[1](2, 2) = 84;
+
+	c[2](0, 0) = 39;
+	c[2](0, 1) = 54;
+	c[2](0, 2) = 69;
+
+	c[2](1, 0) = 49;
+	c[2](1, 1) = 68;
+	c[2](1, 2) = 87;
+
+	c[2](2, 0) = 59;
+	c[2](2, 1) = 82;
+	c[2](2, 2) = 105;
+
+	c[3](0, 0) = 8;
+	c[3](0, 1) = 16;
+	c[3](0, 2) = 24;
+
+	c[3](1, 0) = 10;
+	c[3](1, 1) = 20;
+	c[3](1, 2) = 30;
+
+	c[3](2, 0) = 12;
+	c[3](2, 1) = 24;
+	c[3](2, 2) = 36;
+
+	BlockSparseMatrix computed = a.convolutionalMultiply(b, 1);
+	
+	if(computed != c)
+	{
+		std::cout << " Block Sparse Convolutional Matrix Multiply Test Failed:\n";
+		std::cout << "  result matrix " << computed.toMatrix().toString();
+		std::cout << "  does not match reference matrix " << c.toMatrix().toString();
+	}
+	else
+	{
+		std::cout << " Block Sparse Convolutional Matrix Multiply Test Passed\n";
+	}
+	
+	return computed == c;
+}
+
+bool testSparseConvolutionalAddBroadcastRow()
+{
+	BlockSparseMatrix a(2, 3, 2, false);
+	
+	BlockSparseMatrix b(1, 1, 2, false);
+	
+	BlockSparseMatrix c(2, 3, 2, false);
+	
+	a[0](0, 0) = 1;
+	a[0](0, 1) = 2;
+	a[0](1, 0) = 3;
+	a[0](1, 1) = 4;
+	a[0](2, 0) = 5;
+	a[0](2, 1) = 6;
+	
+	a[1](0, 0) = 7;
+	a[1](0, 1) = 8;
+	a[1](1, 0) = 9;
+	a[1](1, 1) = 10;
+	a[1](2, 0) = 11;
+	a[1](2, 1) = 12;
+
+	b[0](0, 0) = 1;
+	b[0](0, 1) = 2;
+	
+	c[0](0, 0) = 2;
+	c[0](0, 1) = 4;
+	c[0](1, 0) = 4;
+	c[0](1, 1) = 6;
+	c[0](2, 0) = 6;
+	c[0](2, 1) = 8;
+	
+	c[1](0, 0) = 8;
+	c[1](0, 1) = 10;
+	c[1](1, 0) = 10;
+	c[1](1, 1) = 12;
+	c[1](2, 0) = 12;
+	c[1](2, 1) = 14;
+	
+	BlockSparseMatrix computed = a.convolutionalAddBroadcastRow(b);
+	
+	if(computed != c)
+	{
+		std::cout << " Block Sparse Matrix Convolutional Add Broadcast Row Test Failed:\n";
+		std::cout << "  result matrix " << computed.toMatrix().toString();
+		std::cout << "  does not match reference matrix " << c.toMatrix().toString();
+	}
+	else
+	{
+		std::cout << " Block Sparse Matrix Convolutional Add Broadcast Row Test Passed\n";
+	}
+	
+	return computed == c;
+}
+
+bool testSparseReduceTileSumAlongRows()
+{
+	BlockSparseMatrix a(4, 2, 2, true);
+	
+	BlockSparseMatrix b(2, 2, 2, true);
+	
+	BlockSparseMatrix c(2, 2, 2, true);
+	
+	a[0](0, 0) = 1;
+	a[0](0, 1) = 2;
+	a[0](1, 0) = 3;
+	a[0](1, 1) = 4;
+	
+	a[1](0, 0) = 5;
+	a[1](0, 1) = 6;
+	a[1](1, 0) = 7;
+	a[1](1, 1) = 8;
+	
+	a[2](0, 0) = 9;
+	a[2](0, 1) = 10;
+	a[2](1, 0) = 11;
+	a[2](1, 1) = 12;
+	
+	a[3](0, 0) = 13;
+	a[3](0, 1) = 14;
+	a[3](1, 0) = 15;
+	a[3](1, 1) = 16;
+
+	b[0](0, 0) = 1;
+	b[0](0, 1) = 2;
+	b[0](1, 0) = 3;
+	b[0](1, 1) = 4;
+	
+	b[1](0, 0) = 5;
+	b[1](0, 1) = 6;
+	b[1](1, 0) = 7;
+	b[1](1, 1) = 8;
+	
+	c[0](0, 0) = 10;
+	c[0](0, 1) = 12;
+	c[0](1, 0) = 14;
+	c[0](1, 1) = 16;
+	
+	c[1](0, 0) = 18;
+	c[1](0, 1) = 20;
+	c[1](1, 0) = 22;
+	c[1](1, 1) = 24;
+	
+	BlockSparseMatrix computed = a.reduceTileSumAlongRows(b.rowsPerBlock(), c.blocks());
+	
+	if(computed != c)
+	{
+		std::cout << " Block Sparse Matrix Convolutional Add Broadcast Row Test Failed:\n";
+		std::cout << "  result matrix " << computed.toMatrix().toString();
+		std::cout << "  does not match reference matrix " << c.toMatrix().toString();
+	}
+	else
+	{
+		std::cout << " Block Sparse Matrix Convolutional Add Broadcast Row Test Passed\n";
+	}
+	
+	return computed == c;
 }
 
 int main(int argc, char** argv)
@@ -222,6 +433,9 @@ int main(int argc, char** argv)
 	passed &= testTranspose();
     passed &= testSparseMultiply();
     passed &= testSparseMultiply2();
+    passed &= testSparseConvolutionalMultiply();
+    passed &= testSparseConvolutionalAddBroadcastRow();
+    passed &= testSparseReduceTileSumAlongRows();
 
 	if(not passed)
 	{

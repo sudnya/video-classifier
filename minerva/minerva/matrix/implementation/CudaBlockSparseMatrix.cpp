@@ -135,6 +135,11 @@ Value* CudaBlockSparseMatrix::multiply(const Value* m) const
 	CudaBlockSparseCache::release(result);
 	CudaBlockSparseCache::release(m);
 
+	if(util::isLogEnabled("CudaBlockSparseMatrix::Detail"))
+	{
+		util::log("CudaBlockSparseMatrix::Detail") << result->debugString() << "\n";
+	}
+
 	return result;
 	#endif
 }
@@ -146,7 +151,7 @@ const size_t divideRoundUp(size_t numerator, size_t denominator)
 
 Value* CudaBlockSparseMatrix::convolutionalMultiply(const Value* m, size_t step) const
 {
-	if(m->columnsPerBlock() == step)
+	if(m->columnsPerBlock() == step && m->blocks() == blocks())
 	{
 		return multiply(m);
 	}
@@ -538,7 +543,7 @@ Value* CudaBlockSparseMatrix::transpose() const
 	CudaBlockSparseCache::release(result);
 
 	//result->_performTransposeIfNecessary();
-	
+
 	return result;
 	
 	#endif
@@ -728,7 +733,8 @@ Value* CudaBlockSparseMatrix::reduceTileSumAlongRows(size_t rowsPerTile, size_t 
 {
 	_performTransposeIfNecessary();
 	assert(!_isTransposed);
-	auto result = new CudaBlockSparseMatrix(*this, false);
+	
+	auto result = new CudaBlockSparseMatrix(tiles, columnsPerBlock(), rowsPerTile, isRowSparse());
 	
 	auto devicePointer = CudaBlockSparseCache::acquireReadOnly(this);
 	auto resultPointer = CudaBlockSparseCache::acquireClobber(result);

@@ -274,6 +274,9 @@ static void batchedMultiply(float* result, size_t blocks,
 		leftTransposedMode = CublasLibrary::CUBLAS_OP_T;
 		
 		lda = leftRowsPerBlock;
+
+		// k = leftRowsPerBlock;
+		// n = leftColumnsPerBlock;
 	}
 	
 	if(transposeRight)
@@ -281,6 +284,9 @@ static void batchedMultiply(float* result, size_t blocks,
 		rightTransposedMode = CublasLibrary::CUBLAS_OP_T;
 		
 		ldb = rightRowsPerBlock;
+		
+		// ldc = rightRowsPerBlock;
+		// m   = rightRowsPerBlock;
 	}
 
 	FloatPointerVector aData;
@@ -314,8 +320,24 @@ void CudaSparseMatrixLibrary::multiply(float* result, const float* left, bool le
 		1.0f, 0.0f);
 }
 
+static size_t computeCompleteBlocksForConvolutionalMultiply(size_t leftBlocks,
+	size_t leftColumnsPerBlock, size_t rightRowsPerBlock, size_t step)
+{
+	size_t leftColumns = leftColumnsPerBlock * leftBlocks;
+	
+	if(rightRowsPerBlock > leftColumns)
+	{
+		return 0;
+	}
+	
+	size_t leftColumnsToBeSubdivided = leftColumns - rightRowsPerBlock;
+	
+	// we get at least one complete block, plus any that can be subdivided
+	return 1 + (leftColumnsToBeSubdivided / step);
+}
+
 void CudaSparseMatrixLibrary::convolutionalMultiply(float* result, const float* left,
-	const float* right, bool rightTransposed, size_t resultBlocks, size_t leftBlocks,
+	const float* right, bool transposeRight, size_t resultBlocks, size_t leftBlocks,
 	size_t leftRowsPerBlock, size_t leftColumnsPerBlock, size_t rightBlocks,
 	size_t rightRowsPerBlock, size_t rightColumnsPerBlock, size_t step)
 {
@@ -323,10 +345,39 @@ void CudaSparseMatrixLibrary::convolutionalMultiply(float* result, const float* 
 	
 	assert(resultBlocks % rightBlocks == 0);
 	
-	batchedMultiply(result, resultBlocks,
-		left,  true,            leftColumnsPerBlock, leftRowsPerBlock,     step * leftRowsPerBlock,                  1,
-		right, rightTransposed, rightRowsPerBlock,   rightColumnsPerBlock, rightRowsPerBlock * rightColumnsPerBlock, rightRepeat,
+	size_t completeBlocks = computeCompleteBlocksForConvolutionalMultiply(
+		leftBlocks, leftColumnsPerBlock, rightRowsPerBlock, step);
+
+	// handle complete blocks	
+	batchedMultiply(result, completeBlocks,
+		left,  true,           leftRowsPerBlock,    leftColumnsPerBlock,  step              * leftRowsPerBlock,     1,
+		right, transposeRight, rightRowsPerBlock,   rightColumnsPerBlock, rightRowsPerBlock * rightColumnsPerBlock, rightRepeat,
 		1.0f, 0.0f);
+
+
+	size_t danglingBlocks = resultBlocks - completeBlocks;
+	
+	// handle dangling blocks
+	// TODO: write a custom kernel for this
+	// TODO: launch async with the previous kernel
+	for(size_t danglingBlock = 0; danglingBlock < danglingBlocks; ++danglingBlock)
+	{
+		size_t startingBlock = danglingBlock + completeBlocks;
+		size_t leftColumns   = leftColumnsPerBlock * leftBlocks;
+
+		const float* leftStart  = left  + (startingBlock * (step * leftRowsPerBlock));
+		const float* rightStart = right + ((startingBlock * rightBlocks / resultBlocks) * (rightRowsPerBlock * rightColumnsPerBlock));	
+
+		float* resultStart = result + (startingBlock * (leftRowsPerBlock * rightColumnsPerBlock)); 
+
+		size_t remainingLeftColumnsPerBlock = leftColumns - (startingBlock * step);
+		size_t remainingRightRowsPerBlock   = remainingLeftColumnsPerBlock;
+	
+		batchedMultiply(resultStart, 1,
+			leftStart,  true,           leftRowsPerBlock,             remainingLeftColumnsPerBlock, step * leftRowsPerBlock,                  1,
+			rightStart, transposeRight, remainingRightRowsPerBlock,   rightColumnsPerBlock,         rightRowsPerBlock * rightColumnsPerBlock, rightRepeat,
+			1.0f, 0.0f);
+	}
 }
 
 static void reverseConvolutionalMultiplyCompleteBlocks(size_t resultBlocks, float* result,
@@ -624,8 +675,6 @@ float CudaSparseMatrixLibrary::reduceSum(const float* input, size_t size)
 	CudaDriver::cuMemcpyDtoH(&resultValue, (CUdeviceptr)result, sizeof(float));
 
 	CudaBlockSparseCache::fastDeviceFree(result);
-	
-	//CudaDriver::cuMemFree((CUdeviceptr)result);
 	
 	return resultValue;
 }

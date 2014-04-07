@@ -143,6 +143,10 @@ public:
 	BlockSparseMatrix reduceTileSumAlongRows(size_t rowsPerTile, size_t blocks) const;
 
 public:
+	bool operator==(const BlockSparseMatrix& m) const;
+	bool operator!=(const BlockSparseMatrix& m) const;
+
+public:
 	std::string toString()    const;
 	std::string debugString() const;
 	std::string shapeString() const;

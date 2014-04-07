@@ -140,7 +140,7 @@ public:
 	bool operator!=(const Matrix& m) const;
 
 public:
-    std::string toString(size_t maxRows = 10, size_t maxColumns = 10) const;
+    std::string toString(size_t maxRows = 20, size_t maxColumns = 20) const;
 	std::string debugString() const;
 	std::string shapeString() const;
 

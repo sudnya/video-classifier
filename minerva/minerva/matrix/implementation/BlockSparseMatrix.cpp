@@ -387,6 +387,16 @@ BlockSparseMatrix BlockSparseMatrix::reduceTileSumAlongRows(size_t tilesPerRow, 
 	return BlockSparseMatrix(_implementation->reduceTileSumAlongRows(tilesPerRow, rowsPerBlock));
 }
 
+bool BlockSparseMatrix::operator==(const BlockSparseMatrix& m) const
+{
+	return toMatrix() == m.toMatrix();
+}
+
+bool BlockSparseMatrix::operator!=(const BlockSparseMatrix& m) const
+{
+	return !(*this == m);
+}
+
 std::string BlockSparseMatrix::toString() const
 {
 	return _implementation->toString();
@@ -399,23 +409,7 @@ std::string BlockSparseMatrix::debugString() const
 
 std::string BlockSparseMatrix::shapeString() const
 {
-	std::stringstream stream;
-
-	stream << "(" << blocks() << " blocks, " << rowsPerBlock() << " rows per block, "
-		<< columnsPerBlock() << " columns per block, ";
-	
-	if(isRowSparse())
-	{
-		stream << "row-sparse";
-	}
-	else
-	{
-		stream << "column-sparse";
-	}
-	
-	stream << ")";
-
-	return stream.str();
+	return _implementation->shapeString();
 }
 
 BlockSparseMatrix::BlockSparseMatrix(BlockSparseMatrixImplementation* i)

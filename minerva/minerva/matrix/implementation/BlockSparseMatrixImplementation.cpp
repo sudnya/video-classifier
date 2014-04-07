@@ -201,6 +201,27 @@ std::string BlockSparseMatrixImplementation::debugString() const
 {
 	return toString();
 }
+
+std::string BlockSparseMatrixImplementation::shapeString() const
+{
+	std::stringstream stream;
+
+	stream << "(" << blocks() << " blocks, " << rowsPerBlock() << " rows per block, "
+		<< columnsPerBlock() << " columns per block, ";
+	
+	if(isRowSparse())
+	{
+		stream << "row-sparse";
+	}
+	else
+	{
+		stream << "column-sparse";
+	}
+	
+	stream << ")";
+
+	return stream.str();
+}
 	
 void BlockSparseMatrixImplementation::resize(size_t blocks, size_t rowsPerBlock, size_t columnsPerBlock)
 {

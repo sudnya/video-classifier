@@ -664,8 +664,8 @@ Value* NaiveBlockSparseMatrix::reduceTileSumAlongRows(size_t rowsPerTile, size_t
 			{
 				for(size_t currentRow = row; currentRow < endingRow; currentRow += rowsPerTile)
 				{
-					size_t block       = row / this->rowsPerBlock();
-					size_t blockOffset = row % this->rowsPerBlock();
+					size_t block       = currentRow / this->rowsPerBlock();
+					size_t blockOffset = currentRow % this->rowsPerBlock();
 
 					assert(block < this->blocks());
 
@@ -685,8 +685,8 @@ Value* NaiveBlockSparseMatrix::reduceTileSumAlongRows(size_t rowsPerTile, size_t
 			{
 				for(size_t currentRow = row; currentRow < endingRow; currentRow += rowsPerTile)
 				{
-					size_t block       = row / this->rowsPerBlock();
-					size_t blockOffset = row % this->rowsPerBlock();
+					size_t block       = currentRow / this->rowsPerBlock();
+					size_t blockOffset = currentRow % this->rowsPerBlock();
 
 					size_t resultBlock = (currentRow / rowsPerBlock()) % result->blocks();
 					
