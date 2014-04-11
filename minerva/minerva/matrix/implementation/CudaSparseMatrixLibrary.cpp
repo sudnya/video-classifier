@@ -350,10 +350,9 @@ void CudaSparseMatrixLibrary::convolutionalMultiply(float* result, const float* 
 
 	// handle complete blocks	
 	batchedMultiply(result, completeBlocks,
-		left,  true,           leftRowsPerBlock,    leftColumnsPerBlock,  step              * leftRowsPerBlock,     1,
+		left,  true,           leftRowsPerBlock,    rightRowsPerBlock,    step              * leftRowsPerBlock,     1,
 		right, transposeRight, rightRowsPerBlock,   rightColumnsPerBlock, rightRowsPerBlock * rightColumnsPerBlock, rightRepeat,
 		1.0f, 0.0f);
-
 
 	size_t danglingBlocks = resultBlocks - completeBlocks;
 	
@@ -386,17 +385,17 @@ static void reverseConvolutionalMultiplyCompleteBlocks(size_t resultBlocks, floa
 	size_t leftColumnStep, size_t completeBlockId)
 {
 	size_t leftStep  = leftRowsPerBlock  * leftColumnStep;
-	size_t rightStep = rightRowsPerBlock * leftColumnsPerBlock;
+	size_t rightStep = rightRowsPerBlock * rightColumnsPerBlock;
 
-	size_t leftStart = completeBlockId * rightRowsPerBlock;
+	size_t leftStart = completeBlockId * leftStep;
 
-	float beta  = 1.0f;
-	float alpha = completeBlockId == 0 ? 0.0f : 1.0f;
+	float alpha = 1.0f;
+	float beta  = completeBlockId == 0 ? 0.0f : 1.0f;
 
 	batchedMultiply(result, resultBlocks,
-		left + leftStart, leftTransposed,  leftRowsPerBlock,  leftColumnsPerBlock,  leftStep,  1,
+		left + leftStart, true,            leftRowsPerBlock,  leftColumnStep,       leftStep,  1,
 		right,            rightTransposed, rightRowsPerBlock, rightColumnsPerBlock, rightStep, 1,
-		beta, alpha);
+		alpha, beta);
 }
 
 static void reverseConvolutionalMultiplyDanglingBlocks(size_t blocks, float* result,
@@ -407,20 +406,20 @@ static void reverseConvolutionalMultiplyDanglingBlocks(size_t blocks, float* res
 	if(leftColumnRemainder == 0) return;
 
 	size_t leftStep  = leftRowsPerBlock  * leftColumnStep;
-	size_t rightStep = rightRowsPerBlock * leftColumnsPerBlock;
+	size_t rightStep = rightRowsPerBlock * rightColumnsPerBlock;
 
-	size_t leftStart = completeBlockId * rightRowsPerBlock;
+	size_t leftStart = completeBlockId * leftStep;
 
-	float beta  = 1.0f;
-	float alpha = completeBlockId == 0 ? 0.0f : 1.0f;
+	float alpha = 1.0f;
+	float beta  = completeBlockId == 0 ? 0.0f : 1.0f;
 	
 	rightRowsPerBlock   = leftColumnRemainder;
 	leftColumnsPerBlock = leftColumnRemainder;
 	
 	batchedMultiply(result, blocks,
-		left + leftStart,   leftTransposed,  leftRowsPerBlock,  leftColumnsPerBlock,  leftStep,  1,
+		left + leftStart,   true,            leftRowsPerBlock,  leftColumnsPerBlock,  leftStep,  1,
 		right,              rightTransposed, rightRowsPerBlock, rightColumnsPerBlock, rightStep, 1,
-		beta, alpha);
+		alpha, beta);
 }
 
 static void reverseConvolutionalMultiplyFinalBlock(size_t resultBlocks, float* result,
@@ -455,20 +454,20 @@ void CudaSparseMatrixLibrary::reverseConvolutionalMultiply(float* result, const 
 	size_t rightRowsPerBlock, size_t rightColumnsPerBlock)
 {
 	size_t leftColumns = leftColumnsPerBlock * leftBlocks;
-	size_t rightRows   = rightRowsPerBlock * rightBlocks;
+	size_t rightRows   = rightRowsPerBlock   * rightBlocks;
 
-	size_t leftColumnStep = (leftColumns + rightRows - 1) / rightRows; 
+	size_t leftColumnStep = rightRowsPerBlock; 
 	
 	size_t blocks = resultBlocks;
 	
 	// Step 1: loop over complete blocks
-	size_t completeBlocks      = leftColumnStep / rightRowsPerBlock;
-	size_t leftColumnRemainder = leftColumnStep % rightRowsPerBlock;
+	size_t completeBlocks      = leftColumns / rightRows;
+	size_t leftColumnRemainder = leftColumns % rightRows;
 
 	for(size_t completeBlock = 0; completeBlock < completeBlocks; ++completeBlock)
 	{
 		reverseConvolutionalMultiplyCompleteBlocks(blocks, result,
-			left, leftTransposed, leftRowsPerBlock, leftColumnsPerBlock,
+			left,  leftTransposed,  leftRowsPerBlock,  leftColumnsPerBlock,
 			right, rightTransposed, rightRowsPerBlock, rightColumnsPerBlock,
 			leftColumnStep, completeBlock);
 	}

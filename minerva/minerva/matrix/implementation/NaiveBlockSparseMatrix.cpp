@@ -113,9 +113,9 @@ Value* NaiveBlockSparseMatrix::reverseConvolutionalMultiply(const Value* matrix)
 	
 	// TODO: in parallel
 	auto result = new NaiveBlockSparseMatrix(isRowSparse());
-	
-	size_t leftColumnStep = (columns() + m->rows() - 1) / m->rows(); 
-	size_t leftColumn     = 0;
+
+	size_t leftColumnStep  = m->rowsPerBlock();
+	size_t leftColumn      = 0;
 
 	auto flattened = toMatrix();
 
@@ -125,12 +125,12 @@ Value* NaiveBlockSparseMatrix::reverseConvolutionalMultiply(const Value* matrix)
 
 	for(auto& right : *m)
 	{
-		size_t leftColumnEnd = std::min(flattened.columns(), leftColumn + leftColumnStep);
-		
 		Matrix temp(flattened.rows(), right.columns());
 		
-		for(size_t leftBegin = leftColumn; leftBegin < leftColumnEnd; leftBegin += right.rows())
+		for(size_t leftBegin = leftColumn; leftBegin < flattened.columns(); leftBegin += right.rows())
 		{
+			size_t leftColumnEnd = std::min(flattened.columns(), leftBegin + leftColumnStep);
+		
 			auto leftSlice = flattened.slice(0, leftBegin, flattened.rows(), leftColumnEnd - leftBegin);
 			
 			zeroExtendColumns(leftSlice, m->rowsPerBlock());

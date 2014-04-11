@@ -75,6 +75,13 @@ Layer::BlockSparseMatrix Layer::runInputs(const BlockSparseMatrix& m) const
 		util::log("Layer") << "  layer: " << m_sparseMatrix.shapeString() << "\n";
 	}
 	
+	if(util::isLogEnabled("Layer::Detail"))
+	{
+		util::log("Layer::Detail") << "  input: " << m.debugString() << "\n";
+		util::log("Layer::Detail") << "  layer: " << m_sparseMatrix.debugString() << "\n";
+		util::log("Layer::Detail") << "  bias:  " << m_bias.debugString() << "\n";
+	}
+	
 	auto unbiasedOutput = m.convolutionalMultiply(m_sparseMatrix, blockStep());
 	auto output = unbiasedOutput.convolutionalAddBroadcastRow(m_bias);
 	
@@ -83,7 +90,13 @@ Layer::BlockSparseMatrix Layer::runInputs(const BlockSparseMatrix& m) const
 	if(util::isLogEnabled("Layer"))
 	{
 		util::log("Layer") << "  output: " << output.shapeString() << "\n";
-	}	
+	}
+	
+	if(util::isLogEnabled("Layer::Detail"))
+	{
+		util::log("Layer::Detail") << "  output: " << output.debugString() << "\n";
+	}
+
 	return output;
 }
 
@@ -104,6 +117,11 @@ Layer::BlockSparseMatrix Layer::runReverse(const BlockSparseMatrix& m) const
 	if(util::isLogEnabled("Layer"))
 	{
 		util::log("Layer") << "  output: " << result.shapeString() << "\n";
+	}
+	
+	if(util::isLogEnabled("Layer::Detail"))
+	{
+		util::log("Layer::Detail") << "  output: " << result.debugString() << "\n";
 	}
 
 	return result;

@@ -192,14 +192,19 @@ Value* CudaBlockSparseMatrix::reverseConvolutionalMultiply(const Value* m) const
 		return multiply(m);
 	}
 	
+	assert(!_isTransposed);
+	
+	auto copy = std::unique_ptr<Value>(transpose());
+	
 	auto matrixPointer = CudaBlockSparseCache::acquireReadOnly(m);
-	auto devicePointer = CudaBlockSparseCache::acquireReadOnly(this);	
+	auto devicePointer = CudaBlockSparseCache::acquireReadOnly(copy.get());	
 
 	size_t resultBlocks          = m->blocks();
 	size_t resultRowsPerBlock    = rowsPerBlock();
 	size_t resultColumnsPerBlock = m->columnsPerBlock();
 
-	auto result        = new CudaBlockSparseMatrix(resultBlocks, resultRowsPerBlock, resultColumnsPerBlock, isRowSparse());
+	auto result = new CudaBlockSparseMatrix(resultBlocks,
+		resultRowsPerBlock, resultColumnsPerBlock, isRowSparse());
 	auto resultPointer = CudaBlockSparseCache::acquireClobber(result);
 	
 	CudaSparseMatrixLibrary::reverseConvolutionalMultiply(
@@ -209,9 +214,16 @@ Value* CudaBlockSparseMatrix::reverseConvolutionalMultiply(const Value* m) const
 		blocks(), rowsPerBlock(), columnsPerBlock(),
 		m->blocks(), m->rowsPerBlock(), m->columnsPerBlock());
 
-	CudaBlockSparseCache::release(this);
+	CudaBlockSparseCache::release(copy.get());
 	CudaBlockSparseCache::release(result);
 	CudaBlockSparseCache::release(m);
+
+	if(util::isLogEnabled("CudaBlockSparseMatrix::Detail"))
+	{
+		util::log("CudaBlockSparseMatrix::Detail") << " result " << result->debugString() << "\n";
+		util::log("CudaBlockSparseMatrix::Detail") << " left   " << debugString() << "\n";
+		util::log("CudaBlockSparseMatrix::Detail") << " right  " << m->debugString() << "\n";
+	}
 
 	return result;
 }
@@ -624,22 +636,25 @@ void CudaBlockSparseMatrix::transposeSelf()
 void CudaBlockSparseMatrix::assignUniformRandomValues(
 	std::default_random_engine& engine, float min, float max)
 {
-	#if 1
-	auto devicePointer = CudaBlockSparseCache::acquireClobber(this);
+	bool useCudaRandom = util::KnobDatabase::getKnobValue(
+		"CudaBlockSparseMatrix::UseCudaRandomLibrary", true);
 	
-	CudaSparseMatrixLibrary::assignUniformRandomValues(devicePointer,
-		min, max, size());
-		
-	CudaBlockSparseCache::release(this);
-	
-	//util::log("CudaBlockSparseMatrixLibrary") << " result is: " << toString();
-	#else
-	
-	for(auto& matrix : *this)
+	if(useCudaRandom)
 	{
-		matrix.assignUniformRandomValues(engine, min, max);
+		auto devicePointer = CudaBlockSparseCache::acquireClobber(this);
+		
+		CudaSparseMatrixLibrary::assignUniformRandomValues(devicePointer,
+			min, max, size());
+			
+		CudaBlockSparseCache::release(this);
 	}
-	#endif
+	else
+	{
+		for(auto& matrix : *this)
+		{
+			matrix.assignUniformRandomValues(engine, min, max);
+		}
+	}
 }
 
 Value* CudaBlockSparseMatrix::greaterThanOrEqual(float f) const
