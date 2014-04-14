@@ -16,6 +16,7 @@
 
 #include <minerva/util/interface/debug.h>
 #include <minerva/util/interface/Casts.h>
+#include <minerva/util/interface/Knobs.h>
 
 // Standard Library Includes
 #include <vector>
@@ -145,6 +146,12 @@ static void launchKernel(const std::string& name, const ByteVector& parameters)
 
 	// launch it
 	CudaDriver::cuLaunchGrid(function, getGoodCtaCount(), 1);
+
+	// consider blocking
+	if(util::KnobDatabase::getKnobValue("CudaSparseMatrixLibrary::UseBlockingKernelLaunches", false))
+	{
+		CudaDriver::cuCtxSynchronize();
+	}
 }
 
 /*
@@ -537,12 +544,12 @@ void CudaSparseMatrixLibrary::subtract(float* result, const float* left, float f
 
 void CudaSparseMatrixLibrary::klDivergence(float* result, float f, size_t size)
 {
-	launchKernel("klDivergence", result, f, size);
+	launchKernel("klDivergence", result, result, f, size);
 }
 
 void CudaSparseMatrixLibrary::klDivergenceDerivative(float* result, float f, size_t size)
 {
-	launchKernel("klDivergenceDerivative", result, f, size);
+	launchKernel("klDivergenceDerivative", result, result, f, size);
 }
 
 void CudaSparseMatrixLibrary::transpose(float* result, const float* left, size_t blocks, size_t rows, size_t columns)

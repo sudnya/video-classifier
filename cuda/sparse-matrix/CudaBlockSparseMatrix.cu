@@ -575,7 +575,7 @@ extern "C" __global__ void reduceTileSumAlongRows(float* result, float* input, u
 	{
 		float value = 0.0f;
 		
-		for(uint64_t position = i; position < inputSize; i += totalSize)
+		for(uint64_t position = i; position < inputSize; position += totalSize)
 		{
 			value += input[position];
 		}

@@ -113,12 +113,5 @@ if env['install']:
 	Default(install_alias)
 
 
-# Add subdirectories
-#SConscript(env['path_to_root_dir'] + '/flexbe/proco/SConscript', exports='env')
-#SConscript(env['path_to_root_dir'] + '/flexbe/driver/SConscript', exports='env')
-#SConscript(env['path_to_root_dir'] + '/flexbe/virtual-trace/SConscript',
-#	exports='env')
-
-
 
 
