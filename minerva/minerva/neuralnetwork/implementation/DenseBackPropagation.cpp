@@ -59,12 +59,10 @@ static float computeCostForLayer(const Layer& layer, const BlockSparseMatrix& la
 	auto sum = yTemp.add(yMinusOneTemp);
 	auto cost = sum.multiply(-1.0f/m);
 
-	//TODO Normalize this with lambda!
 	float costSum = cost.reduceSum();
 
-	auto weights = layer.getFlattenedWeights();
-
-	costSum += (lambda / (2.0f * m)) * (weights.elementMultiply(weights).reduceSum());
+	costSum += (lambda / (2.0f * m)) * (layer.getWeightsWithoutBias().elementMultiply(
+		layer.getWeightsWithoutBias()).reduceSum());
 
 	return costSum;
 }
@@ -214,7 +212,8 @@ MatrixVector DenseBackPropagation::getDeltas(const NeuralNetwork& network, const
 	{
 		for(auto& delta : deltas)
 		{
-			util::log("DenseBackPropagation::Detail") << " added delta of size ( " << delta.rows() << " ) rows and ( " << delta.columns() << " )\n" ;
+			util::log("DenseBackPropagation::Detail") << " added delta of size ( " << delta.rows()
+				<< " ) rows and ( " << delta.columns() << " )\n" ;
 			//util::log("DenseBackPropagation::Detail") << " delta contains " << delta.toString() << "\n";
 		}
 	}

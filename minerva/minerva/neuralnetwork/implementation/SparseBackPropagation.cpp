@@ -34,7 +34,8 @@ static BlockSparseMatrix computeInputDerivative(const NeuralNetwork& network, co
 	const BlockSparseMatrix& referenceOutput, float lambda, float sparsity, float sparsityWeight);
 static float computeCostForNetwork(const NeuralNetwork& network, const BlockSparseMatrix& input,
 	const BlockSparseMatrix& referenceOutput, float lambda, float sparsity, float sparsityWeight);
-static Matrix getAverageActivations(const NeuralNetwork& network, const BlockSparseMatrix& input);
+static float getActivationSparsityCost(const NeuralNetwork& network, const BlockSparseMatrix& input,
+	float sparsity, float sparsityWeight);
 
 SparseBackPropagation::SparseBackPropagation(NeuralNetwork* ann,
 	BlockSparseMatrix* input,
@@ -91,21 +92,16 @@ static float computeCostForNetwork(const NeuralNetwork& network, const BlockSpar
 
 	if(lambda > 0.0f)
 	{
-		auto weights = network.getFlattenedWeights();
-
-		costSum += (lambda / (2.0f * m)) * ((weights.elementMultiply(weights)).reduceSum());
+		for(auto& layer : network)
+		{
+			costSum += (lambda / (2.0f * m)) * ((layer.getWeightsWithoutBias().elementMultiply(
+				layer.getWeightsWithoutBias())).reduceSum());
+		}
 	}
 
 	if(sparsityWeight > 0.0f)
 	{
-		// The average activation of each neuron over all samples
-		auto averageActivations = getAverageActivations(network, input);
-
-		// Get the KL divergence of each activation
-		auto klDivergence = averageActivations.klDivergence(sparsity);
-	
-		// Add it into the cost
-		costSum += sparsityWeight * klDivergence.reduceSum();
+		costSum += getActivationSparsityCost(network, input, sparsity, sparsityWeight);
 	}
 	
 	return costSum;
@@ -207,37 +203,39 @@ static BlockSparseMatrix getInputDelta(const NeuralNetwork& network, const Matri
 	return delta;	
 }
 
-static Matrix getAverageActivations(const NeuralNetwork& network, const BlockSparseMatrix& input)
+static float getActivationSparsityCost(const NeuralNetwork& network, const BlockSparseMatrix& input,
+	float sparsity, float sparsityWeight)
 {
-	assert(!network.empty());
-
-	Matrix activations(1, network.totalActivations() - network.getOutputCount());
-
+	float cost = 0.0f;
+	
 	auto temp = input;
 
-	size_t position = 0;
-
-	for (auto i = network.begin(); i != --network.end(); ++i)
+	for(auto i = network.begin(); i != --network.end(); ++i)
 	{
-		network.formatInputForLayer(*i, temp);
+		auto& layer = *i;
+
+		// The average activation of each neuron over all samples
+		network.formatInputForLayer(layer, temp);
 		
-		temp = (*i).runInputs(temp);
+		temp = layer.runInputs(temp);
 	
-		auto reduced = temp.reduceSumAlongRows().multiply(1.0f/temp.rows());
-	
-		for(auto& matrix : reduced)
+		auto averageActivations = temp.reduceSumAlongRows().multiply(1.0f/temp.rows());
+
+		// Get the KL divergence of each activation
+		auto klDivergence = averageActivations.klDivergence(sparsity);
+		
+		if(util::isLogEnabled("SparseBackPropagation::Detail"))
 		{
-			assert(position + matrix.size() <= activations.size());
-
-			std::memcpy(&activations.data()[position],
-				&matrix.data()[0],
-				matrix.size() * sizeof(float));
-			
-			position += matrix.size();
+			util::log("SparseBackPropagation::Detail") << " kl divergence of size " << klDivergence.shapeString() << "\n" ;
+			util::log("SparseBackPropagation::Detail") << " average activations of size " << averageActivations.shapeString() << "\n" ;
+			//util::log("SparseBackPropagation") << " kl divergence " << klDivergence.toString() << "\n";
 		}
+	
+		// Add it into the cost
+		cost += sparsityWeight * klDivergence.reduceSum();
 	}
-
-	return activations;
+	
+	return cost;
 }
 
 static MatrixVector getActivations(const NeuralNetwork& network, const BlockSparseMatrix& input) 
@@ -342,14 +340,14 @@ static BlockSparseMatrix computeInputDerivative(const NeuralNetwork& network,
 	//get deltas in a vector
 	auto delta = getInputDelta(network, activations, referenceOutput, sparsity, sparsityWeight);
 	
-	util::log("DenseBackPropagation") << "Input delta: " << delta.toString();
+	util::log("SparseBackPropagation") << "Input delta: " << delta.toString();
 	unsigned int samples = input.rows();
 
 	auto partialDerivative = delta;
 
 	auto normalizedPartialDerivative = partialDerivative.multiply(1.0f/samples);
 
-	util::log("DenseBackPropagation") << "Input derivative: " << normalizedPartialDerivative.toString();
+	util::log("SparseBackPropagation") << "Input derivative: " << normalizedPartialDerivative.toString();
 
 	return normalizedPartialDerivative;
 }

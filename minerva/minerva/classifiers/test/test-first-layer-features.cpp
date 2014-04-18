@@ -95,7 +95,7 @@ static void createModel(ClassificationModel& model, const Parameters& parameters
 		<< "Building feature selector network with "
 		<< featureSelector.getOutputCount() << " output neurons\n";
 
-	featureSelector.setUseSparseCostFunction(true);
+	featureSelector.setUseSparseCostFunction(false);
 
 	model.setNeuralNetwork("FeatureSelector", featureSelector);
 }

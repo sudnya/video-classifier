@@ -712,7 +712,7 @@ Value* CudaBlockSparseMatrix::reduceSumAlongColumns() const
 	_performTransposeIfNecessary();
 	assert(!_isTransposed);
 
-	auto result = new CudaBlockSparseMatrix(*this, false);
+	auto result = new CudaBlockSparseMatrix(blocks(), rowsPerBlock(), 1, isRowSparse());
 	
 	auto devicePointer = CudaBlockSparseCache::acquireReadOnly(this);
 	auto resultPointer = CudaBlockSparseCache::acquireClobber(result);
@@ -730,7 +730,7 @@ Value* CudaBlockSparseMatrix::reduceSumAlongRows() const
 {
 	_performTransposeIfNecessary();
 	assert(!_isTransposed);
-	auto result = new CudaBlockSparseMatrix(*this, false);
+	auto result = new CudaBlockSparseMatrix(blocks(), 1, columnsPerBlock(), isRowSparse());
 	
 	auto devicePointer = CudaBlockSparseCache::acquireReadOnly(this);
 	auto resultPointer = CudaBlockSparseCache::acquireClobber(result);
