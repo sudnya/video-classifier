@@ -111,6 +111,7 @@ bool testTranspose()
 
 }
 
+
 bool testSparseMultiply()
 {
 	BlockSparseMatrix a(1, 2, 3);
@@ -542,6 +543,50 @@ bool testSparseReverseConvolutionalMultiply()
 	return computed == c;
 }
 
+bool testSparseReduceSumAlongRows()
+{
+	BlockSparseMatrix a(2, 2, 3, false);
+	
+	BlockSparseMatrix c(2, 1, 3, false);
+	
+	a[0](0, 0) = 1;
+	a[0](1, 0) = 2;
+	a[0](0, 1) = 3;
+	a[0](1, 1) = 4;
+	a[0](0, 2) = 5;
+	a[0](1, 2) = 6;
+
+	a[1](0, 0) = 7;
+	a[1](1, 0) = 8;
+	a[1](0, 1) = 9;
+	a[1](1, 1) = 10;
+	a[1](0, 2) = 11;
+	a[1](1, 2) = 12;
+	
+	c[0](0, 0) = 3;
+	c[0](0, 1) = 7;
+	c[0](0, 2) = 11;
+	
+	c[1](0, 0) = 15;
+	c[1](0, 1) = 19;
+	c[1](0, 2) = 23;
+	
+	BlockSparseMatrix computed = a.reduceSumAlongRows();
+	
+	if(computed != c)
+	{
+		std::cout << " Block Sparse Reduce Sum Along Rows Test Failed:\n";
+		std::cout << "  result matrix " << computed.toMatrix().toString();
+		std::cout << "  does not match reference matrix " << c.toMatrix().toString();
+	}
+	else
+	{
+		std::cout << " Block Sparse Reduce Sum Along Rows Test Passed\n";
+	}
+	
+	return computed == c;
+}
+
 int main(int argc, char** argv)
 {
 	minerva::util::enableAllLogs();
@@ -559,6 +604,7 @@ int main(int argc, char** argv)
     passed &= testSparseConvolutionalAddBroadcastRow();
     passed &= testSparseReduceTileSumAlongRows();
     passed &= testSparseReverseConvolutionalMultiply();
+    passed &= testSparseReduceSumAlongRows();
 
 	if(not passed)
 	{

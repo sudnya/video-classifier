@@ -640,6 +640,16 @@ void CudaSparseMatrixLibrary::sigmoidDerivativeSelf(float* result, size_t size)
 	launchKernel("sigmoidDerivativeSelf", result, size);
 }
 
+void CudaSparseMatrixLibrary::maxSelf(float* result, float value, size_t size)
+{
+	launchKernel("minSelf", result, value, size);
+}
+
+void CudaSparseMatrixLibrary::minSelf(float* result, float value, size_t size)
+{
+	launchKernel("maxSelf", result, value, size);
+}
+
 void CudaSparseMatrixLibrary::assignUniformRandomValues(float* result, float min, float max, size_t size)
 {
 	util::log("CudaSparseMatrixLibrary") << "assigning uniform random values using cuRand\n";

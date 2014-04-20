@@ -258,9 +258,22 @@ void NeuralNetwork::mirror()
 
 	addLayer(Layer(blocks, newInputs, newOutputs));
 	
-	// should be pseudo inverse
-	std::default_random_engine engine(std::time(nullptr));
+	std::default_random_engine engine;
 
+	// TODO: should wire this out of the neural network	
+	bool shouldSeedWithTime = util::KnobDatabase::getKnobValue(
+		"NeuralNetwork::SeedWithTime", false);
+	
+	if(shouldSeedWithTime)
+	{
+		engine.seed(std::time(0));
+	}
+	else
+	{
+		engine.seed(0);
+	}
+
+	// should be pseudo inverse
 	back().initializeRandomly(engine);
 }
 

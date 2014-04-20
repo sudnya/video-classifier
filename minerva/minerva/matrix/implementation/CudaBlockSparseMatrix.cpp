@@ -620,12 +620,20 @@ void CudaBlockSparseMatrix::sigmoidDerivativeSelf()
 
 void CudaBlockSparseMatrix::minSelf(float value)
 {
-	assertM(false, "Not implemented.");
+	auto devicePointer = CudaBlockSparseCache::acquire(this);
+	
+	CudaSparseMatrixLibrary::minSelf(devicePointer, value, size());
+	
+	CudaBlockSparseCache::release(this);
 }
 
 void CudaBlockSparseMatrix::maxSelf(float value)
 {
-	assertM(false, "Not implemented.");
+	auto devicePointer = CudaBlockSparseCache::acquire(this);
+	
+	CudaSparseMatrixLibrary::maxSelf(devicePointer, value, size());
+	
+	CudaBlockSparseCache::release(this);
 }
 
 void CudaBlockSparseMatrix::transposeSelf()

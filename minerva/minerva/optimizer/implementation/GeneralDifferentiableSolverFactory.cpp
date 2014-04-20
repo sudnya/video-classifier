@@ -40,8 +40,8 @@ GeneralDifferentiableSolver* GeneralDifferentiableSolverFactory::create(const st
 static std::string getSolverName()
 {
 	return util::KnobDatabase::getKnobValue("GeneralDifferentiableSolver::Type",
-		"LBFGSSolver");
 		//"GradientDescentSolver");	
+		"LBFGSSolver");
 }
 
 GeneralDifferentiableSolver* GeneralDifferentiableSolverFactory::create()

@@ -292,6 +292,28 @@ extern "C" __global__ void sigmoidDerivativeSelf(float* result, uint64_t size)
 	}
 }
 
+extern "C" __global__ void minSelf(float* result, float value, uint64_t size)
+{
+	uint64_t step  = blockDim.x * gridDim.x;
+	uint64_t start = blockIdx.x * blockDim.x + threadIdx.x;
+
+	for(uint64_t i = start; i < size; i += step)
+	{
+		result[i] = min(value, result[i]);
+	}
+}
+
+extern "C" __global__ void maxSelf(float* result, float value, uint64_t size)
+{
+	uint64_t step  = blockDim.x * gridDim.x;
+	uint64_t start = blockIdx.x * blockDim.x + threadIdx.x;
+
+	for(uint64_t i = start; i < size; i += step)
+	{
+		result[i] = max(value, result[i]);
+	}
+}
+
 extern "C" __global__ void scaleRandom(float* result, float min, float max, uint64_t size)
 {
 	uint64_t step  = blockDim.x * gridDim.x;
@@ -456,43 +478,38 @@ extern "C" __global__ void reduceSumAlongRowsRowSparse(float* result, float* inp
 	}
 }
 
-extern "C" __global__ void reduceSumAlongRowsColumnSparse(float* result, float* input, uint64_t blocks, uint64_t rows, uint64_t columns)
+// Optimized for wide matrices with many columns
+extern "C" __global__ void reduceSumAlongRowsColumnSparse(float* result, float* input,
+	uint64_t blocks, uint64_t rows, uint64_t columns)
 {
-	uint64_t step  = gridDim.x;
-	uint64_t start = blockIdx.x;
+	uint64_t size  = blocks * columns;
+	uint64_t step  = blockDim.x * gridDim.x;
+	uint64_t start = blockIdx.x * blockDim.x + threadIdx.x;
+		
+	uint64_t blockSize = rows * columns;
 	
-	uint64_t size = blocks;
-
 	for(uint64_t i = start; i < size; i += step)
 	{
 		float value = 0.0f;
-		
-		uint64_t ctaStart = threadIdx.x;
-		uint64_t ctaStep  = blockDim.x;
-		uint64_t ctaSize  = columns * blocks;
-		
-		for(uint64_t j = ctaStart; j < ctaSize; j += ctaStep)
-		{	
-			uint64_t blockSize = rows * columns;
-			uint64_t blockId = j / columns;
-			uint64_t rowOffset = i * columns;
-			uint64_t columnOffset = j % columns;			
 
-			uint64_t index = blockSize * blockId + rowOffset + columnOffset;
+		uint64_t block         = i / columns;
+		uint64_t columnInBlock = i % columns;
+	
+		uint64_t base = block * blockSize;
+		
+		for(uint64_t row = 0; row != rows; ++row)
+		{
+			uint64_t index = base + (row * columns + columnInBlock);
 			
 			value += input[index];
 		}
 		
-		float finalValue = reduceCta(value);
-		
-		if(threadIdx.x == 0)
-		{
-			result[i] = finalValue;
-		}
+		result[i] = value;	
 	}
 }
 
-extern "C" __global__ void reduceSumAlongColumnsRowSparse(float* result, float* input, uint64_t blocks, uint64_t rows, uint64_t columns)
+extern "C" __global__ void reduceSumAlongColumnsRowSparse(float* result, float* input,
+	uint64_t blocks, uint64_t rows, uint64_t columns)
 {
 	uint64_t step  = blockDim.x * gridDim.x;
 	uint64_t start = blockIdx.x * blockDim.x + threadIdx.x;
@@ -515,7 +532,8 @@ extern "C" __global__ void reduceSumAlongColumnsRowSparse(float* result, float* 
 	}
 }
 
-extern "C" __global__ void reduceSumAlongColumnsColumnSparse(float* result, float* input, uint64_t blocks, uint64_t rows, uint64_t columns)
+extern "C" __global__ void reduceSumAlongColumnsColumnSparse(float* result, float* input,
+	uint64_t blocks, uint64_t rows, uint64_t columns)
 {
 	uint64_t step  = blockDim.x * gridDim.x;
 	uint64_t start = blockIdx.x * blockDim.x + threadIdx.x;

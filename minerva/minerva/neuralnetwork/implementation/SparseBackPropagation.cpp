@@ -226,9 +226,12 @@ static float getActivationSparsityCost(const NeuralNetwork& network, const Block
 		
 		if(util::isLogEnabled("SparseBackPropagation::Detail"))
 		{
-			util::log("SparseBackPropagation::Detail") << " kl divergence of size " << klDivergence.shapeString() << "\n" ;
+			util::log("SparseBackPropagation::Detail") << " activations of size " << temp.shapeString() << "\n" ;
 			util::log("SparseBackPropagation::Detail") << " average activations of size " << averageActivations.shapeString() << "\n" ;
-			//util::log("SparseBackPropagation") << " kl divergence " << klDivergence.toString() << "\n";
+			util::log("SparseBackPropagation::Detail") << " kl divergence of size " << klDivergence.shapeString() << "\n" ;
+			util::log("SparseBackPropagation::Detail") << " activations " << temp.debugString() << "\n" ;
+			util::log("SparseBackPropagation::Detail") << " average activations " << averageActivations.debugString() << "\n" ;
+			util::log("SparseBackPropagation::Detail") << " kl divergence " << klDivergence.toString() << "\n";
 		}
 	
 		// Add it into the cost

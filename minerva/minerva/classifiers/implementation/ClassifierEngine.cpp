@@ -351,6 +351,10 @@ static VideoAndFrameVector pickRandomFrames(VideoVector& videos,
 	{
 		generator.seed(std::time(0));
 	}
+	else
+	{
+		generator.seed(0);
+	}
 
 	VideoAndFrameVector positions;
 	
@@ -394,10 +398,15 @@ IntVector getRandomOrder(unsigned int size)
 	std::default_random_engine generator;
 	
 	bool shouldSeedWithTime = util::KnobDatabase::getKnobValue(
-		"ClassifierEngine::SeedWithTime", true);
+		"ClassifierEngine::SeedWithTime", false);
+	
 	if(shouldSeedWithTime)
 	{
 		generator.seed(std::time(0));
+	}
+	else
+	{
+		generator.seed(0);
 	}
 	
 	std::shuffle(order.begin(), order.end(), generator);	
