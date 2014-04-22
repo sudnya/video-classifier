@@ -75,7 +75,7 @@ class NeuralNetwork
 
 		size_t getOutputNeurons() const;
 
-		size_t getBlockingFactor() const;
+		size_t getInputBlockingFactor()  const;
 		size_t getOutputBlockingFactor() const;
 	
 	public:
@@ -156,6 +156,9 @@ class NeuralNetwork
 	public:
 		NeuronSet getInputNeuronsConnectedToThisOutput(unsigned neuron) const;
 		NeuralNetwork getSubgraphConnectedToThisOutput(unsigned neuron) const;
+
+	public:
+		std::string shapeString() const;
 
 	private:
 		LayerVector m_layers;

@@ -56,18 +56,18 @@ static void createAndInitializeNeuralNetworks(
 	
 	// pooling layer
 	featureSelector.addLayer(Layer(featureSelector.back().blocks(),
-		featureSelector.back().getBlockingFactor(),
-		featureSelector.back().getBlockingFactor() / reductionFactor));
+		featureSelector.back().getInputBlockingFactor(),
+		featureSelector.back().getInputBlockingFactor() / reductionFactor));
 	
 	// convolutional layer
 	featureSelector.addLayer(Layer(featureSelector.back().blocks() / reductionFactor,
-		featureSelector.back().getBlockingFactor(),
-		featureSelector.back().getBlockingFactor()));
+		featureSelector.back().getInputBlockingFactor(),
+		featureSelector.back().getInputBlockingFactor()));
 	
 	// pooling layer
 	featureSelector.addLayer(Layer(featureSelector.back().blocks(),
-		featureSelector.back().getBlockingFactor(),
-		featureSelector.back().getBlockingFactor() / reductionFactor));
+		featureSelector.back().getInputBlockingFactor(),
+		featureSelector.back().getInputBlockingFactor() / reductionFactor));
 
 	featureSelector.initializeRandomly(engine);
 	util::log("TestNeuralNetworkPerformance")

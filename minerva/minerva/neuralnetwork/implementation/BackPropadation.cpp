@@ -179,7 +179,7 @@ static NeuralNetwork createNetworkFromWeights(
 	for(auto& layer : *neuralNetwork)
 	{
 		newNetwork.addLayer(Layer(layer.blocks(),
-			layer.getBlockingFactor(), layer.getOutputBlockingFactor(),
+			layer.getInputBlockingFactor(), layer.getOutputBlockingFactor(),
 			layer.blockStep()));
 		
 		newNetwork.back().setBias(layer.getBias());
@@ -200,7 +200,7 @@ static NeuralNetwork createNetworkFromWeights(
 	for(auto& layer : *neuralNetwork)
 	{
 		newNetwork.addLayer(Layer(layer.blocks(),
-			layer.getBlockingFactor(), layer.getOutputBlockingFactor(),
+			layer.getInputBlockingFactor(), layer.getOutputBlockingFactor(),
 			layer.blockStep()));
 		
 		newNetwork.back().setBias(layer.getBias());
@@ -225,7 +225,7 @@ SparseMatrixVectorFormat BackPropagation::getWeightFormat() const
 	
 	for(auto& layer : *getNeuralNetwork())
 	{
-		format.push_back(SparseMatrixFormat(layer.blocks(), layer.getBlockingFactor(),
+		format.push_back(SparseMatrixFormat(layer.blocks(), layer.getInputBlockingFactor(),
 			layer.getOutputBlockingFactor()));
 	}
 	

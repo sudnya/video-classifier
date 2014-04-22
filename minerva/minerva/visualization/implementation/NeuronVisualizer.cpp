@@ -192,7 +192,7 @@ static void visualizeNeuron(const NeuralNetwork& network, Image& image, unsigned
 	size_t x = 0;
 	size_t y = 0;
 	
-	util::getNearestToSquareFactors(x, y, network.getBlockingFactor());
+	util::getNearestToSquareFactors(x, y, network.getInputBlockingFactor());
 
 	updateImage(image, matrix, x, y);
 }

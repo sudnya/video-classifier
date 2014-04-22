@@ -55,7 +55,7 @@ class Layer
 		size_t getInputCount()  const;
 		size_t getOutputCount() const;
 
-		size_t getBlockingFactor() const;
+		size_t getInputBlockingFactor() const;
 		size_t getOutputBlockingFactor() const;
 
 	public:

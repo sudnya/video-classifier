@@ -42,7 +42,7 @@ void UnsupervisedLearner::learn(ImageVector&& images)
 {
 	/* using the feature NN & training images emit a NN for classifiers */
 	auto input = images.convertToStandardizedMatrix(m_featureSelector.getInputCount(),
-		m_featureSelector.getBlockingFactor());
+		m_featureSelector.getInputBlockingFactor());
 	images.clear();
 	
 	auto inputReference = input.add(1.0f).multiply(0.5f);

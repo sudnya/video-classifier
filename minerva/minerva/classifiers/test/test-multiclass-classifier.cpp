@@ -65,18 +65,18 @@ static void createAndInitializeNeuralNetworks(
 	
 	// pooling layer
 	featureSelector.addLayer(Layer(featureSelector.back().blocks(),
-		featureSelector.back().getBlockingFactor(),
-		featureSelector.back().getBlockingFactor() / reductionFactor));
+		featureSelector.back().getInputBlockingFactor(),
+		featureSelector.back().getInputBlockingFactor() / reductionFactor));
 	
 	// convolutional layer
 	featureSelector.addLayer(Layer(featureSelector.back().blocks() / reductionFactor,
-		featureSelector.back().getBlockingFactor(),
-		featureSelector.back().getBlockingFactor()));
+		featureSelector.back().getInputBlockingFactor(),
+		featureSelector.back().getInputBlockingFactor()));
 	
 	// pooling layer
 	featureSelector.addLayer(Layer(featureSelector.back().blocks(),
-		featureSelector.back().getBlockingFactor(),
-		featureSelector.back().getBlockingFactor() / reductionFactor));
+		featureSelector.back().getInputBlockingFactor(),
+		featureSelector.back().getInputBlockingFactor() / reductionFactor));
 
 	featureSelector.initializeRandomly(engine);
 	util::log("TestMulticlassClassifier")
@@ -211,12 +211,12 @@ static void visualizeModel(ClassificationModel& model,
 
 		if(neuronIndex < featureSelectorNetwork.front().blocks())
 		{
-			oneLayerNetwork.front() = Layer(1, oneLayerNetwork.front().getBlockingFactor(),
-				oneLayerNetwork.front().getBlockingFactor());
+			oneLayerNetwork.front() = Layer(1, oneLayerNetwork.front().getInputBlockingFactor(),
+				oneLayerNetwork.front().getInputBlockingFactor());
 			*oneLayerNetwork.front().begin() = *(featureSelectorNetwork.front().begin() + neuronIndex);
 			*oneLayerNetwork.front().begin_bias() = *(featureSelectorNetwork.front().begin_bias() + neuronIndex);
 
-			neuronIndex = neuronIndex * oneLayerNetwork.front().getBlockingFactor();
+			neuronIndex = neuronIndex * oneLayerNetwork.front().getInputBlockingFactor();
 		}
 		else
 		{

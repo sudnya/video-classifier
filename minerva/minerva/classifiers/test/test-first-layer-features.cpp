@@ -56,7 +56,7 @@ public:
 
 public:
 	Parameters()
-	: blockX(8), blockY(8), blockStep(2)
+	: blockX(8), blockY(8), blockStep(4)
 	{
 		
 	}
@@ -75,20 +75,21 @@ static void createModel(ClassificationModel& model, const Parameters& parameters
 	const size_t blocks    = totalPixels / blockSize;
 	const size_t blockStep = blockSize / parameters.blockStep;
 
-	size_t reductionFactor = std::min(blocks, std::min(parameters.xPixels, parameters.blockX)) * parameters.blockStep;
+	size_t reductionFactor = 4;
 
 	// convolutional layer
 	featureSelector.addLayer(Layer(blocks, blockSize, blockSize, blockStep));
 	
 	// pooling layer
-	featureSelector.addLayer(Layer(featureSelector.back().blocks() * parameters.blockStep,
-		featureSelector.back().getBlockingFactor(),
-		featureSelector.back().getBlockingFactor() / reductionFactor));
+	featureSelector.addLayer(
+		Layer(featureSelector.back().blocks() * parameters.blockStep,
+		featureSelector.back().getInputBlockingFactor(),
+		reductionFactor * parameters.colors));
 	
 	// contrast normalization
 	featureSelector.addLayer(Layer(featureSelector.back().blocks(),
-		featureSelector.back().getBlockingFactor() / reductionFactor,
-		featureSelector.back().getBlockingFactor() / reductionFactor));
+		featureSelector.back().getOutputBlockingFactor(),
+		featureSelector.back().getOutputBlockingFactor()));
 
 	featureSelector.initializeRandomly(engine);
 	minerva::util::log("TestFirstLayerFeatures")

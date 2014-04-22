@@ -64,13 +64,13 @@ Classifier::Matrix Classifier::detectLabels(const ImageVector& images)
 {
 	size_t classifierInputCount = m_classifierNetwork.getInputCount();
 	size_t     systemInputCount = m_classifierNetwork.getInputCount();
-    size_t       blockingFactor = m_classifierNetwork.getBlockingFactor();
+    size_t       blockingFactor = m_classifierNetwork.getInputBlockingFactor();
 
 	if (!m_featureSelectorNetwork.empty())
 	{
 		classifierInputCount = m_featureSelectorNetwork.getOutputCount();
 		systemInputCount	 = m_featureSelectorNetwork.getInputCount();
-        blockingFactor       = m_featureSelectorNetwork.getBlockingFactor();
+        blockingFactor       = m_featureSelectorNetwork.getInputBlockingFactor();
 	}
 
 	assert(m_classifierNetwork.getInputCount() == classifierInputCount);

@@ -39,14 +39,14 @@ void Learner::loadClassifier()
 void Learner::trainClassifier(ImageVector&& images)
 {
 	size_t inputCount = m_featureSelectorNetwork.getInputCount();
-	size_t blockingFactor = m_featureSelectorNetwork.getBlockingFactor();
+	size_t blockingFactor = m_featureSelectorNetwork.getInputBlockingFactor();
 
 	util::log("Learner") << "Loading feature selector with: " << inputCount << " inputs.\n";
 
 	if(m_featureSelectorNetwork.empty())
 	{
 		inputCount = m_classifierNetwork.getInputCount();
-		blockingFactor = m_classifierNetwork.getBlockingFactor();
+		blockingFactor = m_classifierNetwork.getInputBlockingFactor();
 		util::log("Learner") << " could not load feature selector.\n";
 	}
 

@@ -142,7 +142,7 @@ size_t Layer::getOutputCount() const
 	return getOutputCountForInputCount(getInputCount());	
 }
 
-size_t Layer::getBlockingFactor() const
+size_t Layer::getInputBlockingFactor() const
 {
 	return m_sparseMatrix.getBlockingFactor();
 }
@@ -160,7 +160,7 @@ size_t Layer::getOutputCountForInputCount(size_t inputCount) const
 size_t Layer::getFloatingPointOperationCount() const
 {
 	// blocks * blockInputs^2 * blockOutputs
-	return blocks() * getBlockingFactor() * getBlockingFactor() * getOutputBlockingFactor();
+	return blocks() * getInputBlockingFactor() * getInputBlockingFactor() * getOutputBlockingFactor();
 }
 
 size_t Layer::totalNeurons() const
@@ -376,7 +376,7 @@ Layer::NeuronSet Layer::getInputNeuronsConnectedToTheseOutputs(
 		size_t blockStart = block * blockStep();
 		
 		size_t begin = blockStart;
-		size_t end   = blockStart + getBlockingFactor();
+		size_t end   = blockStart + getInputBlockingFactor();
 		
 		// TODO: eliminate the reundant inserts
 		for(size_t i = begin; i < end; ++i)
@@ -403,7 +403,7 @@ Layer Layer::getSubgraphConnectedToTheseOutputs(
 		blocks.insert(block);
 	}
 	
-	Layer layer(blocks.size(), getBlockingFactor(),
+	Layer layer(blocks.size(), getInputBlockingFactor(),
 		getOutputBlockingFactor(), blockStep());
 	
 	for(auto& block : blocks)

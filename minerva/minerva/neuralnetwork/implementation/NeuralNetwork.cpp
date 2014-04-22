@@ -251,7 +251,7 @@ void NeuralNetwork::mirror()
 	assert(newOutputs > 0);
 	
 	util::log("NeuralNetwork") << "Mirroring neural network output layer ("
-		<< back().blocks() << " blocks, " << back().getBlockingFactor()
+		<< back().blocks() << " blocks, " << back().getInputBlockingFactor()
 		<< " inputs, " << back().getOutputBlockingFactor()
 		<< " outputs) to (" << blocks << " blocks, " << newInputs
 		<< " inputs, " << newOutputs << " outputs)\n";
@@ -322,12 +322,12 @@ size_t NeuralNetwork::getOutputCountForInputCount(
 	return outputCount;
 }
 
-size_t NeuralNetwork::getBlockingFactor() const
+size_t NeuralNetwork::getInputBlockingFactor() const
 {
 	if(empty())
 		return 0;
 
-	return front().getBlockingFactor();
+	return front().getInputBlockingFactor();
 }
 
 size_t NeuralNetwork::getOutputBlockingFactor() const
@@ -425,7 +425,7 @@ NeuralNetwork::BlockSparseMatrix NeuralNetwork::convertToBlockSparseForLayerInpu
 	
 	BlockSparseMatrix result;
 
-	size_t blockingFactor = layer.getBlockingFactor();
+	size_t blockingFactor = layer.getInputBlockingFactor();
 
 	for(size_t column = 0; column < m.columns(); column += blockingFactor)
 	{
@@ -606,30 +606,8 @@ BackPropagation* NeuralNetwork::createBackPropagation() const
 
 bool NeuralNetwork::areConnectionsValid() const
 {
-
-	/*
-	Is this necessary anymore?
+	// TODO
 	
-	for(auto layer = begin(); layer != end(); ++layer)
-	{
-		auto next = layer; ++next;
-		if(next == end()) break;
-		
-		if(layer->getOutputCount() != next->getInputCount())
-		{
-			util::log("NeuralNetwork") << " Layer " << std::distance(begin(), layer)
-				<< " (" << layer->blocks() << " blocks, "
-				<< layer->getBlockingFactor() << " blockInputs, "
-				<< layer->getOutputBlockingFactor() << " blockOutputs) /= "
-				 << " Layer " << std::distance(begin(), next)
-				<< " (" << next->blocks() << " blocks, "
-				<< next->getBlockingFactor() << " blockInputs, "
-				<< next->getOutputBlockingFactor() << " blockOutputs)\n";
-			return false;
-		}
-	}
-	*/
-
 	util::log("NeuralNetwork") << "Verified network with " << getInputCount()
 		<< " inputs and " << getOutputCount() << " outputs\n";
 	
@@ -661,36 +639,29 @@ NeuralNetwork NeuralNetwork::getSubgraphConnectedToThisOutput(
 	NeuralNetworkSubgraphExtractor extractor(const_cast<NeuralNetwork*>(this));
 	
 	return extractor.copySubgraphConnectedToThisOutput(neuron);
-	/*
-	NeuralNetwork network;
-	
-	NeuronSet inputs;
-	
-	NeuronSet outputs;
+}
 
-	inputs.insert(neuron);
-
-	LayerVector layers;
+std::string NeuralNetwork::shapeString() const
+{
+	std::stringstream stream;
 	
-	for(auto layer = rbegin(); layer != rend(); ++layer)
+	stream << "Neural Network [" << size() << " layers, " << getInputCount()
+		<< " inputs (" << getInputBlockingFactor() << " way blocked), "
+		<< getOutputNeurons() << " outputs (" << getOutputBlockingFactor()
+		<< " way blocked)]\n";
+
+	for(auto& layer : *this)
 	{
-		std::swap(inputs, outputs);
+		size_t index = &layer - &*begin();
 		
-		inputs = layer->getInputNeuronsConnectedToTheseOutputs(outputs);
-		
-		layers.push_back(layer->getSubgraphConnectedToTheseOutputs(outputs));
+		stream << " Layer " << index << ": [" << layer.blocks() << " blocks, "
+			<< layer.getInputCount() << " inputs ("
+			<< layer.getInputBlockingFactor() << " way blocked), "
+			<< layer.getOutputCount() << " outputs (" << layer.getOutputBlockingFactor()
+			<< " way blocked), " << layer.blockStep() << " block step]\n";
 	}
 	
-	for(auto layer = layers.rbegin(); layer != layers.rend(); ++layer)
-	{
-		network.addLayer(std::move(*layer));
-	}
-
-	network.setLabelsForOutputNeurons(*this);
-	network.setUseSparseCostFunction(isUsingSparseCostFunction());
-		
-	return network;
-	*/
+	return stream.str();
 }
 
 }

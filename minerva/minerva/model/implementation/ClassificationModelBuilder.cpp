@@ -360,13 +360,13 @@ static void buildConvolutionalFastModel(ClassificationModel* model, unsigned xPi
 	
 	// pooling layer
 	featureSelector.addLayer(Layer(featureSelector.back().blocks(),
-		featureSelector.back().getBlockingFactor(),
-		featureSelector.back().getBlockingFactor() / reductionFactor));
+		featureSelector.back().getInputBlockingFactor(),
+		featureSelector.back().getInputBlockingFactor() / reductionFactor));
 	
 	// contrast normalization
 	featureSelector.addLayer(Layer(featureSelector.back().blocks() / reductionFactor,
-		featureSelector.back().getBlockingFactor(),
-		featureSelector.back().getBlockingFactor()));
+		featureSelector.back().getInputBlockingFactor(),
+		featureSelector.back().getInputBlockingFactor()));
 
 	// convolutional layer
 	featureSelector.addLayer(Layer(featureSelector.back().blocks(),
@@ -375,13 +375,13 @@ static void buildConvolutionalFastModel(ClassificationModel* model, unsigned xPi
 	
 	// pooling layer
 	featureSelector.addLayer(Layer(featureSelector.back().blocks(),
-		featureSelector.back().getBlockingFactor(),
-		featureSelector.back().getBlockingFactor() / reductionFactor));
+		featureSelector.back().getInputBlockingFactor(),
+		featureSelector.back().getInputBlockingFactor() / reductionFactor));
 	
 	// contrast normalization
 	featureSelector.addLayer(Layer(featureSelector.back().blocks() / reductionFactor,
-		featureSelector.back().getBlockingFactor(),
-		featureSelector.back().getBlockingFactor()));
+		featureSelector.back().getInputBlockingFactor(),
+		featureSelector.back().getInputBlockingFactor()));
 
 	
 	// convolutional layer
@@ -391,13 +391,13 @@ static void buildConvolutionalFastModel(ClassificationModel* model, unsigned xPi
 	
 	// pooling layer
 	featureSelector.addLayer(Layer(featureSelector.back().blocks(),
-		featureSelector.back().getBlockingFactor(),
-		featureSelector.back().getBlockingFactor() / reductionFactor));
+		featureSelector.back().getInputBlockingFactor(),
+		featureSelector.back().getInputBlockingFactor() / reductionFactor));
 	
 	// contrast normalization
 	featureSelector.addLayer(Layer(featureSelector.back().blocks() / reductionFactor,
-		featureSelector.back().getBlockingFactor(),
-		featureSelector.back().getBlockingFactor()));
+		featureSelector.back().getInputBlockingFactor(),
+		featureSelector.back().getInputBlockingFactor()));
 	
     featureSelector.setUseSparseCostFunction(true);
     
