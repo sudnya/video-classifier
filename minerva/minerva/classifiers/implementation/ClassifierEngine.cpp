@@ -124,7 +124,7 @@ void ClassifierEngine::runOnPaths(const StringVector& paths)
 		}
 	}
 	
-	unsigned int maxBatchSize = _batchSize;
+	unsigned int maxBatchSize = std::min(_maximumSamplesToRun, _batchSize);
 
 	unsigned int maxVideoFrames = _maximumSamplesToRun;
 	

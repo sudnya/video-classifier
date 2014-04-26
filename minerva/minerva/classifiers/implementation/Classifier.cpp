@@ -38,6 +38,7 @@ LabelVector Classifier::classify(const ImageVector& images)
 unsigned Classifier::getInputFeatureCount()
 {
 	loadFeatureSelector();
+	loadClassifier();
 
 	if (m_featureSelectorNetwork.empty())
 		return m_classifierNetwork.getInputCount();

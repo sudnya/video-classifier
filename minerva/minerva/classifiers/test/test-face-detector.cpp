@@ -47,7 +47,25 @@ neuralnetwork::NeuralNetwork createAndInitializeNeuralNetwork(unsigned networkSi
 	
 	//assert(networkSize % 32 == 0);
 
-	unsigned convolutionalLayers = std::min(1024U, networkSize);
+	unsigned xPixels = networkSize;
+	unsigned yPixels = networkSize;
+	unsigned colors  = 3;
+
+	unsigned size = colors * xPixels * yPixels;
+
+	unsigned blockX = 8;
+	unsigned blockY = 8;
+
+	unsigned blockMultiplier = 2;
+
+	unsigned blockSize = blockX * blockY * colors;
+	unsigned blockStep = blockSize / blockMultiplier;
+	
+	unsigned blocks = size / blockSize;
+	
+	unsigned fullyConnectedNeurons = 512;
+
+	unsigned int reductionFactor = 2;
 
 	//ann.addLayer(Layer(convolutionalLayers,    32, 32)); // convolutional layer
 	//ann.addLayer(Layer(convolutionalLayers,    32,  4)); // max pooling layer
@@ -55,15 +73,20 @@ neuralnetwork::NeuralNetwork createAndInitializeNeuralNetwork(unsigned networkSi
 	//ann.addLayer(Layer(convolutionalLayers,  32,  32));
 	//ann.addLayer(Layer(convolutionalLayers,  32,  32));
 	
-	//ann.addLayer(Layer(1, convolutionalLayers, 1));
-	ann.addLayer(Layer(3 * convolutionalLayers, 2624, 256 / convolutionalLayers));
-	ann.addLayer(Layer(1, ann.getOutputCount(), 500));
-	//ann.addLayer(Layer(1, 300, 100));
-	ann.addLayer(Layer(1, 500, 1));
+	ann.addLayer(Layer(blocks, blockSize, blockSize, blockStep));
+	ann.addLayer(Layer(blocks * blockMultiplier, ann.back().getOutputBlockingFactor(),
+		reductionFactor * colors));
+	
+	ann.addLayer(Layer(ann.back().blocks(), ann.back().getOutputBlockingFactor(),
+		reductionFactor * colors));
+
+	ann.addLayer(Layer(1, ann.getOutputCount(), fullyConnectedNeurons));
+	ann.addLayer(Layer(1, fullyConnectedNeurons, 1));
 
     ann.initializeRandomly(engine, epsilon);
-
 	ann.setLabelForOutputNeuron(0, "face");
+
+	ann.setUseSparseCostFunction(true);
 
     return ann;
 }
@@ -101,17 +124,12 @@ float classify(ClassificationModel& faceModel, const std::string& faceDatabasePa
 static void visualizeNetwork(neuralnetwork::NeuralNetwork& neuralNetwork,
 	const std::string& outputPath, unsigned networkSize)
 {
-	// save the downsampled reference
-	visualization::NeuronVisualizer visualizer(&neuralNetwork);
-	
-	unsigned factor = std::sqrt(networkSize);
+	// Visualize the first layer
+	minerva::visualization::NeuronVisualizer visualizer(&neuralNetwork);
 
-	//video::Image image(384, 246, 3, 1);
-	video::Image image(64 * factor, 41 * factor, 3, 1);
+	auto image = visualizer.visualizeInputTilesForAllNeurons();
 	
 	image.setPath(outputPath);
-	
-	visualizer.visualizeNeuron(image, 0);
 
 	image.save();
 }
@@ -213,7 +231,7 @@ int main(int argc, char** argv)
 		"(comma-separated list of modules, e.g. NeuralNetwork, Layer, ...).");
     parser.parse("-s", "--seed", seed, false,
         "Seed with time.");
-    parser.parse("-n", "--network-size", networkSize, 1024,
+    parser.parse("-n", "--network-size", networkSize, 16,
         "The number of inputs to the network.");
     parser.parse("-e", "--epsilon", epsilon, 1.0f,
         "Range to intiialize the network with.");

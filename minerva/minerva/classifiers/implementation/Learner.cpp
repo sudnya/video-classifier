@@ -20,6 +20,11 @@ void Learner::learnAndTrain(ImageVector&& images)
 
 size_t Learner::getInputFeatureCount() const
 {
+	if(m_featureSelectorNetwork.empty())
+	{
+		return m_classifierNetwork.getInputCount();
+	}
+
 	return m_featureSelectorNetwork.getInputCount();
 }
 
