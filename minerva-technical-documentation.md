@@ -68,7 +68,7 @@ being presented 10,000 random images.
 
 ![Layer One Features](/documentation/tech-report/images/first-layer-neurons-32x32-4x4-tiles.jpg "Layer One Feature Responses")
 
-These compare favorably to Gabor Filter function responses in the top-left of the following figure, which have been found
+These compare favorably to Gabor Filter function responses in the top-right of the following figure, which have been found
 in the first layers of the visual cortex in mammalians, and perform well at visual classification tasks: 
 
 ![Layer One Features](/documentation/tech-report/images/SoftFeatures.png "Gabor Function Responses and Spatial Domain Representation")
