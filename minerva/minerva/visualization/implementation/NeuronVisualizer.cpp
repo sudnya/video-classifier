@@ -439,11 +439,31 @@ static Matrix optimizeWithDerivative(const NeuralNetwork* network,
 	return bestInputs;
 }
 
-static Matrix optimizeAnalytically(const NeuralNetwork*, const Image& , unsigned int)
+static Matrix optimizeAnalytically(const NeuralNetwork* network, const Image& image, unsigned int neuron)
 {
-	assertM(false, "not implemented");
+	Matrix bestInputs(1, network->getInputCount());
 	
-	Matrix bestInputs;
+	float sumOfSquaredWeights = 0.0f;
+	size_t weights = 0;	
+
+	for(auto& block : network->front().getWeightsWithoutBias())
+	{
+		for(auto& weight : block)
+		{
+			sumOfSquaredWeights += weight * weight;
+			weights += 1;
+		}
+	}
+	
+	float squareRoot = std::sqrt(sumOfSquaredWeights);
+	
+	for(size_t input = 0; input != network->getInputCount(); ++input)
+	{
+		size_t block  = input / network->getInputBlockingFactor();
+		size_t offset = input % network->getInputBlockingFactor();
+		
+		bestInputs(0, input) = network->front()[block][offset] / squareRoot;
+	}
 	
 	return bestInputs;	
 }
