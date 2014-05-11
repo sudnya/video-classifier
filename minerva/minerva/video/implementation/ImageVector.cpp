@@ -110,6 +110,23 @@ ImageVector::Matrix ImageVector::convertToStandardizedMatrix(size_t sampleCount,
 	}
 	
 	matrix.data() = data;
+
+	// remove mean
+	matrix = matrix.add(-matrix.reduceSum()/matrix.size());
+
+	// truncate to 3 standard deviations
+	float standardDeviation = std::sqrt(matrix.elementMultiply(matrix).reduceSum() / matrix.size());
+
+	matrix.maxSelf(-3.0f * standardDeviation);
+	matrix.minSelf( 3.0f * standardDeviation);
+
+	// scale from [-1,1]
+	matrix = matrix.multiply(1.0f/(3.0f * standardDeviation));
+
+	// rescale from [-1,1] to [0.1, 0.9]
+	//matrix = matrix.add(1.0f).multiply(0.4f).add(0.1f);
+	
+	//std::cout << "Matrix " << matrix.debugString();
 	
 	return matrix;
 }
@@ -146,11 +163,11 @@ ImageVector::Matrix ImageVector::getReference(
 			if((*this)[imageId].label() ==
 				neuralNetwork.getLabelForOutputNeuron(outputNeuron))
 			{
-				matrix(imageId, outputNeuron) = 1.0f;
+				matrix(imageId, outputNeuron) = 0.9f;
 			}
 			else
 			{
-				matrix(imageId, outputNeuron) = 0.0f;
+				matrix(imageId, outputNeuron) = 0.1f;
 			}
 		}
 	}

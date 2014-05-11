@@ -152,6 +152,7 @@ void ClassificationModel::save() const
 			stream << "\t\t\t\t{\n";
 			
 			stream << "\t\t\t\t\t\"name\": \"layer" << index << "\",\n";
+			stream << "\t\t\t\t\t\"step\": " << layer->blockStep() << ",\n";
 			stream << "\t\t\t\t\t\"weights\" : [\n";
 			
 			for(auto matrix = layer->begin(); matrix != layer->end(); ++matrix)
@@ -326,8 +327,12 @@ void ClassificationModel::load()
 				util::log("ClassificationModel") << "   layer "
 					<< (std::string)layerVisitor["name"] << "\n";
 
+				size_t step = (int)layerVisitor["step"];
+		
+				layer.setBlockStep(step);
+				
 				util::json::Visitor matrixArrayVisitor(layerVisitor["weights"]);	
-			
+					
 				for(auto weightMatrixObject = matrixArrayVisitor.begin_array();
 					weightMatrixObject != matrixArrayVisitor.end_array();
 					++weightMatrixObject)
@@ -416,6 +421,11 @@ void ClassificationModel::load()
 	}
 	
 	delete headerObject;
+}
+	
+void ClassificationModel::clear()
+{
+	_neuralNetworks.clear();
 }
 
 }

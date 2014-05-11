@@ -48,6 +48,9 @@ public:
 	void save() const;
 	void load();
 
+public:
+	void clear();
+
 private:
 	std::string _path;
 	bool        _loaded;

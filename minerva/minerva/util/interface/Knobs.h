@@ -21,6 +21,7 @@ class KnobDatabase
 
 public:
 	static void addKnob(const std::string& name, const std::string& value);
+	static void setKnob(const std::string& name, const std::string& value);
 
 public:
 	template<typename T>

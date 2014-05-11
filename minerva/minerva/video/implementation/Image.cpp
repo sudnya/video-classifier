@@ -526,15 +526,15 @@ size_t Image::zToLinearOrder(size_t zPosition, size_t _xTileSize, size_t _yTileS
 
 float Image::standardize(float component) const
 {
-	return (component * 2.0f / range()) - 1.0f;
+	return (component / range()) * 2.0f - 1.0f;
 }
 
 float Image::destandardize(float component) const
 {
-	component = std::min(component, 1.0f);
+	component = std::min(component,  1.0f);
 	component = std::max(component, -1.0f);
 
-	float colorValue = (component + 1.0f) * (range()/2.0f);
+	float colorValue = (component + 1.0f) * (range() / 2.0f);
 	
 	return colorValue;
 }

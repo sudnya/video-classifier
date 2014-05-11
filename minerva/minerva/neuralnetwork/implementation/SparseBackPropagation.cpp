@@ -137,7 +137,7 @@ static MatrixVector getDeltas(const NeuralNetwork& network, const MatrixVector& 
 		// add in the sparsity term
 		auto klDivergenceDerivative = activation.reduceSumAlongRows().multiply(1.0f/samples).klDivergenceDerivative(sparsity);
 
-		auto sparsityTerm = klDivergenceDerivative.multiply(sparsityWeight/samples);
+		auto sparsityTerm = klDivergenceDerivative.multiply(sparsityWeight);
 	   
 		delta = deltaPropagatedReverse.elementMultiply(activationDerivativeOfCurrentLayer).addBroadcastRow(sparsityTerm);
 
@@ -180,7 +180,7 @@ static BlockSparseMatrix getInputDelta(const NeuralNetwork& network, const Matri
 		// add in the sparsity term
 		auto klDivergenceDerivative = i->reduceSumAlongRows().multiply(1.0f/samples).klDivergenceDerivative(sparsity);
 
-		auto sparsityTerm = klDivergenceDerivative.multiply(sparsityWeight/samples);
+		auto sparsityTerm = klDivergenceDerivative.multiply(sparsityWeight);
 
 		util::log ("SparseBackPropagation") << " Computing input delta for layer number: " << layerNumber << "\n";
 		delta = deltaPropagatedReverse.elementMultiply(activationDerivativeOfCurrentLayer).addBroadcastRow(sparsityTerm);
@@ -194,13 +194,11 @@ static BlockSparseMatrix getInputDelta(const NeuralNetwork& network, const Matri
 
 	network.formatOutputForLayer(layer, delta);
 
-	auto activationDerivativeOfCurrentLayer = activations.front();
 	auto deltaPropagatedReverse = layer.runReverse(delta);
 
 	util::log ("SparseBackPropagation") << " Computing input delta for layer number: " << layerNumber << "\n";
-	delta = deltaPropagatedReverse;
 	
-	return delta;	
+	return deltaPropagatedReverse;	
 }
 
 static float getActivationSparsityCost(const NeuralNetwork& network, const BlockSparseMatrix& input,

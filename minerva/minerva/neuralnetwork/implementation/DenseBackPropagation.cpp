@@ -214,7 +214,7 @@ MatrixVector DenseBackPropagation::getDeltas(const NeuralNetwork& network, const
 		{
 			util::log("DenseBackPropagation::Detail") << " added delta of size ( " << delta.rows()
 				<< " ) rows and ( " << delta.columns() << " )\n" ;
-			//util::log("DenseBackPropagation::Detail") << " delta contains " << delta.toString() << "\n";
+			util::log("DenseBackPropagation::Detail") << " delta contains " << delta.toString() << "\n";
 		}
 	}
 	
@@ -239,6 +239,13 @@ BlockSparseMatrix DenseBackPropagation::getInputDelta(const NeuralNetwork& netwo
 
 		util::log ("DenseBackPropagation") << " Computing input delta for layer number: " << layerNumber << "\n";
 		delta = deltaPropagatedReverse.elementMultiply(activationDerivativeOfCurrentLayer);
+		
+		if(util::isLogEnabled("DenseBackPropagation::Detail"))
+		{
+			util::log("DenseBackPropagation::Detail") << " added delta of size ( " << delta.rows()
+				<< " ) rows and ( " << delta.columns() << " )\n" ;
+			util::log("DenseBackPropagation::Detail") << " delta contains " << delta.toString() << "\n";
+		}
 
 		++i; 
 	}
@@ -254,6 +261,13 @@ BlockSparseMatrix DenseBackPropagation::getInputDelta(const NeuralNetwork& netwo
 
 	util::log ("DenseBackPropagation") << " Computing input delta for layer number: " << layerNumber << "\n";
 	delta = deltaPropagatedReverse;//deltaPropagatedReverse.elementMultiply(activationDerivativeOfCurrentLayer);
+	
+	if(util::isLogEnabled("DenseBackPropagation::Detail"))
+	{
+		util::log("DenseBackPropagation::Detail") << " added delta of size ( " << delta.rows()
+			<< " ) rows and ( " << delta.columns() << " )\n" ;
+		util::log("DenseBackPropagation::Detail") << " delta contains " << delta.toString() << "\n";
+	}
 	
 	return delta;	
 }
@@ -279,8 +293,8 @@ MatrixVector DenseBackPropagation::getActivations(const NeuralNetwork& network, 
 		//<< " ) rows and ( " << activations.back().columns() << " )\n" ;
 	}
 
-	//util::log("DenseBackPropagation") << " intermediate stage ( " << activations[activations.size() / 2].toString() << "\n";
-	//util::log("DenseBackPropagation") << " final output ( " << activations.back().toString() << "\n";
+	util::log("DenseBackPropagation") << " intermediate stage ( " << activations[activations.size() / 2].toString() << "\n";
+	util::log("DenseBackPropagation") << " final output ( " << activations.back().toString() << "\n";
 
 	return activations;
 }

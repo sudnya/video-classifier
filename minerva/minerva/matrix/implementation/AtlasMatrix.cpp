@@ -443,7 +443,7 @@ static float klDivergenceDerivative(float value, float sparsity)
 	if(value > (1.0f - epsilon)) value = 1.0f - epsilon;
 	if(value < epsilon         ) value = epsilon;
 
-	float result = (-sparsity / value + (1.0f - sparsity)/(1.0f - value));
+	float result = ((-sparsity / value) + (1.0f - sparsity)/(1.0f - value));
 
 	assert(!std::isnan(result));
 

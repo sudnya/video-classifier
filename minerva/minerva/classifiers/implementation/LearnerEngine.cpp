@@ -42,7 +42,7 @@ void LearnerEngine::registerModel()
 
 void LearnerEngine::closeModel()
 {
-	_learner->writeClassifier();
+	_learner->saveNetworks();
 
 	saveModel();
 }

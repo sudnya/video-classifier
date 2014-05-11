@@ -13,6 +13,7 @@
 
 // Standard Library Includes
 #include <stdexcept>
+#include <map>
 
 namespace minerva
 {
@@ -241,46 +242,15 @@ public:
 
 	void extractFile(const std::string& name, std::ostream& file)
 	{
-		reset();
-		
-		TarLibrary::archive_entry* entry = nullptr;
-		
-		int status = TarLibrary::archive_read_next_header(_archive, &entry);
-		
-		while(status == TarLibrary::OK)
+		if(_loadFileFromCache(name, file))
 		{
-			if(name == TarLibrary::archive_entry_pathname(entry))
-			{
-				size_t size = TarLibrary::archive_entry_size(entry);
-
-				char buffer[1024];
-				
-				while(size > 0)
-				{
-					size_t transferSize = std::min((size_t)1024, size);
-				
-					if(TarLibrary::archive_read_data(_archive, buffer,
-						transferSize) != transferSize)
-					{
-						TarLibrary::archive_entry_free(entry);
-						
-						throw std::runtime_error("Failed to read data "
-							"from archive.");
-					}
-					
-					file.write(buffer, transferSize);
-					
-					size -= transferSize;
-				}
-			
-				return;
-			}
-			
-			status = TarLibrary::archive_read_next_header(_archive, &entry);
+			return;
 		}
 		
-		throw std::runtime_error("Could not find filename '" + name +
-			"' in archive '" + _path + "'");
+		_readFileIntoCache(name);
+		
+		_loadFileFromCache(name, file);
+	
 	}
 
 private:
@@ -301,6 +271,86 @@ private:
 private:
 	TarLibrary::archive* _archive;
 	FILE*                _file;
+
+private:
+	typedef std::vector<char> ByteVector;
+	typedef std::map<std::string, ByteVector> FilenameToDataMap;
+
+private:
+	FilenameToDataMap _cachedFiles;
+
+private:
+	bool _loadFileFromCache(const std::string& filename, std::ostream& file)
+	{
+		auto entry = _cachedFiles.find(filename);
+		
+		if(entry == _cachedFiles.end())
+		{
+			return false;
+		}
+		
+		file.write(entry->second.data(), entry->second.size());
+		
+		return true;
+	}
+	
+	void _readFileIntoCache(const std::string& filename)
+	{
+		if(_cachedFiles.count(filename) > 0)
+		{
+			return;
+		}
+		
+		bool triedReset = false;
+		
+		TarLibrary::archive_entry* entry = nullptr;
+		
+		int status = TarLibrary::archive_read_next_header(_archive, &entry);
+		
+		while(status == TarLibrary::OK)
+		{
+			std::string entryFilename = TarLibrary::archive_entry_pathname(entry);
+
+			auto insertion = _cachedFiles.insert(std::make_pair(entryFilename, ByteVector()));
+			
+			if(insertion.second)
+			{
+				auto& cachedFileData = insertion.first->second;
+				
+				size_t size = TarLibrary::archive_entry_size(entry);
+
+				cachedFileData.resize(size);
+				
+				if(TarLibrary::archive_read_data(_archive,
+					cachedFileData.data(), size) != size)
+				{
+					TarLibrary::archive_entry_free(entry);
+					
+					throw std::runtime_error("Failed to read data "
+						"from archive.");
+				}
+			}
+
+			if(filename == entryFilename)
+			{
+				return;
+			}
+			
+			status = TarLibrary::archive_read_next_header(_archive, &entry);
+			
+			if(status != TarLibrary::OK && !triedReset)
+			{
+				triedReset = true;
+				
+				reset();
+				
+				status = TarLibrary::archive_read_next_header(_archive, &entry);
+			}
+		}
+		
+		throw std::runtime_error("Could not find filename '" + filename +
+			"' in archive '" + _path + "'");
+	}
 	
 };
 

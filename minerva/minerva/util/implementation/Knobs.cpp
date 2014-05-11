@@ -61,6 +61,11 @@ void KnobDatabase::addKnob(const std::string& name, const std::string& value)
 	}
 }
 
+void KnobDatabase::setKnob(const std::string& name, const std::string& value)
+{
+	database.knobs[name] = value;
+}
+
 bool KnobDatabase::knobExists(const std::string& knobname)
 {
 	return database.knobs.count(knobname) != 0;

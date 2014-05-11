@@ -15,42 +15,44 @@ namespace classifiers
 {
 class Learner
 {
-	public:
-		typedef minerva::model::ClassificationModel ClassificationModel;
-		typedef minerva::neuralnetwork::NeuralNetwork NeuralNetwork;
-		typedef minerva::video::ImageVector ImageVector;
+public:
+	typedef minerva::model::ClassificationModel ClassificationModel;
+	typedef minerva::neuralnetwork::NeuralNetwork NeuralNetwork;
+	typedef minerva::video::ImageVector ImageVector;
 
-	public:
-		Learner(ClassificationModel* model) : m_classificationModel(model)
-		{
-		}
+public:
+	Learner(ClassificationModel* model);
 
-		void learnAndTrain(ImageVector&& images);
+	void learnAndTrain(ImageVector&& images);
 
-		size_t getInputFeatureCount() const;
-	
-	public:
-		void loadFeatureSelector();
-		void loadClassifier();
-		void writeClassifier();
-	
-	private:
-		void trainClassifier(ImageVector&& images);
+	size_t getInputFeatureCount()   const;
+	size_t getInputBlockingFactor() const;
 
-	private:
-		ClassificationModel* m_classificationModel;
+public:
+	void loadFeatureSelector();
+	void loadClassifier();
+	void saveNetworks();
 
-		/* The neural network as a result of unsupervised learning is read from the disk */
-		NeuralNetwork m_featureSelectorNetwork;
-		/* The test images full of pixels are input */
-		ImageVector m_inputImages;
+private:
+	void _trainClassifier(ImageVector&& images);
 
-		/* The output of this step is a neural network of classifiers */
-		NeuralNetwork m_classifierNetwork;
+private:
+	void _formNetwork(NeuralNetwork& network);
+	void _restoreNetwork(NeuralNetwork& network);
+
+private:
+	ClassificationModel* _classificationModel;
+
+private:
+	NeuralNetwork _featureSelectorNetwork;
+	NeuralNetwork _classifierNetwork;
+
+private:
+	bool _shouldTrainFeatureSelector;
 
 };
 
-} //end classifiers
-} //end minerva
+} 
+} 
 
 

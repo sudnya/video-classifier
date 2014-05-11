@@ -133,7 +133,24 @@ static void getTileDimensions(size_t& x, size_t& y, size_t& colors,
 static NeuralNetwork extractTileFromNetwork(const NeuralNetwork& network,
 	unsigned int outputNeuron)
 {
-	return network.getSubgraphConnectedToThisOutput(outputNeuron); 
+	// Get the connected subgraph
+	auto newNetwork = network.getSubgraphConnectedToThisOutput(outputNeuron); 
+	
+	// Remove all other connections from the final layer
+	size_t block  = outputNeuron / newNetwork.getOutputBlockingFactor();
+	size_t offset = outputNeuron % newNetwork.getOutputBlockingFactor();	
+
+	auto& outputLayer = newNetwork.back();
+	
+	Matrix weights = outputLayer[block].slice(0, offset, outputLayer.getInputBlockingFactor(), 1);
+	Matrix bias    = outputLayer.at_bias(block).slice(0, offset, 1, 1);
+	
+	outputLayer.resize(1, outputLayer.getInputBlockingFactor(), 1);
+	
+	outputLayer[0]         = weights;
+	outputLayer.at_bias(0) = bias;
+	
+	return newNetwork;
 }
 
 static size_t sqrtRoundUp(size_t value)
@@ -162,11 +179,14 @@ static size_t getYPixelsPerTile(const NeuralNetwork& network)
 
 static size_t getColorsPerTile(const NeuralNetwork& network)
 {
-	return 3;
+	size_t inputs = network.getInputNeuronsConnectedToThisOutput(0).size();
+	
+	return inputs % 3 == 0 ? 3 : 1;
 }
 
 static Matrix optimizeWithoutDerivative(const NeuralNetwork*, const Image& , unsigned int);
 static Matrix optimizeWithDerivative(const NeuralNetwork*, const Image& , unsigned int);
+static Matrix optimizeAnalytically(const NeuralNetwork*, const Image& , unsigned int);
 static void updateImage(Image& , const Matrix& , size_t xTileSize, size_t yTileSize);
 
 static void visualizeNeuron(const NeuralNetwork& network, Image& image, unsigned int outputNeuron)
@@ -183,6 +203,10 @@ static void visualizeNeuron(const NeuralNetwork& network, Image& image, unsigned
 	else if(solverClass == "NonDifferentiable")
 	{
 		matrix = optimizeWithoutDerivative(&network, image, outputNeuron);
+	}
+	else if(solverClass == "Analytical")
+	{
+		matrix = optimizeAnalytically(&network, image, outputNeuron);
 	}
 	else
 	{
@@ -205,7 +229,7 @@ void NeuronVisualizer::setNeuralNetwork(const NeuralNetwork* network)
 static Matrix generateRandomImage(const NeuralNetwork* network,
 	const Image& image, unsigned int seed, float range)
 {
-	std::uniform_real_distribution<float> distribution(-range, range );
+	std::uniform_real_distribution<float> distribution(-range, range);
 	std::default_random_engine generator(seed);
 
 	Matrix::FloatVector data(network->getInputCount());
@@ -316,7 +340,7 @@ static Matrix generateReferenceForNeuron(const NeuralNetwork* network,
 {
 	Matrix reference(1, network->getOutputCount());
 	
-	reference(0, neuron) = 1.0f;
+	reference(0, 0) = 1.0f;
 	
 	return reference;
 }
@@ -324,8 +348,8 @@ static Matrix generateReferenceForNeuron(const NeuralNetwork* network,
 static void addConstraints(optimizer::GeneralDifferentiableSolver* solver)
 {
 	// constrain values between 0.0f and 255.0f
-	solver->addConstraint(ConstantConstraint( 1.0f));
-	solver->addConstraint(ConstantConstraint(-1.0f, ConstantConstraint::GreaterThanOrEqual));
+	solver->addConstraint(ConstantConstraint(-1.0f));
+	solver->addConstraint(ConstantConstraint(1.0f, ConstantConstraint::GreaterThanOrEqual));
 }
 
 static Matrix optimizeWithDerivative(float& bestCost, const NeuralNetwork* network,
@@ -342,8 +366,11 @@ static Matrix optimizeWithDerivative(float& bestCost, const NeuralNetwork* netwo
 	
 	auto bestSoFar = input;
 	     bestCost  = data->computeCost();
+	
+	std::string solverType = util::KnobDatabase::getKnobValue(
+		"NeuronVisualizer::SolverType", "GradientDescentSolver");
 
-	auto solver = optimizer::GeneralDifferentiableSolverFactory::create();
+	auto solver = optimizer::GeneralDifferentiableSolverFactory::create(solverType);
 	
 	assert(solver != nullptr);
 
@@ -356,7 +383,7 @@ static Matrix optimizeWithDerivative(float& bestCost, const NeuralNetwork* netwo
 	
 	try
 	{
-		CostAndGradientFunction costAndGradient(data, bestCost, 0.002f);
+		CostAndGradientFunction costAndGradient(data, bestCost, 0.000002f);
 	
 		bestCost = solver->solve(bestSoFar, costAndGradient);
 	}
@@ -373,6 +400,7 @@ static Matrix optimizeWithDerivative(float& bestCost, const NeuralNetwork* netwo
 	
 	util::log("NeuronVisualizer") << "  solver produced new cost: "
 		<< bestCost << ".\n";
+	util::log("NeuronVisualizer") << "  final input is : " << bestSoFar.toString();
 	util::log("NeuronVisualizer") << "  final output is : " << network->runInputs(bestSoFar).toString();
 	return bestSoFar.toMatrix();
 }
@@ -409,6 +437,15 @@ static Matrix optimizeWithDerivative(const NeuralNetwork* network,
 	}
 	
 	return bestInputs;
+}
+
+static Matrix optimizeAnalytically(const NeuralNetwork*, const Image& , unsigned int)
+{
+	assertM(false, "not implemented");
+	
+	Matrix bestInputs;
+	
+	return bestInputs;	
 }
 
 static void updateImage(Image& image, const Matrix& bestData, size_t xTileSize, size_t yTileSize)

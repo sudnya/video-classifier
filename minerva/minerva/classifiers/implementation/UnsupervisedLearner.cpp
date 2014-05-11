@@ -45,7 +45,7 @@ void UnsupervisedLearner::learn(ImageVector&& images)
 		m_featureSelector.getInputBlockingFactor());
 	images.clear();
 	
-	auto inputReference = input.add(1.0f).multiply(0.5f);
+	auto inputReference = input.add(1.0f).multiply(0.4f).add(0.1f);
 	auto layerInput = std::move(input);
 
 	for(size_t counter = 0; counter < m_featureSelector.size(); counter += m_layersPerIteration)

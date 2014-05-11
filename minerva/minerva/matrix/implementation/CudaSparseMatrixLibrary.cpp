@@ -659,7 +659,7 @@ void CudaSparseMatrixLibrary::assignUniformRandomValues(float* result, float min
 	
 	CurandLibrary::curandCreateGenerator(&generator, CurandLibrary::CURAND_RNG_PSEUDO_DEFAULT);
 	
-		CurandLibrary::curandGenerateUniform(generator, result, size);
+	CurandLibrary::curandGenerateUniform(generator, result, size);
 
 	if(min != 0.0f || max != 1.0f)
 	{

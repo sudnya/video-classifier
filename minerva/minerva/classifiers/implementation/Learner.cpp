@@ -6,6 +6,7 @@
 // Minerva Includes
 #include <minerva/classifiers/interface/Learner.h>
 
+#include <minerva/util/interface/Knobs.h>
 #include <minerva/util/interface/debug.h>
 
 namespace minerva
@@ -13,71 +14,143 @@ namespace minerva
 namespace classifiers
 {
 
+Learner::Learner(ClassificationModel* model)
+: _classificationModel(model), _shouldTrainFeatureSelector(true)
+{
+	_shouldTrainFeatureSelector = util::KnobDatabase::getKnobValue("Learner::TrainFeatureSelector", true);
+}
+
 void Learner::learnAndTrain(ImageVector&& images)
 {
-	trainClassifier(std::move(images));
+	_trainClassifier(std::move(images));
 }
 
 size_t Learner::getInputFeatureCount() const
 {
-	if(m_featureSelectorNetwork.empty())
+	if(_featureSelectorNetwork.empty())
 	{
-		return m_classifierNetwork.getInputCount();
+		return _classifierNetwork.getInputCount();
 	}
 
-	return m_featureSelectorNetwork.getInputCount();
+	return _featureSelectorNetwork.getInputCount();
+}
+
+size_t Learner::getInputBlockingFactor() const
+{
+	if(_featureSelectorNetwork.empty())
+	{
+		return _classifierNetwork.getInputBlockingFactor();
+	}
+
+	return _featureSelectorNetwork.getInputBlockingFactor();
 }
 
 void Learner::loadFeatureSelector()
 {
-	if (!m_classificationModel->containsNeuralNetwork("FeatureSelector")) return;
+	if (!_classificationModel->containsNeuralNetwork("FeatureSelector")) return;
 
-	/* read from the feature file into memory/variable */
-	m_featureSelectorNetwork = m_classificationModel->getNeuralNetwork("FeatureSelector");
+	_featureSelectorNetwork = _classificationModel->getNeuralNetwork("FeatureSelector");
 }
 
 void Learner::loadClassifier()
 {
-	m_classifierNetwork = m_classificationModel->getNeuralNetwork("Classifier");
+	_classifierNetwork = _classificationModel->getNeuralNetwork("Classifier");
+}
+ 
+void Learner::saveNetworks()
+{
+	_classificationModel->setNeuralNetwork("Classifier", _classifierNetwork);
+	
+	if(_shouldTrainFeatureSelector &&
+		_classificationModel->containsNeuralNetwork("FeatureSelector"))	
+	{
+		_classificationModel->setNeuralNetwork("FeatureSelector", _featureSelectorNetwork);
+	}
 }
 
-void Learner::trainClassifier(ImageVector&& images)
+void Learner::_trainClassifier(ImageVector&& images)
 {
-	size_t inputCount = m_featureSelectorNetwork.getInputCount();
-	size_t blockingFactor = m_featureSelectorNetwork.getInputBlockingFactor();
+	size_t inputCount     = getInputFeatureCount();
+	size_t blockingFactor = getInputBlockingFactor();
 
 	util::log("Learner") << "Loading feature selector with: " << inputCount << " inputs.\n";
-
-	if(m_featureSelectorNetwork.empty())
-	{
-		inputCount = m_classifierNetwork.getInputCount();
-		blockingFactor = m_classifierNetwork.getInputBlockingFactor();
-		util::log("Learner") << " could not load feature selector.\n";
-	}
 
 	auto matrix = images.convertToStandardizedMatrix(inputCount,
 		blockingFactor);
 	
-	// If there is a feature selector, do feature selection first
-	if (!m_featureSelectorNetwork.empty())
+	if(!_shouldTrainFeatureSelector && !_featureSelectorNetwork.empty() )
 	{
-		matrix = m_featureSelectorNetwork.runInputs(matrix);
-		util::log("Learner") << "Feature selector produced input: " << matrix.toString();
+		matrix = _featureSelectorNetwork.runInputs(matrix);
 	}
+	
+	NeuralNetwork network;
+	
+	_formNetwork(network);
 
-	auto reference = images.getReference(m_classifierNetwork);
+	auto reference = images.getReference(network);
 
-	util::log("Learner") << "Training classifier network with reference: " << reference.toString();
+	util::log("Learner") << "Training network with reference: " << reference.toString();
 
 	images.clear();
 	
-	m_classifierNetwork.train(matrix, reference);
+	network.train(matrix, reference);
+	
+	_restoreNetwork(network);
 }
- 
-void Learner::writeClassifier()
+
+void Learner::_formNetwork(NeuralNetwork& network)
 {
-	/* write out m_classifiers to disk */
-	m_classificationModel->setNeuralNetwork("Classifier", m_classifierNetwork);
+	// first try to add layers of the feature selector
+	if(_shouldTrainFeatureSelector && !_featureSelectorNetwork.empty())
+	{
+		for(auto&& layer : _featureSelectorNetwork)
+		{
+			network.addLayer(layer);
+		}
+	}
+	
+	// then add layers from the classifier
+	for(auto&& layer : _classifierNetwork)
+	{
+		network.addLayer(layer);
+	}
+	
+	network.setLabelsForOutputNeurons(_classifierNetwork);
+	
+	bool sparse = false;
+	
+	if(_shouldTrainFeatureSelector && !_featureSelectorNetwork.empty())
+	{
+		sparse |= _featureSelectorNetwork.isUsingSparseCostFunction();
+	}
+	
+	sparse |= _classifierNetwork.isUsingSparseCostFunction();
+	
+	network.setUseSparseCostFunction(sparse);
+}
+
+
+void Learner::_restoreNetwork(NeuralNetwork& network)
+{
+	auto networkLayer = network.begin();
+	
+	if(_shouldTrainFeatureSelector && !_featureSelectorNetwork.empty())
+	{
+		for(auto&& layer : _featureSelectorNetwork)
+		{
+			layer = std::move(*networkLayer);
+			
+			++networkLayer;
+		}
+	}
+	
+	for(auto&& layer : _classifierNetwork)
+	{
+		layer = std::move(*networkLayer);
+	
+		++networkLayer;
+	}
+	
 }
 
 } //end classifiers

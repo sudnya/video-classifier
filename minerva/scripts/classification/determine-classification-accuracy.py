@@ -12,6 +12,7 @@ import csv
 
 from argparse import ArgumentParser
 from sklearn  import svm
+from sklearn  import ensemble
 from sklearn  import cross_validation
 from sklearn  import linear_model
 from numpy    import array
@@ -23,7 +24,7 @@ def main():
 	
 	parser.add_argument("-i", "--input-file", default = "",
 		help = "The input file path (.csv).")
-	parser.add_argument("-m", "--maximum-samples", default = 30000,
+	parser.add_argument("-m", "--maximum-samples", default = 1000,
 		help = "The maximum number of samples to train over.")
 	parser.add_argument("-s", "--data-splits", default = 3,
 		help = "The number of times to split the data and perform training.")
@@ -51,20 +52,22 @@ class Classifier:
 	def run(self):
 		labels, data = self.extractData()
 		
-		classifierEngine = self.getEngine()
+		classifierEngines = self.getEngines()
 		
-		print "Running cross validation over " + str(self.dataSplits) + " splits..."
-		scores = cross_validation.cross_val_score(
-			classifierEngine, array(data), array(self.convertLabels(labels)),
-			cv=self.dataSplits)
+		for engine, name in classifierEngines:
+			print name + ": Running cross validation over " + str(self.dataSplits) + " splits..."
+			scores = cross_validation.cross_val_score(
+				engine, array(data), array(self.convertLabels(labels)),
+				cv=self.dataSplits)
+
+			print scores		
+			print(" Accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() * 2))
 		
-		print(" Accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() * 2))
-		
-	def getEngine(self):
-		return svm.LinearSVC()
-		#return svm.SVC(kernel='rbf')
-		#return svm.SVC(kernel='linear', C=1.0)
-		#return linear_model.RidgeClassifier(alpha=2.0)	
+	def getEngines(self):
+		return [(svm.LinearSVC(), 'linear-svm'),
+			(svm.SVC(kernel='rbf'), 'rbf-svm'),
+			(ensemble.RandomForestClassifier(), 'random-forest'),
+			(linear_model.RidgeClassifier(alpha=2.0), 'ridge-regression')]
 
 	def convertLabels(self, labels):
 		labelMap = {}

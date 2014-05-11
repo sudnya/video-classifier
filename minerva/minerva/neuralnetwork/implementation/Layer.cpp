@@ -55,12 +55,12 @@ Layer& Layer::operator=(Layer&& l)
 
 void Layer::initializeRandomly(std::default_random_engine& engine, float e)
 {
-	float epsilon = util::KnobDatabase::getKnobValue("Layer::RandomInitializationEpsilon", e);
+	e = util::KnobDatabase::getKnobValue("Layer::RandomInitializationEpsilon", e);	
 
-	epsilon = (e / std::sqrt(getInputCount() + 1));
+	float epsilon = std::sqrt((e) / (getInputBlockingFactor() + getOutputBlockingFactor() + 1));
 	
 	m_sparseMatrix.assignUniformRandomValues(engine, -epsilon, epsilon);
-			m_bias.assignUniformRandomValues(engine, -epsilon, epsilon);
+	m_bias.assignUniformRandomValues(engine, 0.0f, 0.0f);
 }
 
 Layer::BlockSparseMatrix Layer::runInputs(const BlockSparseMatrix& m) const

@@ -1,23 +1,59 @@
 {
 	"name" : "fast-model",
 
-	"x" : "32",
-	"y" : "32",
-	"colors" : "3",
+	"xPixels" : 32,
+	"yPixels" : 32,
+	"colors" : 3,
 
-	"outputs" : [ "cats", "dogs" ],
+	"output-names" : [ "cat", "dog" ],
+	
+	"neuralnetworks" : [
+		{
+			"name" : "FeatureSelector",
 
-	"networks" : [
+			"layers" : [
+				{
+					"tiles" : 64,
+					"inputsPerTile" : 48,
+					"outputsPerTile" : 48,
+					"tileSpacing" : 24
+				},
+				{
+					"tiles" : 128,
+					"inputsPerTile" : 48,
+					"outputsPerTile" : 3
+				},
+				{
+					"tiles" : 8,
+					"inputsPerTile" : 48,
+					"outputsPerTile" : 48
+				}
+			],
+			
+			"costFunction" : "sparse"
+		},
 		{
 			"name" : "Classifier",
 			"layers" : [
 				{
-					
-				}	
-			]
-		},
+					"tiles" : 8,
+					"inputsPerTile" : 48,
+					"outputsPerTile" : 32
+				},
+				{
+					"tiles" : 1,
+					"inputsPerTile" : 256,
+					"outputsPerTile" : 256
+				},
+				{
+					"tiles" : 1,
+					"inputsPerTile" : 256,
+					"outputsPerTile" : 2
+				}
+			],
+			
+			"costFunction" : "dense"
+		}
 	]
-
-
 }
 

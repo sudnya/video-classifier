@@ -21,6 +21,7 @@
 
 // Standard Library Includes
 #include <stdexcept>
+#include <fstream>
 
 namespace minerva
 {
@@ -41,14 +42,28 @@ static classifiers::ClassifierEngine* createEngine(
 
 static StringVector getPaths(const std::string& pathlist);
 
-static void createNewModel(const std::string& modelFileName)
+static std::string loadFile(const std::string& path);
+
+static void createNewModel(const std::string& modelFileName, const std::string& modelSpecificationPath)
 {
 	model::ClassificationModelBuilder builder;
 	
-	auto model = builder.create(modelFileName);
+	model::ClassificationModel* model = nullptr;
 
+	if(modelSpecificationPath.empty())
+	{
+		model = builder.create(modelFileName);
+	}
+	else
+	{
+		auto specification = loadFile(modelSpecificationPath);
+
+		model = builder.create(modelFileName, specification);
+		
+	}
+	
 	model->save();
-
+	
 	delete model;
 }
 
@@ -63,29 +78,21 @@ static void visualizeNeurons(const std::string& modelFileName,
 		"NetworkToVisualize", "FeatureSelector");
 	
 	auto network = model.getNeuralNetwork(networkName);
-	
+
+	network.setUseSparseCostFunction(false);
+
 	visualization::NeuronVisualizer visualizer(&network);
+
+	auto image = visualizer.visualizeInputTilesForAllNeurons();
 	
-	video::Image image(model.xPixels(), model.yPixels(), model.colors(), 1);
-	
-	for(unsigned int i = 0; i < network.getOutputCount(); ++i)
-	{
-		std::stringstream path;
-		
-		path << networkName << "::Output::" << i << ".png";
-		
-		image.setPath(util::joinPaths(outputPath, path.str()));
-		
-		visualizer.visualizeNeuron(image, i);
-		
-		image.save();
-	}
+	image.setPath(util::joinPaths(outputPath, networkName + ".png"));
+
+	image.save();
 }
 
 static void runClassifier(const std::string& outputFilename,
-	const std::string& inputFileNames,
-	const std::string& modelFileName, bool shouldClassify,
-	bool shouldTrain, bool shouldLearnFeatures, bool shouldExtractFeatures)
+	const std::string& inputFileNames, const std::string& modelFileName,
+	bool shouldClassify, bool shouldTrain, bool shouldLearnFeatures, bool shouldExtractFeatures)
 {
 	util::log("minerva-classifier") << "Loading classifier.\n";
 
@@ -209,6 +216,28 @@ static StringVector getPaths(const std::string& pathlist)
 	return util::split(pathlist, ",");
 }
 
+static std::string loadFile(const std::string& path)
+{
+	std::ifstream stream(path);
+	
+	if(!stream.good())
+	{
+		throw std::runtime_error("Failed to open file '" + path + "' for reading.");
+	}
+	
+	stream.seekg(0, std::ios::end);
+
+	size_t size = stream.tellg();	
+
+	std::string contents(size, ' ');
+	
+	stream.seekg(0, std::ios::beg);
+
+	stream.read((char*)contents.data(), size);
+	
+	return contents;
+}
+
 static void enableSpecificLogs(const std::string& modules)
 {
 	auto individualModules = util::split(modules, ",");
@@ -232,12 +261,12 @@ static void setupKnobs(size_t maximumSamples, size_t batchSize)
 {
 	if(maximumSamples > 0)
 	{
-		util::KnobDatabase::addKnob("ClassifierEngine::MaximumVideoFrames",
+		util::KnobDatabase::setKnob("ClassifierEngine::MaximumVideoFrames",
 			toString(maximumSamples));
 	}
 	if(batchSize > 0)
 	{
-		util::KnobDatabase::addKnob("ClassifierEngine::ImageBatchSize",
+		util::KnobDatabase::setKnob("ClassifierEngine::ImageBatchSize",
 			toString(batchSize));
 	}
 }
@@ -250,6 +279,7 @@ int main(int argc, char** argv)
 	
 	std::string inputFileNames;
 	std::string modelFileName;
+	std::string modelSpecificationPath;
 	std::string outputPath;
 	std::string options;
 
@@ -295,6 +325,8 @@ int main(int argc, char** argv)
 
 	parser.parse("-s", "--maximum-samples", maximumSamples, 0, "Override the maximum "
 		"number of samples to process, otherwise it will process all samples.");
+	parser.parse("-S", "--model-specification", modelSpecificationPath, "",
+		"The path to the specification for the new model.");
 	parser.parse("-b", "--batch-size", batchSize, 0, "Override the number of samples "
 		"to process in one training batch.");
 
@@ -322,7 +354,7 @@ int main(int argc, char** argv)
 		
 		if(createNewModel)
 		{
-			minerva::createNewModel(modelFileName);
+			minerva::createNewModel(modelFileName, modelSpecificationPath);
 		}
 		else if(visualizeNetwork)
 		{
@@ -330,7 +362,7 @@ int main(int argc, char** argv)
 		}
 		else
 		{
-			minerva::runClassifier(outputPath, inputFileNames, modelFileName,
+			minerva::runClassifier(outputPath, inputFileNames, modelFileName, 
 				shouldClassify, shouldTrain, shouldLearnFeatures,
 				shouldExtractFeatures);
 		}

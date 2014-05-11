@@ -9,6 +9,7 @@
 #include <minerva/classifiers/interface/UnsupervisedLearner.h>
 
 #include <minerva/util/interface/debug.h>
+#include <minerva/util/interface/Knobs.h>
 
 namespace minerva
 {
@@ -19,7 +20,8 @@ namespace classifiers
 UnsupervisedLearnerEngine::UnsupervisedLearnerEngine()
 : _learner(nullptr), _layersPerIteration(1)
 {
-
+	_layersPerIteration = util::KnobDatabase::getKnobValue<unsigned int>(
+		"UnsupervisedLearnerEngine::LayersPerIteration", 3);
 }
 
 UnsupervisedLearnerEngine::~UnsupervisedLearnerEngine()

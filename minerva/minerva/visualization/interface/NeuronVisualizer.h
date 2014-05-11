@@ -35,7 +35,6 @@ public:
 	
 private:
 	const NeuralNetwork* _network;
-
 };
 
 }

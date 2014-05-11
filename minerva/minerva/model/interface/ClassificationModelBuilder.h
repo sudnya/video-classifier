@@ -22,7 +22,13 @@ namespace model
 class ClassificationModelBuilder
 {
 public:
+	/*! \brief Create a new model at the specified path */
 	ClassificationModel* create(const std::string& path);
+
+public:
+	/*! \brief Create a new model at the specified path using the
+		specified topology. */
+	ClassificationModel* create(const std::string& path, const std::string& specificationPath);
 
 };
 

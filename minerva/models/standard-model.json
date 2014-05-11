@@ -1,0 +1,93 @@
+{
+	"name" : "standard-model",
+
+	"xPixels" : 256,
+	"yPixels" : 256,
+	"colors" : 3,
+
+	"output-names" : [ "cat", "dog" ],
+	
+	"neuralnetworks" : [
+		{
+			"name" : "FeatureSelector",
+
+			"layers" : [
+				
+				{
+					"tiles" : 4096,
+					"inputsPerTile" : 48,
+					"outputsPerTile" : 48,
+					"tileSpacing" : 24
+				},
+				{
+					"tiles" : 8192,
+					"inputsPerTile" : 48,
+					"outputsPerTile" : 3
+				},
+				{
+					"tiles" : 512,
+					"inputsPerTile" : 48,
+					"outputsPerTile" : 48
+				},
+				{
+					"tiles" : 512,
+					"inputsPerTile" : 48,
+					"outputsPerTile" : 48,
+					"tileSpacing" : 24
+				},
+				{
+					"tiles" : 1024,
+					"inputsPerTile" : 48,
+					"outputsPerTile" : 3
+				},
+				{
+					"tiles" : 64,
+					"inputsPerTile" : 48,
+					"outputsPerTile" : 48
+				},
+				{
+					"tiles" : 64,
+					"inputsPerTile" : 48,
+					"outputsPerTile" : 48,
+					"tileSpacing" : 24
+				},
+				{
+					"tiles" : 128,
+					"inputsPerTile" : 48,
+					"outputsPerTile" : 12
+				},
+				{
+					"tiles" : 32,
+					"inputsPerTile" : 48,
+					"outputsPerTile" : 48
+				}
+			],
+			
+			"costFunction" : "sparse"
+		},
+		{
+			"name" : "Classifier",
+			"layers" : [
+				{
+					"tiles" : 32,
+					"inputsPerTile" : 48,
+					"outputsPerTile" : 8
+				},
+				{
+					"tiles" : 1,
+					"inputsPerTile" : 256,
+					"outputsPerTile" : 256
+				},
+				{
+					"tiles" : 1,
+					"inputsPerTile" : 256,
+					"outputsPerTile" : 2
+				}
+			],
+			
+			"costFunction" : "dense"
+		}
+	]
+}
+
+
