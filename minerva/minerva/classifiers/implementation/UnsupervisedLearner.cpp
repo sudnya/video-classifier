@@ -77,7 +77,7 @@ void UnsupervisedLearner::learn(ImageVector&& images)
 		
 		copy.setUseSparseCostFunction(m_featureSelector.isUsingSparseCostFunction());
 		
-		copy.mirror();
+		copy.mirror(m_featureSelector.front());
 		
 		copy.train(layerInput, inputReference);
 	
@@ -85,7 +85,7 @@ void UnsupervisedLearner::learn(ImageVector&& images)
 	
 		layerInput = copy.runInputs(layerInput);
 
-		inputReference = layerInput;
+		//inputReference = layerInput;
 
 		for(size_t layerId = counter; layerId != counterEnd; ++layerId)
 		{	

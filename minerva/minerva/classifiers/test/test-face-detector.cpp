@@ -56,16 +56,16 @@ neuralnetwork::NeuralNetwork createAndInitializeNeuralNetwork(unsigned networkSi
 	unsigned blockX = 8;
 	unsigned blockY = 8;
 
-	unsigned blockMultiplier = 2;
+	unsigned blockMultiplier = 1;
 
 	unsigned blockSize = blockX * blockY * colors;
 	unsigned blockStep = blockSize / blockMultiplier;
 	
 	unsigned blocks = size / blockSize;
 	
-	unsigned fullyConnectedNeurons = 512;
+	unsigned fullyConnectedNeurons = 128;
 
-	unsigned int reductionFactor = 2;
+	//unsigned int reductionFactor = 2;
 
 	//ann.addLayer(Layer(convolutionalLayers,    32, 32)); // convolutional layer
 	//ann.addLayer(Layer(convolutionalLayers,    32,  4)); // max pooling layer
@@ -74,11 +74,9 @@ neuralnetwork::NeuralNetwork createAndInitializeNeuralNetwork(unsigned networkSi
 	//ann.addLayer(Layer(convolutionalLayers,  32,  32));
 	
 	ann.addLayer(Layer(blocks, blockSize, blockSize, blockStep));
-	ann.addLayer(Layer(blocks * blockMultiplier, ann.back().getOutputBlockingFactor(),
-		reductionFactor * colors));
 	
-	ann.addLayer(Layer(ann.back().blocks(), ann.back().getOutputBlockingFactor(),
-		reductionFactor * colors));
+	//ann.addLayer(Layer(ann.back().blocks(), ann.back().getOutputBlockingFactor(),
+	//	reductionFactor * colors));
 
 	ann.addLayer(Layer(1, ann.getOutputCount(), fullyConnectedNeurons));
 	ann.addLayer(Layer(1, fullyConnectedNeurons, 1));
@@ -86,7 +84,7 @@ neuralnetwork::NeuralNetwork createAndInitializeNeuralNetwork(unsigned networkSi
     ann.initializeRandomly(engine, epsilon);
 	ann.setLabelForOutputNeuron(0, "face");
 
-	ann.setUseSparseCostFunction(true);
+	ann.setUseSparseCostFunction(false);
 
     return ann;
 }

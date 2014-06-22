@@ -65,6 +65,7 @@ class NeuralNetwork
 
 	public:
 		void mirror();
+		void mirror(const Layer& layer);
 		void cutOffSecondHalf();
 
 	public:

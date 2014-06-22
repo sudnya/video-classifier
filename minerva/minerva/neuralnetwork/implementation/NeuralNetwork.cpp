@@ -236,16 +236,21 @@ static size_t getGreatestCommonDivisor(size_t a, size_t b)
 
 void NeuralNetwork::mirror()
 {
-	size_t blocks = getGreatestCommonDivisor(front().blocks(),
-		getGreatestCommonDivisor(getOutputCount(), getInputCount()));
+	mirror(front());
+}
+
+void NeuralNetwork::mirror(const Layer& layer)
+{
+	size_t blocks = getGreatestCommonDivisor(layer.blocks(),
+		getGreatestCommonDivisor(getOutputCount(), layer.getInputCount()));
 
 	assertM(getOutputCount() % blocks == 0, "Input count " << getOutputCount()
 		<< " not divisible by " << blocks << ".");
-	assertM(getInputCount() % blocks == 0, "Output count " << getInputCount()
+	assertM(layer.getInputCount() % blocks == 0, "Output count " << layer.getInputCount()
 		<< " not divisivle by " << blocks << ".");
 
 	size_t newInputs  = getOutputCount() / blocks;
-	size_t newOutputs = getInputCount()  / blocks;
+	size_t newOutputs = layer.getInputCount()  / blocks;
 	
 	assert(newInputs  > 0);
 	assert(newOutputs > 0);
