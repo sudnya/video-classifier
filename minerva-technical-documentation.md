@@ -66,7 +66,7 @@ The following image includes a visualization of some of the low level features
 (inputs that a pooling layer neuron maximally responds to) that were learned by Minerva after
 being presented 10,000 random images.  
 
-![Layer One Features](/documentation/tech-report/images/first-layer-neurons-32x32-4x4-tiles.jpg "Layer One Feature Responses")
+![Layer One Features](/documentation/tech-report/images/first-layer-neurons-8x8-tiles.jpg "Layer One Feature Responses")
 
 These compare favorably to Gabor Filter function responses in the top-right of the following figure, which have been found
 in the first layers of the visual cortex in mammalians, and perform well at visual classification tasks: 

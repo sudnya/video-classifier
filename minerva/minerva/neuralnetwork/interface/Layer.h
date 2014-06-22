@@ -44,7 +44,7 @@ class Layer
 		Layer& operator=(Layer&&);
 
 	public:
-		void initializeRandomly(std::default_random_engine& engine, float epsilon = 0.3f);
+		void initializeRandomly(std::default_random_engine& engine, float epsilon = 6.0f);
 		BlockSparseMatrix runInputs(const BlockSparseMatrix& m) const;
 		BlockSparseMatrix runReverse(const BlockSparseMatrix& m) const;
  

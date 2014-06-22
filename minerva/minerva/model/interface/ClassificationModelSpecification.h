@@ -25,12 +25,12 @@ namespace model
 class ClassificationModelSpecification 
 {
 public:
-	ClassificationModelSpecification();
+	ClassificationModelSpecification(const std::string& specification = "");
 	~ClassificationModelSpecification();
 
 public:
 	void parseSpecification(const std::string& specification);
-	void initializeModel(ClassificationModel* model);
+	void initializeModel(ClassificationModel& model);
 
 private:
 	std::unique_ptr<ClassificationModelSpecificationImplementation> _implementation;

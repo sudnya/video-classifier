@@ -31,10 +31,10 @@ static NeuralNetwork createNeuralNetwork(size_t xPixels, size_t yPixels,
 	NeuralNetwork network;
 
 	// 5x5 convolutional layer
-	network.addLayer(Layer(xPixels * colors, yPixels, yPixels));
+	network.addLayer(Layer(xPixels, yPixels * colors, yPixels * colors));
 
 	// 2x2 pooling layer
-	//network.addLayer(Layer(1, 16, 16));
+	//network.addLayer(Layer(1, xPixels, xPixels));
 
 	// final prediction layer
 	network.addLayer(Layer(1, network.getOutputCount(), 1));
@@ -157,8 +157,8 @@ static void trainNetwork(NeuralNetwork& neuralNetwork, const Image& image,
 			batchSize, engine);
 		
 		Matrix input = batch.convertToStandardizedMatrix(
-			neuralNetwork.getInputCount(), std::sqrt(neuralNetwork.getInputBlockingFactor()),
-			std::sqrt(neuralNetwork.getInputBlockingFactor()));
+			neuralNetwork.getInputCount(),
+			neuralNetwork.getInputBlockingFactor(), image.colorComponents());
 		
 		Matrix reference = generateReference(batch);
 		
@@ -188,8 +188,8 @@ static float testNetwork(NeuralNetwork& neuralNetwork, const Image& image,
 			batchSize, engine);
 		
 		Matrix input = batch.convertToStandardizedMatrix(
-			neuralNetwork.getInputCount(), std::sqrt(neuralNetwork.getInputBlockingFactor()),
-			std::sqrt(neuralNetwork.getInputBlockingFactor()));
+			neuralNetwork.getInputCount(),
+			neuralNetwork.getInputBlockingFactor(), image.colorComponents());
 		
 		Matrix reference = generateReference(batch);
 		
@@ -227,12 +227,12 @@ static float visualizeNetwork(NeuralNetwork& neuralNetwork, const Image& referen
 
 	minerva::util::log("TestVisualization") << "Reference response: "
 		<< neuralNetwork.runInputs(referenceImage.convertToStandardizedMatrix(
-			neuralNetwork.getInputCount(), std::sqrt(neuralNetwork.getInputBlockingFactor()),
-			std::sqrt(neuralNetwork.getInputBlockingFactor()))).toString();
+			neuralNetwork.getInputCount(),
+			neuralNetwork.getInputBlockingFactor(), image.colorComponents())).toString();
 	minerva::util::log("TestVisualization") << "Visualized response: "
 		<< neuralNetwork.runInputs(image.convertToStandardizedMatrix(
-			neuralNetwork.getInputCount(), std::sqrt(neuralNetwork.getInputBlockingFactor()),
-			std::sqrt(neuralNetwork.getInputBlockingFactor()))).toString();
+			neuralNetwork.getInputCount(),
+			neuralNetwork.getInputBlockingFactor(), image.colorComponents())).toString();
 	
 	image.save();
 
@@ -327,15 +327,15 @@ int main(int argc, char** argv)
         "The number of iterations to train the network for.");
     parser.parse("-b", "--batch-size", batchSize, 100,
         "The number of images to use for each iteration.");
-    parser.parse("-n", "--noise-magnitude", noiseMagnitude, 0.1f,
+    parser.parse("-n", "--noise-magnitude", noiseMagnitude, 0.05f,
         "The magnitude of noise to add to the image (0.0f - 1.0f).");
     parser.parse("-L", "--log-module", loggingEnabledModules, "",
 		"Print out log messages during execution for specified modules "
 		"(comma-separated list of modules, e.g. NeuralNetwork, Layer, ...).");
     parser.parse("-s", "--seed", seed, false, "Seed with time.");
-    parser.parse("-x", "--x-pixels", xPixels, 8,
+    parser.parse("-x", "--x-pixels", xPixels, 16,
         "The number of X pixels to consider from the input image.");
-	parser.parse("-y", "--y-pixels", yPixels, 8,
+	parser.parse("-y", "--y-pixels", yPixels, 16,
 		"The number of Y pixels to consider from the input image");
 	parser.parse("-c", "--colors", colors, 3,
 		"The number of color components (e.g. RGB) to consider from the input image");

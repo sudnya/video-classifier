@@ -27,7 +27,7 @@ public:
 	
 public:
 	void parseSpecification(const std::string& specification);
-	void initializeModel(ClassificationModel* model);
+	void initializeModel(ClassificationModel& model);
 
 private:
 	
@@ -39,10 +39,13 @@ private:
 };
 
 
-ClassificationModelSpecification::ClassificationModelSpecification()
+ClassificationModelSpecification::ClassificationModelSpecification(const std::string& specification)
 : _implementation(new ClassificationModelSpecificationImplementation)
 {
-
+	if(!specification.empty())
+	{
+		parseSpecification(specification);
+	}
 }
 
 ClassificationModelSpecification::~ClassificationModelSpecification() = default;
@@ -52,7 +55,7 @@ void ClassificationModelSpecification::parseSpecification(const std::string& spe
 	_implementation->parseSpecification(specification);
 }
 
-void ClassificationModelSpecification::initializeModel(ClassificationModel* model)
+void ClassificationModelSpecification::initializeModel(ClassificationModel& model)
 {
 	_implementation->initializeModel(model);
 }
@@ -71,9 +74,9 @@ void ClassificationModelSpecificationImplementation::parseSpecification(const st
 	_specification.reset(parser.parse_object(jsonStream));
 }
 
-void ClassificationModelSpecificationImplementation::initializeModel(ClassificationModel* model)
+void ClassificationModelSpecificationImplementation::initializeModel(ClassificationModel& model)
 {
-	model->clear();
+	model.clear();
 	
 	util::json::Visitor objectVisitor(_specification.get());
 	
@@ -96,7 +99,7 @@ void ClassificationModelSpecificationImplementation::initializeModel(Classificat
 	size_t yPixels = (int) objectVisitor["yPixels"];	
 	size_t colors  = (int) objectVisitor["colors" ];
 
-	model->setInputImageResolution(xPixels, yPixels, colors);
+	model.setInputImageResolution(xPixels, yPixels, colors);
 	
 	if(objectVisitor.find("output-names") == 0)
 	{
@@ -105,17 +108,30 @@ void ClassificationModelSpecificationImplementation::initializeModel(Classificat
 	
 	util::json::Visitor outputsVisitor(
 		objectVisitor["output-names"]);		
-	
+
+	bool defaultOutputs = false;	
 	std::vector<std::string> outputs;
 	
-	for(auto outputObject = outputsVisitor.begin_array();
-		outputObject != outputsVisitor.end_array(); ++outputObject)
+	if(outputsVisitor.is_string())
 	{
-		util::json::Visitor outputVisitor(*outputObject);
-
-		outputs.push_back(outputVisitor);
+		if((std::string)outputsVisitor != "default")
+		{
+			throw std::runtime_error("Invalid 'output-names' member value: '" + std::string(outputsVisitor) + "'.");
+		}
+		
+		defaultOutputs = true;
 	}
-	
+	else
+	{
+		for(auto outputObject = outputsVisitor.begin_array();
+			outputObject != outputsVisitor.end_array(); ++outputObject)
+		{
+			util::json::Visitor outputVisitor(*outputObject);
+
+			outputs.push_back(outputVisitor);
+		}
+	}
+
 	if(objectVisitor.find("neuralnetworks") == 0)
 	{
 		throw std::runtime_error("Specification does not include an 'neuralnetworks' member.");
@@ -201,23 +217,26 @@ void ClassificationModelSpecificationImplementation::initializeModel(Classificat
 		
 		if(networkObject == --networksVisitor.end_array())
 		{
-			if(network.getOutputNeurons() != outputs.size())
+			if(!defaultOutputs)
 			{
-				throw std::runtime_error("Output neuron names does not "
-					"match the network output count for network " + name);
-			}
-			
-			for(auto& outputName : outputs)
-			{
-				size_t index = &outputName - &outputs[0];
+				if(network.getOutputNeurons() != outputs.size())
+				{
+					throw std::runtime_error("Output neuron names does not "
+						"match the network output count for network " + name);
+				}
 				
-				network.setLabelForOutputNeuron(index, outputName);
+				for(auto& outputName : outputs)
+				{
+					size_t index = &outputName - &outputs[0];
+					
+					network.setLabelForOutputNeuron(index, outputName);
+				}
 			}
 		}
 		
 		network.initializeRandomly(_randomEngine);
 					
-		model->setNeuralNetwork(name, network);
+		model.setNeuralNetwork(name, network);
 	}
 }
 

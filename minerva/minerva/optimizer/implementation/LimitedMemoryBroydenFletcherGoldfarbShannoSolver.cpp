@@ -233,18 +233,22 @@ float LBFGSSolver::solve(BlockSparseMatrixVector& inputs, const CostAndGradientF
 	
 	//parameters.min_step = 10e-10;
 	//parameters.max_linesearch = 5.0;
-	parameters.linesearch = LBFGSSolverLibrary::LBFGS_LINESEARCH_DEFAULT;//LBFGSSolverLibrary::LBFGS_LINESEARCH_BACKTRACKING_STRONG_WOLFE;
-	parameters.epsilon = 1e-10;
+	parameters.linesearch = 
+		
+		//LBFGSSolverLibrary::LBFGS_LINESEARCH_ARMIJO;
+		LBFGSSolverLibrary::LBFGS_LINESEARCH_DEFAULT;
+		//LBFGSSolverLibrary::LBFGS_LINESEARCH_BACKTRACKING_STRONG_WOLFE;
+	//parameters.epsilon = 1e-10;
 	//parameters.m = 3;
 	//parameters.xtol = 0.000001;
-	parameters.ftol = 1e-10;
+	//parameters.ftol = 1e-10;
 	//parameters.gtol = 1e-10;
 	
 	parameters.max_linesearch = util::KnobDatabase::getKnobValue(
-		"LBFGSSolver::MaxLineSearchIterations", 8);
+		"LBFGSSolver::MaxLineSearchIterations", 10);
 
 	parameters.max_iterations =
-		util::KnobDatabase::getKnobValue("LBFGSSolver::MaxIterations", 100);
+		util::KnobDatabase::getKnobValue("LBFGSSolver::MaxIterations", 500);
 	
 	int status = LBFGSSolverLibrary::lbfgs(getSize(inputs), inputArray,
 		&finalCost, lbfgsCallback, lbfgsProgress,

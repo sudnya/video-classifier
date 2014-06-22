@@ -84,6 +84,8 @@ static void runAllImages(ClassifierEngine* engine, ImageVector& images,
 	unsigned int maxBatchSize, unsigned int& maxVideoFrames);
 static void runAllVideos(ClassifierEngine* engine, VideoVector& images,
 	unsigned int maxBatchSize, unsigned int& maxVideoFrames, bool requiresLabeledData);
+static void sliceOutTilesToFitTheNetwork(ClassifierEngine* engine, ImageVector& images,
+	size_t maxVideoFrames);
 
 void ClassifierEngine::runOnDatabaseFile(const std::string& path)
 {
@@ -124,9 +126,11 @@ void ClassifierEngine::runOnPaths(const StringVector& paths)
 		}
 	}
 	
-	unsigned int maxBatchSize = std::min(_maximumSamplesToRun, _batchSize);
-
 	unsigned int maxVideoFrames = _maximumSamplesToRun;
+	
+	sliceOutTilesToFitTheNetwork(this, images, maxVideoFrames);
+	
+	unsigned int maxBatchSize = std::min(_maximumSamplesToRun, _batchSize);
 	
 	do
 	{
@@ -202,6 +206,11 @@ void ClassifierEngine::saveModel()
 	if(_ownModel) _model->save();
 }
 
+size_t ClassifierEngine::getColorComponents() const
+{
+	return _model->colors();
+}
+
 static void consolidateLabels(ImageVector& images, VideoVector& videos);
 
 static void parseImageDatabase(ImageVector& images, VideoVector& videos,
@@ -232,7 +241,7 @@ static void parseImageDatabase(ImageVector& images, VideoVector& videos,
 			else
 			{
 				util::log("ClassifierEngine") << "  found unlabeled image '" << sample.path()
-					<< "'n";
+					<< "'\n";
 			}
 			
 			images.push_back(Image(sample.path(), sample.label()));
@@ -414,7 +423,107 @@ IntVector getRandomOrder(unsigned int size)
 	return order;
 }
 
-static void sliceOutTilesToFitTheNetwork(ClassifierEngine* engine, ImageVector& images)
+static void sliceOutCenterOnly(ClassifierEngine* engine, ImageVector& images, size_t maxVideoFrames)
+{
+	size_t xTile = 0;
+	size_t yTile = 0;
+	
+	util::getNearestToSquareFactors(xTile, yTile,
+		engine->getInputFeatureCount() / engine->getColorComponents());
+
+	ImageVector slicedImages;
+	
+	size_t frames = 0;
+	
+	for(auto& image : images)
+	{
+		if(frames >= maxVideoFrames)
+		{
+			break;
+		}
+
+		image.load();
+	
+		size_t startX = (image.x() - xTile) / 2;
+		size_t startY = (image.y() - yTile) / 2;
+	
+		size_t newX = xTile;
+		size_t newY = yTile;
+	
+		if(newX + startX > image.x())
+		{
+			newX = image.x() - startX;
+		}
+		
+		if(newY + startY > image.y())
+		{
+			newY = image.y() - startY;
+		}
+		
+		slicedImages.push_back(image.getTile(startX, startY,
+			newX, newY, engine->getColorComponents()));
+		
+		frames += 1;
+	}
+	
+	images = std::move(slicedImages);
+
+}
+
+static void sliceOutAllTiles(ClassifierEngine* engine, ImageVector& images,
+	size_t maxVideoFrames)
+{	
+	size_t xTile = 0;
+	size_t yTile = 0;
+	
+	util::getNearestToSquareFactors(xTile, yTile,
+		engine->getInputFeatureCount() / engine->getColorComponents());
+
+	ImageVector slicedImages;
+	
+	size_t frames = 0;
+	
+	for(auto& image : images)
+	{
+		if(frames >= maxVideoFrames)
+		{
+			break;
+		}
+			
+		image.load();
+		
+		for(size_t startX = 0; startX < image.x() && frames < maxVideoFrames;
+			startX += xTile)
+		{
+			for(size_t startY = 0; startY < image.y() && frames < maxVideoFrames;
+				startY += yTile)
+			{
+				size_t newX = xTile;
+				size_t newY = yTile;
+			
+				if(newX + startX > image.x())
+				{
+					newX = image.x() - startX;
+				}
+				
+				if(newY + startY > image.y())
+				{
+					newY = image.y() - startY;
+				}
+				
+				slicedImages.push_back(image.getTile(startX, startY,
+					newX, newY, engine->getColorComponents()));
+
+				++frames;
+			}
+		}
+	}
+	
+	images = std::move(slicedImages);
+}
+
+static void sliceOutTilesToFitTheNetwork(ClassifierEngine* engine,
+	ImageVector& images, size_t maxVideoFrames)
 {
 	bool shouldSlice = util::KnobDatabase::getKnobValue(
 		"ClassifierEngine::SliceInputImagesToFitNetwork", false);
@@ -423,34 +532,17 @@ static void sliceOutTilesToFitTheNetwork(ClassifierEngine* engine, ImageVector& 
 	{
 		return;
 	}
-	
-	size_t xTile = 0;
-	size_t yTile = 0;
-	
-	util::getNearestToSquareFactors(xTile, yTile,
-		engine->getInputFeatureCount() / images.back().colorComponents());
-	
-	for(auto& image : images)
-	{
-		size_t newX = xTile;
-		size_t newY = yTile;
 
-		size_t startX = image.x() / 4;
-		size_t startY = image.y() / 4;
-		
-		if(newX + startX > image.x())
-		{
-			newX   = image.x();
-			startX = 0;
-		}
-		
-		if(newY + startY > image.y())
-		{
-			newY   = image.y();
-			startY = 0;
-		}
-		
-		image = image.getTile(startX, startY, newX, newY);
+	bool shouldSliceCenter = util::KnobDatabase::getKnobValue(
+		"ClassifierEngine::SliceOutCenterTileOnly", true);
+	
+	if(shouldSliceCenter)
+	{
+		sliceOutCenterOnly(engine, images, maxVideoFrames);
+	}
+	else
+	{
+		sliceOutAllTiles(engine, images, maxVideoFrames);
 	}
 }
 
@@ -472,14 +564,8 @@ static void runAllImages(ClassifierEngine* engine, ImageVector& images,
 		for(unsigned int j = 0; j < batchSize; ++j)
 		{
 			batch.push_back(images[randomImageOrder[i + j]]);
+			batch.back().load();
 		}
-		
-		for(auto& image : batch)
-		{
-			image.load();
-		}
-		
-		sliceOutTilesToFitTheNetwork(engine, batch);
 		
 		util::log("ClassifierEngine") << " running batch with " << batch.size()
 			<< " images\n";

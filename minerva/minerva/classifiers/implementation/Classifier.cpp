@@ -78,7 +78,7 @@ Classifier::Matrix Classifier::detectLabels(const ImageVector& images)
 	
 	/* run classification using features, classifier network to emit label */
 	auto matrix = images.convertToStandardizedMatrix(systemInputCount,
-		std::sqrt(blockingFactor), std::sqrt(blockingFactor));
+		blockingFactor, m_classificationModel->colors());
 
 	assert(matrix.columns() == systemInputCount);
 

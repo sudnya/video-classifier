@@ -90,7 +90,7 @@ void ImageVector::clear()
 }
 
 ImageVector::Matrix ImageVector::convertToStandardizedMatrix(size_t sampleCount,
-	size_t xTileSize, size_t yTileSize) const
+	size_t xTileSize, size_t yTileSize, size_t colors) const
 {
 	size_t rows    = _images.size();
 	size_t columns = sampleCount;
@@ -102,6 +102,8 @@ ImageVector::Matrix ImageVector::convertToStandardizedMatrix(size_t sampleCount,
     size_t offset = 0;
 	for(auto& image : _images)
 	{
+		assert(colors == image.colorComponents());
+		
 		auto samples = image.getSampledData(columns, xTileSize, yTileSize);
 		
 		std::copy(samples.begin(), samples.end(), data.begin() + offset);
@@ -110,18 +112,18 @@ ImageVector::Matrix ImageVector::convertToStandardizedMatrix(size_t sampleCount,
 	}
 	
 	matrix.data() = data;
-
+	
 	// remove mean
 	matrix = matrix.add(-matrix.reduceSum()/matrix.size());
 
 	// truncate to 3 standard deviations
-	float standardDeviation = std::sqrt(matrix.elementMultiply(matrix).reduceSum() / matrix.size());
+	float standardDeviation = 3.0f * std::sqrt(matrix.elementMultiply(matrix).reduceSum() / matrix.size());
 
-	matrix.maxSelf(-3.0f * standardDeviation);
-	matrix.minSelf( 3.0f * standardDeviation);
+	matrix.maxSelf(-standardDeviation);
+	matrix.minSelf( standardDeviation);
 
 	// scale from [-1,1]
-	matrix = matrix.multiply(1.0f/(3.0f * standardDeviation));
+	matrix = matrix.multiply(1.0f/(standardDeviation));
 
 	// rescale from [-1,1] to [0.1, 0.9]
 	//matrix = matrix.add(1.0f).multiply(0.4f).add(0.1f);
@@ -131,14 +133,15 @@ ImageVector::Matrix ImageVector::convertToStandardizedMatrix(size_t sampleCount,
 	return matrix;
 }
 
-ImageVector::Matrix ImageVector::convertToStandardizedMatrix(size_t sampleCount, size_t tileSize) const
+ImageVector::Matrix ImageVector::convertToStandardizedMatrix(size_t sampleCount, size_t tileSize,
+	size_t colors) const
 {
 	size_t x = 0;
 	size_t y = 0;
 	
-	util::getNearestToSquareFactors(x, y, tileSize);
+	util::getNearestToSquareFactors(x, y, tileSize / colors);
 
-	return convertToStandardizedMatrix(sampleCount, x, y);
+	return convertToStandardizedMatrix(sampleCount, x, y, colors);
 }
 
 ImageVector::Matrix ImageVector::getReference(

@@ -83,7 +83,7 @@ private:
 
 static float linearSolver(BackPropagation* backPropData)
 {
-	util::log("TiledConvolutionalSolver") << "  starting linear solver\n";
+	util::log("TiledConvolutionalSolver") << "  starting general solver\n";
 		
 	auto solver = GeneralDifferentiableSolverFactory::create();
 	

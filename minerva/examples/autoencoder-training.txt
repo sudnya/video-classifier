@@ -1,0 +1,19 @@
+################################################################################
+# A list of images used for autoencoder training
+################################################################################
+
+####################
+# Unlabeled Images #
+####################
+
+../images/autoencoder-training/IMAGE0.png
+../images/autoencoder-training/IMAGE1.png
+../images/autoencoder-training/IMAGE2.png
+../images/autoencoder-training/IMAGE3.png
+../images/autoencoder-training/IMAGE4.png
+../images/autoencoder-training/IMAGE5.png
+../images/autoencoder-training/IMAGE6.png
+../images/autoencoder-training/IMAGE7.png
+../images/autoencoder-training/IMAGE8.png
+../images/autoencoder-training/IMAGE9.png
+

@@ -83,6 +83,9 @@ protected:
 public:
 	virtual void runOnImageBatch(ImageVector&& images) = 0;
 	virtual size_t getInputFeatureCount() const = 0;
+
+public:
+	size_t getColorComponents() const;
 	
 public:
 	ClassifierEngine(const ClassifierEngine&) = delete;

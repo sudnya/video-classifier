@@ -36,12 +36,6 @@ NeuralNetworkSolver* NeuralNetworkSolver::create(BackPropagation* d)
 {
 	auto solverName = util::KnobDatabase::getKnobValue("Solver::Type",
 		"TiledConvolutionalSolver");
-		//"MultiLevelOptimizer");	
-
-	if(solverName == "MultiLevelOptimizer")
-	{
-		return new MultiLevelOptimizer(d);
-	}
 
 	// Fall back to tiled solver
 	return new TiledConvolutionalSolver(d);

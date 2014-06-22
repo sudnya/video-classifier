@@ -1246,6 +1246,11 @@ bool json::Visitor::is_null() const {
 	return !value || value->type == Value::Null;
 }
 
+//! returns true if value is String
+bool json::Visitor::is_string() const {
+	return !is_null() && value->type == Value::String;
+}
+
 json::Visitor json::Visitor::operator[](const char *key) const {
 	if (value->type != Value::Object) {
 		throw EXCEPTION("operator[](const std::string &) expects Visitor to wrap an Object");

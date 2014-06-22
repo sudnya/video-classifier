@@ -41,7 +41,7 @@ FeatureExtractor::Matrix FeatureExtractor::extract(ImageVector&& images)
 	size_t blockingFactor = neuralNetwork.getInputBlockingFactor();
 	
 	auto matrix = images.convertToStandardizedMatrix(neuralNetwork.getInputCount(),
-		blockingFactor);
+		blockingFactor, _classificationModel->colors());
 	
 	return neuralNetwork.runInputs(matrix);
 }

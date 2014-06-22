@@ -76,7 +76,7 @@ void Learner::_trainClassifier(ImageVector&& images)
 	util::log("Learner") << "Loading feature selector with: " << inputCount << " inputs.\n";
 
 	auto matrix = images.convertToStandardizedMatrix(inputCount,
-		blockingFactor);
+		blockingFactor, _classificationModel->colors());
 	
 	if(!_shouldTrainFeatureSelector && !_featureSelectorNetwork.empty() )
 	{

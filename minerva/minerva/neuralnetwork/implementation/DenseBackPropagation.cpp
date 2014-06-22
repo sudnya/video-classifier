@@ -61,7 +61,7 @@ static float computeCostForLayer(const Layer& layer, const BlockSparseMatrix& la
 
 	float costSum = cost.reduceSum();
 
-	costSum += (lambda / (2.0f * m)) * (layer.getWeightsWithoutBias().elementMultiply(
+	costSum += (lambda / (2.0f)) * (layer.getWeightsWithoutBias().elementMultiply(
 		layer.getWeightsWithoutBias()).reduceSum());
 
 	return costSum;
@@ -73,29 +73,44 @@ static float computeCostForNetwork(const NeuralNetwork& network, const BlockSpar
 	//J(theta) = -1/m (sum over i, sum over k y(i,k) * log (h(x)) + (1-y(i,k))*log(1-h(x)) +
 	//		   regularization term lambda/2m sum over l,i,j (theta[i,j])^2
 	// J = (1/m) .* sum(sum(-yOneHot .* log(hx) - (1 - yOneHot) .* log(1 - hx)));
+	#if 0
+	const float epsilon = 1.0e-40f;
 
 	unsigned m = input.rows();
 
-	
 	auto hx = network.runInputs(input);
 	
-	auto logHx = hx.add(1e-15f).log();
+	auto logHx = hx.add(epsilon).log();
 	auto yTemp = referenceOutput.elementMultiply(logHx);
 
 	auto oneMinusY = referenceOutput.negate().add(1.0f);
 	auto oneMinusHx = hx.negate().add(1.0f);
-	auto logOneMinusHx = oneMinusHx.add(1e-15f).log(); // add an epsilon to avoid log(0)
+	auto logOneMinusHx = oneMinusHx.add(epsilon).log(); // add an epsilon to avoid log(0)
 	auto yMinusOneTemp = oneMinusY.elementMultiply(logOneMinusHx);
 
 	auto sum = yTemp.add(yMinusOneTemp);
 
-	float costSum = sum.reduceSum() * -1.0f / m;
+	float costSum = sum.reduceSum() * -0.5f / m;
+	#else
+
+	unsigned m = input.rows();
+
+	auto hx = network.runInputs(input);
+
+	auto errors = hx.subtract(referenceOutput);
+	auto squaredErrors = errors.elementMultiply(errors);
+
+	float sumOfSquaredErrors = squaredErrors.reduceSum();
+	
+	float costSum = sumOfSquaredErrors * 1.0f / (2.0f * m);
+
+	#endif
 
 	if(lambda > 0.0f)
 	{
 		for(auto& layer : network)
 		{
-			costSum += (lambda / (2.0f * m)) * ((layer.getWeightsWithoutBias().elementMultiply(
+			costSum += (lambda / (2.0f)) * ((layer.getWeightsWithoutBias().elementMultiply(
 				layer.getWeightsWithoutBias())).reduceSum());
 		}
 	}
@@ -185,7 +200,7 @@ MatrixVector DenseBackPropagation::getDeltas(const NeuralNetwork& network, const
 	deltas.reserve(activations.size() - 1);
 	
 	auto i = activations.rbegin();
-	auto delta = (*i).subtract(*_referenceOutput);
+	auto delta = (*i).subtract(*_referenceOutput).elementMultiply(i->sigmoidDerivative());
 	++i;
 
 	while (i != activations.rend())
@@ -299,16 +314,19 @@ MatrixVector DenseBackPropagation::getActivations(const NeuralNetwork& network, 
 	return activations;
 }
 
-static void coalesceNeuronOutputs(BlockSparseMatrix& derivative, const BlockSparseMatrix& skeleton)
+static void coalesceNeuronOutputs(BlockSparseMatrix& derivative,
+	const BlockSparseMatrix& skeleton)
 {
-	if(derivative.rowsPerBlock() == skeleton.columnsPerBlock() && derivative.blocks() == skeleton.blocks()) return;
+	if(derivative.rowsPerBlock() == skeleton.columnsPerBlock() &&
+		derivative.blocks() == skeleton.blocks()) return;
 	
 	// Must be evenly divisible
 	assert(derivative.rows() % skeleton.columns() == 0);
 	assert(derivative.columns() == skeleton.rowsPerBlock());
 	
 	// Add the rows together in a block-cyclic fasion
-	derivative = derivative.reduceTileSumAlongRows(skeleton.columns(), skeleton.blocks());
+	derivative = derivative.reduceTileSumAlongRows(skeleton.columnsPerBlock(),
+		skeleton.blocks());
 }
 
 MatrixVector DenseBackPropagation::getCostDerivative(
@@ -321,7 +339,7 @@ MatrixVector DenseBackPropagation::getCostDerivative(
 	
 	MatrixVector partialDerivative;
 
-	partialDerivative.reserve(deltas.size());
+	partialDerivative.reserve(2 * deltas.size());
 	
 	unsigned int samples = _input->rows();
 
@@ -346,14 +364,21 @@ MatrixVector DenseBackPropagation::getCostDerivative(
 		// add in the regularization term
 		auto weights = layer.getWeightsWithoutBias();
 
-		auto lambdaTerm = weights.multiply(_lambda/samples);
+		auto lambdaTerm = weights.multiply(_lambda);
+		
+		// compute the derivative for the bias
+		auto normalizedBiasPartialDerivative = transposedDelta.reduceSumAlongColumns().multiply(1.0f/samples);
 
 		// Account for cases where the same neuron produced multiple outputs
 		//  or not enough inputs existed
 		coalesceNeuronOutputs(normalizedPartialDerivative, lambdaTerm);
+		coalesceNeuronOutputs(normalizedBiasPartialDerivative, layer.getBias());
 	
-		// Compute the partial derivatives
+		// Compute the partial derivatives with respect to the weights
 		partialDerivative.push_back(lambdaTerm.add(normalizedPartialDerivative.transpose()));
+		
+		// Compute partial derivatives with respect to the bias
+		partialDerivative.push_back(normalizedBiasPartialDerivative.transpose());
 
 	}//this loop ends after all activations are done. and we don't need the last delta (ref-output anyway)
 

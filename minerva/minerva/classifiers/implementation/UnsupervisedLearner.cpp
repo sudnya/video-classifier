@@ -42,10 +42,22 @@ void UnsupervisedLearner::learn(ImageVector&& images)
 {
 	/* using the feature NN & training images emit a NN for classifiers */
 	auto input = images.convertToStandardizedMatrix(m_featureSelector.getInputCount(),
-		m_featureSelector.getInputBlockingFactor());
+		m_featureSelector.getInputBlockingFactor(), m_classificationModelPtr->colors());
 	images.clear();
+
+	#if 0
+	input = input.add(-input.reduceSum() / input.size());
+
+	auto standardDeviation = 3.0f * std::sqrt(input.elementMultiply(input).reduceSum() / input.size());
 	
+	input.maxSelf(- standardDeviation);
+	input.minSelf(  standardDeviation);
+	input = input.multiply(1.0f/standardDeviation);
+
+	#else
 	auto inputReference = input.add(1.0f).multiply(0.4f).add(0.1f);
+	#endif
+	
 	auto layerInput = std::move(input);
 
 	for(size_t counter = 0; counter < m_featureSelector.size(); counter += m_layersPerIteration)

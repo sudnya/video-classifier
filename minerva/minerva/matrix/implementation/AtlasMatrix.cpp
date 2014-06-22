@@ -420,7 +420,7 @@ void AtlasMatrix::sigmoidDerivativeSelf()
 	}
 }
 
-static float epsilon = 10e-5;
+static float epsilon = 1e-5;
 
 static float klDivergence(float value, float sparsity)
 {
@@ -428,8 +428,9 @@ static float klDivergence(float value, float sparsity)
 	if(value > (1.0f - epsilon)) value = 1.0f - epsilon;
 	if(value < epsilon         ) value = epsilon;
 
-	float result = sparsity * std::log(sparsity / value) +
-		(1.0f - sparsity) * std::log((1.0f - sparsity) / (1.0f - value));
+	float result = 
+		(sparsity * std::log(sparsity / value)) +
+		((1.0f - sparsity) * std::log((1.0f - sparsity) / (1.0f - value)));
 	
 	assert(!std::isnan(result));
 
@@ -443,7 +444,7 @@ static float klDivergenceDerivative(float value, float sparsity)
 	if(value > (1.0f - epsilon)) value = 1.0f - epsilon;
 	if(value < epsilon         ) value = epsilon;
 
-	float result = ((-sparsity / value) + (1.0f - sparsity)/(1.0f - value));
+	float result = ((-sparsity / value) + ((1.0f - sparsity)/(1.0f - value)));
 
 	assert(!std::isnan(result));
 

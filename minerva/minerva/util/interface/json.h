@@ -307,6 +307,9 @@ namespace json {
 		//! returns true if value is Null
 		bool is_null() const;
 		
+		//! returns true if value is a String
+		bool is_string() const;
+		
 		//! casts value to boolean, assuming it is either True or False
 		operator bool() const;
 		

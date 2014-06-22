@@ -191,7 +191,7 @@ void Layer::setWeightsWithoutBias(const BlockSparseMatrix& weights)
 
 size_t Layer::totalWeights() const
 {
-	return m_sparseMatrix.size();
+	return m_sparseMatrix.size() + m_bias.size();
 }
 
 Layer::Matrix Layer::getFlattenedWeights() const
@@ -201,6 +201,14 @@ Layer::Matrix Layer::getFlattenedWeights() const
 	size_t position = 0;
 
 	for(auto matrix = begin(); matrix != end(); ++matrix)
+	{
+		std::memcpy(&weights.data()[position], &matrix->data()[0],
+			matrix->size() * sizeof(float));
+
+		position += matrix->size();
+	}
+
+	for(auto matrix = begin_bias(); matrix != end_bias(); ++matrix)
 	{
 		std::memcpy(&weights.data()[position], &matrix->data()[0],
 			matrix->size() * sizeof(float));
@@ -218,6 +226,14 @@ void Layer::setFlattenedWeights(const Matrix& m)
 	size_t position = 0;
 	
 	for(auto matrix = begin(); matrix != end(); ++matrix)
+	{
+		std::memcpy(matrix->data().data(), &m.data()[position],
+			matrix->size() * sizeof(float));		
+	
+		position += matrix->size();
+	}
+	
+	for(auto matrix = begin_bias(); matrix != end_bias(); ++matrix)
 	{
 		std::memcpy(matrix->data().data(), &m.data()[position],
 			matrix->size() * sizeof(float));		

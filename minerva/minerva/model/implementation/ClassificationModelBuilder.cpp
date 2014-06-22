@@ -31,7 +31,7 @@ static void initializeModelFromSpecification(ClassificationModel* model, const s
 	
 	modelSpecification.parseSpecification(specification);
 	
-	modelSpecification.initializeModel(model);
+	modelSpecification.initializeModel(*model);
 }
 
 static void buildConvolutionalFastModel(ClassificationModel* model, size_t outputs)

@@ -4,8 +4,6 @@
 	\brief  The header file for the GPULBFGSSolver class.
 */
 
-#pragma once
-
 // Minvera Includes
 #include <minerva/optimizer/interface/GPULBFGSSolver.h>
 

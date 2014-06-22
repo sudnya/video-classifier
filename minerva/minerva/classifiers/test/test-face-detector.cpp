@@ -233,7 +233,7 @@ int main(int argc, char** argv)
         "Seed with time.");
     parser.parse("-n", "--network-size", networkSize, 16,
         "The number of inputs to the network.");
-    parser.parse("-e", "--epsilon", epsilon, 1.0f,
+    parser.parse("-e", "--epsilon", epsilon, 6.0f,
         "Range to intiialize the network with.");
     parser.parse("-v", "--verbose", verbose, false,
         "Print out log messages during execution");

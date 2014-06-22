@@ -50,7 +50,8 @@ Value* NaiveBlockSparseMatrix::multiply(const Value* matrix) const
 		<< " does not match right rows " << m->rows());
 
 	auto resultBlock = result->begin();
-	for(auto left = begin(), right = m->begin(); left != end(); ++left, ++right, ++resultBlock)
+	for(auto left = begin(), right = m->begin(); left != end();
+		++left, ++right, ++resultBlock)
 	{
 		*resultBlock = std::move(left->multiply(*right));
 	}
@@ -66,7 +67,8 @@ static void zeroExtendColumns(Matrix& m, size_t columns)
 	}
 }
 
-Value* NaiveBlockSparseMatrix::convolutionalMultiply(const Value* matrix, size_t step) const
+Value* NaiveBlockSparseMatrix::convolutionalMultiply(const Value* matrix,
+	size_t step) const
 {
 	// Just multiply if there is a 1 to 1 match between blocks
 	if(matrix->rowsPerBlock() == step && matrix->blocks() == blocks())
@@ -623,7 +625,8 @@ Value* NaiveBlockSparseMatrix::reduceSumAlongRows() const
 
 }
 
-static Matrix extractBlockByRow(const NaiveBlockSparseMatrix& matrix, size_t block, size_t row, size_t rows)
+static Matrix extractBlockByRow(const NaiveBlockSparseMatrix& matrix,
+	size_t block, size_t row, size_t rows)
 {
 	Matrix result;
 	
@@ -639,13 +642,15 @@ static Matrix extractBlockByRow(const NaiveBlockSparseMatrix& matrix, size_t blo
 
 		assert(remainingRows < matrix.rowsPerBlock());
 		
-		result = result.appendRows(matrix[block].slice(row, 0, remainingRows, matrix.columnsPerBlock()));
+		result = result.appendRows(matrix[block].slice(row, 0, remainingRows,
+			matrix.columnsPerBlock()));
 	}
 
 	return result;
 }
 
-Value* NaiveBlockSparseMatrix::reduceTileSumAlongRows(size_t rowsPerTile, size_t blocks) const
+Value* NaiveBlockSparseMatrix::reduceTileSumAlongRows(size_t rowsPerTile,
+	size_t blocks) const
 {
 	auto result = new NaiveBlockSparseMatrix(isRowSparse());
 
@@ -662,7 +667,8 @@ Value* NaiveBlockSparseMatrix::reduceTileSumAlongRows(size_t rowsPerTile, size_t
 			
 			if(result->empty())
 			{
-				for(size_t currentRow = row; currentRow < endingRow; currentRow += rowsPerTile)
+				for(size_t currentRow = row; currentRow < endingRow;
+					currentRow += rowsPerTile)
 				{
 					size_t block       = currentRow / this->rowsPerBlock();
 					size_t blockOffset = currentRow % this->rowsPerBlock();
@@ -677,31 +683,36 @@ Value* NaiveBlockSparseMatrix::reduceTileSumAlongRows(size_t rowsPerTile, size_t
 					{
 						size_t rows = std::min(rowsPerTile, endingRow - currentRow);
 
-						result->push_back((*this)[block].slice(0, 0, rows, columnsPerBlock()));
+						result->push_back((*this)[block].slice(
+							0, 0, rows, columnsPerBlock()));
 					}
 				}
 			}
 			else
 			{
-				for(size_t currentRow = row; currentRow < endingRow; currentRow += rowsPerTile)
+				for(size_t currentRow = row; currentRow < endingRow;
+					currentRow += rowsPerTile)
 				{
 					size_t block       = currentRow / this->rowsPerBlock();
 					size_t blockOffset = currentRow % this->rowsPerBlock();
 
-					size_t resultBlock = (currentRow / rowsPerBlock()) % result->blocks();
+					size_t resultBlock =
+						(currentRow / rowsPerBlock()) % result->blocks();
 					
 					assert(resultBlock < result->blocks());
 					assert(block < this->blocks());
 
 					if(blockOffset == 0 && this->rowsPerBlock() == rowsPerTile)
 					{
-						(*result)[resultBlock] = (*result)[resultBlock].add((*this)[block]);
+						(*result)[resultBlock] = (*result)[resultBlock].add(
+							(*this)[block]);
 					}
 					else
 					{
 						size_t rows = std::min(rowsPerTile, endingRow - currentRow);
 
-						(*result)[resultBlock] = (*result)[resultBlock].add(extractBlockByRow(*this, block, blockOffset, rows));
+						(*result)[resultBlock] = (*result)[resultBlock].add(
+							extractBlockByRow(*this, block, blockOffset, rows));
 					}
 				}
 			}

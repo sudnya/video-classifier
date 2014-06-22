@@ -181,8 +181,6 @@ static NeuralNetwork createNetworkFromWeights(
 		newNetwork.addLayer(Layer(layer.blocks(),
 			layer.getInputBlockingFactor(), layer.getOutputBlockingFactor(),
 			layer.blockStep()));
-		
-		newNetwork.back().setBias(layer.getBias());
 	}
 	
 	newNetwork.setLabelsForOutputNeurons(*neuralNetwork);
@@ -195,6 +193,8 @@ static NeuralNetwork createNetworkFromWeights(
 	const NeuralNetwork* neuralNetwork, const MatrixVector& weights)
 {
 	NeuralNetwork newNetwork;
+	
+	assert(weights.size() == 2 * neuralNetwork->size());
 
 	auto weight = weights.begin();	
 	for(auto& layer : *neuralNetwork)
@@ -203,9 +203,10 @@ static NeuralNetwork createNetworkFromWeights(
 			layer.getInputBlockingFactor(), layer.getOutputBlockingFactor(),
 			layer.blockStep()));
 		
-		newNetwork.back().setBias(layer.getBias());
 		newNetwork.back().setWeightsWithoutBias(*weight);
-
+		++weight;
+		
+		newNetwork.back().setBias(*weight);
 		++weight;
 	}
 	
@@ -227,6 +228,8 @@ SparseMatrixVectorFormat BackPropagation::getWeightFormat() const
 	{
 		format.push_back(SparseMatrixFormat(layer.blocks(), layer.getInputBlockingFactor(),
 			layer.getOutputBlockingFactor()));
+		format.push_back(SparseMatrixFormat(layer.blocks(), 1,
+			layer.getOutputBlockingFactor()));
 	}
 	
 	return format;
@@ -247,11 +250,12 @@ MatrixVector BackPropagation::getWeights() const
 {
 	MatrixVector weights;
 	
-	weights.reserve(getNeuralNetwork()->size());
+	weights.reserve(2 * getNeuralNetwork()->size());
 	
 	for(auto& layer : *getNeuralNetwork())
 	{
 		weights.push_back(layer.getWeightsWithoutBias());
+		weights.push_back(layer.getBias());
 	}
 	
 	return weights;
@@ -259,12 +263,14 @@ MatrixVector BackPropagation::getWeights() const
 
 void BackPropagation::setWeights(const MatrixVector& weights)
 {
-	assert(weights.size() == getNeuralNetwork()->size());
+	assert(weights.size() == (2 * getNeuralNetwork()->size()));
 	
 	auto weight = weights.begin();
 	for(auto layer = getNeuralNetwork()->begin(); layer != getNeuralNetwork()->end(); ++layer, ++weight)
 	{
 		layer->setWeightsWithoutBias(*weight);
+		++weight;
+		layer->setBias(*weight);
 	}
 }
 

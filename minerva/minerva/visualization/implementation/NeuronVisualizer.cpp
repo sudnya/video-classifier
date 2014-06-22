@@ -135,12 +135,18 @@ static NeuralNetwork extractTileFromNetwork(const NeuralNetwork& network,
 {
 	// Get the connected subgraph
 	auto newNetwork = network.getSubgraphConnectedToThisOutput(outputNeuron); 
-	
+
+	util::log("NeuronVisualizer")
+		<< "sliced out tile with shape: " << newNetwork.shapeString() << ".\n";
+		
 	// Remove all other connections from the final layer
-	size_t block  = outputNeuron / newNetwork.getOutputBlockingFactor();
-	size_t offset = outputNeuron % newNetwork.getOutputBlockingFactor();	
+	#if 1
+	size_t block  = (outputNeuron % newNetwork.getOutputNeurons()) / newNetwork.getOutputBlockingFactor();
+	size_t offset = (outputNeuron % newNetwork.getOutputNeurons()) % newNetwork.getOutputBlockingFactor();	
 
 	auto& outputLayer = newNetwork.back();
+	
+	assert(block < outputLayer.blocks());
 	
 	Matrix weights = outputLayer[block].slice(0, offset, outputLayer.getInputBlockingFactor(), 1);
 	Matrix bias    = outputLayer.at_bias(block).slice(0, offset, 1, 1);
@@ -149,7 +155,10 @@ static NeuralNetwork extractTileFromNetwork(const NeuralNetwork& network,
 	
 	outputLayer[0]         = weights;
 	outputLayer.at_bias(0) = bias;
-	
+
+	util::log("NeuronVisualizer")
+		<< " trimmed to: " << newNetwork.shapeString() << ".\n";
+	#endif
 	return newNetwork;
 }
 
@@ -340,7 +349,7 @@ static Matrix generateReferenceForNeuron(const NeuralNetwork* network,
 {
 	Matrix reference(1, network->getOutputCount());
 	
-	reference(0, 0) = 1.0f;
+	reference(0, 0) = 0.9f;
 	
 	return reference;
 }

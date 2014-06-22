@@ -36,7 +36,7 @@ public:
 
 public:
 	void setTile(size_t x, size_t y, const Image& image);
-	Image getTile(size_t x, size_t y, size_t xPixels, size_t yPixels) const;
+	Image getTile(size_t x, size_t y, size_t xPixels, size_t yPixels, size_t colors) const;
 
 public:
 	size_t x() const;

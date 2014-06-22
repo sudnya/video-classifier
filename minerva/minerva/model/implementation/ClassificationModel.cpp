@@ -25,13 +25,13 @@ namespace model
 {
 
 ClassificationModel::ClassificationModel(const std::string& path)
-: _path(path), _loaded(false)
+: _path(path), _loaded(false), _xPixels(0), _yPixels(0), _colors(3)
 {
 
 }
 
 ClassificationModel::ClassificationModel()
-: _path("unknown-path"), _loaded(true)
+: _path("unknown-path"), _loaded(true), _xPixels(0), _yPixels(0), _colors(3)
 {
 
 }

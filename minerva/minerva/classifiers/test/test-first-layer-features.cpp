@@ -56,7 +56,7 @@ public:
 
 public:
 	Parameters()
-	: blockX(8), blockY(8), blockStep(4)
+	: blockX(8), blockY(8), blockStep(1)
 	{
 		
 	}
@@ -71,7 +71,8 @@ static void createModel(ClassificationModel& model, const Parameters& parameters
 	size_t totalPixels = parameters.xPixels * parameters.yPixels * parameters.colors;
 
 	// derive parameters from image dimensions 
-	const size_t blockSize = std::min(parameters.xPixels, parameters.blockX) * std::min(parameters.yPixels, parameters.blockY) * parameters.colors;
+	const size_t blockSize = std::min(parameters.xPixels, parameters.blockX) *
+		std::min(parameters.yPixels, parameters.blockY) * parameters.colors;
 	const size_t blocks    = totalPixels / blockSize;
 	const size_t blockStep = blockSize / parameters.blockStep;
 
@@ -169,7 +170,7 @@ int main(int argc, char** argv)
 		"visualization/first-layer-neurons.jpg",
         "The output path to generate visualization results.");
 
-    parser.parse("", "--iterations", parameters.trainingIterations, 3,
+    parser.parse("-I", "--iterations", parameters.trainingIterations, 3,
         "The number of iterations to train the network for.");
     parser.parse("-b", "--batch-size", parameters.batchSize, 100,
         "The number of images to use for each iteration.");

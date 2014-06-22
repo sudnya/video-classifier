@@ -90,6 +90,7 @@ public:
 	Matrix subtract(float f) const;
 
 	Matrix log() const;
+	Matrix sqrt() const;
 	Matrix abs() const;
 	Matrix negate() const;
 	Matrix sigmoid() const;
@@ -110,8 +111,8 @@ public:
     void sigmoidDerivativeSelf();
     void klDivergenceSelf(float sparsity);
     void klDivergenceDerivativeSelf(float sparsity);
-	void minSelf(float sparsity);
-	void maxSelf(float sparsity);
+	void minSelf(float f);
+	void maxSelf(float f);
 
 	void transposeSelf();
 

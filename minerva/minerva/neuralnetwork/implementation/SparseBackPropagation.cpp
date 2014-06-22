@@ -72,7 +72,8 @@ static float computeCostForNetwork(const NeuralNetwork& network, const BlockSpar
 	//		   regularization term lambda/2m sum over l,i,j (theta[i,j])^2
 	// J = (1/m) .* sum(sum(-yOneHot .* log(hx) - (1 - yOneHot) .* log(1 - hx)));
 
-	const float epsilon = 1.0e-6f;
+	#if USE_LOGISTIC_COST_FUNCTION
+	const float epsilon = 1.0e-40f;
 
 	unsigned m = input.rows();
 
@@ -88,15 +89,35 @@ static float computeCostForNetwork(const NeuralNetwork& network, const BlockSpar
 
 	auto sum = yTemp.add(yMinusOneTemp);
 
-	float costSum = sum.reduceSum() * -1.0f / m;
+	float costSum = sum.reduceSum() * -0.5f / m;
+	#else
+
+	unsigned m = input.rows();
+
+	auto hx = network.runInputs(input);
+
+	auto errors = hx.subtract(referenceOutput);
+	auto squaredErrors = errors.elementMultiply(errors);
+
+	float sumOfSquaredErrors = squaredErrors.reduceSum();
+	
+	float costSum = sumOfSquaredErrors * 1.0f / (2.0f * m);
+
+	#endif
 
 	if(lambda > 0.0f)
 	{
+		float regularizationCost = 0.0f;
+
 		for(auto& layer : network)
 		{
-			costSum += (lambda / (2.0f * m)) * ((layer.getWeightsWithoutBias().elementMultiply(
+			regularizationCost += ((layer.getWeightsWithoutBias().elementMultiply(
 				layer.getWeightsWithoutBias())).reduceSum());
 		}
+		
+		regularizationCost *= lambda / 2.0f;
+		
+		costSum += regularizationCost;
 	}
 
 	if(sparsityWeight > 0.0f)
@@ -107,6 +128,33 @@ static float computeCostForNetwork(const NeuralNetwork& network, const BlockSpar
 	return costSum;
 }
 
+static MatrixVector getActivations(const NeuralNetwork& network, const BlockSparseMatrix& input) 
+{
+	MatrixVector activations;
+
+	activations.reserve(network.size() + 1);
+
+	auto temp = input;
+
+	activations.push_back(temp);
+	//util::log("SparseBackPropagation") << " added activation of size ( " << activations.back().rows()
+	// << " ) rows and ( " << activations.back().columns() << " )\n" ;
+
+	for (auto i = network.begin(); i != network.end(); ++i)
+	{
+		network.formatInputForLayer(*i, activations.back());
+	
+		activations.push_back((*i).runInputs(activations.back()));
+		util::log("SparseBackPropagation::Detail") << " added activation of size ( " << activations.back().rows()
+		<< " ) rows and ( " << activations.back().columns() << " )\n" ;
+	}
+
+	//util::log("SparseBackPropagation") << " intermediate stage ( " << activations[activations.size() / 2].toString() << "\n";
+	//util::log("SparseBackPropagation") << " final output ( " << activations.back().toString() << "\n";
+
+	return activations;
+}
+
 static MatrixVector getDeltas(const NeuralNetwork& network, const MatrixVector& activations, const BlockSparseMatrix& reference,
 	float sparsity, float sparsityWeight)
 {
@@ -115,7 +163,7 @@ static MatrixVector getDeltas(const NeuralNetwork& network, const MatrixVector& 
 	deltas.reserve(activations.size() - 1);
 	
 	auto i = activations.rbegin();
-	auto delta = (*i).subtract(reference);
+	auto delta = (*i).subtract(reference).elementMultiply(i->sigmoidDerivative());
 	++i;
 
 	while (i != activations.rend())
@@ -127,19 +175,19 @@ static MatrixVector getDeltas(const NeuralNetwork& network, const MatrixVector& 
 		auto& layer = network[layerNumber];
 		auto& activation = *i;		
 
-		size_t samples = i->rows();
-
 		network.formatOutputForLayer(layer, deltas.back());
 
 		auto activationDerivativeOfCurrentLayer = activation.sigmoidDerivative();
 		auto deltaPropagatedReverse = layer.runReverse(deltas.back());
 		
 		// add in the sparsity term
+		size_t samples = activation.rows();
+		
 		auto klDivergenceDerivative = activation.reduceSumAlongRows().multiply(1.0f/samples).klDivergenceDerivative(sparsity);
 
 		auto sparsityTerm = klDivergenceDerivative.multiply(sparsityWeight);
 	   
-		delta = deltaPropagatedReverse.elementMultiply(activationDerivativeOfCurrentLayer).addBroadcastRow(sparsityTerm);
+		delta = deltaPropagatedReverse.addBroadcastRow(sparsityTerm).elementMultiply(activationDerivativeOfCurrentLayer);
 
 		++i; 
 	}
@@ -158,32 +206,107 @@ static MatrixVector getDeltas(const NeuralNetwork& network, const MatrixVector& 
 	return deltas;
 }
 
+static void coalesceNeuronOutputs(BlockSparseMatrix& derivative, const BlockSparseMatrix& skeleton)
+{
+	if(derivative.rowsPerBlock() == skeleton.columnsPerBlock() && derivative.blocks() == skeleton.blocks()) return;
+	
+	// Must be evenly divisible
+	assert(derivative.rows() % skeleton.columns() == 0);
+	assert(derivative.columns() == skeleton.rowsPerBlock());
+	
+	// Add the rows together in a block-cyclic fasion
+	derivative = derivative.reduceTileSumAlongRows(skeleton.columnsPerBlock(),
+		skeleton.blocks());
+}
+
+static MatrixVector computeCostDerivative(const NeuralNetwork& network, const BlockSparseMatrix& input,
+	const BlockSparseMatrix& referenceOutput, float lambda, float sparsity, float sparsityWeight)
+{
+	//get activations in a vector
+	auto activations = getActivations(network, input);
+	//get deltas in a vector
+	auto deltas = getDeltas(network, activations, referenceOutput, sparsity, sparsityWeight);
+	
+	MatrixVector partialDerivative;
+	
+	partialDerivative.reserve(2 * deltas.size());
+	
+	unsigned int samples = input.rows();
+
+	//derivative of layer = activation[i] * delta[i+1] - for some layer i
+	auto layer = network.begin();
+	for (auto i = deltas.begin(), j = activations.begin(); i != deltas.end() && j != activations.end(); ++i, ++j, ++layer)
+	{
+		auto& activation = *j;
+		auto& delta      = *i;
+
+		auto  transposedDelta = delta.transpose();
+
+		transposedDelta.setRowSparse();
+
+		// there will be one less delta than activation
+		auto unnormalizedPartialDerivative = (transposedDelta.reverseConvolutionalMultiply(activation));
+		auto normalizedPartialDerivative = unnormalizedPartialDerivative.multiply(1.0f/samples);
+		
+		// add in the regularization term
+		auto weights = layer->getWeightsWithoutBias();
+		
+		auto lambdaTerm = weights.multiply(lambda);
+		
+		// Account for cases where the same neuron produced multiple outputs
+		//  or not enough inputs existed
+		coalesceNeuronOutputs(normalizedPartialDerivative, lambdaTerm);
+		
+		auto regularizedPartialDerivative = lambdaTerm.add(normalizedPartialDerivative.transpose());
+		
+		partialDerivative.push_back(std::move(regularizedPartialDerivative));
+	
+		util::log("SparseBackPropagation") << " computed derivative for layer "
+			<< std::distance(deltas.begin(), i)
+			<< " (" << partialDerivative.back().rows()
+			<< " rows, " << partialDerivative.back().columns() << " columns).\n";
+		util::log("SparseBackPropagation") << " PD contains " << partialDerivative.back().toString() << "\n";
+		
+		// Compute partial derivatives with respect to the bias
+		auto normalizedBiasPartialDerivative = transposedDelta.reduceSumAlongColumns().multiply(1.0f/samples);
+		
+		coalesceNeuronOutputs(normalizedBiasPartialDerivative, layer->getBias());
+		
+		partialDerivative.push_back(std::move(normalizedBiasPartialDerivative.transpose()));
+	
+	}//this loop ends after all activations are done. and we don't need the last delta (ref-output anyway)
+	
+	return partialDerivative;
+}
+
 static BlockSparseMatrix getInputDelta(const NeuralNetwork& network, const MatrixVector& activations,
 	const BlockSparseMatrix& reference, float sparsity, float sparsityWeight)
 {
 	auto i = activations.rbegin();
-	auto delta = (*i).subtract(reference);
+	auto delta = (*i).subtract(reference).elementMultiply(i->sigmoidDerivative());
 	++i;
 
 	while (i + 1 != activations.rend())
 	{
 		unsigned int layerNumber = std::distance(activations.begin(), --(i.base()));
 		auto& layer = network[layerNumber];
-
+		auto& activation = *i;		
+		
 		network.formatOutputForLayer(layer, delta);
 
-		size_t samples = i->rows();
-
-		auto activationDerivativeOfCurrentLayer = i->sigmoidDerivative();
+		auto activationDerivativeOfCurrentLayer = activation.sigmoidDerivative();
 		auto deltaPropagatedReverse = layer.runReverse(delta);
-
+		
 		// add in the sparsity term
-		auto klDivergenceDerivative = i->reduceSumAlongRows().multiply(1.0f/samples).klDivergenceDerivative(sparsity);
+		size_t samples = activation.rows();
+		
+		auto klDivergenceDerivative = activation.reduceSumAlongRows().multiply(1.0f/samples).klDivergenceDerivative(sparsity);
 
 		auto sparsityTerm = klDivergenceDerivative.multiply(sparsityWeight);
+	   
+		delta = deltaPropagatedReverse.addBroadcastRow(sparsityTerm).elementMultiply(activationDerivativeOfCurrentLayer);
 
 		util::log ("SparseBackPropagation") << " Computing input delta for layer number: " << layerNumber << "\n";
-		delta = deltaPropagatedReverse.elementMultiply(activationDerivativeOfCurrentLayer).addBroadcastRow(sparsityTerm);
 
 		++i; 
 	}
@@ -216,8 +339,10 @@ static float getActivationSparsityCost(const NeuralNetwork& network, const Block
 		network.formatInputForLayer(layer, temp);
 		
 		temp = layer.runInputs(temp);
+		
+		size_t samples = temp.rows();
 	
-		auto averageActivations = temp.reduceSumAlongRows().multiply(1.0f/temp.rows());
+		auto averageActivations = temp.reduceSumAlongRows().multiply(1.0f/samples);
 
 		// Get the KL divergence of each activation
 		auto klDivergence = averageActivations.klDivergence(sparsity);
@@ -237,98 +362,6 @@ static float getActivationSparsityCost(const NeuralNetwork& network, const Block
 	}
 	
 	return cost;
-}
-
-static MatrixVector getActivations(const NeuralNetwork& network, const BlockSparseMatrix& input) 
-{
-	MatrixVector activations;
-
-	activations.reserve(network.size() + 1);
-
-	auto temp = input;
-
-	activations.push_back(temp);
-	//util::log("SparseBackPropagation") << " added activation of size ( " << activations.back().rows()
-	// << " ) rows and ( " << activations.back().columns() << " )\n" ;
-
-	for (auto i = network.begin(); i != network.end(); ++i)
-	{
-		network.formatInputForLayer(*i, activations.back());
-	
-		activations.push_back((*i).runInputs(activations.back()));
-		//util::log("SparseBackPropagation") << " added activation of size ( " << activations.back().rows()
-		//<< " ) rows and ( " << activations.back().columns() << " )\n" ;
-	}
-
-	//util::log("SparseBackPropagation") << " intermediate stage ( " << activations[activations.size() / 2].toString() << "\n";
-	//util::log("SparseBackPropagation") << " final output ( " << activations.back().toString() << "\n";
-
-	return activations;
-}
-
-static void coalesceNeuronOutputs(BlockSparseMatrix& derivative, const BlockSparseMatrix& skeleton)
-{
-	if(derivative.rowsPerBlock() == skeleton.columnsPerBlock() && derivative.blocks() == skeleton.blocks()) return;
-	
-	// Must be evenly divisible
-	assert(derivative.rows() % skeleton.columns() == 0);
-	assert(derivative.columns() == skeleton.rowsPerBlock());
-	
-	// Add the rows together in a block-cyclic fasion
-	derivative = derivative.reduceTileSumAlongRows(skeleton.columns(), skeleton.blocks());
-}
-
-static MatrixVector computeCostDerivative(const NeuralNetwork& network, const BlockSparseMatrix& input,
-	const BlockSparseMatrix& referenceOutput, float lambda, float sparsity, float sparsityWeight)
-{
-	//get activations in a vector
-	auto activations = getActivations(network, input);
-	//get deltas in a vector
-	auto deltas = getDeltas(network, activations, referenceOutput, sparsity, sparsityWeight);
-	
-	MatrixVector partialDerivative;
-	
-	partialDerivative.reserve(deltas.size());
-	
-	unsigned int samples = input.rows();
-
-	//derivative of layer = activation[i] * delta[i+1] - for some layer i
-	auto layer = network.begin();
-	for (auto i = deltas.begin(), j = activations.begin(); i != deltas.end() && j != activations.end(); ++i, ++j, ++layer)
-	{
-		auto& activation = *j;
-		auto& delta      = *i;
-
-		auto  transposedDelta = delta.transpose();
-
-		transposedDelta.setRowSparse();
-
-		// there will be one less delta than activation
-		auto unnormalizedPartialDerivative = (transposedDelta.reverseConvolutionalMultiply(activation));
-		auto normalizedPartialDerivative = unnormalizedPartialDerivative.multiply(1.0f/samples);
-		
-		// add in the regularization term
-		auto weights = layer->getWeightsWithoutBias();
-		
-		auto lambdaTerm = weights.multiply(lambda/samples);
-		
-		// Account for cases where the same neuron produced multiple outputs
-		//  or not enough inputs existed
-		coalesceNeuronOutputs(normalizedPartialDerivative, lambdaTerm);
-		
-		auto regularizedPartialDerivative = lambdaTerm.add(normalizedPartialDerivative.transpose());
-		
-		partialDerivative.push_back(std::move(regularizedPartialDerivative));
-	
-		util::log("SparseBackPropagation") << " computed derivative for layer "
-			<< std::distance(deltas.begin(), i)
-			<< " (" << partialDerivative.back().rows()
-			<< " rows, " << partialDerivative.back().columns() << " columns).\n";
-		util::log("SparseBackPropagation") << " PD contains " << partialDerivative.back().toString() << "\n";
-	
-	}//this loop ends after all activations are done. and we don't need the last delta (ref-output anyway)
-	
-	return partialDerivative;
 }
 
 static BlockSparseMatrix computeInputDerivative(const NeuralNetwork& network,

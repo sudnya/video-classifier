@@ -42,8 +42,8 @@ class NeuralNetwork
 		NeuralNetwork();
 
 	public:
-		void initializeRandomly(std::default_random_engine& engine, float epsilon = 6.0f);
-		void initializeRandomly(float epsilon = 6.0f);
+		void initializeRandomly(std::default_random_engine& engine, float epsilon = 3.0f);
+		void initializeRandomly(float epsilon = 3.0f);
 		
 		void train(const Matrix& input, const Matrix& reference);
 		void train(Matrix&& input, Matrix&& reference);

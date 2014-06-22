@@ -62,9 +62,9 @@ void Image::setTile(size_t xStart, size_t yStart, const Image& image)
 	}
 }
 
-Image Image::getTile(size_t xStart, size_t yStart, size_t xPixels, size_t yPixels) const
+Image Image::getTile(size_t xStart, size_t yStart, size_t xPixels, size_t yPixels, size_t colors) const
 {
-	Image result(xPixels, yPixels, colorComponents(), pixelSize(), path(), label());
+	Image result(xPixels, yPixels, colors, pixelSize(), path(), label());
 	
 	// TODO faster
 
@@ -72,9 +72,11 @@ Image Image::getTile(size_t xStart, size_t yStart, size_t xPixels, size_t yPixel
 	{
 		for(size_t x = 0; x < xPixels; ++x)
 		{
-			for(size_t c = 0; c < colorComponents(); ++c)
+			for(size_t c = 0; c < colors; ++c)
 			{
-				result.setComponentAt(x, y, c, getComponentAt(x + xStart, y + yStart, c));
+				size_t color = c % colorComponents();
+				
+				result.setComponentAt(x, y, c, getComponentAt(x + xStart, y + yStart, color));
 			}
 		}
 	}
@@ -248,7 +250,8 @@ matrix::Matrix Image::convertToStandardizedMatrix(size_t sampleCount, size_t xTi
 	return matrix::Matrix(1, sampleCount, samples);
 }
 
-Image::FloatVector Image::getSampledData(size_t sampleCount, size_t xTileSize, size_t yTileSize) const
+Image::FloatVector Image::getSampledData(size_t sampleCount,
+	size_t xTileSize, size_t yTileSize) const
 {
 	FloatVector samples;
 
@@ -280,7 +283,8 @@ Image::FloatVector Image::getSampledData(size_t sampleCount, size_t xTileSize, s
 	return samples;
 }
 
-void Image::updateImageFromSamples(const FloatVector& samples, size_t xTileSize, size_t yTileSize)
+void Image::updateImageFromSamples(const FloatVector& samples,
+	size_t xTileSize, size_t yTileSize)
 {
 	// nearest neighbor sampling
 	for(size_t y = 0; y < this->y(); ++y)
