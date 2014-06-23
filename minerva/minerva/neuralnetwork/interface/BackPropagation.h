@@ -41,6 +41,7 @@ public:
 	MatrixVector computeCostDerivative() const;
 	BlockSparseMatrix computeInputDerivative() const;
 	float computeCost() const;
+	float computeInputCost() const;
 	float computeAccuracy() const;
 
 public:
@@ -92,6 +93,7 @@ protected:
 	virtual MatrixVector getCostDerivative(const NeuralNetwork&, const BlockSparseMatrix&, const BlockSparseMatrix& ) const = 0;
 	virtual BlockSparseMatrix getInputDerivative(const NeuralNetwork&, const BlockSparseMatrix&, const BlockSparseMatrix&) const = 0;
 	virtual float getCost(const NeuralNetwork&, const BlockSparseMatrix&, const BlockSparseMatrix&) const = 0;
+	virtual float getInputCost(const NeuralNetwork&, const BlockSparseMatrix&, const BlockSparseMatrix&) const = 0;
 
 protected:
 	NeuralNetwork*     _neuralNetworkPtr;

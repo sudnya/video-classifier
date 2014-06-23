@@ -51,7 +51,6 @@ static void createModel(ClassificationModel& model)
 		"					\"outputsPerTile\" : 25,\n"
 		"					\"tileSpacing\" : 64\n"
 		"				}\n"
-		"				}\n"
 		"			],\n"
 		"			\n"
 		"			\"costFunction\" : \"sparse\"\n"

@@ -357,8 +357,8 @@ static Matrix generateReferenceForNeuron(const NeuralNetwork* network,
 static void addConstraints(optimizer::GeneralDifferentiableSolver* solver)
 {
 	// constrain values between 0.0f and 255.0f
-	solver->addConstraint(ConstantConstraint(-1.0f));
-	solver->addConstraint(ConstantConstraint(1.0f, ConstantConstraint::GreaterThanOrEqual));
+	solver->addConstraint(ConstantConstraint(1.0f));
+	solver->addConstraint(ConstantConstraint(-1.0f, ConstantConstraint::GreaterThanOrEqual));
 }
 
 static Matrix optimizeWithDerivative(float& bestCost, const NeuralNetwork* network,
@@ -374,7 +374,7 @@ static Matrix optimizeWithDerivative(float& bestCost, const NeuralNetwork* netwo
 	data->setReferenceOutput(&reference);
 	
 	auto bestSoFar = input;
-	     bestCost  = data->computeCost();
+	     bestCost  = data->computeInputCost();
 	
 	std::string solverType = util::KnobDatabase::getKnobValue(
 		"NeuronVisualizer::SolverType", "GradientDescentSolver");

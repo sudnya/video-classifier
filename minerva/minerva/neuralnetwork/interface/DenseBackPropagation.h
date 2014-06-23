@@ -24,6 +24,7 @@ private:
 	virtual MatrixVector getCostDerivative(const NeuralNetwork&, const BlockSparseMatrix&, const BlockSparseMatrix& ) const;
 	virtual BlockSparseMatrix getInputDerivative(const NeuralNetwork&, const BlockSparseMatrix&, const BlockSparseMatrix&) const;
 	virtual float getCost(const NeuralNetwork&, const BlockSparseMatrix&, const BlockSparseMatrix&) const;
+	virtual float getInputCost(const NeuralNetwork&, const BlockSparseMatrix&, const BlockSparseMatrix&) const;
 
 private:
 	bool testDerivative();

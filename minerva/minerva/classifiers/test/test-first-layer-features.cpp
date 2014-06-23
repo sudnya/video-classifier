@@ -82,15 +82,15 @@ static void createModel(ClassificationModel& model, const Parameters& parameters
 	featureSelector.addLayer(Layer(blocks, blockSize, blockSize / reductionFactor, blockStep));
 	
 	// pooling layer
-	//featureSelector.addLayer(
-	//	Layer(1,
-	//		featureSelector.back().getOutputBlockingFactor() * blocks,
-	//		featureSelector.back().getOutputBlockingFactor() / 2));
+	featureSelector.addLayer(
+		Layer(1,
+			blocks * featureSelector.back().getOutputBlockingFactor(),
+			blocks * featureSelector.back().getOutputBlockingFactor()));
 	
 	// contrast normalization
-	//featureSelector.addLayer(Layer(featureSelector.back().blocks(),
-	//	featureSelector.back().getOutputBlockingFactor(),
-	//	featureSelector.back().getOutputBlockingFactor()));
+	featureSelector.addLayer(Layer(featureSelector.back().blocks(),
+		featureSelector.back().getOutputBlockingFactor(),
+		featureSelector.back().getOutputBlockingFactor()));
 
 	featureSelector.initializeRandomly(engine);
 	minerva::util::log("TestFirstLayerFeatures")
@@ -113,7 +113,7 @@ static void trainNetwork(ClassificationModel& model, const Parameters& parameter
 	unsupervisedLearnerEngine->setMultipleSamplesAllowed(true);
 	unsupervisedLearnerEngine->setModel(&model);
 	unsupervisedLearnerEngine->setBatchSize(parameters.batchSize);
-	unsupervisedLearnerEngine->setLayersPerIteration(3);
+	unsupervisedLearnerEngine->setLayersPerIteration(1);
 
 	// read from database and use model to train
     unsupervisedLearnerEngine->runOnDatabaseFile(parameters.inputPath);

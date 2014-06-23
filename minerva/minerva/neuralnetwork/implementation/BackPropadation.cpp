@@ -58,6 +58,11 @@ float BackPropagation::computeCost() const
 	return getCost(*getNeuralNetwork(), *getInput(), *getReferenceOutput());
 }
 
+float BackPropagation::computeInputCost() const
+{
+	return getInputCost(*getNeuralNetwork(), *getInput(), *getReferenceOutput());
+}
+
 float BackPropagation::computeAccuracy() const
 {
 	return getNeuralNetwork()->computeAccuracy(*getInput(), *getReferenceOutput());
@@ -283,7 +288,7 @@ float BackPropagation::computeCostForNewWeights(const MatrixVector& weights) con
 
 float BackPropagation::computeCostForNewInputs(const MatrixVector& inputs) const
 {
-	return getCost(*getNeuralNetwork(), inputs[0], *getReferenceOutput());
+	return getInputCost(*getNeuralNetwork(), inputs[0], *getReferenceOutput());
 }
 
 float BackPropagation::computeAccuracyForNewWeights(const MatrixVector& weights) const
@@ -314,7 +319,7 @@ float BackPropagation::computeCostForNewFlattenedWeights(const Matrix& weights) 
 
 float BackPropagation::computeCostForNewFlattenedInputs(const Matrix& inputs) const
 {
-	return getCost(*getNeuralNetwork(),
+	return getInputCost(*getNeuralNetwork(),
 		getNeuralNetwork()->convertToBlockSparseForLayerInput(getNeuralNetwork()->front(), inputs),
 		*getReferenceOutput());
 }

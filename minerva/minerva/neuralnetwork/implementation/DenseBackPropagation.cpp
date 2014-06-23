@@ -193,6 +193,12 @@ float DenseBackPropagation::getCost(const NeuralNetwork& network, const BlockSpa
 	return computeCostForNetwork(network, input, reference, _lambda);
 }
 
+float DenseBackPropagation::getInputCost(const NeuralNetwork& network, const BlockSparseMatrix& input,
+	const BlockSparseMatrix& reference) const
+{
+	return computeCostForNetwork(network, input, reference, 0.0f);
+}
+
 MatrixVector DenseBackPropagation::getDeltas(const NeuralNetwork& network, const MatrixVector& activations) const
 {
 	MatrixVector deltas;
@@ -239,7 +245,7 @@ MatrixVector DenseBackPropagation::getDeltas(const NeuralNetwork& network, const
 BlockSparseMatrix DenseBackPropagation::getInputDelta(const NeuralNetwork& network, const MatrixVector& activations) const
 {
 	auto i = activations.rbegin();
-	auto delta = (*i).subtract(*_referenceOutput);
+	auto delta = (*i).subtract(*_referenceOutput).elementMultiply(i->sigmoidDerivative());
 	++i;
 
 	while (i + 1 != activations.rend())
@@ -271,11 +277,10 @@ BlockSparseMatrix DenseBackPropagation::getInputDelta(const NeuralNetwork& netwo
 
 	network.formatOutputForLayer(layer, delta);
 
-	auto activationDerivativeOfCurrentLayer = activations.front();
 	auto deltaPropagatedReverse = layer.runReverse(delta);
 
 	util::log ("DenseBackPropagation") << " Computing input delta for layer number: " << layerNumber << "\n";
-	delta = deltaPropagatedReverse;//deltaPropagatedReverse.elementMultiply(activationDerivativeOfCurrentLayer);
+	delta = deltaPropagatedReverse;
 	
 	if(util::isLogEnabled("DenseBackPropagation::Detail"))
 	{

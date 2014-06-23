@@ -65,6 +65,12 @@ float SparseBackPropagation::getCost(const NeuralNetwork& network,
 	return neuralnetwork::computeCostForNetwork(network, input, reference, _lambda, _sparsity, _sparsityWeight);
 }
 
+float SparseBackPropagation::getInputCost(const NeuralNetwork& network,
+	const BlockSparseMatrix& input, const BlockSparseMatrix& reference) const
+{
+	return neuralnetwork::computeCostForNetwork(network, input, reference, 0.0f, 0.0f, 0.0f);
+}
+
 static float computeCostForNetwork(const NeuralNetwork& network, const BlockSparseMatrix& input,
 	const BlockSparseMatrix& referenceOutput, float lambda, float sparsity, float sparsityWeight)
 {
@@ -297,14 +303,7 @@ static BlockSparseMatrix getInputDelta(const NeuralNetwork& network, const Matri
 		auto activationDerivativeOfCurrentLayer = activation.sigmoidDerivative();
 		auto deltaPropagatedReverse = layer.runReverse(delta);
 		
-		// add in the sparsity term
-		size_t samples = activation.rows();
-		
-		auto klDivergenceDerivative = activation.reduceSumAlongRows().multiply(1.0f/samples).klDivergenceDerivative(sparsity);
-
-		auto sparsityTerm = klDivergenceDerivative.multiply(sparsityWeight);
-	   
-		delta = deltaPropagatedReverse.addBroadcastRow(sparsityTerm).elementMultiply(activationDerivativeOfCurrentLayer);
+		delta = deltaPropagatedReverse.elementMultiply(activationDerivativeOfCurrentLayer);
 
 		util::log ("SparseBackPropagation") << " Computing input delta for layer number: " << layerNumber << "\n";
 
