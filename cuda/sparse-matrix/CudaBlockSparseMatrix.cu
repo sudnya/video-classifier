@@ -118,6 +118,17 @@ extern "C" __global__ void addFloat(float* result, float* input, float value, ui
 	}
 }
 
+extern "C" __global__ void copy(float* result, float* input, uint64_t size)
+{
+	uint64_t step  = blockDim.x * gridDim.x;
+	uint64_t start = blockIdx.x * blockDim.x + threadIdx.x;
+
+	for(uint64_t i = start; i < size; i += step)
+	{
+		result[i] = input[i];
+	}
+}
+
 extern "C" __global__ void subtract(float* result, float* left, float* right, uint64_t size)
 {
 	uint64_t step  = blockDim.x * gridDim.x;
@@ -311,6 +322,17 @@ extern "C" __global__ void maxSelf(float* result, float value, uint64_t size)
 	for(uint64_t i = start; i < size; i += step)
 	{
 		result[i] = max(value, result[i]);
+	}
+}
+
+extern "C" __global__ void assignSelf(float* result, float value, uint64_t size)
+{
+	uint64_t step  = blockDim.x * gridDim.x;
+	uint64_t start = blockIdx.x * blockDim.x + threadIdx.x;
+
+	for(uint64_t i = start; i < size; i += step)
+	{
+		result[i] = value;
 	}
 }
 
@@ -511,24 +533,29 @@ extern "C" __global__ void reduceSumAlongRowsColumnSparse(float* result, float* 
 extern "C" __global__ void reduceSumAlongColumnsRowSparse(float* result, float* input,
 	uint64_t blocks, uint64_t rows, uint64_t columns)
 {
-	uint64_t step  = blockDim.x * gridDim.x;
-	uint64_t start = blockIdx.x * blockDim.x + threadIdx.x;
+	uint64_t step  = gridDim.x;
+	uint64_t start = blockIdx.x;
 	
-	uint64_t totalSize = blocks * rows * columns;
+	uint64_t totalRows = blocks * rows;
 	
-	uint64_t chunkSize = align(step, columns);
-
-	for(uint64_t i = start; i < chunkSize && i < totalSize; i += step)
+	// over each row 
+	for(uint64_t row = start; row < totalRows; row += step)
 	{
-		float value = 0.0f;
-		uint64_t column = i % columns;		
-
-		for(uint64_t j = i; j < totalSize; j += chunkSize)
+		float localSum = 0.0f;
+		
+		uint64_t localStart = threadIdx.x;
+		uint64_t localStep  = blockDim.x;
+		
+		// over each column
+		for(uint64_t column = localStart; column < columns; column += localStep)
 		{
-			value += input[j];
+			uint64_t index = (row * columns + column);
+			
+			localSum += input[index];
 		}
 		
-		atomicAdd(result + column, value);
+		// reduce
+		result[row] = reduceCta(localSum);
 	}
 }
 

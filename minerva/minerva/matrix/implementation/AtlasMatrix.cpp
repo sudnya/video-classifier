@@ -483,6 +483,14 @@ void AtlasMatrix::maxSelf(float value)
 	}
 }
 
+void AtlasMatrix::assignSelf(float value)
+{
+	for(auto& f : _data)
+	{
+		f = value;
+	}
+}
+
 void AtlasMatrix::assignUniformRandomValues(
 	std::default_random_engine& generator, float min, float max)
 {

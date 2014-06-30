@@ -48,7 +48,7 @@ static void createModel(ClassificationModel& model)
 		"				{\n"
 		"					\"tiles\" : 1,\n"
 		"					\"inputsPerTile\" : 64,\n"
-		"					\"outputsPerTile\" : 25,\n"
+		"					\"outputsPerTile\" : 128,\n"
 		"					\"tileSpacing\" : 64\n"
 		"				}\n"
 		"			],\n"

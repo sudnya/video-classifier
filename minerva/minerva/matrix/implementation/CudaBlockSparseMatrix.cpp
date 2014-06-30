@@ -627,6 +627,15 @@ void CudaBlockSparseMatrix::minSelf(float value)
 	CudaBlockSparseCache::release(this);
 }
 
+void CudaBlockSparseMatrix::assignSelf(float value)
+{
+	auto devicePointer = CudaBlockSparseCache::acquire(this);
+	
+	CudaSparseMatrixLibrary::assignSelf(devicePointer, value, size());
+	
+	CudaBlockSparseCache::release(this);
+}
+
 void CudaBlockSparseMatrix::maxSelf(float value)
 {
 	auto devicePointer = CudaBlockSparseCache::acquire(this);
@@ -670,7 +679,7 @@ Value* CudaBlockSparseMatrix::greaterThanOrEqual(float f) const
 	auto devicePointer = CudaBlockSparseCache::acquireReadOnly(this);
 	
 	auto result = new CudaBlockSparseMatrix(*this, false);
-	auto resultPointer = CudaBlockSparseCache::acquireClobber(this);
+	auto resultPointer = CudaBlockSparseCache::acquireClobber(result);
 	
 	CudaSparseMatrixLibrary::greaterThanOrEqual(resultPointer, devicePointer, f, size());
 	

@@ -240,7 +240,7 @@ float LBFGSSolver::solve(BlockSparseMatrixVector& inputs, const CostAndGradientF
 		//LBFGSSolverLibrary::LBFGS_LINESEARCH_BACKTRACKING_STRONG_WOLFE;
 	//parameters.epsilon = 1e-10;
 	//parameters.m = 3;
-	//parameters.xtol = 0.000001;
+	parameters.xtol = 1e-30;
 	//parameters.ftol = 1e-10;
 	//parameters.gtol = 1e-10;
 	

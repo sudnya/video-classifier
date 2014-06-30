@@ -67,6 +67,7 @@ public:
 	static void sigmoidDerivativeSelf(float* result, size_t size);
 	static void minSelf(float* result, float value, size_t size);
 	static void maxSelf(float* result, float value, size_t size);
+	static void assignSelf(float* result, float value, size_t size);
 
 public:
 	static void assignUniformRandomValues(float* result, float min, float max,

@@ -113,6 +113,7 @@ public:
     void klDivergenceDerivativeSelf(float sparsity);
 	void minSelf(float f);
 	void maxSelf(float f);
+	void assignSelf(float f);
 
 	void transposeSelf();
 

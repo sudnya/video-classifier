@@ -371,6 +371,13 @@ void Matrix::maxSelf(float f)
 	_matrix->maxSelf(f);
 }
 
+void Matrix::assignSelf(float f)
+{
+	assert(_matrix != nullptr);
+	
+	_matrix->assignSelf(f);
+}
+
 void Matrix::assignUniformRandomValues(
 	std::default_random_engine& engine, float min, float max)
 {

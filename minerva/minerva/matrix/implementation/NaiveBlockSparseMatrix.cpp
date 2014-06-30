@@ -480,6 +480,15 @@ void NaiveBlockSparseMatrix::maxSelf(float v)
 	}
 }
 
+void NaiveBlockSparseMatrix::assignSelf(float v)
+{
+	// TODO: in parallel
+	for(auto& matrix : *this)
+	{
+		matrix.assignSelf(v);
+	}
+}
+
 void NaiveBlockSparseMatrix::transposeSelf()
 {
 	// TODO: in parallel

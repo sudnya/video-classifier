@@ -36,6 +36,8 @@ static bool isInMargin(const Matrix& ref, const Matrix& output, float epsilon)
 static float computeCostForLayer(const Layer& layer, const BlockSparseMatrix& layerInput,
 	const BlockSparseMatrix& layerOutput, float lambda)
 {
+
+	#if 0
 	//J(theta) = -1/m (sum over i, sum over k yi,k * log (h(xl)k) + (1-yik)*log(1-h(xi)k) +
 	//		   regularization term lambda/2m sum over l,i,j (theta[i,j])^2
 	
@@ -60,6 +62,19 @@ static float computeCostForLayer(const Layer& layer, const BlockSparseMatrix& la
 	auto cost = sum.multiply(-1.0f/m);
 
 	float costSum = cost.reduceSum();
+	#else
+	unsigned m = layerInput.rows();
+
+	auto hx = layer.runInputs(layerInput);
+
+	auto errors = hx.subtract(layerOutput);
+	auto squaredErrors = errors.elementMultiply(errors);
+
+	float sumOfSquaredErrors = squaredErrors.reduceSum();
+	
+	float costSum = sumOfSquaredErrors * 1.0f / (2.0f * m);
+
+	#endif
 
 	costSum += (lambda / (2.0f)) * (layer.getWeightsWithoutBias().elementMultiply(
 		layer.getWeightsWithoutBias()).reduceSum());
@@ -373,7 +388,9 @@ MatrixVector DenseBackPropagation::getCostDerivative(
 		
 		// compute the derivative for the bias
 		auto normalizedBiasPartialDerivative = transposedDelta.reduceSumAlongColumns().multiply(1.0f/samples);
-
+		
+		util::log("DenseBackPropagation::Detail") << "  tranposed delta: " << transposedDelta.toString() << "\n";
+		util::log("DenseBackPropagation::Detail") << "  bias derivative: " << normalizedBiasPartialDerivative.toString() << "\n";
 		// Account for cases where the same neuron produced multiple outputs
 		//  or not enough inputs existed
 		coalesceNeuronOutputs(normalizedPartialDerivative, lambdaTerm);

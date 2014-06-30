@@ -566,6 +566,14 @@ void CublasMatrix::maxSelf(float value)
 	}
 }
 
+void CublasMatrix::assignSelf(float value)
+{
+	for(auto& f : _data)
+	{
+		f = value;
+	}
+}
+
 void CublasMatrix::assignUniformRandomValues(
 	std::default_random_engine& generator, float min, float max)
 {

@@ -63,6 +63,7 @@ public:
     virtual void klDivergenceDerivativeSelf(float sparsity);
     virtual void minSelf(float f);
     virtual void maxSelf(float f);
+    virtual void assignSelf(float f);
 
 	virtual void assignUniformRandomValues(
 		std::default_random_engine& engine, float min, float max);

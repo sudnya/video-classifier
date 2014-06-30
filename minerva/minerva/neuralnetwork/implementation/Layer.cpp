@@ -60,7 +60,9 @@ void Layer::initializeRandomly(std::default_random_engine& engine, float e)
 	float epsilon = std::sqrt((e) / (getInputBlockingFactor() + getOutputBlockingFactor() + 1));
 	
 	m_sparseMatrix.assignUniformRandomValues(engine, -epsilon, epsilon);
-	m_bias.assignUniformRandomValues(engine, 0.0f, 0.0f);
+
+	// assign bias to 0.0f
+	m_bias.assignSelf(0.0f);
 }
 
 Layer::BlockSparseMatrix Layer::runInputs(const BlockSparseMatrix& m) const
@@ -139,7 +141,13 @@ size_t Layer::getInputCount() const
 
 size_t Layer::getOutputCount() const
 {
-	return getOutputCountForInputCount(getInputCount());	
+	size_t outputCount = getOutputCountForInputCount(getInputCount());	
+
+	util::log("Layer") << m_sparseMatrix.shapeString()
+		<< ": Output count for input count " << getInputCount()
+		<< " is " << outputCount << "\n";
+
+	return outputCount;
 }
 
 size_t Layer::getInputBlockingFactor() const
@@ -154,7 +162,13 @@ size_t Layer::getOutputBlockingFactor() const
 
 size_t Layer::getOutputCountForInputCount(size_t inputCount) const
 {
-	return (inputCount / blockStep()) * (m_sparseMatrix.columnsPerBlock());
+	size_t outputCount = (inputCount / blockStep()) * (m_sparseMatrix.columnsPerBlock());
+	
+	util::log("Layer") << m_sparseMatrix.shapeString()
+		<< ": Output count for input count " << inputCount
+		<< " is " << outputCount << "\n";
+
+	return outputCount;
 }
 
 size_t Layer::getFloatingPointOperationCount() const

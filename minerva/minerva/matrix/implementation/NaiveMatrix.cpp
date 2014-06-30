@@ -461,6 +461,14 @@ void NaiveMatrix::maxSelf(float value)
 	}
 }
 
+void NaiveMatrix::assignSelf(float value)
+{
+	for(auto& f : _data)
+	{
+		f = value;
+	}
+}
+
 void NaiveMatrix::assignUniformRandomValues(
 	std::default_random_engine& generator, float min, float max)
 {

@@ -597,7 +597,7 @@ void CudaSparseMatrixLibrary::transpose(float* result, const float* left, size_t
 
 void CudaSparseMatrixLibrary::copy(float* result, const float* left, size_t size)
 {
-	launchKernel("addFloat", result, left, 0.0f, size);
+	launchKernel("copy", result, left, size);
 }
 
 void CudaSparseMatrixLibrary::negate(float* result, const float* left, size_t size)
@@ -650,6 +650,11 @@ void CudaSparseMatrixLibrary::minSelf(float* result, float value, size_t size)
 	launchKernel("maxSelf", result, value, size);
 }
 
+void CudaSparseMatrixLibrary::assignSelf(float* result, float value, size_t size)
+{
+	launchKernel("assignSelf", result, value, size);
+}
+
 void CudaSparseMatrixLibrary::assignUniformRandomValues(float* result, float min, float max, size_t size)
 {
 	util::log("CudaSparseMatrixLibrary") << "assigning uniform random values using cuRand\n";
@@ -669,7 +674,8 @@ void CudaSparseMatrixLibrary::assignUniformRandomValues(float* result, float min
 	CurandLibrary::curandDestroyGenerator(generator);
 }
 
-void CudaSparseMatrixLibrary::greaterThanOrEqual(float* result, const float* left, float f, size_t size)
+void CudaSparseMatrixLibrary::greaterThanOrEqual(float* result, const float* left,
+	float f, size_t size)
 {
 	launchKernel("greaterThanOrEqual", result, left, f, size);
 }
@@ -723,6 +729,7 @@ void CudaSparseMatrixLibrary::reduceSumAlongColumns(float* result, const float* 
 {
 	if(isRowSparse)
 	{
+		launchKernel("fillWithZero", result, blocks * rows);
 		launchKernel("reduceSumAlongColumnsRowSparse", result, input, blocks, rows, columns);
 	}
 	else

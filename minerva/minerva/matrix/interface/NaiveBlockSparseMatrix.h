@@ -58,6 +58,8 @@ public:
 	virtual void minSelf(float value);
 	virtual void maxSelf(float value);
 
+	virtual void assignSelf(float value);
+
 	virtual void transposeSelf();
 
 	virtual void assignUniformRandomValues(std::default_random_engine& engine,
