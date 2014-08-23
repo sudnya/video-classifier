@@ -160,9 +160,6 @@ private:
 
 };
 
-// Derived Typedefs
-typedef std::vector<BlockSparseMatrix> BlockSparseMatrixVector;
-
 }
 
 }
