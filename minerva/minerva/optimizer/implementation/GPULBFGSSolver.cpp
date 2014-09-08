@@ -121,6 +121,9 @@ private:
 	GPULBFGSSolverHistory          _history;
 	const CostAndGradientFunction& _costAndGradientFunction;
 
+private:
+	std::unique_ptr<LineSearch> _lineSearch;
+
 };
 
 float GPULBFGSSolver::solve(BlockSparseMatrixVector& inputs, 
@@ -152,11 +155,6 @@ static float computeInverseNorm(const BlockSparseMatrixVector& matrix)
 	return 1.0f / computeNorm(matrix);
 }
 
-static void lineSearchMoreThuente(BlockSparseMatrixVector& inputs, float& cost,
-	const BlockSparseMatrixVector& gradient, const BlockSparseMatrixVector& direction,
-	float step, const BlockSparseMatrixVector& previousInputs,
-	const BlockSparseMatrixVector& previousGradients);
-		
 static void reportProgress(float cost, const BlockSparseMatrixVector& gradient,
 	float inputNorm, float gradientNorm, float step)
 {
@@ -211,8 +209,7 @@ float GPULBFGSSolverImplementation::solve()
 		auto previousGradient = gradient;
 		
 		// search for an optimal step using a line search
-		// TODO: What is the w parameter?
-		lineSearch(_inputs, cost, gradient, direction, step, previousInputs, previousGradient);
+		_lineSearch->search(_inputs, cost, gradient, direction, step, previousInputs, previousGradient);
 		
 		// Compute the norms
 		float inputNorm    = computeNorm(_inputs);

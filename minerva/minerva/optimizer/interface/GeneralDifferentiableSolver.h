@@ -1,6 +1,6 @@
-/* Author: Sudnya Padalikar
- * Date  : 08/17/2013
- * The interface for the LinearSolver class 
+/* \author Sudnya Padalikar
+   \date   08/17/2013
+   \brief  The interface for the GeneralDifferentiableSolver class. 
  */
 
 #pragma once

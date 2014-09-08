@@ -21,8 +21,6 @@ namespace neuralnetwork
 
 	Each layer is stored as a block sparse matrix.  Rows correspond to output neurons,
 	and columns correspond to input weights.  
-
-
 */
 class Layer
 {
