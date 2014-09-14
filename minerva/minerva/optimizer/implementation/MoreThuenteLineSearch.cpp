@@ -7,11 +7,38 @@
 // Minerva Includes
 #include <minerva/optimizer/interface/MoreThuenteLineSearch.h>
 
+#include <minerva/optimizer/interface/CostAndGradientFunction.h>
+
+#include <minerva/matrix/interface/BlockSparseMatrixVector.h>
+
+// Standard Library Includes
+#include <algorithm>
+#include <cmath>
+#include <stdexcept>
+#include <cassert>
+
 namespace minerva
 {
 
 namespace optimizer
 {
+
+static bool isSignDifferent(float left, float right)
+{
+	return std::copysign(1.0f, left) != std::copysign(1.0f, right);
+}
+
+static float findCubicMinimizer(float leftStep, float leftCost,
+	float leftGradientDirection, float rightStep, float rightCost,
+	float rightGradientDirection);
+static float findCubicMinimizer(float leftStep, float leftCost,
+	float leftGradientDirection, float rightStep, float rightCost,
+	float rightGradientDirection, float minStep, float maxStep);
+
+static float findQuadraticMinimizer(float leftStep, float leftCost,
+	float leftGradientDirection, float rightStep, float rightCost);
+static float findQuadraticMinimizer(float leftStep,
+	float leftGradientDirection, float rightStep, float rightGradientDirection);
 
 /**
   Update a safeguarded trial value and interval for line search.
@@ -44,9 +71,9 @@ namespace optimizer
 	
    @see liblbfgs.c
  */
-static bool updateIntervalOfUncertainty(
+static void updateIntervalOfUncertainty(
 	float& bestStep, float& bestCost, float& bestGradientDirection,
-	float& intevalEndStep, float& intervalEndCost, float& intervalEndGradientDirection,
+	float& intervalEndStep, float& intervalEndCost, float& intervalEndGradientDirection,
 	float& step, float& cost, float& gradientDirection,
 	float minStep, float maxStep, bool& bracket)
 {
@@ -111,7 +138,7 @@ static bool updateIntervalOfUncertainty(
 		// Case 2: a lower function value and derivatives of opposite sign
 		// The minimizer is bracketed.  The closest minimizer is taken.
 		bracket = true;
-		bound   = false;
+		bounded = false;
 		
 		cubicMinimizerStep = findCubicMinimizer(bestStep, bestCost, bestGradientDirection,
 			step, cost, gradientDirection);
@@ -136,7 +163,7 @@ static bool updateIntervalOfUncertainty(
 		// max step.
 		// The quadratic minimizer is also computed and if the minumum is bracketed, then
 		// the minimizer closest to x is used, otherwise the farthest away is used.
-		bound = true;
+		bounded = true;
 		
 		
 		cubicMinimizerStep = findCubicMinimizer(bestStep, bestCost, bestGradientDirection,
@@ -146,24 +173,24 @@ static bool updateIntervalOfUncertainty(
 		
 		if(bracket)
 		{
-			if(std::fabs(step - cubicMinimizer) < std::fabs(step - quadraticMinimizer))
+			if(std::fabs(step - cubicMinimizerStep) < std::fabs(step - quadraticMinimizerStep))
 			{
-				newStep = cubicMinimizer;
+				newStep = cubicMinimizerStep;
 			}
 			else
 			{
-				newStep = quadraticMinimizer;
+				newStep = quadraticMinimizerStep;
 			}
 		}
 		else
 		{
-			if(std::fabs(step - cubicMinimizer) > std::fabs(step - quadraticMinimizer))
+			if(std::fabs(step - cubicMinimizerStep) > std::fabs(step - quadraticMinimizerStep))
 			{
-				newStep = cubicMinimizer;
+				newStep = cubicMinimizerStep;
 			}
 			else
 			{
-				newStep = quadraticMinimizer;
+				newStep = quadraticMinimizerStep;
 			}
 		}
 	}
@@ -172,7 +199,7 @@ static bool updateIntervalOfUncertainty(
 		// Case 4: A  lower cost, derivatives of the same sign, and the magnitude of the
 		// derivative does not decrease.  If the maximum is not bracketed, the step is
 		// either the min or max step, otherwise the cubic minimizer is used.
-		bound = false;
+		bounded = false;
 		
 		if(bracket)
 		{
@@ -235,7 +262,7 @@ static bool updateIntervalOfUncertainty(
 	if (step < minStep) step = minStep;
 	
 	// Adjust the trial step if it is too close to the upper bound
-	if(bracket and bound)
+	if(bracket and bounded)
 	{
 		float quadraticMinimizer = bestStep + (2.0f/3.0f) * (intervalEndStep - bestStep);
 		
@@ -256,7 +283,7 @@ static bool updateIntervalOfUncertainty(
 void MoreThuenteLineSearch::search(
 	const CostAndGradientFunction& costFunction,
 	BlockSparseMatrixVector& inputs, float& cost,
-	const BlockSparseMatrixVector& gradient, const BlockSparseMatrixVector& direction,
+	BlockSparseMatrixVector& gradient, const BlockSparseMatrixVector& direction,
 	float step, const BlockSparseMatrixVector& previousInputs,
 	const BlockSparseMatrixVector& previousGradients)
 {
@@ -267,7 +294,7 @@ void MoreThuenteLineSearch::search(
 	auto initialGradientDirection = gradient.dotProduct(direction);
 	
 	// make sure that we are pointed in a descent direction
-	if(intialGradient > 0.0f)
+	if(initialGradientDirection > 0.0f)
 	{
 		throw std::runtime_error("Search direction does not decrease objective function.");
 	}
@@ -275,7 +302,6 @@ void MoreThuenteLineSearch::search(
 	// Local variables
 	bool  bracket              = false;
 	bool  stageOne             = true;
-	bool  intervalUpdateFailed = false;
 	float initialCost          = cost;
 
 	float gradientDirectionTest = initialGradientDirection * _tolerance;
@@ -321,7 +347,7 @@ void MoreThuenteLineSearch::search(
 		bool wouldTerminate = (
 			(bracket &&
 				((step < minStep || maxStep <= step) ||
-					_maxLinesearch <= iteration + 1 || intervalUpdateFailed)
+					_maxLineSearch <= iteration + 1)
 			) || (bracket && (maxStep - minStep <= _xTolerance * maxStep))
 			);
 		
@@ -334,14 +360,14 @@ void MoreThuenteLineSearch::search(
 		inputs = previousInputs.add(direction.multiply(step));
 		
 		// Evaluate the function and gradient at the current value	
-		cost = costFunction.computeFunction(gradient, inputs);
-		gradientDirection = gradient.dot(direction);
+		cost = costFunction.computeCostAndGradient(gradient, inputs);
+		float gradientDirection = gradient.dotProduct(direction);
 		
-		testCost = initialCost + step * gradientDirectionTest;
+		float testCost = initialCost + step * gradientDirectionTest;
 		++iteration;
 		
 		// Test for rounding errors
-		if(bracket && ((step < minStep) || (maxStep <= step) || intervalUpdateFailed))
+		if(bracket && ((step < minStep) || (maxStep <= step)))
 		{
 			throw std::runtime_error("Rounding error occured.");
 		}
@@ -363,21 +389,21 @@ void MoreThuenteLineSearch::search(
 		}
 		
 		// The width of the interval of uncertainty is too small (at most xtol)
-		if(bracket && (maxStep - minStep) <= (_xTol * maxStep))
+		if(bracket && (maxStep - minStep) <= (_xTolerance * maxStep))
 		{
 			throw std::runtime_error("The width of the interval of "
 				"uncertainty is too small.");
 		}
 		
 		// The maximum number of iterations was exceeded
-		if(iterations >= _maximumIterations)
+		if(iteration >= _maxLineSearch)
 		{
 			break;
 		}
 		
 		// The sufficient descrease and directional derivative conditions hold
 		if(cost < testCost &&
-			std::fabs(gradientDirection) <= (_gtol * (initialGradientDirection)))
+			std::fabs(gradientDirection) <= (_gTolerance * (initialGradientDirection)))
 		{
 			break;
 		}
@@ -386,7 +412,8 @@ void MoreThuenteLineSearch::search(
 		// function has a nonpositive value and nonnegative derivative.
 		if(stageOne &&
 			cost <= testCost &&
-			(std::min(_ftol, _gtol) * initialGradientDirection <= gradientDirection))
+			(std::min(_fTolerance, _gTolerance) *
+				initialGradientDirection <= gradientDirection))
 		{
 			stageOne = false;
 		}
@@ -413,16 +440,16 @@ void MoreThuenteLineSearch::search(
 				intervalEndGradientDirection - gradientDirectionTest;
 			
 			// update the interval of uncertainty and compute the new step size
-			intervalUpdateFailed = !updateIntervalOfUncertainty(
+			updateIntervalOfUncertainty(
 				bestStep, modifiedBestCost, modifiedBestGradientDirection,
-				intevalEndStep, modifiedIntervalEndCost, modifiedIntervalEndGradientDirection,
+				intervalEndStep, modifiedIntervalEndCost, modifiedIntervalEndGradientDirection,
 				step, modifiedCost, modifiedGradientDirection,
 				minStep, maxStep, bracket);
 			
 			// Reset the function and gradient values
 			bestCost = modifiedBestCost + bestStep * gradientDirectionTest;
 			intervalEndCost =
-				modifiedIntervalEndTest + intervalEndStep * gradientDirectionTest;
+				modifiedIntervalEndCost + intervalEndStep * gradientDirectionTest;
 			
 			bestGradientDirection =
 				modifiedBestGradientDirection + gradientDirectionTest;
@@ -431,9 +458,9 @@ void MoreThuenteLineSearch::search(
 		}
 		else
 		{
-			intervalUpdateFailed = !updateIntervalOfUncertainty(
+			updateIntervalOfUncertainty(
 				bestStep, bestCost, bestGradientDirection,
-				intevalEndStep, intervalEndCost, intervalEndGradientDirection,
+				intervalEndStep, intervalEndCost, intervalEndGradientDirection,
 				step, cost, gradientDirection,
 				minStep, maxStep, bracket);
 		}
@@ -441,12 +468,12 @@ void MoreThuenteLineSearch::search(
 		// Force a sufficient decrease in the interval of uncertainty
 		if(bracket)
 		{
-			if ((2.0f/3.0f) * previousWidth <= std::fabs(intervalEndStep - bestStep))
+			if ((2.0f/3.0f) * previousIntervalWidth <= std::fabs(intervalEndStep - bestStep))
 			{
 				step = bestStep + 0.5f * (intervalEndStep - bestStep);
 			}
-			previousWidth = width;
-			width = std::fabs(intervalEndStep - bestStep);
+			previousIntervalWidth = intervalWidth;
+			previousIntervalWidth = std::fabs(intervalEndStep - bestStep);
 		}
 	}
 }

@@ -46,10 +46,12 @@ public:
 
 public:
 	BlockSparseMatrixVector subtract(const BlockSparseMatrixVector& ) const;
+	BlockSparseMatrixVector add(const BlockSparseMatrixVector& ) const;
 	BlockSparseMatrixVector elementMultiply(const BlockSparseMatrixVector& ) const;
 
 public:
 	BlockSparseMatrixVector add(float ) const;
+	BlockSparseMatrixVector multiply(float) const;
 
 public:
 	void addSelf(const BlockSparseMatrixVector& );

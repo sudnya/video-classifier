@@ -10,6 +10,9 @@
 // Minerva Includes
 #include <minerva/optimizer/interface/LineSearch.h>
 
+// Standard Library Includes
+#include <cstring>
+
 namespace minerva
 {
 
@@ -22,10 +25,19 @@ public:
 	virtual void search(
 		const CostAndGradientFunction& costFunction,
 		BlockSparseMatrixVector& inputs, float& cost,
-		const BlockSparseMatrixVector& gradient,
+		BlockSparseMatrixVector& gradient,
 		const BlockSparseMatrixVector& direction,
 		float step, const BlockSparseMatrixVector& previousInputs,
 		const BlockSparseMatrixVector& previousGradients);
+
+private:
+	float _tolerance;
+	float _xTolerance;
+	float _gTolerance;
+	float _fTolerance;
+	float _maxStep;
+	float _minStep;
+	size_t _maxLineSearch;
 
 };
 
