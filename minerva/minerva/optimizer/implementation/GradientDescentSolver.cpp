@@ -10,6 +10,7 @@
 #include <minerva/optimizer/interface/Constraint.h>
 
 #include <minerva/matrix/interface/Matrix.h>
+#include <minerva/matrix/interface/BlockSparseMatrixVector.h>
 
 #include <minerva/neuralnetwork/interface/NeuralNetwork.h>
 

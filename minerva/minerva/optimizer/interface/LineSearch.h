@@ -34,7 +34,8 @@ public:
 	virtual void search(
 		const CostAndGradientFunction& costFunction,
 		BlockSparseMatrixVector& inputs, float& cost,
-		const BlockSparseMatrixVector& gradient, const BlockSparseMatrixVector& direction,
+		const BlockSparseMatrixVector& gradient,
+		const BlockSparseMatrixVector& direction,
 		float step, const BlockSparseMatrixVector& previousInputs,
 		const BlockSparseMatrixVector& previousGradients) = 0;
 

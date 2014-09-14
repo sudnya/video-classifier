@@ -12,7 +12,12 @@ namespace matrix
 class BlockSparseMatrixVector
 {
 private:
-	typedef std::vector<BlockSparseMatrix> Vector;
+	typedef BlockSparseMatrix value_type;
+	typedef value_type& reference_type;
+	typedef const value_type& const_reference_type;
+
+public:
+	typedef std::vector<value_type> Vector;
 
 public:
 	typedef Vector::iterator       iterator;
@@ -31,6 +36,10 @@ public:
 public:
 	BlockSparseMatrixVector& operator=(const BlockSparseMatrixVector&  );
 	BlockSparseMatrixVector& operator=(const BlockSparseMatrixVector&& );
+
+public:
+	reference_type operator[](size_t i);
+	const_reference_type operator[](size_t i) const;
 
 public:
 	BlockSparseMatrixVector negate() const;

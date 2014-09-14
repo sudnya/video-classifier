@@ -5,9 +5,10 @@
 */
 
 // Minerva Includes
-#include <minvera/optimizer/interface/LineSearch.h>
+#include <minerva/optimizer/interface/LineSearchFactory.h>
+#include <minerva/optimizer/interface/LineSearch.h>
 
-#include <minerva/optimizer/interface/MoreTheunteLineSearch.h>
+#include <minerva/optimizer/interface/MoreThuenteLineSearch.h>
 
 namespace minerva
 {
@@ -15,19 +16,19 @@ namespace minerva
 namespace optimizer
 {
 
-std::unique_ptr<LineSearch> LineSearch::create(const std::string& searchName)
+std::unique_ptr<LineSearch> LineSearchFactory::create(const std::string& searchName)
 {
 	std::unique_ptr<LineSearch> lineSearch;
 	
 	if(searchName == "MoreThuenteLineSearch")
 	{
-		lineSearch.reset(new MoreTheunteLineSearch);
+		lineSearch.reset(new MoreThuenteLineSearch);
 	}
 	
 	return lineSearch;
 }
 
-std::unique_ptr<LineSearch> LineSearch::create()
+std::unique_ptr<LineSearch> LineSearchFactory::create()
 {
 	return create("MoreThuenteLineSearch");
 }

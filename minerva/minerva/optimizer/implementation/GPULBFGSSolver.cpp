@@ -8,7 +8,12 @@
 #include <minerva/optimizer/interface/GPULBFGSSolver.h>
 
 #include <minerva/optimizer/interface/CostAndGradientFunction.h>
+#include <minerva/optimizer/interface/LineSearchFactory.h>
+#include <minerva/optimizer/interface/LineSearch.h>
+
 #include <minerva/matrix/interface/BlockSparseMatrixVector.h>
+
+#include <minerva/util/interface/debug.h>
 
 // Standard Library Includes
 #include <deque>
@@ -209,7 +214,8 @@ float GPULBFGSSolverImplementation::solve()
 		auto previousGradient = gradient;
 		
 		// search for an optimal step using a line search
-		_lineSearch->search(_inputs, cost, gradient, direction, step, previousInputs, previousGradient);
+		_lineSearch->search(_costAndGradientFunction, _inputs, cost,
+			gradient, direction, step, previousInputs, previousGradient);
 		
 		// Compute the norms
 		float inputNorm    = computeNorm(_inputs);

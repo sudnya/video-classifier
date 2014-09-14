@@ -6,6 +6,7 @@
 // Minerva Includes
 #include <minerva/optimizer/interface/GeneralDifferentiableSolver.h>
 
+#include <minerva/matrix/interface/BlockSparseMatrixVector.h>
 #include <minerva/matrix/interface/BlockSparseMatrix.h>
 #include <minerva/matrix/interface/Matrix.h>
 
