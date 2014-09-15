@@ -21,7 +21,7 @@ public:
 		BlockSparseMatrix* ref = nullptr);
 
 private:
-	virtual MatrixVector getCostDerivative(const NeuralNetwork&, const BlockSparseMatrix&, const BlockSparseMatrix& ) const;
+	virtual BlockSparseMatrixVector getCostDerivative(const NeuralNetwork&, const BlockSparseMatrix&, const BlockSparseMatrix& ) const;
 	virtual BlockSparseMatrix getInputDerivative(const NeuralNetwork&, const BlockSparseMatrix&, const BlockSparseMatrix&) const;
 	virtual float getCost(const NeuralNetwork&, const BlockSparseMatrix&, const BlockSparseMatrix&) const;
 	virtual float getInputCost(const NeuralNetwork&, const BlockSparseMatrix&, const BlockSparseMatrix&) const;
@@ -30,12 +30,12 @@ private:
 	bool testDerivative();
 
 private:
-	BlockSparseMatrix getInputDelta(const NeuralNetwork& network, const MatrixVector& m) const;
-	MatrixVector getDeltas(const NeuralNetwork& network, const MatrixVector& m) const;
-	MatrixVector getActivations(const NeuralNetwork& network, const BlockSparseMatrix& inputs) const;
+	BlockSparseMatrix getInputDelta(const NeuralNetwork& network, const BlockSparseMatrixVector& m) const;
+	BlockSparseMatrixVector getDeltas(const NeuralNetwork& network, const BlockSparseMatrixVector& m) const;
+	BlockSparseMatrixVector getActivations(const NeuralNetwork& network, const BlockSparseMatrix& inputs) const;
    
 private:
-	MatrixVector getCostDerivative(const NeuralNetwork& network) const;
+	BlockSparseMatrixVector getCostDerivative(const NeuralNetwork& network) const;
 	BlockSparseMatrix getInputDerivative(const NeuralNetwork& network,
 		const BlockSparseMatrix& input) const;
 

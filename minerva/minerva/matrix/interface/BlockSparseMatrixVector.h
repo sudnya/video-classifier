@@ -28,6 +28,7 @@ public:
 
 public:
 	BlockSparseMatrixVector();
+	BlockSparseMatrixVector(size_t elements, const BlockSparseMatrix& value);
 
 public:
 	BlockSparseMatrixVector(const BlockSparseMatrixVector&);
@@ -91,6 +92,13 @@ public:
 	void push_back(const BlockSparseMatrix&  );
 	void push_back(const BlockSparseMatrix&& );
 
+public:
+	BlockSparseMatrix& back();
+	const BlockSparseMatrix& back() const;
+
+	BlockSparseMatrix& front();
+	const BlockSparseMatrix& front() const;
+	
 private:
 	Vector _matrix;
 

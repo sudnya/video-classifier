@@ -28,17 +28,152 @@ static bool isSignDifferent(float left, float right)
 	return std::copysign(1.0f, left) != std::copysign(1.0f, right);
 }
 
+/**
+ * Find a minimizer of an interpolated cubic function.
+ *  @param  cm      The minimizer of the interpolated cubic.
+ *  @param  u       The value of one point, u.
+ *  @param  fu      The value of f(u).
+ *  @param  du      The value of f'(u).
+ *  @param  v       The value of another point, v.
+ *  @param  fv      The value of f(v).
+ *  @param  dv      The value of f'(v).
+ */
+
 static float findCubicMinimizer(float leftStep, float leftCost,
 	float leftGradientDirection, float rightStep, float rightCost,
-	float rightGradientDirection);
+	float rightGradientDirection)
+{
+    //d = (v) - (u);
+	float difference = rightStep - leftStep;
+
+    //theta = ((fu) - (fv)) * 3 / d + (du) + (dv);
+	float theta = ((leftCost - rightCost) * 3.0f / difference) +
+		leftGradientDirection + rightGradientDirection;
+    
+	// p = fabs(theta);
+	float p = std::fabs(theta);
+
+    // q = fabs(du);
+	float q = std::fabs(leftGradientDirection);
+
+    // r = fabs(dv);
+	float r = std::fabs(rightGradientDirection);
+
+    // s = max3(p, q, r);
+	float s = std::max(p, std::max(q, r));
+
+    /* gamma = s*sqrt((theta/s)**2 - (du/s) * (dv/s)) */
+    // a = theta / s;
+	float a = theta / s;
+
+    // gamma = s * sqrt(a * a - ((du) / s) * ((dv) / s));
+	float gamma = s *
+		std::sqrtf(a * a - (leftGradientDirection / s) * (rightGradientDirection / s));
+
+    //if ((v) < (u)) gamma = -gamma;
+    if ((rightStep) < (leftStep)) gamma = -gamma; 
+
+    // p = gamma - (du) + theta;
+	float p1 = gamma - leftGradientDirection + theta;
+
+    // q = gamma - (du) + gamma + (dv);
+	float q1 = gamma - leftGradientDirection + gamma + rightGradientDirection;
+	
+    // r = p / q;
+    float r1 = p1 / q1;
+	
+	// (cm) = (u) + r * d;
+	return leftStep + r1 * difference;
+}
+
 static float findCubicMinimizer(float leftStep, float leftCost,
 	float leftGradientDirection, float rightStep, float rightCost,
-	float rightGradientDirection, float minStep, float maxStep);
+	float rightGradientDirection, float minStep, float maxStep)
+{
+    //d = (v) - (u);
+	float difference = rightStep - leftStep;
+
+    //theta = ((fu) - (fv)) * 3 / d + (du) + (dv);
+	float theta = ((leftCost - rightCost) * 3.0f / difference) +
+		leftGradientDirection + rightGradientDirection;
+    
+	// p = fabs(theta);
+	float p = std::fabs(theta);
+
+    // q = fabs(du);
+	float q = std::fabs(leftGradientDirection);
+
+    // r = fabs(dv);
+	float r = std::fabs(rightGradientDirection);
+
+    // s = max3(p, q, r);
+	float s = std::max(p, std::max(q, r));
+
+    /* gamma = s*sqrt((theta/s)**2 - (du/s) * (dv/s)) */
+    // a = theta / s;
+	float a = theta / s;
+
+    // gamma = s * sqrt(a * a - ((du) / s) * ((dv) / s));
+	float gamma = s * std::sqrtf(std::max(0.0f, a * a - (leftGradientDirection / s) *
+		(rightGradientDirection / s)));
+
+    //if ((v) < (u)) gamma = -gamma;
+    if ((rightStep) < (leftStep)) gamma = -gamma; 
+
+    // p = gamma - (dv) + theta;
+	float p1 = gamma - rightGradientDirection + theta;
+
+    // q = gamma - (dv) + gamma + (du);
+	float q1 = gamma - rightGradientDirection + gamma + leftGradientDirection;
+	
+    // r = p / q;
+    float r1 = p1 / q1;
+    
+	/*
+	if (r < 0. && gamma != 0.) { \
+        (cm) = (v) - r * d; \
+    } else if (a < 0) { \
+        (cm) = (xmax); \
+    } else { \
+        (cm) = (xmin); \
+    } */
+	
+	if(r < 0.0f && gamma != 0.0f)
+	{
+		return rightStep - r1 * difference;
+	}
+	else if(a < 0.0f)
+	{
+		return maxStep;
+	}
+	else
+	{
+		return minStep;
+	}
+}
 
 static float findQuadraticMinimizer(float leftStep, float leftCost,
-	float leftGradientDirection, float rightStep, float rightCost);
+	float leftGradientDirection, float rightStep, float rightCost)
+{
+    // a = (v) - (u);
+	float a = rightStep - leftStep;
+	
+    // (qm) = (u) + (du) / (((fu) - (fv)) / a + (du)) / 2 * a;
+	return leftStep +
+		(leftGradientDirection / ((leftCost - rightCost) / a + leftGradientDirection)) /
+		(2.0f * a);
+}
+
 static float findQuadraticMinimizer(float leftStep,
-	float leftGradientDirection, float rightStep, float rightGradientDirection);
+	float leftGradientDirection, float rightStep, float rightGradientDirection)
+{
+    // a = (u) - (v);
+	float a = leftStep - rightStep;
+
+    // (qm) = (v) + (dv) / ((dv) - (du)) * a;
+	return rightStep +
+		(rightGradientDirection / (rightGradientDirection - leftGradientDirection)) * a;
+}
 
 /**
   Update a safeguarded trial value and interval for line search.

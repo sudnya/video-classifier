@@ -12,8 +12,9 @@
 // Forward Declarations
 namespace minerva { namespace neuralnetwork { class NeuralNetwork; } }
 
-namespace minerva { namespace matrix { class Matrix;            } }
-namespace minerva { namespace matrix { class BlockSparseMatrix; } }
+namespace minerva { namespace matrix { class Matrix;                  } }
+namespace minerva { namespace matrix { class BlockSparseMatrix;       } }
+namespace minerva { namespace matrix { class BlockSparseMatrixVector; } }
 
 namespace minerva { namespace optimizer { class SparseMatrixFormat; } }
 
@@ -28,7 +29,7 @@ public:
 	typedef minerva::neuralnetwork::NeuralNetwork NeuralNetwork;
 	typedef minerva::matrix::Matrix Matrix;
 	typedef minerva::matrix::BlockSparseMatrix BlockSparseMatrix;
-	typedef std::vector<BlockSparseMatrix> MatrixVector;
+	typedef minerva::matrix::BlockSparseMatrixVector BlockSparseMatrixVector;
 	typedef std::vector<optimizer::SparseMatrixFormat> DataStructureFormat;
 
 public:
@@ -38,7 +39,7 @@ public:
 	virtual ~BackPropagation();
 
 public:
-	MatrixVector computeCostDerivative() const;
+	BlockSparseMatrixVector computeCostDerivative() const;
 	BlockSparseMatrix computeInputDerivative() const;
 	float computeCost() const;
 	float computeInputCost() const;
@@ -69,14 +70,16 @@ public:
 	DataStructureFormat getInputFormat() const;
 
 public:
-	MatrixVector getWeights() const;
-	void setWeights(const MatrixVector& weights);
+	BlockSparseMatrixVector getWeights() const;
+	void setWeights(const BlockSparseMatrixVector& weights);
 	
-	float computeCostForNewWeights(const MatrixVector& weights) const;
-	float computeCostForNewInputs(const MatrixVector& inputs) const;
-	float computeAccuracyForNewWeights(const MatrixVector& weights) const;
-	MatrixVector computePartialDerivativesForNewWeights(const MatrixVector& weights) const;
-	MatrixVector computePartialDerivativesForNewInputs(const MatrixVector& inputs) const;
+	float computeCostForNewWeights(const BlockSparseMatrixVector& weights) const;
+	float computeCostForNewInputs(const BlockSparseMatrixVector& inputs) const;
+	float computeAccuracyForNewWeights(const BlockSparseMatrixVector& weights) const;
+	BlockSparseMatrixVector computePartialDerivativesForNewWeights(
+		const BlockSparseMatrixVector& weights) const;
+	BlockSparseMatrixVector computePartialDerivativesForNewInputs(
+		const BlockSparseMatrixVector& inputs) const;
 	
 public:
 	float  computeCostForNewFlattenedWeights(const Matrix& weights) const;
@@ -86,14 +89,18 @@ public:
 	Matrix computePartialDerivativesForNewFlattenedInputs(const Matrix& inputs) const;	
 
 public:
-	static Matrix flatten(const MatrixVector& matrices);
+	static Matrix flatten(const BlockSparseMatrixVector& matrices);
 	static Matrix flatten(const BlockSparseMatrix& blockedMatrix);
 
 protected:
-	virtual MatrixVector getCostDerivative(const NeuralNetwork&, const BlockSparseMatrix&, const BlockSparseMatrix& ) const = 0;
-	virtual BlockSparseMatrix getInputDerivative(const NeuralNetwork&, const BlockSparseMatrix&, const BlockSparseMatrix&) const = 0;
-	virtual float getCost(const NeuralNetwork&, const BlockSparseMatrix&, const BlockSparseMatrix&) const = 0;
-	virtual float getInputCost(const NeuralNetwork&, const BlockSparseMatrix&, const BlockSparseMatrix&) const = 0;
+	virtual BlockSparseMatrixVector getCostDerivative(const NeuralNetwork&,
+		const BlockSparseMatrix&, const BlockSparseMatrix& ) const = 0;
+	virtual BlockSparseMatrix getInputDerivative(const NeuralNetwork&,
+		const BlockSparseMatrix&, const BlockSparseMatrix&) const = 0;
+	virtual float getCost(const NeuralNetwork&, const BlockSparseMatrix&,
+		const BlockSparseMatrix&) const = 0;
+	virtual float getInputCost(const NeuralNetwork&, const BlockSparseMatrix&,
+		const BlockSparseMatrix&) const = 0;
 
 protected:
 	NeuralNetwork*     _neuralNetworkPtr;
