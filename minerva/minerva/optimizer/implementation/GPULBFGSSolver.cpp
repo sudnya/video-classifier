@@ -44,10 +44,16 @@ public:
 	size_t maximumIterations;
 	float  stoppingGradientEpsilon;
 	float  minimumImprovement;
+
+public:
+	static size_t historySize();
 };
 
 class GPULBFGSSolverHistoryEntry
 {
+public:
+	float cost;
+
 public:
 	BlockSparseMatrixVector inputDifference;
 	BlockSparseMatrixVector gradientDifference;
@@ -57,8 +63,6 @@ public:
 
 public:
 	float alpha;
-
-
 	
 };
 
@@ -75,7 +79,14 @@ public:
 	typedef HistoryQueue::const_reverse_iterator const_reverse_iterator;
 
 public:
-	void saveCost(float cost);
+	void setCost(float f);
+	void setInputAndGradientDifference(BlockSparseMatrixVector&& inputDifference,
+		BlockSparseMatrixVector&& gradientDifference,
+		float inputGradientDifferenceProduct);
+
+public:
+	void newEntry();
+	void saveEntry();
 
 public:
 	size_t historySize() const;
@@ -99,8 +110,88 @@ public:
 
 private:
 	HistoryQueue _queue;
+	size_t       _maximumSize;
 
 };
+	
+void GPULBFGSSolverHistory::setCost(float f)
+{
+	assert(!_queue.empty());
+	_queue.back().cost = f;
+}
+
+void GPULBFGSSolverHistory::setInputAndGradientDifference(BlockSparseMatrixVector&& inputDifference,
+	BlockSparseMatrixVector&& gradientDifference,
+	float inputGradientDifferenceProduct)
+{
+	assert(!_queue.empty());
+}
+
+void GPULBFGSSolverHistory::newEntry()
+{
+	while(historySize() >= _maximumSize)
+	{
+		_queue.pop_front();
+	}
+	
+	_queue.push_back(GPULBFGSSolverHistoryEntry());
+}
+
+void GPULBFGSSolverHistory::saveEntry()
+{
+	// intentionally blank
+}
+
+size_t GPULBFGSSolverHistory::historySize() const
+{
+	return _queue.size();
+}
+
+float GPULBFGSSolverHistory::previousCost() const
+{
+	assert(!_queue.empty());
+	return _queue.back().cost;
+}
+
+GPULBFGSSolverHistory::iterator GPULBFGSSolverHistory::begin()
+{
+	return _queue.begin();
+}
+
+GPULBFGSSolverHistory::const_iterator GPULBFGSSolverHistory::begin() const
+{
+	return _queue.begin();
+}
+
+GPULBFGSSolverHistory::iterator GPULBFGSSolverHistory::end()
+{
+	return _queue.end();
+}
+
+GPULBFGSSolverHistory::const_iterator GPULBFGSSolverHistory::end() const
+{
+	return _queue.end();
+}
+
+GPULBFGSSolverHistory::reverse_iterator GPULBFGSSolverHistory::rbegin()
+{
+	return _queue.rbegin();
+}
+
+GPULBFGSSolverHistory::const_reverse_iterator GPULBFGSSolverHistory::rbegin() const
+{
+	return _queue.rbegin();
+}
+
+GPULBFGSSolverHistory::reverse_iterator GPULBFGSSolverHistory::rend()
+{
+	return _queue.rend();
+}
+
+GPULBFGSSolverHistory::const_reverse_iterator GPULBFGSSolverHistory::rend() const
+{
+	return _queue.rend();
+}
 
 class GPULBFGSSolverImplementation
 {
@@ -141,8 +232,8 @@ float GPULBFGSSolver::solve(BlockSparseMatrixVector& inputs,
 
 double GPULBFGSSolver::getMemoryOverhead()
 {
-    // TODO
-    return 120.0;
+    // Current size (cost+gradient), plus 2 copies per history entry
+    return (GPULBFGSSolverParameters::historySize() + 1) * 2;
 }
 
 bool GPULBFGSSolver::isSupported()
@@ -180,7 +271,9 @@ float GPULBFGSSolverImplementation::solve()
 	float cost = _costAndGradientFunction.computeCostAndGradient(gradient, _inputs);
 	
 	// Store the initial cost value
-	_history.saveCost(cost);
+	_history.newEntry();
+	_history.setCost(cost);
+	_history.saveEntry();
 	
 	// Compute the direction
 	// Initially, the hessian is the identity, so the direction is just the -gradient
@@ -255,7 +348,8 @@ float GPULBFGSSolverImplementation::solve()
 		}
 		
 		// Save the current cost value
-		_history.saveCost(cost);
+		_history.newEntry();
+		_history.setCost(cost);
 
 		// Compute new search direction
 		_computeNewSearchDirection(direction, _inputs, previousInputs, gradient, previousGradient);
@@ -266,6 +360,9 @@ float GPULBFGSSolverImplementation::solve()
 
 		// Increment
 		++currentIteration;
+
+		// Save the history
+		_history.saveEntry();
 	}
 	
 	return cost;
@@ -309,6 +406,8 @@ void GPULBFGSSolverImplementation::_computeNewSearchDirection(
 		
 		direction.addSelf(entry->inputDifference.add(entry->alpha - beta));
 	}
+	
+	_history.setInputAndGradientDifference(std::move(inputDifference), std::move(gradientDifference), inputGradientDifferenceProduct);
 }
 
 }
