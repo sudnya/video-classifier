@@ -11,6 +11,9 @@
 
 #include <minerva/matrix/interface/BlockSparseMatrixVector.h>
 
+#include <minerva/util/interface/Knobs.h>
+#include <minerva/util/interface/debug.h>
+
 // Standard Library Includes
 #include <algorithm>
 #include <cmath>
@@ -138,7 +141,7 @@ static float findCubicMinimizer(float leftStep, float leftCost,
         (cm) = (xmin); \
     } */
 	
-	if(r < 0.0f && gamma != 0.0f)
+	if(r1 < 0.0f && gamma != 0.0f)
 	{
 		return rightStep - r1 * difference;
 	}
@@ -243,7 +246,7 @@ static void updateIntervalOfUncertainty(
 	bool bounded = false;
 	
 	// Select a new step
-	if(bestStep < step)
+	if(bestCost < cost)
 	{
 		// Case 1: a higher value function
 		// The minimum is bracket.  If the cubic minimizer is closer to x, it is taken, other
@@ -341,7 +344,7 @@ static void updateIntervalOfUncertainty(
 			newStep = findCubicMinimizer(bestStep, bestCost, bestGradientDirection,
 				step, cost, gradientDirection);
 		}
-		else if (bestCost < cost)
+		else if (bestStep < step)
 		{
 			newStep = maxStep;
 		}
@@ -393,8 +396,8 @@ static void updateIntervalOfUncertainty(
 	}
 	
 	// Clip the step to the min/max
-	if (step > maxStep) step = maxStep;
-	if (step < minStep) step = minStep;
+	if (newStep > maxStep) newStep = maxStep;
+	if (newStep < minStep) newStep = minStep;
 	
 	// Adjust the trial step if it is too close to the upper bound
 	if(bracket and bounded)
@@ -415,6 +418,42 @@ static void updateIntervalOfUncertainty(
 	step = newStep;
 }
 
+
+MoreThuenteLineSearch::MoreThuenteLineSearch()
+: _xTolerance(util::KnobDatabase::getKnobValue("LineSearch::MachinePrecision", 1.0e-13f)),
+  _gTolerance(util::KnobDatabase::getKnobValue("LineSearch::GradientAccuracy", 0.9f)),
+  _fTolerance(util::KnobDatabase::getKnobValue("LineSearch::FunctionAccuracy", 1.0e-4f)),
+  _maxStep(util::KnobDatabase::getKnobValue("LineSearch::MaximumStep", 1.0e20f)),
+  _minStep(util::KnobDatabase::getKnobValue("LineSearch::MinimumStep", 1.0e-20f)),
+  _maxLineSearch(util::KnobDatabase::getKnobValue("LineSearch::MaximumIterations", 10))
+{
+	if(_fTolerance < 0.0f)
+	{
+		throw std::invalid_argument("Function accuracy must be non-negative.");
+	}
+	
+	if(_gTolerance < 0.0f)
+	{
+		throw std::invalid_argument("Gradient accuracy must be non-negative.");
+	}
+	
+	if(_xTolerance < 0.0f)
+	{
+		throw std::invalid_argument("Machine precision must be non-negative.");
+	}
+	
+	if(_minStep < 0.0f)
+	{
+		throw std::invalid_argument("Minimum step must be non-negative.");
+	}
+	
+	if(_maxStep < _minStep)
+	{
+		throw std::invalid_argument("Maximum step must be greater than minimum step.");
+	}
+
+}
+
 void MoreThuenteLineSearch::search(
 	const CostAndGradientFunction& costFunction,
 	BlockSparseMatrixVector& inputs, float& cost,
@@ -422,16 +461,23 @@ void MoreThuenteLineSearch::search(
 	float step, const BlockSparseMatrixVector& previousInputs,
 	const BlockSparseMatrixVector& previousGradients)
 {
+	util::log("MoreThuenteLineSearch") << "Starting line search with initial cost " << cost << "\n";
+	
 	// check the inputs for errors
 	assert(step > 0.0f);
 	
 	// compute the initial gradient in the search direction
-	auto initialGradientDirection = gradient.dotProduct(direction);
+	float initialGradientDirection = gradient.dotProduct(direction);
 	
 	// make sure that we are pointed in a descent direction
 	if(initialGradientDirection > 0.0f)
 	{
-		throw std::runtime_error("Search direction does not decrease objective function.");
+		std::stringstream stream;
+		
+		stream << initialGradientDirection;
+
+		throw std::runtime_error("Search direction does not decrease objective function. Direction: " +
+			direction.toString() + " Gradient: " + gradient.toString() + " Line Direction: " + stream.str());
 	}
 
 	// Local variables
@@ -439,7 +485,7 @@ void MoreThuenteLineSearch::search(
 	bool  stageOne             = true;
 	float initialCost          = cost;
 
-	float gradientDirectionTest = initialGradientDirection * _tolerance;
+	float gradientDirectionTest = initialGradientDirection * _fTolerance;
 
 	float intervalWidth         = _maxStep - _minStep;
 	float previousIntervalWidth = 2.0f * intervalWidth;
@@ -447,17 +493,19 @@ void MoreThuenteLineSearch::search(
 	// Search variables
 	float bestStep = 0.0f;
 	float bestCost = initialCost;
-	auto  bestGradientDirection = initialGradientDirection;
+	float bestGradientDirection = initialGradientDirection;
 	
 	// End of interval of uncertainty variables
 	float intervalEndStep = 0.0f;
 	float intervalEndCost = initialCost;
-	auto  intervalEndGradientDirection = initialGradientDirection;
+	float intervalEndGradientDirection = initialGradientDirection;
 	
 	size_t iteration = 0;
 	
 	while(true)
 	{
+		util::log("MoreThuenteLineSearch") << " iteration " << iteration << "\n";
+
 		// Set the min/max steps to correspond to the current interval of uncertainty
 		float minStep = 0.0f;
 		float maxStep = 0.0f;
@@ -477,6 +525,10 @@ void MoreThuenteLineSearch::search(
 		if(step < _minStep) step = _minStep;
 		if(_maxStep < step) step = _maxStep;
 		
+		util::log("MoreThuenteLineSearch") << "  " << cost << " cost, " << bestStep
+			<< " begin step (" << bestCost << " cost, " << bestGradientDirection
+			<< " direction), " << intervalEndStep << " end step (" << intervalEndCost
+			<< " cost, " << intervalEndGradientDirection << " direction)\n";
 		
 		// If unusual termination would occur, use the best step so far
 		bool wouldTerminate = (
@@ -502,8 +554,9 @@ void MoreThuenteLineSearch::search(
 		++iteration;
 		
 		// Test for rounding errors
-		if(bracket && ((step < minStep) || (maxStep <= step)))
+		if(bracket && ((step <= minStep) || (maxStep <= step)))
 		{
+			return;
 			throw std::runtime_error("Rounding error occured.");
 		}
 		
@@ -537,8 +590,8 @@ void MoreThuenteLineSearch::search(
 		}
 		
 		// The sufficient descrease and directional derivative conditions hold
-		if(cost < testCost &&
-			std::fabs(gradientDirection) <= (_gTolerance * (initialGradientDirection)))
+		if(cost <= testCost &&
+			std::fabs(gradientDirection) <= (_gTolerance * (-initialGradientDirection)))
 		{
 			break;
 		}
@@ -564,8 +617,8 @@ void MoreThuenteLineSearch::search(
 		{
 			// Define the modified function and derivative values
 			float modifiedCost     = cost - step * gradientDirectionTest;
-			float modifiedBestCost = bestCost - step * gradientDirectionTest;
-			float modifiedIntervalEndCost = intervalEndCost - step * gradientDirectionTest;
+			float modifiedBestCost = bestCost - bestStep * gradientDirectionTest;
+			float modifiedIntervalEndCost = intervalEndCost - intervalEndStep * gradientDirectionTest;
 			
 			float modifiedGradientDirection     = gradientDirection - gradientDirectionTest;
 			float modifiedBestGradientDirection =
@@ -608,7 +661,7 @@ void MoreThuenteLineSearch::search(
 				step = bestStep + 0.5f * (intervalEndStep - bestStep);
 			}
 			previousIntervalWidth = intervalWidth;
-			previousIntervalWidth = std::fabs(intervalEndStep - bestStep);
+			intervalWidth = std::fabs(intervalEndStep - bestStep);
 		}
 	}
 }

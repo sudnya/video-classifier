@@ -22,6 +22,9 @@ namespace optimizer
 class MoreThuenteLineSearch : public LineSearch
 {
 public:
+	MoreThuenteLineSearch();
+
+public:
 	virtual void search(
 		const CostAndGradientFunction& costFunction,
 		BlockSparseMatrixVector& inputs, float& cost,
@@ -31,7 +34,6 @@ public:
 		const BlockSparseMatrixVector& previousGradients);
 
 private:
-	float _tolerance;
 	float _xTolerance;
 	float _gTolerance;
 	float _fTolerance;

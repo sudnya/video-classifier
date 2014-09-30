@@ -98,6 +98,9 @@ public:
 
 	BlockSparseMatrix& front();
 	const BlockSparseMatrix& front() const;
+
+public:
+	std::string toString() const;
 	
 private:
 	Vector _matrix;

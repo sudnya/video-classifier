@@ -161,6 +161,8 @@ BlockSparseMatrixVector BlockSparseMatrixVector::multiply(float f) const
 
 void BlockSparseMatrixVector::addSelf(const BlockSparseMatrixVector& m)
 {
+	assert(m.size() == size());
+	
 	// TODO: in parallel
 	auto j = m.begin();
 	for(auto i = begin(); i != end(); ++i, ++j)
@@ -182,7 +184,15 @@ void BlockSparseMatrixVector::multiplySelf(float f)
 
 float BlockSparseMatrixVector::dotProduct(const BlockSparseMatrixVector& m) const
 {
+	assert(m.size() == size());
+	
 	float sum = 0.0f;
+	
+	auto j = m.begin();
+	for(auto i = begin(); i != end(); ++i, ++j)
+	{
+		sum += j->elementMultiply(*i).reduceSum();
+	}
 	
 	return sum;
 }
@@ -288,6 +298,16 @@ BlockSparseMatrix& BlockSparseMatrixVector::front()
 const BlockSparseMatrix& BlockSparseMatrixVector::front() const
 {
 	return _matrix.front();
+}
+
+std::string BlockSparseMatrixVector::toString() const
+{
+	if(empty())
+	{
+		return "[]";
+	}
+	
+	return front().toString();
 }
 
 }

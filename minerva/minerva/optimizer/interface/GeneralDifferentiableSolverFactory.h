@@ -8,6 +8,7 @@
 
 // Standard Library Includes
 #include <string>
+#include <vector>
 
 // Forward Declarations
 namespace minerva { namespace optimizer { class GeneralDifferentiableSolver; } }
@@ -18,9 +19,12 @@ namespace minerva
 namespace optimizer
 {
 
-/*! \brief A factory for linear optimizers */
+/*! \brief A factory for differentiable optimizers */
 class GeneralDifferentiableSolverFactory
 {
+public:
+	typedef std::vector<std::string> StringVector;
+
 public:
 	static GeneralDifferentiableSolver* create(const std::string& solverName);
 
@@ -30,6 +34,9 @@ public:
 public:
 	static double getMemoryOverheadForSolver(const std::string& solverName);
 	static double getMemoryOverheadForSolver();
+
+public:
+	static StringVector enumerate();
 
 };
 
