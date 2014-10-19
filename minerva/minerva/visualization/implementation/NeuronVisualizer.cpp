@@ -7,6 +7,8 @@
 // Minvera Includes
 #include <minerva/visualization/interface/NeuronVisualizer.h>
 
+#include <minerva/matrix/interface/BlockSparseMatrixVector.h>
+
 #include <minerva/neuralnetwork/interface/NeuralNetwork.h>
 #include <minerva/neuralnetwork/interface/DenseBackPropagation.h>
 

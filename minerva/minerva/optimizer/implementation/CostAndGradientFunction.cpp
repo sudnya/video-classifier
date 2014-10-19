@@ -9,6 +9,7 @@
 #include <minerva/optimizer/interface/SparseMatrixFormat.h>
 
 #include <minerva/matrix/interface/BlockSparseMatrix.h>
+#include <minerva/matrix/interface/BlockSparseMatrixVector.h>
 
 namespace minerva
 {
@@ -16,9 +17,9 @@ namespace minerva
 namespace optimizer
 {
 
-typedef matrix::Matrix Matrix;
-typedef matrix::BlockSparseMatrix BlockSparseMatrix;
-typedef std::vector<BlockSparseMatrix> BlockSparseMatrixVector;
+typedef matrix::Matrix                  Matrix;
+typedef matrix::BlockSparseMatrix       BlockSparseMatrix;
+typedef matrix::BlockSparseMatrixVector BlockSparseMatrixVector;
 
 CostAndGradientFunction::CostAndGradientFunction(float i, float c,
 	const SparseMatrixVectorFormat& f)

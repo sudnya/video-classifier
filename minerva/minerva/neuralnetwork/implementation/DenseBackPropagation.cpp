@@ -8,6 +8,7 @@
 
 #include <minerva/matrix/interface/Matrix.h>
 #include <minerva/matrix/interface/BlockSparseMatrix.h>
+#include <minerva/matrix/interface/BlockSparseMatrixVector.h>
 
 // Minerva Includes
 #include <minerva/util/interface/debug.h>
@@ -26,7 +27,7 @@ namespace neuralnetwork
 typedef matrix::Matrix Matrix;
 typedef matrix::BlockSparseMatrix BlockSparseMatrix;
 typedef Matrix::FloatVector FloatVector;
-typedef DenseBackPropagation::MatrixVector MatrixVector;
+typedef DenseBackPropagation::BlockSparseMatrixVector BlockSparseMatrixVector;
 
 static bool isInMargin(const Matrix& ref, const Matrix& output, float epsilon)
 {
@@ -189,7 +190,7 @@ DenseBackPropagation::DenseBackPropagation(NeuralNetwork* ann, BlockSparseMatrix
 	_lambda = util::KnobDatabase::getKnobValue("NeuralNetwork::Lambda", 0.01f);
 }
 
-MatrixVector DenseBackPropagation::getCostDerivative(const NeuralNetwork& network,
+BlockSparseMatrixVector DenseBackPropagation::getCostDerivative(const NeuralNetwork& network,
 	const BlockSparseMatrix& input,
 	const BlockSparseMatrix& reference) const
 {
@@ -214,9 +215,9 @@ float DenseBackPropagation::getInputCost(const NeuralNetwork& network, const Blo
 	return computeCostForNetwork(network, input, reference, 0.0f);
 }
 
-MatrixVector DenseBackPropagation::getDeltas(const NeuralNetwork& network, const MatrixVector& activations) const
+BlockSparseMatrixVector DenseBackPropagation::getDeltas(const NeuralNetwork& network, const BlockSparseMatrixVector& activations) const
 {
-	MatrixVector deltas;
+	BlockSparseMatrixVector deltas;
 
 	deltas.reserve(activations.size() - 1);
 	
@@ -257,7 +258,7 @@ MatrixVector DenseBackPropagation::getDeltas(const NeuralNetwork& network, const
 	return deltas;
 }
 
-BlockSparseMatrix DenseBackPropagation::getInputDelta(const NeuralNetwork& network, const MatrixVector& activations) const
+BlockSparseMatrix DenseBackPropagation::getInputDelta(const NeuralNetwork& network, const BlockSparseMatrixVector& activations) const
 {
 	auto i = activations.rbegin();
 	auto delta = (*i).subtract(*_referenceOutput).elementMultiply(i->sigmoidDerivative());
@@ -307,9 +308,9 @@ BlockSparseMatrix DenseBackPropagation::getInputDelta(const NeuralNetwork& netwo
 	return delta;	
 }
 
-MatrixVector DenseBackPropagation::getActivations(const NeuralNetwork& network, const BlockSparseMatrix& input) const
+BlockSparseMatrixVector DenseBackPropagation::getActivations(const NeuralNetwork& network, const BlockSparseMatrix& input) const
 {
-	MatrixVector activations;
+	BlockSparseMatrixVector activations;
 
 	activations.reserve(network.size() + 1);
 
@@ -349,7 +350,7 @@ static void coalesceNeuronOutputs(BlockSparseMatrix& derivative,
 		skeleton.blocks());
 }
 
-MatrixVector DenseBackPropagation::getCostDerivative(
+BlockSparseMatrixVector DenseBackPropagation::getCostDerivative(
 	const NeuralNetwork& network) const
 {
 	//get activations in a vector
@@ -357,7 +358,7 @@ MatrixVector DenseBackPropagation::getCostDerivative(
 	//get deltas in a vector
 	auto deltas = getDeltas(network, activations);
 	
-	MatrixVector partialDerivative;
+	BlockSparseMatrixVector partialDerivative;
 
 	partialDerivative.reserve(2 * deltas.size());
 	

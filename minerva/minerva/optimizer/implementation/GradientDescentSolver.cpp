@@ -10,6 +10,7 @@
 #include <minerva/optimizer/interface/Constraint.h>
 
 #include <minerva/matrix/interface/Matrix.h>
+#include <minerva/matrix/interface/BlockSparseMatrixVector.h>
 
 #include <minerva/neuralnetwork/interface/NeuralNetwork.h>
 
@@ -38,8 +39,8 @@ float GradientDescentSolver::solve(BlockSparseMatrixVector& weights, const CostA
 {
    float learningRate = util::KnobDatabase::getKnobValue<float>(
 		"GradientDescentSolver::LearningRate", 2.4f);
-	float convergenceRatio = util::KnobDatabase::getKnobValue<float>(
-		"GradientDescentSolver::ConvergenceRatio", 0.1f);
+	float epsilon = util::KnobDatabase::getKnobValue<float>(
+		"GradientDescentSolver::Epsilon", 1.0e-6f);
 	float learningRateBackoff = util::KnobDatabase::getKnobValue<float>(
 		"GradientDescentSolver::LearningRateBackoff", 0.5f);
 	unsigned iterations = util::KnobDatabase::getKnobValue<float>(
@@ -52,7 +53,8 @@ float GradientDescentSolver::solve(BlockSparseMatrixVector& weights, const CostA
 
 	float learningRateBaseline = learningRate;
 	
-	util::log("GradientDescentSolver") << "Solving for at most " << iterations << " iterations\n";
+	util::log("GradientDescentSolver") << "Solving for at most "
+		<< iterations << " iterations\n";
 		
 	for(unsigned i = 0; i < iterations; ++i)
 	{
@@ -72,7 +74,8 @@ float GradientDescentSolver::solve(BlockSparseMatrixVector& weights, const CostA
 
 		if(newCost < previousCost)
 		{
-			util::log("GradientDescentSolver") << " Cost is now " << (newCost) << " (changed by " << (newCost - previousCost) << ")\n";
+			util::log("GradientDescentSolver") << " Cost is now " << (newCost)
+				<< " (changed by " << (newCost - previousCost) << ")\n";
 			
 			weights      = newWeights;
 			previousCost = newCost;
@@ -81,7 +84,7 @@ float GradientDescentSolver::solve(BlockSparseMatrixVector& weights, const CostA
 			learningRate += learningRateBaseline / 10.0f;
 			
 			// Early exit if the cost was reduced significantly enough
-			if(newCost <= originalCost * convergenceRatio)
+			if(newCost <= epsilon)
 			{
 				break;
 			}
@@ -94,7 +97,8 @@ float GradientDescentSolver::solve(BlockSparseMatrixVector& weights, const CostA
 
 			learningRateBaseline = learningRate;
 			
-			util::log("GradientDescentSolver") << " Backing off learning rate to " << learningRate << "\n";
+			util::log("GradientDescentSolver") << " Backing off learning rate to "
+				<< learningRate << "\n";
 		}
 	}
 	

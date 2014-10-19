@@ -13,6 +13,7 @@
 // Forward Declarations
 namespace minerva { namespace matrix    { class Matrix;                  } }
 namespace minerva { namespace matrix    { class BlockSparseMatrix;       } }
+namespace minerva { namespace matrix    { class BlockSparseMatrixVector; } }
 namespace minerva { namespace optimizer { class SparseMatrixFormat;      } }
 namespace minerva { namespace optimizer { class CostAndGradientFunction; } }
 
@@ -26,10 +27,10 @@ namespace optimizer
 class CostAndGradientFunction
 {
 public:
-	typedef matrix::BlockSparseMatrix BlockSparseMatrix;
-	typedef std::vector<BlockSparseMatrix> BlockSparseMatrixVector;
-	typedef matrix::Matrix Matrix;
+	typedef matrix::BlockSparseMatrix       BlockSparseMatrix;
+	typedef matrix::BlockSparseMatrixVector BlockSparseMatrixVector;
 	typedef std::vector<SparseMatrixFormat> SparseMatrixVectorFormat;
+	typedef matrix::Matrix                  Matrix;
 
 public:
 	CostAndGradientFunction(float initialCost = 0.0f, float costReductionFactor = 0.0f,

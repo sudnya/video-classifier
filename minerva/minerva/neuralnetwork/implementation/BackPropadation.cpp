@@ -10,6 +10,7 @@
 
 #include <minerva/matrix/interface/Matrix.h>
 #include <minerva/matrix/interface/BlockSparseMatrix.h>
+#include <minerva/matrix/interface/BlockSparseMatrixVector.h>
 
 #include <minerva/optimizer/interface/LinearSolver.h>
 #include <minerva/optimizer/interface/CostAndGradientFunction.h>
@@ -26,7 +27,7 @@ namespace neuralnetwork
 typedef matrix::Matrix Matrix;
 typedef matrix::BlockSparseMatrix BlockSparseMatrix;
 typedef Matrix::FloatVector FloatVector;
-typedef BackPropagation::MatrixVector MatrixVector;
+typedef BackPropagation::BlockSparseMatrixVector BlockSparseMatrixVector;
 typedef optimizer::SparseMatrixFormat SparseMatrixFormat;
 typedef optimizer::SparseMatrixVectorFormat SparseMatrixVectorFormat;
 
@@ -43,7 +44,7 @@ BackPropagation::~BackPropagation()
 
 }
 
-BackPropagation::MatrixVector BackPropagation::computeCostDerivative() const
+BackPropagation::BlockSparseMatrixVector BackPropagation::computeCostDerivative() const
 {
 	return getCostDerivative(*getNeuralNetwork(), *getInput(), *getReferenceOutput());
 }
@@ -113,7 +114,7 @@ void BackPropagation::setReferenceOutput(BlockSparseMatrix* o)
 	_referenceOutput = o;
 }
 
-static size_t getElementCount(const MatrixVector& matrices)
+static size_t getElementCount(const BlockSparseMatrixVector& matrices)
 {
 	size_t size = 0;
 	
@@ -125,7 +126,7 @@ static size_t getElementCount(const MatrixVector& matrices)
 	return size;
 }
 
-Matrix BackPropagation::flatten(const MatrixVector& matrices)
+Matrix BackPropagation::flatten(const BlockSparseMatrixVector& matrices)
 {
 	FloatVector flattenedData(getElementCount(matrices));
 	
@@ -195,7 +196,7 @@ static NeuralNetwork createNetworkFromWeights(
 }
 
 static NeuralNetwork createNetworkFromWeights(
-	const NeuralNetwork* neuralNetwork, const MatrixVector& weights)
+	const NeuralNetwork* neuralNetwork, const BlockSparseMatrixVector& weights)
 {
 	NeuralNetwork newNetwork;
 	
@@ -251,9 +252,9 @@ SparseMatrixVectorFormat BackPropagation::getInputFormat() const
 	return format;
 }
 
-MatrixVector BackPropagation::getWeights() const
+BlockSparseMatrixVector BackPropagation::getWeights() const
 {
-	MatrixVector weights;
+	BlockSparseMatrixVector weights;
 	
 	weights.reserve(2 * getNeuralNetwork()->size());
 	
@@ -266,7 +267,7 @@ MatrixVector BackPropagation::getWeights() const
 	return weights;
 }
 
-void BackPropagation::setWeights(const MatrixVector& weights)
+void BackPropagation::setWeights(const BlockSparseMatrixVector& weights)
 {
 	assert(weights.size() == (2 * getNeuralNetwork()->size()));
 	
@@ -279,35 +280,35 @@ void BackPropagation::setWeights(const MatrixVector& weights)
 	}
 }
 
-float BackPropagation::computeCostForNewWeights(const MatrixVector& weights) const
+float BackPropagation::computeCostForNewWeights(const BlockSparseMatrixVector& weights) const
 {
 	auto network = createNetworkFromWeights(getNeuralNetwork(), weights);
 
 	return getCost(network, *getInput(), *getReferenceOutput());
 }
 
-float BackPropagation::computeCostForNewInputs(const MatrixVector& inputs) const
+float BackPropagation::computeCostForNewInputs(const BlockSparseMatrixVector& inputs) const
 {
 	return getInputCost(*getNeuralNetwork(), inputs[0], *getReferenceOutput());
 }
 
-float BackPropagation::computeAccuracyForNewWeights(const MatrixVector& weights) const
+float BackPropagation::computeAccuracyForNewWeights(const BlockSparseMatrixVector& weights) const
 {
 	auto network = createNetworkFromWeights(getNeuralNetwork(), weights);
 
 	return network.computeAccuracy(*getInput(), *getReferenceOutput());
 }
 
-MatrixVector BackPropagation::computePartialDerivativesForNewWeights(const MatrixVector& weights) const
+BlockSparseMatrixVector BackPropagation::computePartialDerivativesForNewWeights(const BlockSparseMatrixVector& weights) const
 {
 	auto network = createNetworkFromWeights(getNeuralNetwork(), weights);
 
 	return getCostDerivative(network, *getInput(), *getReferenceOutput());
 }
 
-MatrixVector BackPropagation::computePartialDerivativesForNewInputs(const MatrixVector& inputs) const
+BlockSparseMatrixVector BackPropagation::computePartialDerivativesForNewInputs(const BlockSparseMatrixVector& inputs) const
 {
-	return MatrixVector(1, getInputDerivative(*getNeuralNetwork(), inputs[0], *getReferenceOutput()));
+	return BlockSparseMatrixVector(1, getInputDerivative(*getNeuralNetwork(), inputs[0], *getReferenceOutput()));
 }
 
 float BackPropagation::computeCostForNewFlattenedWeights(const Matrix& weights) const

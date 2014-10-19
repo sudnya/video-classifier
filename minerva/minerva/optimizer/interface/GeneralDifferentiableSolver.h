@@ -1,6 +1,6 @@
-/* Author: Sudnya Padalikar
- * Date  : 08/17/2013
- * The interface for the LinearSolver class 
+/* \author Sudnya Padalikar
+   \date   08/17/2013
+   \brief  The interface for the GeneralDifferentiableSolver class. 
  */
 
 #pragma once
@@ -9,12 +9,12 @@
 #include <minerva/optimizer/interface/Solver.h>
 
 // Standard Library Includes
-#include <vector>
 #include <cstdlib>
 
 // Forward Declarations
 namespace minerva { namespace matrix    { class Matrix;                  } }
 namespace minerva { namespace matrix    { class BlockSparseMatrix;       } }
+namespace minerva { namespace matrix    { class BlockSparseMatrixVector; } }
 namespace minerva { namespace optimizer { class CostAndGradientFunction; } }
 
 namespace minerva
@@ -26,9 +26,9 @@ namespace optimizer
 class GeneralDifferentiableSolver : public Solver
 {
 public:
-	typedef matrix::BlockSparseMatrix      BlockSparseMatrix;
-	typedef matrix::Matrix                 Matrix;
-	typedef std::vector<BlockSparseMatrix> BlockSparseMatrixVector;
+	typedef matrix::BlockSparseMatrix       BlockSparseMatrix;
+	typedef matrix::Matrix                  Matrix;
+	typedef matrix::BlockSparseMatrixVector BlockSparseMatrixVector;
 
 public:
 	virtual ~GeneralDifferentiableSolver();

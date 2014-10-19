@@ -10,6 +10,7 @@
 
 #include <minerva/matrix/interface/Matrix.h>
 #include <minerva/matrix/interface/BlockSparseMatrix.h>
+#include <minerva/matrix/interface/BlockSparseMatrixVector.h>
 
 #include <minerva/util/interface/debug.h>
 #include <minerva/util/interface/Knobs.h>
@@ -26,9 +27,9 @@ namespace neuralnetwork
 typedef matrix::Matrix Matrix;
 typedef matrix::BlockSparseMatrix BlockSparseMatrix;
 typedef Matrix::FloatVector FloatVector;
-typedef SparseBackPropagation::MatrixVector MatrixVector;
+typedef SparseBackPropagation::BlockSparseMatrixVector BlockSparseMatrixVector;
 
-static MatrixVector computeCostDerivative(const NeuralNetwork& network, const BlockSparseMatrix& input,
+static BlockSparseMatrixVector computeCostDerivative(const NeuralNetwork& network, const BlockSparseMatrix& input,
 	const BlockSparseMatrix& referenceOutput, float lambda, float sparsity, float sparsityWeight);
 static BlockSparseMatrix computeInputDerivative(const NeuralNetwork& network, const BlockSparseMatrix& input,
 	const BlockSparseMatrix& referenceOutput, float lambda, float sparsity, float sparsityWeight);
@@ -47,7 +48,7 @@ SparseBackPropagation::SparseBackPropagation(NeuralNetwork* ann,
 	_sparsityWeight = util::KnobDatabase::getKnobValue("NeuralNetwork::SparsityWeight", 0.600f);
 }
 
-MatrixVector SparseBackPropagation::getCostDerivative(const NeuralNetwork& neuralNetwork,
+BlockSparseMatrixVector SparseBackPropagation::getCostDerivative(const NeuralNetwork& neuralNetwork,
 	const BlockSparseMatrix& input, const BlockSparseMatrix& reference) const
 {
 	return neuralnetwork::computeCostDerivative(neuralNetwork, input, reference, _lambda, _sparsity, _sparsityWeight);
@@ -134,9 +135,9 @@ static float computeCostForNetwork(const NeuralNetwork& network, const BlockSpar
 	return costSum;
 }
 
-static MatrixVector getActivations(const NeuralNetwork& network, const BlockSparseMatrix& input) 
+static BlockSparseMatrixVector getActivations(const NeuralNetwork& network, const BlockSparseMatrix& input) 
 {
-	MatrixVector activations;
+	BlockSparseMatrixVector activations;
 
 	activations.reserve(network.size() + 1);
 
@@ -161,10 +162,10 @@ static MatrixVector getActivations(const NeuralNetwork& network, const BlockSpar
 	return activations;
 }
 
-static MatrixVector getDeltas(const NeuralNetwork& network, const MatrixVector& activations, const BlockSparseMatrix& reference,
+static BlockSparseMatrixVector getDeltas(const NeuralNetwork& network, const BlockSparseMatrixVector& activations, const BlockSparseMatrix& reference,
 	float sparsity, float sparsityWeight)
 {
-	MatrixVector deltas;
+	BlockSparseMatrixVector deltas;
 	
 	deltas.reserve(activations.size() - 1);
 	
@@ -225,7 +226,7 @@ static void coalesceNeuronOutputs(BlockSparseMatrix& derivative, const BlockSpar
 		skeleton.blocks());
 }
 
-static MatrixVector computeCostDerivative(const NeuralNetwork& network, const BlockSparseMatrix& input,
+static BlockSparseMatrixVector computeCostDerivative(const NeuralNetwork& network, const BlockSparseMatrix& input,
 	const BlockSparseMatrix& referenceOutput, float lambda, float sparsity, float sparsityWeight)
 {
 	//get activations in a vector
@@ -233,7 +234,7 @@ static MatrixVector computeCostDerivative(const NeuralNetwork& network, const Bl
 	//get deltas in a vector
 	auto deltas = getDeltas(network, activations, referenceOutput, sparsity, sparsityWeight);
 	
-	MatrixVector partialDerivative;
+	BlockSparseMatrixVector partialDerivative;
 	
 	partialDerivative.reserve(2 * deltas.size());
 	
@@ -285,7 +286,7 @@ static MatrixVector computeCostDerivative(const NeuralNetwork& network, const Bl
 	return partialDerivative;
 }
 
-static BlockSparseMatrix getInputDelta(const NeuralNetwork& network, const MatrixVector& activations,
+static BlockSparseMatrix getInputDelta(const NeuralNetwork& network, const BlockSparseMatrixVector& activations,
 	const BlockSparseMatrix& reference, float sparsity, float sparsityWeight)
 {
 	auto i = activations.rbegin();

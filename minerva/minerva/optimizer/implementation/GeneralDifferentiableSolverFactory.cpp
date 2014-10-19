@@ -7,6 +7,7 @@
 // Minerva Includes
 #include <minerva/optimizer/interface/GeneralDifferentiableSolverFactory.h>
 #include <minerva/optimizer/interface/LimitedMemoryBroydenFletcherGoldfarbShannoSolver.h>
+#include <minerva/optimizer/interface/GPULBFGSSolver.h>
 #include <minerva/optimizer/interface/GradientDescentSolver.h>
 
 #include <minerva/util/interface/Knobs.h>
@@ -24,7 +25,11 @@ GeneralDifferentiableSolver* GeneralDifferentiableSolverFactory::create(const st
 	if("LimitedMemoryBroydenFletcherGoldfarbShannoSolver" == name ||
 		"LBFGSSolver" == name)
 	{
-		if(LBFGSSolver::isSupported())
+		if(GPULBFGSSolver::isSupported())
+		{
+			solver = new GPULBFGSSolver;
+		}
+		else if(LBFGSSolver::isSupported())
 		{
 			solver = new LBFGSSolver;
 		}
@@ -40,7 +45,6 @@ GeneralDifferentiableSolver* GeneralDifferentiableSolverFactory::create(const st
 static std::string getSolverName()
 {
 	return util::KnobDatabase::getKnobValue("GeneralDifferentiableSolver::Type",
-		//"GradientDescentSolver");	
 		"LBFGSSolver");
 }
 
@@ -74,6 +78,15 @@ double GeneralDifferentiableSolverFactory::getMemoryOverheadForSolver()
 	auto solverName = getSolverName();
 	 
 	return getMemoryOverheadForSolver(solverName);
+}
+
+GeneralDifferentiableSolverFactory::StringVector GeneralDifferentiableSolverFactory::enumerate()
+{
+	return 
+	{
+		"LimitedMemoryBroydenFletcherGoldfarbShannoSolver",
+		"GradientDescentSolver"
+	};
 }
 
 }
