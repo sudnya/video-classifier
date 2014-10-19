@@ -356,8 +356,19 @@ float GPULBFGSSolverImplementation::solve()
 		auto previousGradient = gradient;
 		
 		// search for an optimal step using a line search
-		_lineSearch->search(_costAndGradientFunction, _inputs, cost,
-			gradient, direction, step, previousInputs, previousGradient);
+		try
+		{
+			_lineSearch->search(_costAndGradientFunction, _inputs, cost,
+				gradient, direction, step, previousInputs, previousGradient);
+		}
+		catch(...)
+		{
+			// revert
+			_inputs  = previousInputs;
+			gradient = previousGradient;
+			
+			throw;
+		}
 		
 		// Compute the norms
 		float inputNorm    = computeNorm(_inputs);
@@ -390,10 +401,6 @@ float GPULBFGSSolverImplementation::solve()
 				return cost;
 			}
 		}
-	
-		// Save the current cost value
-		_history.newEntry();
-		_history.setCost(cost);
 		
 		// Test for iteration limits
 		if(_parameters.maximumIterations < currentIteration)
@@ -404,6 +411,9 @@ float GPULBFGSSolverImplementation::solve()
 		// Compute new search direction
 		_computeNewSearchDirection(direction, _inputs, previousInputs,
 			gradient, previousGradient);
+	
+		// Save the current cost value
+		_history.setCost(cost);
 
 		// Compute the new step
 		// start with just 1.0f
@@ -426,20 +436,22 @@ void GPULBFGSSolverImplementation::_computeNewSearchDirection(
 	const BlockSparseMatrixVector& gradient,
 	const BlockSparseMatrixVector& previousGradient)
 {
+	// Start the new direction with the negative gradient
+	direction = gradient.negate();
+	
 	auto inputDifference    =   inputs.subtract(previousInputs  ); // s
 	auto gradientDifference = gradient.subtract(previousGradient); // y
 	
 	float inputGradientDifferenceProduct    = gradientDifference.dotProduct(   inputDifference); // ys
 	float gradientGradientDifferenceProduct = gradientDifference.dotProduct(gradientDifference); // yy
 	
+	_history.newEntry();
+	
 	_history.setInputAndGradientDifference(std::move(inputDifference),
 		std::move(gradientDifference), inputGradientDifferenceProduct);
 	
-	// Start the new direction with the negative gradient
-	direction = gradient.negate();
-	
 	// Update alpha
-	for(auto entry = _history.begin(); entry != _history.end(); ++entry)
+	for(auto entry = _history.rbegin(); entry != _history.rend(); ++entry)
 	{
 		entry->alpha = entry->inputDifference.dotProduct(direction);
 
@@ -452,7 +464,7 @@ void GPULBFGSSolverImplementation::_computeNewSearchDirection(
 	direction.multiplySelf(inputGradientDifferenceProduct / gradientGradientDifferenceProduct);
 
 	// Update beta
-	for(auto entry = _history.rbegin(); entry != _history.rend(); ++entry)
+	for(auto entry = _history.begin(); entry != _history.end(); ++entry)
 	{
 		float beta = entry->gradientDifference.dotProduct(direction);
 

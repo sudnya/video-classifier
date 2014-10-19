@@ -9,6 +9,9 @@
 #include <minerva/optimizer/interface/LineSearch.h>
 
 #include <minerva/optimizer/interface/MoreThuenteLineSearch.h>
+#include <minerva/optimizer/interface/BacktrackingLineSearch.h>
+
+#include <minerva/util/interface/Knobs.h>
 
 namespace minerva
 {
@@ -24,13 +27,17 @@ std::unique_ptr<LineSearch> LineSearchFactory::create(const std::string& searchN
 	{
 		lineSearch.reset(new MoreThuenteLineSearch);
 	}
+	else if(searchName == "BacktrackingLineSearch")
+	{
+		lineSearch.reset(new BacktrackingLineSearch);
+	}
 	
 	return lineSearch;
 }
 
 std::unique_ptr<LineSearch> LineSearchFactory::create()
 {
-	return create("MoreThuenteLineSearch");
+	return create(util::KnobDatabase::getKnobValue("LineSearch::Default", "BacktrackingLineSearch"));
 }
 
 }

@@ -469,6 +469,8 @@ void MoreThuenteLineSearch::search(
 	// compute the initial gradient in the search direction
 	float initialGradientDirection = gradient.dotProduct(direction);
 	
+	assert(!std::isnan(initialGradientDirection));
+	
 	// make sure that we are pointed in a descent direction
 	if(initialGradientDirection > 0.0f)
 	{
