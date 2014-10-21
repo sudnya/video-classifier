@@ -56,7 +56,7 @@ public:
 
 public:
 	Parameters()
-	: blockX(8), blockY(8), blockStep(1)
+	: blockX(16), blockY(16), blockStep(1)
 	{
 		
 	}
@@ -83,11 +83,15 @@ static void createModel(ClassificationModel& model, const Parameters& parameters
 	
 	// pooling layer
 	featureSelector.addLayer(
-		Layer(1,
-			blocks * featureSelector.back().getOutputBlockingFactor(),
-			blocks * featureSelector.back().getOutputBlockingFactor()));
+		Layer(blocks,
+			featureSelector.back().getOutputBlockingFactor(),
+			featureSelector.back().getOutputBlockingFactor()));
 	
 	// contrast normalization
+	featureSelector.addLayer(Layer(featureSelector.back().blocks(),
+		featureSelector.back().getOutputBlockingFactor(),
+		featureSelector.back().getOutputBlockingFactor()));
+	
 	//featureSelector.addLayer(Layer(featureSelector.back().blocks(),
 	//	featureSelector.back().getOutputBlockingFactor(),
 	//	featureSelector.back().getOutputBlockingFactor()));

@@ -81,7 +81,7 @@ void BacktrackingLineSearch::search(
 
 	if(initialGradientDirection > 0.0f)
 	{
-		throw std::runtime_error("Initial direction increases the function.");
+		//throw std::runtime_error("Initial direction increases the function.");
 	}
 
 	float test = _fTolerance * initialGradientDirection;
