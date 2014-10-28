@@ -13,9 +13,12 @@
 
 // Standard Library Includes
 #include <ostream>
+#include <memory>
 
 // Forward Declarations
-namespace minerva { namespace model { class ClassificationModel; } }
+namespace minerva { namespace model       { class ClassificationModel; } }
+namespace minerva { namespace input       { class InputDataProducer;   } }
+namespace minerva { namespace classifiers { class ResultProcessor;     } }
 
 namespace minerva
 {
@@ -29,38 +32,39 @@ namespace classifiers
 class ClassifierEngine
 {
 public:
-	typedef util::StringVector StringVector;
-	typedef video::ImageVector ImageVector;
-
-public:
 	ClassifierEngine();
 	virtual ~ClassifierEngine();
 
 public:
-	/*! \brief Load a model from a file */
+	/*! \brief Load a model from a file, the engine takes ownership. */
 	void loadModel(const std::string& pathToModelFile);
 	
-	/*! \brief Add model directly */
+	/*! \brief Add model directly, the engine takes ownership. */
 	void setModel(model::ClassificationModel* model);
+	
+	/*! \brief Set the result handler, the engine takes ownership. */
+	void setResultProcessor(ResultProcessor* processor);
 
 	/*! \brief Run on a single image/video database file */
 	void runOnDatabaseFile(const std::string& pathToDatabase);
-
-	/*! \brief Run the classifier on all of the contained paths */
-	void runOnPaths(const StringVector& paths);
 
 	/*! \brief Set the output file name */
 	void setOutputFilename(const std::string& filename);
 
 public:
+	/*! \brief Get the model, the caller takes ownership. */
+	model::ClassificationModel* getModel();
+	
+	/*! \brief Get the result handler, the caller takes ownership */
+	ResultProducer* getResultProcessor();
+
+public:
 	/*! \brief Set the maximum samples to be run by the engine */
-	void setMaximumSamplesToRun(unsigned int samples);
+	void setMaximumSamplesToRun(size_t samples);
 	/*! \brief Set the number of samples to be run in a batch by the engine */
-	void setBatchSize(unsigned int samples);
+	void setBatchSize(size_t samples);
 	/*! \brief Should the engine be allowed to run the same sample multiple times */
-	void setMultipleSamplesAllowed(bool);
-	/*! \brief Should the engine display images and their labels after running them? */
-	void setDisplayImages(bool);
+	void setAllowSamplingWithReplacement(bool);
 	
 public:
 	std::string reportStatisticsString() const;
@@ -81,11 +85,8 @@ protected:
 	void saveModel();
 
 public:
-	virtual void runOnImageBatch(ImageVector&& images) = 0;
+	virtual ResultVector runOnBatch(matrix::Matrix&& batchOfSamples) = 0;
 	virtual size_t getInputFeatureCount() const = 0;
-
-public:
-	size_t getColorComponents() const;
 	
 public:
 	ClassifierEngine(const ClassifierEngine&) = delete;
@@ -95,18 +96,9 @@ protected:
 	typedef model::ClassificationModel ClassificationModel;
 
 protected:
-	ClassificationModel* _model;
-	bool                 _ownModel;
-
-protected:
-	unsigned int _maximumSamplesToRun;
-	unsigned int _batchSize;
-	bool         _areMultipleSamplesAllowed;
-	bool         _shouldDisplayImages;
-
-protected:
-	std::string _outputFilename;
-
+	std::unique_ptr<ClassificationModel> _model;
+	std::unique_ptr<InputDataProducer>   _dataProducer;
+	std::unique_ptr<ResultProcessor>     _resultProcesssor;
 
 };
 

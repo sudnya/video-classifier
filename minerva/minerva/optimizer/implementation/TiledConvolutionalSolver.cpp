@@ -82,7 +82,7 @@ private:
 	const BackPropagation* _backPropDataPtr;
 };
 
-static float linearSolver(BackPropagation* backPropData)
+static float differentiableSolver(BackPropagation* backPropData)
 {
 	util::log("TiledConvolutionalSolver") << "  starting general solver\n";
 		
@@ -163,7 +163,7 @@ void TiledConvolutionalSolver::solve()
 			m_backPropDataPtr->setInput(&inputTile);
 			m_backPropDataPtr->setReferenceOutput(&referenceTile);
 
-			linearSolver(m_backPropDataPtr);
+			differentiableSolver(m_backPropDataPtr);
 			
 			extractor.restoreTile(&networkTile, &inputTile, &referenceTile, tile);
 		}
