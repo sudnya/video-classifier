@@ -72,11 +72,13 @@ void ClassifierEngine::runOnDatabaseFile(const std::string& path)
 		throw std::runtime_error("No input path provided.");
 	}
 	
-	_producer.reset(InputDataProducerFactory::createForDatabase(path));
+	_dataProducer.reset(InputDataProducerFactory::createForDatabase(path));
 	
 	while(!_producer->empty())
 	{
-		runOnBatch(std::move(_producer->pop()));
+		auto results = runOnBatch(std::move(_producer->pop()));
+		
+		_resultProcessor->process(std::move(results));
 	}
 
 	// close

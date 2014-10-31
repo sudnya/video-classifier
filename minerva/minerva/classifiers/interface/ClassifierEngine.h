@@ -53,9 +53,16 @@ public:
 
 public:
 	/*! \brief Get the model, the caller takes ownership. */
-	model::ClassificationModel* getModel();
+	model::ClassificationModel* extractModel();
 	
 	/*! \brief Get the result handler, the caller takes ownership */
+	ResultProducer* extractResultProcessor();
+
+public:
+	/*! \brief Get the model, the engine retains ownership */
+	model::ClassificationModel* getModel();
+	
+	/*! \brief Get the result handler, the enginer retains ownership */
 	ResultProducer* getResultProcessor();
 
 public:

@@ -21,42 +21,42 @@ namespace classifiers
 
 class Classifier
 {
-    public:
-    	typedef model::ClassificationModel   ClassificationModel;
-    	typedef video::ImageVector           ImageVector;
-        typedef neuralnetwork::NeuralNetwork NeuralNetwork;
-        typedef matrix::Matrix               Matrix;
-		typedef std::vector<std::string>     LabelVector;
+public:
+	typedef model::ClassificationModel   ClassificationModel;
+	typedef video::ImageVector           ImageVector;
+	typedef neuralnetwork::NeuralNetwork NeuralNetwork;
+	typedef matrix::Matrix               Matrix;
+	typedef std::vector<std::string>     LabelVector;
 
-    public:
-        Classifier(const ClassificationModel* model) : m_classificationModel(model)
-        {
+public:
+	Classifier(const ClassificationModel* model) : m_classificationModel(model)
+	{
 
-        }
-    
-        LabelVector classify(const ImageVector& images);
+	}
 
-    	unsigned getInputFeatureCount();
-    	
-    private:
-        void loadFeatureSelector();
-        void loadClassifier();
-        Matrix detectLabels(const ImageVector& images);
-        LabelVector pickMostLikelyLabel(const Matrix& m, const ImageVector& images);
-    
-    	
-    private:
-        const ClassificationModel* m_classificationModel;
+	LabelVector classify(const ImageVector& images);
 
-        /* These are read from disk */
-        NeuralNetwork m_featureSelectorNetwork;
-        NeuralNetwork m_classifierNetwork;
+	unsigned getInputFeatureCount();
+	
+private:
+	void loadFeatureSelector();
+	void loadClassifier();
+	Matrix detectLabels(const ImageVector& images);
+	LabelVector pickMostLikelyLabel(const Matrix& m, const ImageVector& images);
 
-        /* These are read from test images */
-        ImageVector m_inputImages;
+	
+private:
+	const ClassificationModel* m_classificationModel;
 
-        /* Vector of values for all possible labels */
-        LabelVector m_labels;
+	/* These are read from disk */
+	NeuralNetwork m_featureSelectorNetwork;
+	NeuralNetwork m_classifierNetwork;
+
+	/* These are read from test images */
+	ImageVector m_inputImages;
+
+	/* Vector of values for all possible labels */
+	LabelVector m_labels;
 };
 
 } //end classifiers

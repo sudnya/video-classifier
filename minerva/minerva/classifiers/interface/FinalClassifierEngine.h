@@ -22,6 +22,7 @@ class FinalClassifierEngine : public ClassifierEngine
 {
 public:
 	FinalClassifierEngine();
+	virtual ~FinalClassifierEngine();
 
 public:
 	float getAccuracy() const;

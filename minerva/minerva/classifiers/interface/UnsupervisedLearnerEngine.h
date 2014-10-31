@@ -9,15 +9,14 @@
 // Minerva Includes
 #include <minerva/classifiers/interface/ClassifierEngine.h>
 
-// Forward Declaration
-namespace minerva { namespace classifiers { class UnsupervisedLearner; } }
-
 namespace minerva
 {
 
 namespace classifiers
 {
 
+
+/*! \brief Performs unsupervised learning on a given model. */
 class UnsupervisedLearnerEngine : public ClassifierEngine
 {
 public:
@@ -36,14 +35,16 @@ private:
 	virtual void closeModel();
 	
 private:
-	virtual void runOnImageBatch(ImageVector&& images);
-	virtual size_t getInputFeatureCount() const;
-
-private:
-	UnsupervisedLearner* _learner;
+	virtual void runOnBatch(Matrix&& samples);
 
 private:
 	size_t _layersPerIteration;
+
+private:
+	typedef std::map<std::string, NeuralNetwork> NetworkMap;
+
+private:
+	NetworkMap _augmentorNetworks;
 
 };
 

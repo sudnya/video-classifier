@@ -29,15 +29,11 @@ public:
 	FeatureExtractorEngine& operator=(const FeatureExtractorEngine&) = delete;
 	
 private:
-	virtual void   runOnImageBatch(ImageVector&& images);
-	virtual size_t getInputFeatureCount() const;
+	virtual ResultVector runOnBatch(Matrix&& matrix);
 
 private:	
 	virtual void registerModel();
 	virtual void closeModel();
-
-private:
-	std::unique_ptr<std::ofstream> _outputFile;
 };
 
 }

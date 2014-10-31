@@ -30,7 +30,7 @@ public:
 
 public:
 	const NeuralNetwork& getNeuralNetwork(const std::string& name) const;
-	NeuralNetwork& getNeuralNetwork(const std::string& name);
+	NeuralNetwork&  getNeuralNetwork(const std::string& name);
 
 public:
 	bool containsNeuralNetwork(const std::string& name) const;
