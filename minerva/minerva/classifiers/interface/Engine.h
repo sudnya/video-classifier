@@ -1,7 +1,7 @@
-/*	\file   ClassifierEngine.h
+/*	\file   Engine.h
 	\date   Saturday August 10, 2013
 	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The header file for the ClassifierEngine class.
+	\brief  The header file for the Engine class.
 */
 
 #pragma once
@@ -29,11 +29,11 @@ namespace classifiers
 /*! \brief A generic interface to a classifier with support for an arbitrarily
 	large input data stream.
  */
-class ClassifierEngine
+class Engine
 {
 public:
-	ClassifierEngine();
-	virtual ~ClassifierEngine();
+	Engine();
+	virtual ~Engine();
 
 public:
 	/*! \brief Load a model from a file, the engine takes ownership. */
@@ -89,15 +89,24 @@ protected:
 	virtual bool requiresLabeledData() const;
 
 protected:
+	/*! \brief Save the model to persistent storage. */
 	void saveModel();
 
+protected:
+	/*! \brief Extract and merge all networks from the model. */
+	NeuralNetwork getAggregateModel();
+
+	/*! \brief Unpack and restore networks back to the model. */
+	void restoreAggregateNetwork(NeuralNetwork& network);
+	
+
 public:
-	virtual ResultVector runOnBatch(matrix::Matrix&& batchOfSamples) = 0;
-	virtual size_t getInputFeatureCount() const = 0;
+	/*! \brief Run the engine on the specified batch. */
+	virtual ResultVector runOnBatch(Matrix&& batchOfSamples, Matrix&& referenceForEachSample) = 0;
 	
 public:
-	ClassifierEngine(const ClassifierEngine&) = delete;
-	ClassifierEngine& operator=(const ClassifierEngine&) = delete;
+	Engine(const Engine&) = delete;
+	Engine& operator=(const Engine&) = delete;
 
 protected:
 	typedef model::ClassificationModel ClassificationModel;

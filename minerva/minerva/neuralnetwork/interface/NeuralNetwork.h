@@ -143,6 +143,9 @@ class NeuralNetwork
 	public:
 		size_t size() const;
 		bool   empty() const;
+	
+	public:
+		void setParameters(const NeuralNetwork& network);
 
 	public:
 		void setUseSparseCostFunction(bool shouldUse);

@@ -7,7 +7,7 @@
 #pragma once
 
 // Minerva Includes
-#include <minerva/classifiers/interface/ClassifierEngine.h>
+#include <minerva/classifiers/interface/Engine.h>
 
 // Standard Library Includes
 #include <map>
@@ -18,14 +18,11 @@ namespace minerva
 namespace classifiers
 {
 
-class FinalClassifierEngine : public ClassifierEngine
+class FinalClassifierEngine : public Engine
 {
 public:
 	FinalClassifierEngine();
 	virtual ~FinalClassifierEngine();
-
-public:
-	float getAccuracy() const;
 
 public:
 	void useLabeledData(bool useIt);

@@ -19,169 +19,86 @@ namespace classifiers
 FinalClassifierEngine::FinalClassifierEngine()
 : _shouldUseLabeledData(false)
 {
-
+	setResultProcessor(new LabelResultProcessor);
 }	
 
-float FinalClassifierEngine::getAccuracy() const
-{
-	return (_statistics.exactMatches + 0.0) / _statistics.totalSamples;
-}
-
-void FinalClassifierEngine::useLabeledData(bool shouldUse)
+void FinalClassifierEngine::setUseLabeledData(bool shouldUse)
 {
 	_shouldUseLabeledData = shouldUse;
 }
 
-void FinalClassifierEngine::reportStatistics(std::ostream& stream) const
+StringVector convertActivationsToLabels(Matrix&& activations, const NeuralNetwork& network)
 {
-	stream << _statistics.toString();
-}
-
-void FinalClassifierEngine::runOnImageBatch(ImageVector&& images)
-{
-	Classifier classifier(_model);
+	size_t samples = activations.rows();
+	size_t columns = activations.columns();
 	
-	auto labels = classifier.classify(images);
+	StringVector labels;
 	
-	assert(labels.size() == images.size());
-
-	auto image = images.begin();
-	for(auto label = labels.begin(); label != labels.end() &&
-		image != images.end(); ++label, ++image)
+	for(size_t sample = 0; sample < samples; ++sample)
 	{
-		if(image->hasLabel())
+		size_t maxColumn = 0;
+		float  maxValue  = 0.0f;
+		
+		for(size_t column = 0; column < columns; ++column)
 		{
-			util::log("FinalClassifierEngine") << " Classified '" << image->path()
-				<< "' with label '" << image->label() << "' as '" << *label << "'\n";
+			if(activations(row, column) >= maxValue)
+			{
+				maxValue  = activations(row, column);
+				maxColumn = column;
+			}
 		}
-		else
-		{
-			util::log("FinalClassifierEngine") << " Classified '" << image->path()
-				<< "' as '" << *label << "'\n";
-		}
-
-		if(_shouldDisplayImages)
-		{
-			image->displayOnScreen();
-			image->addTextToDisplay(*label);
-			image->waitForKeyPress();
-			image->deleteWindow();
-		}
-
-		_updateStatistics(*label, *image);
+		
+		labels.push_back(network.getLabelForOutputNeuron(maxColumn));
 	}
-
-	// TODO interpret labels, update statistics
+	
+	return labels;
 }
 
-size_t FinalClassifierEngine::getInputFeatureCount() const
+ResultVector compareWithReference(const StringVector& labels, const StringVector& references)
 {
-	Classifier classifier(_model);
+	ResultVector results;
 	
-	return classifier.getInputFeatureCount();
+	for(auto labels = labels.begin(), reference = references.begin(); label != labels.end(); ++reference, ++label)
+	{
+		result.push_back(new LabelMatchResult(*label, *reference));
+	}
+	
+	return results;
+}
+
+ResultVector recordLabels(const StringVector& labels)
+{
+	ResultVector result;
+	
+	for(auto label : labels)
+	{
+		result.push_back(new LabelResult(label));
+	}
+	
+	return result;
+}
+
+FinalClassifierEngine::ResultVector FinalClassifierEngine::runBatch(Matrix&& input, Matrix&& reference)
+{
+	auto network = getAggregateNetwork();
+	
+	auto result = network.runInputs(std::move(input));
+
+	auto labels = convertActivationsToLabels(result, network);
+	
+	restoreAggregateNetwork(network);
+	
+	if(_shouldUseLabeledData)
+	{
+		return compareWithReference(labels, convertActivationsToLabels(std::move(reference), network));
+	}
+	
+	return recordLabels(labels);
 }
 
 bool FinalClassifierEngine::requiresLabeledData() const
 {
 	return _shouldUseLabeledData;
-}
-
-FinalClassifierEngine::Statistics::Statistics()
-: exactMatches(0), totalSamples(0)
-{
-
-}
-
-std::string FinalClassifierEngine::Statistics::toString() const
-{
-	std::stringstream stream;
-
-	stream << "Statistics for 'Classifier' Neural Network:\n";
-
-	for(auto& labelStatistic : labelStatistics)
-	{
-		stream << " for neuron with label '" << labelStatistic.second.label << "':\n";
-		
-		stream << "  true  positives: " << labelStatistic.second.truePositives  << "\n";
-		stream << "  true  negatives: " << labelStatistic.second.trueNegatives  << "\n";
-		stream << "  false positives: " << labelStatistic.second.falsePositives << "\n";
-		stream << "  false negatives: " << labelStatistic.second.falseNegatives << "\n";
-	}
-
-	stream << " aggregate statistics:\n";
-	stream << "  total samples: " << totalSamples << "\n";
-	stream << "  exact matches: " << exactMatches << "\n";
-	stream << "  accuracy:      " << ((100.0 * exactMatches) / totalSamples) << "\n";
-
-
-	return stream.str();
-}
-
-void FinalClassifierEngine::_updateStatistics(const std::string& label,
-	const Image& image)
-{
-	// Finished a sample
-	_statistics.totalSamples += 1;
-	
-	bool isExactMatch = true;
-
-	// Add trackers for all possible labels if they exist
-	auto& classifier = _model->getNeuralNetwork("Classifier");
-	
-	for(unsigned i = 0; i < classifier.getOutputCount(); ++i)
-	{
-		auto outputLabel = classifier.getLabelForOutputNeuron(i);
-
-		if(outputLabel.empty()) continue;
-
-		if(_statistics.labelStatistics.count(outputLabel) != 0)
-		{
-			continue;
-		}
-		
-		_statistics.labelStatistics.insert(std::make_pair(outputLabel,
-			LabelStatistic(outputLabel, 0, 0, 0, 0)));
-	}
-
-	// Update the statistics for each label
-	for(auto& labelStatistic : _statistics.labelStatistics)
-	{
-		if(label == labelStatistic.second.label)
-		{
-			// match 
-			if(label == image.label())
-			{
-				labelStatistic.second.truePositives += 1; 
-			}
-			else
-			{
-				labelStatistic.second.falsePositives += 1;
-				isExactMatch = false;
-			}
-		}
-		else if (image.label() == labelStatistic.second.label)
-		{
-			labelStatistic.second.falseNegatives += 1;
-			isExactMatch = false;
-		}
-		else
-		{
-			labelStatistic.second.trueNegatives += 1;
-		}
-	}
-	
-	if(isExactMatch)
-	{
-		_statistics.exactMatches += 1;
-	}
-}
-
-FinalClassifierEngine::LabelStatistic::LabelStatistic(const std::string& l,
-	size_t tp, size_t tn, size_t fp, size_t fn)
-: label(l), truePositives(tp), trueNegatives(tn), falsePositives(fp),
-	falseNegatives(fn)
-{
-
 }
 
 }

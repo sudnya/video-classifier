@@ -34,7 +34,7 @@ void UnsupervisedLearnerEngine::setLayersPerIteration(size_t l)
 	_layersPerIteration = l;
 }
 
-void UnsupervisedLearnerEngine::runOnBatch(Matrix&& input)
+UnsupervisedLearnerEngine::ResultVector UnsupervisedLearnerEngine::runOnBatch(Matrix&& input, Matrix&& reference)
 {
 	util::log("UnsupervisedLearnerEngine") << "Performing unsupervised "
 		"learning on " << input.rows() <<  " samples...\n";
@@ -67,6 +67,8 @@ void UnsupervisedLearnerEngine::runOnBatch(Matrix&& input)
 	
 	util::log("UnsupervisedLearnerEngine") << " unsupervised "
 		"learning finished, updating model.\n";
+	
+	return ResultVector();
 }
 
 size_t UnsupervisedLearnerEngine::_getTotalLayers() const
@@ -88,7 +90,7 @@ neuralnetwork::NeuralNetwork UnsupervisedLearnerEngine::_formAugmentedNetwork(si
 		network.addLayer(std::move(featureSelector[layerId]));
 	}
 	
-	network.setUseSparseCostFunction(featureSelector.isUsingSparseCostFunction());
+	network.setParameters(featureSelector);
 	
 	// Create or restore the augmentor layers
 	auto& augmentor = _getOrCreateAugmentor("FeatureSelector", layerBegin, network);

@@ -20,46 +20,34 @@ namespace classifiers
 {
 
 LearnerEngine::LearnerEngine()
-: _learner(nullptr)
 {
-
+	
 }
 
 LearnerEngine::~LearnerEngine()
 {
-	delete _learner;
-}
 
-void LearnerEngine::registerModel()
-{
-	assert(_learner == nullptr);
-
-	_learner = new Learner(_model);
-
-	_learner->loadFeatureSelector();
-	_learner->loadClassifier();
 }
 
 void LearnerEngine::closeModel()
 {
-	_learner->saveNetworks();
-
 	saveModel();
 }
 	
-void LearnerEngine::runOnImageBatch(ImageVector&& images)
+LearnerEngine::ResultVector LearnerEngine::runOnBatch(Matrix&& input, Matrix&& reference)
 {
 	util::log("LearnerEngine") << "Performing supervised "
-		"learning on batch of " << images.size() <<  " images...\n";
+		"learning on batch of " << input.rows() <<  " images...\n";
 	
-	_learner->learnAndTrain(std::move(images));
+	auto network = getAggregateNetwork();
+	
+	network.train(input, reference);
+	
+	restoreAggregateNetwork(network);
+	
+	return ResultVector();
 }
 
-size_t LearnerEngine::getInputFeatureCount() const
-{
-	return _learner->getInputFeatureCount();
-}
-	
 bool LearnerEngine::requiresLabeledData() const
 {
 	return true;

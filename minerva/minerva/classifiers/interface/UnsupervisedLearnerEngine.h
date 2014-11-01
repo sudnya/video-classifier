@@ -7,7 +7,7 @@
 #pragma once
 
 // Minerva Includes
-#include <minerva/classifiers/interface/ClassifierEngine.h>
+#include <minerva/classifiers/interface/Engine.h>
 
 namespace minerva
 {
@@ -17,7 +17,7 @@ namespace classifiers
 
 
 /*! \brief Performs unsupervised learning on a given model. */
-class UnsupervisedLearnerEngine : public ClassifierEngine
+class UnsupervisedLearnerEngine : public Engine
 {
 public:
 	UnsupervisedLearnerEngine();
