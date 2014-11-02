@@ -31,15 +31,18 @@ typedef video::VideoVector VideoVector;
 static ImageVector getImageBatch(ImageVector& images, VideoVector& video,
 	size_t& remainingSamples, size_t batchSize);
 
-InputVisualDataProducer::Matrix InputVisualDataProducer::pop()
+InputVisualDataProducer::InputAndReference InputVisualDataProducer::pop()
 {
 	_initialize();
 	
 	ImageVector batch = getImageBatch(_images, _videos, _remainingSamples, getBatchSize());
 	
 	// TODO: specialize this logic
-	return batch.convertToStandardizedMatrix(getInputCount(),
+	auto input = batch.convertToStandardizedMatrix(getInputCount(),
 		getInputBlockingFactor(), getColorComponents());
+	auto reference = batch.getReference();
+	
+	return std::make_pair(std::move(input), std::move(reference));
 }
 
 bool InputVisualDataProducer::empty() const

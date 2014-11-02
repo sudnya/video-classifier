@@ -12,6 +12,11 @@ namespace minerva
 namespace results
 {
 
+ResultVector::ResultVector()
+{
+
+}
+
 ResultVector::~ResultVector()
 {
 	clear();

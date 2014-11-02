@@ -7,8 +7,6 @@
 #pragma once
 
 // Minerva Includes
-#include <minerva/video/interface/ImageVector.h>
-
 #include <minerva/util/interface/string.h>
 
 // Standard Library Includes
@@ -16,9 +14,12 @@
 #include <memory>
 
 // Forward Declarations
-namespace minerva { namespace model       { class ClassificationModel; } }
-namespace minerva { namespace input       { class InputDataProducer;   } }
-namespace minerva { namespace classifiers { class ResultProcessor;     } }
+namespace minerva { namespace model         { class ClassificationModel; } }
+namespace minerva { namespace input         { class InputDataProducer;   } }
+namespace minerva { namespace results       { class ResultProcessor;     } }
+namespace minerva { namespace neuralnetwork { class NeuralNetwork;       } }
+namespace minerva { namespace results       { class ResultVector;        } }
+namespace minerva { namespace matrix        { class Matrix;              } }
 
 namespace minerva
 {
@@ -32,6 +33,14 @@ namespace classifiers
 class Engine
 {
 public:
+	typedef input::InputDataProducer     InputDataProducer;
+	typedef model::ClassificationModel   ClassificationModel;
+	typedef results::ResultProcessor     ResultProcessor;
+	typedef results::ResultVector        ResultVector;
+	typedef neuralnetwork::NeuralNetwork NeuralNetwork;
+	typedef matrix::Matrix               Matrix;
+
+public:
 	Engine();
 	virtual ~Engine();
 
@@ -40,7 +49,7 @@ public:
 	void loadModel(const std::string& pathToModelFile);
 	
 	/*! \brief Add model directly, the engine takes ownership. */
-	void setModel(model::ClassificationModel* model);
+	void setModel(ClassificationModel* model);
 	
 	/*! \brief Set the result handler, the engine takes ownership. */
 	void setResultProcessor(ResultProcessor* processor);
@@ -53,17 +62,17 @@ public:
 
 public:
 	/*! \brief Get the model, the caller takes ownership. */
-	model::ClassificationModel* extractModel();
+	ClassificationModel* extractModel();
 	
 	/*! \brief Get the result handler, the caller takes ownership */
-	ResultProducer* extractResultProcessor();
+	ResultProcessor* extractResultProcessor();
 
 public:
 	/*! \brief Get the model, the engine retains ownership */
-	model::ClassificationModel* getModel();
+	ClassificationModel* getModel();
 	
 	/*! \brief Get the result handler, the enginer retains ownership */
-	ResultProducer* getResultProcessor();
+	ResultProcessor* getResultProcessor();
 
 public:
 	/*! \brief Set the maximum samples to be run by the engine */
@@ -94,7 +103,7 @@ protected:
 
 protected:
 	/*! \brief Extract and merge all networks from the model. */
-	NeuralNetwork getAggregateModel();
+	NeuralNetwork getAggregateNetwork();
 
 	/*! \brief Unpack and restore networks back to the model. */
 	void restoreAggregateNetwork(NeuralNetwork& network);
@@ -109,12 +118,9 @@ public:
 	Engine& operator=(const Engine&) = delete;
 
 protected:
-	typedef model::ClassificationModel ClassificationModel;
-
-protected:
 	std::unique_ptr<ClassificationModel> _model;
 	std::unique_ptr<InputDataProducer>   _dataProducer;
-	std::unique_ptr<ResultProcessor>     _resultProcesssor;
+	std::unique_ptr<ResultProcessor>     _resultProcessor;
 
 };
 

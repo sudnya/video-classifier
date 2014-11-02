@@ -7,13 +7,13 @@
 // Minerva Includes
 #include <minerva/classifiers/interface/Engine.h>
 
+#include <minerva/results/interface/NullResultProcessor.h>
+#include <minerva/results/interface/ResultVector.h>
+
+#include <minerva/input/interface/InputDataProducerFactory.h>
+#include <minerva/input/interface/InputDataProducer.h>
+
 #include <minerva/model/interface/ClassificationModel.h>
-
-#include <minerva/database/interface/SampleDatabase.h>
-#include <minerva/database/interface/Sample.h>
-
-#include <minerva/video/interface/Image.h>
-#include <minerva/video/interface/Video.h>
 
 #include <minerva/util/interface/debug.h>
 #include <minerva/util/interface/paths.h>
@@ -35,12 +35,7 @@ namespace classifiers
 
 Engine::Engine()
 {
-	_maximumSamplesToRun = util::KnobDatabase::getKnobValue(
-		"Engine::MaximumVideoFrames", 20000000);
-	_batchSize = util::KnobDatabase::getKnobValue(
-		"Engine::ImageBatchSize", 512);
-
-	setResultProcessor(new NullResultProcessor);
+	setResultProcessor(new results::NullResultProcessor);
 }
 
 Engine::~Engine()
@@ -69,16 +64,18 @@ void Engine::runOnDatabaseFile(const std::string& path)
 
 	registerModel();
 		
-	if(paths.empty())
+	if(path.empty())
 	{
 		throw std::runtime_error("No input path provided.");
 	}
 	
-	_dataProducer.reset(InputDataProducerFactory::createForDatabase(path));
+	_dataProducer.reset(input::InputDataProducerFactory::createForDatabase(path));
 	
-	while(!_producer->empty())
+	while(!_dataProducer->empty())
 	{
-		auto results = runOnBatch(std::move(_producer->pop()));
+		auto dataAndReference = std::move(_dataProducer->pop());
+		
+		auto results = runOnBatch(std::move(dataAndReference.first), std::move(dataAndReference.second));
 		
 		_resultProcessor->process(std::move(results));
 	}
@@ -121,12 +118,12 @@ void Engine::saveModel()
 	if(_model) _model->save();
 }
 
-neuralnetwork::NeuralNetwork Engine::getAggregateModel()
+neuralnetwork::NeuralNetwork Engine::getAggregateNetwork()
 {
 	neuralnetwork::NeuralNetwork network;
 	
 	auto& featureSelector = _model->getNeuralNetwork("FeatureSelector");
-	auto& classifier      = _model->getNeuralNetwork("Classifiers");
+	auto& classifier      = _model->getNeuralNetwork("Classifier");
 	
 	for(auto&& layer : featureSelector)
 	{
@@ -144,7 +141,7 @@ neuralnetwork::NeuralNetwork Engine::getAggregateModel()
 void Engine::restoreAggregateNetwork(neuralnetwork::NeuralNetwork& network)
 {
 	auto& featureSelector = _model->getNeuralNetwork("FeatureSelector");
-	auto& classifier      = _model->getNeuralNetwork("Classifiers");
+	auto& classifier      = _model->getNeuralNetwork("Classifier");
 	
 	size_t layerId = 0;
 	

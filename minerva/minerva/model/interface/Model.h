@@ -23,6 +23,9 @@ class ClassificationModel
 {
 public:
 	typedef neuralnetwork::NeuralNetwork NeuralNetwork;
+	typedef std::list<NeuralNetwork> NeuralNetworkList;
+	typedef NeuralNetworkList::iterator iterator;
+	typedef NeuralNetworkList::const_iterator const_iterator;
 
 public:
 	ClassificationModel(const std::string& path);
@@ -51,15 +54,23 @@ public:
 public:
 	void clear();
 
+public:
+	iterator       begin();
+	const_iterator begin() const;
+	
+	iterator       end();
+	const_iterator end() const;
+
 private:
 	std::string _path;
 	bool        _loaded;
 
 private:
-	typedef std::map<std::string, NeuralNetwork> NeuralNetworkMap;
+	typedef std::map<std::string, iterator> NeuralNetworkMap;
 
 private:
-	NeuralNetworkMap _neuralNetworks;
+	NeuralNetworkList _neuralNetworks;
+	NeuralNetworkMap  _neuralNetworkMap;
 
 	unsigned int _xPixels;
 	unsigned int _yPixels;

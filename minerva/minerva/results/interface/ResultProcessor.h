@@ -6,10 +6,13 @@
 
 #pragma once
 
+// Forward Declarations
+namespace minerva { namespace results { class ResultProcessor; } } 
+
 namespace minerva
 {
 
-namespace classifiers
+namespace results
 {
 
 /*! \brief A class for processing the results of an engine. */

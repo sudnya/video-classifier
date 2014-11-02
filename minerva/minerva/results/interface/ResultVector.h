@@ -25,11 +25,12 @@ public:
 	typedef Vector::const_iterator const_iterator;
 
 public:
+	ResultVector();
 	~ResultVector();
 
 public:
-	ResultVector(const ResultVector&) = delete;
-	ResultVector& operator=(const ResultVector&) = delete;
+	ResultVector(const ResultVector&);
+	ResultVector& operator=(const ResultVector&);
 
 public:
 	void push_back(Result*);

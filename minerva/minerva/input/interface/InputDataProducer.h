@@ -17,6 +17,7 @@ class InputDataProducer
 {
 public:
 	typedef matrix::Matrix Matrix;
+	typedef std::pair<Matrix, Matrix> InputAndReferencePair;
 
 public:
 	virtual ~InputDataProducer();
@@ -27,7 +28,7 @@ public:
 		Note: the caller must ensure that the producer is not empty.
 
 	*/
-	virtual Matrix pop() = 0;
+	virtual InputAndReferencePair pop() = 0;
 	
 	/*! \brief Return true if there are no more samples. */
 	virtual bool empty() const = 0;

@@ -29,11 +29,6 @@ typedef matrix::BlockSparseMatrix BlockSparseMatrix;
 typedef Matrix::FloatVector FloatVector;
 typedef DenseBackPropagation::BlockSparseMatrixVector BlockSparseMatrixVector;
 
-static bool isInMargin(const Matrix& ref, const Matrix& output, float epsilon)
-{
-	return output.subtract(ref).abs().reduceSum() < (ref.size() * epsilon);
-}
-
 static float computeCostForLayer(const Layer& layer, const BlockSparseMatrix& layerInput,
 	const BlockSparseMatrix& layerOutput, float lambda)
 {
@@ -132,56 +127,6 @@ static float computeCostForNetwork(const NeuralNetwork& network, const BlockSpar
 	}
 	
 	return costSum;
-}
-
-static bool gradientChecking(const BlockSparseMatrix& partialDerivatives,
-	const Layer& layer, const BlockSparseMatrix& layerInput,
-	const BlockSparseMatrix& layerOutput, float epsilon, float lambda)
-{
-	auto layerWeights = layer.getFlattenedWeights();
-	auto flattenedPartialDerivatives = BackPropagation::flatten(partialDerivatives);
-
-	Matrix gradientEstimate(flattenedPartialDerivatives.rows(), flattenedPartialDerivatives.columns());
-
-	util::log("DenseBackPropagation") << "Running gradient checking on " << layerWeights.size() << " weights....\n";
-
-	assertM(layerWeights.rows() == flattenedPartialDerivatives.rows(), "Layer weights has " << layerWeights.rows()
-		<< " rows, but the flattened partial derivatives has " << flattenedPartialDerivatives.rows());
-	assert(layerWeights.columns() == flattenedPartialDerivatives.columns());
-
-	auto weight = layerWeights.begin();
-	auto partialDerivative = flattenedPartialDerivatives.begin();
-	for (auto estimate = gradientEstimate.begin(); estimate != gradientEstimate.end(); ++estimate, ++weight, ++partialDerivative)
-	{
-		// +e
-		Layer layerPlus = layer;
-
-		layerPlus.back()[std::distance(layerWeights.begin(), weight)] += epsilon;
-
-		util::log("DenseBackPropagation") << "  layer plus e " << layerPlus.back().toString() << "\n";
-		// -e 
-		Layer layerMinus = layer;
-
-		layerMinus.back()[std::distance(layerWeights.begin(), weight)] -= epsilon;
-		util::log("DenseBackPropagation") << "  layer minus e " << layerMinus.back().toString() << "\n";
-
-		// update derivative value
-		float derivative = (computeCostForLayer(layerPlus, layerInput, layerOutput, lambda) -
-			computeCostForLayer(layerMinus, layerInput, layerOutput, lambda)) / (2.0f * epsilon);
-	
-		*estimate = derivative;
-
-		util::log("DenseBackPropagation") << " gradient of weight "
-			<< std::distance(layerWeights.begin(), weight) << " out of " << layerWeights.size() 
-			<< " weights is " << derivative << ", compared to computed " << *partialDerivative << "\n";
-	
-		 if (std::abs(derivative - *partialDerivative) > epsilon)
-		 {
-			return false;
-		 }
-	}
-
-	return isInMargin(flattenedPartialDerivatives, gradientEstimate, epsilon);
 }
 
 DenseBackPropagation::DenseBackPropagation(NeuralNetwork* ann, BlockSparseMatrix* input, BlockSparseMatrix* ref)

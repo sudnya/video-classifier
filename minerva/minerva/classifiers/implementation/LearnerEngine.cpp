@@ -6,7 +6,11 @@
 
 // Minerva Includes
 #include <minerva/classifiers/interface/LearnerEngine.h>
-#include <minerva/classifiers/interface/Learner.h>
+
+#include <minerva/neuralnetwork/interface/NeuralNetwork.h>
+
+#include <minerva/results/interface/ResultVector.h>
+#include <minerva/matrix/interface/Matrix.h>
 
 #include <minerva/util/interface/debug.h>
 
@@ -41,7 +45,7 @@ LearnerEngine::ResultVector LearnerEngine::runOnBatch(Matrix&& input, Matrix&& r
 	
 	auto network = getAggregateNetwork();
 	
-	network.train(input, reference);
+	network.train(std::move(input), std::move(reference));
 	
 	restoreAggregateNetwork(network);
 	

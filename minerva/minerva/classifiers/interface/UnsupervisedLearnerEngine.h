@@ -9,6 +9,9 @@
 // Minerva Includes
 #include <minerva/classifiers/interface/Engine.h>
 
+// Standard Library Includes
+#include <map>
+
 namespace minerva
 {
 
@@ -35,7 +38,7 @@ private:
 	virtual void closeModel();
 	
 private:
-	virtual void runOnBatch(Matrix&& samples);
+	virtual ResultVector runOnBatch(Matrix&& samples, Matrix&& reference);
 
 private:
 	size_t _layersPerIteration;

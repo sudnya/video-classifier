@@ -7,6 +7,13 @@
 // Minerva Includes
 #include <minerva/classifiers/interface/FeatureExtractorEngine.h>
 
+#include <minerva/results/interface/FeatureResultProcessor.h>
+#include <minerva/results/interface/FeatureResult.h>
+
+#include <minerva/results/interface/ResultVector.h>
+
+#include <minerva/model/interface/ClassificationModel.h>
+
 // Standard Library Includes
 #include <cassert>
 
@@ -18,14 +25,10 @@ namespace classifiers
 
 FeatureExtractorEngine::FeatureExtractorEngine()
 {
-	setResultProcessor(new FeatureResultProcessor);
+	setResultProcessor(new results::FeatureResultProcessor);
 }
 
-typedef std::vector<std::string> StringVector;
-typedef matrix::Matrix Matrix;
-typedef video::ImageVector ImageVector;
-
-ResultVector FeatureExtractorEngine::runBatch(Matrix&& input, Matrix&& reference)
+FeatureExtractorEngine::ResultVector FeatureExtractorEngine::runOnBatch(Matrix&& input, Matrix&& reference)
 {
 	auto& featureSelector = _model->getNeuralNetwork("FeatureSelector");
 	
@@ -34,11 +37,11 @@ ResultVector FeatureExtractorEngine::runBatch(Matrix&& input, Matrix&& reference
 	// convert to results
 	size_t samples = features.rows();
 	
-	ResultVector results;
+	ResultVector result;
 	
 	for(size_t sample = 0; sample < samples; ++sample)
 	{
-		result.push_back(new FeatureResult(features.slice(sample, 0, 1, features.columns())));
+		result.push_back(new results::FeatureResult(features.slice(sample, 0, 1, features.columns())));
 	}
 	
 	return result;

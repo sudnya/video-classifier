@@ -6,7 +6,11 @@
 
 #pragma once
 
+// Minerva Includes
 #include <minerva/results/interface/Result.h>
+
+// Forward Declarations
+namespace minerva { namespace matrix { class Matrix; } }
 
 namespace minerva
 {
@@ -18,10 +22,14 @@ namespace results
 class FeatureResult : public Result
 {
 public:
+	typedef matrix::Matrix Matrix;
+
+public:
 	FeatureResult(Matrix&&);
+	~FeatureResult();
 	
 public:
-	Matrix features;
+	std::unique_ptr<Matrix> features;
 
 };
 

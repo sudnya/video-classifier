@@ -1,7 +1,7 @@
-/*	\file   ClassifierFactory.h
+/*	\file   EngineFactory.h
 	\date   Saturday August 10, 2013
 	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The header file for the ClassifierFactory class.
+	\brief  The header file for the EngineFactory class.
 */
 
 #pragma once
@@ -10,7 +10,7 @@
 #include <string>
 
 // Forward Declarations
-namespace minerva { namespace classifiers { class ClassifierEngine; } }
+namespace minerva { namespace classifiers { class Engine; } }
 
 namespace minerva
 {
@@ -19,10 +19,10 @@ namespace classifiers
 {
 
 /*! \brief A factory for classifier engines */
-class ClassifierFactory
+class EngineFactory
 {
 public:
-	static ClassifierEngine* create(const std::string& classifierName);
+	static Engine* create(const std::string& classifierName);
 
 };
 

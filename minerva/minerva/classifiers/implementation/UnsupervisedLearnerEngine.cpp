@@ -6,7 +6,12 @@
 
 // Minerva Includes
 #include <minerva/classifiers/interface/UnsupervisedLearnerEngine.h>
-#include <minerva/classifiers/interface/UnsupervisedLearner.h>
+
+#include <minerva/model/interface/ClassificationModel.h>
+
+#include <minerva/neuralnetwork/interface/NeuralNetwork.h>
+
+#include <minerva/results/interface/ResultVector.h>
 
 #include <minerva/util/interface/debug.h>
 #include <minerva/util/interface/Knobs.h>
@@ -34,12 +39,24 @@ void UnsupervisedLearnerEngine::setLayersPerIteration(size_t l)
 	_layersPerIteration = l;
 }
 
+static size_t getTotalLayers(model::ClassificationModel* model)
+{
+	size_t layers = 0;
+	
+	for(auto& network : *model)
+	{
+		layers += network.size();
+	}
+	
+	return layers;
+}
+
 UnsupervisedLearnerEngine::ResultVector UnsupervisedLearnerEngine::runOnBatch(Matrix&& input, Matrix&& reference)
 {
 	util::log("UnsupervisedLearnerEngine") << "Performing unsupervised "
 		"learning on " << input.rows() <<  " samples...\n";
 	
-	auto totalLayers = _getTotalLayers();
+	auto totalLayers = getTotalLayers(_model);
 	
 	auto inputReference = input.add(1.0f).multiply(0.4f).add(0.1f);
 	

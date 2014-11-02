@@ -29,7 +29,7 @@ public:
 	FeatureExtractorEngine& operator=(const FeatureExtractorEngine&) = delete;
 	
 private:
-	virtual ResultVector runOnBatch(Matrix&& matrix);
+	virtual ResultVector runOnBatch(Matrix&& matrix, Matrix&& reference);
 
 private:	
 	virtual void registerModel();
