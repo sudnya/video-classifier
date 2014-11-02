@@ -1,7 +1,7 @@
-/*	\file   ClassificationModelSpecification.h
+/*	\file   ModelSpecification.h
 	\date   Saturday April 26, 2014
 	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The header file for the ClassificationModelSpecification class.
+	\brief  The header file for the ModelSpecification class.
 */
 
 #pragma once
@@ -11,8 +11,8 @@
 #include <memory>
 
 // Forward Declarations
-namespace minerva { namespace model { class ClassificationModel;                            } }
-namespace minerva { namespace model { class ClassificationModelSpecificationImplementation; } }
+namespace minerva { namespace model { class Model;                            } }
+namespace minerva { namespace model { class ModelSpecificationImplementation; } }
 
 namespace minerva
 {
@@ -22,18 +22,18 @@ namespace model
 
 /*! \brief A class for initializing a classificaiton model
 	from a json specification */
-class ClassificationModelSpecification 
+class ModelSpecification 
 {
 public:
-	ClassificationModelSpecification(const std::string& specification = "");
-	~ClassificationModelSpecification();
+	ModelSpecification(const std::string& specification = "");
+	~ModelSpecification();
 
 public:
 	void parseSpecification(const std::string& specification);
-	void initializeModel(ClassificationModel& model);
+	void initializeModel(Model& model);
 
 private:
-	std::unique_ptr<ClassificationModelSpecificationImplementation> _implementation;
+	std::unique_ptr<ModelSpecificationImplementation> _implementation;
 
 };
 

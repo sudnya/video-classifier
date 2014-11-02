@@ -7,7 +7,7 @@
 // Minerva Includes
 #include <minerva/classifiers/interface/UnsupervisedLearnerEngine.h>
 
-#include <minerva/model/interface/ClassificationModel.h>
+#include <minerva/model/interface/Model.h>
 
 #include <minerva/neuralnetwork/interface/NeuralNetwork.h>
 
@@ -39,16 +39,21 @@ void UnsupervisedLearnerEngine::setLayersPerIteration(size_t l)
 	_layersPerIteration = l;
 }
 
-static size_t getTotalLayers(model::ClassificationModel* model)
+static size_t getTotalLayers(model::Model& model)
 {
+	#if 0
+	// use all layers
 	size_t layers = 0;
 	
-	for(auto& network : *model)
+	for(auto& network : model)
 	{
 		layers += network.size();
 	}
 	
 	return layers;
+	#else
+	return model.getNeuralNetwork("FeatureSelector").size();
+	#endif
 }
 
 UnsupervisedLearnerEngine::ResultVector UnsupervisedLearnerEngine::runOnBatch(Matrix&& input, Matrix&& reference)
@@ -56,7 +61,7 @@ UnsupervisedLearnerEngine::ResultVector UnsupervisedLearnerEngine::runOnBatch(Ma
 	util::log("UnsupervisedLearnerEngine") << "Performing unsupervised "
 		"learning on " << input.rows() <<  " samples...\n";
 	
-	auto totalLayers = getTotalLayers(_model);
+	auto totalLayers = getTotalLayers(*_model);
 	
 	auto inputReference = input.add(1.0f).multiply(0.4f).add(0.1f);
 	
@@ -76,7 +81,7 @@ UnsupervisedLearnerEngine::ResultVector UnsupervisedLearnerEngine::runOnBatch(Ma
 		
 		if(counter + _layersPerIteration < totalLayers)
 		{
-			layerInput = copy.runInputs(layerInput);
+			layerInput = network.runInputs(layerInput);
 		}
 		
 		_restoreAugmentedNetwork(network, counter);
@@ -88,17 +93,10 @@ UnsupervisedLearnerEngine::ResultVector UnsupervisedLearnerEngine::runOnBatch(Ma
 	return ResultVector();
 }
 
-size_t UnsupervisedLearnerEngine::_getTotalLayers() const
-{
-	return _model->getNeuralNetwork("FeatureSelector").size();
-}
-
 neuralnetwork::NeuralNetwork UnsupervisedLearnerEngine::_formAugmentedNetwork(size_t layerBegin, size_t layerEnd)
 {
 	// Move the network into the temporary
-	auto& featureSelector = model->getNeuralNetwork("FeatureSelector");
-	
-	auto inputCount = featureSelector.getInputCount();
+	auto& featureSelector = _model->getNeuralNetwork("FeatureSelector");
 	
 	neuralnetwork::NeuralNetwork network;
 	
@@ -123,8 +121,8 @@ neuralnetwork::NeuralNetwork UnsupervisedLearnerEngine::_formAugmentedNetwork(si
 
 void UnsupervisedLearnerEngine::_restoreAugmentedNetwork(neuralnetwork::NeuralNetwork& network, size_t layerBegin)
 {
-	auto& featureSelector = model->getNeuralNetwork("FeatureSelector");
-	auto& augmentor = getAugmentor("FeatureSelector", layerBegin);
+	auto& featureSelector = _model->getNeuralNetwork("FeatureSelector");
+	auto& augmentor = _getAugmentor("FeatureSelector", layerBegin);
 
 	size_t layerEnd = layerBegin + network.size() - augmentor.size();
 	
@@ -155,7 +153,7 @@ neuralnetwork::NeuralNetwork& UnsupervisedLearnerEngine::_getOrCreateAugmentor(c
 		augmentor = _augmentorNetworks.insert(std::make_pair(stream.str(),
 			neuralnetwork::NeuralNetwork())).first;
 		
-		augmentor->mirror(network.front());
+		augmentor->second.mirror(network.front());
 	}
 	
 	return augmentor->second;

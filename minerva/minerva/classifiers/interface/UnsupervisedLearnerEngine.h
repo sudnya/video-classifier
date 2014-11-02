@@ -41,6 +41,12 @@ private:
 	virtual ResultVector runOnBatch(Matrix&& samples, Matrix&& reference);
 
 private:
+	NeuralNetwork _formAugmentedNetwork(size_t layerBegin, size_t layerEnd);
+	void _restoreAugmentedNetwork(NeuralNetwork& network, size_t layerBegin);
+	NeuralNetwork& _getOrCreateAugmentor(const std::string& name, size_t layer, NeuralNetwork& network);
+	NeuralNetwork& _getAugmentor(const std::string& name, size_t layer);
+
+private:
 	size_t _layersPerIteration;
 
 private:

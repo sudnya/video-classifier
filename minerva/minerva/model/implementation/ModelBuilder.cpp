@@ -1,13 +1,13 @@
-/*	\file   ClassificationModelBuilder.cpp
+/*	\file   ModelBuilder.cpp
 	\date   Saturday August 10, 2013
 	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The source file for the ClassificationModelBuilder class.
+	\brief  The source file for the ModelBuilder class.
 */
 
 // Minerva Includes
-#include <minerva/model/interface/ClassificationModelBuilder.h>
-#include <minerva/model/interface/ClassificationModel.h>
-#include <minerva/model/interface/ClassificationModelSpecification.h>
+#include <minerva/model/interface/ModelBuilder.h>
+#include <minerva/model/interface/Model.h>
+#include <minerva/model/interface/ModelSpecification.h>
 #include <minerva/model/interface/BuiltInSpecifications.h>
 
 #include <minerva/neuralnetwork/interface/NeuralNetwork.h>
@@ -25,29 +25,29 @@ typedef minerva::neuralnetwork::NeuralNetwork NeuralNetwork;
 typedef minerva::neuralnetwork::Layer Layer;
 typedef minerva::matrix::Matrix Matrix;
 
-static void initializeModelFromSpecification(ClassificationModel* model, const std::string& specification)
+static void initializeModelFromSpecification(Model* model, const std::string& specification)
 {
-	ClassificationModelSpecification modelSpecification;
+	ModelSpecification modelSpecification;
 	
 	modelSpecification.parseSpecification(specification);
 	
 	modelSpecification.initializeModel(*model);
 }
 
-static void buildConvolutionalFastModel(ClassificationModel* model, size_t outputs)
+static void buildConvolutionalFastModel(Model* model, size_t outputs)
 {
 	auto specification = BuiltInSpecifications::getConvolutionalFastModelSpecification(outputs);
 	
 	initializeModelFromSpecification(model, specification);
 }
 
-ClassificationModel* ClassificationModelBuilder::create(const std::string& path)
+Model* ModelBuilder::create(const std::string& path)
 {
-	auto model = new ClassificationModel(path);
+	auto model = new Model(path);
 
-	size_t x      = util::KnobDatabase::getKnobValue("ClassificationModelBuilder::ResolutionX",     32);
-	size_t y      = util::KnobDatabase::getKnobValue("ClassificationModelBuilder::ResolutionY",     32);
-	size_t colors = util::KnobDatabase::getKnobValue("ClassificationModelBuilder::ColorComponents", 3 );
+	size_t x      = util::KnobDatabase::getKnobValue("ModelBuilder::ResolutionX",     32);
+	size_t y      = util::KnobDatabase::getKnobValue("ModelBuilder::ResolutionY",     32);
+	size_t colors = util::KnobDatabase::getKnobValue("ModelBuilder::ColorComponents", 3 );
 
 	model->setInputImageResolution(x, y, colors);
 
@@ -56,7 +56,7 @@ ClassificationModel* ClassificationModelBuilder::create(const std::string& path)
 	// (FastModel, ConvolutionalCPUModel, ConvolutionalGPUModel)
 	auto modelType = util::KnobDatabase::getKnobValue("ModelType", "ConvolutionalFastModel"); 
 
-	util::log("ClassificationModelBuilder") << "Creating ...\n";
+	util::log("ModelBuilder") << "Creating ...\n";
 
 	if(modelType == "ConvolutionalFastModel")
 	{
@@ -70,9 +70,9 @@ ClassificationModel* ClassificationModelBuilder::create(const std::string& path)
 	return model;
 }
 
-ClassificationModel* ClassificationModelBuilder::create(const std::string& path, const std::string& specification)
+Model* ModelBuilder::create(const std::string& path, const std::string& specification)
 {
-	auto model = new ClassificationModel(path);
+	auto model = new Model(path);
 	
 	initializeModelFromSpecification(model, specification);
 		

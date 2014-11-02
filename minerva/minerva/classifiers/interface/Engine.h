@@ -14,7 +14,7 @@
 #include <memory>
 
 // Forward Declarations
-namespace minerva { namespace model         { class ClassificationModel; } }
+namespace minerva { namespace model         { class Model; } }
 namespace minerva { namespace input         { class InputDataProducer;   } }
 namespace minerva { namespace results       { class ResultProcessor;     } }
 namespace minerva { namespace neuralnetwork { class NeuralNetwork;       } }
@@ -34,7 +34,7 @@ class Engine
 {
 public:
 	typedef input::InputDataProducer     InputDataProducer;
-	typedef model::ClassificationModel   ClassificationModel;
+	typedef model::Model   Model;
 	typedef results::ResultProcessor     ResultProcessor;
 	typedef results::ResultVector        ResultVector;
 	typedef neuralnetwork::NeuralNetwork NeuralNetwork;
@@ -49,7 +49,7 @@ public:
 	void loadModel(const std::string& pathToModelFile);
 	
 	/*! \brief Add model directly, the engine takes ownership. */
-	void setModel(ClassificationModel* model);
+	void setModel(Model* model);
 	
 	/*! \brief Set the result handler, the engine takes ownership. */
 	void setResultProcessor(ResultProcessor* processor);
@@ -62,14 +62,14 @@ public:
 
 public:
 	/*! \brief Get the model, the caller takes ownership. */
-	ClassificationModel* extractModel();
+	Model* extractModel();
 	
 	/*! \brief Get the result handler, the caller takes ownership */
 	ResultProcessor* extractResultProcessor();
 
 public:
 	/*! \brief Get the model, the engine retains ownership */
-	ClassificationModel* getModel();
+	Model* getModel();
 	
 	/*! \brief Get the result handler, the enginer retains ownership */
 	ResultProcessor* getResultProcessor();
@@ -118,7 +118,7 @@ public:
 	Engine& operator=(const Engine&) = delete;
 
 protected:
-	std::unique_ptr<ClassificationModel> _model;
+	std::unique_ptr<Model> _model;
 	std::unique_ptr<InputDataProducer>   _dataProducer;
 	std::unique_ptr<ResultProcessor>     _resultProcessor;
 

@@ -29,55 +29,6 @@ typedef matrix::BlockSparseMatrix BlockSparseMatrix;
 typedef Matrix::FloatVector FloatVector;
 typedef DenseBackPropagation::BlockSparseMatrixVector BlockSparseMatrixVector;
 
-static float computeCostForLayer(const Layer& layer, const BlockSparseMatrix& layerInput,
-	const BlockSparseMatrix& layerOutput, float lambda)
-{
-
-	#if 0
-	//J(theta) = -1/m (sum over i, sum over k yi,k * log (h(xl)k) + (1-yik)*log(1-h(xi)k) +
-	//		   regularization term lambda/2m sum over l,i,j (theta[i,j])^2
-	
-	auto hx = layer.runInputs(layerInput);
-	
-	auto logHx = hx.log();
-	
-	auto oneMinusHx = hx.negate().add(1.0f);
-	
-	// add an epsilon to avoid log(0)
-	auto logOneMinusHx = oneMinusHx.add(1e-15f).log();
-	
-	auto oneMinusY = layerOutput.negate().add(1.0f);
-
-	unsigned m = layerInput.rows();
-
-	auto yTemp = layerOutput.elementMultiply(logHx);
-
-	auto yMinusOneTemp = oneMinusY.elementMultiply(logOneMinusHx);
-	
-	auto sum = yTemp.add(yMinusOneTemp);
-	auto cost = sum.multiply(-1.0f/m);
-
-	float costSum = cost.reduceSum();
-	#else
-	unsigned m = layerInput.rows();
-
-	auto hx = layer.runInputs(layerInput);
-
-	auto errors = hx.subtract(layerOutput);
-	auto squaredErrors = errors.elementMultiply(errors);
-
-	float sumOfSquaredErrors = squaredErrors.reduceSum();
-	
-	float costSum = sumOfSquaredErrors * 1.0f / (2.0f * m);
-
-	#endif
-
-	costSum += (lambda / (2.0f)) * (layer.getWeightsWithoutBias().elementMultiply(
-		layer.getWeightsWithoutBias()).reduceSum());
-
-	return costSum;
-}
-
 static float computeCostForNetwork(const NeuralNetwork& network, const BlockSparseMatrix& input,
 	const BlockSparseMatrix& referenceOutput, float lambda)
 {
@@ -349,16 +300,6 @@ BlockSparseMatrixVector DenseBackPropagation::getCostDerivative(
 		partialDerivative.push_back(normalizedBiasPartialDerivative.transpose());
 
 	}//this loop ends after all activations are done. and we don't need the last delta (ref-output anyway)
-
-	bool performGradientChecking = util::KnobDatabase::getKnobValue("NeuralNetwork::DoGradientChecking", false);
-
-	if (performGradientChecking)
-	{ 
-		float epsilon = util::KnobDatabase::getKnobValue("NeuralNetwork::GradientCheckingEpsilon", 0.05f);
-		bool isInRange = gradientChecking(partialDerivative.back(), network.back(), *(++activations.rbegin()),
-			*_referenceOutput, epsilon, _lambda);
-		assertM(isInRange, "Gradient checking indicates gradient descent is wrong\n");
-	}
 
 	return partialDerivative;	
 }

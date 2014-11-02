@@ -1,7 +1,7 @@
-/*	\file   ClassificationModel.h
+/*	\file   Model.h
 	\date   Saturday August 10, 2013
 	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The header file for the ClassificationModel class.
+	\brief  The header file for the Model class.
 */
 
 #pragma once
@@ -12,6 +12,7 @@
 // Standard Library Includes
 #include <string>
 #include <map>
+#include <list>
 
 namespace minerva
 {
@@ -19,7 +20,7 @@ namespace minerva
 namespace model
 {
 
-class ClassificationModel
+class Model
 {
 public:
 	typedef neuralnetwork::NeuralNetwork NeuralNetwork;
@@ -28,8 +29,8 @@ public:
 	typedef NeuralNetworkList::const_iterator const_iterator;
 
 public:
-	ClassificationModel(const std::string& path);
-	ClassificationModel();
+	Model(const std::string& path);
+	Model();
 
 public:
 	const NeuralNetwork& getNeuralNetwork(const std::string& name) const;

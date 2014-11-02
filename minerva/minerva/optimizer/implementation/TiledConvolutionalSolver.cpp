@@ -177,7 +177,7 @@ void TiledConvolutionalSolver::solve()
 	{
 		util::log("TiledConvolutionalSolver")
 			<< " no need for tiling, solving entire network at once.\n";
-		linearSolver(m_backPropDataPtr);
+		differentiableSolver(m_backPropDataPtr);
 	}
 	
 	// Accuracy 

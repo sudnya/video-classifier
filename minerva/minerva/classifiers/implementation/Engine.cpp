@@ -13,7 +13,7 @@
 #include <minerva/input/interface/InputDataProducerFactory.h>
 #include <minerva/input/interface/InputDataProducer.h>
 
-#include <minerva/model/interface/ClassificationModel.h>
+#include <minerva/model/interface/Model.h>
 
 #include <minerva/util/interface/debug.h>
 #include <minerva/util/interface/paths.h>
@@ -43,7 +43,7 @@ Engine::~Engine()
 
 }
 
-void Engine::setModel(ClassificationModel* model)
+void Engine::setModel(Model* model)
 {
 	_model.reset(model);
 }
@@ -53,7 +53,7 @@ void Engine::loadModel(const std::string& pathToModelFile)
 	util::log("Engine") << "Loading model file '" << pathToModelFile
 		<<  "'...\n";
 	
-	_model.reset(new ClassificationModel(pathToModelFile));
+	_model.reset(new Model(pathToModelFile));
 
 	util::log("Engine") << " model loaded.\n";
 }

@@ -5,7 +5,6 @@
 
 
 #include <minerva/optimizer/interface/NeuralNetworkSolver.h>
-#include <minerva/optimizer/interface/MultiLevelOptimizer.h>
 #include <minerva/optimizer/interface/TiledConvolutionalSolver.h>
 
 #include <minerva/util/interface/debug.h>

@@ -12,7 +12,7 @@
 
 #include <minerva/results/interface/ResultVector.h>
 
-#include <minerva/model/interface/ClassificationModel.h>
+#include <minerva/model/interface/Model.h>
 
 // Standard Library Includes
 #include <cassert>

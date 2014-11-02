@@ -1,11 +1,11 @@
-/*	\file   ClassificationModel.cpp
+/*	\file   Model.cpp
 	\date   Saturday August 10, 2013
 	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The source file for the ClassificationModel class.
+	\brief  The source file for the Model class.
 */
 
 // Minerva Includes
-#include <minerva/model/interface/ClassificationModel.h>
+#include <minerva/model/interface/Model.h>
 
 #include <minerva/neuralnetwork/interface/Layer.h>
 
@@ -24,54 +24,61 @@ namespace minerva
 namespace model
 {
 
-ClassificationModel::ClassificationModel(const std::string& path)
+Model::Model(const std::string& path)
 : _path(path), _loaded(false), _xPixels(0), _yPixels(0), _colors(3)
 {
 
 }
 
-ClassificationModel::ClassificationModel()
+Model::Model()
 : _path("unknown-path"), _loaded(true), _xPixels(0), _yPixels(0), _colors(3)
 {
 
 }
 
-const ClassificationModel::NeuralNetwork& ClassificationModel::getNeuralNetwork(
+const Model::NeuralNetwork& Model::getNeuralNetwork(
 	const std::string& name) const
 {
-	auto network = _neuralNetworks.find(name);
+	auto network = _neuralNetworkMap.find(name);
 	
-	assertM(network != _neuralNetworks.end(), "Invalid neural network name "
+	assertM(network != _neuralNetworkMap.end(), "Invalid neural network name "
 		+ name);
 	
-	return network->second;
+	return *network->second;
 }
 
-ClassificationModel::NeuralNetwork& ClassificationModel::getNeuralNetwork(
+Model::NeuralNetwork& Model::getNeuralNetwork(
 	const std::string& name)
 {
-	auto network = _neuralNetworks.find(name);
+	auto network = _neuralNetworkMap.find(name);
 	
-	assertM(network != _neuralNetworks.end(), "Invalid neural network name "
+	assertM(network != _neuralNetworkMap.end(), "Invalid neural network name "
 		+ name);
 	
-	return network->second;
+	return *network->second;
 }
 
-bool ClassificationModel::containsNeuralNetwork(const std::string& name) const
+bool Model::containsNeuralNetwork(const std::string& name) const
 {
-	return _neuralNetworks.count(name) != 0;
+	return _neuralNetworkMap.count(name) != 0;
 }
 
-void ClassificationModel::setNeuralNetwork(
+void Model::setNeuralNetwork(
 	const std::string& name, const NeuralNetwork& n)
 {
 	assert(n.areConnectionsValid());
 	
-	_neuralNetworks[name] = n;
+	if(!containsNeuralNetwork(name))
+	{
+		_neuralNetworkMap[name] = _neuralNetworks.insert(_neuralNetworks.end(), n);
+	}
+	else
+	{
+		*_neuralNetworkMap[name] = n;
+	}
 }
 
-void ClassificationModel::setInputImageResolution(unsigned int x,
+void Model::setInputImageResolution(unsigned int x,
 	unsigned int y, unsigned int c)
 {
 	_xPixels = x;
@@ -79,22 +86,22 @@ void ClassificationModel::setInputImageResolution(unsigned int x,
 	_colors  = c;
 }
 
-unsigned int ClassificationModel::xPixels() const
+unsigned int Model::xPixels() const
 {
 	return _xPixels;
 }
 
-unsigned int ClassificationModel::yPixels() const
+unsigned int Model::yPixels() const
 {
 	return _yPixels;
 }
 
-unsigned int ClassificationModel::colors() const
+unsigned int Model::colors() const
 {
 	return _colors;
 }
 
-void ClassificationModel::save() const
+void Model::save() const
 {
 	typedef matrix::Matrix Matrix;
 	typedef std::map<std::string, const Matrix*> MatrixMap;
@@ -116,10 +123,10 @@ void ClassificationModel::save() const
 
 	MatrixMap filenameToMatrices;
 
-	for(auto network = _neuralNetworks.begin();
-		network != _neuralNetworks.end(); ++network)
+	for(auto network = _neuralNetworkMap.begin();
+		network != _neuralNetworkMap.end(); ++network)
 	{	
-		if(network != _neuralNetworks.begin())
+		if(network != _neuralNetworkMap.begin())
 		{
 			stream << ",\n";
 		}
@@ -130,7 +137,7 @@ void ClassificationModel::save() const
 
         std::string costFunctionType = "dense";
 
-        if(network->second.isUsingSparseCostFunction())
+        if(network->second->isUsingSparseCostFunction())
         {
             costFunctionType = "sparse";
         }
@@ -139,15 +146,15 @@ void ClassificationModel::save() const
 
 		stream << "\t\t\t\"layers\": [\n";
 		
-		for(auto layer = network->second.begin();
-			layer != network->second.end(); ++layer)
+		for(auto layer = network->second->begin();
+			layer != network->second->end(); ++layer)
 		{
-			if(layer != network->second.begin())
+			if(layer != network->second->begin())
 			{
 				stream << ",\n";
 			}
 			
-			unsigned int index = std::distance(network->second.begin(), layer);
+			unsigned int index = std::distance(network->second->begin(), layer);
 			
 			stream << "\t\t\t\t{\n";
 			
@@ -212,7 +219,7 @@ void ClassificationModel::save() const
 		stream << "\t\t\t\"output-names\": [\n";
 		
 		for(unsigned int output = 0;
-			output != network->second.getOutputCount(); ++output)
+			output != network->second->getOutputCount(); ++output)
 		{
 			if(output != 0)
 			{
@@ -220,7 +227,7 @@ void ClassificationModel::save() const
 			}
 
 			stream << "\t\t\t\t\"" << 
-				network->second.getLabelForOutputNeuron(output) << "\"";
+				network->second->getLabelForOutputNeuron(output) << "\"";
 		}	
 		
 		stream << "]\n";
@@ -254,7 +261,7 @@ void ClassificationModel::save() const
 	}
 }
 
-void ClassificationModel::load()
+void Model::load()
 {
 	if(_loaded) return;
 	
@@ -262,7 +269,7 @@ void ClassificationModel::load()
 	
 	_neuralNetworks.clear();
 	
-	util::log("ClassificationModel") << "Loading classification-model from '"
+	util::log("Model") << "Loading classification-model from '"
 		<< _path << "'\n";
 	
 	util::TarArchive tar(_path, "r:gz");
@@ -274,7 +281,7 @@ void ClassificationModel::load()
 	util::json::Parser parser;
 	auto headerObject = parser.parse_object(header);
 
-	util::log("ClassificationModel") << " loading header\n";
+	util::log("Model") << " loading header\n";
 	
 	try
 	{
@@ -284,7 +291,7 @@ void ClassificationModel::load()
 		_yPixels = (int) headerVisitor["yPixels"];	
 		_colors  = (int) headerVisitor["colors" ];
 
-		util::log("ClassificationModel") << "  (" << _xPixels << " xPixels, "
+		util::log("Model") << "  (" << _xPixels << " xPixels, "
 			<< _yPixels << " yPixels, " << _colors << " colors)\n";
 		
 		util::json::Visitor networksVisitor(
@@ -298,33 +305,34 @@ void ClassificationModel::load()
 			std::string name = networkVisitor["name"];
 			std::string costFunctionType = networkVisitor["costFunction"];
 
-			util::log("ClassificationModel") << "  neural network '"
+			util::log("Model") << "  neural network '"
 				<< name << "'\n";
 			
 			util::json::Visitor layersVisitor(networkVisitor["layers"]);	
 			
-			auto network = _neuralNetworks.insert(std::make_pair(name,
-				neuralnetwork::NeuralNetwork())).first;
+			auto network = _neuralNetworks.insert(_neuralNetworks.end(),
+				NeuralNetwork());
+			_neuralNetworkMap.insert(std::make_pair(name, network));
 		
             if(costFunctionType == "sparse")
             {
-                network->second.setUseSparseCostFunction(true);
+                network->setUseSparseCostFunction(true);
             }
             else
             {
-                network->second.setUseSparseCostFunction(false);
+                network->setUseSparseCostFunction(false);
             }
 
 			for(auto layerObject = layersVisitor.begin_array();
 				layerObject != layersVisitor.end_array(); ++layerObject)
 			{
-				network->second.addLayer(neuralnetwork::Layer());
+				network->addLayer(neuralnetwork::Layer());
 				
-				auto& layer = network->second.back();
+				auto& layer = network->back();
 				
 				util::json::Visitor layerVisitor(*layerObject);
 
-				util::log("ClassificationModel") << "   layer "
+				util::log("Model") << "   layer "
 					<< (std::string)layerVisitor["name"] << "\n";
 
 				size_t step = (int)layerVisitor["step"];
@@ -352,7 +360,7 @@ void ClassificationModel::load()
 					stream.read((char*)&rows,    sizeof(uint64_t));
 					stream.read((char*)&columns, sizeof(uint64_t));
 
-					util::log("ClassificationModel") << "    matrix(" << rows
+					util::log("Model") << "    matrix(" << rows
 						<< " rows, " << columns << " columns)\n";
 					
 					layer.push_back(matrix::Matrix());
@@ -385,7 +393,7 @@ void ClassificationModel::load()
 					stream.read((char*)&rows,    sizeof(uint64_t));
 					stream.read((char*)&columns, sizeof(uint64_t));
 
-					util::log("ClassificationModel") << "    bias matrix(" << rows
+					util::log("Model") << "    bias matrix(" << rows
 						<< " rows, " << columns << " columns)\n";
 					
 					layer.push_back_bias(matrix::Matrix());
@@ -405,7 +413,7 @@ void ClassificationModel::load()
 			{
 				util::json::Visitor outputVisitor(*outputObject);
 				
-				network->second.setLabelForOutputNeuron(
+				network->setLabelForOutputNeuron(
 					std::distance(outputsVisitor.begin_array(), outputObject),
 					outputVisitor);
 			}
@@ -423,7 +431,7 @@ void ClassificationModel::load()
 	delete headerObject;
 }
 	
-void ClassificationModel::clear()
+void Model::clear()
 {
 	_neuralNetworks.clear();
 }
