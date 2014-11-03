@@ -4,17 +4,23 @@
 	\brief  The source file for the ResultProcessor class.
 */
 
-#include <minerva/results/interface/ResultsProcessor.h>
+// Minerva Includes
+#include <minerva/results/interface/ResultProcessor.h>
 
 namespace minerva
 {
 
-namespace classifiers
+namespace results
 {
 
 ResultProcessor::~ResultProcessor()
 {
 
+}
+
+void ResultProcessor::setOutputFilename(const std::string& filename)
+{
+	// intentionally blank
 }
 
 }

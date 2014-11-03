@@ -5,11 +5,11 @@
 */
 
 // Minerva Includes
-#include <minerva/classifiers/interface/ClassifierFactory.h>
-#include <minerva/classifiers/interface/ClassifierEngine.h>
+#include <minerva/classifiers/interface/EngineFactory.h>
+#include <minerva/classifiers/interface/Engine.h>
 
-#include <minerva/model/interface/ClassificationModelBuilder.h>
-#include <minerva/model/interface/ClassificationModel.h>
+#include <minerva/model/interface/ModelBuilder.h>
+#include <minerva/model/interface/Model.h>
 
 #include <minerva/visualization/interface/NeuronVisualizer.h>
 #include <minerva/video/interface/Image.h>
@@ -35,20 +35,18 @@ static void checkInputs(const std::string& inputFileNames,
 	bool& shouldTrain, bool& shouldLearnFeatures,
 	bool& shouldExtractFeatures);
 
-static classifiers::ClassifierEngine* createEngine(
+static classifiers::Engine* createEngine(
 	const std::string& outputFilename, bool shouldClassify,
 	bool shouldTrain, bool shouldLearnFeatures,
 	bool shouldExtractFeatures);
-
-static StringVector getPaths(const std::string& pathlist);
 
 static std::string loadFile(const std::string& path);
 
 static void createNewModel(const std::string& modelFileName, const std::string& modelSpecificationPath)
 {
-	model::ClassificationModelBuilder builder;
+	model::ModelBuilder builder;
 	
-	model::ClassificationModel* model = nullptr;
+	model::Model* model = nullptr;
 
 	if(modelSpecificationPath.empty())
 	{
@@ -70,7 +68,7 @@ static void createNewModel(const std::string& modelFileName, const std::string& 
 static void visualizeNeurons(const std::string& modelFileName,
 	const std::string& outputPath)
 {
-	model::ClassificationModel model(modelFileName);
+	model::Model model(modelFileName);
 	
 	model.load();
 	
@@ -96,7 +94,7 @@ static void runClassifier(const std::string& outputFilename,
 {
 	util::log("minerva-classifier") << "Loading classifier.\n";
 
-	classifiers::ClassifierEngine* engine = nullptr;
+	classifiers::Engine* engine = nullptr;
 
 	try
 	{
@@ -113,10 +111,8 @@ static void runClassifier(const std::string& outputFilename,
 
 		engine->loadModel(modelFileName);
 
-		engine->runOnPaths(getPaths(inputFileNames));
+		engine->runOnDatabaseFile(inputFileNames);
 		
-		engine->reportStatistics(std::cout);
-	
 		delete engine;
 	}
 	catch(const std::exception& e)
@@ -171,31 +167,23 @@ static void checkInputs(const std::string& inputFileNames,
 	}
 }
 
-static classifiers::ClassifierEngine* createEngine(
+static classifiers::Engine* createEngine(
 	const std::string& outputFilename, bool shouldClassify,
 	bool shouldTrain, bool shouldLearnFeatures, bool shouldExtractFeatures)
 {
-	classifiers::ClassifierEngine* engine = nullptr;
+	classifiers::Engine* engine = nullptr;
 	
 	if(shouldTrain)
 	{
-		engine = classifiers::ClassifierFactory::create("LearnerEngine");
-		engine->setMultipleSamplesAllowed(true);
+		engine = classifiers::EngineFactory::create("LearnerEngine");
 	}
 	else if(shouldLearnFeatures)
 	{
-		engine = classifiers::ClassifierFactory::create(
-			"UnsupervisedLearnerEngine");
-		
-		if(engine != nullptr)
-		{
-			engine->setMultipleSamplesAllowed(true);
-		}
+		engine = classifiers::EngineFactory::create("UnsupervisedLearnerEngine");
 	}
 	else if(shouldExtractFeatures)
 	{
-		engine = classifiers::ClassifierFactory::create(
-			"FeatureExtractorEngine");
+		engine = classifiers::EngineFactory::create("FeatureExtractorEngine");
 		
 		if(engine != nullptr)
 		{
@@ -204,16 +192,10 @@ static classifiers::ClassifierEngine* createEngine(
 	}
 	else
 	{
-		engine = classifiers::ClassifierFactory::create(
-			"FinalClassifierEngine");
+		engine = classifiers::EngineFactory::create("ClassifierEngine");
 	}
 	
 	return engine;
-}
-
-static StringVector getPaths(const std::string& pathlist)
-{
-	return util::split(pathlist, ",");
 }
 
 static std::string loadFile(const std::string& path)
@@ -261,12 +243,12 @@ static void setupKnobs(size_t maximumSamples, size_t batchSize)
 {
 	if(maximumSamples > 0)
 	{
-		util::KnobDatabase::setKnob("ClassifierEngine::MaximumVideoFrames",
+		util::KnobDatabase::setKnob("InputDataProducer::MaximumSampleCount",
 			toString(maximumSamples));
 	}
 	if(batchSize > 0)
 	{
-		util::KnobDatabase::setKnob("ClassifierEngine::ImageBatchSize",
+		util::KnobDatabase::setKnob("InputDataProducer::BatchSize",
 			toString(batchSize));
 	}
 }
@@ -300,7 +282,7 @@ int main(int argc, char** argv)
 	parser.description("The Minerva image and video classifier.");
 
 	parser.parse("-i", "--input",  inputFileNames,
-		"", "The input image or video file path or list of paths.");
+		"", "The input image or video database path.");
 	parser.parse("-o", "--output",  outputPath,
 		"", "The output path to store generated files "
 			"(for visualization or feature extraction).");

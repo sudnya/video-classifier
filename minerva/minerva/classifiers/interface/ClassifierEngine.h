@@ -27,9 +27,6 @@ public:
 public:
 	void setUseLabeledData(bool useIt);
 
-public:
-	virtual void reportStatistics(std::ostream& stream) const;
-
 protected:
 	virtual ResultVector runOnBatch(Matrix&& inputs, Matrix&& reference);
 	virtual bool requiresLabeledData() const;

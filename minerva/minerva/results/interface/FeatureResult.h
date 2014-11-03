@@ -9,6 +9,9 @@
 // Minerva Includes
 #include <minerva/results/interface/Result.h>
 
+// Standard Library Includes
+#include <memory>
+
 // Forward Declarations
 namespace minerva { namespace matrix { class Matrix; } }
 

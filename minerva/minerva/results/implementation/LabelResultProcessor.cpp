@@ -4,12 +4,16 @@
 	\brief  The source file for the LabelResultProcessor class.
 */
 
+// Minerva Includes
 #include <minerva/results/interface/LabelResultProcessor.h>
+
+// Standard Library Includes
+#include <unordered_map>
 
 namespace minerva
 {
 
-namespace classifiers
+namespace results
 {
 
 LabelResultProcessor::~LabelResultProcessor()

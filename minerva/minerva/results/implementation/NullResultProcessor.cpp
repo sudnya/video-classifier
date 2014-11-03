@@ -9,7 +9,7 @@
 namespace minerva
 {
 
-namespace classifiers
+namespace results
 {
 
 NullResultProcessor::~NullResultProcessor()

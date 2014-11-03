@@ -7,11 +7,11 @@
 // Minerva Includes
 #include <minerva/input/interface/InputDataProducerFactory.h>
 
-// Standard Library Includes
-#include <string>
+#include <minerva/input/interface/InputAudioDataProducer.h>
+#include <minerva/input/interface/InputTextDataProducer.h>
+#include <minerva/input/interface/InputVisualDataProducer.h>
 
-// Forward Declarations
-namespace minerva { namespace input{ class InputDataProducer; } }
+#include <minerva/database/interface/SampleDatabase.h>
 
 namespace minerva
 {
@@ -19,14 +19,43 @@ namespace minerva
 namespace input
 {
 
-/*! \brief A factory for classifier engines */
-class InputDataProducerFactory
+InputDataProducer* InputDataProducerFactory::create(const std::string& producerName, const std::string& databaseName)
 {
-public:
-	static InputDataProducer* create(const std::string& classifierName);
-	static InputDataProducer* createForDatabase(const std::string& classifierName);
+	if(producerName == "InputAudioDataProducer")
+	{
+		return new InputAudioDataProducer(databaseName);
+	}
+	else if(producerName == "InputTextDataProducer")
+	{
+		return new InputTextDataProducer(databaseName);
+	}
+	else if(producerName == "InputVisualDataProducer")
+	{
+		return new InputVisualDataProducer(databaseName);
+	}
 
-};
+	return nullptr;
+}
+
+InputDataProducer* InputDataProducerFactory::createForDatabase(const std::string& databaseName)
+{
+	database::SampleDatabase database(databaseName);
+	
+	if(database.containsAudioSamples())
+	{
+		return create("InputAudioDataProducer", databaseName);
+	}
+	else if(database.containsVideoSamples() || database.containsImageSamples())
+	{
+		return create("InputVisualDataProducer", databaseName);
+	}
+	else if(database.containsTextSamples())
+	{
+		return create("InputTextDataProducer", databaseName);
+	}
+
+	return nullptr;
+}
 
 }
 

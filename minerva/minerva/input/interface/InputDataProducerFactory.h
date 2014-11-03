@@ -22,8 +22,8 @@ namespace input
 class InputDataProducerFactory
 {
 public:
-	static InputDataProducer* create(const std::string& classifierName);
-	static InputDataProducer* createForDatabase(const std::string& classifierName);
+	static InputDataProducer* create(const std::string& producerName, const std::string& databaseName);
+	static InputDataProducer* createForDatabase(const std::string& databaseName);
 
 };
 

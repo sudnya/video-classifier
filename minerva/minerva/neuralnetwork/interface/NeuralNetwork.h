@@ -165,10 +165,10 @@ class NeuralNetwork
 		std::string shapeString() const;
 
 	private:
-		LayerVector m_layers;
-		NeuronToLabelMap m_labels;
+		LayerVector _layers;
 	
 	private:
+		NeuronToLabelMap _labels;
 		bool _useSparseCostFunction;
 
 };

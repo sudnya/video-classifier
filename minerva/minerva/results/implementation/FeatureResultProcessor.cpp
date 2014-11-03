@@ -6,10 +6,12 @@
 
 #include <minerva/results/interface/FeatureResultProcessor.h>
 
+#include <minerva/util/interface/debug.h>
+
 namespace minerva
 {
 
-namespace classifiers
+namespace results
 {
 
 FeatureResultProcessor::~FeatureResultProcessor()
@@ -19,9 +21,8 @@ FeatureResultProcessor::~FeatureResultProcessor()
 
 void FeatureResultProcessor::process(const ResultVector& results)
 {
-	
-	
-	for()
+	// TODO:
+	assertM(false, "Not implemented.");
 }
 
 }

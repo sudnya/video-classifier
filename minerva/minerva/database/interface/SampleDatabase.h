@@ -32,6 +32,7 @@ public:
 
 public:
 	SampleDatabase(const std::string& path);
+	~SampleDatabase();
 
 public:
 	StringVector getAllPossibleLabels() const;
@@ -50,6 +51,12 @@ public:
 
 public:
 	const std::string& path() const;
+
+public:
+	bool containsVideoSamples() const;
+	bool containsImageSamples() const;
+	bool containsAudioSamples() const;
+	bool containsTextSamples() const;
 
 public:
 	void addSample(const Sample& sample);

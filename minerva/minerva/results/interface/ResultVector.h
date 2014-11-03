@@ -6,6 +6,10 @@
 
 #pragma once
 
+// Standard Library Includes
+#include <vector>
+
+// Forward Declarations
 namespace minerva { namespace results { class Result; } }
 
 namespace minerva

@@ -30,6 +30,11 @@ ClassifierEngine::ClassifierEngine()
 	setResultProcessor(new results::LabelResultProcessor);
 }	
 
+ClassifierEngine::~ClassifierEngine()
+{
+
+}
+
 void ClassifierEngine::setUseLabeledData(bool shouldUse)
 {
 	_shouldUseLabeledData = shouldUse;

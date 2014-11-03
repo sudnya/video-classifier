@@ -144,10 +144,9 @@ ImageVector::Matrix ImageVector::convertToStandardizedMatrix(size_t sampleCount,
 	return convertToStandardizedMatrix(sampleCount, x, y, colors);
 }
 
-ImageVector::Matrix ImageVector::getReference(
-	const NeuralNetwork& neuralNetwork) const
+ImageVector::Matrix ImageVector::getReference(const util::StringVector& labels) const
 {
-	Matrix matrix(size(), neuralNetwork.getOutputCount());
+	Matrix matrix(size(), labels.size());
 	
 	util::log("ImageVector") << "Generating reference image:\n";
 	
@@ -157,14 +156,13 @@ ImageVector::Matrix ImageVector::getReference(
 			<< (*this)[imageId].label() << "'\n";
 		
 		for(unsigned int outputNeuron = 0;
-			outputNeuron != neuralNetwork.getOutputCount(); ++outputNeuron)
+			outputNeuron != labels.size(); ++outputNeuron)
 		{
 			util::log("ImageVector") << "  For output neuron" << outputNeuron
 				<< " with label '"
-				<< neuralNetwork.getLabelForOutputNeuron(outputNeuron) << "'\n";
+				<< labels[outputNeuron] << "'\n";
 		
-			if((*this)[imageId].label() ==
-				neuralNetwork.getLabelForOutputNeuron(outputNeuron))
+			if((*this)[imageId].label() == labels[outputNeuron])
 			{
 				matrix(imageId, outputNeuron) = 0.9f;
 			}
@@ -175,8 +173,7 @@ ImageVector::Matrix ImageVector::getReference(
 		}
 	}
 	
-	util::log("ImageVector") << " Generated matrix: " << matrix.toString(10, 20)
-		<< "\n";
+	util::log("ImageVector") << " Generated matrix: " << matrix.toString() << "\n";
 	
 	return matrix;
 }

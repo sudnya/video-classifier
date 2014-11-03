@@ -31,9 +31,6 @@ public:
 private:
 	virtual ResultVector runOnBatch(Matrix&& matrix, Matrix&& reference);
 
-private:	
-	virtual void registerModel();
-	virtual void closeModel();
 };
 
 }

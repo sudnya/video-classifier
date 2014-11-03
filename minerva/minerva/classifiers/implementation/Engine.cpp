@@ -43,11 +43,6 @@ Engine::~Engine()
 
 }
 
-void Engine::setModel(Model* model)
-{
-	_model.reset(model);
-}
-
 void Engine::loadModel(const std::string& pathToModelFile)
 {
 	util::log("Engine") << "Loading model file '" << pathToModelFile
@@ -56,6 +51,16 @@ void Engine::loadModel(const std::string& pathToModelFile)
 	_model.reset(new Model(pathToModelFile));
 
 	util::log("Engine") << " model loaded.\n";
+}
+
+void Engine::setModel(Model* model)
+{
+	_model.reset(model);
+}
+
+void Engine::setResultProcessor(ResultProcessor* processor)
+{
+	_resultProcessor.reset(processor);
 }
 
 void Engine::runOnDatabaseFile(const std::string& path)
@@ -69,13 +74,14 @@ void Engine::runOnDatabaseFile(const std::string& path)
 		throw std::runtime_error("No input path provided.");
 	}
 	
-	_dataProducer.reset(input::InputDataProducerFactory::createForDatabase(path));
+	_setupProducer(path);
 	
 	while(!_dataProducer->empty())
 	{
 		auto dataAndReference = std::move(_dataProducer->pop());
 		
-		auto results = runOnBatch(std::move(dataAndReference.first), std::move(dataAndReference.second));
+		auto results = runOnBatch(std::move(dataAndReference.first),
+			std::move(dataAndReference.second));
 		
 		_resultProcessor->process(std::move(results));
 	}
@@ -84,18 +90,44 @@ void Engine::runOnDatabaseFile(const std::string& path)
 	closeModel();
 }
 
-std::string Engine::reportStatisticsString() const
+void Engine::setOutputFilename(const std::string& filename)
 {
-	std::stringstream stream;
-
-	reportStatistics(stream);
-	
-	return stream.str();
+	_resultProcessor->setOutputFilename(filename);
 }
 
-void Engine::reportStatistics(std::ostream& stream) const
+Engine::Model* Engine::extractModel()
 {
-	// intentionally blank
+	return _model.release();
+}
+
+Engine::ResultProcessor* Engine::extractResultProcessor()
+{
+	return _resultProcessor.release();
+}
+
+Engine::Model* Engine::getModel()
+{
+	return _model.get();
+}
+
+Engine::ResultProcessor* Engine::getResultProcessor()
+{
+	return _resultProcessor.get();
+}
+
+void Engine::setMaximumSamplesToRun(size_t samples)
+{
+	_dataProducer->setMaximumSamplesToRun(samples);
+}
+
+void Engine::setBatchSize(size_t samples)
+{
+	_dataProducer->setBatchSize(samples);
+}
+
+void Engine::setAllowSamplingWithReplacement(bool allow)
+{
+	_dataProducer->setAllowSamplingWithReplacement(allow);
 }
 
 void Engine::registerModel()
@@ -157,6 +189,15 @@ void Engine::restoreAggregateNetwork(neuralnetwork::NeuralNetwork& network)
 		++layerId;
 	}
 }
+
+void Engine::_setupProducer(const std::string& path)
+{
+	_dataProducer.reset(
+		input::InputDataProducerFactory::createForDatabase(path));
+	
+	_dataProducer->setRequiresLabeledData(requiresLabeledData());
+}
+
 
 }
 

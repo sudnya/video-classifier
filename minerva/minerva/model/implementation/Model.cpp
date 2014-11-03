@@ -435,6 +435,46 @@ void Model::clear()
 {
 	_neuralNetworks.clear();
 }
+	
+Model::iterator Model::begin()
+{
+	return _neuralNetworks.begin();
+}
+
+Model::const_iterator Model::begin() const
+{
+	return _neuralNetworks.begin();
+}
+
+Model::iterator Model::end()
+{
+	return _neuralNetworks.end();
+}
+
+Model::const_iterator Model::end() const
+{
+	return _neuralNetworks.end();
+}
+
+Model::reverse_iterator Model::rbegin()
+{
+	return _neuralNetworks.rbegin();
+}
+
+Model::const_reverse_iterator Model::rbegin() const
+{
+	return _neuralNetworks.rbegin();
+}
+
+Model::reverse_iterator Model::rend()
+{
+	return _neuralNetworks.rend();
+}
+
+Model::const_reverse_iterator Model::rend() const
+{
+	return _neuralNetworks.rend();
+}
 
 }
 

@@ -21,6 +21,11 @@ SampleDatabase::SampleDatabase(const std::string& path)
 	_parse();
 }
 
+SampleDatabase::~SampleDatabase()
+{
+
+}
+
 SampleDatabase::StringVector SampleDatabase::getAllPossibleLabels() const
 {
 	return StringVector(_labels.begin(), _labels.end());
@@ -71,6 +76,42 @@ bool SampleDatabase::empty() const
 const std::string& SampleDatabase::path() const
 {
 	return _path;
+}
+	
+bool SampleDatabase::containsVideoSamples() const
+{
+	for(auto& sample : _samples)
+	{
+		if(sample.isVideoSample())
+		{
+			return true;
+		}
+	}
+	
+	return false;
+}
+
+bool SampleDatabase::containsImageSamples() const
+{
+	for(auto& sample : _samples)
+	{
+		if(sample.isImageSample())
+		{
+			return true;
+		}
+	}
+	
+	return false;
+}
+
+bool SampleDatabase::containsAudioSamples() const
+{
+	return false;
+}
+
+bool SampleDatabase::containsTextSamples() const
+{
+	return false;
 }
 
 void SampleDatabase::addSample(const Sample& sample)

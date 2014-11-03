@@ -6,7 +6,11 @@
 
 #pragma once
 
+// Minerva Includes
 #include <minerva/input/interface/InputDataProducer.h>
+
+#include <minerva/video/interface/ImageVector.h>
+#include <minerva/video/interface/Video.h>
 
 namespace minerva
 {
@@ -35,6 +39,9 @@ public:
 	/*! \brief Reset the producer to its original state, all previously
 		popped samples should now be available again. */
 	virtual void reset();
+	
+	/*! \brief Get the total number of unique samples that can be produced. */
+	virtual size_t getUniqueSampleCount() const;
 
 private:
 	void _initialize();
@@ -42,6 +49,9 @@ private:
 private:
 	video::VideoVector _videos;
 	video::ImageVector _images;
+
+private:
+	std::string _sampleDatabasePath;
 	
 private:
 	size_t _remainingSamples;

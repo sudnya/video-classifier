@@ -18,8 +18,8 @@ namespace input
 class InputTextDataProducer : public InputDataProducer
 {
 public:
-	VisualTextDataProducer(const std::string& imageDatabaseFilename);
-	virtual ~VisualTextDataProducer();
+	InputTextDataProducer(const std::string& imageDatabaseFilename);
+	virtual ~InputTextDataProducer();
 
 public:
 	/*! \brief Deque a set of samples from the producer.
@@ -35,6 +35,9 @@ public:
 	/*! \brief Reset the producer to its original state, all previously
 		popped samples should now be available again. */
 	virtual void reset();
+	
+	/*! \brief Get the total number of unique samples that can be produced. */
+	virtual size_t getUniqueSampleCount() const;
 
 };
 

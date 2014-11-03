@@ -29,7 +29,6 @@ public:
 	LearnerEngine& operator=(const LearnerEngine&) = delete;
 	
 private:
-	virtual void registerModel();
 	virtual void closeModel();
 
 private:

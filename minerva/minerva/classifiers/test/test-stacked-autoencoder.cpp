@@ -6,7 +6,7 @@
 
 // Minerva Includes
 #include <minerva/classifiers/interface/UnsupervisedLearnerEngine.h>
-#include <minerva/classifiers/interface/ClassifierFactory.h>
+#include <minerva/classifiers/interface/EngineFactory.h>
 
 #include <minerva/video/interface/Image.h>
 
@@ -67,7 +67,7 @@ static void trainNetwork(const std::string& path, ClassificationModel& model)
 	// engine will now be an unsupervised Learner
 	std::unique_ptr<UnsupervisedLearnerEngine> unsupervisedLearnerEngine(
 		static_cast<UnsupervisedLearnerEngine*>(
-		minerva::classifiers::ClassifierFactory::create("UnsupervisedLearnerEngine")));
+		minerva::classifiers::EngineFactory::create("UnsupervisedLearnerEngine")));
 
 	unsupervisedLearnerEngine->setMultipleSamplesAllowed(true);
 	unsupervisedLearnerEngine->setModel(&model);
@@ -120,11 +120,6 @@ static std::string toString(size_t value)
 
 static void setupKnobs(size_t maximumSamples, size_t batchSize)
 {
-	if(maximumSamples > 0)
-	{
-		minerva::util::KnobDatabase::setKnob("ClassifierEngine::MaximumVideoFrames",
-			toString(maximumSamples));
-	}
 	if(batchSize > 0)
 	{
 		minerva::util::KnobDatabase::setKnob("ClassifierEngine::ImageBatchSize",

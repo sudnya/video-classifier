@@ -24,7 +24,7 @@ env['path_to_root_dir'] = os.path.abspath(minerva_path_to_root_dir)
 directories = ['minerva/driver', 'minerva/util', 'minerva/classifiers',
 	'minerva/matrix', 'minerva/model', 'minerva/neuralnetwork',
 	'minerva/optimizer', 'minerva/video', 'minerva/visualization',
-	'minerva/database']
+	'minerva/database', 'minerva/input', 'minerva/results']
 
 source_directories = [os.path.join(i, 'implementation') for i in directories]
 extensions = ['*.cpp']
@@ -48,28 +48,39 @@ tools = []
 
 tools.append(env.Program('minerva-classifier', \
 	['minerva/tools/minerva-classifier.cpp'], LIBS=minerva_libs))
+
 tools.append(env.Program('test-classifier', \
 	['minerva/classifiers/test/test-classifier.cpp'], LIBS=minerva_libs))
-tools.append(env.Program('test-face-detector', \
-	['minerva/classifiers/test/test-face-detector.cpp'], LIBS=minerva_libs))
-tools.append(env.Program('test-gestures', \
-	['minerva/classifiers/test/test-gestures.cpp'], LIBS=minerva_libs))
-tools.append(env.Program('test-stacked-autoencoder', \
-	['minerva/classifiers/test/test-stacked-autoencoder.cpp'], LIBS=minerva_libs))
+
+#tools.append(env.Program('test-face-detector', \
+#	['minerva/classifiers/test/test-face-detector.cpp'], LIBS=minerva_libs))
+#tools.append(env.Program('test-gestures', \
+#	['minerva/classifiers/test/test-gestures.cpp'], LIBS=minerva_libs))
+
+#tools.append(env.Program('test-stacked-autoencoder', \
+#	['minerva/classifiers/test/test-stacked-autoencoder.cpp'], LIBS=minerva_libs))
+
 tools.append(env.Program('test-matrix', \
 	['minerva/matrix/test/test-matrix.cpp'], LIBS=minerva_libs))
-tools.append(env.Program('test-minerva-visualization', \
-	['minerva/visualization/test/test-minerva-visualization.cpp'], LIBS=minerva_libs))
-tools.append(env.Program('test-multiclass-classifier', \
-	['minerva/classifiers/test/test-multiclass-classifier.cpp'], LIBS=minerva_libs))
+
+#tools.append(env.Program('test-minerva-visualization', \
+#	['minerva/visualization/test/test-minerva-visualization.cpp'], LIBS=minerva_libs))
+
+#tools.append(env.Program('test-multiclass-classifier', \
+#	['minerva/classifiers/test/test-multiclass-classifier.cpp'], LIBS=minerva_libs))
+
 tools.append(env.Program('test-minerva-display', \
 	['minerva/video/test/test-display.cpp'], LIBS=minerva_libs))
+
 tools.append(env.Program('test-minerva-performance', \
 	['minerva/neuralnetwork/test/test-neuralnetwork-performance.cpp'], LIBS=minerva_libs))
-tools.append(env.Program('test-first-layer-features', \
-	['minerva/classifiers/test/test-first-layer-features.cpp'], LIBS=minerva_libs))
-tools.append(env.Program('test-cats-vs-dogs', \
-	['minerva/classifiers/test/test-cats-vs-dogs.cpp'], LIBS=minerva_libs))
+
+#tools.append(env.Program('test-first-layer-features', \
+#	['minerva/classifiers/test/test-first-layer-features.cpp'], LIBS=minerva_libs))
+
+#tools.append(env.Program('test-cats-vs-dogs', \
+#	['minerva/classifiers/test/test-cats-vs-dogs.cpp'], LIBS=minerva_libs))
+
 tools.append(env.Program('test-optimizer', \
 	['minerva/optimizer/test/test-optimizer.cpp'], LIBS=minerva_libs))
 

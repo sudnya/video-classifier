@@ -4,7 +4,9 @@
 	\brief  The source file for the ResultVector class.
 */
 
+// Minerva Includes
 #include <minerva/results/interface/ResultVector.h>
+#include <minerva/results/interface/Result.h>
 
 namespace minerva
 {

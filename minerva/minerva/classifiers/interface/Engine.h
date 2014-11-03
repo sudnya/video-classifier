@@ -81,12 +81,6 @@ public:
 	void setBatchSize(size_t samples);
 	/*! \brief Should the engine be allowed to run the same sample multiple times */
 	void setAllowSamplingWithReplacement(bool);
-	
-public:
-	std::string reportStatisticsString() const;
-
-public:
-	virtual void reportStatistics(std::ostream& stream) const;
 
 protected:
 	/*! \brief Called before the engine starts running on a given model */
@@ -108,19 +102,21 @@ protected:
 	/*! \brief Unpack and restore networks back to the model. */
 	void restoreAggregateNetwork(NeuralNetwork& network);
 	
-
 public:
 	/*! \brief Run the engine on the specified batch. */
 	virtual ResultVector runOnBatch(Matrix&& batchOfSamples, Matrix&& referenceForEachSample) = 0;
 	
-public:
+private:
 	Engine(const Engine&) = delete;
 	Engine& operator=(const Engine&) = delete;
 
+private:
+	void _setupProducer(const std::string& databasePath);
+
 protected:
-	std::unique_ptr<Model> _model;
-	std::unique_ptr<InputDataProducer>   _dataProducer;
-	std::unique_ptr<ResultProcessor>     _resultProcessor;
+	std::unique_ptr<Model>              _model;
+	std::unique_ptr<InputDataProducer>  _dataProducer;
+	std::unique_ptr<ResultProcessor>    _resultProcessor;
 
 };
 

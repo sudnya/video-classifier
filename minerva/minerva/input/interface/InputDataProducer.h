@@ -6,6 +6,16 @@
 
 #pragma once
 
+// Minerva Includes
+#include <minerva/util/interface/string.h>
+
+// Forward Declarations
+namespace minerva { namespace matrix { class Matrix; } }
+namespace minerva { namespace model  { class Model;  } }
+
+// Standard Library Includes
+#include <utility>
+
 namespace minerva
 {
 
@@ -20,6 +30,7 @@ public:
 	typedef std::pair<Matrix, Matrix> InputAndReferencePair;
 
 public:
+	InputDataProducer();
 	virtual ~InputDataProducer();
 
 public:
@@ -37,6 +48,9 @@ public:
 		popped samples should now be available again. */
 	virtual void reset() = 0;
 	
+	/*! \brief Get the total number of unique samples that can be produced. */
+	virtual size_t getUniqueSampleCount() const = 0;
+	
 public:
 	void setAllowSamplingWithReplacement(bool allowReplacement);
 	bool getAllowSamplingWithReplacement() const;
@@ -46,12 +60,31 @@ public:
 	size_t getBatchSize() const;
 
 public:
-	void setRequiresLabelledData(bool requiresLabelledData);
-	bool getRequiresLabelledData() const; 
+	void   setMaximumSamplesToRun(size_t batchSize);
+	size_t getMaximumSamplesToRun() const;
+
+public:
+	void setRequiresLabeledData(bool requiresLabeledData);
+	bool getRequiresLabeledData() const; 
+
+public:
+	void setModel(const model::Model* model);
+
+protected:
+	size_t getInputCount() const;
+	size_t getInputBlockingFactor() const;
+
+protected:
+	util::StringVector getOutputLabels() const;
 	
 private:
 	bool   _allowSamplingWithReplacement;
+	bool   _requiresLabeledData;
 	size_t _batchSize;
+	size_t _maximumSamplesToRun;
+
+private:
+	const model::Model* _model;
 
 };
 

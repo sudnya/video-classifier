@@ -27,6 +27,8 @@ public:
 	typedef std::list<NeuralNetwork> NeuralNetworkList;
 	typedef NeuralNetworkList::iterator iterator;
 	typedef NeuralNetworkList::const_iterator const_iterator;
+	typedef NeuralNetworkList::reverse_iterator reverse_iterator;
+	typedef NeuralNetworkList::const_reverse_iterator const_reverse_iterator;
 
 public:
 	Model(const std::string& path);
@@ -61,6 +63,13 @@ public:
 	
 	iterator       end();
 	const_iterator end() const;
+
+public:
+	reverse_iterator       rbegin();
+	const_reverse_iterator rbegin() const;
+	
+	reverse_iterator       rend();
+	const_reverse_iterator rend() const;
 
 private:
 	std::string _path;

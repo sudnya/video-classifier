@@ -34,7 +34,6 @@ public:
 	void setLayersPerIteration(size_t layers);
 	
 private:
-	virtual void registerModel();
 	virtual void closeModel();
 	
 private:

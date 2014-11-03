@@ -6,7 +6,11 @@
 
 #pragma once
 
+// Minerva Includes
 #include <minerva/results/interface/Result.h>
+
+// Standard Library Includes
+#include <string>
 
 namespace minerva
 {

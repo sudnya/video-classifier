@@ -6,8 +6,12 @@
 
 #pragma once
 
+// Standard Library Includes
+#include <string>
+
 // Forward Declarations
 namespace minerva { namespace results { class ResultProcessor; } } 
+namespace minerva { namespace results { class ResultVector;    } } 
 
 namespace minerva
 {
@@ -24,6 +28,9 @@ public:
 public:
 	/*! \brief Process a batch of results */
 	virtual void process(const ResultVector& ) = 0;
+
+public:
+	virtual void setOutputFilename(const std::string& filename);
 
 };
 

@@ -4,7 +4,18 @@
 	\brief  The header file for the InputVisualDataProducer class.
 */
 
+
+// Minerva Includes
 #include <minerva/input/interface/InputVisualDataProducer.h>
+
+#include <minerva/database/interface/SampleDatabase.h>
+#include <minerva/database/interface/Sample.h>
+
+#include <minerva/util/interface/Knobs.h>
+#include <minerva/util/interface/debug.h>
+#include <minerva/util/interface/math.h>
+
+#include <map>
 
 namespace minerva
 {
@@ -28,21 +39,23 @@ typedef video::ImageVector ImageVector;
 typedef video::Video	   Video;
 typedef video::VideoVector VideoVector;
 
-static ImageVector getImageBatch(ImageVector& images, VideoVector& video,
-	size_t& remainingSamples, size_t batchSize);
+static ImageVector getBatch(ImageVector& images, VideoVector& video,
+	size_t& remainingSamples, size_t batchSize, std::default_random_engine& generator,
+	bool requiresLabeledData);
 
-InputVisualDataProducer::InputAndReference InputVisualDataProducer::pop()
+InputVisualDataProducer::InputAndReferencePair InputVisualDataProducer::pop()
 {
 	_initialize();
 	
-	ImageVector batch = getImageBatch(_images, _videos, _remainingSamples, getBatchSize());
+	ImageVector batch = getBatch(_images, _videos, _remainingSamples,
+		getBatchSize(), _generator, getRequiresLabeledData());
 	
 	// TODO: specialize this logic
 	auto input = batch.convertToStandardizedMatrix(getInputCount(),
-		getInputBlockingFactor(), getColorComponents());
-	auto reference = batch.getReference();
+		getInputBlockingFactor(), _colorComponents);
+	auto reference = batch.getReference(getOutputLabels());
 	
-	return std::make_pair(std::move(input), std::move(reference));
+	return InputAndReferencePair(std::move(input), std::move(reference));
 }
 
 bool InputVisualDataProducer::empty() const
@@ -52,11 +65,16 @@ bool InputVisualDataProducer::empty() const
 
 void InputVisualDataProducer::reset()
 {
-	_remainingSamples = uniqueSampleCount();
+	_remainingSamples = getUniqueSampleCount();
+}
+
+size_t InputVisualDataProducer::getUniqueSampleCount() const
+{
+	return _images.size() + _videos.size();
 }
 
 static void parseImageDatabase(ImageVector& images, VideoVector& video,
-	const std::string& path, bool requiresLabeledData);
+	const std::string& path, bool requiresLabeledData, size_t inputs, size_t colors);
 
 void InputVisualDataProducer::_initialize()
 {
@@ -77,19 +95,22 @@ void InputVisualDataProducer::_initialize()
 		_generator.seed(127);
 	}
 	
-	parseImageDatabase(_images, _video, getSampleDatabasePath(),
-		getRequiresLabelledData());
+	parseImageDatabase(_images, _videos, _sampleDatabasePath,
+		getRequiresLabeledData(), getInputCount(), _colorComponents);
+	
+	reset();
 	
 	_initialized = true;
 }
 
-static void sliceOutTilesToFitTheNetwork(InputVisualDataProducer* engine, ImageVector& images,
-	size_t maxVideoFrames);
+static void sliceOutTilesToFitTheModel(ImageVector& images,
+	size_t inputCount, size_t colorComponents);
 	
 static void consolidateLabels(ImageVector& images, VideoVector& videos);
 
 static void parseImageDatabase(ImageVector& images, VideoVector& videos,
-	const std::string& path, bool requiresLabeledData)
+	const std::string& path, bool requiresLabeledData,
+	size_t inputCount, size_t colorComponents)
 {
 	util::log("InputVisualDataProducer") << " scanning image database '"
 		<< path << "'\n";
@@ -139,26 +160,29 @@ static void parseImageDatabase(ImageVector& images, VideoVector& videos,
 		}
 	}
 	
+	sliceOutTilesToFitTheModel(images, inputCount, colorComponents);
+	
 	consolidateLabels(images, videos);
 }
 
 static void getVideoBatch(ImageVector& batch, VideoVector& videos,
-	size_t& remainingSamples, size_t batchSize);
+	size_t& remainingSamples, size_t batchSize, std::default_random_engine& generator, bool requiresLabeledData);
 static void getImageBatch(ImageVector& batch, ImageVector& images,
-	size_t& remainingSamples, size_t batchSize);
+	size_t& remainingSamples, size_t batchSize, std::default_random_engine& generator);
 
-static ImageVector getImageBatch(ImageVector& images, VideoVector& videos,
-	size_t& remainingSamples, size_t batchSize)
+static ImageVector getBatch(ImageVector& images, VideoVector& videos,
+	size_t& remainingSamples, size_t batchSize, std::default_random_engine& generator,
+	bool requiresLabeledData)
 {
-	std::uniform_int_distribution<size_t> distribution(0,batchSize);
+	std::uniform_int_distribution<size_t> distribution(0, batchSize);
 
-	size_t imageBatchSize = distribution(_generator);
+	size_t imageBatchSize = distribution(generator);
 	size_t videoBatchSize = batchSize - imageBatchSize;
 
 	ImageVector batch;
 	
-	getVideoBatch(batch, videos, remainingSamples, videoBatchSize);
-	getImageBatch(batch, images, remainingSamples, imageBatchSize);
+	getVideoBatch(batch, videos, remainingSamples, videoBatchSize, generator, requiresLabeledData);
+	getImageBatch(batch, images, remainingSamples, imageBatchSize, generator);
 
 	return batch;
 }
@@ -166,23 +190,25 @@ static ImageVector getImageBatch(ImageVector& images, VideoVector& videos,
 typedef std::vector<std::pair<unsigned int, unsigned int>> VideoAndFrameVector;
 
 static VideoAndFrameVector pickRandomFrames(VideoVector& videos,
-	unsigned int maxVideoFrames, bool requiresLabeledData);
+	unsigned int frameCount, bool requiresLabeledData,
+	std::default_random_engine& generator);
 
 static void getVideoBatch(ImageVector& batch, VideoVector& videos,
-	size_t& remainingSamples, size_t batchSize)
+	size_t& remainingSamples, size_t batchSize,
+	std::default_random_engine& generator, bool requiresLabeledData)
 {
 	util::log("InputVisualDataProducer") << "Filling video batch\n";
 
 	size_t frameCount = std::min(batchSize, remainingSamples);
 	
-	auto frames = pickRandomFrames(videos, frameCount, requiresLabeledData);
+	auto frames = pickRandomFrames(videos, frameCount, requiresLabeledData, generator);
 
 	for(auto frame : frames)
 	{
 		unsigned int video  = frame.first;
 		unsigned int offset = frame.second;
 		
-		util::log("InputVisualDataProducer") << " Getting frame (" << frame
+		util::log("InputVisualDataProducer") << " Getting frame (" << offset
 			<< ") from video " << videos[video].path() << "\n"; 
 		
 		batch.push_back(videos[video].getSpecificFrame(offset));
@@ -221,7 +247,8 @@ static unsigned int mapFrameIndexToLabeledFrameIndex(unsigned int frame, const V
 }
 
 static VideoAndFrameVector pickRandomFrames(VideoVector& videos,
-	unsigned int maxVideoFrames, bool requiresLabeledData)
+	unsigned int maxVideoFrames, bool requiresLabeledData,
+	std::default_random_engine& generator)
 {
 	util::log("InputVisualDataProducer") << " Picking random " << maxVideoFrames
 		<< " frames from videos\n"; 
@@ -235,7 +262,7 @@ static VideoAndFrameVector pickRandomFrames(VideoVector& videos,
 	
 	for(unsigned int i = 0; i < maxVideoFrames; ++i)
 	{
-		unsigned int video = _generator() % videos.size();
+		unsigned int video = generator() % videos.size();
 		unsigned int frames = videos[video].getTotalFrames();
 		
 		if(frames == 0)
@@ -243,7 +270,7 @@ static VideoAndFrameVector pickRandomFrames(VideoVector& videos,
 			continue;
 		}
 
-		unsigned int frame = _generator() % frames;
+		unsigned int frame = generator() % frames;
 
 		if(requiresLabeledData)
 		{
@@ -261,7 +288,7 @@ static VideoAndFrameVector pickRandomFrames(VideoVector& videos,
 
 typedef std::vector<unsigned int> IntVector;
 
-IntVector getRandomOrder(unsigned int size)
+IntVector getRandomOrder(unsigned int size, std::default_random_engine& generator)
 {
 	IntVector order(size);
 
@@ -270,18 +297,17 @@ IntVector getRandomOrder(unsigned int size)
 		order[i] = i;
 	}
 	
-	std::shuffle(order.begin(), order.end(), _generator);	
+	std::shuffle(order.begin(), order.end(), generator);	
 
 	return order;
 }
 
-static void sliceOutCenterOnly(InputVisualDataProducer* engine, ImageVector& images, size_t maxVideoFrames)
+static void sliceOutCenterOnly(ImageVector& images, size_t inputCount, size_t colorComponents)
 {
 	size_t xTile = 0;
 	size_t yTile = 0;
 	
-	util::getNearestToSquareFactors(xTile, yTile,
-		engine->getInputFeatureCount() / engine->getColorComponents());
+	util::getNearestToSquareFactors(xTile, yTile, inputCount / colorComponents);
 
 	ImageVector slicedImages;
 	
@@ -289,11 +315,6 @@ static void sliceOutCenterOnly(InputVisualDataProducer* engine, ImageVector& ima
 	
 	for(auto& image : images)
 	{
-		if(frames >= maxVideoFrames)
-		{
-			break;
-		}
-
 		image.load();
 	
 		size_t startX = (image.x() - xTile) / 2;
@@ -313,7 +334,7 @@ static void sliceOutCenterOnly(InputVisualDataProducer* engine, ImageVector& ima
 		}
 		
 		slicedImages.push_back(image.getTile(startX, startY,
-			newX, newY, engine->getColorComponents()));
+			newX, newY, colorComponents));
 		
 		frames += 1;
 	}
@@ -322,14 +343,12 @@ static void sliceOutCenterOnly(InputVisualDataProducer* engine, ImageVector& ima
 
 }
 
-static void sliceOutAllTiles(InputVisualDataProducer* engine, ImageVector& images,
-	size_t maxVideoFrames)
+static void sliceOutAllTiles(ImageVector& images, size_t inputCount, size_t colorComponents)
 {	
 	size_t xTile = 0;
 	size_t yTile = 0;
 	
-	util::getNearestToSquareFactors(xTile, yTile,
-		engine->getInputFeatureCount() / engine->getColorComponents());
+	util::getNearestToSquareFactors(xTile, yTile, inputCount / colorComponents);
 
 	ImageVector slicedImages;
 	
@@ -337,18 +356,11 @@ static void sliceOutAllTiles(InputVisualDataProducer* engine, ImageVector& image
 	
 	for(auto& image : images)
 	{
-		if(frames >= maxVideoFrames)
-		{
-			break;
-		}
-			
 		image.load();
 		
-		for(size_t startX = 0; startX < image.x() && frames < maxVideoFrames;
-			startX += xTile)
+		for(size_t startX = 0; startX < image.x(); startX += xTile)
 		{
-			for(size_t startY = 0; startY < image.y() && frames < maxVideoFrames;
-				startY += yTile)
+			for(size_t startY = 0; startY < image.y(); startY += yTile)
 			{
 				size_t newX = xTile;
 				size_t newY = yTile;
@@ -364,7 +376,7 @@ static void sliceOutAllTiles(InputVisualDataProducer* engine, ImageVector& image
 				}
 				
 				slicedImages.push_back(image.getTile(startX, startY,
-					newX, newY, engine->getColorComponents()));
+					newX, newY, colorComponents));
 
 				++frames;
 			}
@@ -374,8 +386,8 @@ static void sliceOutAllTiles(InputVisualDataProducer* engine, ImageVector& image
 	images = std::move(slicedImages);
 }
 
-static void sliceOutTilesToFitTheNetwork(InputVisualDataProducer* engine,
-	ImageVector& images, size_t maxVideoFrames)
+static void sliceOutTilesToFitTheModel(ImageVector& images,
+	size_t inputCount, size_t colorComponents)
 {
 	bool shouldSlice = util::KnobDatabase::getKnobValue(
 		"InputVisualDataProducer::SliceInputImagesToFitNetwork", false);
@@ -390,22 +402,22 @@ static void sliceOutTilesToFitTheNetwork(InputVisualDataProducer* engine,
 	
 	if(shouldSliceCenter)
 	{
-		sliceOutCenterOnly(engine, images, maxVideoFrames);
+		sliceOutCenterOnly(images, inputCount, colorComponents);
 	}
 	else
 	{
-		sliceOutAllTiles(engine, images, maxVideoFrames);
+		sliceOutAllTiles(images, inputCount, colorComponents);
 	}
 }
 
 
 static void getImageBatch(ImageVector& batch, ImageVector& images,
-	size_t& remainingSamples, size_t maxBatchSize);
+	size_t& remainingSamples, size_t maxBatchSize, std::default_random_engine& generator)
 {
 	util::log("InputVisualDataProducer") << "Collecting image batche\n";
 
 	// shuffle the inputs
-	auto randomImageOrder = getRandomOrder(images.size());
+	auto randomImageOrder = getRandomOrder(images.size(), generator);
 
 	auto batchSize = std::min(images.size(),
 		(size_t)maxBatchSize);
@@ -416,7 +428,7 @@ static void getImageBatch(ImageVector& batch, ImageVector& images,
 		batch.back().load();
 	}
 
-	maxVideoFrames -= batchSize;
+	remainingSamples -= batchSize;
 }
 
 static void consolidateLabels(ImageVector& images, VideoVector& videos)
