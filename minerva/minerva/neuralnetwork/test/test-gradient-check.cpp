@@ -130,6 +130,8 @@ static bool gradientCheck(NeuralNetwork& network, std::default_random_engine& en
 			
 			++blockId;
 		}
+		
+		blockId = 0;
 
 		for(auto block = layer.begin_bias(); block != layer.end_bias(); ++block)
 		{
@@ -146,11 +148,17 @@ static bool gradientCheck(NeuralNetwork& network, std::default_random_engine& en
 				float estimatedGradient = (newCost - cost);
 
 				total += std::abs(estimatedGradient - gradient[layerId][blockId][weightId]) / totalWeights;
+				
+				++weightId;
 			}
+			
+			++blockId;
 		}
 
 		++layerId;
 	}
+	
+	std::cout << "Gradient difference is: " << total << "\n";
 	
 	return isInRange(total);
 }
