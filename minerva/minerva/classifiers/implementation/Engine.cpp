@@ -15,6 +15,8 @@
 
 #include <minerva/model/interface/Model.h>
 
+#include <minerva/matrix/interface/Matrix.h>
+
 #include <minerva/util/interface/debug.h>
 #include <minerva/util/interface/paths.h>
 #include <minerva/util/interface/math.h>

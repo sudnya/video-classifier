@@ -7,7 +7,8 @@
 // Minerva Includes
 #include <minerva/neuralnetwork/interface/NeuralNetwork.h>
 
-#include <minerva/model/interface/ClassificationModel.h>
+#include <minerva/matrix/interface/Matrix.h>
+#include <minerva/matrix/interface/BlockSparseMatrixVector.h>
 
 #include <minerva/util/interface/debug.h>
 #include <minerva/util/interface/ArgumentParser.h>
@@ -29,10 +30,11 @@ namespace neuralnetwork
 
 typedef neuralnetwork::Layer Layer;
 typedef matrix::Matrix Matrix;
+typedef matrix::BlockSparseMatrixVector BlockSparseMatrixVector;
 typedef neuralnetwork::NeuralNetwork NeuralNetwork;
 
 static NeuralNetwork createNetwork(
-	size_t layerSize, size_t blockCount, size_t layerCount
+	size_t layerSize, size_t blockCount, size_t layerCount,
 	std::default_random_engine& engine)
 {
 	NeuralNetwork network;
@@ -47,14 +49,14 @@ static NeuralNetwork createNetwork(
 	return network;
 }
 
-static Matrix generateInput(NeuralNetwork& network, size_t samples,
+static Matrix generateInput(NeuralNetwork& network,
 	std::default_random_engine& engine)
 {
 	size_t inputs = network.getInputCount();
 
-	Matrix inputData(samples, inputs);
+	Matrix inputData(1, inputs);
 
-	std::uniform_real_distribution<float> distribution(0.0f, 1.0f);
+	std::uniform_real_distribution<float> distribution(-1.0f, 1.0f);
 
 	for(auto& value : inputData)
 	{
@@ -64,9 +66,35 @@ static Matrix generateInput(NeuralNetwork& network, size_t samples,
 	return inputData;
 }
 
-static bool gradientCheck(NeuralNetwork& network)
+static Matrix generateReference(NeuralNetwork& network,
+	std::default_random_engine& engine)
 {
+	size_t outputs = network.getOutputCount();
+
+	Matrix outputData(1, outputs);
+
+	std::uniform_real_distribution<float> distribution(0.1f, 0.9f);
+
+	for(auto& value : outputData)
+	{
+		value = distribution(engine);
+	}
+
+	return outputData;
+}
+
+static bool isInRange(float value)
+{
+	return std::abs(value) < 1.0e-10;
+}
+
+static bool gradientCheck(NeuralNetwork& network, std::default_random_engine& engine)
+{
+	const float epsilon = 1.0e-4f;
+
 	float total = 0.0f;
+	
+	size_t totalWeights = network.totalWeights();
 	
 	size_t layerId = 0;
 	
@@ -79,34 +107,46 @@ static bool gradientCheck(NeuralNetwork& network)
 	
 	for(auto& layer : network)
 	{
-		size_t weightId = 0;
+		size_t blockId = 0;
 		
-		for(auto& weight : layer)
+		for(auto& block : layer)
 		{
-			weight += epsilon;
+			size_t weightId = 0;
 			
-			float newCost = network.getCost(input, reference);
-			
-			weight -= epsilon;
-			
-			float estimatedGradient = (newCost - cost);
+			for(auto& weight : block)
+			{
+				weight += epsilon;
+				
+				float newCost = network.getCost(input, reference);
+				
+				weight -= epsilon;
+				
+				float estimatedGradient = (newCost - cost);
 
-			total += std::abs(estimatedGradient - gradient[layerId][weightId]) / totalParameters;
+				total += std::abs(estimatedGradient - gradient[layerId][blockId][weightId]) / totalWeights;
+				
+				++weightId;
+			}
 			
-			++weightId;
+			++blockId;
 		}
-		
-		for(auto bias = layer.bias_begin(); bias != layer.bias_end(); ++bias)
-		{
-			*bias += epsilon;
-			
-			float newCost = network.getCost(input, reference);
-			
-			weight -= epsilon;
-			
-			float estimatedGradient = (newCost - cost);
 
-			total += std::abs(estimatedGradient - gradient[layerId][weightId]) / totalParameters;
+		for(auto block = layer.begin_bias(); block != layer.end_bias(); ++block)
+		{
+			size_t weightId = 0;
+			
+			for(auto& bias : *block)
+			{
+				bias += epsilon;
+				
+				float newCost = network.getCost(input, reference);
+				
+				bias -= epsilon;
+				
+				float estimatedGradient = (newCost - cost);
+
+				total += std::abs(estimatedGradient - gradient[layerId][blockId][weightId]) / totalWeights;
+			}
 		}
 
 		++layerId;
@@ -124,9 +164,9 @@ static void runTest(size_t layerSize, size_t blockCount, size_t layerCount, bool
 		generator.seed(std::time(0));
 	}
 	
-	auto network = createNetwork(layerSize, blockCount, layerCount);
+	auto network = createNetwork(layerSize, blockCount, layerCount, generator);
 	
-	if(gradientCheck(network))
+	if(gradientCheck(network, generator))
 	{
 		std::cout << "Test Passed\n";
 	}

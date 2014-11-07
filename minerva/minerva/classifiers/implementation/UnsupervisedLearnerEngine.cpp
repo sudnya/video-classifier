@@ -13,6 +13,8 @@
 
 #include <minerva/results/interface/ResultVector.h>
 
+#include <minerva/matrix/interface/Matrix.h>
+
 #include <minerva/util/interface/debug.h>
 #include <minerva/util/interface/Knobs.h>
 

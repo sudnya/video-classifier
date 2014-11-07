@@ -11,6 +11,9 @@
 
 #include <minerva/optimizer/interface/NeuralNetworkSolver.h>
 
+#include <minerva/matrix/interface/Matrix.h>
+#include <minerva/matrix/interface/BlockSparseMatrixVector.h>
+
 #include <minerva/util/interface/Knobs.h>
 #include <minerva/util/interface/debug.h>
 
@@ -614,6 +617,51 @@ BackPropagation* NeuralNetwork::createBackPropagation() const
 	backPropagation->setNeuralNetwork(const_cast<NeuralNetwork*>(this));
 	
 	return backPropagation;
+}
+
+float NeuralNetwork::getCostAndGradient(BlockSparseMatrixVector& gradient, BlockSparseMatrix& input, BlockSparseMatrix& reference) const
+{
+	//create a backpropagate-data class
+	//given the neural network, inputs & reference outputs 
+	std::unique_ptr<BackPropagation> backPropagation(createBackPropagation()); 
+
+	backPropagation->setNeuralNetwork(const_cast<NeuralNetwork*>(this));
+	backPropagation->setInput(&input);
+	backPropagation->setReferenceOutput(&reference);
+	
+	// TODO: merge these
+	gradient = backPropagation->computeCostDerivative();
+	
+	return backPropagation->computeCost();
+}
+
+float NeuralNetwork::getCost(BlockSparseMatrix& input, BlockSparseMatrix& reference) const
+{
+	//create a backpropagate-data class
+	//given the neural network, inputs & reference outputs 
+	std::unique_ptr<BackPropagation> backPropagation(createBackPropagation()); 
+
+	backPropagation->setNeuralNetwork(const_cast<NeuralNetwork*>(this));
+	backPropagation->setInput(&input);
+	backPropagation->setReferenceOutput(&reference);
+	
+	return backPropagation->computeCost();
+}
+		
+float NeuralNetwork::getCostAndGradient(BlockSparseMatrixVector& gradient, const Matrix& input, const Matrix& reference) const
+{
+	auto sparseInput     = convertToBlockSparseForLayerInput(front(), input);
+	auto sparseReference = convertToBlockSparseForLayerOutput(back(), reference);
+	
+	return getCostAndGradient(gradient, sparseInput, sparseReference);
+}
+
+float NeuralNetwork::getCost(const Matrix& input, const Matrix& reference) const
+{
+	auto sparseInput     = convertToBlockSparseForLayerInput(front(), input);
+	auto sparseReference = convertToBlockSparseForLayerOutput(back(), reference);
+	
+	return getCost(sparseInput, sparseReference);
 }
 
 bool NeuralNetwork::areConnectionsValid() const

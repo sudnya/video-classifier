@@ -10,6 +10,8 @@
 
 #include <minerva/optimizer/interface/GeneralDifferentiableSolverFactory.h>
 
+#include <minerva/matrix/interface/Matrix.h>
+
 #include <minerva/util/interface/SystemCompatibility.h>
 #include <minerva/util/interface/debug.h>
 

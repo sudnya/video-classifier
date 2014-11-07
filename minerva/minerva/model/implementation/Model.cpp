@@ -9,6 +9,8 @@
 
 #include <minerva/neuralnetwork/interface/Layer.h>
 
+#include <minerva/matrix/interface/Matrix.h>
+
 #include <minerva/util/interface/TarArchive.h>
 
 #include <minerva/util/interface/debug.h>

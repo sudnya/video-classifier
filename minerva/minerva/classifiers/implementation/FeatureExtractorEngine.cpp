@@ -14,6 +14,8 @@
 
 #include <minerva/model/interface/Model.h>
 
+#include <minerva/matrix/interface/Matrix.h>
+
 // Standard Library Includes
 #include <cassert>
 
