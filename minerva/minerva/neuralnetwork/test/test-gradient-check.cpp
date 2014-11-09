@@ -83,18 +83,17 @@ static Matrix generateReference(NeuralNetwork& network,
 	return outputData;
 }
 
-static bool isInRange(float value)
+static bool isInRange(float value, float epsilon)
 {
-	return std::abs(value) < 1.0e-10;
+	return value < epsilon;
 }
 
 static bool gradientCheck(NeuralNetwork& network, std::default_random_engine& engine)
 {
-	const float epsilon = 1.0e-4f;
+	const float epsilon = 5.0e-4f;
 
 	float total = 0.0f;
-	
-	size_t totalWeights = network.totalWeights();
+	float difference = 0.0f;
 	
 	size_t layerId = 0;
 	
@@ -108,7 +107,8 @@ static bool gradientCheck(NeuralNetwork& network, std::default_random_engine& en
 	for(auto& layer : network)
 	{
 		size_t blockId = 0;
-		
+
+		auto biasBlock = layer.begin_bias();
 		for(auto& block : layer)
 		{
 			size_t weightId = 0;
@@ -121,23 +121,24 @@ static bool gradientCheck(NeuralNetwork& network, std::default_random_engine& en
 				
 				weight -= epsilon;
 				
-				float estimatedGradient = (newCost - cost);
-
-				total += std::abs(estimatedGradient - gradient[layerId][blockId][weightId]) / totalWeights;
+				float estimatedGradient = (newCost - cost) / epsilon;
+				float computedGradient = gradient[layerId][blockId][weightId];
+				
+				float thisDifference = std::pow(estimatedGradient - computedGradient, 2.0f);
+				
+				difference += thisDifference;
+				total += std::pow(computedGradient, 2.0f);
+				
+    			minerva::util::log("TestGradientCheck") << " (layer " << layerId << ", block "
+					<< blockId << ", weight " << weightId << ") value is " << computedGradient << " estimate is "
+					<< estimatedGradient << " difference is " << thisDifference << " \n";
 				
 				++weightId;
 			}
 			
-			++blockId;
-		}
-		
-		blockId = 0;
-
-		for(auto block = layer.begin_bias(); block != layer.end_bias(); ++block)
-		{
-			size_t weightId = 0;
+			weightId = 0;
 			
-			for(auto& bias : *block)
+			for(auto& bias : *biasBlock)
 			{
 				bias += epsilon;
 				
@@ -145,22 +146,31 @@ static bool gradientCheck(NeuralNetwork& network, std::default_random_engine& en
 				
 				bias -= epsilon;
 				
-				float estimatedGradient = (newCost - cost);
+				float estimatedGradient = (newCost - cost) / epsilon;
+				float computedGradient = gradient[layerId + 1][blockId][weightId];
+				
+				float thisDifference = std::pow(estimatedGradient - computedGradient, 2.0f);
 
-				total += std::abs(estimatedGradient - gradient[layerId][blockId][weightId]) / totalWeights;
+				difference += thisDifference;
+				total += std::pow(computedGradient, 2.0f);
+				
+    			minerva::util::log("TestGradientCheck") << " (layer " << (layerId + 1) << ", bias "
+					<< blockId << ", weight " << weightId << ") value is " << computedGradient << " estimate is "
+					<< estimatedGradient << " difference is " << thisDifference << " \n";
 				
 				++weightId;
 			}
-			
+
+			++biasBlock;
 			++blockId;
 		}
 
-		++layerId;
+		layerId += 2;
 	}
 	
-	std::cout << "Gradient difference is: " << total << "\n";
+	std::cout << "Gradient difference is: " << (difference/total) << "\n";
 	
-	return isInRange(total);
+	return isInRange(difference/total, epsilon);
 }
 
 static void runTest(size_t layerSize, size_t blockCount, size_t layerCount, bool seed)
@@ -202,7 +212,7 @@ int main(int argc, char** argv)
 
     parser.description("The minerva neural network gradient check.");
 
-    parser.parse("-S", "--layer-size", layerSize, 32,
+    parser.parse("-S", "--layer-size", layerSize, 16,
         "The number of neurons per layer.");
 	parser.parse("-b", "--blocks", blockCount, 4,
 		"The number of blocks per layer.");

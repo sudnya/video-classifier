@@ -59,7 +59,7 @@ static float computeCostForNetwork(const NeuralNetwork& network, const BlockSpar
 
 	auto hx = network.runInputs(input);
 
-	auto errors = hx.subtract(referenceOutput);
+	auto errors = referenceOutput.subtract(hx);
 	auto squaredErrors = errors.elementMultiply(errors);
 
 	float sumOfSquaredErrors = squaredErrors.reduceSum();
@@ -109,49 +109,6 @@ float DenseBackPropagation::getInputCost(const NeuralNetwork& network, const Blo
 	const BlockSparseMatrix& reference) const
 {
 	return computeCostForNetwork(network, input, reference, 0.0f);
-}
-
-BlockSparseMatrixVector DenseBackPropagation::getDeltas(const NeuralNetwork& network, const BlockSparseMatrixVector& activations) const
-{
-	BlockSparseMatrixVector deltas;
-
-	deltas.reserve(activations.size() - 1);
-	
-	auto i = activations.rbegin();
-	auto delta = (*i).subtract(*_referenceOutput).elementMultiply(i->sigmoidDerivative());
-	++i;
-
-	while (i != activations.rend())
-	{
-		deltas.push_back(std::move(delta));
-		
-		unsigned int layerNumber = std::distance(activations.begin(), --(i.base()));
-		//util::log ("DenseBackPropagation") << " Layer number: " << layerNumber << "\n";
-		auto& layer = network[layerNumber];
-
-		network.formatOutputForLayer(layer, deltas.back());
-
-		auto activationDerivativeOfCurrentLayer = i->sigmoidDerivative();
-		auto deltaPropagatedReverse = layer.runReverse(deltas.back());
-	   
-		delta = deltaPropagatedReverse.elementMultiply(activationDerivativeOfCurrentLayer);
-
-		++i; 
-	}
-
-	std::reverse(deltas.begin(), deltas.end());
-	
-	if(util::isLogEnabled("DenseBackPropagation::Detail"))
-	{
-		for(auto& delta : deltas)
-		{
-			util::log("DenseBackPropagation::Detail") << " added delta of size ( " << delta.rows()
-				<< " ) rows and ( " << delta.columns() << " )\n" ;
-			util::log("DenseBackPropagation::Detail") << " delta contains " << delta.toString() << "\n";
-		}
-	}
-	
-	return deltas;
 }
 
 BlockSparseMatrix DenseBackPropagation::getInputDelta(const NeuralNetwork& network, const BlockSparseMatrixVector& activations) const
@@ -231,6 +188,49 @@ BlockSparseMatrixVector DenseBackPropagation::getActivations(const NeuralNetwork
 	return activations;
 }
 
+BlockSparseMatrixVector DenseBackPropagation::getDeltas(const NeuralNetwork& network, const BlockSparseMatrixVector& activations) const
+{
+	BlockSparseMatrixVector deltas;
+
+	deltas.reserve(activations.size() - 1);
+	
+	auto i = activations.rbegin();
+	auto delta = (*i).subtract(*_referenceOutput).elementMultiply(i->sigmoidDerivative());
+	++i;
+
+	while (i != activations.rend())
+	{
+		deltas.push_back(std::move(delta));
+		
+		unsigned int layerNumber = std::distance(activations.begin(), --(i.base()));
+		//util::log ("DenseBackPropagation") << " Layer number: " << layerNumber << "\n";
+		auto& layer = network[layerNumber];
+
+		network.formatOutputForLayer(layer, deltas.back());
+
+		auto activationDerivativeOfCurrentLayer = i->sigmoidDerivative();
+		auto deltaPropagatedReverse = layer.runReverse(deltas.back());
+	   
+		delta = deltaPropagatedReverse.elementMultiply(activationDerivativeOfCurrentLayer);
+
+		++i; 
+	}
+
+	std::reverse(deltas.begin(), deltas.end());
+	
+	if(util::isLogEnabled("DenseBackPropagation::Detail"))
+	{
+		for(auto& delta : deltas)
+		{
+			util::log("DenseBackPropagation::Detail") << " added delta of size ( " << delta.rows()
+				<< " ) rows and ( " << delta.columns() << " )\n" ;
+			util::log("DenseBackPropagation::Detail") << " delta contains " << delta.toString() << "\n";
+		}
+	}
+	
+	return deltas;
+}
+
 static void coalesceNeuronOutputs(BlockSparseMatrix& derivative,
 	const BlockSparseMatrix& skeleton)
 {
@@ -270,7 +270,7 @@ BlockSparseMatrixVector DenseBackPropagation::getCostDerivative(
 
 		transposedDelta.setRowSparse();
 		
-		util::log("DenseBackPropagation::Detail") << " computing derivative for layer " << std::distance(deltas.begin(), i) << "\n";
+		util::log("DenseBackPropagation::Detail") << " computing derivative for layer " << std::distance(deltas.begin(), i) << " from " << samples << " samples\n";
 		util::log("DenseBackPropagation::Detail") << "  activation: " << activation.shapeString() << "\n";
 		util::log("DenseBackPropagation::Detail") << "  delta-transposed: " << transposedDelta.shapeString() << "\n";
 
@@ -286,15 +286,16 @@ BlockSparseMatrixVector DenseBackPropagation::getCostDerivative(
 		// compute the derivative for the bias
 		auto normalizedBiasPartialDerivative = transposedDelta.reduceSumAlongColumns().multiply(1.0f/samples);
 		
-		util::log("DenseBackPropagation::Detail") << "  tranposed delta: " << transposedDelta.toString() << "\n";
-		util::log("DenseBackPropagation::Detail") << "  bias derivative: " << normalizedBiasPartialDerivative.toString() << "\n";
+		util::log("DenseBackPropagation::Detail") << "  weight derivative: " << normalizedPartialDerivative.shapeString() << "\n";
+		util::log("DenseBackPropagation::Detail") << "  bias derivative  : " << normalizedBiasPartialDerivative.shapeString() << "\n";
+		
 		// Account for cases where the same neuron produced multiple outputs
 		//  or not enough inputs existed
 		coalesceNeuronOutputs(normalizedPartialDerivative, lambdaTerm);
 		coalesceNeuronOutputs(normalizedBiasPartialDerivative, layer.getBias());
 	
 		// Compute the partial derivatives with respect to the weights
-		partialDerivative.push_back(lambdaTerm.add(normalizedPartialDerivative.transpose()));
+		partialDerivative.push_back(normalizedPartialDerivative.transpose());
 		
 		// Compute partial derivatives with respect to the bias
 		partialDerivative.push_back(normalizedBiasPartialDerivative.transpose());

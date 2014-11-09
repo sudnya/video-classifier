@@ -602,9 +602,11 @@ BackPropagation* NeuralNetwork::createBackPropagation() const
 	}
 	else
 	{
-		backPropagationType = util::KnobDatabase::getKnobValue(
-			"BackPropagation::DefaultType", "DenseBackPropagation");
+		backPropagationType = "DenseBackPropagation";
 	}
+	
+	backPropagationType = util::KnobDatabase::getKnobValue(
+		"BackPropagation::ForceType", backPropagationType);
 	
 	auto backPropagation = BackPropagationFactory::create(backPropagationType);
 	
