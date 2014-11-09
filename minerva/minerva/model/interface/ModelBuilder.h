@@ -1,7 +1,7 @@
-/*	\file   ClassificationModelBuilder.h
+/*	\file   ModelBuilder.h
 	\date   Saturday August 10, 2013
 	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The header file for the ClassificationModelBuilder class.
+	\brief  The header file for the ModelBuilder class.
 */
 
 #pragma once
@@ -10,7 +10,7 @@
 #include <string>
 
 // Forward Declarations
-namespace minerva { namespace model { class ClassificationModel; } }
+namespace minerva { namespace model { class Model; } }
 
 namespace minerva
 {
@@ -19,16 +19,16 @@ namespace model
 {
 
 /*! \brief A constructor for classification models */
-class ClassificationModelBuilder
+class ModelBuilder
 {
 public:
 	/*! \brief Create a new model at the specified path */
-	ClassificationModel* create(const std::string& path);
+	Model* create(const std::string& path);
 
 public:
 	/*! \brief Create a new model at the specified path using the
 		specified topology. */
-	ClassificationModel* create(const std::string& path, const std::string& specificationPath);
+	Model* create(const std::string& path, const std::string& specificationPath);
 
 };
 

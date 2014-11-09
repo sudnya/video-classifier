@@ -1,5 +1,5 @@
 /*	\file   ClassifierEngine.h
-	\date   Saturday August 10, 2013
+	\date   Sunday August 11, 2013
 	\author Gregory Diamos <solusstultus@gmail.com>
 	\brief  The header file for the ClassifierEngine class.
 */
@@ -7,15 +7,10 @@
 #pragma once
 
 // Minerva Includes
-#include <minerva/video/interface/ImageVector.h>
-
-#include <minerva/util/interface/string.h>
+#include <minerva/classifiers/interface/Engine.h>
 
 // Standard Library Includes
-#include <ostream>
-
-// Forward Declarations
-namespace minerva { namespace model { class ClassificationModel; } }
+#include <map>
 
 namespace minerva
 {
@@ -23,95 +18,28 @@ namespace minerva
 namespace classifiers
 {
 
-/*! \brief A generic interface to a classifier with support for an arbitrarily
-	large input data stream.
- */
-class ClassifierEngine
+class ClassifierEngine : public Engine
 {
-public:
-	typedef util::StringVector StringVector;
-	typedef video::ImageVector ImageVector;
-
 public:
 	ClassifierEngine();
 	virtual ~ClassifierEngine();
 
 public:
-	/*! \brief Load a model from a file */
-	void loadModel(const std::string& pathToModelFile);
-	
-	/*! \brief Add model directly */
-	void setModel(model::ClassificationModel* model);
-
-	/*! \brief Run on a single image/video database file */
-	void runOnDatabaseFile(const std::string& pathToDatabase);
-
-	/*! \brief Run the classifier on all of the contained paths */
-	void runOnPaths(const StringVector& paths);
-
-	/*! \brief Set the output file name */
-	void setOutputFilename(const std::string& filename);
-
-public:
-	/*! \brief Set the maximum samples to be run by the engine */
-	void setMaximumSamplesToRun(unsigned int samples);
-	/*! \brief Set the number of samples to be run in a batch by the engine */
-	void setBatchSize(unsigned int samples);
-	/*! \brief Should the engine be allowed to run the same sample multiple times */
-	void setMultipleSamplesAllowed(bool);
-	/*! \brief Should the engine display images and their labels after running them? */
-	void setDisplayImages(bool);
-	
-public:
-	std::string reportStatisticsString() const;
-
-public:
-	virtual void reportStatistics(std::ostream& stream) const;
+	void setUseLabeledData(bool useIt);
 
 protected:
-	/*! \brief Called before the engine starts running on a given model */
-	virtual void registerModel();
-	/*! \brief Called after the engine finishes running on a given model */
-	virtual void closeModel();
-
-	/*! \brief Determines whether or not the engine must use labeled data */	
+	virtual ResultVector runOnBatch(Matrix&& inputs, Matrix&& reference);
 	virtual bool requiresLabeledData() const;
 
-protected:
-	void saveModel();
-
-public:
-	virtual void runOnImageBatch(ImageVector&& images) = 0;
-	virtual size_t getInputFeatureCount() const = 0;
-
-public:
-	size_t getColorComponents() const;
-	
-public:
-	ClassifierEngine(const ClassifierEngine&) = delete;
-	ClassifierEngine& operator=(const ClassifierEngine&) = delete;
-
-protected:
-	typedef model::ClassificationModel ClassificationModel;
-
-protected:
-	ClassificationModel* _model;
-	bool                 _ownModel;
-
-protected:
-	unsigned int _maximumSamplesToRun;
-	unsigned int _batchSize;
-	bool         _areMultipleSamplesAllowed;
-	bool         _shouldDisplayImages;
-
-protected:
-	std::string _outputFilename;
-
+private:
+	bool _shouldUseLabeledData;
 
 };
 
 }
 
 }
+
+
 
 

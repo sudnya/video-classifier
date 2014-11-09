@@ -7,7 +7,7 @@
 #pragma once
 
 // Minerva Includes
-#include <minerva/classifiers/interface/ClassifierEngine.h>
+#include <minerva/classifiers/interface/Engine.h>
 
 // Forward Declarations
 namespace minerva { namespace classifiers { class Learner; } }
@@ -18,7 +18,7 @@ namespace minerva
 namespace classifiers
 {
 
-class LearnerEngine : public ClassifierEngine
+class LearnerEngine : public Engine
 {
 public:
 	LearnerEngine();
@@ -29,17 +29,12 @@ public:
 	LearnerEngine& operator=(const LearnerEngine&) = delete;
 	
 private:
-	virtual void registerModel();
 	virtual void closeModel();
 
 private:
-	virtual void runOnImageBatch(ImageVector&& images);
-	virtual size_t getInputFeatureCount() const;
+	virtual ResultVector runOnBatch(Matrix&& input, Matrix&& reference);
 	
 	virtual bool requiresLabeledData() const;
-
-private:
-	Learner*     _learner;
 
 
 };

@@ -7,7 +7,9 @@
 // Minerva Includes
 #include <minerva/neuralnetwork/interface/NeuralNetwork.h>
 
-#include <minerva/model/interface/ClassificationModel.h>
+#include <minerva/model/interface/Model.h>
+
+#include <minerva/matrix/interface/Matrix.h>
 
 #include <minerva/util/interface/debug.h>
 #include <minerva/util/interface/ArgumentParser.h>
@@ -29,11 +31,11 @@ namespace neuralnetwork
 
 typedef neuralnetwork::Layer Layer;
 typedef matrix::Matrix Matrix;
-typedef model::ClassificationModel ClassificationModel;
+typedef model::Model Model;
 typedef neuralnetwork::NeuralNetwork NeuralNetwork;
 
 static void createAndInitializeNeuralNetworks(
-	ClassificationModel& model,
+	Model& model,
 	size_t xPixels, size_t yPixels,
 	size_t colors, size_t classes,
 	std::default_random_engine& engine)
@@ -94,7 +96,7 @@ static void createAndInitializeNeuralNetworks(
 	model.setNeuralNetwork("Classifier", classifier);
 }
 
-static void reportInitialStatistics(ClassificationModel& model)
+static void reportInitialStatistics(Model& model)
 {
 	auto& featureSelector = model.getNeuralNetwork("FeatureSelector");
 	auto& classifier      = model.getNeuralNetwork("Classifier");
@@ -180,7 +182,7 @@ static void reportUnsupervisedTrainingPerformance(NeuralNetwork& network,
 
 }
 
-static void benchmarkFeatureSelectorTraining(ClassificationModel& model,
+static void benchmarkFeatureSelectorTraining(Model& model,
 	size_t iterations, size_t batchSize, std::default_random_engine& engine)
 {
 	auto& featureSelector = model.getNeuralNetwork("FeatureSelector");
@@ -204,13 +206,13 @@ static void benchmarkFeatureSelectorTraining(ClassificationModel& model,
 	reportUnsupervisedTrainingPerformance(featureSelector, timer, iterations, batchSize);
 }
 
-static void benchmarkClassifierTraining(ClassificationModel& model,
+static void benchmarkClassifierTraining(Model& model,
 	size_t iterations, size_t batchSize, std::default_random_engine& engine)
 {
 	
 }
 
-static void benchmarkClassification(ClassificationModel& model,
+static void benchmarkClassification(Model& model,
 	size_t iterations, size_t batchSize, std::default_random_engine& engine)
 {
 
@@ -236,7 +238,7 @@ static void runTest(size_t iterations, size_t trainingIterations,
 	setupKnobs();
 
 	// Create a model for multiclass classification
-	ClassificationModel model;
+	Model model;
 	
 	// initialize the model, one feature selector network and one classifier network
     createAndInitializeNeuralNetworks(model, xPixels, yPixels, colors, 20, generator); 

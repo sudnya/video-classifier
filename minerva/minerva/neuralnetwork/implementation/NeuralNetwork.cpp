@@ -11,6 +11,9 @@
 
 #include <minerva/optimizer/interface/NeuralNetworkSolver.h>
 
+#include <minerva/matrix/interface/Matrix.h>
+#include <minerva/matrix/interface/BlockSparseMatrixVector.h>
+
 #include <minerva/util/interface/Knobs.h>
 #include <minerva/util/interface/debug.h>
 
@@ -36,7 +39,7 @@ void NeuralNetwork::initializeRandomly(std::default_random_engine& engine, float
 {
 	util::log("NeuralNetwork") << "Initializing neural network randomly.\n";
 
-	for (auto i = m_layers.begin(); i != m_layers.end(); ++i)
+	for (auto i = _layers.begin(); i != _layers.end(); ++i)
 	{
 		(*i).initializeRandomly(engine, epsilon);
 	}
@@ -114,10 +117,10 @@ NeuralNetwork::BlockSparseMatrix NeuralNetwork::runInputs(const BlockSparseMatri
 {
 	auto temp = m;
 
-	for (auto i = m_layers.begin(); i != m_layers.end(); ++i)
+	for (auto i = _layers.begin(); i != _layers.end(); ++i)
 	{
 		util::log("NeuralNetwork") << " Running forward propagation through layer "
-			<< std::distance(m_layers.begin(), i) << "\n";
+			<< std::distance(_layers.begin(), i) << "\n";
 		//formatInputForLayer(*i, temp);
 		temp = (*i).runInputs(temp);
 	}
@@ -156,9 +159,9 @@ float NeuralNetwork::computeAccuracy(const BlockSparseMatrix& input,
 
 std::string NeuralNetwork::getLabelForOutputNeuron(unsigned int i) const
 {
-	auto label = m_labels.find(i);
+	auto label = _labels.find(i);
 	
-	if(label == m_labels.end())
+	if(label == _labels.end())
 	{
 		std::stringstream stream;
 		
@@ -180,47 +183,47 @@ void NeuralNetwork::setLabelForOutputNeuron(unsigned int idx, const std::string&
 	util::log("NeuralNetwork") << "Setting label for output neuron "
 		<< idx << " to " << label << "\n";
 
-	m_labels[idx] = label;
+	_labels[idx] = label;
 }
 
 void NeuralNetwork::setLabelsForOutputNeurons(const NeuralNetwork& network)
 {
-	m_labels = network.m_labels;
+	_labels = network._labels;
 }
 
 void NeuralNetwork::addLayer(Layer&& L)
 {
-	m_layers.push_back(std::move(L));
+	_layers.push_back(std::move(L));
 }
 
 void NeuralNetwork::addLayer(const Layer& L)
 {
-	m_layers.push_back(L);
+	_layers.push_back(L);
 }
 
 unsigned NeuralNetwork::getTotalLayerSize() const
 {
-	return m_layers.size();
+	return _layers.size();
 }
 
 const NeuralNetwork::LayerVector* NeuralNetwork::getLayers() const
 {
-	return &m_layers;
+	return &_layers;
 }
 
 NeuralNetwork::LayerVector* NeuralNetwork::getLayers()
 {
-	return &m_layers;
+	return &_layers;
 }
 
 void NeuralNetwork::resize(size_t layers)
 {
-	m_layers.resize(layers);
+	_layers.resize(layers);
 }
 
 void NeuralNetwork::clear()
 {
-	m_layers.clear();
+	_layers.clear();
 }
 
 static size_t getGreatestCommonDivisor(size_t a, size_t b)
@@ -494,82 +497,89 @@ NeuralNetwork::BlockSparseMatrix NeuralNetwork::convertToBlockSparseForLayerOutp
 
 NeuralNetwork::iterator NeuralNetwork::begin()
 {
-	return m_layers.begin();
+	return _layers.begin();
 }
 
 NeuralNetwork::const_iterator NeuralNetwork::begin() const
 {
-	return m_layers.begin();
+	return _layers.begin();
 }
 
 NeuralNetwork::iterator NeuralNetwork::end()
 {
-	return m_layers.end();
+	return _layers.end();
 }
 
 NeuralNetwork::const_iterator NeuralNetwork::end() const
 {
-	return m_layers.end();
+	return _layers.end();
 }
 
 NeuralNetwork::reverse_iterator NeuralNetwork::rbegin()
 {
-	return m_layers.rbegin();
+	return _layers.rbegin();
 }
 
 NeuralNetwork::const_reverse_iterator NeuralNetwork::rbegin() const
 {
-	return m_layers.rbegin();
+	return _layers.rbegin();
 }
 
 NeuralNetwork::reverse_iterator NeuralNetwork::rend()
 {
-	return m_layers.rend();
+	return _layers.rend();
 }
 
 NeuralNetwork::const_reverse_iterator NeuralNetwork::rend() const
 {
-	return m_layers.rend();
+	return _layers.rend();
 }
 
 NeuralNetwork::Layer& NeuralNetwork::operator[](size_t index)
 {
-	return m_layers[index];
+	return _layers[index];
 }
 
 const NeuralNetwork::Layer& NeuralNetwork::operator[](size_t index) const
 {
-	return m_layers[index];
+	return _layers[index];
 }
 
 Layer& NeuralNetwork::back()
 {
-	return m_layers.back();
+	return _layers.back();
 }
 
 const Layer& NeuralNetwork::back() const
 {
-	return m_layers.back();
+	return _layers.back();
 }
 
 Layer& NeuralNetwork::front()
 {
-	return m_layers.front();
+	return _layers.front();
 }
 
 const Layer& NeuralNetwork::front() const
 {
-	return m_layers.front();
+	return _layers.front();
 }
 
 size_t NeuralNetwork::size() const
 {
-	return m_layers.size();
+	return _layers.size();
 }
 
 bool NeuralNetwork::empty() const
 {
-	return m_layers.empty();
+	return _layers.empty();
+}
+
+void NeuralNetwork::setParameters(const NeuralNetwork& network)
+{
+	setUseSparseCostFunction(network.isUsingSparseCostFunction());
+	
+	setLabelsForOutputNeurons(network);
 }
 
 void NeuralNetwork::setUseSparseCostFunction(bool shouldUse)
@@ -592,9 +602,11 @@ BackPropagation* NeuralNetwork::createBackPropagation() const
 	}
 	else
 	{
-		backPropagationType = util::KnobDatabase::getKnobValue(
-			"BackPropagation::DefaultType", "DenseBackPropagation");
+		backPropagationType = "DenseBackPropagation";
 	}
+	
+	backPropagationType = util::KnobDatabase::getKnobValue(
+		"BackPropagation::ForceType", backPropagationType);
 	
 	auto backPropagation = BackPropagationFactory::create(backPropagationType);
 	
@@ -607,6 +619,51 @@ BackPropagation* NeuralNetwork::createBackPropagation() const
 	backPropagation->setNeuralNetwork(const_cast<NeuralNetwork*>(this));
 	
 	return backPropagation;
+}
+
+float NeuralNetwork::getCostAndGradient(BlockSparseMatrixVector& gradient, BlockSparseMatrix& input, BlockSparseMatrix& reference) const
+{
+	//create a backpropagate-data class
+	//given the neural network, inputs & reference outputs 
+	std::unique_ptr<BackPropagation> backPropagation(createBackPropagation()); 
+
+	backPropagation->setNeuralNetwork(const_cast<NeuralNetwork*>(this));
+	backPropagation->setInput(&input);
+	backPropagation->setReferenceOutput(&reference);
+	
+	// TODO: merge these
+	gradient = backPropagation->computeCostDerivative();
+	
+	return backPropagation->computeCost();
+}
+
+float NeuralNetwork::getCost(BlockSparseMatrix& input, BlockSparseMatrix& reference) const
+{
+	//create a backpropagate-data class
+	//given the neural network, inputs & reference outputs 
+	std::unique_ptr<BackPropagation> backPropagation(createBackPropagation()); 
+
+	backPropagation->setNeuralNetwork(const_cast<NeuralNetwork*>(this));
+	backPropagation->setInput(&input);
+	backPropagation->setReferenceOutput(&reference);
+	
+	return backPropagation->computeCost();
+}
+		
+float NeuralNetwork::getCostAndGradient(BlockSparseMatrixVector& gradient, const Matrix& input, const Matrix& reference) const
+{
+	auto sparseInput     = convertToBlockSparseForLayerInput(front(), input);
+	auto sparseReference = convertToBlockSparseForLayerOutput(back(), reference);
+	
+	return getCostAndGradient(gradient, sparseInput, sparseReference);
+}
+
+float NeuralNetwork::getCost(const Matrix& input, const Matrix& reference) const
+{
+	auto sparseInput     = convertToBlockSparseForLayerInput(front(), input);
+	auto sparseReference = convertToBlockSparseForLayerOutput(back(), reference);
+	
+	return getCost(sparseInput, sparseReference);
 }
 
 bool NeuralNetwork::areConnectionsValid() const

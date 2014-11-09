@@ -1,12 +1,12 @@
-/*	\file   ClassificationModelSpecification.cpp
+/*	\file   ModelSpecification.cpp
 	\date   Saturday April 26, 2014
 	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The source file for the ClassificationModelSpecification class.
+	\brief  The source file for the ModelSpecification class.
 */
 
 // Minerva Includes
-#include <minerva/model/interface/ClassificationModelSpecification.h>
-#include <minerva/model/interface/ClassificationModel.h>
+#include <minerva/model/interface/ModelSpecification.h>
+#include <minerva/model/interface/Model.h>
 
 #include <minerva/util/interface/json.h>
 
@@ -20,14 +20,14 @@ namespace minerva
 namespace model
 {
 
-class ClassificationModelSpecificationImplementation
+class ModelSpecificationImplementation
 {
 public:
-	ClassificationModelSpecificationImplementation();
+	ModelSpecificationImplementation();
 	
 public:
 	void parseSpecification(const std::string& specification);
-	void initializeModel(ClassificationModel& model);
+	void initializeModel(Model& model);
 
 private:
 	
@@ -39,8 +39,8 @@ private:
 };
 
 
-ClassificationModelSpecification::ClassificationModelSpecification(const std::string& specification)
-: _implementation(new ClassificationModelSpecificationImplementation)
+ModelSpecification::ModelSpecification(const std::string& specification)
+: _implementation(new ModelSpecificationImplementation)
 {
 	if(!specification.empty())
 	{
@@ -48,24 +48,24 @@ ClassificationModelSpecification::ClassificationModelSpecification(const std::st
 	}
 }
 
-ClassificationModelSpecification::~ClassificationModelSpecification() = default;
+ModelSpecification::~ModelSpecification() = default;
 
-void ClassificationModelSpecification::parseSpecification(const std::string& specification)
+void ModelSpecification::parseSpecification(const std::string& specification)
 {
 	_implementation->parseSpecification(specification);
 }
 
-void ClassificationModelSpecification::initializeModel(ClassificationModel& model)
+void ModelSpecification::initializeModel(Model& model)
 {
 	_implementation->initializeModel(model);
 }
 
-ClassificationModelSpecificationImplementation::ClassificationModelSpecificationImplementation()
+ModelSpecificationImplementation::ModelSpecificationImplementation()
 {
 
 }
 
-void ClassificationModelSpecificationImplementation::parseSpecification(const std::string& specification)
+void ModelSpecificationImplementation::parseSpecification(const std::string& specification)
 {
 	util::json::Parser parser;
 
@@ -74,7 +74,7 @@ void ClassificationModelSpecificationImplementation::parseSpecification(const st
 	_specification.reset(parser.parse_object(jsonStream));
 }
 
-void ClassificationModelSpecificationImplementation::initializeModel(ClassificationModel& model)
+void ModelSpecificationImplementation::initializeModel(Model& model)
 {
 	model.clear();
 	

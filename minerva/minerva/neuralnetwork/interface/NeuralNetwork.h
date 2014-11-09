@@ -5,7 +5,6 @@
 
 #pragma once
 
-#include <minerva/matrix/interface/Matrix.h>
 #include <minerva/neuralnetwork/interface/Layer.h>
 
 #include <string>
@@ -14,7 +13,9 @@
 #include <random>
 
 // Forward Declaration
-namespace minerva { namespace neuralnetwork { class BackPropagation; } }
+namespace minerva { namespace neuralnetwork { class BackPropagation;         } }
+namespace minerva { namespace matrix        { class BlockSparseMatrix;       } }
+namespace minerva { namespace matrix        { class BlockSparseMatrixVector; } }
 
 namespace minerva
 {
@@ -26,6 +27,7 @@ class NeuralNetwork
 	public:
 		typedef minerva::matrix::Matrix Matrix;
 		typedef minerva::matrix::BlockSparseMatrix BlockSparseMatrix;
+		typedef minerva::matrix::BlockSparseMatrixVector BlockSparseMatrixVector;
 		typedef minerva::neuralnetwork::Layer Layer;
 
 		typedef std::map<unsigned, std::string> NeuronToLabelMap;
@@ -143,6 +145,9 @@ class NeuralNetwork
 	public:
 		size_t size() const;
 		bool   empty() const;
+	
+	public:
+		void setParameters(const NeuralNetwork& network);
 
 	public:
 		void setUseSparseCostFunction(bool shouldUse);
@@ -150,6 +155,13 @@ class NeuralNetwork
 
 	public:
 		BackPropagation* createBackPropagation() const;
+	
+	public:
+		float getCostAndGradient(BlockSparseMatrixVector& gradient, BlockSparseMatrix& input, BlockSparseMatrix& reference) const;
+		float getCost(BlockSparseMatrix& input, BlockSparseMatrix& reference) const;
+		
+		float getCostAndGradient(BlockSparseMatrixVector& gradient, const Matrix& input, const Matrix& reference) const;
+		float getCost(const Matrix& input, const Matrix& reference) const;
 	
 	public:
 		bool areConnectionsValid() const;
@@ -162,10 +174,10 @@ class NeuralNetwork
 		std::string shapeString() const;
 
 	private:
-		LayerVector m_layers;
-		NeuronToLabelMap m_labels;
+		LayerVector _layers;
 	
 	private:
+		NeuronToLabelMap _labels;
 		bool _useSparseCostFunction;
 
 };

@@ -11,6 +11,8 @@
 
 #include <minerva/matrix/interface/Matrix.h>
 
+#include <minerva/util/interface/string.h>
+
 // Standard Library Includes
 #include <vector>
 
@@ -68,7 +70,7 @@ public:
 		size_t xTileSize, size_t yTileSize, size_t colors) const;
 	Matrix convertToStandardizedMatrix(size_t sampleCount,
 		size_t tileSize, size_t colors) const;
-    Matrix getReference(const NeuralNetwork& network) const;
+    Matrix getReference(const util::StringVector& labels) const;
 
 private:
 	size_t _getSampledImageSize() const;

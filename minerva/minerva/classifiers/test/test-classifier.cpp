@@ -3,7 +3,10 @@
  * A unit test that implements a neural network to perform XOR 
 */
 
-#include <minerva/classifiers/interface/Classifier.h>
+#include <minerva/neuralnetwork/interface/NeuralNetwork.h>
+
+#include <minerva/matrix/interface/Matrix.h>
+
 #include <minerva/util/interface/debug.h>
 #include <minerva/util/interface/ArgumentParser.h>
 

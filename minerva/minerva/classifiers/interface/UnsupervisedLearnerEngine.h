@@ -7,10 +7,10 @@
 #pragma once
 
 // Minerva Includes
-#include <minerva/classifiers/interface/ClassifierEngine.h>
+#include <minerva/classifiers/interface/Engine.h>
 
-// Forward Declaration
-namespace minerva { namespace classifiers { class UnsupervisedLearner; } }
+// Standard Library Includes
+#include <map>
 
 namespace minerva
 {
@@ -18,7 +18,9 @@ namespace minerva
 namespace classifiers
 {
 
-class UnsupervisedLearnerEngine : public ClassifierEngine
+
+/*! \brief Performs unsupervised learning on a given model. */
+class UnsupervisedLearnerEngine : public Engine
 {
 public:
 	UnsupervisedLearnerEngine();
@@ -32,18 +34,25 @@ public:
 	void setLayersPerIteration(size_t layers);
 	
 private:
-	virtual void registerModel();
 	virtual void closeModel();
 	
 private:
-	virtual void runOnImageBatch(ImageVector&& images);
-	virtual size_t getInputFeatureCount() const;
+	virtual ResultVector runOnBatch(Matrix&& samples, Matrix&& reference);
 
 private:
-	UnsupervisedLearner* _learner;
+	NeuralNetwork _formAugmentedNetwork(size_t layerBegin, size_t layerEnd);
+	void _restoreAugmentedNetwork(NeuralNetwork& network, size_t layerBegin);
+	NeuralNetwork& _getOrCreateAugmentor(const std::string& name, size_t layer, NeuralNetwork& network);
+	NeuralNetwork& _getAugmentor(const std::string& name, size_t layer);
 
 private:
 	size_t _layersPerIteration;
+
+private:
+	typedef std::map<std::string, NeuralNetwork> NetworkMap;
+
+private:
+	NetworkMap _augmentorNetworks;
 
 };
 

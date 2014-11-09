@@ -1,7 +1,7 @@
-/*	\file   ClassificationModel.h
+/*	\file   Model.h
 	\date   Saturday August 10, 2013
 	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The header file for the ClassificationModel class.
+	\brief  The header file for the Model class.
 */
 
 #pragma once
@@ -12,6 +12,7 @@
 // Standard Library Includes
 #include <string>
 #include <map>
+#include <list>
 
 namespace minerva
 {
@@ -19,18 +20,23 @@ namespace minerva
 namespace model
 {
 
-class ClassificationModel
+class Model
 {
 public:
 	typedef neuralnetwork::NeuralNetwork NeuralNetwork;
+	typedef std::list<NeuralNetwork> NeuralNetworkList;
+	typedef NeuralNetworkList::iterator iterator;
+	typedef NeuralNetworkList::const_iterator const_iterator;
+	typedef NeuralNetworkList::reverse_iterator reverse_iterator;
+	typedef NeuralNetworkList::const_reverse_iterator const_reverse_iterator;
 
 public:
-	ClassificationModel(const std::string& path);
-	ClassificationModel();
+	Model(const std::string& path);
+	Model();
 
 public:
 	const NeuralNetwork& getNeuralNetwork(const std::string& name) const;
-	NeuralNetwork& getNeuralNetwork(const std::string& name);
+	NeuralNetwork&  getNeuralNetwork(const std::string& name);
 
 public:
 	bool containsNeuralNetwork(const std::string& name) const;
@@ -51,15 +57,30 @@ public:
 public:
 	void clear();
 
+public:
+	iterator       begin();
+	const_iterator begin() const;
+	
+	iterator       end();
+	const_iterator end() const;
+
+public:
+	reverse_iterator       rbegin();
+	const_reverse_iterator rbegin() const;
+	
+	reverse_iterator       rend();
+	const_reverse_iterator rend() const;
+
 private:
 	std::string _path;
 	bool        _loaded;
 
 private:
-	typedef std::map<std::string, NeuralNetwork> NeuralNetworkMap;
+	typedef std::map<std::string, iterator> NeuralNetworkMap;
 
 private:
-	NeuralNetworkMap _neuralNetworks;
+	NeuralNetworkList _neuralNetworks;
+	NeuralNetworkMap  _neuralNetworkMap;
 
 	unsigned int _xPixels;
 	unsigned int _yPixels;

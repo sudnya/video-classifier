@@ -7,7 +7,7 @@
 #pragma once
 
 // Minerva Includes
-#include <minerva/classifiers/interface/ClassifierEngine.h>
+#include <minerva/classifiers/interface/Engine.h>
 
 // Standard Library Includes
 #include <memory>
@@ -19,7 +19,7 @@ namespace minerva
 namespace classifiers
 {
 
-class FeatureExtractorEngine: public ClassifierEngine
+class FeatureExtractorEngine: public Engine
 {
 public:
 	FeatureExtractorEngine();
@@ -29,15 +29,8 @@ public:
 	FeatureExtractorEngine& operator=(const FeatureExtractorEngine&) = delete;
 	
 private:
-	virtual void   runOnImageBatch(ImageVector&& images);
-	virtual size_t getInputFeatureCount() const;
+	virtual ResultVector runOnBatch(Matrix&& matrix, Matrix&& reference);
 
-private:	
-	virtual void registerModel();
-	virtual void closeModel();
-
-private:
-	std::unique_ptr<std::ofstream> _outputFile;
 };
 
 }
