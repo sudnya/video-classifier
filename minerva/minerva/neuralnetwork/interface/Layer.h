@@ -74,10 +74,6 @@ class Layer
 
 	public:
 		size_t totalWeights() const;
-		
-	public:
-		Matrix getFlattenedWeights() const;
-		void setFlattenedWeights(const Matrix& m);
 
 	public:
 		void resize(size_t blocks);

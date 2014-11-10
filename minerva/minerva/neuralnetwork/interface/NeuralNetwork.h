@@ -91,10 +91,6 @@ class NeuralNetwork
 	public:
 		size_t totalWeights()     const;
 		size_t totalActivations() const;
-	
-	public:
-		Matrix getFlattenedWeights() const;
-		void setFlattenedWeights(const Matrix& m);
 
 	public:
 		BlockSparseMatrix convertToBlockSparseForLayerInput(const Layer& layer, const Matrix& m) const;

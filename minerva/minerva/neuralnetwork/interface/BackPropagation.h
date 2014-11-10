@@ -61,11 +61,6 @@ public:
 	void setReferenceOutput(BlockSparseMatrix* );
 
 public:
-	Matrix getFlattenedWeights() const;
-	Matrix getFlattenedCostDerivative() const;
-	void   setFlattenedWeights(const Matrix& weights);
-
-public:
 	DataStructureFormat getWeightFormat() const;
 	DataStructureFormat getInputFormat() const;
 
@@ -80,13 +75,6 @@ public:
 		const BlockSparseMatrixVector& weights) const;
 	BlockSparseMatrixVector computePartialDerivativesForNewInputs(
 		const BlockSparseMatrixVector& inputs) const;
-	
-public:
-	float  computeCostForNewFlattenedWeights(const Matrix& weights) const;
-	float  computeCostForNewFlattenedInputs(const Matrix& inputs) const;
-	float  computeAccuracyForNewFlattenedWeights(const Matrix& weights) const;
-	Matrix computePartialDerivativesForNewFlattenedWeights(const Matrix& weights) const;
-	Matrix computePartialDerivativesForNewFlattenedInputs(const Matrix& inputs) const;	
 
 public:
 	static Matrix flatten(const BlockSparseMatrixVector& matrices);

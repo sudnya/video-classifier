@@ -392,40 +392,6 @@ size_t NeuralNetwork::totalActivations() const
 	return activations;
 }
 
-NeuralNetwork::Matrix NeuralNetwork::getFlattenedWeights() const
-{
-	// TODO: avoid the copy
-	Matrix weights(1, totalWeights());
-	
-	size_t position = 0;
-	
-	for(auto& layer : *this)
-	{
-		auto flattenedWeights = layer.getFlattenedWeights();
-
-		std::memcpy(&weights.data()[position], &flattenedWeights.data()[0],
-			flattenedWeights.size() * sizeof(float));
-
-		position += flattenedWeights.size();	
-	}
-	
-	return weights;
-}
-
-void NeuralNetwork::setFlattenedWeights(const Matrix& m)
-{
-	size_t weights = 0;
-
-	for(auto& layer : *this)
-	{
-		auto sliced = m.slice(0, weights, 1, layer.totalWeights());
-		
-		layer.setFlattenedWeights(sliced);
-		
-		weights += layer.totalWeights();
-	}
-}
-
 NeuralNetwork::BlockSparseMatrix NeuralNetwork::convertToBlockSparseForLayerInput(
 	const Layer& layer, const Matrix& m) const
 {

@@ -114,87 +114,6 @@ void BackPropagation::setReferenceOutput(BlockSparseMatrix* o)
 	_referenceOutput = o;
 }
 
-static size_t getElementCount(const BlockSparseMatrixVector& matrices)
-{
-	size_t size = 0;
-	
-	for(auto& matrix : matrices)
-	{
-		size += matrix.size();
-	}
-	
-	return size;
-}
-
-Matrix BackPropagation::flatten(const BlockSparseMatrixVector& matrices)
-{
-	FloatVector flattenedData(getElementCount(matrices));
-	
-	size_t position = 0;
-	
-	for(auto& blockedMatrix : matrices)
-	{
-		for(auto& matrix : blockedMatrix)
-		{
-			auto data = matrix.data();
-			
-			std::memcpy(&flattenedData[position], data.data(),
-				sizeof(float) * matrix.size());
-			
-			position += matrix.size();
-		}
-	}
-
-	return Matrix(1, getElementCount(matrices), flattenedData);
-}
-
-Matrix BackPropagation::flatten(const BlockSparseMatrix& blockedMatrix)
-{
-	Matrix result(1, blockedMatrix.size());
-	
-	size_t position = 0;
-	
-	for(auto& matrix : blockedMatrix)
-	{
-		auto data = matrix.data();
-		
-		std::memcpy(&result[position], data.data(),
-			sizeof(float) * matrix.size());
-		
-		position += matrix.size();
-	}
-
-	return result;
-} 
-
-Matrix BackPropagation::getFlattenedWeights() const
-{
-	return getNeuralNetwork()->getFlattenedWeights();
-}
-
-Matrix BackPropagation::getFlattenedCostDerivative() const
-{
-	return flatten(computeCostDerivative());
-}
-
-static NeuralNetwork createNetworkFromWeights(
-	const NeuralNetwork* neuralNetwork, const Matrix& weights)
-{
-	NeuralNetwork newNetwork;
-	
-	for(auto& layer : *neuralNetwork)
-	{
-		newNetwork.addLayer(Layer(layer.blocks(),
-			layer.getInputBlockingFactor(), layer.getOutputBlockingFactor(),
-			layer.blockStep()));
-	}
-	
-	newNetwork.setLabelsForOutputNeurons(*neuralNetwork);
-	newNetwork.setFlattenedWeights(weights);
-		
-	return newNetwork;
-}
-
 static NeuralNetwork createNetworkFromWeights(
 	const NeuralNetwork* neuralNetwork, const BlockSparseMatrixVector& weights)
 {
@@ -219,11 +138,6 @@ static NeuralNetwork createNetworkFromWeights(
 	newNetwork.setLabelsForOutputNeurons(*neuralNetwork);
 		
 	return newNetwork;
-}
-
-void BackPropagation::setFlattenedWeights(const Matrix& weights)
-{
-	*_neuralNetworkPtr = createNetworkFromWeights(getNeuralNetwork(), weights);
 }
 
 SparseMatrixVectorFormat BackPropagation::getWeightFormat() const
@@ -309,41 +223,6 @@ BlockSparseMatrixVector BackPropagation::computePartialDerivativesForNewWeights(
 BlockSparseMatrixVector BackPropagation::computePartialDerivativesForNewInputs(const BlockSparseMatrixVector& inputs) const
 {
 	return BlockSparseMatrixVector(1, getInputDerivative(*getNeuralNetwork(), inputs[0], *getReferenceOutput()));
-}
-
-float BackPropagation::computeCostForNewFlattenedWeights(const Matrix& weights) const
-{
-	auto network = createNetworkFromWeights(getNeuralNetwork(), weights);
-
-	return getCost(network, *getInput(), *getReferenceOutput());
-}
-
-float BackPropagation::computeCostForNewFlattenedInputs(const Matrix& inputs) const
-{
-	return getInputCost(*getNeuralNetwork(),
-		getNeuralNetwork()->convertToBlockSparseForLayerInput(getNeuralNetwork()->front(), inputs),
-		*getReferenceOutput());
-}
-
-float BackPropagation::computeAccuracyForNewFlattenedWeights(const Matrix& weights) const
-{
-	auto network = createNetworkFromWeights(getNeuralNetwork(), weights);
-
-	return network.computeAccuracy(*getInput(), *getReferenceOutput());
-}
-
-Matrix BackPropagation::computePartialDerivativesForNewFlattenedWeights(const Matrix& weights) const
-{
-	auto network = createNetworkFromWeights(getNeuralNetwork(), weights);
-
-	return flatten(getCostDerivative(network, *getInput(), *getReferenceOutput()));
-}
-
-Matrix BackPropagation::computePartialDerivativesForNewFlattenedInputs(const Matrix& inputs) const
-{
-	return flatten(getInputDerivative(*getNeuralNetwork(),
-		getNeuralNetwork()->convertToBlockSparseForLayerInput(getNeuralNetwork()->front(),
-		inputs), *getReferenceOutput()));
 }
 
 }
