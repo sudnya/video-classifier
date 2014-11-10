@@ -134,7 +134,7 @@ float computeEntropy(const Matrix& thresholdOutput)
 
 void trainNeuralNetwork(neuralnetwork::NeuralNetwork& ann, unsigned trainingIter, std::default_random_engine& generator)
 {
-    unsigned samplesPerIter = ann.getInputCount() * 10;
+    unsigned samplesPerIter = ann.getInputCount() * 50;
 
     util::log("TestClassifier") << "Starting training\n";
 
@@ -158,7 +158,7 @@ void trainNeuralNetwork(neuralnetwork::NeuralNetwork& ann, unsigned trainingIter
 		{
         	util::log("TestClassifier") << " After BackProp, output is:    " << threshold(ann.runInputs(input)).toString();
     	}
-	}    
+	}
 }
 
 unsigned compare(const Matrix& output, const Matrix& reference)
@@ -229,7 +229,9 @@ void runTest(unsigned iterations, bool seed, unsigned networkSize, float epsilon
     float threshold = 0.75;
     if (accuracy > threshold)
     {
-        std::cout << "Test passed with accuracy " << accuracy 
+        std::cout << "Test Passed\n";
+
+		std::cout << " with accuracy " << accuracy 
             << " which is more than expected threshold " << threshold << "\n";
     }
     else

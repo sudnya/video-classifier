@@ -55,10 +55,7 @@ void KnobDatabaseImplementation::loadKnobFiles()
 
 void KnobDatabase::addKnob(const std::string& name, const std::string& value)
 {
-	if(!database.knobs.insert(std::make_pair(name, value)).second)
-	{
-		throw std::runtime_error("Duplicate knob '" + name  + "'");
-	}
+	database.knobs[name] = value;
 }
 
 void KnobDatabase::setKnob(const std::string& name, const std::string& value)

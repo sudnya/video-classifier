@@ -85,7 +85,7 @@ GeneralDifferentiableSolverFactory::StringVector GeneralDifferentiableSolverFact
 	return 
 	{
 		"LimitedMemoryBroydenFletcherGoldfarbShannoSolver",
-		"GradientDescentSolver"
+		//"GradientDescentSolver"
 	};
 }
 

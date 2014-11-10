@@ -71,10 +71,10 @@ class Test:
 		self.status = "Did not complete."	
 		for line in message.splitlines():
 			line = line.strip("\n")
-			if(re.search( "Pass/Fail : Pass", line) != None or re.search("PASSED", line) != None):
+			if(re.search( "Test Passed", line) != None or re.search("PASSED", line) != None):
 				self.passed = True
 				self.status = "Passed"
-			elif (re.search("Pass/Fail : Fail", line) != None or re.search("FAILED", line) != None):
+			elif (re.search("Test Failed", line) != None or re.search("FAILED", line) != None):
 				self.passed = False
 				self.status = "Failed"
 				break
@@ -90,7 +90,7 @@ class Test:
 			+ " " + self.arguments)
 		tempName = self.randomString() + ".tmp"
 		command = "echo \"\u001b\" | " + self.path + " " + self.arguments
-		command += " -v"
+		#command += " -v"
 		command += " >" + tempName + " 2>&1"
 		logging.debug("The command was " + command)
 		self.lock.release()
@@ -101,7 +101,7 @@ class Test:
 		logging.info("Test " + self.path )
 		logging.info("Test completed in " + str(self.time) + " seconds")
 		try:
-			tempFile = open( tempName, "rb" )
+			tempFile = open(tempName, "rb")
 			message = tempFile.read()
 			message.decode("utf8")	
 			logging.info(" It produced the following output:\n" + message);
@@ -136,15 +136,17 @@ class TestThread(Thread):
 			except Empty:
 				running = False
 
+def isTest(filename):
+	return filename.startswith("test")
+
 class RunRegression:
 	
-	def __init__(self, logFile, testFile, debug, testDirectory, jobs):
-		self.logFile = os.path.abspath( logFile )
-		self.testFile = os.path.abspath( testFile )
+	def __init__(self, logFile, debug, testDirectory, jobs):
+		self.logFile = os.path.abspath(logFile)
 		self.baseDirectory = os.getcwd()
 		self.createLogFile(debug)
 		self.testDirectory = testDirectory
-		self.parseTestFile( )
+		self.parseTestFile()
 		self.jobs = int(jobs)
 	
 	def createLogFile(self, debug):
@@ -163,38 +165,36 @@ class RunRegression:
 					
 	# Each line in the test file is the relative path
 	# to a test
-	def parseTestFile( self ):
+	def parseTestFile(self):
 		self.tests = set()
 		self.passed = {}
 		self.failed = {}
 		self.noTest = set()
 		lock = Lock()
-		if len(self.testDirectory) == 0:
-			testBase = os.path.dirname(self.testFile)
-		else:
-			testBase = self.testDirectory
+		
+		testBase = self.testDirectory
+		
 		logging.debug("Changing directory to " + testBase)
-		os.chdir(testBase)
-		logging.info("Reading in test file " + self.testFile)
-		tests = open( self.testFile, 'r' )
+		logging.info("Scanning for tests ")
+		
 		logging.info(" Found the following tests:")
-		for currentTest in tests:
-			parameters = currentTest.split();
-			if len(parameters) == 0 :
-				continue
-			if parameters[0] != "" and parameters[0][0] != '#':
-				logging.info("  " + os.path.abspath(parameters[0]))
-				if(os.path.isfile( os.path.abspath(parameters[0]))):
-					self.tests.add(Test(os.path.abspath(parameters[0]), \
-						parameters[1:], lock))
-				else:
-					logging.error("Could not find test program " + \
-						os.path.abspath( parameters[0]))
-					self.noTest.add(os.path.abspath(parameters[0]))
-		tests.close()
+		for test in self.getTestFiles():
+			logging.info("  " + test)
+			
+			self.tests.add(Test(test, "", lock))
+	
 		logging.info("==== INDIVIDUAL TEST RESULTS ====\n")
 		logging.debug("Returning to base directory " + self.baseDirectory)
-		os.chdir(self.baseDirectory)
+	
+	def getTestFiles(self):
+		tests = []
+		
+		for (path, directories, files) in os.walk(self.testDirectory):
+			for filename in files:
+				if isTest(filename):
+					tests.append(os.path.abspath(os.path.join(path, filename)))
+				
+		return tests
 		
 	def run(self):
 		self.passed.clear()
@@ -204,9 +204,9 @@ class RunRegression:
 			queue.put(test, False)		
 		threads = []	
 		threadCount = min(detectCPUs(), self.jobs)
-		for i in range( threadCount ):
-			thread = TestThread( queue )
-			threads.append( thread )
+		for i in range(threadCount):
+			thread = TestThread(queue)
+			threads.append(thread)
 			threads[i].start()
 		for thread in threads:
 			thread.join()
@@ -223,7 +223,7 @@ class RunRegression:
 		for (path, test) in self.passed.iteritems():
 			string += " (%3.3f" % test.time + "s) : " + test.path + " : " \
 				+ test.status + "\n"
-		if len( self.failed ) != 0:
+		if len(self.failed) != 0:
 			string += "\nFailing tests:\n"
 			for (path, test) in self.failed.iteritems():
 				string += " (%3.3f" % test.time + "s) : " + test.path + " : " \
@@ -245,18 +245,14 @@ class RunRegression:
 def main():
 	parser = OptionParser()
 	
-	parser.add_option("-l", "--logFile", \
-		default="python/regression/regressionResults.txt")
-	parser.add_option("-t", "--testFile", \
-		default="python/regression/regressionTests.txt")
-	parser.add_option("-v", "--verbose", default = False, \
-		action = "store_true")
+	parser.add_option("-l", "--logFile", default="regressionResults.txt")
+	parser.add_option("-v", "--verbose", default = False, action = "store_true")
 	parser.add_option("-d", "--debug", default = False, action = "store_true")
 	parser.add_option("-j", "--jobs", default = 1024)
-	parser.add_option("-p", "--test_path", default="")	
+	parser.add_option("-i", "--test_path", default="build_local/bin")	
 	(options, arguments) = parser.parse_args()
 	
-	regression = RunRegression(options.logFile, options.testFile, \
+	regression = RunRegression(options.logFile, \
 		options.debug, options.test_path, options.jobs)
 	regression.run()
 	regression.report(options.verbose)	

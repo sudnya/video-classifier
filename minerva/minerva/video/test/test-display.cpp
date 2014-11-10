@@ -33,7 +33,7 @@ static void displayImage(const std::string& inputPath, size_t xPixels,
 	downsampledImage.displayOnScreen();
 	downsampledImage.addTextToDisplay(text);	
 
-	ImageLibraryInterface::waitForKey();
+	//ImageLibraryInterface::waitForKey();
 
 }
 
@@ -59,6 +59,8 @@ static void runTest(const std::string& inputPath, size_t xPixels,
 		throw std::runtime_error("Input path '" + inputPath +
 			"' is neither an image or a video.");
 	}
+	
+	std::cout << "Test Passed\n";
 }
 
 }

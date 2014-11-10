@@ -314,6 +314,8 @@ int main(int argc, char** argv)
         minerva::neuralnetwork::runTest(
 			iterations, trainingIterations, batchSize, classificationIterations,
 			xPixels, yPixels, colors, seed);
+		
+		std::cout << "Test Passed\n";
     }
     catch(const std::exception& e)
     {
