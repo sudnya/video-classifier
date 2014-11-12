@@ -1,6 +1,6 @@
 /* Author: Sudnya Padalikar
  * Date  : 08/09/2013
- * The interface of the Neural Network class 
+ * The interface of the Neural Network class
  */
 
 #pragma once
@@ -24,157 +24,157 @@ namespace neuralnetwork
 
 class NeuralNetwork
 {
-	public:
-		typedef minerva::matrix::Matrix Matrix;
-		typedef minerva::matrix::BlockSparseMatrix BlockSparseMatrix;
-		typedef minerva::matrix::BlockSparseMatrixVector BlockSparseMatrixVector;
-		typedef minerva::neuralnetwork::Layer Layer;
+public:
+    typedef minerva::matrix::Matrix Matrix;
+    typedef minerva::matrix::BlockSparseMatrix BlockSparseMatrix;
+    typedef minerva::matrix::BlockSparseMatrixVector BlockSparseMatrixVector;
+    typedef minerva::neuralnetwork::Layer Layer;
 
-		typedef std::map<unsigned, std::string> NeuronToLabelMap;
-		typedef Layer::NeuronSet NeuronSet;
-		
-		typedef std::vector<Layer> LayerVector;
+    typedef std::map<unsigned, std::string> NeuronToLabelMap;
+    typedef Layer::NeuronSet NeuronSet;
 
-		typedef LayerVector::reverse_iterator	    reverse_iterator;
-		typedef LayerVector::iterator	            iterator;
-		typedef LayerVector::const_iterator         const_iterator;
-		typedef LayerVector::const_reverse_iterator const_reverse_iterator;
+    typedef std::vector<Layer> LayerVector;
 
-	public:
-		NeuralNetwork();
+    typedef LayerVector::reverse_iterator	    reverse_iterator;
+    typedef LayerVector::iterator	            iterator;
+    typedef LayerVector::const_iterator         const_iterator;
+    typedef LayerVector::const_reverse_iterator const_reverse_iterator;
 
-	public:
-		void initializeRandomly(std::default_random_engine& engine, float epsilon = 3.0f);
-		void initializeRandomly(float epsilon = 3.0f);
-		
-		void train(const Matrix& input, const Matrix& reference);
-		void train(Matrix&& input, Matrix&& reference);
-		void train(BlockSparseMatrix& input, BlockSparseMatrix& reference);		
+public:
+    NeuralNetwork();
 
-		Matrix runInputs(const Matrix& m) const;
-		BlockSparseMatrix runInputs(const BlockSparseMatrix& m) const;
+public:
+    void initializeRandomly(std::default_random_engine& engine, float epsilon = 3.0f);
+    void initializeRandomly(float epsilon = 3.0f);
 
-	public:
-		float computeAccuracy(const Matrix& input, const Matrix& reference) const;
-		float computeAccuracy(const BlockSparseMatrix& input, const BlockSparseMatrix& reference) const;
-		
-	public:
-		std::string getLabelForOutputNeuron(unsigned int idx) const;
-		void setLabelForOutputNeuron(unsigned int idx, const std::string& label);
+    void train(const Matrix& input, const Matrix& reference);
+    void train(Matrix&& input, Matrix&& reference);
+    void train(BlockSparseMatrix& input, BlockSparseMatrix& reference);
 
-	public:
-		void setLabelsForOutputNeurons(const NeuralNetwork& network);
+    Matrix runInputs(const Matrix& m) const;
+    BlockSparseMatrix runInputs(const BlockSparseMatrix& m) const;
 
-	public:
-		void mirror();
-		void mirror(const Layer& layer);
-		void cutOffSecondHalf();
+public:
+    float computeAccuracy(const Matrix& input, const Matrix& reference) const;
+    float computeAccuracy(const BlockSparseMatrix& input, const BlockSparseMatrix& reference) const;
 
-	public:
-		size_t getInputCount()  const;
-		size_t getOutputCount() const;
+public:
+    std::string getLabelForOutputNeuron(unsigned int idx) const;
+    void setLabelForOutputNeuron(unsigned int idx, const std::string& label);
 
-		size_t getOutputCountForInputCount(size_t inputCount) const;
+public:
+    void setLabelsForOutputNeurons(const NeuralNetwork& network);
 
-		size_t getOutputNeurons() const;
+public:
+    void mirror();
+    void mirror(const Layer& layer);
+    void cutOffSecondHalf();
 
-		size_t getInputBlockingFactor()  const;
-		size_t getOutputBlockingFactor() const;
-	
-	public:
-		size_t totalNeurons()     const;
-		size_t totalConnections() const;
+public:
+    size_t getInputCount()  const;
+    size_t getOutputCount() const;
 
-	public:
-		size_t getFloatingPointOperationCount() const;
+    size_t getOutputCountForInputCount(size_t inputCount) const;
 
-	public:
-		size_t totalWeights()     const;
-		size_t totalActivations() const;
+    size_t getOutputNeurons() const;
 
-	public:
-		BlockSparseMatrix convertToBlockSparseForLayerInput(const Layer& layer, const Matrix& m) const;
-		BlockSparseMatrix convertToBlockSparseForLayerOutput(const Layer& layer, const Matrix& m) const;
-		BlockSparseMatrix convertOutputToBlockSparse(const Matrix& m) const;
-		void formatInputForLayer(const Layer& layer, BlockSparseMatrix& m) const;
-		void formatOutputForLayer(const Layer& layer, BlockSparseMatrix& m) const;
+    size_t getInputBlockingFactor()  const;
+    size_t getOutputBlockingFactor() const;
 
-	public:
-		void addLayer(const Layer&);
-		void addLayer(Layer&&);
-		unsigned getTotalLayerSize() const;
-		
-		      LayerVector* getLayers();
-		const LayerVector* getLayers() const;
+public:
+    size_t totalNeurons()     const;
+    size_t totalConnections() const;
 
-	public:
-		void resize(size_t layers);
+public:
+    size_t getFloatingPointOperationCount() const;
 
-		void clear();
+public:
+    size_t totalWeights()     const;
+    size_t totalActivations() const;
 
-	public:
-		iterator       begin();
-		const_iterator begin() const;
+public:
+    BlockSparseMatrix convertToBlockSparseForLayerInput(const Layer& layer, const Matrix& m) const;
+    BlockSparseMatrix convertToBlockSparseForLayerOutput(const Layer& layer, const Matrix& m) const;
+    BlockSparseMatrix convertOutputToBlockSparse(const Matrix& m) const;
+    void formatInputForLayer(const Layer& layer, BlockSparseMatrix& m) const;
+    void formatOutputForLayer(const Layer& layer, BlockSparseMatrix& m) const;
 
-		iterator       end();
-		const_iterator end() const;
+public:
+    void addLayer(const Layer&);
+    void addLayer(Layer&&);
+    unsigned getTotalLayerSize() const;
 
-	public:
-		reverse_iterator       rbegin();
-		const_reverse_iterator rbegin() const;
+          LayerVector* getLayers();
+    const LayerVector* getLayers() const;
 
-		reverse_iterator       rend();
-		const_reverse_iterator rend() const;
+public:
+    void resize(size_t layers);
 
-	public:
-		      Layer& operator[](size_t index);
-		const Layer& operator[](size_t index) const;
+    void clear();
 
-	public:
-		      Layer& back();
-		const Layer& back() const;
-	
-	public:
-		      Layer& front();
-		const Layer& front() const;
-	
-	public:
-		size_t size() const;
-		bool   empty() const;
-	
-	public:
-		void setParameters(const NeuralNetwork& network);
+public:
+    iterator       begin();
+    const_iterator begin() const;
 
-	public:
-		void setUseSparseCostFunction(bool shouldUse);
-		bool isUsingSparseCostFunction() const;
+    iterator       end();
+    const_iterator end() const;
 
-	public:
-		BackPropagation* createBackPropagation() const;
-	
-	public:
-		float getCostAndGradient(BlockSparseMatrixVector& gradient, BlockSparseMatrix& input, BlockSparseMatrix& reference) const;
-		float getCost(BlockSparseMatrix& input, BlockSparseMatrix& reference) const;
-		
-		float getCostAndGradient(BlockSparseMatrixVector& gradient, const Matrix& input, const Matrix& reference) const;
-		float getCost(const Matrix& input, const Matrix& reference) const;
-	
-	public:
-		bool areConnectionsValid() const;
+public:
+    reverse_iterator       rbegin();
+    const_reverse_iterator rbegin() const;
 
-	public:
-		NeuronSet getInputNeuronsConnectedToThisOutput(unsigned neuron) const;
-		NeuralNetwork getSubgraphConnectedToThisOutput(unsigned neuron) const;
+    reverse_iterator       rend();
+    const_reverse_iterator rend() const;
 
-	public:
-		std::string shapeString() const;
+public:
+          Layer& operator[](size_t index);
+    const Layer& operator[](size_t index) const;
 
-	private:
-		LayerVector _layers;
-	
-	private:
-		NeuronToLabelMap _labels;
-		bool _useSparseCostFunction;
+public:
+          Layer& back();
+    const Layer& back() const;
+
+public:
+          Layer& front();
+    const Layer& front() const;
+
+public:
+    size_t size() const;
+    bool   empty() const;
+
+public:
+    void setParameters(const NeuralNetwork& network);
+
+public:
+    void setUseSparseCostFunction(bool shouldUse);
+    bool isUsingSparseCostFunction() const;
+
+public:
+    BackPropagation* createBackPropagation() const;
+
+public:
+    float getCostAndGradient(BlockSparseMatrixVector& gradient, BlockSparseMatrix& input, BlockSparseMatrix& reference) const;
+    float getCost(BlockSparseMatrix& input, BlockSparseMatrix& reference) const;
+
+    float getCostAndGradient(BlockSparseMatrixVector& gradient, const Matrix& input, const Matrix& reference) const;
+    float getCost(const Matrix& input, const Matrix& reference) const;
+
+public:
+    bool areConnectionsValid() const;
+
+public:
+    NeuronSet getInputNeuronsConnectedToThisOutput(unsigned neuron) const;
+    NeuralNetwork getSubgraphConnectedToThisOutput(unsigned neuron) const;
+
+public:
+    std::string shapeString() const;
+
+private:
+    LayerVector _layers;
+
+private:
+    NeuronToLabelMap _labels;
+    bool _useSparseCostFunction;
 
 };
 

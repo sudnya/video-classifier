@@ -1,6 +1,6 @@
 /* Author: Sudnya Padalikar
  * Date  : 08/11/2013
- * The implementation of the layer class 
+ * The implementation of the layer class
  */
 
 #include <minerva/neuralnetwork/interface/Layer.h>
@@ -36,11 +36,11 @@ Layer::Layer(const Layer& l)
 Layer& Layer::operator=(const Layer& l)
 {
 	if(this == &l) return *this;
-	
+
 	m_sparseMatrix = l.m_sparseMatrix;
 	m_bias = l.m_bias;
 	m_blockStep = l.m_blockStep;
-	
+
 	return *this;
 }
 
@@ -49,16 +49,16 @@ Layer& Layer::operator=(Layer&& l)
 	std::swap(m_sparseMatrix, l.m_sparseMatrix);
 	std::swap(m_bias, l.m_bias);
 	std::swap(m_blockStep, l.m_blockStep);
-	
+
 	return *this;
 }
 
 void Layer::initializeRandomly(std::default_random_engine& engine, float e)
 {
-	e = util::KnobDatabase::getKnobValue("Layer::RandomInitializationEpsilon", e);	
+	e = util::KnobDatabase::getKnobValue("Layer::RandomInitializationEpsilon", e);
 
 	float epsilon = std::sqrt((e) / (getInputBlockingFactor() + getOutputBlockingFactor() + 1));
-	
+
 	m_sparseMatrix.assignUniformRandomValues(engine, -epsilon, epsilon);
 
 	// assign bias to 0.0f
@@ -76,24 +76,24 @@ Layer::BlockSparseMatrix Layer::runInputs(const BlockSparseMatrix& m) const
 			<< " outputs, " << blockStep() << " block step).\n";
 		util::log("Layer") << "  layer: " << m_sparseMatrix.shapeString() << "\n";
 	}
-	
+
 	if(util::isLogEnabled("Layer::Detail"))
 	{
 		util::log("Layer::Detail") << "  input: " << m.debugString() << "\n";
 		util::log("Layer::Detail") << "  layer: " << m_sparseMatrix.debugString() << "\n";
 		util::log("Layer::Detail") << "  bias:  " << m_bias.debugString() << "\n";
 	}
-	
+
 	auto unbiasedOutput = m.convolutionalMultiply(m_sparseMatrix, blockStep());
 	auto output = unbiasedOutput.convolutionalAddBroadcastRow(m_bias);
-	
+
 	output.sigmoidSelf();
-	
+
 	if(util::isLogEnabled("Layer"))
 	{
 		util::log("Layer") << "  output: " << output.shapeString() << "\n";
 	}
-	
+
 	if(util::isLogEnabled("Layer::Detail"))
 	{
 		util::log("Layer::Detail") << "  output: " << output.debugString() << "\n";
@@ -113,25 +113,20 @@ Layer::BlockSparseMatrix Layer::runReverse(const BlockSparseMatrix& m) const
 			<< " outputs, " << blockStep() << " block step).\n";
 		util::log("Layer") << "  layer: " << m_sparseMatrix.shapeString() << "\n";
   	}
- 
+
 	auto result = m.reverseConvolutionalMultiply(m_sparseMatrix.transpose());
 
 	if(util::isLogEnabled("Layer"))
 	{
 		util::log("Layer") << "  output: " << result.shapeString() << "\n";
 	}
-	
+
 	if(util::isLogEnabled("Layer::Detail"))
 	{
 		util::log("Layer::Detail") << "  output: " << result.debugString() << "\n";
 	}
 
 	return result;
-}
-
-void Layer::transpose()
-{
-	m_sparseMatrix.transposeSelf();
 }
 
 size_t Layer::getInputCount() const
@@ -141,7 +136,7 @@ size_t Layer::getInputCount() const
 
 size_t Layer::getOutputCount() const
 {
-	size_t outputCount = getOutputCountForInputCount(getInputCount());	
+	size_t outputCount = getOutputCountForInputCount(getInputCount());
 
 	util::log("Layer") << m_sparseMatrix.shapeString()
 		<< ": Output count for input count " << getInputCount()
@@ -163,7 +158,7 @@ size_t Layer::getOutputBlockingFactor() const
 size_t Layer::getOutputCountForInputCount(size_t inputCount) const
 {
 	size_t outputCount = (inputCount / blockStep()) * (m_sparseMatrix.columnsPerBlock());
-	
+
 	util::log("Layer") << m_sparseMatrix.shapeString()
 		<< ": Output count for input count " << inputCount
 		<< " is " << outputCount << "\n";
@@ -335,7 +330,7 @@ bool Layer::empty() const
 {
 	return m_sparseMatrix.empty();
 }
-		
+
 void Layer::setBias(const BlockSparseMatrix& bias)
 {
 	m_bias = bias;
@@ -346,7 +341,7 @@ const Layer::BlockSparseMatrix& Layer::getBias() const
 {
 	return m_bias;
 }
-		
+
 Layer::NeuronSet Layer::getInputNeuronsConnectedToTheseOutputs(
 	const NeuronSet& outputs) const
 {
@@ -356,17 +351,17 @@ Layer::NeuronSet Layer::getInputNeuronsConnectedToTheseOutputs(
 	{
 		size_t block = output / getOutputBlockingFactor();
 		size_t blockStart = block * blockStep();
-		
+
 		size_t begin = blockStart;
 		size_t end   = blockStart + getInputBlockingFactor();
-		
+
 		// TODO: eliminate the reundant inserts
 		for(size_t i = begin; i < end; ++i)
 		{
 			inputs.insert(i);
 		}
 	}
-	
+
 	return inputs;
 }
 
@@ -374,7 +369,7 @@ Layer Layer::getSubgraphConnectedToTheseOutputs(
 	const NeuronSet& outputs) const
 {
 	typedef std::set<size_t> BlockSet;
-	
+
 	BlockSet blocks;
 
 	// TODO: eliminate the reundant inserts
@@ -384,18 +379,18 @@ Layer Layer::getSubgraphConnectedToTheseOutputs(
 
 		blocks.insert(block);
 	}
-	
+
 	Layer layer(blocks.size(), getInputBlockingFactor(),
 		getOutputBlockingFactor(), blockStep());
-	
+
 	for(auto& block : blocks)
 	{
 		size_t blockIndex = block - *blocks.begin();
-		
+
 		layer[blockIndex] = (*this)[block];
 		layer.at_bias(blockIndex) = at_bias(block);
 	}
-	
+
 	return layer;
 }
 
