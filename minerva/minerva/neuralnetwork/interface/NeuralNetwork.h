@@ -5,8 +5,7 @@
 
 #pragma once
 
-#include <minerva/neuralnetwork/interface/Layer.h>
-
+// Standard Library Includes
 #include <string>
 #include <vector>
 #include <map>
@@ -14,6 +13,7 @@
 
 // Forward Declaration
 namespace minerva { namespace neuralnetwork { class BackPropagation;         } }
+namespace minerva { namespace neuralnetwork { class Layer;                   } }
 namespace minerva { namespace matrix        { class BlockSparseMatrix;       } }
 namespace minerva { namespace matrix        { class BlockSparseMatrixVector; } }
 
@@ -25,15 +25,14 @@ namespace neuralnetwork
 class NeuralNetwork
 {
 public:
-    typedef minerva::matrix::Matrix Matrix;
-    typedef minerva::matrix::BlockSparseMatrix BlockSparseMatrix;
+    typedef minerva::matrix::Matrix                  Matrix;
+    typedef minerva::matrix::BlockSparseMatrix       BlockSparseMatrix;
     typedef minerva::matrix::BlockSparseMatrixVector BlockSparseMatrixVector;
-    typedef minerva::neuralnetwork::Layer Layer;
 
     typedef std::map<unsigned, std::string> NeuronToLabelMap;
     typedef Layer::NeuronSet NeuronSet;
 
-    typedef std::vector<Layer> LayerVector;
+    typedef std::vector<std::unique_ptr<Layer>> LayerVector;
 
     typedef LayerVector::reverse_iterator	    reverse_iterator;
     typedef LayerVector::iterator	            iterator;
@@ -51,12 +50,9 @@ public:
     void train(Matrix&& input, Matrix&& reference);
     void train(BlockSparseMatrix& input, BlockSparseMatrix& reference);
 
-    Matrix runInputs(const Matrix& m) const;
-    BlockSparseMatrix runInputs(const BlockSparseMatrix& m) const;
-
 public:
-    float computeAccuracy(const Matrix& input, const Matrix& reference) const;
-    float computeAccuracy(const BlockSparseMatrix& input, const BlockSparseMatrix& reference) const;
+    Matrix            runInputs(const Matrix& m)            const;
+    BlockSparseMatrix runInputs(const BlockSparseMatrix& m) const;
 
 public:
     std::string getLabelForOutputNeuron(unsigned int idx) const;
@@ -174,7 +170,6 @@ private:
 
 private:
     NeuronToLabelMap _labels;
-    bool _useSparseCostFunction;
 
 };
 

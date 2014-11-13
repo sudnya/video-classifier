@@ -35,7 +35,7 @@ public:
     virtual BlockSparseMatrix runReverse(BlockSparseMatrixVector& gradients, const BlockSparseMatrix& m) const = 0;
 
 public:
-    virtual BlockSparseMatrixVector&       weights()       = 0;
+    virtual       BlockSparseMatrixVector& weights()       = 0;
     virtual const BlockSparseMatrixVector& weights() const = 0;
 
 public:
@@ -49,16 +49,14 @@ public:
     virtual size_t getOutputCountForInputCount(size_t inputCount) const = 0;
 
 public:
-    virtual size_t getFloatingPointOperationCount() const = 0;
-
-public:
     virtual size_t totalNeurons()	  const = 0;
     virtual size_t totalConnections() const = 0;
 
 public:
-    virtual NeuronSet getInputNeuronsConnectedToTheseOutputs(
-        const NeuronSet& outputs) const = 0;
-    virtual Layer getSubgraphConnectedToTheseOutputs(
+    virtual size_t getFloatingPointOperationCount() const = 0;
+
+public:
+    virtual Layer* sliceSubgraphConnectedToTheseOutputs(
         const NeuronSet& outputs) const = 0;
 
 };
