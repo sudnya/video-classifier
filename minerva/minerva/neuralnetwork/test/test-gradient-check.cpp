@@ -102,7 +102,7 @@ static bool gradientCheck(NeuralNetwork& network, std::default_random_engine& en
 	
 	BlockSparseMatrixVector gradient;
 
-	float cost = network.getCostAndGradient(gradient, input, reference);
+	float cost = BackPropagation(network, input, reference).getCostAndGradient(gradient);
 	
 	for(auto& layer : network)
 	{

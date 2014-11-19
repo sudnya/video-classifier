@@ -122,13 +122,6 @@ public:
     const_reverse_iterator rend() const;
 
 public:
-    float getCostAndGradient(BlockSparseMatrixVector& gradient, BlockSparseMatrix& input, BlockSparseMatrix& reference) const;
-    float getCost(BlockSparseMatrix& input, BlockSparseMatrix& reference) const;
-
-    float getCostAndGradient(BlockSparseMatrixVector& gradient, const Matrix& input, const Matrix& reference) const;
-    float getCost(const Matrix& input, const Matrix& reference) const;
-
-public:
     bool areConnectionsValid() const;
 
 public:
