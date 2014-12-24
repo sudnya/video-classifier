@@ -24,8 +24,8 @@ public:
 	/*! \brief Run the cost function on the specified output and reference. */
 	virtual BlockSparseMatrix computeCost(const BlockSparseMatrix& output, const BlockSparseMatrix& reference) const = 0;
 
-	/*! \brief Determine the derivative of the cost function for the specified output and reference. */
-	virtual BlockSparseMatrix computeCostDerivative(const BlockSparseMatrix& output, const BlockSparseMatrix& reference) const = 0;
+	/*! \brief Determine the change in the output needed to minimize the cost function. */
+	virtual BlockSparseMatrix computeDelta(const BlockSparseMatrix& output, const BlockSparseMatrix& reference) const = 0;
 
 };
 

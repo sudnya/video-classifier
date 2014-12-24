@@ -18,7 +18,7 @@ namespace optimizer
 class TiledConvolutionalSolver : public NeuralNetworkSolver
 {
 public:
-	TiledConvolutionalSolver(BackPropagation* );
+	TiledConvolutionalSolver(NeuralNetwork* );
 
 public:
 	virtual void solve();

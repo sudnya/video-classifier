@@ -12,10 +12,12 @@
 #include <random>
 
 // Forward Declaration
-namespace minerva { namespace neuralnetwork { class BackPropagation;         } }
 namespace minerva { namespace neuralnetwork { class Layer;                   } }
+namespace minerva { namespace neuralnetwork { class CostFunction;            } }
+namespace minerva { namespace matrix        { class Matrix;                  } }
 namespace minerva { namespace matrix        { class BlockSparseMatrix;       } }
 namespace minerva { namespace matrix        { class BlockSparseMatrixVector; } }
+namespace minerva { namespace optimizer     { class NeuralNetworkSolver;     } }
 
 namespace minerva
 {
@@ -47,6 +49,17 @@ public:
     void train(BlockSparseMatrix& input, BlockSparseMatrix& reference);
 
 public:
+	/*! \brief Get the cost and gradient. */
+	float getCostAndGradient(BlockSparseMatrixVector& gradient, const BlockSparseMatrix& input, const BlockSparseMatrix& reference);
+	/*! \brief Get the cost. */
+	float getCost(const BlockSparseMatrix& input, const BlockSparseMatrix& reference);
+	
+	/*! \brief Get the cost and gradient. */
+	float getCostAndGradient(Matrix& gradient, const Matrix& input, const Matrix& reference);
+	/*! \brief Get the cost. */
+	float getCost(const Matrix& input, const Matrix& reference);
+
+public:
 	/*! \brief Run input samples through the network, return the output */
     Matrix runInputs(const Matrix& m) const;
 	/*! \brief Run input samples through the network, return the output */
@@ -61,7 +74,10 @@ public:
     void clear();
 
 public:
-	typedef std::unique_ptr<Layer> LayerPointer;
+	typedef std::unique_ptr<Layer>        LayerPointer;
+	typedef std::unique_ptr<CostFunction> CostFunctionPointer;
+
+	typedef std::unique_ptr<NeuralNetworkSolver> NeuralNetworkSolverPointer;
 
 public:
           LayerPointer& operator[](size_t index);
@@ -122,11 +138,19 @@ public:
     const_reverse_iterator rend() const;
 
 public:
-    bool areConnectionsValid() const;
+    NeuralNetwork getSubgraphConnectedToThisOutput(unsigned neuron) const;
 
 public:
-    NeuronSet getInputNeuronsConnectedToThisOutput(unsigned neuron) const;
-    NeuralNetwork getSubgraphConnectedToThisOutput(unsigned neuron) const;
+	/*! \brief Set the network cost function, the network takes ownership */
+	void setCostFunction(CostFunction*);
+	/*! \brief Get the network cost function, the network retains ownership */
+	CostFunction* getCostFunction();
+
+public:
+	/*! \brief Set the network cost function, the network takes ownership */
+	void setSolver(NeuralNetworkSolver*);
+	/*! \brief Get the network cost function, the network retains ownership */
+	NeuralNetworkSolver* getSolver();
 
 public:
     std::string shapeString() const;
@@ -145,9 +169,16 @@ private:
 private:
     LayerVector _layers;
 
+private:
+	CostFunctionPointer _costFunction;
+	
+private:
+	NeuralNetworkSolverPointer _solver;
+
 
 };
 
-}//end neural network
-}//end minerva
+}
+
+}
 

@@ -39,7 +39,8 @@ public:
 public:
     virtual BlockSparseMatrix runForward(const BlockSparseMatrix& m) const = 0;
     virtual BlockSparseMatrix runReverse(BlockSparseMatrixVector& gradients,
-		const BlockSparseMatrix& m) const = 0;
+		const BlockSparseMatrix& activations,
+		const BlockSparseMatrix& deltas) const = 0;
 
 public:
     virtual       BlockSparseMatrixVector& weights()       = 0;
@@ -89,6 +90,10 @@ public:
 	virtual void setWeightCostFunction(WeightCostFunction*);
 	/*! \brief Get the weight cost function component, the layer retains ownership. */
 	virtual void WeightCostFunction* getWeightCostFunction();
+
+public:
+	Layer(const Layer& )           = delete;
+	Layer& operator=(const Layer&) = delete;
 
 private:
 	std::unique_ptr<ActivationFunction>     _activationFunction;

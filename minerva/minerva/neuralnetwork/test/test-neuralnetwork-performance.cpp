@@ -54,20 +54,20 @@ static void createAndInitializeNeuralNetworks(
 	const size_t blocks    = totalPixels / blockSize;
 	
 	// convolutional layer
-	featureSelector.addLayer(Layer(blocks, blockSize, blockSize));
+	featureSelector.addLayer(FeedForwardLayer(blocks, blockSize, blockSize));
 	
 	// pooling layer
-	featureSelector.addLayer(Layer(featureSelector.back().blocks(),
+	featureSelector.addLayer(FeedForwardLayer(featureSelector.back().blocks(),
 		featureSelector.back().getInputBlockingFactor(),
 		featureSelector.back().getInputBlockingFactor() / reductionFactor));
 	
 	// convolutional layer
-	featureSelector.addLayer(Layer(featureSelector.back().blocks() / reductionFactor,
+	featureSelector.addLayer(FeedForwardLayer(featureSelector.back().blocks() / reductionFactor,
 		featureSelector.back().getInputBlockingFactor(),
 		featureSelector.back().getInputBlockingFactor()));
 	
 	// pooling layer
-	featureSelector.addLayer(Layer(featureSelector.back().blocks(),
+	featureSelector.addLayer(FeedForwardLayer(featureSelector.back().blocks(),
 		featureSelector.back().getInputBlockingFactor(),
 		featureSelector.back().getInputBlockingFactor() / reductionFactor));
 
@@ -83,13 +83,13 @@ static void createAndInitializeNeuralNetworks(
 	// fully connected input layer
 	NeuralNetwork classifier;
 
-	classifier.addLayer(Layer(1, featureSelector.getOutputCount(), hiddenLayerSize));
+	classifier.addLayer(FeedForwardLayer(1, featureSelector.getOutputCount(), hiddenLayerSize));
 
 	// fully connected hidden layer
-	classifier.addLayer(Layer(1, classifier.getOutputCount(), classifier.getOutputCount()));
+	classifier.addLayer(FeedForwardLayer(1, classifier.getOutputCount(), classifier.getOutputCount()));
 	
 	// final prediction layer
-	classifier.addLayer(Layer(1, classifier.getOutputCount(), classes));
+	classifier.addLayer(FeedForwardLayer(1, classifier.getOutputCount(), classes));
 
 	classifier.initializeRandomly(engine);
 

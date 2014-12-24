@@ -40,7 +40,7 @@ typedef matrix::Matrix Matrix;
 typedef matrix::BlockSparseMatrix BlockSparseMatrix;
 typedef GeneralDifferentiableSolver::BlockSparseMatrixVector BlockSparseMatrixVector;
 
-TiledConvolutionalSolver::TiledConvolutionalSolver(BackPropagation* b)
+TiledConvolutionalSolver::TiledConvolutionalSolver(NeuralNetwork* b)
 : NeuralNetworkSolver(b)
 {
 
@@ -86,7 +86,7 @@ static float differentiableSolver(BackPropagation* backPropData)
 {
 	util::log("TiledConvolutionalSolver") << "  starting general solver\n";
 		
-	auto solver = GeneralDifferentiableSolverFactory::create();
+	auto solver = std::make_unique(GeneralDifferentiableSolverFactory::create());
 	
 	float newCost = std::numeric_limits<float>::infinity();
 	
@@ -178,14 +178,6 @@ void TiledConvolutionalSolver::solve()
 		util::log("TiledConvolutionalSolver")
 			<< " no need for tiling, solving entire network at once.\n";
 		differentiableSolver(m_backPropDataPtr);
-	}
-	
-	// Accuracy 
-	if(util::isLogEnabled("TiledConvolutionalSolver::Detail"))
-	{
-		util::log("TiledConvolutionalSolver::Detail") << "  accuracy after training: "
-			<< m_backPropDataPtr->getNeuralNetwork()->computeAccuracy(*m_backPropDataPtr->getInput(),
-				*m_backPropDataPtr->getReferenceOutput()) << "\n";
 	}
 }
 
