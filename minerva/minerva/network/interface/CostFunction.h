@@ -12,7 +12,7 @@ namespace minerva { namespace matrix { class BlockSparseMatrix; } }
 namespace minerva
 {
 
-namespace neuralnetwork
+namespace network
 {
 
 class CostFunction

@@ -11,7 +11,7 @@ namespace minerva { namespace neuralnetwork { class Layer; } }
 
 namespace minerva
 {
-namespace neuralnetwork
+namespace network
 {
 
 /* \brief A neural network layer factory. */

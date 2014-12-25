@@ -1,0 +1,116 @@
+/*  \file   RecurrentLayer.cpp
+	\author Gregory Diamos
+ 	\date   Dec 24, 2014
+ 	\brief  The implementation of the RecurrentLayer class.
+*/
+
+#pragma once
+
+// Minerva Includes
+#include <minerva/neuralnetwork/interface/RecurrentLayer.h>
+
+namespace minerva
+{
+
+namespace neuralnetwork
+{
+
+RecurrentLayer::RecurrentLayer()
+{
+
+}
+
+RecurrentLayer::~RecurrentLayer()
+{
+
+}
+
+void RecurrentLayer::initializeRandomly(std::default_random_engine& engine, float epsilon)
+{
+	assertM(false, "Not Implemented.");
+}
+
+BlockSparseMatrix RecurrentLayer::runForward(const BlockSparseMatrix& m) const
+{
+	assertM(false, "Not Implemented.");
+}
+
+BlockSparseMatrix RecurrentLayer::runReverse(BlockSparseMatrixVector& gradients,
+	const BlockSparseMatrix& activations,
+	const BlockSparseMatrix& deltas) const
+{
+	assertM(false, "Not Implemented.");
+}
+
+BlockSparseMatrixVector& RecurrentLayer::weights()
+{
+	assertM(false, "Not Implemented.");
+}
+
+const BlockSparseMatrixVector& RecurrentLayer::weights() const
+{
+	assertM(false, "Not Implemented.");
+}
+
+size_t RecurrentLayer::getInputCount() const
+{
+	assertM(false, "Not Implemented.");
+}
+
+size_t RecurrentLayer::getOutputCount() const
+{
+	assertM(false, "Not Implemented.");
+}
+
+size_t RecurrentLayer::getInputBlockingFactor() const
+{
+	assertM(false, "Not Implemented.");
+}
+
+size_t RecurrentLayer::getOutputBlockingFactor() const
+{
+	assertM(false, "Not Implemented.");
+}
+
+size_t RecurrentLayer::getOutputCountForInputCount(size_t inputCount) const
+{
+	assertM(false, "Not Implemented.");
+}
+
+size_t RecurrentLayer::totalNeurons() const
+{
+	assertM(false, "Not Implemented.");
+}
+size_t RecurrentLayer::totalConnections() const
+{
+	assertM(false, "Not Implemented.");
+}
+
+size_t RecurrentLayer::getFloatingPointOperationCount() const
+{
+	assertM(false, "Not Implemented.");
+}
+
+Layer* RecurrentLayer::sliceSubgraphConnectedToTheseOutputs(
+	const NeuronSet& outputs) const
+{
+	assertM(false, "Not Implemented.");
+}
+
+void RecurrentLayer::save(util::TarArchive& archive) const
+{
+	assertM(false, "Not Implemented.");
+}
+
+void RecurrentLayer::load(const util::TarArchive& archive, const std::string& name)
+{
+	assertM(false, "Not Implemented.");
+}
+
+}
+
+}
+
+
+
+

@@ -77,10 +77,10 @@ public:
 public:
 	/*! \brief Set the maximum samples to be run by the engine */
 	void setMaximumSamplesToRun(size_t samples);
+	/*! \brief Set the epochs (passes over the entire training set) to be run by the engine */
+	void setEpochs(size_t epochs);
 	/*! \brief Set the number of samples to be run in a batch by the engine */
 	void setBatchSize(size_t samples);
-	/*! \brief Should the engine be allowed to run the same sample multiple times */
-	void setAllowSamplingWithReplacement(bool);
 
 protected:
 	/*! \brief Called before the engine starts running on a given model */

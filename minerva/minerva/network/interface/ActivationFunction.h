@@ -9,7 +9,7 @@
 namespace minerva
 {
 
-namespace neuralnetwork
+namespace network
 {
 
 class ActivationFunction

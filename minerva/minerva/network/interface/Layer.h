@@ -15,7 +15,7 @@ namespace minerva { namespace matrix { class BlockSparseMatrixVector; } }
 
 namespace minerva
 {
-namespace neuralnetwork
+namespace network
 {
 
 /* \brief A neural network layer interface. */
@@ -32,9 +32,6 @@ public:
 public:
     virtual void initializeRandomly(std::default_random_engine& engine,
 		float epsilon = 6.0f) = 0;
-
-public:
-	virtual BlockSparseMatrix train(const BlockSparseMatrix& m) const = 0;
 
 public:
     virtual BlockSparseMatrix runForward(const BlockSparseMatrix& m) const = 0;
@@ -71,7 +68,7 @@ public:
 	/*! \brief Save the layer to the tar file and header. */
 	virtual void save(util::TarArchive& archive) const = 0;
 	/*! \brief Intialize the layer from the tar file and header. */
-	virtual void load(const util::TarArchive& archive) = 0;
+	virtual void load(const util::TarArchive& archive, const std::string& name) = 0;
 
 public:
 	/*! \brief Set the activation function, the layer takes ownership. */
@@ -87,9 +84,9 @@ public:
 	
 public:
 	/*! \brief Set the weight cost function component, the layer takes ownership. */
-	virtual void setWeightCostFunction(WeightCostFunction*);
+	void setWeightCostFunction(WeightCostFunction*);
 	/*! \brief Get the weight cost function component, the layer retains ownership. */
-	virtual void WeightCostFunction* getWeightCostFunction();
+	WeightCostFunction* getWeightCostFunction();
 
 public:
 	Layer(const Layer& )           = delete;
@@ -103,5 +100,6 @@ private:
 };
 
 }
+
 }
 

@@ -46,6 +46,10 @@ public:
 	void setInputImageResolution(unsigned int x, unsigned int y, unsigned int colors);
 
 public:
+	void setOutputLabel(size_t output, const std::string& label);
+	std::string getOutputLabel(size_t output) const;
+
+public:
 	unsigned int xPixels() const;
 	unsigned int yPixels() const;
 	unsigned int colors()  const;
@@ -77,15 +81,17 @@ private:
 
 private:
 	typedef std::map<std::string, iterator> NeuralNetworkMap;
+	typedef std::map<size_t, std::string> LabelMap;
 
 private:
 	NeuralNetworkList _neuralNetworks;
 	NeuralNetworkMap  _neuralNetworkMap;
+	LabelMap          _outputLabels;
 
 	unsigned int _xPixels;
 	unsigned int _yPixels;
 	unsigned int _colors;
-
+	
 };
 
 }

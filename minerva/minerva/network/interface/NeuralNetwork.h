@@ -12,8 +12,8 @@
 #include <random>
 
 // Forward Declaration
-namespace minerva { namespace neuralnetwork { class Layer;                   } }
-namespace minerva { namespace neuralnetwork { class CostFunction;            } }
+namespace minerva { namespace network       { class Layer;                   } }
+namespace minerva { namespace network       { class CostFunction;            } }
 namespace minerva { namespace matrix        { class Matrix;                  } }
 namespace minerva { namespace matrix        { class BlockSparseMatrix;       } }
 namespace minerva { namespace matrix        { class BlockSparseMatrixVector; } }
@@ -27,9 +27,10 @@ namespace network
 class NeuralNetwork
 {
 public:
-    typedef minerva::matrix::Matrix                  Matrix;
-    typedef minerva::matrix::BlockSparseMatrix       BlockSparseMatrix;
-    typedef minerva::matrix::BlockSparseMatrixVector BlockSparseMatrixVector;
+    typedef matrix::Matrix                  Matrix;
+    typedef matrix::BlockSparseMatrix       BlockSparseMatrix;
+    typedef matrix::BlockSparseMatrixVector BlockSparseMatrixVector;
+	typedef 
 
 public:
     NeuralNetwork();
@@ -151,6 +152,12 @@ public:
 	void setSolver(NeuralNetworkSolver*);
 	/*! \brief Get the network cost function, the network retains ownership */
 	NeuralNetworkSolver* getSolver();
+
+public:
+	/*! \brief Save the network to the tar file and header. */
+	void save(util::TarArchive& archive) const;
+	/*! \brief Intialize the network from the tar file and header. */
+	void load(const util::TarArchive& archive, const std::string& name);
 
 public:
     std::string shapeString() const;

@@ -11,14 +11,14 @@
 #include <memory>
 
 // Forward Declarations
-namespace minerva { namespace neuralnetwork { class NeuralNetwork;     } }
-namespace minerva { namespace neuralnetwork { class NeuralNetworkTile; } } 
-namespace minerva { namespace matrix        { class BlockSparseMatrix; } }
+namespace minerva { namespace network { class NeuralNetwork;     } }
+namespace minerva { namespace network { class NeuralNetworkTile; } } 
+namespace minerva { namespace matrix  { class BlockSparseMatrix; } }
 
 namespace minerva
 {
 
-namespace neuralnetwork
+namespace network
 {
 
 class NeuralNetworkSubgraphExtractor

@@ -1,7 +1,7 @@
-/*	\file   RectifiedLinearActivationFunction.h
+/*	\file   SigmoidActivationFunction.h
 	\date   Saturday August 10, 2013
 	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The header file for the RectifiedLinearActivationFunction class.
+	\brief  The header file for the SigmoidActivationFunction class.
 */
 
 #pragma once
@@ -9,13 +9,13 @@
 namespace minerva
 {
 
-namespace neuralnetwork
+namespace network
 {
 
-class RectifiedLinearActivationFunction
+class SigmoidActivationFunction
 {
 public:
-	virtual ~RectifiedActivationFunction();
+	virtual ~SigmoidActivationFunction();
 
 public:
 	/*! \brief Run the activation function on the specified input. */
@@ -29,5 +29,6 @@ public:
 }
 
 }
+
 
 

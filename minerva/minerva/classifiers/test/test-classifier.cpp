@@ -4,6 +4,7 @@
 */
 
 #include <minerva/neuralnetwork/interface/NeuralNetwork.h>
+#include <minerva/neuralnetwork/interface/FeedForwardLayer.h>
 
 #include <minerva/matrix/interface/Matrix.h>
 
@@ -28,7 +29,7 @@ neuralnetwork::NeuralNetwork createAndInitializeNeuralNetwork(unsigned networkSi
 	size_t convolutionalLayers = 1;//std::min(networkSize/4, 1U);
 
     // Layer 1
-    ann.addLayer(Layer(convolutionalLayers,networkSize/convolutionalLayers,
+    ann.addLayer(FeedForwardLayer(convolutionalLayers,networkSize/convolutionalLayers,
 		networkSize/convolutionalLayers));
 
 	size_t step = 8;
@@ -37,11 +38,11 @@ neuralnetwork::NeuralNetwork createAndInitializeNeuralNetwork(unsigned networkSi
 	size_t layerTwoStep = (networkSize / convolutionalLayersTwo) / step;
 
     // Layer 2
-    ann.addLayer(Layer(convolutionalLayersTwo, networkSize/convolutionalLayersTwo,
+    ann.addLayer(FeedForwardLayer(convolutionalLayersTwo, networkSize/convolutionalLayersTwo,
 		networkSize/convolutionalLayersTwo, layerTwoStep));
 
     // Layer 3
-    ann.addLayer(Layer(1,networkSize * step,networkSize/2));
+    ann.addLayer(FeedForwardLayer(1,networkSize * step,networkSize/2));
 
 	std::default_random_engine engine;
 	
@@ -54,7 +55,6 @@ neuralnetwork::NeuralNetwork createAndInitializeNeuralNetwork(unsigned networkSi
 
 Matrix generateRandomMatrix(unsigned rows, unsigned columns, std::default_random_engine& generator)
 {
-    
     std::bernoulli_distribution distribution(0.5f);
     
     Matrix matrix(rows, columns);
@@ -94,44 +94,6 @@ Matrix matrixXor(const Matrix& inputs)
     return output;
 }
 
-Matrix threshold(const Matrix& output)
-{
-    Matrix temp = output;
-
-    for(auto value = temp.begin(); value != temp.end(); ++value)
-    {
-        if(*value > 0.5f)
-        {
-            *value = 1.0f;
-        }
-        else
-        {
-            *value = 0.0f;
-        }
-    }
-
-    return temp;
-}
-
-float computeEntropy(const Matrix& thresholdOutput)
-{
-	float totalColumnEntropy = 0;
-
-	for(size_t column = 0; column < thresholdOutput.columns(); ++column)
-	{
-		float totalBits = 0.0f;
-		
-		for(size_t row = 0; row < thresholdOutput.rows(); ++row)
-		{
-			totalBits += thresholdOutput(row, column);
-		}
-		
-		totalColumnEntropy += 0.5f - std::fabs(0.5f - (totalBits / thresholdOutput.rows()));
-	}
-	
-	return totalColumnEntropy / thresholdOutput.columns();
-}
-
 void trainNeuralNetwork(neuralnetwork::NeuralNetwork& ann, unsigned trainingIter, std::default_random_engine& generator)
 {
     unsigned samplesPerIter = ann.getInputCount() * 50;
@@ -148,7 +110,6 @@ void trainNeuralNetwork(neuralnetwork::NeuralNetwork& ann, unsigned trainingIter
 		{
 			util::log("TestClassifier") << " Input is:     " << input.toString();
 			util::log("TestClassifier") << " Output is:    " << threshold(ann.runInputs(input)).toString();
-			util::log("TestClassifier") << "  Output entropy is " << computeEntropy(threshold(ann.runInputs(input))) << "\n";
 			util::log("TestClassifier") << " Reference is: " << referenceMatrix.toString();
 		}
 		

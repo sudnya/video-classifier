@@ -12,7 +12,7 @@
 namespace minerva
 {
 
-namespace neuralnetwork
+namespace network
 {
 
 /*! \brief A softmax cost function. */

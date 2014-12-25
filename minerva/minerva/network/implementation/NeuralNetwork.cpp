@@ -26,7 +26,7 @@ typedef minerva::optimizer::NeuralNetworkSolver NeuralNetworkSolver;
 
 namespace minerva
 {
-namespace neuralnetwork
+namespace network
 {
 
 NeuralNetwork::NeuralNetwork()
@@ -382,6 +382,16 @@ void NeuralNetwork::setSolver(NeuralNetworkSolver* s)
 NeuralNetwork::NeuralNetworkSolver* NeuralNetwork::getSolver()
 {
 	return _solver.get();
+}
+	
+void NeuralNetwork::save(util::TarArchive& archive) const
+{
+	assertM(false, "Not Implemented");
+}
+
+void NeuralNetwork::load(const util::TarArchive& archive, const std::string& name)
+{
+	assertM(false, "Not Implemented");
 }
 
 std::string NeuralNetwork::shapeString() const
