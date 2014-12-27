@@ -6,8 +6,12 @@
 #pragma once
 
 // Forward Declarations
-namespace minerva { namespace matrix { class BlockSparseMatrix;       } }
-namespace minerva { namespace matrix { class BlockSparseMatrixVector; } }
+namespace minerva { namespace matrix  { class BlockSparseMatrix;       } }
+namespace minerva { namespace matrix  { class BlockSparseMatrixVector; } }
+namespace minerva { namespace network { class ActivationFunction;      } }
+namespace minerva { namespace network { class ActivationCostFunction;  } }
+namespace minerva { namespace network { class WeightCostFunction;      } }
+namespace minerva { namespace util    { class TarArchive;              } }
 
 // Standard Library Includes
 #include <random>
@@ -27,6 +31,7 @@ public:
     typedef std::set<size_t> NeuronSet;
 
 public:
+	Layer();
     virtual ~Layer();
 
 public:
@@ -69,6 +74,10 @@ public:
 	virtual void save(util::TarArchive& archive) const = 0;
 	/*! \brief Intialize the layer from the tar file and header. */
 	virtual void load(const util::TarArchive& archive, const std::string& name) = 0;
+
+public:
+	virtual Layer* clone() const = 0;
+	virtual Layer* mirror() const = 0;
 
 public:
 	/*! \brief Set the activation function, the layer takes ownership. */

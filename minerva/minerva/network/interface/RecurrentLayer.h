@@ -7,7 +7,7 @@
 #pragma once
 
 // Minerva Includes
-#include <minerva/neuralnetwork/interface/Layer.h>
+#include <minerva/network/interface/Layer.h>
 
 namespace minerva
 {

@@ -6,13 +6,15 @@
 
 #pragma once
 
-// Minerva Includes
-#include <minerva/neuralnetwork/interface/NeuralNetwork.h>
-
 // Standard Library Includes
 #include <string>
 #include <map>
 #include <list>
+#include <vector>
+
+// Forward Declarations
+namespace minerva { namespace network { class NeuralNetwork; } }
+namespace minerva { namespace util    { class TarArchive;    } }
 
 namespace minerva
 {
@@ -23,7 +25,7 @@ namespace model
 class Model
 {
 public:
-	typedef neuralnetwork::NeuralNetwork NeuralNetwork;
+	typedef network::NeuralNetwork NeuralNetwork;
 	typedef std::list<NeuralNetwork> NeuralNetworkList;
 	typedef NeuralNetworkList::iterator iterator;
 	typedef NeuralNetworkList::const_iterator const_iterator;
@@ -36,7 +38,7 @@ public:
 
 public:
 	const NeuralNetwork& getNeuralNetwork(const std::string& name) const;
-	NeuralNetwork&  getNeuralNetwork(const std::string& name);
+	NeuralNetwork& getNeuralNetwork(const std::string& name);
 
 public:
 	bool containsNeuralNetwork(const std::string& name) const;
@@ -82,6 +84,7 @@ private:
 private:
 	typedef std::map<std::string, iterator> NeuralNetworkMap;
 	typedef std::map<size_t, std::string> LabelMap;
+	typedef std::vector<std::string> StringVector;
 
 private:
 	NeuralNetworkList _neuralNetworks;
@@ -91,6 +94,17 @@ private:
 	unsigned int _xPixels;
 	unsigned int _yPixels;
 	unsigned int _colors;
+	
+private:
+	void _saveInputDescription(util::TarArchive& tar) const;
+	void _saveOutputDescription(util::TarArchive& tar) const;
+
+private:
+	void _loadInputDescription(util::TarArchive& tar);
+	void _loadOutputDescription(util::TarArchive& tar);
+
+private:
+	StringVector _getNetworkList(util::TarArchive& tar);
 	
 };
 

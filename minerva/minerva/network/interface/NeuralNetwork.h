@@ -18,6 +18,7 @@ namespace minerva { namespace matrix        { class Matrix;                  } }
 namespace minerva { namespace matrix        { class BlockSparseMatrix;       } }
 namespace minerva { namespace matrix        { class BlockSparseMatrixVector; } }
 namespace minerva { namespace optimizer     { class NeuralNetworkSolver;     } }
+namespace minerva { namespace util          { class TarArchive;              } }
 
 namespace minerva
 {
@@ -30,7 +31,7 @@ public:
     typedef matrix::Matrix                  Matrix;
     typedef matrix::BlockSparseMatrix       BlockSparseMatrix;
     typedef matrix::BlockSparseMatrixVector BlockSparseMatrixVector;
-	typedef 
+	typedef optimizer::NeuralNetworkSolver  NeuralNetworkSolver;
 
 public:
     NeuralNetwork();
@@ -69,6 +70,8 @@ public:
 public:
 	/*! \brief Add a new layer, the network takes ownership */
     void addLayer(Layer*);
+	/*! \brief Add an existing layer, the network takes ownership */
+    void addLayer(std::unique_ptr<Layer>&& );
 
 public:
 	/*! \brief Clear the network */
@@ -155,7 +158,7 @@ public:
 
 public:
 	/*! \brief Save the network to the tar file and header. */
-	void save(util::TarArchive& archive) const;
+	void save(util::TarArchive& archive, const std::string& name) const;
 	/*! \brief Intialize the network from the tar file and header. */
 	void load(const util::TarArchive& archive, const std::string& name);
 
@@ -163,8 +166,8 @@ public:
     std::string shapeString() const;
 
 public:
-	NeuralNetwork(const NeuralNetwork& ) = delete;
-	NeuralNetwork& operator=(const NeuralNetwork&) = delete;
+	NeuralNetwork(const NeuralNetwork& );
+	NeuralNetwork& operator=(const NeuralNetwork&);
 
 private:
     BlockSparseMatrix convertToBlockSparseForLayerInput(const Layer& layer, const Matrix& m) const;

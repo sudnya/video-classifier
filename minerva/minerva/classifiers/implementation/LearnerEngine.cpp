@@ -7,9 +7,14 @@
 // Minerva Includes
 #include <minerva/classifiers/interface/LearnerEngine.h>
 
-#include <minerva/neuralnetwork/interface/NeuralNetwork.h>
+#include <minerva/network/interface/NeuralNetwork.h>
+#include <minerva/network/interface/Layer.h>
+#include <minerva/network/interface/CostFunction.h>
+
+#include <minerva/optimizer/interface/NeuralNetworkSolver.h>
 
 #include <minerva/results/interface/ResultVector.h>
+
 #include <minerva/matrix/interface/Matrix.h>
 
 #include <minerva/util/interface/debug.h>

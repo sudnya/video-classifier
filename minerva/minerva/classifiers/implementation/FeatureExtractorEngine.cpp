@@ -7,6 +7,8 @@
 // Minerva Includes
 #include <minerva/classifiers/interface/FeatureExtractorEngine.h>
 
+#include <minerva/network/interface/NeuralNetwork.h>
+
 #include <minerva/results/interface/FeatureResultProcessor.h>
 #include <minerva/results/interface/FeatureResult.h>
 

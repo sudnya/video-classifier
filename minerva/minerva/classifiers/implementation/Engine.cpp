@@ -7,6 +7,12 @@
 // Minerva Includes
 #include <minerva/classifiers/interface/Engine.h>
 
+#include <minerva/network/interface/NeuralNetwork.h>
+#include <minerva/network/interface/Layer.h>
+#include <minerva/network/interface/CostFunction.h>
+
+#include <minerva/optimizer/interface/NeuralNetworkSolver.h>
+
 #include <minerva/results/interface/NullResultProcessor.h>
 #include <minerva/results/interface/ResultVector.h>
 
@@ -127,9 +133,9 @@ void Engine::setBatchSize(size_t samples)
 	_dataProducer->setBatchSize(samples);
 }
 
-void Engine::setAllowSamplingWithReplacement(bool allow)
+void Engine::setEpochs(size_t epochs)
 {
-	_dataProducer->setAllowSamplingWithReplacement(allow);
+	_dataProducer->setEpochs(epochs);
 }
 
 void Engine::registerModel()
@@ -152,27 +158,27 @@ void Engine::saveModel()
 	if(_model) _model->save();
 }
 
-neuralnetwork::NeuralNetwork Engine::getAggregateNetwork()
+network::NeuralNetwork Engine::getAggregateNetwork()
 {
-	neuralnetwork::NeuralNetwork network;
+	network::NeuralNetwork network;
 	
 	auto& featureSelector = _model->getNeuralNetwork("FeatureSelector");
 	auto& classifier      = _model->getNeuralNetwork("Classifier");
 	
-	for(auto&& layer : featureSelector)
+	for(auto& layer : featureSelector)
 	{
-		network.addLayer(std::move(layer));
+		network.addLayer(layer.release());
 	}
 	
-	for(auto&& layer : classifier)
+	for(auto& layer : classifier)
 	{
-		network.addLayer(std::move(layer));
+		network.addLayer(layer.release());
 	}
 	
 	return network;
 }
 
-void Engine::restoreAggregateNetwork(neuralnetwork::NeuralNetwork& network)
+void Engine::restoreAggregateNetwork(network::NeuralNetwork& network)
 {
 	auto& featureSelector = _model->getNeuralNetwork("FeatureSelector");
 	auto& classifier      = _model->getNeuralNetwork("Classifier");

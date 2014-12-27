@@ -14,12 +14,12 @@
 #include <memory>
 
 // Forward Declarations
-namespace minerva { namespace model         { class Model; } }
-namespace minerva { namespace input         { class InputDataProducer;   } }
-namespace minerva { namespace results       { class ResultProcessor;     } }
-namespace minerva { namespace neuralnetwork { class NeuralNetwork;       } }
-namespace minerva { namespace results       { class ResultVector;        } }
-namespace minerva { namespace matrix        { class Matrix;              } }
+namespace minerva { namespace model   { class Model;             } }
+namespace minerva { namespace input   { class InputDataProducer; } }
+namespace minerva { namespace results { class ResultProcessor;   } }
+namespace minerva { namespace network { class NeuralNetwork;     } }
+namespace minerva { namespace results { class ResultVector;      } }
+namespace minerva { namespace matrix  { class Matrix;            } }
 
 namespace minerva
 {
@@ -33,12 +33,12 @@ namespace classifiers
 class Engine
 {
 public:
-	typedef input::InputDataProducer     InputDataProducer;
-	typedef model::Model   Model;
-	typedef results::ResultProcessor     ResultProcessor;
-	typedef results::ResultVector        ResultVector;
-	typedef neuralnetwork::NeuralNetwork NeuralNetwork;
-	typedef matrix::Matrix               Matrix;
+	typedef input::InputDataProducer InputDataProducer;
+	typedef model::Model             Model;
+	typedef results::ResultProcessor ResultProcessor;
+	typedef results::ResultVector    ResultVector;
+	typedef network::NeuralNetwork   NeuralNetwork;
+	typedef matrix::Matrix           Matrix;
 
 public:
 	Engine();

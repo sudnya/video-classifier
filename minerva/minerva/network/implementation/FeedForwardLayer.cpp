@@ -4,10 +4,17 @@
  	\brief  The implementation of the FeedForwardLayer class.
 */
 
-#pragma once
-
 // Minerva Includes
-#include <minerva/neuralnetwork/interface/FeedForwardLayer.h>
+#include <minerva/network/interface/FeedForwardLayer.h>
+
+#include <minerva/network/interface/ActivationFunction.h>
+#include <minerva/network/interface/ActivationCostFunction.h>
+#include <minerva/network/interface/WeightCostFunction.h>
+
+#include <minerva/matrix/interface/BlockSparseMatrix.h>
+
+#include <minerva/util/interface/debug.h>
+#include <minerva/util/interface/knobs.h>
 
 namespace minerva
 {
@@ -15,9 +22,12 @@ namespace minerva
 namespace network
 {
 
+typedef matrix::BlockSparseMatrix BlockSparseMatrix;
+
 FeedForwardLayer::FeedForwardLayer(size_t blocks, size_t inputsPerBlock, size_t outputsPerBlock, size_t blockStep)
-: _weights(totalBlocks, blockInput, blockOutput, true),
-  _bias(totalBlocks, 1, blockOutput, false), _blockStep((blockStep > 0) ? blockStep : blockInput)
+: _parameters({BlockSparseMatrix(blocks, inputsPerBlock, outputsPerBlock, true), BlockSparseMatrix(blocks, 1, outputsPerBlock, false)}), 
+ _weights(_parameters[0]), _bias(_parameters[1]),
+ _blockStep((blockStep > 0) ? blockStep : inputsPerBlock)
 {
 
 }
@@ -45,20 +55,20 @@ BlockSparseMatrix FeedForwardLayer::runForward(const BlockSparseMatrix& m) const
 	{
 		util::log("FeedForwardLayer") << " Running forward propagation on matrix (" << m.rows()
 			<< " rows, " << m.columns() << " columns) through layer with dimensions ("
-			<< blocks() << " blocks, "
+			<< _weights.blocks() << " blocks, "
 			<< getInputCount() << " inputs, " << getOutputCount()
-			<< " outputs, " << blockStep() << " block step).\n";
-		util::log("FeedForwardLayer") << "  layer: " << m_sparseMatrix.shapeString() << "\n";
+			<< " outputs, " << _blockStep << " block step).\n";
+		util::log("FeedForwardLayer") << "  layer: " << _weights.shapeString() << "\n";
 	}
 
 	if(util::isLogEnabled("FeedForwardLayer::Detail"))
 	{
 		util::log("FeedForwardLayer::Detail") << "  input: " << m.debugString() << "\n";
-		util::log("FeedForwardLayer::Detail") << "  layer: " << m_sparseMatrix.debugString() << "\n";
-		util::log("FeedForwardLayer::Detail") << "  bias:  " << m_bias.debugString() << "\n";
+		util::log("FeedForwardLayer::Detail") << "  layer: " << _weights.debugString() << "\n";
+		util::log("FeedForwardLayer::Detail") << "  bias:  " << _bias.debugString() << "\n";
 	}
 
-	auto unbiasedOutput = m.convolutionalMultiply(_weights, blockStep());
+	auto unbiasedOutput = m.convolutionalMultiply(_weights, _blockStep);
 
 	auto output = unbiasedOutput.convolutionalAddBroadcastRow(_bias);
 	

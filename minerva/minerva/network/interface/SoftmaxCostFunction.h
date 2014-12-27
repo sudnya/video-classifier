@@ -7,7 +7,7 @@
 #pragma once
 
 // Minerva Includes
-#include <minerva/neuralnetwork/interface/CostFunction.h>
+#include <minerva/network/interface/CostFunction.h>
 
 namespace minerva
 {

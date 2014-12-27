@@ -52,8 +52,8 @@ public:
 	virtual size_t getUniqueSampleCount() const = 0;
 	
 public:
-	void setAllowSamplingWithReplacement(bool allowReplacement);
-	bool getAllowSamplingWithReplacement() const;
+	void setEpochs(size_t epochs);
+	bool getEpochs() const;
 
 public:
 	void   setBatchSize(size_t batchSize);
@@ -78,7 +78,7 @@ protected:
 	util::StringVector getOutputLabels() const;
 	
 private:
-	bool   _allowSamplingWithReplacement;
+	size_t _epochs;
 	bool   _requiresLabeledData;
 	size_t _batchSize;
 	size_t _maximumSamplesToRun;

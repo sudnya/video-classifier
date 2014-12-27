@@ -18,6 +18,9 @@ namespace network
 class CostFunction
 {
 public:
+	typedef matrix::BlockSparseMatrix BlockSparseMatrix;
+
+public:
 	virtual ~CostFunction();
 
 public:

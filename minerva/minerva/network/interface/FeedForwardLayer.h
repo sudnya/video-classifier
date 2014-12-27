@@ -7,7 +7,9 @@
 #pragma once
 
 // Minerva Includes
-#include <minerva/neuralnetwork/interface/Layer.h>
+#include <minerva/network/interface/Layer.h>
+
+#include <minerva/matrix/interface/BlockSparseMatrixVector.h>
 
 namespace minerva
 {
@@ -58,6 +60,9 @@ public:
 public:
 	virtual void save(util::TarArchive& archive) const;
 	virtual void load(const util::TarArchive& archive, const std::string& name);
+
+public:
+	virtual Layer* clone() const;
 
 private:
 	BlockSparseMatrixVector _parameters;

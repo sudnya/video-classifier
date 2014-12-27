@@ -7,7 +7,13 @@
 // Minerva Includes
 #include <minerva/classifiers/interface/ClassifierEngine.h>
 
-#include <minerva/neuralnetwork/interface/NeuralNetwork.h>
+#include <minerva/network/interface/NeuralNetwork.h>
+#include <minerva/network/interface/Layer.h>
+#include <minerva/network/interface/CostFunction.h>
+
+#include <minerva/optimizer/interface/NeuralNetworkSolver.h>
+
+#include <minerva/model/interface/Model.h>
 
 #include <minerva/results/interface/LabelResultProcessor.h>
 #include <minerva/results/interface/LabelMatchResult.h>
@@ -41,7 +47,7 @@ void ClassifierEngine::setUseLabeledData(bool shouldUse)
 }
 
 util::StringVector convertActivationsToLabels(matrix::Matrix&& activations,
-	const neuralnetwork::NeuralNetwork& network)
+	const model::Model& model)
 {
 	size_t samples = activations.rows();
 	size_t columns = activations.columns();
@@ -62,7 +68,7 @@ util::StringVector convertActivationsToLabels(matrix::Matrix&& activations,
 			}
 		}
 		
-		labels.push_back(network.getLabelForOutputNeuron(maxColumn));
+		labels.push_back(model.getOutputLabel(maxColumn));
 	}
 	
 	return labels;
@@ -99,13 +105,13 @@ ClassifierEngine::ResultVector ClassifierEngine::runOnBatch(Matrix&& input, Matr
 	
 	auto result = network.runInputs(std::move(input));
 
-	auto labels = convertActivationsToLabels(std::move(result), network);
+	auto labels = convertActivationsToLabels(std::move(result), *_model);
 	
 	restoreAggregateNetwork(network);
 	
 	if(_shouldUseLabeledData)
 	{
-		return compareWithReference(labels, convertActivationsToLabels(std::move(reference), network));
+		return compareWithReference(labels, convertActivationsToLabels(std::move(reference), *_model));
 	}
 	
 	return recordLabels(labels);

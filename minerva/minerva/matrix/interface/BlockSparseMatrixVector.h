@@ -31,6 +31,9 @@ public:
 	BlockSparseMatrixVector(size_t elements, const BlockSparseMatrix& value);
 
 public:
+	BlockSparseMatrixVector(std::initializer_list<BlockSparseMatrix> l);
+
+public:
 	BlockSparseMatrixVector(const BlockSparseMatrixVector&);
 	BlockSparseMatrixVector(const BlockSparseMatrixVector&&);
 
