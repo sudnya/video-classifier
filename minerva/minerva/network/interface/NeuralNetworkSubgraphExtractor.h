@@ -71,8 +71,8 @@ public:
 
 private:
 	NeuralNetwork*     _network;
-	BlockSparseMatrix* _input;
-	BlockSparseMatrix* _output;
+	const BlockSparseMatrix* _input;
+	const BlockSparseMatrix* _output;
 
 private:
 	TileVector _tiles;

@@ -7,6 +7,7 @@
 // Minerva Includes
 #include <minerva/network/interface/NeuralNetworkSubgraphExtractor.h>
 #include <minerva/network/interface/NeuralNetwork.h>
+#include <minerva/network/interface/Layer.h>
 
 #include <minerva/optimizer/interface/GeneralDifferentiableSolverFactory.h>
 
@@ -26,8 +27,6 @@ namespace minerva
 namespace network
 {
 
-#if 0
-
 typedef NeuralNetworkTile Tile;
 typedef NeuralNetworkSubgraphExtractor::TileVector TileVector;
 typedef matrix::BlockSparseMatrix BlockSparseMatrix;
@@ -42,8 +41,8 @@ NeuralNetworkSubgraphExtractor::NeuralNetworkSubgraphExtractor(NeuralNetwork* ne
 	getTiles(_tiles, _network, _input, _output);
 }
 
-NeuralNetworkSubgraphExtractor::NeuralNetworkSubgraphExtractor(NeuralNetwork* network, BlockSparseMatrix* input,
-	BlockSparseMatrix* reference)
+NeuralNetworkSubgraphExtractor::NeuralNetworkSubgraphExtractor(NeuralNetwork* network, const BlockSparseMatrix* input,
+	const BlockSparseMatrix* reference)
 : _network(network), _input(input), _output(reference)
 {
 	getTiles(_tiles, _network, _input, _output);
@@ -70,8 +69,8 @@ void NeuralNetworkSubgraphExtractor::coalesceTiles()
 }
 
 static void extractTileFromNetwork(NeuralNetwork* networkTile, BlockSparseMatrix* inputTile,
-	BlockSparseMatrix* referenceTile, NeuralNetwork* network, BlockSparseMatrix* input,
-	BlockSparseMatrix* reference, const Tile& tile);
+	BlockSparseMatrix* referenceTile, NeuralNetwork* network, const BlockSparseMatrix* input,
+	const BlockSparseMatrix* reference, const Tile& tile);
 
 void NeuralNetworkSubgraphExtractor::extractTile(NeuralNetwork* networkTile, BlockSparseMatrix* inputTile,
 	BlockSparseMatrix* referenceTile, const Tile* tile)
@@ -79,8 +78,8 @@ void NeuralNetworkSubgraphExtractor::extractTile(NeuralNetwork* networkTile, Blo
 	extractTileFromNetwork(networkTile, inputTile, referenceTile, _network, _input, _output, *tile);
 }
 
-static void restoreTileToNetwork(NeuralNetwork* network, BlockSparseMatrix* input,
-	BlockSparseMatrix* reference, NeuralNetwork* networkTile, BlockSparseMatrix* inputTile,
+static void restoreTileToNetwork(NeuralNetwork* network, const BlockSparseMatrix* input,
+	const BlockSparseMatrix* reference, NeuralNetwork* networkTile, BlockSparseMatrix* inputTile,
 	BlockSparseMatrix* referenceTile, const Tile& tile);
 
 void NeuralNetworkSubgraphExtractor::restoreTile(NeuralNetwork* networkTile, BlockSparseMatrix* inputTile,
@@ -189,7 +188,7 @@ public:
 		if (isInput())     return (*input    ).blockSize();
 		if (isReference()) return (*reference).blockSize();
 		
-		return (*network)[layer-1].blockSize();
+		return (*network)[layer-1]->totalConnections();
 	}
 
 	size_t tileBase(size_t layer) const;
@@ -385,7 +384,7 @@ static IdVector getPredecessors(const NeuralNetwork* neuralNetwork,
 	}
 	else
 	{
-		blocks = (*neuralNetwork)[layerId - 1].blocks();
+		blocks = (*neuralNetwork)[layerId - 1]->getBlocks();
 	}
 	
 	size_t previousBlocks = 0;
@@ -396,7 +395,7 @@ static IdVector getPredecessors(const NeuralNetwork* neuralNetwork,
 	}
 	else
 	{
-		previousBlocks = (*neuralNetwork)[layerId - 2].blocks();
+		previousBlocks = (*neuralNetwork)[layerId - 2]->getBlocks();
 	}
 	
 	size_t beginId = (blockId * previousBlocks) / blocks;
@@ -427,7 +426,7 @@ static void formGraphOverNetwork(NeuronBlockGraph& graph,
 	size_t layerCount = 1;
 	for(auto& layer : *neuralNetwork)
 	{
-		for(size_t block = 0; block != layer.blocks(); ++block)
+		for(size_t block = 0; block != layer->getBlocks(); ++block)
 		{
 			graph.addBlock(layerCount, block);
 		}
@@ -448,7 +447,7 @@ static void formGraphOverNetwork(NeuronBlockGraph& graph,
 	layerCount = 1;
 	for(auto& layer : *neuralNetwork)
 	{
-		for(size_t block = 0; block != layer.blocks(); ++block)
+		for(size_t block = 0; block != layer->getBlocks(); ++block)
 		{
 			auto predecessors = getPredecessors(neuralNetwork, input, reference, layerCount, block);
 
@@ -624,11 +623,6 @@ static void getTiles(TileVector& tiles, const NeuralNetwork* neuralNetwork, cons
 static void configureTile(NeuralNetwork* networkTile, BlockSparseMatrix* inputTile,
 	BlockSparseMatrix* referenceTile, const Tile& tile)
 {
-	if(tile.network() != nullptr)
-	{
-		networkTile->setUseSparseCostFunction(tile.network()->isUsingSparseCostFunction());
-	}
-	
 	for(auto& block : tile.blocks)
 	{
 		if(block.isInput() && inputTile != nullptr)
@@ -641,17 +635,21 @@ static void configureTile(NeuralNetwork* networkTile, BlockSparseMatrix* inputTi
 		}
 		else
 		{
+			#if 0
 			networkTile->resize(std::max(networkTile->size(), block.layer));
 			(*networkTile)[block.layer - 1].resize(std::max((*networkTile)[block.layer - 1].blocks(), block.blockInTile() + 1));
+			#endif
+			assertM(false, "Not implemented.");
 		}
 	}
 }
 
 static void extractTileFromNetwork(NeuralNetwork* networkTile, BlockSparseMatrix* inputTile,
-	BlockSparseMatrix* referenceTile, NeuralNetwork* network, BlockSparseMatrix* input,
-	BlockSparseMatrix* reference, const Tile& tile)
+	BlockSparseMatrix* referenceTile, NeuralNetwork* network, const BlockSparseMatrix* input,
+	const BlockSparseMatrix* reference, const Tile& tile)
 {
 	configureTile(networkTile, inputTile, referenceTile, tile);
+	#if 0
 
 	for(auto& block : tile.blocks)
 	{
@@ -669,14 +667,17 @@ static void extractTileFromNetwork(NeuralNetwork* networkTile, BlockSparseMatrix
 			(*networkTile)[block.layer - 1].setBlockStep((*network)[block.layer - 1].blockStep());
 			(*networkTile)[block.layer - 1][block.blockInTile()] = std::move((*network)[block.layer - 1][block.blockInLayer()]);
 			(*networkTile)[block.layer - 1].at_bias(block.blockInTile()) = std::move((*network)[block.layer - 1].at_bias(block.blockInLayer()));
+			assertM(false, "Not implemented.");
 		}
 	}
+	#endif
 }
 
-static void restoreTileToNetwork(NeuralNetwork* network, BlockSparseMatrix* input,
-	BlockSparseMatrix* reference, NeuralNetwork* networkTile, BlockSparseMatrix* inputTile,
+static void restoreTileToNetwork(NeuralNetwork* network, const BlockSparseMatrix* input,
+	const BlockSparseMatrix* reference, NeuralNetwork* networkTile, BlockSparseMatrix* inputTile,
 	BlockSparseMatrix* referenceTile, const Tile& tile)
 {
+	#if 0
 	for(auto& block : tile.blocks)
 	{
 		if(block.isInput())
@@ -692,8 +693,10 @@ static void restoreTileToNetwork(NeuralNetwork* network, BlockSparseMatrix* inpu
 			(*network)[block.layer - 1].setBlockStep((*networkTile)[block.layer - 1].blockStep());
 			(*network)[block.layer - 1][block.blockInLayer()] = std::move((*networkTile)[block.layer - 1][block.blockInTile()]);
 			(*network)[block.layer - 1].at_bias(block.blockInLayer()) = std::move((*networkTile)[block.layer - 1].at_bias(block.blockInTile()));
+			assertM(false, "Not implemented.");
 		}
 	}
+	#endif
 }
 
 static void copyTileFromNetwork(NeuralNetwork* networkTile, const NeuralNetwork* network, const Tile& tile)
@@ -704,10 +707,13 @@ static void copyTileFromNetwork(NeuralNetwork* networkTile, const NeuralNetwork*
 	{
 		if(block.isLayer())
 		{
+			#if 0
 			// TODO: Encapsulate
 			(*networkTile)[block.layer - 1].setBlockStep((*network)[block.layer - 1].blockStep());
 			(*networkTile)[block.layer - 1][block.blockInTile()] = (*network)[block.layer - 1][block.blockInLayer()];
 			(*networkTile)[block.layer - 1].at_bias(block.blockInTile()) = (*network)[block.layer - 1].at_bias(block.blockInLayer());
+			#endif
+			assertM(false, "Not implemented.");
 		}
 	}
 }
@@ -741,8 +747,6 @@ static size_t getTotalTileConnections(const NeuralNetworkTile* tile)
 {
 	return tile->totalConnections();
 }
-
-#endif
 
 }
 
