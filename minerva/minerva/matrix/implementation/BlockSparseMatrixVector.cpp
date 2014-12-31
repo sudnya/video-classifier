@@ -275,7 +275,7 @@ void BlockSparseMatrixVector::push_back(const BlockSparseMatrix& m)
 	_matrix.push_back(m);
 }
 
-void BlockSparseMatrixVector::push_back(const BlockSparseMatrix&& m)
+void BlockSparseMatrixVector::push_back(BlockSparseMatrix&& m)
 {
 	_matrix.push_back(std::move(m));
 }

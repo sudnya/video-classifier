@@ -5,12 +5,13 @@
 */
 
 // Minerva Includes
-#include <minerva/neuralnetwork/interface/NeuralNetworkSubgraphExtractor.h>
-#include <minerva/neuralnetwork/interface/NeuralNetwork.h>
+#include <minerva/network/interface/NeuralNetworkSubgraphExtractor.h>
+#include <minerva/network/interface/NeuralNetwork.h>
 
 #include <minerva/optimizer/interface/GeneralDifferentiableSolverFactory.h>
 
 #include <minerva/matrix/interface/Matrix.h>
+#include <minerva/matrix/interface/BlockSparseMatrix.h>
 
 #include <minerva/util/interface/SystemCompatibility.h>
 #include <minerva/util/interface/debug.h>
@@ -22,8 +23,10 @@
 namespace minerva
 {
 
-namespace neuralnetwork
+namespace network
 {
+
+#if 0
 
 typedef NeuralNetworkTile Tile;
 typedef NeuralNetworkSubgraphExtractor::TileVector TileVector;
@@ -63,7 +66,7 @@ static void coalesceTiles(const NeuralNetwork* neuralNetwork, TileVector& tiles)
 
 void NeuralNetworkSubgraphExtractor::coalesceTiles()
 {
-	neuralnetwork::coalesceTiles(_network, _tiles);
+	network::coalesceTiles(_network, _tiles);
 }
 
 static void extractTileFromNetwork(NeuralNetwork* networkTile, BlockSparseMatrix* inputTile,
@@ -738,6 +741,8 @@ static size_t getTotalTileConnections(const NeuralNetworkTile* tile)
 {
 	return tile->totalConnections();
 }
+
+#endif
 
 }
 

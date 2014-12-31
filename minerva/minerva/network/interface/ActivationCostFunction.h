@@ -7,7 +7,7 @@
 #pragma once
 
 // Forward Declarations
-namespace minerva { namespace network { class BlockSparseMatrix; } }
+namespace minerva { namespace matrix { class BlockSparseMatrix; } }
 
 namespace minerva
 {
@@ -18,6 +18,9 @@ namespace network
 /*! \brief */
 class ActivationCostFunction
 {
+public:
+	typedef matrix::BlockSparseMatrix BlockSparseMatrix;
+
 public:
 	virtual ~ActivationCostFunction();
 

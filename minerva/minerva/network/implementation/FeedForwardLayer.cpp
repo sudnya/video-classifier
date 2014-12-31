@@ -12,6 +12,7 @@
 #include <minerva/network/interface/WeightCostFunction.h>
 
 #include <minerva/matrix/interface/BlockSparseMatrix.h>
+#include <minerva/matrix/interface/Matrix.h>
 
 #include <minerva/util/interface/debug.h>
 #include <minerva/util/interface/knobs.h>
@@ -23,6 +24,7 @@ namespace network
 {
 
 typedef matrix::BlockSparseMatrix BlockSparseMatrix;
+typedef matrix::BlockSparseMatrixVector BlockSparseMatrixVector;
 
 FeedForwardLayer::FeedForwardLayer(size_t blocks, size_t inputsPerBlock, size_t outputsPerBlock, size_t blockStep)
 : _parameters({BlockSparseMatrix(blocks, inputsPerBlock, outputsPerBlock, true), BlockSparseMatrix(blocks, 1, outputsPerBlock, false)}), 
@@ -72,7 +74,7 @@ BlockSparseMatrix FeedForwardLayer::runForward(const BlockSparseMatrix& m) const
 
 	auto output = unbiasedOutput.convolutionalAddBroadcastRow(_bias);
 	
-	auto activation = _activationFunction->apply(output);
+	auto activation = getActivationFunction()->apply(output);
 
 	if(util::isLogEnabled("FeedForwardLayer"))
 	{
@@ -93,11 +95,11 @@ BlockSparseMatrix FeedForwardLayer::runReverse(BlockSparseMatrixVector& gradient
 {
 	if(util::isLogEnabled("Layer"))
 	{
-		util::log("Layer") << " Running reverse propagation on matrix (" << m.rows()
-			<< " rows, " << m.columns() << " columns) through layer with dimensions ("
-			<< blocks() << " blocks, "
+		util::log("Layer") << " Running reverse propagation on matrix (" << deltas.rows()
+			<< " rows, " << deltas.columns() << " columns) through layer with dimensions ("
+			<< _weights.blocks() << " blocks, "
 			<< getInputCount() << " inputs, " << getOutputCount()
-			<< " outputs, " << blockStep() << " block step).\n";
+			<< " outputs, " << _blockStep << " block step).\n";
 		util::log("Layer") << "  layer: " << _weights.shapeString() << "\n";
   	}
 	
@@ -114,19 +116,19 @@ BlockSparseMatrix FeedForwardLayer::runReverse(BlockSparseMatrixVector& gradient
 	// add in the weight cost function term
 	if(getWeightCostFunction() != nullptr)
 	{
-		weightGradient = weightGradient.add(getWeightCostFunction()->applyDerivative(_weights));
+		weightGradient = weightGradient.add(getWeightCostFunction()->getGradient(_weights));
 	}
 
 	gradients.push_back(weightGradient);
 	
 	// compute gradient for the bias
-	auto biasGradient = transposedDelta.reduceSumAlongColumns().multiply(1.0f/samples);
+	auto biasGradient = transposedDeltas.reduceSumAlongColumns().multiply(1.0f/samples);
 	
 	gradients.push_back(biasGradient);
 	
 	// compute deltas for previous layer
 	auto deltasPropagatedReverse = deltas.reverseConvolutionalMultiply(_weights.transpose());
-	auto activationCostFunctionGradient = _costFunction->applyDerivative(activation);
+	auto activationCostFunctionGradient = getActivationCostFunction()->getGradient(activations);
 	
 	auto previousLayerDeltas = deltasPropagatedReverse.elementMultiply(activationCostFunctionGradient);
 
@@ -181,7 +183,7 @@ size_t FeedForwardLayer::getOutputBlockingFactor() const
 
 size_t FeedForwardLayer::getOutputCountForInputCount(size_t inputCount) const
 {
-	size_t outputCount = (inputCount / blockStep()) * (_weights.columnsPerBlock());
+	size_t outputCount = (inputCount / _blockStep) * (_weights.columnsPerBlock());
 
 	util::log("FeedForwardLayer") << _weights.shapeString()
 		<< ": Output count for input count " << inputCount
@@ -197,7 +199,7 @@ size_t FeedForwardLayer::totalNeurons()	const
 
 size_t FeedForwardLayer::totalConnections() const
 {
-	return totalWeights();
+	return _weights.size() + _bias.size();
 }
 
 size_t FeedForwardLayer::getFloatingPointOperationCount() const
@@ -220,8 +222,8 @@ Layer* FeedForwardLayer::sliceSubgraphConnectedToTheseOutputs(
 		blocks.insert(block);
 	}
 
-	auto layer = std::make_unique<FeedForwardLayer>(blocks.size(), getInputBlockingFactor(),
-		getOutputBlockingFactor(), blockStep());
+	std::unique_ptr<FeedForwardLayer> layer(new FeedForwardLayer(blocks.size(), getInputBlockingFactor(),
+		getOutputBlockingFactor(), _blockStep));
 
 	for(auto& block : blocks)
 	{

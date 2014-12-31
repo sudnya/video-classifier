@@ -33,12 +33,9 @@ public:
 	typedef matrix::Matrix                  Matrix;
 
 public:
-	CostAndGradientFunction(float initialCost = 0.0f, float costReductionFactor = 0.0f,
-		const SparseMatrixVectorFormat& format = SparseMatrixVectorFormat());
-	CostAndGradientFunction(float initialCost, float costReductionFactor,
-		const BlockSparseMatrixVector& format);
-	CostAndGradientFunction(float initialCost, float costReductionFactor,
-		const Matrix& format);
+	CostAndGradientFunction(const SparseMatrixVectorFormat& format = SparseMatrixVectorFormat());
+	CostAndGradientFunction(const BlockSparseMatrixVector& matrix);
+	CostAndGradientFunction(const Matrix& format);
 	virtual ~CostAndGradientFunction();
 
 public:
@@ -51,8 +48,6 @@ public:
 public:
 	/*! \brief The initial cost at the time the routine is called, can be ignored (set to 0.0f) */
 	float initialCost;
-	/*! \brief The stopping condition for the solver */
-	float costReductionFactor;
 
 public:
 	/*! \brief Structural parameters of the data structure */

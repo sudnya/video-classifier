@@ -15,8 +15,8 @@ namespace minerva
 namespace optimizer
 {
 
-NeuralNetworkSolver::NeuralNetworkSolver(BackPropagation* b)
-: m_backPropDataPtr(b)
+NeuralNetworkSolver::NeuralNetworkSolver(NeuralNetwork* n)
+: _network(n)
 {
 
 }
@@ -31,13 +31,13 @@ void NeuralNetworkSolver::solve()
     assertM(false, "Not implemented yet");
 }
 
-NeuralNetworkSolver* NeuralNetworkSolver::create(BackPropagation* d)
+NeuralNetworkSolver* NeuralNetworkSolver::create(NeuralNetwork* n)
 {
 	auto solverName = util::KnobDatabase::getKnobValue("Solver::Type",
 		"TiledConvolutionalSolver");
 
 	// Fall back to tiled solver
-	return new TiledConvolutionalSolver(d);
+	return new TiledConvolutionalSolver(n);
 }
 
 }

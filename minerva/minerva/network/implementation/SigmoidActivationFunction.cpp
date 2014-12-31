@@ -4,15 +4,20 @@
 	\brief  The header file for the SigmoidActivationFunction class.
 */
 
-#include <minerva/neuralnetwork/interface/SigmoidLinearActivationFunction.h>
+// Minerva Includes
+#include <minerva/network/interface/SigmoidActivationFunction.h>
+
+#include <minerva/matrix/interface/BlockSparseMatrix.h>
 
 namespace minerva
 {
 
-namespace neuralnetwork
+namespace network
 {
 
-SigmoidActivationFunction::~RectifiedActivationFunction()
+typedef matrix::BlockSparseMatrix BlockSparseMatrix;
+
+SigmoidActivationFunction::~SigmoidActivationFunction()
 {
 
 }

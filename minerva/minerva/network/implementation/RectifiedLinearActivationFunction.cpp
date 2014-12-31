@@ -4,15 +4,20 @@
 	\brief  The header file for the RectifiedLinearActivationFunction class.
 */
 
-#include <minerva/neuralnetwork/interface/RectifiedLinearActivationFunction.h>
+// Minerva Includes
+#include <minerva/network/interface/RectifiedLinearActivationFunction.h>
+
+#include <minerva/matrix/interface/BlockSparseMatrix.h>
 
 namespace minerva
 {
 
-namespace neuralnetwork
+namespace network
 {
 
-RectifiedLinearActivationFunction::~RectifiedActivationFunction()
+typedef matrix::BlockSparseMatrix BlockSparseMatrix;
+
+RectifiedLinearActivationFunction::~RectifiedLinearActivationFunction()
 {
 
 }

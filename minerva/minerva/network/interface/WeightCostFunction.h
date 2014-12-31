@@ -15,10 +15,13 @@ namespace minerva
 namespace network
 {
 
-class CostFunction
+class WeightCostFunction
 {
 public:
-	virtual ~CostFunction();
+	typedef matrix::BlockSparseMatrix BlockSparseMatrix;
+
+public:
+	virtual ~WeightCostFunction();
 
 public:
 	/*! \brief Run the cost function on the specified weights. */

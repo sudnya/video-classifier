@@ -33,8 +33,8 @@ public:
 
 public:
 	NeuralNetworkSubgraphExtractor(NeuralNetwork* network);
-	NeuralNetworkSubgraphExtractor(NeuralNetwork* network, BlockSparseMatrix* input,
-		BlockSparseMatrix* reference);
+	NeuralNetworkSubgraphExtractor(NeuralNetwork* network, const BlockSparseMatrix* input,
+		const BlockSparseMatrix* reference);
 
 	~NeuralNetworkSubgraphExtractor();
 

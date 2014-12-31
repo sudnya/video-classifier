@@ -52,6 +52,7 @@ public:
     virtual size_t getInputCount()  const = 0;
     virtual size_t getOutputCount() const = 0;
 
+    virtual size_t getBlocks()  const = 0;
     virtual size_t getInputBlockingFactor()  const = 0;
     virtual size_t getOutputBlockingFactor() const = 0;
 
@@ -84,18 +85,27 @@ public:
 	void setActivationFunction(ActivationFunction*);
 	/*! \brief Get the activation function, the layer retains ownership. */
 	ActivationFunction* getActivationFunction();
+	/*! \brief Get the activation function, the layer retains ownership. */
+	const ActivationFunction* getActivationFunction() const;
 
 public:
 	/*! \brief Set the activation cost function component, the layer takes ownership. */
 	void setActivationCostFunction(ActivationCostFunction*);
 	/*! \brief Get the activation cost function component, the layer retains ownership. */
 	ActivationCostFunction* getActivationCostFunction();
+	/*! \brief Get the activation cost function component, the layer retains ownership. */
+	const ActivationCostFunction* getActivationCostFunction() const;
 	
 public:
 	/*! \brief Set the weight cost function component, the layer takes ownership. */
 	void setWeightCostFunction(WeightCostFunction*);
 	/*! \brief Get the weight cost function component, the layer retains ownership. */
 	WeightCostFunction* getWeightCostFunction();
+	/*! \brief Get the weight cost function component, the layer retains ownership. */
+	const WeightCostFunction* getWeightCostFunction() const;
+
+public:
+	std::string shapeString() const;
 
 public:
 	Layer(const Layer& )           = delete;

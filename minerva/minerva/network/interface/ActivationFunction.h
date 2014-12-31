@@ -6,6 +6,9 @@
 
 #pragma once
 
+// Forward Declarations
+namespace minerva { namespace matrix { class BlockSparseMatrix; } }
+
 namespace minerva
 {
 
@@ -14,6 +17,9 @@ namespace network
 
 class ActivationFunction
 {
+public:
+	typedef matrix::BlockSparseMatrix BlockSparseMatrix;
+
 public:
 	virtual ~ActivationFunction();
 

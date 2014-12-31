@@ -40,6 +40,7 @@ public:
     virtual size_t getInputCount()  const;
     virtual size_t getOutputCount() const;
 
+    virtual size_t getBlocks() const;
     virtual size_t getInputBlockingFactor()  const;
     virtual size_t getOutputBlockingFactor() const;
 
@@ -63,6 +64,7 @@ public:
 
 public:
 	virtual Layer* clone() const;
+	virtual Layer* mirror() const;
 
 private:
 	BlockSparseMatrixVector _parameters;

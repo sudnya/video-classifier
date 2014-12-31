@@ -7,8 +7,8 @@
 #pragma once
 
 // Forward Declaration
-namespace minerva { namespace neuralnetwork { class NeuralNetwork; } }
-namespace minerva { namespace video         { class Image;         } }
+namespace minerva { namespace network { class NeuralNetwork; } }
+namespace minerva { namespace video   { class Image;         } }
 
 namespace minerva
 {
@@ -19,7 +19,7 @@ namespace visualization
 class NeuronVisualizer
 {
 public:
-	typedef neuralnetwork::NeuralNetwork NeuralNetwork;
+	typedef network::NeuralNetwork NeuralNetwork;
 	typedef video::Image Image;
 
 public:

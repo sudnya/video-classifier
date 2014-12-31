@@ -18,6 +18,7 @@ namespace minerva { namespace matrix        { class Matrix;                  } }
 namespace minerva { namespace matrix        { class BlockSparseMatrix;       } }
 namespace minerva { namespace matrix        { class BlockSparseMatrixVector; } }
 namespace minerva { namespace optimizer     { class NeuralNetworkSolver;     } }
+namespace minerva { namespace optimizer     { class SparseMatrixFormat;      } }
 namespace minerva { namespace util          { class TarArchive;              } }
 
 namespace minerva
@@ -32,9 +33,12 @@ public:
     typedef matrix::BlockSparseMatrix       BlockSparseMatrix;
     typedef matrix::BlockSparseMatrixVector BlockSparseMatrixVector;
 	typedef optimizer::NeuralNetworkSolver  NeuralNetworkSolver;
+	typedef optimizer::SparseMatrixFormat   SparseMatrixFormat;
+	typedef std::vector<SparseMatrixFormat> SparseMatrixVectorFormat;
 
 public:
     NeuralNetwork();
+	~NeuralNetwork();
 
 public:
 	/*! \brief Initialize the network weights */
@@ -52,14 +56,21 @@ public:
 
 public:
 	/*! \brief Get the cost and gradient. */
-	float getCostAndGradient(BlockSparseMatrixVector& gradient, const BlockSparseMatrix& input, const BlockSparseMatrix& reference);
+	float getCostAndGradient(BlockSparseMatrixVector& gradient, const BlockSparseMatrix& input, const BlockSparseMatrix& reference) const;
 	/*! \brief Get the cost. */
-	float getCost(const BlockSparseMatrix& input, const BlockSparseMatrix& reference);
+	float getCost(const BlockSparseMatrix& input, const BlockSparseMatrix& reference) const;
 	
 	/*! \brief Get the cost and gradient. */
-	float getCostAndGradient(Matrix& gradient, const Matrix& input, const Matrix& reference);
+	float getCostAndGradient(BlockSparseMatrixVector& gradient, const Matrix& input, const Matrix& reference) const;
 	/*! \brief Get the cost. */
-	float getCost(const Matrix& input, const Matrix& reference);
+	float getCost(const Matrix& input, const Matrix& reference) const;
+
+public:
+	/*! \brief Get the cost and gradient with respect to the inputs. */
+	float getInputCostAndGradient(BlockSparseMatrix& gradient, const BlockSparseMatrix& input, const BlockSparseMatrix& reference) const;
+	
+	/*! \brief Get the cost and gradient. */
+	float getInputCostAndGradient(BlockSparseMatrixVector& gradient, const Matrix& input, const Matrix& reference) const;
 
 public:
 	/*! \brief Run input samples through the network, return the output */
@@ -145,16 +156,32 @@ public:
     NeuralNetwork getSubgraphConnectedToThisOutput(unsigned neuron) const;
 
 public:
+	/*! \brief Move the weight matrices outside of the network. */
+	void extractWeights(BlockSparseMatrixVector&  weights);
+	/*! \brief Replace the weight matrices contained in the network with the specified weights */
+	void restoreWeights(BlockSparseMatrixVector&& weights);
+	/*! \brief Get the sparse matrix format used by the weight matrices */
+	SparseMatrixVectorFormat getWeightFormat() const;
+
+public:	
+	/*! \brief Get the sparse matrix format used by the input matrices */
+	SparseMatrixVectorFormat getInputFormat() const;
+
+public:
 	/*! \brief Set the network cost function, the network takes ownership */
 	void setCostFunction(CostFunction*);
 	/*! \brief Get the network cost function, the network retains ownership */
 	CostFunction* getCostFunction();
+	/*! \brief Get the network cost function, the network retains ownership */
+	const CostFunction* getCostFunction() const;
 
 public:
 	/*! \brief Set the network cost function, the network takes ownership */
 	void setSolver(NeuralNetworkSolver*);
 	/*! \brief Get the network cost function, the network retains ownership */
 	NeuralNetworkSolver* getSolver();
+	/*! \brief Get the network cost function, the network retains ownership */
+	const NeuralNetworkSolver* getSolver() const;
 
 public:
 	/*! \brief Save the network to the tar file and header. */
@@ -169,7 +196,7 @@ public:
 	NeuralNetwork(const NeuralNetwork& );
 	NeuralNetwork& operator=(const NeuralNetwork&);
 
-private:
+public:
     BlockSparseMatrix convertToBlockSparseForLayerInput(const Layer& layer, const Matrix& m) const;
     BlockSparseMatrix convertToBlockSparseForLayerOutput(const Layer& layer, const Matrix& m) const;
     BlockSparseMatrix convertOutputToBlockSparse(const Matrix& m) const;

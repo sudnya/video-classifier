@@ -4,7 +4,11 @@
  */
 
 // Minerva Includes
-#include <minerva/neuralnetwork/interface/Layer.h>
+#include <minerva/network/interface/Layer.h>
+
+#include <minerva/network/interface/ActivationCostFunction.h>
+#include <minerva/network/interface/ActivationFunction.h>
+#include <minerva/network/interface/WeightCostFunction.h>
 
 namespace minerva
 {

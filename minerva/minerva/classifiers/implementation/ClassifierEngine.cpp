@@ -8,10 +8,6 @@
 #include <minerva/classifiers/interface/ClassifierEngine.h>
 
 #include <minerva/network/interface/NeuralNetwork.h>
-#include <minerva/network/interface/Layer.h>
-#include <minerva/network/interface/CostFunction.h>
-
-#include <minerva/optimizer/interface/NeuralNetworkSolver.h>
 
 #include <minerva/model/interface/Model.h>
 

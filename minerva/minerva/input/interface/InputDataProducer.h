@@ -52,8 +52,8 @@ public:
 	virtual size_t getUniqueSampleCount() const = 0;
 	
 public:
-	void setEpochs(size_t epochs);
-	bool getEpochs() const;
+	void   setEpochs(size_t epochs);
+	size_t getEpochs() const;
 
 public:
 	void   setBatchSize(size_t batchSize);

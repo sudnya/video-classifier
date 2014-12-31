@@ -23,6 +23,9 @@ class CostFunctionFactory
 {
 public:
 	static CostFunction* create(const std::string& costFunctionName);
+	
+	// Create the default cost function
+	static CostFunction* create();
 
 };
 

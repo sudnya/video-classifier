@@ -9,6 +9,8 @@
 
 #include <minerva/model/interface/Model.h>
 
+#include <minerva/network/interface/NeuralNetwork.h>
+
 #include <minerva/util/interface/Knobs.h>
 
 namespace minerva
@@ -20,9 +22,9 @@ namespace input
 InputDataProducer::InputDataProducer()
 :  _requiresLabeledData(false), _model(nullptr)
 {
-	_allowSamplingWithReplacement = util::KnobDatabase::getKnobValue("InputDataProducer::AllowSamplingWithReplacement", true);
-	_maximumSamplesToRun          = util::KnobDatabase::getKnobValue("InputDataProducer::MaximumSamplesToRun", 1e9);
-	_batchSize                    = util::KnobDatabase::getKnobValue("InputDataProducer::BatchSize", 64);;
+	_epochs              = util::KnobDatabase::getKnobValue("InputDataProducer::Epochs", 60);
+	_maximumSamplesToRun = util::KnobDatabase::getKnobValue("InputDataProducer::MaximumSamplesToRun", 1e9);
+	_batchSize           = util::KnobDatabase::getKnobValue("InputDataProducer::BatchSize", 64);;
 }
 
 InputDataProducer::~InputDataProducer()
@@ -30,14 +32,14 @@ InputDataProducer::~InputDataProducer()
 
 }
 
-void InputDataProducer::setAllowSamplingWithReplacement(bool allowReplacement)
+void InputDataProducer::setEpochs(size_t e)
 {
-	_allowSamplingWithReplacement = allowReplacement;
+	_epochs = e;
 }
 
-bool InputDataProducer::getAllowSamplingWithReplacement() const
+size_t InputDataProducer::getEpochs() const
 {
-	return _allowSamplingWithReplacement;
+	return _epochs;
 }
 
 void InputDataProducer::setBatchSize(size_t batchSize)
@@ -92,7 +94,7 @@ util::StringVector InputDataProducer::getOutputLabels() const
 	for(size_t output = 0;
 		output != _model->rbegin()->getOutputCount(); ++output)
 	{
-		labels.push_back(_model->rbegin()->getLabelForOutputNeuron(output));
+		labels.push_back(_model->getOutputLabel(output));
 	}
 	
 	return labels;

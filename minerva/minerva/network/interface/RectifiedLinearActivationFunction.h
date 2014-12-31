@@ -6,6 +6,9 @@
 
 #pragma once
 
+// Forward Declarations
+namespace minerva { namespace matrix { class BlockSparseMatrix; } }
+
 namespace minerva
 {
 
@@ -15,7 +18,10 @@ namespace network
 class RectifiedLinearActivationFunction
 {
 public:
-	virtual ~RectifiedActivationFunction();
+	typedef matrix::BlockSparseMatrix BlockSparseMatrix;
+
+public:
+	virtual ~RectifiedLinearActivationFunction();
 
 public:
 	/*! \brief Run the activation function on the specified input. */

@@ -7,7 +7,7 @@
 // Minerva Includes
 #include <minerva/video/interface/ImageVector.h>
 
-#include <minerva/neuralnetwork/interface/NeuralNetwork.h>
+#include <minerva/network/interface/NeuralNetwork.h>
 
 #include <minerva/util/interface/debug.h>
 #include <minerva/util/interface/math.h>

@@ -100,6 +100,8 @@ static bool gradientCheck(NeuralNetwork& network, std::default_random_engine& en
 	auto input     = generateInput(network, engine);
 	auto reference = generateReference(network, engine);
 	
+	BlockSparseMatrixVector gradient;
+	
 	float cost = network.getCostAndGradient(gradient, input, reference);
 	
 	for(auto& layer : network)

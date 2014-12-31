@@ -21,9 +21,8 @@ typedef matrix::Matrix                  Matrix;
 typedef matrix::BlockSparseMatrix       BlockSparseMatrix;
 typedef matrix::BlockSparseMatrixVector BlockSparseMatrixVector;
 
-CostAndGradientFunction::CostAndGradientFunction(float i, float c,
-	const SparseMatrixVectorFormat& f)
-: initialCost(i), costReductionFactor(c), format(f)
+CostAndGradientFunction::CostAndGradientFunction(const SparseMatrixVectorFormat& f)
+: format(f)
 {
 
 }
@@ -49,16 +48,14 @@ static SparseMatrixVectorFormat convertToFormat(const Matrix& matrix)
 	return format;
 }
 
-CostAndGradientFunction::CostAndGradientFunction(float i, float c,
-	const BlockSparseMatrixVector& vector)
-: initialCost(i), costReductionFactor(c), format(convertToFormat(vector))
+CostAndGradientFunction::CostAndGradientFunction(const BlockSparseMatrixVector& vector)
+: format(convertToFormat(vector))
 {
 
 }
 
-CostAndGradientFunction::CostAndGradientFunction(float i, float c,
-	const Matrix& matrix)
-: initialCost(i), costReductionFactor(c), format(convertToFormat(matrix))
+CostAndGradientFunction::CostAndGradientFunction(const Matrix& matrix)
+: format(convertToFormat(matrix))
 {
 
 }

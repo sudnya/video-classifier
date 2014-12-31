@@ -4,16 +4,21 @@
  	\brief  The implementation of the RecurrentLayer class.
 */
 
-#pragma once
-
 // Minerva Includes
-#include <minerva/neuralnetwork/interface/RecurrentLayer.h>
+#include <minerva/network/interface/RecurrentLayer.h>
+
+#include <minerva/matrix/interface/BlockSparseMatrix.h>
+
+#include <minerva/util/interface/debug.h>
 
 namespace minerva
 {
 
-namespace neuralnetwork
+namespace network
 {
+
+typedef matrix::BlockSparseMatrix BlockSparseMatrix;
+typedef matrix::BlockSparseMatrixVector BlockSparseMatrixVector;
 
 RecurrentLayer::RecurrentLayer()
 {

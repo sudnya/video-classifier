@@ -107,8 +107,12 @@ public:
 
 	BlockSparseMatrix log() const;
 	BlockSparseMatrix negate() const;
+
 	BlockSparseMatrix sigmoid() const;
 	BlockSparseMatrix sigmoidDerivative() const;
+	
+	BlockSparseMatrix rectifiedLinear() const;
+	BlockSparseMatrix rectifiedLinearDerivative() const;
 	
 	BlockSparseMatrix klDivergence(float sparsity) const;
 	BlockSparseMatrix klDivergenceDerivative(float sparsity) const;
@@ -121,6 +125,8 @@ public:
 	void logSelf();
     void sigmoidSelf();
     void sigmoidDerivativeSelf();
+    void rectifiedLinearSelf();
+    void rectifiedLinearDerivativeSelf();
 	void minSelf(float f);
 	void maxSelf(float f);
 	void assignSelf(float f);

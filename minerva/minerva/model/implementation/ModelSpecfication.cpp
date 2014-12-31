@@ -11,9 +11,6 @@
 #include <minerva/network/interface/NeuralNetwork.h>
 #include <minerva/network/interface/Layer.h>
 #include <minerva/network/interface/LayerFactory.h>
-#include <minerva/network/interface/CostFunction.h>
-
-#include <minerva/optimizer/interface/NeuralNetworkSolver.h>
 
 #include <minerva/util/interface/json.h>
 

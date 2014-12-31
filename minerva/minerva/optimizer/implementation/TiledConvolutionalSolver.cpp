@@ -11,8 +11,8 @@
 #include <minerva/optimizer/interface/CostAndGradientFunction.h>
 #include <minerva/optimizer/interface/SparseMatrixFormat.h>
 
-#include <minerva/neuralnetwork/interface/NeuralNetwork.h>
-#include <minerva/neuralnetwork/interface/NeuralNetworkSubgraphExtractor.h>
+#include <minerva/network/interface/NeuralNetwork.h>
+#include <minerva/network/interface/NeuralNetworkSubgraphExtractor.h>
 
 #include <minerva/matrix/interface/Matrix.h>
 #include <minerva/matrix/interface/BlockSparseMatrix.h>
@@ -33,15 +33,14 @@ namespace minerva
 namespace optimizer
 {
 
-typedef neuralnetwork::BackPropagation BackPropagation;
-typedef neuralnetwork::NeuralNetwork NeuralNetwork;
-typedef neuralnetwork::NeuralNetworkSubgraphExtractor NeuralNetworkSubgraphExtractor;
+typedef network::NeuralNetwork NeuralNetwork;
+typedef network::NeuralNetworkSubgraphExtractor NeuralNetworkSubgraphExtractor;
 typedef matrix::Matrix Matrix;
 typedef matrix::BlockSparseMatrix BlockSparseMatrix;
 typedef GeneralDifferentiableSolver::BlockSparseMatrixVector BlockSparseMatrixVector;
 
-TiledConvolutionalSolver::TiledConvolutionalSolver(NeuralNetwork* b)
-: NeuralNetworkSolver(b)
+TiledConvolutionalSolver::TiledConvolutionalSolver(NeuralNetwork* n)
+: NeuralNetworkSolver(n)
 {
 
 }
@@ -49,8 +48,8 @@ TiledConvolutionalSolver::TiledConvolutionalSolver(NeuralNetwork* b)
 class TiledNeuralNetworkCostAndGradient : public CostAndGradientFunction
 {
 public:
-	TiledNeuralNetworkCostAndGradient(const BackPropagation* b)
-	: CostAndGradientFunction(0.0f, 0.0f, b->getWeightFormat()), _backPropDataPtr(b)
+	TiledNeuralNetworkCostAndGradient(NeuralNetwork* n, const BlockSparseMatrix* i, const BlockSparseMatrix* r)
+	: CostAndGradientFunction(n->getWeightFormat()), _network(n), _input(i), _reference(r)
 	{
 	
 	}
@@ -62,16 +61,18 @@ public:
 	
 public:
 	virtual float computeCostAndGradient(BlockSparseMatrixVector& gradient,
-		const BlockSparseMatrixVector& inputs) const
+		const BlockSparseMatrixVector& weights) const
 	{
-		gradient = _backPropDataPtr->computePartialDerivativesForNewWeights(inputs);
+		_network->restoreWeights(std::move(const_cast<BlockSparseMatrixVector&>(weights)));
+		
+		float newCost = _network->getCostAndGradient(gradient, *_input, *_reference);
+		
+		_network->extractWeights(const_cast<BlockSparseMatrixVector&>(weights));
 		
 		if(util::isLogEnabled("TiledConvolutionalSolver::Detail"))
 		{	
 			util::log("TiledConvolutionalSolver::Detail") << " new gradient is : " << gradient.front().toString();
 		}
-		
-		float newCost = _backPropDataPtr->computeCostForNewWeights(inputs);
 		
 		util::log("TiledConvolutionalSolver::Detail") << " new cost is : " << newCost << "\n";
 		
@@ -79,44 +80,37 @@ public:
 	}
 
 private:
-	const BackPropagation* _backPropDataPtr;
+	NeuralNetwork*           _network;
+	const BlockSparseMatrix* _input;
+	const BlockSparseMatrix* _reference;
 };
 
-static float differentiableSolver(BackPropagation* backPropData)
+static float differentiableSolver(NeuralNetwork* network, const BlockSparseMatrix* input, const BlockSparseMatrix* reference)
 {
 	util::log("TiledConvolutionalSolver") << "  starting general solver\n";
 		
-	auto solver = std::make_unique(GeneralDifferentiableSolverFactory::create());
+	std::unique_ptr<GeneralDifferentiableSolver> solver(GeneralDifferentiableSolverFactory::create());
 	
 	float newCost = std::numeric_limits<float>::infinity();
 	
-	if(solver == nullptr)
+	if(!solver)
 	{
 		util::log("TiledConvolutionalSolver") << "   failed to allocate solver\n";
 		return newCost;
 	}
 	
-	auto weights = backPropData->getWeights();
-
-	try
-	{
-		TiledNeuralNetworkCostAndGradient costAndGradient(backPropData);
-		
-		newCost = solver->solve(weights, costAndGradient);
-	}
-	catch(...)
-	{
-		util::log("TiledConvolutionalSolver") << "   solver produced an error.\n";
-		delete solver;
-		throw;
-	}
+	BlockSparseMatrixVector weights;
 	
-	delete solver;
+	network->extractWeights(weights);
+
+	TiledNeuralNetworkCostAndGradient costAndGradient(network, input, reference);
+	
+	newCost = solver->solve(weights, costAndGradient);
 	
 	util::log("TiledConvolutionalSolver") << "   solver produced new cost: "
 		<< newCost << ".\n";
 
-	backPropData->setWeights(weights);
+	network->restoreWeights(std::move(weights));
 
 	return newCost;
 }
@@ -125,22 +119,9 @@ static float differentiableSolver(BackPropagation* backPropData)
 void TiledConvolutionalSolver::solve()
 {
     util::log("TiledConvolutionalSolver") << "Solve\n";
-	
-	// Accuracy 
-	if(util::isLogEnabled("TiledConvolutionalSolver::Detail"))
-	{
-		util::log("TiledConvolutionalSolver::Detail") << " accuracy before training: "
-			<< m_backPropDataPtr->getNeuralNetwork()->computeAccuracy(*m_backPropDataPtr->getInput(),
-				*m_backPropDataPtr->getReferenceOutput()) << "\n";
-	}
-
-	// Save the initial back prop parameters	
-	auto neuralNetwork = m_backPropDataPtr->getNeuralNetwork();
-	auto input         = m_backPropDataPtr->getInput();
-	auto reference     = m_backPropDataPtr->getReferenceOutput();
 
 	// Tile the network
-	NeuralNetworkSubgraphExtractor extractor(neuralNetwork, input, reference);
+	NeuralNetworkSubgraphExtractor extractor(_network, _input, _reference);
 	
 	extractor.coalesceTiles();
 	
@@ -150,34 +131,25 @@ void TiledConvolutionalSolver::solve()
 		for(auto& tile : extractor)
 		{
 			NeuralNetwork     networkTile;
-			BlockSparseMatrix inputTile(input->isRowSparse());
-			BlockSparseMatrix referenceTile(reference->isRowSparse());
+			BlockSparseMatrix inputTile(_input->isRowSparse());
+			BlockSparseMatrix referenceTile(_reference->isRowSparse());
 			
 			util::log("TiledConvolutionalSolver") << " solving tile " << extractor.getTileIndex(tile)
 				<< " out of " << extractor.tiles() << " with "
 				<< extractor.getTotalConnections(tile) << " connections\n";
 			
 			extractor.extractTile(&networkTile, &inputTile, &referenceTile, tile);
-			
-			m_backPropDataPtr->setNeuralNetwork(&networkTile);
-			m_backPropDataPtr->setInput(&inputTile);
-			m_backPropDataPtr->setReferenceOutput(&referenceTile);
 
-			differentiableSolver(m_backPropDataPtr);
+			differentiableSolver(&networkTile, &inputTile, &referenceTile);
 			
 			extractor.restoreTile(&networkTile, &inputTile, &referenceTile, tile);
 		}
-		
-		// Restore the back prop parameters
-		m_backPropDataPtr->setNeuralNetwork(neuralNetwork);
-		m_backPropDataPtr->setInput(input);
-		m_backPropDataPtr->setReferenceOutput(reference);
 	}
 	else
 	{
 		util::log("TiledConvolutionalSolver")
 			<< " no need for tiling, solving entire network at once.\n";
-		differentiableSolver(m_backPropDataPtr);
+		differentiableSolver(_network, _input, _reference);
 	}
 }
 

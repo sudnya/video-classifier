@@ -93,7 +93,8 @@ public:
 
 public:
 	void push_back(const BlockSparseMatrix&  );
-	void push_back(const BlockSparseMatrix&& );
+	void push_back(BlockSparseMatrix&&);
+	void push_back(BlockSparseMatrixVector&&);
 
 public:
 	BlockSparseMatrix& back();
