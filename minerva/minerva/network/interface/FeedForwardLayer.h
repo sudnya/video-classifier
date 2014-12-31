@@ -66,6 +66,9 @@ public:
 	virtual Layer* clone() const;
 	virtual Layer* mirror() const;
 
+public:
+	virtual std::string getTypeName() const;
+
 private:
 	BlockSparseMatrixVector _parameters;
 

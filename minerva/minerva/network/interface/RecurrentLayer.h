@@ -59,6 +59,9 @@ public:
 	virtual void save(util::TarArchive& archive) const;
 	virtual void load(const util::TarArchive& archive, const std::string& name);
 
+public:
+	virtual std::string getTypeName() const;
+
 };
 
 }

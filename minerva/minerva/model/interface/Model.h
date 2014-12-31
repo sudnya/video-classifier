@@ -45,16 +45,19 @@ public:
 
 public:
 	void setNeuralNetwork(const std::string& name, const NeuralNetwork& n);
-	void setInputImageResolution(unsigned int x, unsigned int y, unsigned int colors);
+	void setInputImageResolution(size_t x, size_t y, size_t colors);
 
 public:
 	void setOutputLabel(size_t output, const std::string& label);
 	std::string getOutputLabel(size_t output) const;
 
 public:
-	unsigned int xPixels() const;
-	unsigned int yPixels() const;
-	unsigned int colors()  const;
+	size_t getOutputCount() const;
+
+public:
+	size_t xPixels() const;
+	size_t yPixels() const;
+	size_t colors()  const;
 
 public:
 	void save() const;
@@ -85,15 +88,6 @@ private:
 	typedef std::map<std::string, iterator> NeuralNetworkMap;
 	typedef std::map<size_t, std::string> LabelMap;
 	typedef std::vector<std::string> StringVector;
-
-private:
-	NeuralNetworkList _neuralNetworks;
-	NeuralNetworkMap  _neuralNetworkMap;
-	LabelMap          _outputLabels;
-
-	unsigned int _xPixels;
-	unsigned int _yPixels;
-	unsigned int _colors;
 	
 private:
 	void _saveInputDescription(util::TarArchive& tar) const;
@@ -105,6 +99,15 @@ private:
 
 private:
 	StringVector _getNetworkList(util::TarArchive& tar);
+
+private:
+	NeuralNetworkList _neuralNetworks;
+	NeuralNetworkMap  _neuralNetworkMap;
+	LabelMap          _outputLabels;
+
+	size_t _xPixels;
+	size_t _yPixels;
+	size_t _colors;
 	
 };
 

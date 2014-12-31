@@ -10,6 +10,9 @@
 #include <minerva/network/interface/ActivationFunction.h>
 #include <minerva/network/interface/WeightCostFunction.h>
 
+// Standard Library Includes
+#include <sstream>
+
 namespace minerva
 {
 
@@ -31,12 +34,22 @@ ActivationFunction* Layer::getActivationFunction()
 	return _activationFunction.get();
 }
 
+const ActivationFunction* Layer::getActivationFunction() const
+{
+	return _activationFunction.get();
+}
+
 void Layer::setActivationCostFunction(ActivationCostFunction* f)
 {
 	_activationCostFunction.reset(f);
 }
 
 ActivationCostFunction* Layer::getActivationCostFunction()
+{
+	return _activationCostFunction.get();
+}
+
+const ActivationCostFunction* Layer::getActivationCostFunction() const
 {
 	return _activationCostFunction.get();
 }
@@ -49,6 +62,20 @@ void Layer::setWeightCostFunction(WeightCostFunction* f)
 WeightCostFunction* Layer::getWeightCostFunction()
 {
 	return _weightCostFunction.get();
+}
+
+const WeightCostFunction* Layer::getWeightCostFunction() const
+{
+	return _weightCostFunction.get();
+}
+
+std::string Layer::shapeString() const
+{
+	std::stringstream stream;
+	
+	stream << "(" << getTypeName() << " type, " << getBlocks() << " blocks, " << getInputBlockingFactor() << " inputs, " << getOutputBlockingFactor() << " outputs)";
+
+	return stream.str();
 }
 
 }

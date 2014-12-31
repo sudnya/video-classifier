@@ -27,6 +27,12 @@ BlockSparseMatrixVector::BlockSparseMatrixVector(size_t elements, const BlockSpa
 
 }
 
+BlockSparseMatrixVector::BlockSparseMatrixVector(std::initializer_list<BlockSparseMatrix> l)
+: _matrix(l)
+{
+
+}
+
 BlockSparseMatrixVector::BlockSparseMatrixVector(const BlockSparseMatrixVector& m)
 : _matrix(m._matrix)
 {
@@ -278,6 +284,14 @@ void BlockSparseMatrixVector::push_back(const BlockSparseMatrix& m)
 void BlockSparseMatrixVector::push_back(BlockSparseMatrix&& m)
 {
 	_matrix.push_back(std::move(m));
+}
+
+void BlockSparseMatrixVector::push_back(BlockSparseMatrixVector&& v)
+{
+	for(auto& m : v)
+	{
+		_matrix.push_back(std::move(m));	
+	}
 }
 
 BlockSparseMatrix& BlockSparseMatrixVector::back()

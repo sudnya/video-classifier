@@ -22,9 +22,9 @@ namespace input
 InputDataProducer::InputDataProducer()
 :  _requiresLabeledData(false), _model(nullptr)
 {
-	_epochs              = util::KnobDatabase::getKnobValue("InputDataProducer::Epochs", 60);
+	_epochs              = util::KnobDatabase::getKnobValue("InputDataProducer::Epochs",               60);
 	_maximumSamplesToRun = util::KnobDatabase::getKnobValue("InputDataProducer::MaximumSamplesToRun", 1e9);
-	_batchSize           = util::KnobDatabase::getKnobValue("InputDataProducer::BatchSize", 64);;
+	_batchSize           = util::KnobDatabase::getKnobValue("InputDataProducer::BatchSize",            64);
 }
 
 InputDataProducer::~InputDataProducer()
@@ -91,8 +91,7 @@ util::StringVector InputDataProducer::getOutputLabels() const
 {
 	util::StringVector labels;
 	
-	for(size_t output = 0;
-		output != _model->rbegin()->getOutputCount(); ++output)
+	for(size_t output = 0; output != _model->getOutputCount(); ++output)
 	{
 		labels.push_back(_model->getOutputLabel(output));
 	}

@@ -81,6 +81,9 @@ public:
 	virtual Layer* mirror() const = 0;
 
 public:
+	virtual std::string getTypeName() const = 0;
+
+public:
 	/*! \brief Set the activation function, the layer takes ownership. */
 	void setActivationFunction(ActivationFunction*);
 	/*! \brief Get the activation function, the layer retains ownership. */

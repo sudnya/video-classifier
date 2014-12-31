@@ -38,6 +38,11 @@ NeuralNetwork::NeuralNetwork()
 
 }
 
+NeuralNetwork::~NeuralNetwork()
+{
+
+}
+
 void NeuralNetwork::initializeRandomly(std::default_random_engine& engine, float epsilon)
 {
 	util::log("NeuralNetwork") << "Initializing neural network randomly.\n";

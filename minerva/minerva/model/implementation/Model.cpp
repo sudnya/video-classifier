@@ -77,26 +77,44 @@ void Model::setNeuralNetwork(
 		*_neuralNetworkMap[name] = n;
 	}
 }
+	
+void Model::setOutputLabel(size_t output, const std::string& label)
+{
+	_outputLabels[output] = label;
+}
 
-void Model::setInputImageResolution(unsigned int x,
-	unsigned int y, unsigned int c)
+std::string Model::getOutputLabel(size_t output) const
+{
+	auto label = _outputLabels.find(output);
+	
+	assert(label != _outputLabels.end());
+	
+	return label->second;
+}
+
+size_t Model::getOutputCount() const
+{
+	return _outputLabels.size();
+}
+
+void Model::setInputImageResolution(size_t x, size_t y, size_t c)
 {
 	_xPixels = x;
 	_yPixels = y;
 	_colors  = c;
 }
 
-unsigned int Model::xPixels() const
+size_t Model::xPixels() const
 {
 	return _xPixels;
 }
 
-unsigned int Model::yPixels() const
+size_t Model::yPixels() const
 {
 	return _yPixels;
 }
 
-unsigned int Model::colors() const
+size_t Model::colors() const
 {
 	return _colors;
 }
@@ -188,6 +206,31 @@ Model::reverse_iterator Model::rend()
 Model::const_reverse_iterator Model::rend() const
 {
 	return _neuralNetworks.rend();
+}
+	
+void Model::_saveInputDescription(util::TarArchive& tar) const
+{
+	assertM(false, "Not implemented.");
+}
+
+void Model::_saveOutputDescription(util::TarArchive& tar) const
+{
+	assertM(false, "Not implemented.");
+}
+
+void Model::_loadInputDescription(util::TarArchive& tar)
+{
+	assertM(false, "Not implemented.");
+}
+
+void Model::_loadOutputDescription(util::TarArchive& tar)
+{
+	assertM(false, "Not implemented.");
+}
+
+Model::StringVector Model::_getNetworkList(util::TarArchive& tar)
+{
+	assertM(false, "Not implemented.");
 }
 
 }
