@@ -6,11 +6,15 @@
 
 #pragma once
 
+// Standard Library
+#include <string>
+
 // Forward Declarations
-namespace minerva { namespace neuralnetwork { class Layer; } }
+namespace minerva { namespace network { class Layer; } }
 
 namespace minerva
 {
+
 namespace network
 {
 
@@ -22,5 +26,6 @@ public:
 };
 
 }
+
 }
 

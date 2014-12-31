@@ -11,6 +11,7 @@
 #include <minerva/network/interface/Layer.h>
 
 #include <minerva/optimizer/interface/NeuralNetworkSolver.h>
+#include <minerva/optimizer/interface/SparseMatrixFormat.h>
 
 #include <minerva/matrix/interface/Matrix.h>
 #include <minerva/matrix/interface/BlockSparseMatrixVector.h>
@@ -174,6 +175,11 @@ NeuralNetwork::BlockSparseMatrix NeuralNetwork::runInputs(const BlockSparseMatri
 void NeuralNetwork::addLayer(Layer* l)
 {
 	_layers.push_back(LayerPointer(l));
+}
+   
+void NeuralNetwork::addLayer(std::unique_ptr<Layer>&& l)
+{
+	_layers.push_back(std::move(l));
 }
 
 void NeuralNetwork::clear()
@@ -367,6 +373,36 @@ NeuralNetwork NeuralNetwork::getSubgraphConnectedToThisOutput(
 	
 	return extractor.copySubgraphConnectedToThisOutput(neuron);
 }
+
+void NeuralNetwork::extractWeights(BlockSparseMatrixVector& weights)
+{
+	for(auto& layer : *this)
+	{
+		layer->extractWeights(weights);
+	}
+}
+
+void NeuralNetwork::restoreWeights(BlockSparseMatrixVector&& weights)
+{
+	for(auto layer = rbegin(); layer != rend(); ++layer)
+	{
+		(*layer)->restoreWeights(std::move(weights));
+	}
+}
+
+NeuralNetwork::SparseMatrixVectorFormat NeuralNetwork::getWeightFormat() const
+{
+	SparseMatrixVectorFormat format;
+	
+	for(auto& layer : *this)
+	{
+		auto layerFormat = layer->getWeightFormat();
+		
+		format.insert(format.end(), layerFormat.begin(), layerFormat.end());
+	}
+	
+	return format;
+}
 	
 void NeuralNetwork::setCostFunction(CostFunction* f)
 {
@@ -415,6 +451,35 @@ std::string NeuralNetwork::shapeString() const
 	}
 	
 	return stream.str();
+}
+
+NeuralNetwork::NeuralNetwork(const NeuralNetwork& n)
+: _costFunction(n.getCostFunction()->clone()), _solver(n.getSolver()->clone())
+{
+	for(auto& layer : n)
+	{
+		addLayer(layer->clone());
+	}
+}
+
+NeuralNetwork& NeuralNetwork::operator=(const NeuralNetwork& n)
+{
+	if(&n == this)
+	{
+		return *this;
+	}
+	
+	clear();
+	
+	setCostFunction(n.getCostFunction()->clone());
+	setSolver(n.getSolver()->clone());
+	
+	for(auto& layer : n)
+	{
+		addLayer(layer->clone());
+	}
+	
+	return *this;
 }
 
 NeuralNetwork::BlockSparseMatrix NeuralNetwork::convertToBlockSparseForLayerInput(

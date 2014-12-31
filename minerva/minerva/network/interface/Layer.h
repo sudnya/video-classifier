@@ -6,12 +6,13 @@
 #pragma once
 
 // Forward Declarations
-namespace minerva { namespace matrix  { class BlockSparseMatrix;       } }
-namespace minerva { namespace matrix  { class BlockSparseMatrixVector; } }
-namespace minerva { namespace network { class ActivationFunction;      } }
-namespace minerva { namespace network { class ActivationCostFunction;  } }
-namespace minerva { namespace network { class WeightCostFunction;      } }
-namespace minerva { namespace util    { class TarArchive;              } }
+namespace minerva { namespace matrix    { class BlockSparseMatrix;       } }
+namespace minerva { namespace matrix    { class BlockSparseMatrixVector; } }
+namespace minerva { namespace network   { class ActivationFunction;      } }
+namespace minerva { namespace network   { class ActivationCostFunction;  } }
+namespace minerva { namespace network   { class WeightCostFunction;      } }
+namespace minerva { namespace optimizer { class SparseMatrixFormat;      } }
+namespace minerva { namespace util      { class TarArchive;              } }
 
 // Standard Library Includes
 #include <random>
@@ -26,8 +27,10 @@ namespace network
 class Layer
 {
 public:
-    typedef minerva::matrix::BlockSparseMatrix BlockSparseMatrix;
+    typedef minerva::matrix::BlockSparseMatrix       BlockSparseMatrix;
     typedef minerva::matrix::BlockSparseMatrixVector BlockSparseMatrixVector;
+	typedef optimizer::SparseMatrixFormat   SparseMatrixFormat;
+	typedef std::vector<SparseMatrixFormat> SparseMatrixVectorFormat;
     typedef std::set<size_t> NeuronSet;
 
 public:
@@ -75,6 +78,14 @@ public:
 	virtual void save(util::TarArchive& archive) const = 0;
 	/*! \brief Intialize the layer from the tar file and header. */
 	virtual void load(const util::TarArchive& archive, const std::string& name) = 0;
+
+public:
+	/*! \brief Move the weight matrices outside of the network. */
+	void extractWeights(BlockSparseMatrixVector&  weights);
+	/*! \brief Replace the weight matrices contained in the network with the specified weights */
+	void restoreWeights(BlockSparseMatrixVector&& weights);
+	/*! \brief Get the sparse matrix format used by the weight matrices */
+	SparseMatrixVectorFormat getWeightFormat() const;
 
 public:
 	virtual Layer* clone() const = 0;

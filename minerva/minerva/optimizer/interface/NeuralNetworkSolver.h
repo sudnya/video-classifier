@@ -30,6 +30,9 @@ public:
 	virtual void solve() = 0;
 
 public:
+	virtual NeuralNetworkSolver* clone() const = 0;
+
+public:
 	void setInput(const BlockSparseMatrix* input);
 	void setReference(const BlockSparseMatrix* reference);
 

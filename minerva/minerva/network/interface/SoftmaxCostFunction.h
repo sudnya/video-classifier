@@ -26,7 +26,10 @@ public:
 	virtual BlockSparseMatrix computeCost(const BlockSparseMatrix& output, const BlockSparseMatrix& reference) const;
 
 	/*! \brief Determine the derivative of the cost function for the specified output and reference. */
-	virtual BlockSparseMatrix computeCostDerivative(const BlockSparseMatrix& output, const BlockSparseMatrix& reference) const;
+	virtual BlockSparseMatrix computeDelta(const BlockSparseMatrix& output, const BlockSparseMatrix& reference) const;
+
+public:
+	virtual CostFunction* clone() const;
 
 };
 

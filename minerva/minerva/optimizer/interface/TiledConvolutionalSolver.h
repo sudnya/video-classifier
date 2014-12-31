@@ -22,6 +22,9 @@ public:
 
 public:
 	virtual void solve();
+
+public:
+	virtual NeuralNetworkSolver* clone() const;
 };
 
 }

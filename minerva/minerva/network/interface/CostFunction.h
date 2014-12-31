@@ -30,6 +30,10 @@ public:
 	/*! \brief Determine the change in the output needed to minimize the cost function. */
 	virtual BlockSparseMatrix computeDelta(const BlockSparseMatrix& output, const BlockSparseMatrix& reference) const = 0;
 
+public:
+	/*! \brief Clone */
+	virtual CostFunction* clone() const = 0;
+
 };
 
 }
