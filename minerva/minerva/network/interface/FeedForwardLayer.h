@@ -63,6 +63,14 @@ public:
 	virtual void load(const util::TarArchive& archive, const std::string& name);
 
 public:
+	/*! \brief Move the weight matrices outside of the network. */
+	virtual void extractWeights(BlockSparseMatrixVector&  weights);
+	/*! \brief Replace the weight matrices contained in the network with the specified weights */
+	virtual void restoreWeights(BlockSparseMatrixVector&& weights);
+	/*! \brief Get the sparse matrix format used by the weight matrices */
+	virtual SparseMatrixVectorFormat getWeightFormat() const;
+
+public:
 	virtual Layer* clone() const;
 	virtual Layer* mirror() const;
 

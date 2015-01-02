@@ -38,6 +38,10 @@ public:
     virtual ~Layer();
 
 public:
+	Layer(const Layer& );
+	Layer& operator=(const Layer&);
+
+public:
     virtual void initializeRandomly(std::default_random_engine& engine,
 		float epsilon = 6.0f) = 0;
 
@@ -81,11 +85,11 @@ public:
 
 public:
 	/*! \brief Move the weight matrices outside of the network. */
-	void extractWeights(BlockSparseMatrixVector&  weights);
+	virtual void extractWeights(BlockSparseMatrixVector&  weights) = 0;
 	/*! \brief Replace the weight matrices contained in the network with the specified weights */
-	void restoreWeights(BlockSparseMatrixVector&& weights);
+	virtual void restoreWeights(BlockSparseMatrixVector&& weights) = 0;
 	/*! \brief Get the sparse matrix format used by the weight matrices */
-	SparseMatrixVectorFormat getWeightFormat() const;
+	virtual SparseMatrixVectorFormat getWeightFormat() const = 0;
 
 public:
 	virtual Layer* clone() const = 0;
@@ -120,10 +124,6 @@ public:
 
 public:
 	std::string shapeString() const;
-
-public:
-	Layer(const Layer& )           = delete;
-	Layer& operator=(const Layer&) = delete;
 
 private:
 	std::unique_ptr<ActivationFunction>     _activationFunction;

@@ -31,6 +31,9 @@ public:
 	/*! \brief Get the gradient for the given activations. */
 	virtual BlockSparseMatrix getGradient(const BlockSparseMatrix&) const = 0;
 
+public:
+	virtual ActivationCostFunction* clone() const = 0;
+
 };
 
 }

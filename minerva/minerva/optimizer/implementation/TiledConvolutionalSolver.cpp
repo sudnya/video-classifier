@@ -153,6 +153,11 @@ void TiledConvolutionalSolver::solve()
 	}
 }
 
+NeuralNetworkSolver* TiledConvolutionalSolver::clone() const
+{
+	return new TiledConvolutionalSolver(*this);
+}
+
 }
 
 }

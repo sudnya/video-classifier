@@ -286,14 +286,24 @@ BlockSparseMatrix BlockSparseMatrix::negate() const
 	return BlockSparseMatrix(_implementation->negate());
 }
 
+BlockSparseMatrix BlockSparseMatrix::sigmoid() const
+{
+	return BlockSparseMatrix(_implementation->sigmoid());
+}
+
 BlockSparseMatrix BlockSparseMatrix::sigmoidDerivative() const
 {
 	return BlockSparseMatrix(_implementation->sigmoidDerivative());
 }
 
-BlockSparseMatrix BlockSparseMatrix::sigmoid() const
+BlockSparseMatrix BlockSparseMatrix::rectifiedLinear() const
 {
-	return BlockSparseMatrix(_implementation->sigmoid());
+	return BlockSparseMatrix(_implementation->rectifiedLinear());
+}
+
+BlockSparseMatrix BlockSparseMatrix::rectifiedLinearDerivative() const
+{
+	return BlockSparseMatrix(_implementation->rectifiedLinearDerivative());
 }
 	
 BlockSparseMatrix BlockSparseMatrix::klDivergence(float sparsity) const
@@ -329,6 +339,16 @@ void BlockSparseMatrix::sigmoidSelf()
 void BlockSparseMatrix::sigmoidDerivativeSelf()
 {
 	_implementation->sigmoidDerivativeSelf();
+}
+
+void BlockSparseMatrix::rectifiedLinearSelf()
+{
+	_implementation->rectifiedLinearSelf();
+}
+
+void BlockSparseMatrix::rectifiedLinearDerivativeSelf()
+{
+	_implementation->rectifiedLinearDerivativeSelf();
 }
 
 void BlockSparseMatrix::minSelf(float value)

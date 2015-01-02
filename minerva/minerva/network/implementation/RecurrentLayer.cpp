@@ -9,6 +9,8 @@
 
 #include <minerva/matrix/interface/BlockSparseMatrix.h>
 
+#include <minerva/optimizer/interface/SparseMatrixFormat.h>
+
 #include <minerva/util/interface/debug.h>
 
 namespace minerva
@@ -67,6 +69,11 @@ size_t RecurrentLayer::getOutputCount() const
 	assertM(false, "Not Implemented.");
 }
 
+size_t RecurrentLayer::getBlocks() const
+{
+	assertM(false, "Not Implemented.");
+}
+
 size_t RecurrentLayer::getInputBlockingFactor() const
 {
 	assertM(false, "Not Implemented.");
@@ -110,6 +117,36 @@ void RecurrentLayer::save(util::TarArchive& archive) const
 void RecurrentLayer::load(const util::TarArchive& archive, const std::string& name)
 {
 	assertM(false, "Not Implemented.");
+}
+
+void RecurrentLayer::extractWeights(BlockSparseMatrixVector& weights)
+{
+	assertM(false, "Not Implemented.");
+}
+
+void RecurrentLayer::restoreWeights(BlockSparseMatrixVector&& weights)
+{
+	assertM(false, "Not Implemented.");
+}
+
+RecurrentLayer::SparseMatrixVectorFormat RecurrentLayer::getWeightFormat() const
+{
+	return {};
+}
+	
+Layer* RecurrentLayer::clone() const
+{
+	return new RecurrentLayer(*this);
+}
+
+Layer* RecurrentLayer::mirror() const
+{
+	assertM(false, "Not Implemented.");
+}
+
+std::string RecurrentLayer::getTypeName() const
+{
+	return "RecurrentLayer";
 }
 
 }

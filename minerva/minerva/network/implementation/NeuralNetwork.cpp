@@ -122,6 +122,47 @@ float NeuralNetwork::getCostAndGradient(BlockSparseMatrixVector& gradient, const
 	
 	return getCostFunction()->computeCost(activations.back(), reference).reduceSum();
 }
+	
+float NeuralNetwork::getInputCostAndGradient(BlockSparseMatrix& gradient, const BlockSparseMatrix& input, const BlockSparseMatrix& reference) const
+{
+	BlockSparseMatrixVector activations;
+
+	activations.push_back(input);
+
+	for(auto layer = begin(); layer != end(); ++layer)
+	{
+		util::log("NeuralNetwork") << " Running forward propagation through layer "
+			<< std::distance(begin(), layer) << "\n";
+		
+		activations.push_back(std::move((*layer)->runForward(activations.back())));
+	}
+	
+	auto activation = activations.rbegin();
+	auto delta      = getCostFunction()->computeDelta(*activation, reference);
+	
+	for(auto layer = rbegin(); layer != rend(); ++layer, ++activation)
+	{
+		BlockSparseMatrixVector grad;
+
+		delta = (*layer)->runReverse(grad, *activation, delta);
+	}
+	
+	auto samples = activation->rows();
+	
+	gradient = delta.multiply(1.0f / samples);
+	
+	return getCostFunction()->computeCost(activations.back(), reference).reduceSum();
+}
+
+float NeuralNetwork::getInputCostAndGradient(BlockSparseMatrix& gradient, const Matrix& input, const Matrix& reference) const
+{
+	auto tempInput     = convertToBlockSparseForLayerInput(*front(), input);
+	auto tempReference = convertToBlockSparseForLayerOutput(*back(), reference);
+	
+	float cost = getInputCostAndGradient(gradient, tempInput, tempReference);
+
+	return cost;
+}
 
 float NeuralNetwork::getCost(const BlockSparseMatrix& input, const BlockSparseMatrix& reference) const
 {
@@ -403,6 +444,13 @@ NeuralNetwork::SparseMatrixVectorFormat NeuralNetwork::getWeightFormat() const
 	
 	return format;
 }
+
+NeuralNetwork::SparseMatrixVectorFormat NeuralNetwork::getInputFormat() const
+{
+	return {SparseMatrixFormat(front()->getBlocks(),
+				front()->getInputBlockingFactor(),
+				front()->getOutputBlockingFactor())};
+}
 	
 void NeuralNetwork::setCostFunction(CostFunction* f)
 {
@@ -414,12 +462,22 @@ CostFunction* NeuralNetwork::getCostFunction()
 	return _costFunction.get();
 }
 
+const CostFunction* NeuralNetwork::getCostFunction() const
+{
+	return _costFunction.get();
+}
+
 void NeuralNetwork::setSolver(NeuralNetworkSolver* s)
 {
 	_solver.reset(s);
 }
 
 NeuralNetwork::NeuralNetworkSolver* NeuralNetwork::getSolver()
+{
+	return _solver.get();
+}
+
+const NeuralNetwork::NeuralNetworkSolver* NeuralNetwork::getSolver() const
 {
 	return _solver.get();
 }

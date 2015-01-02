@@ -435,6 +435,24 @@ Value* CublasMatrix::sigmoidDerivative() const
     return result;
 }
 
+Value* CublasMatrix::rectifiedLinear() const
+{
+    CublasMatrix* result = new CublasMatrix(*this);
+	
+	result->rectifiedLinearSelf();
+
+    return result;
+}
+
+Value* CublasMatrix::rectifiedLinearDerivative() const
+{
+    CublasMatrix* result = new CublasMatrix(*this);
+	
+	result->rectifiedLinearDerivativeSelf();
+
+    return result;
+}
+
 Value* CublasMatrix::klDivergence(float sparsity) const
 {
     CublasMatrix* result = new CublasMatrix(*this);
@@ -509,6 +527,32 @@ void CublasMatrix::sigmoidDerivativeSelf()
 	for(auto& f : _data)
 	{
 		f = matrix::sigmoidDerivative(f);
+	}
+}
+
+static float rectifiedLinear(float f)
+{
+	return std::max(std::min(f, 20.0f), -20.0f);
+}
+
+static float rectifiedLinearDerivative(float f)
+{
+	return (f < -20.0f || f > 20.0f) ? 0.0f : 1.0f;
+}
+
+void CublasMatrix::rectifiedLinearSelf()
+{
+	for(auto& f : _data)
+	{
+		f = matrix::rectifiedLinear(f);
+	}
+}
+
+void CublasMatrix::rectifiedLinearDerivativeSelf()
+{
+	for(auto& f : _data)
+	{
+		f = matrix::rectifiedLinearDerivative(f);
 	}
 }
 

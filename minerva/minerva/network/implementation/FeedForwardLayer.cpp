@@ -14,6 +14,8 @@
 #include <minerva/matrix/interface/BlockSparseMatrix.h>
 #include <minerva/matrix/interface/Matrix.h>
 
+#include <minerva/optimizer/interface/SparseMatrixFormat.h>
+
 #include <minerva/util/interface/debug.h>
 #include <minerva/util/interface/knobs.h>
 
@@ -170,6 +172,11 @@ size_t FeedForwardLayer::getOutputCount() const
 
 	return outputCount;
 }
+   
+size_t FeedForwardLayer::getBlocks() const
+{
+	return _weights.blocks();
+}
 
 size_t FeedForwardLayer::getInputBlockingFactor() const
 {
@@ -244,6 +251,41 @@ void FeedForwardLayer::save(util::TarArchive& archive) const
 void FeedForwardLayer::load(const util::TarArchive& archive, const std::string& name)
 {
 	assertM(false, "Not implemented");
+}
+
+void FeedForwardLayer::extractWeights(BlockSparseMatrixVector& weights)
+{
+	weights.push_back(std::move(_weights));
+	weights.push_back(std::move(_bias));
+}
+
+void FeedForwardLayer::restoreWeights(BlockSparseMatrixVector&& weights)
+{
+	_bias = std::move(weights.back());
+	weights.pop_back();
+	
+	_weights = std::move(weights.back());
+	weights.pop_back();
+}
+
+FeedForwardLayer::SparseMatrixVectorFormat FeedForwardLayer::getWeightFormat() const
+{
+	return {SparseMatrixFormat(_weights), SparseMatrixFormat(_bias)};
+}
+
+Layer* FeedForwardLayer::clone() const
+{
+	return new FeedForwardLayer(*this);
+}
+
+Layer* FeedForwardLayer::mirror() const
+{
+	return new FeedForwardLayer(getBlocks(), getOutputBlockingFactor(), getInputBlockingFactor());
+}
+
+std::string FeedForwardLayer::getTypeName() const
+{
+	return "FeedForwardLayer";
 }
 
 }

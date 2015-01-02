@@ -56,6 +56,9 @@ public:
 	virtual Value* sigmoid() const = 0;
 	virtual Value* sigmoidDerivative() const = 0;
 	
+	virtual Value* rectifiedLinear() const = 0;
+	virtual Value* rectifiedLinearDerivative() const = 0;
+	
 	virtual Value* klDivergence(float sparsity) const = 0;
 	virtual Value* klDivergenceDerivative(float sparsity) const = 0;
 
@@ -67,6 +70,8 @@ public:
 	virtual void logSelf() = 0;
     virtual void sigmoidSelf() = 0;
     virtual void sigmoidDerivativeSelf() = 0;
+    virtual void rectifiedLinearSelf() = 0;
+    virtual void rectifiedLinearDerivativeSelf() = 0;
 	virtual void minSelf(float v) = 0;
 	virtual void maxSelf(float v) = 0;
 	virtual void assignSelf(float v) = 0;

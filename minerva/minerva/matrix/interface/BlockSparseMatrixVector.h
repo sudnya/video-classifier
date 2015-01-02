@@ -97,6 +97,9 @@ public:
 	void push_back(BlockSparseMatrixVector&&);
 
 public:
+	void pop_back();
+
+public:
 	BlockSparseMatrix& back();
 	const BlockSparseMatrix& back() const;
 

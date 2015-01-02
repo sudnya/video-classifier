@@ -30,6 +30,9 @@ public:
 	/*! \brief Compute the gradient with respect to the weights. */
 	virtual BlockSparseMatrix getGradient(const BlockSparseMatrix& weights) const = 0;
 
+public:
+	virtual WeightCostFunction* clone() const = 0;
+
 };
 
 }

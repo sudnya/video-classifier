@@ -378,6 +378,38 @@ Value* NaiveBlockSparseMatrix::sigmoidDerivative() const
 	return result;
 }
 
+Value* NaiveBlockSparseMatrix::rectifiedLinear() const
+{
+	auto result = new NaiveBlockSparseMatrix(isRowSparse());
+
+	result->resize(blocks());
+	
+	// TODO: in parallel
+	auto resultBlock = result->begin();
+	for(auto matrix = begin(); matrix != end(); ++matrix, ++resultBlock)
+	{
+		*resultBlock = std::move(matrix->rectifiedLinear());
+	}
+	
+	return result;
+}
+
+Value* NaiveBlockSparseMatrix::rectifiedLinearDerivative() const
+{
+	auto result = new NaiveBlockSparseMatrix(isRowSparse());
+
+	result->resize(blocks());
+	
+	// TODO: in parallel
+	auto resultBlock = result->begin();
+	for(auto matrix = begin(); matrix != end(); ++matrix, ++resultBlock)
+	{
+		*resultBlock = std::move(matrix->rectifiedLinearDerivative());
+	}
+	
+	return result;
+}
+
 Value* NaiveBlockSparseMatrix::klDivergence(float sparsity) const
 {
 	auto result = new NaiveBlockSparseMatrix(isRowSparse());
@@ -459,6 +491,24 @@ void NaiveBlockSparseMatrix::sigmoidDerivativeSelf()
 	for(auto& matrix : *this)
 	{
 		matrix.sigmoidDerivativeSelf();
+	}
+}
+
+void NaiveBlockSparseMatrix::rectifiedLinearSelf()
+{
+	// TODO: in parallel
+	for(auto& matrix : *this)
+	{
+		matrix.rectifiedLinearSelf();
+	}
+}
+
+void NaiveBlockSparseMatrix::rectifiedLinearDerivativeSelf()
+{
+	// TODO: in parallel
+	for(auto& matrix : *this)
+	{
+		matrix.rectifiedLinearDerivativeSelf();
 	}
 }
 

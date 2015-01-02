@@ -19,11 +19,38 @@ namespace minerva
 namespace network
 {
 
+Layer::Layer()
+{
+
+}
+
 Layer::~Layer()
 {
 
 }
+
+Layer::Layer(const Layer& l)
+: _activationFunction(l.getActivationFunction()->clone()),
+  _activationCostFunction(l.getActivationCostFunction()->clone()),
+  _weightCostFunction(l.getWeightCostFunction()->clone())
+{
+
+}
+
+Layer& Layer::operator=(const Layer& l)
+{
+	if(&l == this)
+	{
+		return *this;
+	}
 	
+	setActivationFunction(l.getActivationFunction()->clone());
+	setActivationCostFunction(l.getActivationCostFunction()->clone());
+	setWeightCostFunction(l.getWeightCostFunction()->clone());
+	
+	return *this;
+}
+
 void Layer::setActivationFunction(ActivationFunction* f)
 {
 	_activationFunction.reset(f);

@@ -294,6 +294,11 @@ void BlockSparseMatrixVector::push_back(BlockSparseMatrixVector&& v)
 	}
 }
 
+void BlockSparseMatrixVector::pop_back()
+{
+	_matrix.pop_back();
+}
+
 BlockSparseMatrix& BlockSparseMatrixVector::back()
 {
 	return _matrix.back();

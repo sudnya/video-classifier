@@ -30,6 +30,9 @@ public:
 	/*! \brief Run the activation function derivative on the specified input. */
 	virtual BlockSparseMatrix applyDerivative(const BlockSparseMatrix&) const = 0;
 
+public:
+	virtual ActivationFunction* clone() const = 0;
+
 };
 
 }

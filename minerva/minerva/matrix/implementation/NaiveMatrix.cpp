@@ -330,6 +330,24 @@ Value* NaiveMatrix::sigmoidDerivative() const
     return result;
 }
 
+Value* NaiveMatrix::rectifiedLinear() const
+{
+    NaiveMatrix* result = new NaiveMatrix(*this);
+	
+	result->rectifiedLinearSelf();
+
+    return result;
+}
+
+Value* NaiveMatrix::rectifiedLinearDerivative() const
+{
+    NaiveMatrix* result = new NaiveMatrix(*this);
+	
+	result->rectifiedLinearDerivativeSelf();
+
+    return result;
+}
+
 Value* NaiveMatrix::klDivergence(float sparsity) const
 {
     NaiveMatrix* result = new NaiveMatrix(*this);
@@ -404,6 +422,32 @@ void NaiveMatrix::sigmoidDerivativeSelf()
 	for(auto& f : _data)
 	{
 		f = matrix::sigmoidDerivative(f);
+	}
+}
+
+static float rectifiedLinear(float f)
+{
+	return std::max(std::min(f, 20.0f), -20.0f);
+}
+
+static float rectifiedLinearDerivative(float f)
+{
+	return (f < -20.0f || f > 20.0f) ? 0.0f : 1.0f;
+}
+
+void NaiveMatrix::rectifiedLinearSelf()
+{
+	for(auto& f : _data)
+	{
+		f = matrix::rectifiedLinear(f);
+	}
+}
+
+void NaiveMatrix::rectifiedLinearDerivativeSelf()
+{
+	for(auto& f : _data)
+	{
+		f = matrix::rectifiedLinearDerivative(f);
 	}
 }
 

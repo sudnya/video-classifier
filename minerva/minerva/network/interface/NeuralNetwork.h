@@ -70,7 +70,7 @@ public:
 	float getInputCostAndGradient(BlockSparseMatrix& gradient, const BlockSparseMatrix& input, const BlockSparseMatrix& reference) const;
 	
 	/*! \brief Get the cost and gradient. */
-	float getInputCostAndGradient(BlockSparseMatrixVector& gradient, const Matrix& input, const Matrix& reference) const;
+	float getInputCostAndGradient(BlockSparseMatrix& gradient, const Matrix& input, const Matrix& reference) const;
 
 public:
 	/*! \brief Run input samples through the network, return the output */

@@ -31,6 +31,16 @@ void NeuralNetworkSolver::solve()
     assertM(false, "Not implemented yet");
 }
 
+void NeuralNetworkSolver::setInput(const BlockSparseMatrix* input)
+{
+	_input = input;
+}
+
+void NeuralNetworkSolver::setReference(const BlockSparseMatrix* reference)
+{
+	_reference = reference;
+}
+
 NeuralNetworkSolver* NeuralNetworkSolver::create(NeuralNetwork* n)
 {
 	auto solverName = util::KnobDatabase::getKnobValue("Solver::Type",
