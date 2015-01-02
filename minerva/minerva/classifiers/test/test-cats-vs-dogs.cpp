@@ -8,7 +8,15 @@
 #include <minerva/classifiers/interface/Engine.h>
 #include <minerva/classifiers/interface/EngineFactory.h>
 
+#include <minerva/visualization/interface/NeuronVisualizer.h>
+
 #include <minerva/model/interface/Model.h>
+
+#include <minerva/results/interface/ResultProcessor.h>
+#include <minerva/results/interface/LabelResultProcessor.h>
+
+#include <minerva/network/interface/FeedForwardLayer.h>
+#include <minerva/network/interface/NeuralNetwork.h>
 
 #include <minerva/video/interface/Image.h>
 #include <minerva/video/interface/ImageVector.h>
@@ -19,12 +27,14 @@
 
 // Type definitions
 typedef minerva::video::Image Image;
-typedef minerva::neuralnetwork::NeuralNetwork NeuralNetwork;
-typedef minerva::neuralnetwork::FeedForwardLayer FeedForwardLayer;
+typedef minerva::network::NeuralNetwork NeuralNetwork;
+typedef minerva::network::FeedForwardLayer FeedForwardLayer;
 typedef minerva::video::ImageVector ImageVector;
 typedef minerva::matrix::Matrix Matrix;
 typedef minerva::visualization::NeuronVisualizer NeuronVisualizer;
 typedef minerva::model::Model Model;
+typedef minerva::classifiers::Engine Engine;
+typedef minerva::results::LabelResultProcessor LabelResultProcessor;
 
 class Parameters
 {
@@ -56,13 +66,11 @@ public:
 
 };
 
-static void addFeatureSelector(ClassificationModel& model, const Parameters& parameters,
+static void addFeatureSelector(Model& model, const Parameters& parameters,
 	std::default_random_engine& engine)
 {
-	auto featureSelector = std::make_unique<NeuralNetwork>();
+	NeuralNetwork featureSelector;
 	
-	size_t totalPixels = parameters.xPixels * parameters.yPixels * parameters.colors;
-
 	// derive parameters from image dimensions 
 	const size_t blockSize = parameters.blockX * parameters.blockY * parameters.colors;
 	const size_t blocks    = 1;
@@ -72,19 +80,19 @@ static void addFeatureSelector(ClassificationModel& model, const Parameters& par
 	size_t poolingReductionFactor = 4;
 
 	// convolutional layer 1
-	featureSelector->addLayer(new FeedForwardLayer(blocks, blockSize,
+	featureSelector.addLayer(new FeedForwardLayer(blocks, blockSize,
 		blockSize, blockStep));
 	
 	// pooling layer 2
-	featureSelector->addLayer(
+	featureSelector.addLayer(
 		new FeedForwardLayer(blocks,
-			blockReductionFactor * featureSelector.back().getOutputBlockingFactor(),
-			featureSelector.back().getOutputBlockingFactor()));
+			blockReductionFactor * featureSelector.back()->getOutputBlockingFactor(),
+			featureSelector.back()->getOutputBlockingFactor()));
 	
 	// pooling layer 3
-	featureSelector->addLayer(new FeedForwardLayer(featureSelector.back().blocks(),
-		poolingReductionFactor * featureSelector.back().getOutputBlockingFactor(),
-		featureSelector.back().getOutputBlockingFactor()));
+	featureSelector.addLayer(new FeedForwardLayer(featureSelector.back()->getBlocks(),
+		poolingReductionFactor * featureSelector.back()->getOutputBlockingFactor(),
+		featureSelector.back()->getOutputBlockingFactor()));
 
 	featureSelector.initializeRandomly(engine);
 	minerva::util::log("TestFirstLayerFeatures")
@@ -94,7 +102,7 @@ static void addFeatureSelector(ClassificationModel& model, const Parameters& par
 	model.setNeuralNetwork("FeatureSelector", featureSelector);
 }
 
-static void addClassifier(ClassificationModel& model, const Parameters& parameters,
+static void addClassifier(Model& model, const Parameters& parameters,
 	std::default_random_engine& engine)
 {
 	NeuralNetwork classifier;
@@ -106,9 +114,9 @@ static void addClassifier(ClassificationModel& model, const Parameters& paramete
 	size_t fullyConnectedSize = 256;
 	
 	// connect the network
-	classifier.addLayer(FeedForwardLayer(1, fullyConnectedInputs, fullyConnectedSize));
-	classifier.addLayer(FeedForwardLayer(1, fullyConnectedSize,   fullyConnectedSize));
-	classifier.addLayer(FeedForwardLayer(1, fullyConnectedSize,   2                 ));
+	classifier.addLayer(new FeedForwardLayer(1, fullyConnectedInputs, fullyConnectedSize));
+	classifier.addLayer(new FeedForwardLayer(1, fullyConnectedSize,   fullyConnectedSize));
+	classifier.addLayer(new FeedForwardLayer(1, fullyConnectedSize,   2                 ));
 	
 	classifier.initializeRandomly(engine);
 	
@@ -118,7 +126,7 @@ static void addClassifier(ClassificationModel& model, const Parameters& paramete
 	model.setNeuralNetwork("Classifier", classifier);
 }
 
-static void createModel(ClassificationModel& model, const Parameters& parameters,
+static void createModel(Model& model, const Parameters& parameters,
 	std::default_random_engine& engine)
 {
 	model.setInputImageResolution(parameters.xPixels, parameters.yPixels, parameters.colors);
@@ -127,13 +135,13 @@ static void createModel(ClassificationModel& model, const Parameters& parameters
 	addClassifier(model, parameters, engine);
 }
 
-static void trainNetwork(ClassificationModel& model, const Parameters& parameters)
+static void trainNetwork(Model& model, const Parameters& parameters)
 {
 	// Train the network
-	auto engine = std::make_unique(minerva::classifiers::EngineFactory::create("LearnerEngine"));
+	std::unique_ptr<Engine> engine(minerva::classifiers::EngineFactory::create("LearnerEngine"));
 
-	engine->setMultipleSamplesAllowed(true);
 	engine->setModel(&model);
+	engine->setEpochs(parameters.epochs);
 	engine->setBatchSize(parameters.batchSize);
 
 	// read from database and use model to train
@@ -143,10 +151,9 @@ static void trainNetwork(ClassificationModel& model, const Parameters& parameter
 	engine->extractModel();
 }
 
-static float testNetwork(ClassificationModel& model, const Parameters& parameters)
+static float testNetwork(Model& model, const Parameters& parameters)
 {
-	auto engine = std::make_unique(
-		minerva::classifiers::EngineFactory::create("ClassifierEngine")));
+	std::unique_ptr<Engine> engine(minerva::classifiers::EngineFactory::create("ClassifierEngine"));
 
 	engine->setBatchSize(parameters.batchSize);
 	engine->setModel(&model);
@@ -165,7 +172,7 @@ static float testNetwork(ClassificationModel& model, const Parameters& parameter
 	return resultProcessor->getAccuracy();
 }
 
-static void createCollage(ClassificationModel& model, const Parameters& parameters)
+static void createCollage(Model& model, const Parameters& parameters)
 {
 	// Visualize the network 
 	auto network = &model.getNeuralNetwork("FeatureSelector");
@@ -189,7 +196,7 @@ static void runTest(const Parameters& parameters)
 	}
 
 	// Create a deep model for first layer classification
-	ClassificationModel model;
+	Model model;
 	
 	createModel(model, parameters, generator);
 	

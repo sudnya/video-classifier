@@ -25,6 +25,12 @@ void FeatureResultProcessor::process(const ResultVector& results)
 	assertM(false, "Not implemented.");
 }
 
+std::string FeatureResultProcessor::toString() const
+{
+	// TODO:
+	assertM(false, "Not implemented.");
+}
+
 }
 
 }

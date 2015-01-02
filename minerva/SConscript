@@ -62,10 +62,10 @@ tools.append(env.Program('test-minerva-display', \
 	['minerva/video/test/test-display.cpp'], LIBS=minerva_libs))
 
 tools.append(env.Program('test-minerva-performance', \
-	['minerva/neuralnetwork/test/test-neuralnetwork-performance.cpp'], LIBS=minerva_libs))
+	['minerva/network/test/test-neuralnetwork-performance.cpp'], LIBS=minerva_libs))
 
 tools.append(env.Program('test-gradient', \
-	['minerva/neuralnetwork/test/test-gradient-check.cpp'], LIBS=minerva_libs))
+	['minerva/network/test/test-gradient-check.cpp'], LIBS=minerva_libs))
 
 tools.append(env.Program('test-cats-vs-dogs', \
 	['minerva/classifiers/test/test-cats-vs-dogs.cpp'], LIBS=minerva_libs))

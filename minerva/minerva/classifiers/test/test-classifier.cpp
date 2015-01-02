@@ -3,8 +3,8 @@
  * A unit test that implements a neural network to perform XOR 
 */
 
-#include <minerva/neuralnetwork/interface/NeuralNetwork.h>
-#include <minerva/neuralnetwork/interface/FeedForwardLayer.h>
+#include <minerva/network/interface/NeuralNetwork.h>
+#include <minerva/network/interface/FeedForwardLayer.h>
 
 #include <minerva/matrix/interface/Matrix.h>
 
@@ -19,17 +19,17 @@ namespace minerva
 namespace classifiers
 {
 
-typedef neuralnetwork::Layer Layer;
+typedef network::FeedForwardLayer FeedForwardLayer;
 typedef matrix::Matrix Matrix;
 
-neuralnetwork::NeuralNetwork createAndInitializeNeuralNetwork(unsigned networkSize, float epsilon)
+network::NeuralNetwork createAndInitializeNeuralNetwork(unsigned networkSize, float epsilon)
 {
-    neuralnetwork::NeuralNetwork ann;
+    network::NeuralNetwork ann;
 
 	size_t convolutionalLayers = 1;//std::min(networkSize/4, 1U);
 
     // Layer 1
-    ann.addLayer(FeedForwardLayer(convolutionalLayers,networkSize/convolutionalLayers,
+    ann.addLayer(new FeedForwardLayer(convolutionalLayers,networkSize/convolutionalLayers,
 		networkSize/convolutionalLayers));
 
 	size_t step = 8;
@@ -38,11 +38,11 @@ neuralnetwork::NeuralNetwork createAndInitializeNeuralNetwork(unsigned networkSi
 	size_t layerTwoStep = (networkSize / convolutionalLayersTwo) / step;
 
     // Layer 2
-    ann.addLayer(FeedForwardLayer(convolutionalLayersTwo, networkSize/convolutionalLayersTwo,
+    ann.addLayer(new FeedForwardLayer(convolutionalLayersTwo, networkSize/convolutionalLayersTwo,
 		networkSize/convolutionalLayersTwo, layerTwoStep));
 
     // Layer 3
-    ann.addLayer(FeedForwardLayer(1,networkSize * step,networkSize/2));
+    ann.addLayer(new FeedForwardLayer(1,networkSize * step,networkSize/2));
 
 	std::default_random_engine engine;
 	
@@ -94,7 +94,26 @@ Matrix matrixXor(const Matrix& inputs)
     return output;
 }
 
-void trainNeuralNetwork(neuralnetwork::NeuralNetwork& ann, unsigned trainingIter, std::default_random_engine& generator)
+Matrix threshold(const Matrix& output)
+{
+    Matrix temp = output;
+
+    for(auto value = temp.begin(); value != temp.end(); ++value)
+    {
+        if(*value > 0.5f)
+        {
+            *value = 1.0f;
+        }
+        else
+        {
+            *value = 0.0f;
+        }
+    }
+
+    return temp;
+}
+
+void trainNeuralNetwork(network::NeuralNetwork& ann, unsigned trainingIter, std::default_random_engine& generator)
 {
     unsigned samplesPerIter = ann.getInputCount() * 50;
 
@@ -142,7 +161,7 @@ unsigned compare(const Matrix& output, const Matrix& reference)
     return bitsThatMatch;
 }
 
-float classify(const neuralnetwork::NeuralNetwork& ann, unsigned iterations, std::default_random_engine& generator)
+float classify(const network::NeuralNetwork& ann, unsigned iterations, std::default_random_engine& generator)
 {
     float accuracy = 0.0f;
     unsigned correctBits = 0;
@@ -174,7 +193,7 @@ void runTest(unsigned iterations, bool seed, unsigned networkSize, float epsilon
     
     // Create neural network
     // 3 layers
-    neuralnetwork::NeuralNetwork ann = createAndInitializeNeuralNetwork(networkSize, epsilon); 
+    network::NeuralNetwork ann = createAndInitializeNeuralNetwork(networkSize, epsilon); 
 
     // Train network against reference XOR function
 

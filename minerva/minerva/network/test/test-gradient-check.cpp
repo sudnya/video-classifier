@@ -5,7 +5,8 @@
 */
 
 // Minerva Includes
-#include <minerva/neuralnetwork/interface/NeuralNetwork.h>
+#include <minerva/network/interface/NeuralNetwork.h>
+#include <minerva/network/interface/FeedForwardLayer.h>
 
 #include <minerva/matrix/interface/Matrix.h>
 #include <minerva/matrix/interface/BlockSparseMatrixVector.h>
@@ -25,13 +26,13 @@
 namespace minerva
 {
 
-namespace neuralnetwork
+namespace network
 {
 
-typedef neuralnetwork::Layer Layer;
+typedef network::FeedForwardLayer FeedForwardLayer;
 typedef matrix::Matrix Matrix;
 typedef matrix::BlockSparseMatrixVector BlockSparseMatrixVector;
-typedef neuralnetwork::NeuralNetwork NeuralNetwork;
+typedef network::NeuralNetwork NeuralNetwork;
 
 static NeuralNetwork createNetwork(
 	size_t layerSize, size_t blockCount, size_t layerCount,
@@ -41,7 +42,7 @@ static NeuralNetwork createNetwork(
 	
 	for(size_t layer = 0; layer < layerCount; ++layer)
 	{
-		network.addLayer(Layer(blockCount, layerSize, layerSize));
+		network.addLayer(new FeedForwardLayer(blockCount, layerSize, layerSize));
 	}
 
 	network.initializeRandomly(engine);
@@ -95,9 +96,10 @@ static bool gradientCheck(NeuralNetwork& network, std::default_random_engine& en
 	float total = 0.0f;
 	float difference = 0.0f;
 	
-	size_t layerId = 0;
+	size_t layerId  = 0;
+	size_t matrixId = 0;
 	
-	auto input     = generateInput(network, engine);
+	auto input     = generateInput(    network, engine);
 	auto reference = generateReference(network, engine);
 	
 	BlockSparseMatrixVector gradient;
@@ -108,64 +110,40 @@ static bool gradientCheck(NeuralNetwork& network, std::default_random_engine& en
 	{
 		size_t blockId = 0;
 
-		auto biasBlock = layer.begin_bias();
-		for(auto& block : layer)
+		for(auto& matrix : layer->weights())
 		{
-			size_t weightId = 0;
-			
-			for(auto& weight : block)
+			for (auto& block : matrix)
 			{
-				weight += epsilon;
+				size_t weightId = 0;
 				
-				float newCost = network.getCost(input, reference);
-				
-				weight -= epsilon;
-				
-				float estimatedGradient = (newCost - cost) / epsilon;
-				float computedGradient = gradient[layerId][blockId][weightId];
-				
-				float thisDifference = std::pow(estimatedGradient - computedGradient, 2.0f);
-				
-				difference += thisDifference;
-				total += std::pow(computedGradient, 2.0f);
-				
-    			minerva::util::log("TestGradientCheck") << " (layer " << layerId << ", block "
-					<< blockId << ", weight " << weightId << ") value is " << computedGradient << " estimate is "
-					<< estimatedGradient << " difference is " << thisDifference << " \n";
-				
-				++weightId;
+				for(auto& weight : block)
+				{
+					weight += epsilon;
+					
+					float newCost = network.getCost(input, reference);
+					
+					weight -= epsilon;
+					
+					float estimatedGradient = (newCost - cost) / epsilon;
+					float computedGradient = gradient[matrixId][blockId][weightId];
+					
+					float thisDifference = std::pow(estimatedGradient - computedGradient, 2.0f);
+					
+					difference += thisDifference;
+					total += std::pow(computedGradient, 2.0f);
+					
+					minerva::util::log("TestGradientCheck") << " (layer " << layerId << ", matrix " << matrixId << ", block "
+						<< blockId << ", weight " << weightId << ") value is " << computedGradient << " estimate is "
+						<< estimatedGradient << " difference is " << thisDifference << " \n";
+					
+					++weightId;
+				}
 			}
 			
-			weightId = 0;
-			
-			for(auto& bias : *biasBlock)
-			{
-				bias += epsilon;
-				
-				float newCost = network.getCost(input, reference);
-				
-				bias -= epsilon;
-				
-				float estimatedGradient = (newCost - cost) / epsilon;
-				float computedGradient = gradient[layerId + 1][blockId][weightId];
-				
-				float thisDifference = std::pow(estimatedGradient - computedGradient, 2.0f);
-
-				difference += thisDifference;
-				total += std::pow(computedGradient, 2.0f);
-				
-    			minerva::util::log("TestGradientCheck") << " (layer " << (layerId + 1) << ", bias "
-					<< blockId << ", weight " << weightId << ") value is " << computedGradient << " estimate is "
-					<< estimatedGradient << " difference is " << thisDifference << " \n";
-				
-				++weightId;
-			}
-
-			++biasBlock;
-			++blockId;
+			++matrixId;
 		}
 
-		layerId += 2;
+		++layerId;
 	}
 	
 	std::cout << "Gradient difference is: " << (difference/total) << "\n";
@@ -242,7 +220,7 @@ int main(int argc, char** argv)
     
     try
     {
-        minerva::neuralnetwork::runTest(layerSize, blockCount, layerCount, seed);
+        minerva::network::runTest(layerSize, blockCount, layerCount, seed);
     }
     catch(const std::exception& e)
     {

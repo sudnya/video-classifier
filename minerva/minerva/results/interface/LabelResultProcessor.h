@@ -24,6 +24,13 @@ public:
 	/*! \brief Process a batch of results */
 	virtual void process(const ResultVector& );
 
+public:
+	/*! \brief Return a description of the results. */
+	virtual std::string toString() const;
+
+public:
+	float getAccuracy() const;
+
 };
 
 }

@@ -1,11 +1,12 @@
-/*! \file   test-neuralnetwork-performance.cpp
+/*! \file   test-network-performance.cpp
 	\author Gregory Diamos
 	\date   Saturday December 6, 2013
 	\brief  A unit test for the performance of the neural network.
 */
 
 // Minerva Includes
-#include <minerva/neuralnetwork/interface/NeuralNetwork.h>
+#include <minerva/network/interface/NeuralNetwork.h>
+#include <minerva/network/interface/FeedForwardLayer.h>
 
 #include <minerva/model/interface/Model.h>
 
@@ -26,13 +27,14 @@
 namespace minerva
 {
 
-namespace neuralnetwork
+namespace network
 {
 
-typedef neuralnetwork::Layer Layer;
+typedef network::Layer Layer;
 typedef matrix::Matrix Matrix;
 typedef model::Model Model;
-typedef neuralnetwork::NeuralNetwork NeuralNetwork;
+typedef network::NeuralNetwork NeuralNetwork;
+typedef network::FeedForwardLayer FeedForwardLayer;
 
 static void createAndInitializeNeuralNetworks(
 	Model& model,
@@ -54,22 +56,22 @@ static void createAndInitializeNeuralNetworks(
 	const size_t blocks    = totalPixels / blockSize;
 	
 	// convolutional layer
-	featureSelector.addLayer(FeedForwardLayer(blocks, blockSize, blockSize));
+	featureSelector.addLayer(new FeedForwardLayer(blocks, blockSize, blockSize));
 	
 	// pooling layer
-	featureSelector.addLayer(FeedForwardLayer(featureSelector.back().blocks(),
-		featureSelector.back().getInputBlockingFactor(),
-		featureSelector.back().getInputBlockingFactor() / reductionFactor));
+	featureSelector.addLayer(new FeedForwardLayer(featureSelector.back()->getBlocks(),
+		featureSelector.back()->getInputBlockingFactor(),
+		featureSelector.back()->getInputBlockingFactor() / reductionFactor));
 	
 	// convolutional layer
-	featureSelector.addLayer(FeedForwardLayer(featureSelector.back().blocks() / reductionFactor,
-		featureSelector.back().getInputBlockingFactor(),
-		featureSelector.back().getInputBlockingFactor()));
+	featureSelector.addLayer(new FeedForwardLayer(featureSelector.back()->getBlocks() / reductionFactor,
+		featureSelector.back()->getInputBlockingFactor(),
+		featureSelector.back()->getInputBlockingFactor()));
 	
 	// pooling layer
-	featureSelector.addLayer(FeedForwardLayer(featureSelector.back().blocks(),
-		featureSelector.back().getInputBlockingFactor(),
-		featureSelector.back().getInputBlockingFactor() / reductionFactor));
+	featureSelector.addLayer(new FeedForwardLayer(featureSelector.back()->getBlocks(),
+		featureSelector.back()->getInputBlockingFactor(),
+		featureSelector.back()->getInputBlockingFactor() / reductionFactor));
 
 	featureSelector.initializeRandomly(engine);
 	util::log("TestNeuralNetworkPerformance")
@@ -83,13 +85,13 @@ static void createAndInitializeNeuralNetworks(
 	// fully connected input layer
 	NeuralNetwork classifier;
 
-	classifier.addLayer(FeedForwardLayer(1, featureSelector.getOutputCount(), hiddenLayerSize));
+	classifier.addLayer(new FeedForwardLayer(1, featureSelector.getOutputCount(), hiddenLayerSize));
 
 	// fully connected hidden layer
-	classifier.addLayer(FeedForwardLayer(1, classifier.getOutputCount(), classifier.getOutputCount()));
+	classifier.addLayer(new FeedForwardLayer(1, classifier.getOutputCount(), classifier.getOutputCount()));
 	
 	// final prediction layer
-	classifier.addLayer(FeedForwardLayer(1, classifier.getOutputCount(), classes));
+	classifier.addLayer(new FeedForwardLayer(1, classifier.getOutputCount(), classes));
 
 	classifier.initializeRandomly(engine);
 
@@ -131,7 +133,7 @@ static void trainFirstLayer(const Matrix& input, NeuralNetwork& neuralNetwork)
 	
 	copy.addLayer(std::move(neuralNetwork.front()));
 	
-	copy.mirror();
+	copy.addLayer(copy.front()->mirror());
 
 	copy.train(input, input);
 
@@ -152,7 +154,7 @@ static void reportUnsupervisedTrainingPerformance(NeuralNetwork& network,
 	// 2 * extra training layer
 	// 5 * bfgs iterations
 	// 1 * batch size
-	size_t flops = network.front().getFloatingPointOperationCount() * 2 * 2 * 5 * batchSize;
+	size_t flops = network.front()->getFloatingPointOperationCount() * 2 * 2 * 5 * batchSize;
 	
 	// Get the flops available on the current machine
 	size_t machineFlops = util::getMachineFlops();
@@ -166,19 +168,19 @@ static void reportUnsupervisedTrainingPerformance(NeuralNetwork& network,
 	// Compute the memory requirements
 	//  4 bytes per float
 	//  2 layers (original + mirrored)
-	double megabytes = (network.front().totalConnections() * 4.0) / (1.0e6);
+	double megabytes = (network.front()->totalConnections() * 4.0) / (1.0e6);
 
 	// Compare it to the actual runtime
 	std::cout << "Unsupervised Learning Performance:\n";
-	std::cout << " Network Connections: " << network.front().totalConnections() << "\n";
-	std::cout << " Network Neurons:     " << network.front().totalNeurons()     << "\n";
-	std::cout << " FLOPs required:      " << toGiga(flops)                      << " GFLOPS\n";
-	std::cout << " Memory required:     " << megabytes                          << " MB\n";
-	std::cout << " Machine FLOPS:       " << toGiga(machineFlops)               << " GFLOPS\n";
-	std::cout << " Speed of light:      " << speedOfLight                       << " seconds\n";
-	std::cout << " Minerva time:        " << timer.seconds()                    << " seconds\n";
+	std::cout << " Network Connections: " << network.front()->totalConnections() << "\n";
+	std::cout << " Network Neurons:     " << network.front()->totalNeurons()     << "\n";
+	std::cout << " FLOPs required:      " << toGiga(flops)                       << " GFLOPS\n";
+	std::cout << " Memory required:     " << megabytes                           << " MB\n";
+	std::cout << " Machine FLOPS:       " << toGiga(machineFlops)                << " GFLOPS\n";
+	std::cout << " Speed of light:      " << speedOfLight                        << " seconds\n";
+	std::cout << " Minerva time:        " << timer.seconds()                     << " seconds\n";
 	std::cout << "\n";
-	std::cout << " CPU-SLOWDOWN:        " << slowdown                           << "x\n";
+	std::cout << " CPU-SLOWDOWN:        " << slowdown                            << "x\n";
 
 }
 
@@ -311,7 +313,7 @@ int main(int argc, char** argv)
     
     try
     {
-        minerva::neuralnetwork::runTest(
+        minerva::network::runTest(
 			iterations, trainingIterations, batchSize, classificationIterations,
 			xPixels, yPixels, colors, seed);
 		

@@ -8,11 +8,14 @@
 #include <minerva/classifiers/interface/EngineFactory.h>
 #include <minerva/classifiers/interface/Engine.h>
 
+#include <minerva/visualization/interface/NeuronVisualizer.h>
+
 #include <minerva/model/interface/ModelBuilder.h>
 #include <minerva/model/interface/Model.h>
 
-#include <minerva/visualization/interface/NeuronVisualizer.h>
 #include <minerva/video/interface/Image.h>
+
+#include <minerva/network/interface/NeuralNetwork.h>
 
 #include <minerva/util/interface/ArgumentParser.h>
 #include <minerva/util/interface/paths.h>
@@ -46,23 +49,21 @@ static void createNewModel(const std::string& modelFileName, const std::string& 
 {
 	model::ModelBuilder builder;
 	
-	model::Model* model = nullptr;
+	std::unique_ptr<model::Model> model;
 
 	if(modelSpecificationPath.empty())
 	{
-		model = builder.create(modelFileName);
+		model.reset(builder.create(modelFileName));
 	}
 	else
 	{
 		auto specification = loadFile(modelSpecificationPath);
 
-		model = builder.create(modelFileName, specification);
+		model.reset(builder.create(modelFileName, specification));
 		
 	}
 	
 	model->save();
-	
-	delete model;
 }
 
 static void visualizeNeurons(const std::string& modelFileName,
@@ -76,8 +77,6 @@ static void visualizeNeurons(const std::string& modelFileName,
 		"NetworkToVisualize", "FeatureSelector");
 	
 	auto network = model.getNeuralNetwork(networkName);
-
-	network.setUseSparseCostFunction(false);
 
 	visualization::NeuronVisualizer visualizer(&network);
 

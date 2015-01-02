@@ -4,7 +4,10 @@
 	\brief  The source file for the NullResultProcessor class.
 */
 
+// Minerva Includes
 #include <minerva/results/interface/NullResultProcessor.h>
+
+#include <minerva/util/interface/debug.h>
 
 namespace minerva
 {
@@ -20,6 +23,12 @@ NullResultProcessor::~NullResultProcessor()
 void NullResultProcessor::process(const ResultVector& )
 {
 
+}
+
+std::string NullResultProcessor::toString() const
+{
+	// TODO:
+	assertM(false, "Not implemented.");
 }
 
 }
