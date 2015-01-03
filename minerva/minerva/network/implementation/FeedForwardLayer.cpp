@@ -95,9 +95,9 @@ BlockSparseMatrix FeedForwardLayer::runReverse(BlockSparseMatrixVector& gradient
 	const BlockSparseMatrix& activations,
 	const BlockSparseMatrix& deltas) const
 {
-	if(util::isLogEnabled("Layer"))
+	if(util::isLogEnabled("FeedForwardLayer"))
 	{
-		util::log("Layer") << " Running reverse propagation on matrix (" << deltas.rows()
+		util::log("FeedForwardLayer") << " Running reverse propagation on matrix (" << deltas.rows()
 			<< " rows, " << deltas.columns() << " columns) through layer with dimensions ("
 			<< _weights.blocks() << " blocks, "
 			<< getInputCount() << " inputs, " << getOutputCount()
@@ -130,18 +130,28 @@ BlockSparseMatrix FeedForwardLayer::runReverse(BlockSparseMatrixVector& gradient
 	
 	// compute deltas for previous layer
 	auto deltasPropagatedReverse = deltas.reverseConvolutionalMultiply(_weights.transpose());
-	auto activationCostFunctionGradient = getActivationCostFunction()->getGradient(activations);
 	
-	auto previousLayerDeltas = deltasPropagatedReverse.elementMultiply(activationCostFunctionGradient);
-
-	if(util::isLogEnabled("Layer"))
+	BlockSparseMatrix previousLayerDeltas;
+	
+	if(getActivationCostFunction() != nullptr)
 	{
-		util::log("Layer") << "  output: " << previousLayerDeltas.shapeString() << "\n";
+		auto activationCostFunctionGradient = getActivationCostFunction()->getGradient(activations);
+		
+		previousLayerDeltas = std::move(deltasPropagatedReverse.elementMultiply(activationCostFunctionGradient));
+	}
+	else
+	{
+		previousLayerDeltas = std::move(deltasPropagatedReverse);
+	}
+	
+	if(util::isLogEnabled("FeedForwardLayer"))
+	{
+		util::log("FeedForwardLayer") << "  output: " << previousLayerDeltas.shapeString() << "\n";
 	}
 
-	if(util::isLogEnabled("Layer::Detail"))
+	if(util::isLogEnabled("FeedForwardLayer::Detail"))
 	{
-		util::log("Layer::Detail") << "  output: " << previousLayerDeltas.debugString() << "\n";
+		util::log("FeedForwardLayer::Detail") << "  output: " << previousLayerDeltas.debugString() << "\n";
 	}
 
 	return previousLayerDeltas;

@@ -32,6 +32,11 @@ BlockSparseMatrix SigmoidActivationFunction::applyDerivative(const BlockSparseMa
 	return deltas.sigmoidDerivative();
 }
 
+ActivationFunction* SigmoidActivationFunction::clone() const
+{
+	return new SigmoidActivationFunction(*this);
+}
+
 }
 
 }

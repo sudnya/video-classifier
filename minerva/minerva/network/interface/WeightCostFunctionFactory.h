@@ -23,12 +23,11 @@ class WeightCostFunctionFactory
 {
 public:
 	static WeightCostFunction* create(const std::string& costFunctionName);
+	static WeightCostFunction* create();
 
 };
 
 }
 
 }
-
-
 

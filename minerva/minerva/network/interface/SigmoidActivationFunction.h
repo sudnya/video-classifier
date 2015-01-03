@@ -6,6 +6,9 @@
 
 #pragma once
 
+// Minerva Includes
+#include <minerva/network/interface/ActivationFunction.h>
+
 // Forward Declarations
 namespace minerva { namespace matrix { class BlockSparseMatrix; } }
 
@@ -15,7 +18,7 @@ namespace minerva
 namespace network
 {
 
-class SigmoidActivationFunction
+class SigmoidActivationFunction : public ActivationFunction
 {
 public:
 	typedef matrix::BlockSparseMatrix BlockSparseMatrix;
@@ -29,6 +32,9 @@ public:
 
 	/*! \brief Run the activation function derivative on the specified input. */
 	virtual BlockSparseMatrix applyDerivative(const BlockSparseMatrix&) const;
+
+public:
+	virtual ActivationFunction* clone() const;
 
 };
 

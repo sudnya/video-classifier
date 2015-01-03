@@ -23,6 +23,7 @@ class ActivationFunctionFactory
 {
 public:
 	static ActivationFunction* create(const std::string& functionName);
+	static ActivationFunction* create();
 
 };
 

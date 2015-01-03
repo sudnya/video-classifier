@@ -246,7 +246,7 @@ int main(int argc, char** argv)
 	unsigned networkSize = 0;
 	float epsilon = 1.0f;
 
-    parser.description("The Minerva image classifier.");
+    parser.description("A minerva nerual network sanity test.");
 
     parser.parse("-i", "--iterations", iterations, 15,
         "The number of iterations to train for");

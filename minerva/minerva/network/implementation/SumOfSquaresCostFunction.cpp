@@ -26,7 +26,7 @@ BlockSparseMatrix SumOfSquaresCostFunction::computeCost(const BlockSparseMatrix&
 {
 	auto difference = output.subtract(reference);
 	
-	return difference.multiply(difference);
+	return difference.elementMultiply(difference);
 }
 
 BlockSparseMatrix SumOfSquaresCostFunction::computeDelta(const BlockSparseMatrix& output, const BlockSparseMatrix& reference) const

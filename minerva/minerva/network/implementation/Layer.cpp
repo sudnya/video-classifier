@@ -10,6 +10,10 @@
 #include <minerva/network/interface/ActivationFunction.h>
 #include <minerva/network/interface/WeightCostFunction.h>
 
+#include <minerva/network/interface/ActivationCostFunctionFactory.h>
+#include <minerva/network/interface/ActivationFunctionFactory.h>
+#include <minerva/network/interface/WeightCostFunctionFactory.h>
+
 // Standard Library Includes
 #include <sstream>
 
@@ -20,6 +24,9 @@ namespace network
 {
 
 Layer::Layer()
+: _activationFunction(ActivationFunctionFactory::create()),
+  _activationCostFunction(ActivationCostFunctionFactory::create()),
+  _weightCostFunction(WeightCostFunctionFactory::create())
 {
 
 }

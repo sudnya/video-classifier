@@ -32,6 +32,11 @@ BlockSparseMatrix RectifiedLinearActivationFunction::applyDerivative(const Block
 	return deltas.rectifiedLinearDerivative();
 }
 
+ActivationFunction* RectifiedLinearActivationFunction::clone() const
+{
+	return new RectifiedLinearActivationFunction(*this);
+}
+
 }
 
 }
