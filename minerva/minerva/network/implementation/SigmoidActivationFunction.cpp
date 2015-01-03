@@ -27,9 +27,9 @@ BlockSparseMatrix SigmoidActivationFunction::apply(const BlockSparseMatrix& acti
 	return activations.sigmoid();
 }
 
-BlockSparseMatrix SigmoidActivationFunction::applyDerivative(const BlockSparseMatrix& deltas) const
+BlockSparseMatrix SigmoidActivationFunction::applyDerivative(const BlockSparseMatrix& activations) const
 {
-	return deltas.sigmoidDerivative();
+	return activations.sigmoidDerivative();
 }
 
 ActivationFunction* SigmoidActivationFunction::clone() const

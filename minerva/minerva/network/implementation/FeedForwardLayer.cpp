@@ -92,28 +92,32 @@ BlockSparseMatrix FeedForwardLayer::runForward(const BlockSparseMatrix& m) const
 }
 
 BlockSparseMatrix FeedForwardLayer::runReverse(BlockSparseMatrixVector& gradients,
-	const BlockSparseMatrix& activations,
-	const BlockSparseMatrix& deltas) const
+	const BlockSparseMatrix& inputActivations,
+	const BlockSparseMatrix& outputActivations,
+	const BlockSparseMatrix& difference) const
 {
 	if(util::isLogEnabled("FeedForwardLayer"))
 	{
-		util::log("FeedForwardLayer") << " Running reverse propagation on matrix (" << deltas.rows()
-			<< " rows, " << deltas.columns() << " columns) through layer with dimensions ("
-			<< _weights.blocks() << " blocks, "
+		util::log("FeedForwardLayer") << " Running reverse propagation on matrix (" << difference.rows()
+			<< " rows, " << difference.columns() << " columns) through layer with dimensions ("
+			<< getBlocks() << " blocks, "
 			<< getInputCount() << " inputs, " << getOutputCount()
 			<< " outputs, " << _blockStep << " block step).\n";
 		util::log("Layer") << "  layer: " << _weights.shapeString() << "\n";
   	}
+	
+	// finish computing the gradient
+	auto deltas = getActivationFunction()->applyDerivative(outputActivations).elementMultiply(difference);
 	
 	// compute gradient for the weights
 	auto transposedDeltas = deltas.transpose();
 	
 	transposedDeltas.setRowSparse();
 	
-	auto unnormalizedWeightGradient = transposedDeltas.reverseConvolutionalMultiply(activations);
+	auto unnormalizedWeightGradient = transposedDeltas.reverseConvolutionalMultiply(inputActivations);
 
-	auto samples = activations.rows();
-	auto weightGradient = unnormalizedWeightGradient.multiply(1.0f / samples);
+	auto samples = outputActivations.rows();
+	auto weightGradient = unnormalizedWeightGradient.multiply(1.0f / samples).transpose();
 	
 	// add in the weight cost function term
 	if(getWeightCostFunction() != nullptr)
@@ -121,12 +125,12 @@ BlockSparseMatrix FeedForwardLayer::runReverse(BlockSparseMatrixVector& gradient
 		weightGradient = weightGradient.add(getWeightCostFunction()->getGradient(_weights));
 	}
 
-	gradients.push_back(weightGradient);
+	gradients.push_back(std::move(weightGradient));
 	
 	// compute gradient for the bias
 	auto biasGradient = transposedDeltas.reduceSumAlongColumns().multiply(1.0f/samples);
 	
-	gradients.push_back(biasGradient);
+	gradients.push_back(std::move(biasGradient));
 	
 	// compute deltas for previous layer
 	auto deltasPropagatedReverse = deltas.reverseConvolutionalMultiply(_weights.transpose());
@@ -135,7 +139,7 @@ BlockSparseMatrix FeedForwardLayer::runReverse(BlockSparseMatrixVector& gradient
 	
 	if(getActivationCostFunction() != nullptr)
 	{
-		auto activationCostFunctionGradient = getActivationCostFunction()->getGradient(activations);
+		auto activationCostFunctionGradient = getActivationCostFunction()->getGradient(outputActivations);
 		
 		previousLayerDeltas = std::move(deltasPropagatedReverse.elementMultiply(activationCostFunctionGradient));
 	}

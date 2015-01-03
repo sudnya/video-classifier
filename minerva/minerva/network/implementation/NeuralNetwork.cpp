@@ -100,24 +100,37 @@ float NeuralNetwork::getCostAndGradient(BlockSparseMatrixVector& gradient, const
 
 	activations.push_back(input);
 
+	size_t weightMatrices = 0;
+
 	for(auto layer = begin(); layer != end(); ++layer)
 	{
 		util::log("NeuralNetwork") << " Running forward propagation through layer "
 			<< std::distance(begin(), layer) << "\n";
 		
 		activations.push_back(std::move((*layer)->runForward(activations.back())));
+		
+		weightMatrices += (*layer)->weights().size();
 	}
+	
+	gradient.resize(weightMatrices);
 	
 	auto activation = activations.rbegin();
 	auto delta      = getCostFunction()->computeDelta(*activation, reference);
+
+	auto gradientMatrix = gradient.rbegin();
 	
 	for(auto layer = rbegin(); layer != rend(); ++layer, ++activation)
 	{
 		BlockSparseMatrixVector grad;
 
-		delta = (*layer)->runReverse(grad, *activation, delta);
-	
-		gradient.push_back(std::move(grad));
+		auto previousActivation = activation; ++previousActivation;
+
+		delta = (*layer)->runReverse(grad, *previousActivation, *activation, delta);
+		
+		for(auto gradMatrix = grad.rbegin(); gradMatrix != grad.rend(); ++gradMatrix, ++gradientMatrix)
+		{
+			*gradientMatrix = std::move(*gradMatrix);
+		}
 	}
 	
 	return getCostFunction()->computeCost(activations.back(), reference).reduceSum();
@@ -144,7 +157,9 @@ float NeuralNetwork::getInputCostAndGradient(BlockSparseMatrix& gradient, const 
 	{
 		BlockSparseMatrixVector grad;
 
-		delta = (*layer)->runReverse(grad, *activation, delta);
+		auto nextActivation = activation; ++nextActivation;
+		
+		delta = (*layer)->runReverse(grad, *nextActivation, *activation, delta);
 	}
 	
 	auto samples = activation->rows();

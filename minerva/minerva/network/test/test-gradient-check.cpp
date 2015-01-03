@@ -108,10 +108,10 @@ static bool gradientCheck(NeuralNetwork& network, std::default_random_engine& en
 	
 	for(auto& layer : network)
 	{
-		size_t blockId = 0;
-
 		for(auto& matrix : layer->weights())
 		{
+			size_t blockId = 0;
+
 			for (auto& block : matrix)
 			{
 				size_t weightId = 0;
@@ -138,6 +138,8 @@ static bool gradientCheck(NeuralNetwork& network, std::default_random_engine& en
 					
 					++weightId;
 				}
+				
+				++blockId;
 			}
 			
 			++matrixId;

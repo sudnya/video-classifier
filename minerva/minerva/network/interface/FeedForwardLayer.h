@@ -29,7 +29,8 @@ public:
 public:
     virtual BlockSparseMatrix runForward(const BlockSparseMatrix& m) const;
     virtual BlockSparseMatrix runReverse(BlockSparseMatrixVector& gradients,
-		const BlockSparseMatrix& activations,
+		const BlockSparseMatrix& inputActivations,
+		const BlockSparseMatrix& outputActivations,
 		const BlockSparseMatrix& deltas) const;
 
 public:

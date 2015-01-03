@@ -43,7 +43,8 @@ BlockSparseMatrix RecurrentLayer::runForward(const BlockSparseMatrix& m) const
 }
 
 BlockSparseMatrix RecurrentLayer::runReverse(BlockSparseMatrixVector& gradients,
-	const BlockSparseMatrix& activations,
+	const BlockSparseMatrix& inputActivations,
+	const BlockSparseMatrix& outputActivations,
 	const BlockSparseMatrix& deltas) const
 {
 	assertM(false, "Not Implemented.");

@@ -27,9 +27,9 @@ BlockSparseMatrix RectifiedLinearActivationFunction::apply(const BlockSparseMatr
 	return activations.rectifiedLinear();
 }
 
-BlockSparseMatrix RectifiedLinearActivationFunction::applyDerivative(const BlockSparseMatrix& deltas) const
+BlockSparseMatrix RectifiedLinearActivationFunction::applyDerivative(const BlockSparseMatrix& activations) const
 {
-	return deltas.rectifiedLinearDerivative();
+	return activations.rectifiedLinearDerivative();
 }
 
 ActivationFunction* RectifiedLinearActivationFunction::clone() const
