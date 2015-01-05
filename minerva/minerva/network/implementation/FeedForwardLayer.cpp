@@ -114,7 +114,7 @@ BlockSparseMatrix FeedForwardLayer::runReverse(BlockSparseMatrixVector& gradient
 	
 	transposedDeltas.setRowSparse();
 	
-	auto unnormalizedWeightGradient = transposedDeltas.computeConvolutionalGradient(inputActivations, SparseMatrixFormat(_weights));
+	auto unnormalizedWeightGradient = transposedDeltas.computeConvolutionalGradient(inputActivations, SparseMatrixFormat(_weights), _blockStep);
 
 	auto samples = outputActivations.rows();
 	auto weightGradient = unnormalizedWeightGradient.multiply(1.0f / samples).transpose();
@@ -128,7 +128,7 @@ BlockSparseMatrix FeedForwardLayer::runReverse(BlockSparseMatrixVector& gradient
 	gradients.push_back(std::move(weightGradient));
 	
 	// compute gradient for the bias
-	auto biasGradient = transposedDeltas.reduceSumAlongColumns().multiply(1.0f/samples).transpose();
+	auto biasGradient = transposedDeltas.reduceSumAlongColumns().multiply(1.0f / samples).transpose();
 	
 	gradients.push_back(std::move(biasGradient));
 	
@@ -171,6 +171,11 @@ const BlockSparseMatrixVector& FeedForwardLayer::weights() const
 	return _parameters;
 }
 
+float FeedForwardLayer::computeWeightCost() const
+{
+	return getWeightCostFunction()->getCost(_weights);
+}
+
 size_t FeedForwardLayer::getInputCount() const
 {
 	return _weights.rows();
@@ -204,7 +209,19 @@ size_t FeedForwardLayer::getOutputBlockingFactor() const
 
 size_t FeedForwardLayer::getOutputCountForInputCount(size_t inputCount) const
 {
-	size_t outputCount = (inputCount / _blockStep) * (_weights.columnsPerBlock());
+	size_t filterSize = getInputBlockingFactor();
+	
+	size_t inputBlocks     = inputCount / getInputBlockingFactor();
+	size_t partitionSize   = (getBlocks() + inputBlocks - 1) / inputBlocks;
+	size_t fullPartitions  = getBlocks() / partitionSize;
+	size_t remainingBlocks = getBlocks() % partitionSize;
+	
+	size_t partiallyFullPartitions = remainingBlocks > 0 ? 1 : 0;
+	
+	size_t resultBlocks = fullPartitions * ((partitionSize * _weights.rowsPerBlock() - filterSize + _blockStep) / _blockStep) +
+		partiallyFullPartitions * ((remainingBlocks * _weights.rowsPerBlock() - filterSize + _blockStep) / _blockStep);
+
+	size_t outputCount = (resultBlocks) * (_weights.columnsPerBlock());
 
 	util::log("FeedForwardLayer") << _weights.shapeString()
 		<< ": Output count for input count " << inputCount

@@ -30,6 +30,11 @@ public:
 
 	typedef MatrixVector::iterator       iterator;
 	typedef MatrixVector::const_iterator const_iterator;
+	
+	typedef       float& FloatReference;
+	typedef const float& ConstFloatReference;
+	typedef       float* FloatPointer;
+	typedef const float* ConstFloatPointer;
 
 public:
 	explicit BlockSparseMatrix(size_t blocks = 0, size_t rows = 0,
@@ -63,6 +68,9 @@ public:
 public:
 	const Matrix& operator[](size_t position) const;
 	      Matrix& operator[](size_t position);
+	     
+		 FloatReference operator()(size_t row, size_t column);
+	ConstFloatReference operator()(size_t row, size_t column) const;
 
 public:
 	void pop_back();
@@ -95,7 +103,7 @@ public:
 	BlockSparseMatrix multiply(const BlockSparseMatrix& m) const;
 	BlockSparseMatrix convolutionalMultiply(const BlockSparseMatrix& m, size_t step) const;
 
-	BlockSparseMatrix computeConvolutionalGradient(const BlockSparseMatrix& activation, const SparseMatrixFormat& weightFormat) const;
+	BlockSparseMatrix computeConvolutionalGradient(const BlockSparseMatrix& activation, const SparseMatrixFormat& weightFormat, size_t step) const;
 	BlockSparseMatrix computeConvolutionalDeltas(const BlockSparseMatrix& weights, const SparseMatrixFormat& deltasFormat, size_t step) const;
 
 	BlockSparseMatrix multiply(float f) const;
@@ -139,6 +147,11 @@ public:
 
 	void assignUniformRandomValues(std::default_random_engine& engine,
 		float min = 0.0f, float max = 1.0f);
+
+public:
+	Matrix slice(size_t startRow, size_t startColumn,
+		size_t rows, size_t columns) const;
+	void assign(size_t startRow, size_t startColumn, const Matrix&);
 
 public:
 	BlockSparseMatrix greaterThanOrEqual(float f) const;

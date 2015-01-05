@@ -37,7 +37,7 @@ public:
 	virtual Value* multiply(const Value* m) const;
 	virtual Value* convolutionalMultiply(const Value* m, size_t step) const;
 	
-	virtual Value* computeConvolutionalGradient(const Value* activation, const SparseMatrixFormat& weightFormat) const;
+	virtual Value* computeConvolutionalGradient(const Value* activation, const SparseMatrixFormat& weightFormat, size_t step) const;
 	virtual Value* computeConvolutionalDeltas(const Value* weights, const SparseMatrixFormat& deltasFormat, size_t step) const;
 	
 	virtual Value* multiply(float f) const;

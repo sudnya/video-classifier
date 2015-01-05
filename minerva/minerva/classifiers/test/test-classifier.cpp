@@ -26,27 +26,16 @@ network::NeuralNetwork createAndInitializeNeuralNetwork(unsigned networkSize, fl
 {
     network::NeuralNetwork ann;
 
-	size_t convolutionalLayers = 1;//std::min(networkSize/4, 1U);
-
     // Layer 1
-    ann.addLayer(new FeedForwardLayer(convolutionalLayers,networkSize/convolutionalLayers,
-		networkSize/convolutionalLayers));
-
-	size_t step = 8;
-	
-	size_t convolutionalLayersTwo = 1;//std::min(networkSize/4, 1U);
-	size_t layerTwoStep = (networkSize / convolutionalLayersTwo) / step;
-
-    // Layer 2
-    ann.addLayer(new FeedForwardLayer(convolutionalLayersTwo, networkSize/convolutionalLayersTwo,
-		networkSize/convolutionalLayersTwo, layerTwoStep));
+    ann.addLayer(new FeedForwardLayer(1, networkSize, networkSize));
+    ann.addLayer(new FeedForwardLayer(1, networkSize, networkSize));
 
     // Layer 3
-    ann.addLayer(new FeedForwardLayer(1,networkSize * step,networkSize/2));
+    ann.addLayer(new FeedForwardLayer(1, networkSize, networkSize/2));
 
 	std::default_random_engine engine;
 	
-	engine.seed(0);
+	engine.seed(177);
 	
     ann.initializeRandomly(engine, epsilon);
 
@@ -76,7 +65,7 @@ Matrix generateRandomMatrix(unsigned rows, unsigned columns, std::default_random
 
 float floatXor(float x, float y)
 {
-    return x == y ? 0.0f : 1.0f;
+    return x == 1.0f && y == 1.0f ? 0.0f : 1.0f;
 }
 
 Matrix matrixXor(const Matrix& inputs)
@@ -88,7 +77,7 @@ Matrix matrixXor(const Matrix& inputs)
     {
         for (unsigned j = 0; j < inputs.columns()/2; ++j)
         {
-            output(i,j) = floatXor(inputs(i,j), inputs(i, (inputs.columns()/2 + j)));
+            output(i,j) = floatXor(inputs(i, j * 2), inputs(i, j * 2 + 1));
         }
     }
     return output;
@@ -115,7 +104,7 @@ Matrix threshold(const Matrix& output)
 
 void trainNeuralNetwork(network::NeuralNetwork& ann, unsigned trainingIter, std::default_random_engine& generator)
 {
-    unsigned samplesPerIter = ann.getInputCount() * 50;
+    unsigned samplesPerIter = ann.getInputCount() * 200;
 
     util::log("TestClassifier") << "Starting training\n";
 

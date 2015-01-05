@@ -57,6 +57,9 @@ public:
     virtual const BlockSparseMatrixVector& weights() const = 0;
 
 public:
+	virtual float computeWeightCost() const = 0;
+
+public:
     virtual size_t getInputCount()  const = 0;
     virtual size_t getOutputCount() const = 0;
 

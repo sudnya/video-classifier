@@ -31,6 +31,11 @@ public:
 	typedef MatrixVector::const_iterator const_iterator;
 	
 	typedef BlockSparseMatrixImplementation Value;
+	
+	typedef       float& FloatReference;
+	typedef const float& ConstFloatReference;
+	typedef       float* FloatPointer;
+	typedef const float* ConstFloatPointer;
 
 public:
 	explicit BlockSparseMatrixImplementation(size_t blocks, size_t rows,
@@ -41,7 +46,7 @@ public:
 	virtual Value* multiply(const Value* m) const = 0;
 	virtual Value* convolutionalMultiply(const Value* m, size_t step) const = 0;
 
-	virtual Value* computeConvolutionalGradient(const Value* activation, const SparseMatrixFormat& weightFormat) const = 0;
+	virtual Value* computeConvolutionalGradient(const Value* activation, const SparseMatrixFormat& weightFormat, size_t step) const = 0;
 	virtual Value* computeConvolutionalDeltas(const Value* weights, const SparseMatrixFormat& deltasFormat, size_t step) const = 0;
 
 	virtual Value* multiply(float f) const = 0;
@@ -115,6 +120,9 @@ public:
 public:
 	virtual const Matrix& operator[](size_t position) const;
 	virtual       Matrix& operator[](size_t position);
+	     
+	virtual	     FloatReference operator()(size_t row, size_t column);
+	virtual ConstFloatReference operator()(size_t row, size_t column) const;
 
 public:
 	virtual void pop_back();
@@ -137,6 +145,10 @@ public:
 public:
 	virtual void resize(size_t blocks, size_t rowsPerBlock, size_t columnsPerBlock);
 	virtual void resize(size_t blocks);
+
+public:
+	virtual Matrix slice(size_t startRow, size_t startColumn, size_t rows, size_t columns) const;
+	virtual void assign(size_t startRow, size_t startColumn, const Matrix& m);
 
 public:
 	Matrix toMatrix() const;

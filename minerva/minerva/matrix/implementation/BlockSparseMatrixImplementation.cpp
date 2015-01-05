@@ -84,6 +84,26 @@ Matrix& BlockSparseMatrixImplementation::operator[](size_t position)
 	return _matrices[position];
 }
 
+BlockSparseMatrixImplementation::FloatReference BlockSparseMatrixImplementation::operator()(size_t row, size_t column)
+{
+	size_t block = isRowSparse() ? row / rowsPerBlock() : column / columnsPerBlock();
+	
+	size_t blockRow    = isRowSparse()    ? row    % rowsPerBlock()    : row;
+	size_t blockColumn = isColumnSparse() ? column % columnsPerBlock() : column;
+	
+	return (*this)[block](blockRow, blockColumn);
+}
+
+BlockSparseMatrixImplementation::ConstFloatReference BlockSparseMatrixImplementation::operator()(size_t row, size_t column) const
+{
+	size_t block = isRowSparse() ? row / rowsPerBlock() : column / columnsPerBlock();
+	
+	size_t blockRow    = isRowSparse()    ? row    % rowsPerBlock()    : row;
+	size_t blockColumn = isColumnSparse() ? column % columnsPerBlock() : column;
+	
+	return (*this)[block](blockRow, blockColumn);
+}
+
 void BlockSparseMatrixImplementation::pop_back()
 {
 	return _matrices.pop_back();
@@ -232,6 +252,24 @@ void BlockSparseMatrixImplementation::resize(size_t blocks, size_t rowsPerBlock,
 		matrix.resize(rowsPerBlock, columnsPerBlock);
 	}
 }
+
+Matrix BlockSparseMatrixImplementation::slice(size_t startRow, size_t startColumn, size_t rows, size_t columns) const
+{
+	// TODO
+	return toMatrix().slice(startRow, startColumn, rows, columns);
+}
+
+void BlockSparseMatrixImplementation::assign(size_t startRow, size_t startColumn, const Matrix& m)
+{
+	// TODO: better
+	for(size_t r = 0; r < m.rows(); ++r)
+	{
+		for(size_t c = 0; c < m.columns(); ++c)
+		{
+			(*this)(startRow + r, startColumn + c) = m(r, c);
+		}
+	}
+}	
 
 Matrix BlockSparseMatrixImplementation::toMatrix() const
 {

@@ -60,6 +60,11 @@ const BlockSparseMatrixVector& RecurrentLayer::weights() const
 	assertM(false, "Not Implemented.");
 }
 
+float RecurrentLayer::computeWeightCost() const
+{
+	assertM(false, "Not Implemented.");
+}
+
 size_t RecurrentLayer::getInputCount() const
 {
 	assertM(false, "Not Implemented.");

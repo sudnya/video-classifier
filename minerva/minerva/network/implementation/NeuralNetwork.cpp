@@ -136,7 +136,14 @@ float NeuralNetwork::getCostAndGradient(BlockSparseMatrixVector& gradient, const
 		}
 	}
 	
-	return getCostFunction()->computeCost(activations.back(), reference).reduceSum();
+	float weightCost = 0.0f;
+	
+	for(auto& layer : *this)
+	{
+		weightCost += layer->computeWeightCost();
+	}
+	
+	return weightCost + getCostFunction()->computeCost(activations.back(), reference).reduceSum();
 }
 	
 float NeuralNetwork::getInputCostAndGradient(BlockSparseMatrix& gradient, const BlockSparseMatrix& input, const BlockSparseMatrix& reference) const
@@ -171,7 +178,14 @@ float NeuralNetwork::getInputCostAndGradient(BlockSparseMatrix& gradient, const 
 	
 	gradient = delta.multiply(1.0f / samples);
 	
-	return getCostFunction()->computeCost(activations.back(), reference).reduceSum();
+	float weightCost = 0.0f;
+	
+	for(auto& layer : *this)
+	{
+		weightCost += layer->computeWeightCost();
+	}
+	
+	return weightCost + getCostFunction()->computeCost(activations.back(), reference).reduceSum();
 }
 
 float NeuralNetwork::getInputCostAndGradient(BlockSparseMatrix& gradient, const Matrix& input, const Matrix& reference) const
@@ -188,7 +202,14 @@ float NeuralNetwork::getCost(const BlockSparseMatrix& input, const BlockSparseMa
 {
 	auto result = runInputs(input);
 	
-	return getCostFunction()->computeCost(result, reference).reduceSum();
+	float weightCost = 0.0f;
+	
+	for(auto& layer : *this)
+	{
+		weightCost += layer->computeWeightCost();
+	}
+	
+	return weightCost + getCostFunction()->computeCost(result, reference).reduceSum();
 }
 
 float NeuralNetwork::getCostAndGradient(BlockSparseMatrixVector& gradient, const Matrix& input, const Matrix& reference) const

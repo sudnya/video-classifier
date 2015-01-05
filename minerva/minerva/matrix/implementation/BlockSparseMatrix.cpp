@@ -123,6 +123,16 @@ Matrix& BlockSparseMatrix::operator[](size_t position)
 {
 	return (*_implementation)[position];
 }
+		 
+BlockSparseMatrix::FloatReference BlockSparseMatrix::operator()(size_t row, size_t column)
+{
+	return (*this)(row, column);
+}
+
+BlockSparseMatrix::ConstFloatReference BlockSparseMatrix::operator()(size_t row, size_t column) const
+{
+	return (*this)(row, column);
+}
 
 void BlockSparseMatrix::pop_back()
 {
@@ -228,10 +238,10 @@ BlockSparseMatrix BlockSparseMatrix::convolutionalMultiply(
 }
 
 BlockSparseMatrix BlockSparseMatrix::computeConvolutionalGradient(
-	const BlockSparseMatrix& activation, const SparseMatrixFormat& format) const
+	const BlockSparseMatrix& activation, const SparseMatrixFormat& format, size_t step) const
 {
 	return BlockSparseMatrix(_implementation->computeConvolutionalGradient(
-		activation._implementation, format));
+		activation._implementation, format, step));
 }
 
 BlockSparseMatrix BlockSparseMatrix::computeConvolutionalDeltas(
@@ -382,6 +392,18 @@ void BlockSparseMatrix::assignUniformRandomValues(
 	std::default_random_engine& engine, float min, float max)
 {
 	_implementation->assignUniformRandomValues(engine, min, max);
+}
+
+Matrix BlockSparseMatrix::slice(size_t startRow, size_t startColumn,
+	size_t rows, size_t columns) const
+{
+	// TODO: better
+	return _implementation->slice(startRow, startColumn, rows, columns);
+}
+
+void BlockSparseMatrix::assign(size_t startRow, size_t startColumn, const Matrix& m)
+{
+	_implementation->assign(startRow, startColumn, m);
 }
 
 BlockSparseMatrix BlockSparseMatrix::greaterThanOrEqual(float f) const

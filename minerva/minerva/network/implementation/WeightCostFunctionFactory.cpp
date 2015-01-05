@@ -7,6 +7,8 @@
 // Minerva Includes
 #include <minerva/network/interface/WeightCostFunctionFactory.h>
 
+#include <minerva/network/interface/WeightRegularizationCostFunction.h>
+
 namespace minerva
 {
 
@@ -15,6 +17,11 @@ namespace network
 
 WeightCostFunction* WeightCostFunctionFactory::create(const std::string& costFunctionName)
 {
+	if(costFunctionName == "WeightRegularizationCostFunction")
+	{
+		return new WeightRegularizationCostFunction;
+	}
+
 	return nullptr;
 }
 
