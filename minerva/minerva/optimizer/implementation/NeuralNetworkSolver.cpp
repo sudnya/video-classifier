@@ -5,7 +5,7 @@
 
 
 #include <minerva/optimizer/interface/NeuralNetworkSolver.h>
-#include <minerva/optimizer/interface/TiledConvolutionalSolver.h>
+#include <minerva/optimizer/interface/SimpleNeuralNetworkSolver.h>
 
 #include <minerva/util/interface/debug.h>
 #include <minerva/util/interface/Knobs.h>
@@ -26,11 +26,6 @@ NeuralNetworkSolver::~NeuralNetworkSolver()
 
 }
 
-void NeuralNetworkSolver::solve()
-{
-    assertM(false, "Not implemented yet");
-}
-
 void NeuralNetworkSolver::setInput(const BlockSparseMatrix* input)
 {
 	_input = input;
@@ -44,10 +39,10 @@ void NeuralNetworkSolver::setReference(const BlockSparseMatrix* reference)
 NeuralNetworkSolver* NeuralNetworkSolver::create(NeuralNetwork* n)
 {
 	auto solverName = util::KnobDatabase::getKnobValue("Solver::Type",
-		"TiledConvolutionalSolver");
-
-	// Fall back to tiled solver
-	return new TiledConvolutionalSolver(n);
+		"SimpleNeuralNetworkSolver");
+	
+	// Fall back to simple solver
+	return new SimpleNeuralNetworkSolver(n);
 }
 
 }

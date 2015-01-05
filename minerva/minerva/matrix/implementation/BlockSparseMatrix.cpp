@@ -227,11 +227,18 @@ BlockSparseMatrix BlockSparseMatrix::convolutionalMultiply(
 		m._implementation, step));
 }
 
-BlockSparseMatrix BlockSparseMatrix::reverseConvolutionalMultiply(
-	const BlockSparseMatrix& m) const
+BlockSparseMatrix BlockSparseMatrix::computeConvolutionalGradient(
+	const BlockSparseMatrix& activation, const SparseMatrixFormat& format) const
 {
-	return BlockSparseMatrix(_implementation->reverseConvolutionalMultiply(
-		m._implementation));
+	return BlockSparseMatrix(_implementation->computeConvolutionalGradient(
+		activation._implementation, format));
+}
+
+BlockSparseMatrix BlockSparseMatrix::computeConvolutionalDeltas(
+	const BlockSparseMatrix& weights, const SparseMatrixFormat& deltasFormat, size_t step) const
+{
+	return BlockSparseMatrix(_implementation->computeConvolutionalDeltas(
+		weights._implementation, deltasFormat, step));
 }
 
 BlockSparseMatrix BlockSparseMatrix::multiply(float f) const

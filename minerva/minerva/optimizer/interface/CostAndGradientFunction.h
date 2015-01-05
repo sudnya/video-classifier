@@ -14,7 +14,7 @@
 namespace minerva { namespace matrix    { class Matrix;                  } }
 namespace minerva { namespace matrix    { class BlockSparseMatrix;       } }
 namespace minerva { namespace matrix    { class BlockSparseMatrixVector; } }
-namespace minerva { namespace optimizer { class SparseMatrixFormat;      } }
+namespace minerva { namespace matrix    { class SparseMatrixFormat;      } }
 namespace minerva { namespace optimizer { class CostAndGradientFunction; } }
 
 namespace minerva
@@ -29,6 +29,7 @@ class CostAndGradientFunction
 public:
 	typedef matrix::BlockSparseMatrix       BlockSparseMatrix;
 	typedef matrix::BlockSparseMatrixVector BlockSparseMatrixVector;
+	typedef matrix::SparseMatrixFormat      SparseMatrixFormat;
 	typedef std::vector<SparseMatrixFormat> SparseMatrixVectorFormat;
 	typedef matrix::Matrix                  Matrix;
 

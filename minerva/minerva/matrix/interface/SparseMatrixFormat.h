@@ -11,13 +11,13 @@
 #include <vector>
 
 // Forward Declarations
-namespace minerva { namespace matrix    { class Matrix;             } }
-namespace minerva { namespace matrix    { class BlockSparseMatrix;  } }
+namespace minerva { namespace matrix { class Matrix;            } }
+namespace minerva { namespace matrix { class BlockSparseMatrix; } }
 
 namespace minerva
 {
 
-namespace optimizer
+namespace matrix
 {
 
 /* \brief An abstract representation of a sparse matrix */
@@ -26,8 +26,8 @@ class SparseMatrixFormat
 public:
 	explicit SparseMatrixFormat(size_t blocks = 0, size_t rowsPerBlock = 0,
 		size_t columnsPerBlock = 0, bool isRowSparse = true);
-	SparseMatrixFormat(const matrix::BlockSparseMatrix& );
-	SparseMatrixFormat(const matrix::Matrix& );
+	SparseMatrixFormat(const BlockSparseMatrix& );
+	SparseMatrixFormat(const Matrix& );
 	
 public:
 	size_t blocks;

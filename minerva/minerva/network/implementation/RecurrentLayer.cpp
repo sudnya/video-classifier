@@ -9,7 +9,7 @@
 
 #include <minerva/matrix/interface/BlockSparseMatrix.h>
 
-#include <minerva/optimizer/interface/SparseMatrixFormat.h>
+#include <minerva/matrix/interface/SparseMatrixFormat.h>
 
 #include <minerva/util/interface/debug.h>
 

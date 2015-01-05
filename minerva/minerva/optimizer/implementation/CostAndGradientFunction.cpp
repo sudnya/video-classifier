@@ -6,7 +6,8 @@
 
 // Minerva Includes
 #include <minerva/optimizer/interface/CostAndGradientFunction.h>
-#include <minerva/optimizer/interface/SparseMatrixFormat.h>
+
+#include <minerva/matrix/interface/SparseMatrixFormat.h>
 
 #include <minerva/matrix/interface/BlockSparseMatrix.h>
 #include <minerva/matrix/interface/BlockSparseMatrixVector.h>
@@ -17,9 +18,11 @@ namespace minerva
 namespace optimizer
 {
 
-typedef matrix::Matrix                  Matrix;
-typedef matrix::BlockSparseMatrix       BlockSparseMatrix;
-typedef matrix::BlockSparseMatrixVector BlockSparseMatrixVector;
+typedef matrix::Matrix                   Matrix;
+typedef matrix::BlockSparseMatrix        BlockSparseMatrix;
+typedef matrix::BlockSparseMatrixVector  BlockSparseMatrixVector;
+typedef matrix::SparseMatrixFormat       SparseMatrixFormat;
+typedef matrix::SparseMatrixVectorFormat SparseMatrixVectorFormat;
 
 CostAndGradientFunction::CostAndGradientFunction(const SparseMatrixVectorFormat& f)
 : format(f)

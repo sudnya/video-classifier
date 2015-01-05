@@ -6,13 +6,13 @@
 #pragma once
 
 // Forward Declarations
-namespace minerva { namespace matrix    { class BlockSparseMatrix;       } }
-namespace minerva { namespace matrix    { class BlockSparseMatrixVector; } }
-namespace minerva { namespace network   { class ActivationFunction;      } }
-namespace minerva { namespace network   { class ActivationCostFunction;  } }
-namespace minerva { namespace network   { class WeightCostFunction;      } }
-namespace minerva { namespace optimizer { class SparseMatrixFormat;      } }
-namespace minerva { namespace util      { class TarArchive;              } }
+namespace minerva { namespace matrix  { class BlockSparseMatrix;       } }
+namespace minerva { namespace matrix  { class BlockSparseMatrixVector; } }
+namespace minerva { namespace network { class ActivationFunction;      } }
+namespace minerva { namespace network { class ActivationCostFunction;  } }
+namespace minerva { namespace network { class WeightCostFunction;      } }
+namespace minerva { namespace matrix  { class SparseMatrixFormat;      } }
+namespace minerva { namespace util    { class TarArchive;              } }
 
 // Standard Library Includes
 #include <random>
@@ -27,9 +27,9 @@ namespace network
 class Layer
 {
 public:
-    typedef minerva::matrix::BlockSparseMatrix       BlockSparseMatrix;
-    typedef minerva::matrix::BlockSparseMatrixVector BlockSparseMatrixVector;
-	typedef optimizer::SparseMatrixFormat   SparseMatrixFormat;
+    typedef matrix::BlockSparseMatrix       BlockSparseMatrix;
+    typedef matrix::BlockSparseMatrixVector BlockSparseMatrixVector;
+	typedef matrix::SparseMatrixFormat      SparseMatrixFormat;
 	typedef std::vector<SparseMatrixFormat> SparseMatrixVectorFormat;
     typedef std::set<size_t> NeuronSet;
 

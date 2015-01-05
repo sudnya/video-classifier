@@ -11,7 +11,8 @@
 #include <minerva/network/interface/Layer.h>
 
 #include <minerva/optimizer/interface/NeuralNetworkSolver.h>
-#include <minerva/optimizer/interface/SparseMatrixFormat.h>
+
+#include <minerva/matrix/interface/SparseMatrixFormat.h>
 
 #include <minerva/matrix/interface/Matrix.h>
 #include <minerva/matrix/interface/BlockSparseMatrixVector.h>
@@ -93,7 +94,7 @@ void NeuralNetwork::train(BlockSparseMatrix& input, BlockSparseMatrix& reference
 	
 	getSolver()->solve();
 }
-	
+
 float NeuralNetwork::getCostAndGradient(BlockSparseMatrixVector& gradient, const BlockSparseMatrix& input, const BlockSparseMatrix& reference) const
 {
 	BlockSparseMatrixVector activations;
@@ -124,6 +125,8 @@ float NeuralNetwork::getCostAndGradient(BlockSparseMatrixVector& gradient, const
 		BlockSparseMatrixVector grad;
 
 		auto previousActivation = activation; ++previousActivation;
+		
+		formatOutputForLayer(**layer, delta);
 
 		delta = (*layer)->runReverse(grad, *previousActivation, *activation, delta);
 		
@@ -158,6 +161,8 @@ float NeuralNetwork::getInputCostAndGradient(BlockSparseMatrix& gradient, const 
 		BlockSparseMatrixVector grad;
 
 		auto nextActivation = activation; ++nextActivation;
+		
+		formatOutputForLayer(**layer, delta);
 		
 		delta = (*layer)->runReverse(grad, *nextActivation, *activation, delta);
 	}
@@ -448,7 +453,7 @@ void NeuralNetwork::restoreWeights(BlockSparseMatrixVector&& weights)
 
 NeuralNetwork::SparseMatrixVectorFormat NeuralNetwork::getWeightFormat() const
 {
-	SparseMatrixVectorFormat format;
+	matrix::SparseMatrixVectorFormat format;
 	
 	for(auto& layer : *this)
 	{
@@ -595,7 +600,7 @@ void NeuralNetwork::formatOutputForLayer(const Layer& layer, BlockSparseMatrix& 
 {
 	assert(m.columns() % layer.getOutputCount() == 0);
 	
-	if(layer.getBlocks() == m.blocks()) return;
+	if(layer.getBlocks() == m.blocks() && layer.getOutputBlockingFactor() == m.columnsPerBlock()) return;
 
 	assert(m.isColumnSparse());
 

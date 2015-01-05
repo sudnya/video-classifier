@@ -12,8 +12,9 @@
 #include <random>
 
 // Forward Declarations
-namespace minerva { namespace matrix { class Matrix; } }
+namespace minerva { namespace matrix { class Matrix;                          } }
 namespace minerva { namespace matrix { class BlockSparseMatrixImplementation; } }
+namespace minerva { namespace matrix { class SparseMatrixFormat;              } }
 
 namespace minerva
 {
@@ -93,7 +94,10 @@ public:
 public: 
 	BlockSparseMatrix multiply(const BlockSparseMatrix& m) const;
 	BlockSparseMatrix convolutionalMultiply(const BlockSparseMatrix& m, size_t step) const;
-	BlockSparseMatrix reverseConvolutionalMultiply(const BlockSparseMatrix& m) const;
+
+	BlockSparseMatrix computeConvolutionalGradient(const BlockSparseMatrix& activation, const SparseMatrixFormat& weightFormat) const;
+	BlockSparseMatrix computeConvolutionalDeltas(const BlockSparseMatrix& weights, const SparseMatrixFormat& deltasFormat, size_t step) const;
+
 	BlockSparseMatrix multiply(float f) const;
 	BlockSparseMatrix elementMultiply(const BlockSparseMatrix& m) const;
 

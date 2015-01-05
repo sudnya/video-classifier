@@ -34,7 +34,23 @@ typedef matrix::Matrix Matrix;
 typedef matrix::BlockSparseMatrixVector BlockSparseMatrixVector;
 typedef network::NeuralNetwork NeuralNetwork;
 
-static NeuralNetwork createNetwork(
+static NeuralNetwork createFeedForwardFullyConnectedNetwork(
+	size_t layerSize, size_t layerCount,
+	std::default_random_engine& engine)
+{
+	NeuralNetwork network;
+	
+	for(size_t layer = 0; layer < layerCount; ++layer)
+	{
+		network.addLayer(new FeedForwardLayer(1, layerSize, layerSize));
+	}
+
+	network.initializeRandomly(engine);
+
+	return network;
+}
+
+static NeuralNetwork createFeedForwardLocallyConnectedNetwork(
 	size_t layerSize, size_t blockCount, size_t layerCount,
 	std::default_random_engine& engine)
 {
@@ -43,6 +59,38 @@ static NeuralNetwork createNetwork(
 	for(size_t layer = 0; layer < layerCount; ++layer)
 	{
 		network.addLayer(new FeedForwardLayer(blockCount, layerSize, layerSize));
+	}
+
+	network.initializeRandomly(engine);
+
+	return network;
+}
+
+static NeuralNetwork createFeedForwardFullyConnectedConvolutionalNetwork(
+	size_t layerSize, size_t layerCount,
+	std::default_random_engine& engine)
+{
+	NeuralNetwork network;
+	
+	for(size_t layer = 0; layer < layerCount; ++layer)
+	{
+		network.addLayer(new FeedForwardLayer(1, layerSize, layerSize, layerSize / 2));
+	}
+
+	network.initializeRandomly(engine);
+
+	return network;
+}
+
+static NeuralNetwork createFeedForwardLocallyConnectedConvolutionalNetwork(
+	size_t layerSize, size_t blockCount, size_t layerCount,
+	std::default_random_engine& engine)
+{
+	NeuralNetwork network;
+	
+	for(size_t layer = 0; layer < layerCount; ++layer)
+	{
+		network.addLayer(new FeedForwardLayer(blockCount, layerSize, layerSize, layerSize / 2));
 	}
 
 	network.initializeRandomly(engine);
@@ -153,7 +201,7 @@ static bool gradientCheck(NeuralNetwork& network, std::default_random_engine& en
 	return isInRange(difference/total, epsilon);
 }
 
-static void runTest(size_t layerSize, size_t blockCount, size_t layerCount, bool seed)
+static void runTestFeedForwardFullyConnected(size_t layerSize, size_t layerCount, bool seed)
 {
 	std::default_random_engine generator;
 
@@ -161,17 +209,104 @@ static void runTest(size_t layerSize, size_t blockCount, size_t layerCount, bool
 	{
 		generator.seed(std::time(0));
 	}
+	else
+	{
+		generator.seed(377);
+	}
 	
-	auto network = createNetwork(layerSize, blockCount, layerCount, generator);
+	auto network = createFeedForwardFullyConnectedNetwork(layerSize, layerCount, generator);
 	
 	if(gradientCheck(network, generator))
 	{
-		std::cout << "Test Passed\n";
+		std::cout << "Test Feed Forward Fully Connected Network Passed\n";
 	}
 	else
 	{
-		std::cout << "Test Failed\n";
+		std::cout << "Test Feed Forward Fully Connected Network Failed\n";
 	}
+}
+
+static void runTestFeedForwardLocallyConnected(size_t layerSize, size_t blockCount, size_t layerCount, bool seed)
+{
+	std::default_random_engine generator;
+
+	if(seed)
+	{
+		generator.seed(std::time(0));
+	}
+	else
+	{
+		generator.seed(377);
+	}
+	
+	auto network = createFeedForwardLocallyConnectedNetwork(layerSize, blockCount, layerCount, generator);
+	
+	if(gradientCheck(network, generator))
+	{
+		std::cout << "Test Feed Forward Locally Connected Network Passed\n";
+	}
+	else
+	{
+		std::cout << "Test Feed Forward Locally Connected Network Failed\n";
+	}
+}
+
+static void runTestFeedForwardFullyConnectedConvolutional(size_t layerSize, size_t layerCount, bool seed)
+{
+	std::default_random_engine generator;
+
+	if(seed)
+	{
+		generator.seed(std::time(0));
+	}
+	else
+	{
+		generator.seed(377);
+	}
+	
+	auto network = createFeedForwardFullyConnectedConvolutionalNetwork(layerSize, layerCount, generator);
+	
+	if(gradientCheck(network, generator))
+	{
+		std::cout << "Test Feed Forward Fully Connected Convolutional Network Passed\n";
+	}
+	else
+	{
+		std::cout << "Test Feed Forward Fully Connected Convolutional Network Failed\n";
+	}
+}
+
+static void runTestFeedForwardLocallyConnectedConvolutional(size_t layerSize, size_t blockCount, size_t layerCount, bool seed)
+{
+	std::default_random_engine generator;
+
+	if(seed)
+	{
+		generator.seed(std::time(0));
+	}
+	else
+	{
+		generator.seed(377);
+	}
+	
+	auto network = createFeedForwardLocallyConnectedConvolutionalNetwork(layerSize, blockCount, layerCount, generator);
+	
+	if(gradientCheck(network, generator))
+	{
+		std::cout << "Test Feed Forward Locally Connected Convolutional Network Passed\n";
+	}
+	else
+	{
+		std::cout << "Test Feed Forward Locally Connected Convolutional Network Failed\n";
+	}
+}
+
+static void runTest(size_t layerSize, size_t blockCount, size_t layerCount, bool seed)
+{
+	runTestFeedForwardFullyConnected(layerSize, layerCount, seed);
+	runTestFeedForwardLocallyConnected(layerSize, blockCount, layerCount, seed);
+	runTestFeedForwardFullyConnectedConvolutional(layerSize, layerCount, seed);
+	runTestFeedForwardLocallyConnectedConvolutional(layerSize, blockCount, layerCount, seed);
 }
 
 }

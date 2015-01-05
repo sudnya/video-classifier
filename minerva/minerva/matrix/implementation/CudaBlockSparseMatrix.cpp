@@ -12,6 +12,7 @@
 #include <minerva/matrix/interface/CudaBlockSparseCache.h>
 
 #include <minerva/matrix/interface/Matrix.h>
+#include <minerva/matrix/interface/SparseMatrixFormat.h>
 
 #include <minerva/util/interface/Knobs.h>
 #include <minerva/util/interface/debug.h>
@@ -149,49 +150,27 @@ Value* CudaBlockSparseMatrix::convolutionalMultiply(const Value* m, size_t step)
 
 	return result;
 }
-
-Value* CudaBlockSparseMatrix::reverseConvolutionalMultiply(const Value* m) const
+	
+Value* CudaBlockSparseMatrix::computeConvolutionalGradient(const Value* activation, const SparseMatrixFormat& weightFormat) const
 {
 	// Just multiply if there is a 1 to 1 match between blocks
-	if(m->rowsPerBlock() == columnsPerBlock() && m->blocks() == blocks())
+	if(activation->blocks() == blocks())
 	{
-		return multiply(m);
-	}
-	
-	assert(!_isTransposed);
-	
-	auto copy = std::unique_ptr<Value>(transpose());
-	
-	auto matrixPointer = CudaBlockSparseCache::acquireReadOnly(m);
-	auto devicePointer = CudaBlockSparseCache::acquireReadOnly(copy.get());	
-
-	size_t resultBlocks          = m->blocks();
-	size_t resultRowsPerBlock    = rowsPerBlock();
-	size_t resultColumnsPerBlock = m->columnsPerBlock();
-
-	auto result = new CudaBlockSparseMatrix(resultBlocks,
-		resultRowsPerBlock, resultColumnsPerBlock, isRowSparse());
-	auto resultPointer = CudaBlockSparseCache::acquireClobber(result);
-	
-	CudaSparseMatrixLibrary::reverseConvolutionalMultiply(
-		resultPointer, devicePointer, _isTransposed, matrixPointer,
-		static_cast<const CudaBlockSparseMatrix*>(m)->_isTransposed,
-		resultBlocks,
-		blocks(), rowsPerBlock(), columnsPerBlock(),
-		m->blocks(), m->rowsPerBlock(), m->columnsPerBlock());
-
-	CudaBlockSparseCache::release(copy.get());
-	CudaBlockSparseCache::release(result);
-	CudaBlockSparseCache::release(m);
-
-	if(util::isLogEnabled("CudaBlockSparseMatrix::Detail"))
-	{
-		util::log("CudaBlockSparseMatrix::Detail") << " result " << result->debugString() << "\n";
-		util::log("CudaBlockSparseMatrix::Detail") << " left   " << debugString() << "\n";
-		util::log("CudaBlockSparseMatrix::Detail") << " right  " << m->debugString() << "\n";
+		return multiply(activation);
 	}
 
-	return result;
+	assertM(false, "Not implemented.");
+}
+
+Value* CudaBlockSparseMatrix::computeConvolutionalDeltas(const Value* weights, const SparseMatrixFormat& deltasFormat, size_t step) const
+{
+	// Just multiply if there is a 1 to 1 match between blocks
+	if(deltasFormat.columnsPerBlock == step && deltasFormat.blocks == weights->blocks())
+	{
+		return multiply(weights->transpose());
+	}
+
+	assertM(false, "Not implemented.");
 }
 
 Value* CudaBlockSparseMatrix::multiply(float f) const

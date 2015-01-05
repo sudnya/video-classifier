@@ -14,7 +14,7 @@
 #include <minerva/matrix/interface/BlockSparseMatrix.h>
 #include <minerva/matrix/interface/Matrix.h>
 
-#include <minerva/optimizer/interface/SparseMatrixFormat.h>
+#include <minerva/matrix/interface/SparseMatrixFormat.h>
 
 #include <minerva/util/interface/debug.h>
 #include <minerva/util/interface/knobs.h>
@@ -105,8 +105,8 @@ BlockSparseMatrix FeedForwardLayer::runReverse(BlockSparseMatrixVector& gradient
 			<< " outputs, " << _blockStep << " block step).\n";
 		util::log("Layer") << "  layer: " << _weights.shapeString() << "\n";
   	}
-	
-	// finish computing the gradient
+
+	// finish computing the deltas
 	auto deltas = getActivationFunction()->applyDerivative(outputActivations).elementMultiply(difference);
 	
 	// compute gradient for the weights
@@ -114,7 +114,7 @@ BlockSparseMatrix FeedForwardLayer::runReverse(BlockSparseMatrixVector& gradient
 	
 	transposedDeltas.setRowSparse();
 	
-	auto unnormalizedWeightGradient = transposedDeltas.reverseConvolutionalMultiply(inputActivations);
+	auto unnormalizedWeightGradient = transposedDeltas.computeConvolutionalGradient(inputActivations, SparseMatrixFormat(_weights));
 
 	auto samples = outputActivations.rows();
 	auto weightGradient = unnormalizedWeightGradient.multiply(1.0f / samples).transpose();
@@ -128,12 +128,12 @@ BlockSparseMatrix FeedForwardLayer::runReverse(BlockSparseMatrixVector& gradient
 	gradients.push_back(std::move(weightGradient));
 	
 	// compute gradient for the bias
-	auto biasGradient = transposedDeltas.reduceSumAlongColumns().multiply(1.0f/samples);
+	auto biasGradient = transposedDeltas.reduceSumAlongColumns().multiply(1.0f/samples).transpose();
 	
 	gradients.push_back(std::move(biasGradient));
 	
 	// compute deltas for previous layer
-	auto deltasPropagatedReverse = deltas.reverseConvolutionalMultiply(_weights.transpose());
+	auto deltasPropagatedReverse = deltas.computeConvolutionalDeltas(_weights, SparseMatrixFormat(inputActivations), _blockStep);
 	
 	BlockSparseMatrix previousLayerDeltas;
 	

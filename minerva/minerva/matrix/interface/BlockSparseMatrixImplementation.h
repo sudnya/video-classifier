@@ -11,7 +11,8 @@
 #include <random>
 
 // Forward Declarations
-namespace minerva { namespace matrix { class Matrix; } }
+namespace minerva { namespace matrix { class Matrix;             } }
+namespace minerva { namespace matrix { class SparseMatrixFormat; } }
 
 namespace minerva
 {
@@ -39,7 +40,10 @@ public:
 public: 
 	virtual Value* multiply(const Value* m) const = 0;
 	virtual Value* convolutionalMultiply(const Value* m, size_t step) const = 0;
-	virtual Value* reverseConvolutionalMultiply(const Value* m) const = 0;
+
+	virtual Value* computeConvolutionalGradient(const Value* activation, const SparseMatrixFormat& weightFormat) const = 0;
+	virtual Value* computeConvolutionalDeltas(const Value* weights, const SparseMatrixFormat& deltasFormat, size_t step) const = 0;
+
 	virtual Value* multiply(float f) const = 0;
 	virtual Value* elementMultiply(const Value* m) const = 0;
 

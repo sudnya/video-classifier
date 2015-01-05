@@ -5,7 +5,7 @@
 */
 
 // Minerva Includes
-#include <minerva/optimizer/interface/SparseMatrixFormat.h>
+#include <minerva/matrix/interface/SparseMatrixFormat.h>
 
 #include <minerva/matrix/interface/BlockSparseMatrix.h>
 #include <minerva/matrix/interface/Matrix.h>
@@ -13,7 +13,7 @@
 namespace minerva
 {
 
-namespace optimizer
+namespace matrix
 {
 
 SparseMatrixFormat::SparseMatrixFormat(size_t b, size_t r, size_t c, bool s)
@@ -22,14 +22,14 @@ SparseMatrixFormat::SparseMatrixFormat(size_t b, size_t r, size_t c, bool s)
 
 }
 
-SparseMatrixFormat::SparseMatrixFormat(const matrix::BlockSparseMatrix& matrix)
+SparseMatrixFormat::SparseMatrixFormat(const BlockSparseMatrix& matrix)
 : blocks(matrix.blocks()), rowsPerBlock(matrix.rowsPerBlock()),
   columnsPerBlock(matrix.columnsPerBlock()), isRowSparse(matrix.isRowSparse())
 {
 
 }
 
-SparseMatrixFormat::SparseMatrixFormat(const matrix::Matrix& matrix)
+SparseMatrixFormat::SparseMatrixFormat(const Matrix& matrix)
 : blocks(1), rowsPerBlock(matrix.rows()), columnsPerBlock(matrix.columns()), isRowSparse(true)
 {
 

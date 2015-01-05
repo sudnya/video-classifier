@@ -7,21 +7,21 @@
 // Minvera Includes
 #include <minerva/visualization/interface/NeuronVisualizer.h>
 
-#include <minerva/matrix/interface/BlockSparseMatrixVector.h>
-#include <minerva/matrix/interface/Matrix.h>
-
 #include <minerva/network/interface/NeuralNetwork.h>
 #include <minerva/network/interface/Layer.h>
+
+#include <minerva/video/interface/Image.h>
 
 #include <minerva/optimizer/interface/GeneralDifferentiableSolver.h>
 #include <minerva/optimizer/interface/GeneralDifferentiableSolverFactory.h>
 
 #include <minerva/optimizer/interface/CostAndGradientFunction.h>
 #include <minerva/optimizer/interface/CostFunction.h>
-#include <minerva/optimizer/interface/SparseMatrixFormat.h>
 #include <minerva/optimizer/interface/ConstantConstraint.h>
 
-#include <minerva/video/interface/Image.h>
+#include <minerva/matrix/interface/BlockSparseMatrixVector.h>
+#include <minerva/matrix/interface/Matrix.h>
+#include <minerva/matrix/interface/SparseMatrixFormat.h>
 
 #include <minerva/util/interface/Knobs.h>
 #include <minerva/util/interface/math.h>

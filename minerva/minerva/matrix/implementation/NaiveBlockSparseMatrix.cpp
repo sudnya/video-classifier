@@ -8,6 +8,7 @@
 #include <minerva/matrix/interface/NaiveBlockSparseMatrix.h>
 
 #include <minerva/matrix/interface/Matrix.h>
+#include <minerva/matrix/interface/SparseMatrixFormat.h>
 
 #include <minerva/util/interface/debug.h>
 
@@ -59,95 +60,49 @@ Value* NaiveBlockSparseMatrix::multiply(const Value* matrix) const
 	return result;
 }
 
-static void zeroExtendColumns(Matrix& m, size_t columns)
-{
-	if(m.columns() < columns)
-	{
-		m = m.appendColumns(Matrix(m.rows(), columns - m.columns()));
-	}
-}
-
 Value* NaiveBlockSparseMatrix::convolutionalMultiply(const Value* matrix,
 	size_t step) const
 {
-	// Just multiply if there is a 1 to 1 match between blocks
-	if(matrix->rowsPerBlock() == step && matrix->blocks() == blocks())
-	{
-		return multiply(matrix);
-	}
-
 	auto m = dynamic_cast<const NaiveBlockSparseMatrix*>(matrix);
 	assert(m != nullptr);
 	
-	// TODO: in parallel
-	auto result = new NaiveBlockSparseMatrix(isRowSparse());
-
-	auto flattened = toMatrix();
-	
-	for(size_t leftBegin = 0; leftBegin < flattened.columns(); leftBegin += step)
+	// Just multiply if there is a 1 to 1 match between blocks
+	if(m->columnsPerBlock() == step && m->blocks() == blocks())
 	{
-		size_t extent = std::min(flattened.columns(), leftBegin + m->rowsPerBlock());
-		
-		auto temp = flattened.slice(0, leftBegin, flattened.rows(), extent - leftBegin);
-		
-		zeroExtendColumns(temp, m->rowsPerBlock());
-	
-		// TODO:	
-		size_t rightBlockIndex = leftBegin * m->blocks() / flattened.columns();//(leftBegin * flattened.columns()) / (m->rowsPerBlock() * m->rows());
-		assert(rightBlockIndex < m->blocks());		
-
-		result->push_back(temp.multiply((*m)[rightBlockIndex]));
+		return multiply(m);
 	}
 	
-	return result;
+	size_t partitionSize = (blocks() + m->blocks() - 1) / m->blocks();
+	
+	// TODO: in parallel
+}
+	
+Value* NaiveBlockSparseMatrix::computeConvolutionalGradient(const Value* activation, const SparseMatrixFormat& weightFormat) const
+{
+	auto a = dynamic_cast<const NaiveBlockSparseMatrix*>(activation);
+	assert(a != nullptr);
+	
+	// Just multiply if there is a 1 to 1 match between blocks
+	if(a->blocks() == blocks())
+	{
+		return multiply(a);
+	}
+
+	assertM(false, "Not implemented.");
 }
 
-Value* NaiveBlockSparseMatrix::reverseConvolutionalMultiply(const Value* matrix) const
+Value* NaiveBlockSparseMatrix::computeConvolutionalDeltas(const Value* weights, const SparseMatrixFormat& deltasFormat, size_t step) const
 {
+	auto w = dynamic_cast<const NaiveBlockSparseMatrix*>(weights);
+	assert(w != nullptr);
+	
 	// Just multiply if there is a 1 to 1 match between blocks
-	if(columnsPerBlock() == matrix->rowsPerBlock() && matrix->blocks() == blocks())
+	if(deltasFormat.columnsPerBlock == step && deltasFormat.blocks == w->blocks())
 	{
-		return multiply(matrix);
+		return multiply(w->transpose());
 	}
 
-	auto m = dynamic_cast<const NaiveBlockSparseMatrix*>(matrix);
-	assert(m != nullptr);
-	
-	// TODO: in parallel
-	auto result = new NaiveBlockSparseMatrix(isRowSparse());
-
-	size_t leftColumnStep  = m->rowsPerBlock();
-	size_t leftColumn      = 0;
-
-	auto flattened = toMatrix();
-
-	result->resize(m->blocks());
-
-	auto resultBlock = result->begin();
-
-	for(auto& right : *m)
-	{
-		Matrix temp(flattened.rows(), right.columns());
-		
-		for(size_t leftBegin = leftColumn; leftBegin < flattened.columns(); leftBegin += right.rows())
-		{
-			size_t leftColumnEnd = std::min(flattened.columns(), leftBegin + leftColumnStep);
-		
-			auto leftSlice = flattened.slice(0, leftBegin, flattened.rows(), leftColumnEnd - leftBegin);
-			
-			zeroExtendColumns(leftSlice, m->rowsPerBlock());
-			
-			temp = temp.add(leftSlice.multiply(right));
-		}
-		
-		*resultBlock = std::move(temp);
-		
-		leftColumn += leftColumnStep;
-
-		++resultBlock;
-	}
-	
-	return result;
+	assertM(false, "Not implemented.");
 }
 
 Value* NaiveBlockSparseMatrix::multiply(float f) const

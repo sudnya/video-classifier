@@ -12,14 +12,14 @@
 #include <random>
 
 // Forward Declaration
-namespace minerva { namespace network       { class Layer;                   } }
-namespace minerva { namespace network       { class CostFunction;            } }
-namespace minerva { namespace matrix        { class Matrix;                  } }
-namespace minerva { namespace matrix        { class BlockSparseMatrix;       } }
-namespace minerva { namespace matrix        { class BlockSparseMatrixVector; } }
-namespace minerva { namespace optimizer     { class NeuralNetworkSolver;     } }
-namespace minerva { namespace optimizer     { class SparseMatrixFormat;      } }
-namespace minerva { namespace util          { class TarArchive;              } }
+namespace minerva { namespace network   { class Layer;                   } }
+namespace minerva { namespace network   { class CostFunction;            } }
+namespace minerva { namespace matrix    { class Matrix;                  } }
+namespace minerva { namespace matrix    { class BlockSparseMatrix;       } }
+namespace minerva { namespace matrix    { class BlockSparseMatrixVector; } }
+namespace minerva { namespace optimizer { class NeuralNetworkSolver;     } }
+namespace minerva { namespace matrix    { class SparseMatrixFormat;      } }
+namespace minerva { namespace util      { class TarArchive;              } }
 
 namespace minerva
 {
@@ -33,7 +33,7 @@ public:
     typedef matrix::BlockSparseMatrix       BlockSparseMatrix;
     typedef matrix::BlockSparseMatrixVector BlockSparseMatrixVector;
 	typedef optimizer::NeuralNetworkSolver  NeuralNetworkSolver;
-	typedef optimizer::SparseMatrixFormat   SparseMatrixFormat;
+	typedef matrix::SparseMatrixFormat      SparseMatrixFormat;
 	typedef std::vector<SparseMatrixFormat> SparseMatrixVectorFormat;
 
 public:
