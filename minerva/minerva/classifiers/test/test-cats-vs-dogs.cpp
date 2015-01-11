@@ -76,8 +76,8 @@ static void addFeatureSelector(Model& model, const Parameters& parameters,
 	const size_t blocks    = 1;
 	const size_t blockStep = parameters.blockStep;
 
-	size_t blockReductionFactor   = 2;
-	size_t poolingReductionFactor = 4;
+	size_t blockReductionFactor   = 1;
+	size_t poolingReductionFactor = 1;
 
 	// convolutional layer 1
 	featureSelector.addLayer(new FeedForwardLayer(blocks, blockSize,

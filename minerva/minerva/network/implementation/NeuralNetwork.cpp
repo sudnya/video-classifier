@@ -102,7 +102,7 @@ float NeuralNetwork::getCostAndGradient(BlockSparseMatrixVector& gradient, const
 	activations.push_back(input);
 
 	size_t weightMatrices = 0;
-
+	
 	for(auto layer = begin(); layer != end(); ++layer)
 	{
 		util::log("NeuralNetwork") << " Running forward propagation through layer "

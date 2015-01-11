@@ -5,6 +5,7 @@
 
 #include <minerva/network/interface/NeuralNetwork.h>
 #include <minerva/network/interface/FeedForwardLayer.h>
+#include <minerva/network/interface/ActivationFunctionFactory.h>
 
 #include <minerva/matrix/interface/Matrix.h>
 
@@ -26,12 +27,17 @@ network::NeuralNetwork createAndInitializeNeuralNetwork(unsigned networkSize, fl
 {
     network::NeuralNetwork ann;
 
-    // Layer 1
-    ann.addLayer(new FeedForwardLayer(1, networkSize, networkSize));
-    ann.addLayer(new FeedForwardLayer(1, networkSize, networkSize));
+	size_t hiddenSize = (networkSize * 3) / 2;
 
-    // Layer 3
-    ann.addLayer(new FeedForwardLayer(1, networkSize, networkSize/2));
+    // Layer 1
+    ann.addLayer(new FeedForwardLayer(1, networkSize, hiddenSize));
+	
+	ann.back()->setActivationFunction(network::ActivationFunctionFactory::create("SigmoidActivationFunction"));
+
+    // Layer 2
+    ann.addLayer(new FeedForwardLayer(1, hiddenSize, networkSize/2));
+	
+	ann.back()->setActivationFunction(network::ActivationFunctionFactory::create("SigmoidActivationFunction"));
 
 	std::default_random_engine engine;
 	
@@ -65,7 +71,7 @@ Matrix generateRandomMatrix(unsigned rows, unsigned columns, std::default_random
 
 float floatXor(float x, float y)
 {
-    return x == 1.0f && y == 1.0f ? 0.0f : 1.0f;
+    return x == y ? 0.0f : 1.0f;
 }
 
 Matrix matrixXor(const Matrix& inputs)
@@ -104,7 +110,7 @@ Matrix threshold(const Matrix& output)
 
 void trainNeuralNetwork(network::NeuralNetwork& ann, unsigned trainingIter, std::default_random_engine& generator)
 {
-    unsigned samplesPerIter = ann.getInputCount() * 200;
+    unsigned samplesPerIter = ann.getInputCount() * 100;
 
     util::log("TestClassifier") << "Starting training\n";
 
@@ -154,7 +160,7 @@ float classify(const network::NeuralNetwork& ann, unsigned iterations, std::defa
 {
     float accuracy = 0.0f;
     unsigned correctBits = 0;
-    unsigned samplesPerIter = ann.getInputCount() * 10;
+    unsigned samplesPerIter = ann.getInputCount() * 100;
 
     util::log("TestClassifier") << "Starting classification\n";
 

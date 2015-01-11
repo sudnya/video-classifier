@@ -75,17 +75,25 @@ BlockSparseMatrix FeedForwardLayer::runForward(const BlockSparseMatrix& m) const
 	auto unbiasedOutput = m.convolutionalMultiply(_weights, _blockStep);
 
 	auto output = unbiasedOutput.convolutionalAddBroadcastRow(_bias);
-	
-	auto activation = getActivationFunction()->apply(output);
-
-	if(util::isLogEnabled("FeedForwardLayer"))
-	{
-		util::log("FeedForwardLayer") << "  output: " << activation.shapeString() << "\n";
-	}
 
 	if(util::isLogEnabled("FeedForwardLayer::Detail"))
 	{
-		util::log("FeedForwardLayer::Detail") << "  output: " << activation.debugString() << "\n";
+		util::log("FeedForwardLayer::Detail") << "  output: " << output.debugString() << "\n";
+	}
+	else
+	{
+		util::log("FeedForwardLayer") << "  output: " << output.shapeString() << "\n";
+	}
+	
+	auto activation = getActivationFunction()->apply(output);
+	
+	if(util::isLogEnabled("FeedForwardLayer::Detail"))
+	{
+		util::log("FeedForwardLayer::Detail") << "  activation: " << activation.debugString() << "\n";
+	}
+	else
+	{
+		util::log("FeedForwardLayer") << "  activation: " << activation.shapeString() << "\n";
 	}
 
 	return activation;
@@ -105,6 +113,16 @@ BlockSparseMatrix FeedForwardLayer::runReverse(BlockSparseMatrixVector& gradient
 			<< " outputs, " << _blockStep << " block step).\n";
 		util::log("Layer") << "  layer: " << _weights.shapeString() << "\n";
   	}
+	
+	if(util::isLogEnabled("FeedForwardLayer"))
+	{
+		util::log("FeedForwardLayer") << "  input: " << difference.shapeString() << "\n";
+	}
+
+	if(util::isLogEnabled("FeedForwardLayer::Detail"))
+	{
+		util::log("FeedForwardLayer::Detail") << "  input: " << difference.debugString() << "\n";
+	}
 
 	// finish computing the deltas
 	auto deltas = getActivationFunction()->applyDerivative(outputActivations).elementMultiply(difference);
@@ -129,6 +147,16 @@ BlockSparseMatrix FeedForwardLayer::runReverse(BlockSparseMatrixVector& gradient
 	
 	// compute gradient for the bias
 	auto biasGradient = transposedDeltas.reduceSumAlongColumns().multiply(1.0f / samples).transpose();
+	
+	if(util::isLogEnabled("FeedForwardLayer"))
+	{
+		util::log("FeedForwardLayer") << "  bias grad: " << biasGradient.shapeString() << "\n";
+	}
+
+	if(util::isLogEnabled("FeedForwardLayer::Detail"))
+	{
+		util::log("FeedForwardLayer::Detail") << "  bias grad: " << biasGradient.debugString() << "\n";
+	}
 	
 	gradients.push_back(std::move(biasGradient));
 	

@@ -182,7 +182,7 @@ static bool gradientCheck(NeuralNetwork& network, std::default_random_engine& en
 					
 					minerva::util::log("TestGradientCheck") << " (layer " << layerId << ", matrix " << matrixId << ", block "
 						<< blockId << ", weight " << weightId << ") value is " << computedGradient << " estimate is "
-						<< estimatedGradient << " difference is " << thisDifference << " \n";
+						<< estimatedGradient << " (newCost " << newCost << ", oldCost " << cost << ")" << " difference is " << thisDifference << " \n";
 					
 					++weightId;
 				}
@@ -201,7 +201,7 @@ static bool gradientCheck(NeuralNetwork& network, std::default_random_engine& en
 	return isInRange(difference/total, epsilon);
 }
 
-static void runTestFeedForwardFullyConnected(size_t layerSize, size_t layerCount, bool seed)
+static bool runTestFeedForwardFullyConnected(size_t layerSize, size_t layerCount, bool seed)
 {
 	std::default_random_engine generator;
 
@@ -219,14 +219,18 @@ static void runTestFeedForwardFullyConnected(size_t layerSize, size_t layerCount
 	if(gradientCheck(network, generator))
 	{
 		std::cout << "Test Feed Forward Fully Connected Network Passed\n";
+		
+		return true;
 	}
 	else
 	{
 		std::cout << "Test Feed Forward Fully Connected Network Failed\n";
+		
+		return false;
 	}
 }
 
-static void runTestFeedForwardLocallyConnected(size_t layerSize, size_t blockCount, size_t layerCount, bool seed)
+static bool runTestFeedForwardLocallyConnected(size_t layerSize, size_t blockCount, size_t layerCount, bool seed)
 {
 	std::default_random_engine generator;
 
@@ -244,14 +248,18 @@ static void runTestFeedForwardLocallyConnected(size_t layerSize, size_t blockCou
 	if(gradientCheck(network, generator))
 	{
 		std::cout << "Test Feed Forward Locally Connected Network Passed\n";
+			
+		return true;
 	}
 	else
 	{
 		std::cout << "Test Feed Forward Locally Connected Network Failed\n";
+		
+		return false;
 	}
 }
 
-static void runTestFeedForwardFullyConnectedConvolutional(size_t layerSize, size_t layerCount, bool seed)
+static bool runTestFeedForwardFullyConnectedConvolutional(size_t layerSize, size_t layerCount, bool seed)
 {
 	std::default_random_engine generator;
 
@@ -269,14 +277,18 @@ static void runTestFeedForwardFullyConnectedConvolutional(size_t layerSize, size
 	if(gradientCheck(network, generator))
 	{
 		std::cout << "Test Feed Forward Fully Connected Convolutional Network Passed\n";
+		
+		return true;
 	}
 	else
 	{
 		std::cout << "Test Feed Forward Fully Connected Convolutional Network Failed\n";
+
+		return false;
 	}
 }
 
-static void runTestFeedForwardLocallyConnectedConvolutional(size_t layerSize, size_t blockCount, size_t layerCount, bool seed)
+static bool runTestFeedForwardLocallyConnectedConvolutional(size_t layerSize, size_t blockCount, size_t layerCount, bool seed)
 {
 	std::default_random_engine generator;
 
@@ -294,19 +306,47 @@ static void runTestFeedForwardLocallyConnectedConvolutional(size_t layerSize, si
 	if(gradientCheck(network, generator))
 	{
 		std::cout << "Test Feed Forward Locally Connected Convolutional Network Passed\n";
+		
+		return true;
 	}
 	else
 	{
 		std::cout << "Test Feed Forward Locally Connected Convolutional Network Failed\n";
+		
+		return false;
+		
 	}
 }
 
 static void runTest(size_t layerSize, size_t blockCount, size_t layerCount, bool seed)
 {
-	runTestFeedForwardFullyConnected(layerSize, layerCount, seed);
-	runTestFeedForwardLocallyConnected(layerSize, blockCount, layerCount, seed);
-	runTestFeedForwardFullyConnectedConvolutional(layerSize, layerCount, seed);
-	runTestFeedForwardLocallyConnectedConvolutional(layerSize, blockCount, layerCount, seed);
+	bool result = runTestFeedForwardFullyConnected(layerSize, layerCount, seed);
+	
+	if(!result)
+	{
+		return;
+	}
+	
+	result &= runTestFeedForwardLocallyConnected(layerSize, blockCount, layerCount, seed);
+	
+	if(!result)
+	{
+		return;
+	}
+	
+	result &= runTestFeedForwardFullyConnectedConvolutional(layerSize, layerCount, seed);
+	
+	if(!result)
+	{
+		return;
+	}
+	
+	result &= runTestFeedForwardLocallyConnectedConvolutional(layerSize, blockCount, layerCount, seed);
+	
+	if(!result)
+	{
+		return;
+	}
 }
 
 }

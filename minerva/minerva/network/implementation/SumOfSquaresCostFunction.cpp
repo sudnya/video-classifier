@@ -24,11 +24,11 @@ SumOfSquaresCostFunction::~SumOfSquaresCostFunction()
 
 BlockSparseMatrix SumOfSquaresCostFunction::computeCost(const BlockSparseMatrix& output, const BlockSparseMatrix& reference) const
 {
-	auto difference = reference.subtract(output);
+	auto difference = output.subtract(reference);
 
-	auto samples = output.rows();
-	
-	return difference.elementMultiply(difference).multiply(1.0f / (2.0f * samples));
+	size_t samples = output.rows();
+
+	return difference.elementMultiply(difference).multiply(1.0f / (samples * 2.0f));
 }
 
 BlockSparseMatrix SumOfSquaresCostFunction::computeDelta(const BlockSparseMatrix& output, const BlockSparseMatrix& reference) const

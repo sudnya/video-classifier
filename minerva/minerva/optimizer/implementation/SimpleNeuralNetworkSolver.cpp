@@ -68,10 +68,10 @@ public:
 		float newCost = _network->getCostAndGradient(gradient, *_input, *_reference);
 		
 		_network->extractWeights(const_cast<BlockSparseMatrixVector&>(weights));
-		
+
 		if(util::isLogEnabled("SimpleNeuralNetworkSolver::Detail"))
 		{	
-			util::log("SimpleNeuralNetworkSolver::Detail") << " new gradient is : " << gradient.front().toString();
+			util::log("SimpleNeuralNetworkSolver::Detail") << " new gradient is : " << gradient[1].toString();
 		}
 		
 		util::log("SimpleNeuralNetworkSolver::Detail") << " new cost is : " << newCost << "\n";
