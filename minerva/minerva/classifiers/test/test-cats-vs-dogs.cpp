@@ -17,6 +17,7 @@
 
 #include <minerva/network/interface/FeedForwardLayer.h>
 #include <minerva/network/interface/NeuralNetwork.h>
+#include <minerva/network/interface/ActivationFunctionFactory.h>
 
 #include <minerva/video/interface/Image.h>
 #include <minerva/video/interface/ImageVector.h>
@@ -59,7 +60,7 @@ public:
 
 public:
 	Parameters()
-	: blockX(16), blockY(16), blockStep(16*16/2)
+	: blockX(32), blockY(32), blockStep(32*32/4)
 	{
 		
 	}
@@ -76,28 +77,28 @@ static void addFeatureSelector(Model& model, const Parameters& parameters,
 	const size_t blocks    = 1;
 	const size_t blockStep = parameters.blockStep;
 
-	size_t blockReductionFactor   = 1;
-	size_t poolingReductionFactor = 1;
+	size_t blockReductionFactor   = 2;
+	size_t poolingReductionFactor = 2;
 
 	// convolutional layer 1
-	featureSelector.addLayer(new FeedForwardLayer(blocks, blockSize,
-		blockSize, blockStep));
+	featureSelector.addLayer(new FeedForwardLayer(blocks, blockSize, blockSize / blockReductionFactor, blockStep));
 	
 	// pooling layer 2
 	featureSelector.addLayer(
 		new FeedForwardLayer(blocks,
-			blockReductionFactor * featureSelector.back()->getOutputBlockingFactor(),
-			featureSelector.back()->getOutputBlockingFactor()));
+			featureSelector.back()->getOutputBlockingFactor(),
+			featureSelector.back()->getOutputBlockingFactor() / poolingReductionFactor));
 	
 	// pooling layer 3
 	featureSelector.addLayer(new FeedForwardLayer(featureSelector.back()->getBlocks(),
-		poolingReductionFactor * featureSelector.back()->getOutputBlockingFactor(),
+		featureSelector.back()->getOutputBlockingFactor(),
 		featureSelector.back()->getOutputBlockingFactor()));
 
 	featureSelector.initializeRandomly(engine);
-	minerva::util::log("TestFirstLayerFeatures")
+	minerva::util::log("TestCatsVsDogs")
 		<< "Building feature selector network with "
-		<< featureSelector.getOutputCount() << " output neurons\n";
+		<< featureSelector.getOutputCountForInputCount(
+		parameters.xPixels * parameters.yPixels * parameters.colors) << " output neurons\n";
 
 	model.setNeuralNetwork("FeatureSelector", featureSelector);
 }
@@ -109,14 +110,15 @@ static void addClassifier(Model& model, const Parameters& parameters,
 	
 	NeuralNetwork& featureSelector = model.getNeuralNetwork("FeatureSelector");
 	
-	size_t fullyConnectedInputs = featureSelector.getOutputCount();
+	size_t fullyConnectedInputs = featureSelector.getOutputCountForInputCount(parameters.xPixels * parameters.yPixels * parameters.colors);
 	
-	size_t fullyConnectedSize = 256;
+	size_t fullyConnectedSize = 128;
 	
 	// connect the network
 	classifier.addLayer(new FeedForwardLayer(1, fullyConnectedInputs, fullyConnectedSize));
 	classifier.addLayer(new FeedForwardLayer(1, fullyConnectedSize,   fullyConnectedSize));
 	classifier.addLayer(new FeedForwardLayer(1, fullyConnectedSize,   2                 ));
+	//classifier.back()->setActivationFunction(minerva::network::ActivationFunctionFactory::create("SigmoidActivationFunction"));
 	
 	classifier.initializeRandomly(engine);
 	

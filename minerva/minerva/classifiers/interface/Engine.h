@@ -97,10 +97,10 @@ protected:
 
 protected:
 	/*! \brief Extract and merge all networks from the model. */
-	NeuralNetwork getAggregateNetwork();
+	NeuralNetwork* getAggregateNetwork();
 
 	/*! \brief Unpack and restore networks back to the model. */
-	void restoreAggregateNetwork(NeuralNetwork& network);
+	void restoreAggregateNetwork();
 	
 public:
 	/*! \brief Run the engine on the specified batch. */
@@ -117,6 +117,9 @@ protected:
 	std::unique_ptr<Model>              _model;
 	std::unique_ptr<InputDataProducer>  _dataProducer;
 	std::unique_ptr<ResultProcessor>    _resultProcessor;
+
+protected:
+	std::unique_ptr<NeuralNetwork> _aggregateNetwork;
 
 };
 

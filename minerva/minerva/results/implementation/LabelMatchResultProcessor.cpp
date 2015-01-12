@@ -36,6 +36,8 @@ void LabelMatchResultProcessor::process(const ResultVector& results)
 {
 	_total += results.size();
 	
+	util::log("LabelMatchResultProcessor") << "Processing batch of " << results.size() << " results.\n";
+	
 	for(auto result : results)
 	{
 		auto matchResult = dynamic_cast<LabelMatchResult*>(result);
@@ -45,6 +47,8 @@ void LabelMatchResultProcessor::process(const ResultVector& results)
 		{
 			continue;
 		}
+	
+		util::log("LabelMatchResultProcessor") << " label '" << matchResult->label << "', reference '" << matchResult->reference << "'\n";
 		
 		if(matchResult->label == matchResult->reference)
 		{
@@ -59,7 +63,7 @@ std::string LabelMatchResultProcessor::toString() const
 {
 	std::stringstream stream;
 		
-	stream << "Accuracy is: " << getAccuracy();
+	stream << "Accuracy is: " << getAccuracy() << " (" << _matches << " / " << _total << ")";
 	
 	return stream.str();
 }

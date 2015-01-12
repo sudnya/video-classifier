@@ -40,9 +40,32 @@ typedef matrix::BlockSparseMatrix BlockSparseMatrix;
 typedef GeneralDifferentiableSolver::BlockSparseMatrixVector BlockSparseMatrixVector;
 
 SimpleNeuralNetworkSolver::SimpleNeuralNetworkSolver(NeuralNetwork* n)
-: NeuralNetworkSolver(n)
+: NeuralNetworkSolver(n), _solver(GeneralDifferentiableSolverFactory::create())
 {
 
+}
+
+SimpleNeuralNetworkSolver::~SimpleNeuralNetworkSolver()
+{
+
+}
+
+SimpleNeuralNetworkSolver::SimpleNeuralNetworkSolver(const SimpleNeuralNetworkSolver& s)
+: NeuralNetworkSolver(s), _solver(GeneralDifferentiableSolverFactory::create())
+{
+
+}
+
+SimpleNeuralNetworkSolver& SimpleNeuralNetworkSolver::operator=(const SimpleNeuralNetworkSolver& s)
+{
+	if(&s == this)
+	{
+		return *this;
+	}
+	
+	NeuralNetworkSolver::operator=(s);
+
+	return *this;
 }
 
 class NeuralNetworkCostAndGradient : public CostAndGradientFunction
@@ -85,12 +108,9 @@ private:
 	const BlockSparseMatrix* _reference;
 };
 
-static float differentiableSolver(NeuralNetwork* network, const BlockSparseMatrix* input, const BlockSparseMatrix* reference)
+static float differentiableSolver(NeuralNetwork* network, const BlockSparseMatrix* input, const BlockSparseMatrix* reference, GeneralDifferentiableSolver* solver)
 {
 	util::log("SimpleNeuralNetworkSolver") << "  starting general solver\n";
-		
-	std::unique_ptr<GeneralDifferentiableSolver> solver(GeneralDifferentiableSolverFactory::create());
-	
 	float newCost = std::numeric_limits<float>::infinity();
 	
 	if(!solver)
@@ -121,7 +141,7 @@ void SimpleNeuralNetworkSolver::solve()
     util::log("SimpleNeuralNetworkSolver") << "Solve\n";
 	util::log("SimpleNeuralNetworkSolver")
 		<< " no need for tiling, solving entire network at once.\n";
-	differentiableSolver(_network, _input, _reference);
+	differentiableSolver(_network, _input, _reference, _solver.get());
 }
 
 NeuralNetworkSolver* SimpleNeuralNetworkSolver::clone() const

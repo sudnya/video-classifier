@@ -442,8 +442,8 @@ static void getImageBatch(ImageVector& batch, ImageVector& images,
 
 	for(size_t i = 0; i < batchSize; ++i)
 	{
+		images[randomImageOrder[i]].load();
 		batch.push_back(images[randomImageOrder[i]]);
-		batch.back().load();
 	}
 
 	remainingSamples -= batchSize;

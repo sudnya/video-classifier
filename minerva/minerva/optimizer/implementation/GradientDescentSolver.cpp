@@ -36,7 +36,7 @@ static void applyConstraints(BlockSparseMatrixVector& weights, const ConstraintV
 float GradientDescentSolver::solve(BlockSparseMatrixVector& weights, const CostAndGradientFunction& callback)
 {
    float learningRate = util::KnobDatabase::getKnobValue<float>(
-		"GradientDescentSolver::LearningRate", 0.4f);
+		"GradientDescentSolver::LearningRate", 0.2f);
 	float epsilon = util::KnobDatabase::getKnobValue<float>(
 		"GradientDescentSolver::Epsilon", 1.0e-6f);
 	float learningRateBackoff = util::KnobDatabase::getKnobValue<float>(
@@ -52,7 +52,7 @@ float GradientDescentSolver::solve(BlockSparseMatrixVector& weights, const CostA
 	float learningRateBaseline = learningRate;
 	
 	util::log("GradientDescentSolver") << "Solving for at most "
-		<< iterations << " iterations\n";
+		<< iterations << " iterations with initial cost " << originalCost << "\n";
 		
 	for(unsigned i = 0; i < iterations; ++i)
 	{

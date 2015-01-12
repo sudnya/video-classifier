@@ -187,7 +187,9 @@ Value* NaiveBlockSparseMatrix::computeConvolutionalDeltas(const Value* weights, 
 	// Just multiply if there is a 1 to 1 match between blocks
 	if(deltasFormat.columnsPerBlock == step && deltasFormat.blocks == w->blocks())
 	{
-		return multiply(w->transpose());
+		std::unique_ptr<Value> transposedWeights(w->transpose());
+		
+		return multiply(transposedWeights.get());
 	}
 
 	// Otherwise, compute the convolutional deltas

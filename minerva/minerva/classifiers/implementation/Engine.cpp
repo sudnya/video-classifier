@@ -167,28 +167,33 @@ void Engine::saveModel()
 	if(_model) _model->save();
 }
 
-network::NeuralNetwork Engine::getAggregateNetwork()
+network::NeuralNetwork* Engine::getAggregateNetwork()
 {
-	network::NeuralNetwork network;
+	if(!_aggregateNetwork)
+	{
+		_aggregateNetwork.reset(new NeuralNetwork);
+	}
 	
 	auto& featureSelector = _model->getNeuralNetwork("FeatureSelector");
 	auto& classifier      = _model->getNeuralNetwork("Classifier");
 	
 	for(auto& layer : featureSelector)
 	{
-		network.addLayer(layer.release());
+		_aggregateNetwork->addLayer(layer.release());
 	}
 	
 	for(auto& layer : classifier)
 	{
-		network.addLayer(layer.release());
+		_aggregateNetwork->addLayer(layer.release());
 	}
 	
-	return network;
+	return _aggregateNetwork.get();
 }
 
-void Engine::restoreAggregateNetwork(network::NeuralNetwork& network)
+void Engine::restoreAggregateNetwork()
 {
+	assert(_aggregateNetwork);
+
 	auto& featureSelector = _model->getNeuralNetwork("FeatureSelector");
 	auto& classifier      = _model->getNeuralNetwork("Classifier");
 	
@@ -196,15 +201,17 @@ void Engine::restoreAggregateNetwork(network::NeuralNetwork& network)
 	
 	for(auto& layer : featureSelector)
 	{
-		layer = std::move(network[layerId]);
+		layer = std::move((*_aggregateNetwork)[layerId]);
 		++layerId;
 	}
 	
 	for(auto& layer : classifier)
 	{
-		layer = std::move(network[layerId]);
+		layer = std::move((*_aggregateNetwork)[layerId]);
 		++layerId;
 	}
+	
+	_aggregateNetwork->clear();
 }
 
 void Engine::_setupProducer(const std::string& path)

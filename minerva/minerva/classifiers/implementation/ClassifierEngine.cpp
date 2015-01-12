@@ -100,11 +100,11 @@ ClassifierEngine::ResultVector ClassifierEngine::runOnBatch(Matrix&& input, Matr
 {
 	auto network = getAggregateNetwork();
 	
-	auto result = network.runInputs(std::move(input));
+	auto result = network->runInputs(std::move(input));
 
 	auto labels = convertActivationsToLabels(std::move(result), *_model);
 	
-	restoreAggregateNetwork(network);
+	restoreAggregateNetwork();
 	
 	if(_shouldUseLabeledData)
 	{

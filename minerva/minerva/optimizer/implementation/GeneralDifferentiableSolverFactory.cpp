@@ -9,6 +9,7 @@
 #include <minerva/optimizer/interface/LimitedMemoryBroydenFletcherGoldfarbShannoSolver.h>
 #include <minerva/optimizer/interface/GPULBFGSSolver.h>
 #include <minerva/optimizer/interface/GradientDescentSolver.h>
+#include <minerva/optimizer/interface/NesterovAcceleratedGradientSolver.h>
 
 #include <minerva/util/interface/Knobs.h>
 
@@ -37,6 +38,10 @@ GeneralDifferentiableSolver* GeneralDifferentiableSolverFactory::create(const st
 	else if("GradientDescentSolver" == name || "GDSolver" == name)
 	{
 		solver = new GDSolver;
+	}
+	else if("NesterovAcceleratedGradientSolver" == name || "NAGSolver" == name)
+	{
+		solver = new NAGSolver;
 	}
 	
 	return solver;
@@ -69,6 +74,10 @@ double GeneralDifferentiableSolverFactory::getMemoryOverheadForSolver(const std:
 	{
 		return GDSolver::getMemoryOverhead();
 	}
+	else if("NesterovAcceleratedGradientSolver" == name || "NAGSolver" == name)
+	{
+		return NAGSolver::getMemoryOverhead();
+	}
 	
 	return 2.0;
 }
@@ -85,7 +94,8 @@ GeneralDifferentiableSolverFactory::StringVector GeneralDifferentiableSolverFact
 	return 
 	{
 		"LimitedMemoryBroydenFletcherGoldfarbShannoSolver",
-		//"GradientDescentSolver"
+		"GradientDescentSolver",
+		"NesterovAcceleratedGradientSolver"
 	};
 }
 
