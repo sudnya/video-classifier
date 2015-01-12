@@ -35,11 +35,11 @@ public:
 
 public:
 	BlockSparseMatrixVector(const BlockSparseMatrixVector&);
-	BlockSparseMatrixVector(const BlockSparseMatrixVector&&);
+	BlockSparseMatrixVector(BlockSparseMatrixVector&&);
 
 public:
 	BlockSparseMatrixVector& operator=(const BlockSparseMatrixVector&  );
-	BlockSparseMatrixVector& operator=(const BlockSparseMatrixVector&& );
+	BlockSparseMatrixVector& operator=(BlockSparseMatrixVector&& );
 
 public:
 	reference_type operator[](size_t i);

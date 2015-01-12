@@ -35,12 +35,6 @@ std::string LabelResultProcessor::toString() const
 	// TODO:
 	assertM(false, "Not implemented.");
 }
-	
-float LabelResultProcessor::getAccuracy() const
-{
-	// TODO:
-	assertM(false, "Not implemented.");
-}
 
 }
 

@@ -24,7 +24,7 @@ namespace input
 {
 
 InputVisualDataProducer::InputVisualDataProducer(const std::string& imageDatabaseFilename)
-: _remainingSamples(0), _colorComponents(3), _initialized(false)
+: _sampleDatabasePath(imageDatabaseFilename), _remainingSamples(0), _colorComponents(3), _initialized(false)
 {
 
 }
@@ -39,49 +39,18 @@ typedef video::ImageVector ImageVector;
 typedef video::Video	   Video;
 typedef video::VideoVector VideoVector;
 
-static ImageVector getBatch(ImageVector& images, VideoVector& video,
-	size_t& remainingSamples, size_t batchSize, std::default_random_engine& generator,
-	bool requiresLabeledData);
-
-InputVisualDataProducer::InputAndReferencePair InputVisualDataProducer::pop()
-{
-	_initialize();
-	
-	ImageVector batch = getBatch(_images, _videos, _remainingSamples,
-		getBatchSize(), _generator, getRequiresLabeledData());
-	
-	// TODO: specialize this logic
-	auto input = batch.convertToStandardizedMatrix(getInputCount(),
-		getInputBlockingFactor(), _colorComponents);
-	auto reference = batch.getReference(getOutputLabels());
-	
-	return InputAndReferencePair(std::move(input), std::move(reference));
-}
-
-bool InputVisualDataProducer::empty() const
-{
-	return _remainingSamples == 0;
-}
-
-void InputVisualDataProducer::reset()
-{
-	_remainingSamples = getUniqueSampleCount();
-}
-
-size_t InputVisualDataProducer::getUniqueSampleCount() const
-{
-	return _images.size() + _videos.size();
-}
-
 static void parseImageDatabase(ImageVector& images, VideoVector& video,
 	const std::string& path, bool requiresLabeledData, size_t inputs, size_t colors);
 
-void InputVisualDataProducer::_initialize()
+void InputVisualDataProducer::initialize()
 {
-	if (!_initialized)
+	if(_initialized)
 	{
 		return;
 	}
+	
+	util::log("InputVisualDataProducer") << "Initializing from image database '"
+		<< _sampleDatabasePath << "'\n";
 	
 	bool shouldSeedWithTime = util::KnobDatabase::getKnobValue(
 		"InputVisualDataProducer::SeedWithTime", false);
@@ -101,6 +70,45 @@ void InputVisualDataProducer::_initialize()
 	reset();
 	
 	_initialized = true;
+}
+
+static ImageVector getBatch(ImageVector& images, VideoVector& video,
+	size_t& remainingSamples, size_t batchSize, std::default_random_engine& generator,
+	bool requiresLabeledData);
+
+InputVisualDataProducer::InputAndReferencePair InputVisualDataProducer::pop()
+{
+	assert(_initialized);
+	
+	ImageVector batch = getBatch(_images, _videos, _remainingSamples,
+		getBatchSize(), _generator, getRequiresLabeledData());
+	
+	// TODO: specialize this logic
+	auto input = batch.convertToStandardizedMatrix(getInputCount(),
+		getInputBlockingFactor(), _colorComponents);
+	auto reference = batch.getReference(getOutputLabels());
+	
+	util::log("InputVisualDataProducer") << "Loaded batch of '" << batch.size()
+		<<  "' image frames, " << _remainingSamples << " remaining in this epoch.\n";
+	
+	return InputAndReferencePair(std::move(input), std::move(reference));
+}
+
+bool InputVisualDataProducer::empty() const
+{
+	assert(_initialized);
+
+	return _remainingSamples == 0;
+}
+
+void InputVisualDataProducer::reset()
+{
+	_remainingSamples = getUniqueSampleCount();
+}
+
+size_t InputVisualDataProducer::getUniqueSampleCount() const
+{
+	return _images.size() + _videos.size();
 }
 
 static void sliceOutTilesToFitTheModel(ImageVector& images,
@@ -178,7 +186,17 @@ static ImageVector getBatch(ImageVector& images, VideoVector& videos,
 
 	size_t imageBatchSize = distribution(generator);
 	size_t videoBatchSize = batchSize - imageBatchSize;
-
+	
+	if(images.empty())
+	{
+		videoBatchSize = batchSize;
+	}
+	
+	if(videos.empty())
+	{
+		imageBatchSize = batchSize;
+	}
+	
 	ImageVector batch;
 	
 	getVideoBatch(batch, videos, remainingSamples, videoBatchSize, generator, requiresLabeledData);
@@ -414,13 +432,13 @@ static void sliceOutTilesToFitTheModel(ImageVector& images,
 static void getImageBatch(ImageVector& batch, ImageVector& images,
 	size_t& remainingSamples, size_t maxBatchSize, std::default_random_engine& generator)
 {
-	util::log("InputVisualDataProducer") << "Collecting image batche\n";
+	util::log("InputVisualDataProducer") << "Collecting image batches\n";
 
 	// shuffle the inputs
 	auto randomImageOrder = getRandomOrder(images.size(), generator);
 
 	auto batchSize = std::min(images.size(),
-		(size_t)maxBatchSize);
+		std::min(remainingSamples, (size_t)maxBatchSize));
 
 	for(size_t i = 0; i < batchSize; ++i)
 	{

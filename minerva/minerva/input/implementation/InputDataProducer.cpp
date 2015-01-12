@@ -77,6 +77,11 @@ void InputDataProducer::setModel(const model::Model* model)
 	_model = model;
 }
 
+const model::Model* InputDataProducer::getModel() const
+{
+	return _model;
+}
+
 size_t InputDataProducer::getInputCount() const
 {
 	return _model->begin()->getInputCount();

@@ -347,6 +347,25 @@ std::string FeedForwardLayer::getTypeName() const
 	return "FeedForwardLayer";
 }
 
+FeedForwardLayer::FeedForwardLayer(const FeedForwardLayer& l)
+: _parameters(l._parameters), _weights(_parameters[0]), _bias(_parameters[1]), _blockStep(l._blockStep)
+{
+
+}
+
+FeedForwardLayer& FeedForwardLayer::operator=(const FeedForwardLayer& l)
+{
+	if(&l == this)
+	{
+		return *this;
+	}
+	
+	_parameters = l._parameters;
+	_blockStep = l._blockStep;
+	
+	return *this;
+}
+
 }
 
 }

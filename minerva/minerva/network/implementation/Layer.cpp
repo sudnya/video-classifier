@@ -40,8 +40,8 @@ Layer::~Layer()
 
 Layer::Layer(const Layer& l)
 : _activationFunction(l.getActivationFunction()->clone()),
-  _activationCostFunction(l.getActivationCostFunction()->clone()),
-  _weightCostFunction(l.getWeightCostFunction()->clone())
+  _activationCostFunction(l.getActivationCostFunction() == nullptr ? nullptr : l.getActivationCostFunction()->clone()),
+  _weightCostFunction(l.getWeightCostFunction() == nullptr ? nullptr : l.getWeightCostFunction()->clone())
 {
 
 }
@@ -54,8 +54,8 @@ Layer& Layer::operator=(const Layer& l)
 	}
 	
 	setActivationFunction(l.getActivationFunction()->clone());
-	setActivationCostFunction(l.getActivationCostFunction()->clone());
-	setWeightCostFunction(l.getWeightCostFunction()->clone());
+	setActivationCostFunction(l.getActivationCostFunction() == nullptr ? nullptr : l.getActivationCostFunction()->clone());
+	setWeightCostFunction(l.getWeightCostFunction() == nullptr ? nullptr : l.getWeightCostFunction()->clone());
 	
 	return *this;
 }

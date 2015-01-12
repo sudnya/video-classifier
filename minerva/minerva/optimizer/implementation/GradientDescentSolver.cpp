@@ -42,7 +42,7 @@ float GradientDescentSolver::solve(BlockSparseMatrixVector& weights, const CostA
 	float learningRateBackoff = util::KnobDatabase::getKnobValue<float>(
 		"GradientDescentSolver::LearningRateBackoff", 0.5f);
 	unsigned iterations = util::KnobDatabase::getKnobValue<float>(
-		"GradientDescentSolver::Iterations", 10000000);
+		"GradientDescentSolver::Iterations", 10);
 
 	auto derivative = callback.getUninitializedDataStructure();
 

@@ -34,6 +34,9 @@ public:
 	virtual ~InputDataProducer();
 
 public:
+	/*! \brief Initialize the state of the producer after all parameters have been set. */
+	virtual void initialize() = 0;
+
 	/*! \brief Deque a set of samples from the producer.
 
 		Note: the caller must ensure that the producer is not empty.
@@ -69,6 +72,7 @@ public:
 
 public:
 	void setModel(const model::Model* model);
+	const model::Model* getModel() const;
 
 protected:
 	size_t getInputCount() const;

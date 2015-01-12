@@ -13,7 +13,7 @@
 #include <minerva/model/interface/Model.h>
 
 #include <minerva/results/interface/ResultProcessor.h>
-#include <minerva/results/interface/LabelResultProcessor.h>
+#include <minerva/results/interface/LabelMatchResultProcessor.h>
 
 #include <minerva/network/interface/FeedForwardLayer.h>
 #include <minerva/network/interface/NeuralNetwork.h>
@@ -34,7 +34,7 @@ typedef minerva::matrix::Matrix Matrix;
 typedef minerva::visualization::NeuronVisualizer NeuronVisualizer;
 typedef minerva::model::Model Model;
 typedef minerva::classifiers::Engine Engine;
-typedef minerva::results::LabelResultProcessor LabelResultProcessor;
+typedef minerva::results::LabelMatchResultProcessor LabelMatchResultProcessor;
 
 class Parameters
 {
@@ -59,7 +59,7 @@ public:
 
 public:
 	Parameters()
-	: blockX(8), blockY(8), blockStep(8 * 8 / 2)
+	: blockX(16), blockY(16), blockStep(16*16/2)
 	{
 		
 	}
@@ -139,7 +139,7 @@ static void trainNetwork(Model& model, const Parameters& parameters)
 {
 	// Train the network
 	std::unique_ptr<Engine> engine(minerva::classifiers::EngineFactory::create("LearnerEngine"));
-
+	
 	engine->setModel(&model);
 	engine->setEpochs(parameters.epochs);
 	engine->setBatchSize(parameters.batchSize);
@@ -154,7 +154,7 @@ static void trainNetwork(Model& model, const Parameters& parameters)
 static float testNetwork(Model& model, const Parameters& parameters)
 {
 	std::unique_ptr<Engine> engine(minerva::classifiers::EngineFactory::create("ClassifierEngine"));
-
+	
 	engine->setBatchSize(parameters.batchSize);
 	engine->setModel(&model);
 
@@ -165,7 +165,7 @@ static float testNetwork(Model& model, const Parameters& parameters)
 	engine->extractModel();
 	
 	// get the result processor
-	auto resultProcessor = static_cast<LabelResultProcessor*>(engine->getResultProcessor());
+	auto resultProcessor = static_cast<LabelMatchResultProcessor*>(engine->getResultProcessor());
 
 	minerva::util::log("TestCatsVsDogs") << resultProcessor->toString();
 	
@@ -204,9 +204,9 @@ static void runTest(const Parameters& parameters)
 	
 	float accuracy = testNetwork(model, parameters);
 	
-	std::cout << "Accuracy is " << (accuracy * 100.0f) << "%\n";
+	std::cout << "Accuracy is " << (accuracy) << "%\n";
 	
-	if(accuracy < 0.90)
+	if(accuracy < 90.0f)
 	{
 		std::cout << " Test Failed\n";
 	}
@@ -230,7 +230,7 @@ int main(int argc, char** argv)
 	parser.description("A test for minerva difficult classication performance.");
 
     parser.parse("-i", "--input-path", parameters.inputPath,
-		"examples/cats-dogs-explicit-training.txt",
+		"examples/cats-dogs-explicit-training-small.txt",
         "The path of the database of training image files.");
     parser.parse("-t", "--test-path", parameters.testPath,
 		"examples/cats-dogs-explicit-test.txt",

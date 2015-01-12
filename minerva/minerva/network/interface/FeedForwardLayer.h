@@ -81,6 +81,10 @@ public:
 public:
 	virtual std::string getTypeName() const;
 
+public:
+	FeedForwardLayer(const FeedForwardLayer&);
+	FeedForwardLayer& operator=(const FeedForwardLayer&);
+
 private:
 	BlockSparseMatrixVector _parameters;
 

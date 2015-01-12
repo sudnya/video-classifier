@@ -22,6 +22,9 @@ public:
 	virtual ~InputTextDataProducer();
 
 public:
+	/*! \brief Initialize the state of the producer after all parameters have been set. */
+	virtual void initialize();
+
 	/*! \brief Deque a set of samples from the producer.
 
 		Note: the caller must ensure that the producer is not empty.

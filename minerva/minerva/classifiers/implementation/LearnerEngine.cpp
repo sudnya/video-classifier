@@ -36,7 +36,7 @@ LearnerEngine::~LearnerEngine()
 
 void LearnerEngine::closeModel()
 {
-	saveModel();
+	//saveModel();
 }
 	
 LearnerEngine::ResultVector LearnerEngine::runOnBatch(Matrix&& input, Matrix&& reference)

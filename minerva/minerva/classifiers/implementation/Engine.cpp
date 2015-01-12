@@ -10,8 +10,9 @@
 #include <minerva/network/interface/NeuralNetwork.h>
 #include <minerva/network/interface/Layer.h>
 
-#include <minerva/results/interface/NullResultProcessor.h>
+#include <minerva/results/interface/ResultProcessorFactory.h>
 #include <minerva/results/interface/ResultVector.h>
+#include <minerva/results/interface/ResultProcessor.h>
 
 #include <minerva/input/interface/InputDataProducerFactory.h>
 #include <minerva/input/interface/InputDataProducer.h>
@@ -39,8 +40,9 @@ namespace classifiers
 {
 
 Engine::Engine()
+: _dataProducer(input::InputDataProducerFactory::create()), _resultProcessor(results::ResultProcessorFactory::create("NullResultProcessor"))
 {
-	setResultProcessor(new results::NullResultProcessor);
+	
 }
 
 Engine::~Engine()
@@ -81,14 +83,24 @@ void Engine::runOnDatabaseFile(const std::string& path)
 	
 	_setupProducer(path);
 	
-	while(!_dataProducer->empty())
+	_dataProducer->initialize();
+
+	util::log("Engine") << "Running for " << _dataProducer->getEpochs() <<  " epochs.\n";
+	for(size_t epoch = 0; epoch != _dataProducer->getEpochs(); ++epoch)
 	{
-		auto dataAndReference = std::move(_dataProducer->pop());
+		while(!_dataProducer->empty())
+		{
+			auto dataAndReference = std::move(_dataProducer->pop());
+			
+			auto results = runOnBatch(std::move(dataAndReference.first),
+				std::move(dataAndReference.second));
+			
+			_resultProcessor->process(std::move(results));
+		}
+			
+		util::log("Engine") << " Finished epoch " << epoch <<  ".\n";
 		
-		auto results = runOnBatch(std::move(dataAndReference.first),
-			std::move(dataAndReference.second));
-		
-		_resultProcessor->process(std::move(results));
+		_dataProducer->reset();
 	}
 
 	// close
@@ -197,10 +209,16 @@ void Engine::restoreAggregateNetwork(network::NeuralNetwork& network)
 
 void Engine::_setupProducer(const std::string& path)
 {
-	_dataProducer.reset(
-		input::InputDataProducerFactory::createForDatabase(path));
+	std::unique_ptr<InputDataProducer> newProducer(input::InputDataProducerFactory::createForDatabase(path));
 	
-	_dataProducer->setRequiresLabeledData(requiresLabeledData());
+	newProducer->setRequiresLabeledData(requiresLabeledData());
+	newProducer->setEpochs(_dataProducer->getEpochs());
+	newProducer->setMaximumSamplesToRun(_dataProducer->getMaximumSamplesToRun());
+	newProducer->setBatchSize(_dataProducer->getBatchSize());
+	newProducer->setModel(_model.get());
+
+	_dataProducer = std::move(newProducer);
+	
 }
 
 

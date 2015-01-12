@@ -11,7 +11,7 @@
 
 #include <minerva/model/interface/Model.h>
 
-#include <minerva/results/interface/LabelResultProcessor.h>
+#include <minerva/results/interface/ResultProcessorFactory.h>
 #include <minerva/results/interface/LabelMatchResult.h>
 #include <minerva/results/interface/LabelResult.h>
 #include <minerva/results/interface/ResultVector.h>
@@ -27,9 +27,10 @@ namespace classifiers
 {
 
 ClassifierEngine::ClassifierEngine()
-: _shouldUseLabeledData(false)
+: _shouldUseLabeledData(true)
 {
-	setResultProcessor(new results::LabelResultProcessor);
+	setResultProcessor(results::ResultProcessorFactory::create("LabelMatchResultProcessor"));
+	setEpochs(1);
 }	
 
 ClassifierEngine::~ClassifierEngine()
@@ -107,7 +108,10 @@ ClassifierEngine::ResultVector ClassifierEngine::runOnBatch(Matrix&& input, Matr
 	
 	if(_shouldUseLabeledData)
 	{
-		return compareWithReference(labels, convertActivationsToLabels(std::move(reference), *_model));
+		if(reference.rows() == input.rows())
+		{
+			return compareWithReference(labels, convertActivationsToLabels(std::move(reference), *_model));
+		}
 	}
 	
 	return recordLabels(labels);

@@ -39,7 +39,7 @@ BlockSparseMatrixVector::BlockSparseMatrixVector(const BlockSparseMatrixVector& 
 
 }
 
-BlockSparseMatrixVector::BlockSparseMatrixVector(const BlockSparseMatrixVector&& m)
+BlockSparseMatrixVector::BlockSparseMatrixVector(BlockSparseMatrixVector&& m)
 : _matrix(std::move(m._matrix))
 {
 
@@ -52,7 +52,7 @@ BlockSparseMatrixVector& BlockSparseMatrixVector::operator=(const BlockSparseMat
 	return *this;
 }
 
-BlockSparseMatrixVector& BlockSparseMatrixVector::operator=(const BlockSparseMatrixVector&& m)
+BlockSparseMatrixVector& BlockSparseMatrixVector::operator=(BlockSparseMatrixVector&& m)
 {
 	_matrix = std::move(m._matrix);
 	
