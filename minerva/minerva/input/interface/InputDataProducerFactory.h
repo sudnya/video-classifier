@@ -23,6 +23,7 @@ class InputDataProducerFactory
 {
 public:
 	static InputDataProducer* create(const std::string& producerName, const std::string& databaseName);
+	static InputDataProducer* create();
 	static InputDataProducer* createForDatabase(const std::string& databaseName);
 
 };

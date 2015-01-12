@@ -620,6 +620,16 @@ void CudaSparseMatrixLibrary::sigmoidDerivative(float* result, const float* left
 	launchKernel("sigmoidDerivative", result, left, size);
 }
 
+void CudaSparseMatrixLibrary::rectifiedLinear(float* result, const float* left, size_t size)
+{
+	launchKernel("rectifiedLinear", result, left, size);
+}
+
+void CudaSparseMatrixLibrary::rectifiedLinearDerivative(float* result, const float* left, size_t size)
+{
+	launchKernel("rectifiedLinearDerivative", result, left, size);
+}
+
 void CudaSparseMatrixLibrary::negateSelf(float* result, size_t size)
 {
 	launchKernel("negateSelf", result, size);
@@ -638,6 +648,16 @@ void CudaSparseMatrixLibrary::sigmoidSelf(float* result, size_t size)
 void CudaSparseMatrixLibrary::sigmoidDerivativeSelf(float* result, size_t size)
 {
 	launchKernel("sigmoidDerivativeSelf", result, size);
+}
+
+void CudaSparseMatrixLibrary::rectifiedLinearSelf(float* result, size_t size)
+{
+	launchKernel("rectifiedLinearSelf", result, size);
+}
+
+void CudaSparseMatrixLibrary::rectifiedLinearDerivativeSelf(float* result, size_t size)
+{
+	launchKernel("rectifiedLinearDerivativeSelf", result, size);
 }
 
 void CudaSparseMatrixLibrary::maxSelf(float* result, float value, size_t size)

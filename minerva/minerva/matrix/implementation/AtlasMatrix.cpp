@@ -343,6 +343,24 @@ Value* AtlasMatrix::sigmoidDerivative() const
     return result;
 }
 
+Value* AtlasMatrix::rectifiedLinear() const
+{
+    AtlasMatrix* result = new AtlasMatrix(*this);
+	
+	result->rectifiedLinearSelf();
+
+    return result;
+}
+
+Value* AtlasMatrix::rectifiedLinearDerivative() const
+{
+    AtlasMatrix* result = new AtlasMatrix(*this);
+	
+	result->rectifiedLinearDerivativeSelf();
+
+    return result;
+}
+
 Value* AtlasMatrix::klDivergence(float sparsity) const
 {
     AtlasMatrix* result = new AtlasMatrix(*this);
@@ -417,6 +435,32 @@ void AtlasMatrix::sigmoidDerivativeSelf()
 	for(auto& f : _data)
 	{
 		f = matrix::sigmoidDerivative(f);
+	}
+}
+
+static float rectifiedLinear(float f)
+{
+	return std::max(std::min(f, 20.0f), -20.0f);
+}
+
+static float rectifiedLinearDerivative(float f)
+{
+	return (f < -20.0f || f > 20.0f) ? 0.0f : 1.0f;
+}
+
+void AtlasMatrix::rectifiedLinearSelf()
+{
+	for(auto& f : _data)
+	{
+		f = matrix::rectifiedLinear(f);
+	}
+}
+
+void AtlasMatrix::rectifiedLinearDerivativeSelf()
+{
+	for(auto& f : _data)
+	{
+		f = matrix::rectifiedLinearDerivative(f);
 	}
 }
 

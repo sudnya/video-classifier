@@ -301,6 +301,20 @@ Matrix Matrix::sigmoidDerivative() const
 	return Matrix(_matrix->sigmoidDerivative());
 }
 
+Matrix Matrix::rectifiedLinear() const
+{
+	assert(_matrix != nullptr);
+	
+	return Matrix(_matrix->rectifiedLinear());
+}
+
+Matrix Matrix::rectifiedLinearDerivative() const
+{
+	assert(_matrix != nullptr);
+	
+	return Matrix(_matrix->rectifiedLinearDerivative());
+}
+
 Matrix Matrix::klDivergence(float sparsity) const
 {
 	assert(_matrix != nullptr);
@@ -341,6 +355,20 @@ void Matrix::sigmoidDerivativeSelf()
 	assert(_matrix != nullptr);
 
 	_matrix->sigmoidDerivativeSelf();
+}
+
+void Matrix::rectifiedLinearSelf()
+{
+	assert(_matrix != nullptr);
+
+	_matrix->rectifiedLinearSelf();
+}
+
+void Matrix::rectifiedLinearDerivativeSelf()
+{
+	assert(_matrix != nullptr);
+
+	_matrix->rectifiedLinearDerivativeSelf();
 }
 
 void Matrix::klDivergenceSelf(float sparsity)

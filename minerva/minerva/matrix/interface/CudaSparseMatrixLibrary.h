@@ -59,12 +59,16 @@ public:
 	static void log(float* result, const float* left, size_t size);
 	static void sigmoid(float* result, const float* left, size_t size);
 	static void sigmoidDerivative(float* result, const float* left, size_t size);
+	static void rectifiedLinear(float* result, const float* left, size_t size);
+	static void rectifiedLinearDerivative(float* result, const float* left, size_t size);
 
 public:
 	static void negateSelf(float* result, size_t size);
 	static void logSelf(float* result, size_t size);
 	static void sigmoidSelf(float* result, size_t size);
 	static void sigmoidDerivativeSelf(float* result, size_t size);
+	static void rectifiedLinearSelf(float* result, size_t size);
+	static void rectifiedLinearDerivativeSelf(float* result, size_t size);
 	static void minSelf(float* result, float value, size_t size);
 	static void maxSelf(float* result, float value, size_t size);
 	static void assignSelf(float* result, float value, size_t size);

@@ -8,6 +8,7 @@
 #include <minerva/matrix/interface/NaiveBlockSparseMatrix.h>
 
 #include <minerva/matrix/interface/Matrix.h>
+#include <minerva/matrix/interface/SparseMatrixFormat.h>
 
 #include <minerva/util/interface/debug.h>
 
@@ -59,94 +60,159 @@ Value* NaiveBlockSparseMatrix::multiply(const Value* matrix) const
 	return result;
 }
 
-static void zeroExtendColumns(Matrix& m, size_t columns)
+static Matrix gatherLeftForConvolutionalMultiply(const NaiveBlockSparseMatrix* left, size_t blockId, size_t filterSize, size_t partitionSize, size_t step)
 {
-	if(m.columns() < columns)
-	{
-		m = m.appendColumns(Matrix(m.rows(), columns - m.columns()));
-	}
+	size_t partitionId = blockId / partitionSize;
+	size_t remainder   = blockId % partitionSize;
+
+	size_t partitionColumns = (partitionSize * left->columnsPerBlock());
+
+	size_t columnStart = partitionColumns * partitionId + remainder * step;
+	size_t columnEnd   = std::min(columnStart + filterSize, left->columns());
+
+	return left->slice(0, columnStart, left->rows(), columnEnd - columnStart);
 }
 
-Value* NaiveBlockSparseMatrix::convolutionalMultiply(const Value* matrix,
-	size_t step) const
+static Matrix gatherRightForConvolutionalMultiply(const NaiveBlockSparseMatrix* right, size_t blockId, size_t partitionSize)
 {
-	// Just multiply if there is a 1 to 1 match between blocks
-	if(matrix->rowsPerBlock() == step && matrix->blocks() == blocks())
-	{
-		return multiply(matrix);
-	}
+	return (*right)[blockId / partitionSize];
+}
 
+Value* NaiveBlockSparseMatrix::convolutionalMultiply(const Value* matrix, size_t step) const
+{
 	auto m = dynamic_cast<const NaiveBlockSparseMatrix*>(matrix);
 	assert(m != nullptr);
 	
-	// TODO: in parallel
-	auto result = new NaiveBlockSparseMatrix(isRowSparse());
-
-	auto flattened = toMatrix();
-	
-	for(size_t leftBegin = 0; leftBegin < flattened.columns(); leftBegin += step)
+	// Just multiply if there is a 1 to 1 match between blocks
+	if(columnsPerBlock() == step && m->blocks() == blocks())
 	{
-		size_t extent = std::min(flattened.columns(), leftBegin + m->rowsPerBlock());
-		
-		auto temp = flattened.slice(0, leftBegin, flattened.rows(), extent - leftBegin);
-		
-		zeroExtendColumns(temp, m->rowsPerBlock());
+		return multiply(m);
+	}
 	
-		// TODO:	
-		size_t rightBlockIndex = leftBegin * m->blocks() / flattened.columns();//(leftBegin * flattened.columns()) / (m->rowsPerBlock() * m->rows());
-		assert(rightBlockIndex < m->blocks());		
+	size_t partitionSize   = (blocks() + m->blocks() - 1) / m->blocks();
+	size_t fullPartitions  = blocks() / partitionSize;
+	size_t remainingBlocks = blocks() % partitionSize;
+	size_t filterSize      = m->rowsPerBlock();	
 
-		result->push_back(temp.multiply((*m)[rightBlockIndex]));
+	size_t partiallyFullPartitions = remainingBlocks > 0 ? 1 : 0;
+
+	size_t resultBlocks = fullPartitions * ((partitionSize * columnsPerBlock() - filterSize + step) / step) +
+		partiallyFullPartitions * ((remainingBlocks * columnsPerBlock() - filterSize + step) / step);
+	
+	auto result = new NaiveBlockSparseMatrix(isRowSparse());
+	
+	result->resize(resultBlocks);
+	
+	// TODO: in parallel
+	size_t resultBlockId = 0;
+	for(auto& resultBlock : *result)
+	{
+		auto left  = gatherLeftForConvolutionalMultiply( this, resultBlockId, m->rowsPerBlock(), partitionSize, step);
+		auto right = gatherRightForConvolutionalMultiply(m,    resultBlockId, partitionSize);
+		
+		resultBlock = std::move(left.multiply(right));
+		
+		++resultBlockId;
 	}
 	
 	return result;
 }
-
-Value* NaiveBlockSparseMatrix::reverseConvolutionalMultiply(const Value* matrix) const
-{
-	// Just multiply if there is a 1 to 1 match between blocks
-	if(columnsPerBlock() == matrix->rowsPerBlock() && matrix->blocks() == blocks())
-	{
-		return multiply(matrix);
-	}
-
-	auto m = dynamic_cast<const NaiveBlockSparseMatrix*>(matrix);
-	assert(m != nullptr);
 	
-	// TODO: in parallel
-	auto result = new NaiveBlockSparseMatrix(isRowSparse());
-
-	size_t leftColumnStep  = m->rowsPerBlock();
-	size_t leftColumn      = 0;
-
-	auto flattened = toMatrix();
-
-	result->resize(m->blocks());
-
-	auto resultBlock = result->begin();
-
-	for(auto& right : *m)
+Value* NaiveBlockSparseMatrix::computeConvolutionalGradient(const Value* activation, const SparseMatrixFormat& weightFormat, size_t step) const
+{
+	auto a = dynamic_cast<const NaiveBlockSparseMatrix*>(activation);
+	assert(a != nullptr);
+	
+	// Just multiply if there is a 1 to 1 match between blocks
+	if(a->blocks() == blocks())
 	{
-		Matrix temp(flattened.rows(), right.columns());
+		return multiply(a);
+	}
+	
+	// Otherwise, compute the convolutional gradient
+	auto result = new NaiveBlockSparseMatrix(isRowSparse());
+	
+	result->resize(weightFormat.blocks);
+	
+	size_t partitionSize = (a->blocks() + weightFormat.blocks - 1) / weightFormat.blocks;
+	size_t fullPartitions = a->blocks() / partitionSize;
+	size_t remainingBlocks = a->blocks() % partitionSize;
+	size_t filterSize = weightFormat.rowsPerBlock;
+
+	size_t resultBlockId = 0;
+	size_t deltaBlockId  = 0;
+
+	for(auto& resultBlock : *result)
+	{
+		size_t inputBlocksInThisPartition = (resultBlockId < fullPartitions) ? partitionSize : remainingBlocks;
+		size_t blocksInThisPartition = (inputBlocksInThisPartition * a->columnsPerBlock() - filterSize + step) / step;
 		
-		for(size_t leftBegin = leftColumn; leftBegin < flattened.columns(); leftBegin += right.rows())
-		{
-			size_t leftColumnEnd = std::min(flattened.columns(), leftBegin + leftColumnStep);
+		Matrix gradient(weightFormat.rowsPerBlock, weightFormat.columnsPerBlock);
 		
-			auto leftSlice = flattened.slice(0, leftBegin, flattened.rows(), leftColumnEnd - leftBegin);
+		for(size_t blockInThisPartition = 0; blockInThisPartition < blocksInThisPartition; ++blockInThisPartition, ++deltaBlockId)
+		{	
+			auto left  = (*this)[deltaBlockId];
+			auto right = gatherLeftForConvolutionalMultiply(a, deltaBlockId, filterSize, partitionSize, step);
 			
-			zeroExtendColumns(leftSlice, m->rowsPerBlock());
-			
-			temp = temp.add(leftSlice.multiply(right));
+			gradient = gradient.add(left.multiply(right));
 		}
 		
-		*resultBlock = std::move(temp);
+		resultBlock = std::move(gradient);
 		
-		leftColumn += leftColumnStep;
-
-		++resultBlock;
+		++resultBlockId;
 	}
+
+	return result;
+}
+
+static void mergeResultForConvolutionalDeltas(NaiveBlockSparseMatrix* result, const Matrix& resultBlock,
+	size_t blockId, size_t filterSize, size_t partitionSize, size_t step)
+{
+	size_t partitionId = blockId / partitionSize;
+	size_t remainder   = blockId % partitionSize;
+
+	size_t partitionColumns = (partitionSize * result->columnsPerBlock());
+
+	size_t columnStart = partitionColumns * partitionId + remainder * step;
 	
+	// copy
+	result->assign(0, columnStart, resultBlock);
+}
+
+Value* NaiveBlockSparseMatrix::computeConvolutionalDeltas(const Value* weights, const SparseMatrixFormat& deltasFormat, size_t step) const
+{
+	auto w = dynamic_cast<const NaiveBlockSparseMatrix*>(weights);
+	assert(w != nullptr);
+	
+	// Just multiply if there is a 1 to 1 match between blocks
+	if(deltasFormat.columnsPerBlock == step && deltasFormat.blocks == w->blocks())
+	{
+		std::unique_ptr<Value> transposedWeights(w->transpose());
+		
+		return multiply(transposedWeights.get());
+	}
+
+	// Otherwise, compute the convolutional deltas
+	auto result = new NaiveBlockSparseMatrix(isRowSparse());
+	
+	result->resize(deltasFormat.blocks, deltasFormat.rowsPerBlock, deltasFormat.columnsPerBlock);
+	
+	size_t partitionSize = (deltasFormat.blocks + w->blocks() - 1) / w->blocks();
+	size_t filterSize = w->rowsPerBlock();
+
+	size_t resultBlockId = 0;
+	for(auto& block : *this)
+	{
+		auto& left  = block;
+		auto  right = gatherRightForConvolutionalMultiply(w, resultBlockId, partitionSize).transpose();
+		
+		auto resultBlock = left.multiply(right);
+		
+		mergeResultForConvolutionalDeltas(result, resultBlock, resultBlockId, filterSize, partitionSize, step);
+		
+		++resultBlockId;
+	}
+
 	return result;
 }
 
@@ -378,6 +444,38 @@ Value* NaiveBlockSparseMatrix::sigmoidDerivative() const
 	return result;
 }
 
+Value* NaiveBlockSparseMatrix::rectifiedLinear() const
+{
+	auto result = new NaiveBlockSparseMatrix(isRowSparse());
+
+	result->resize(blocks());
+	
+	// TODO: in parallel
+	auto resultBlock = result->begin();
+	for(auto matrix = begin(); matrix != end(); ++matrix, ++resultBlock)
+	{
+		*resultBlock = std::move(matrix->rectifiedLinear());
+	}
+	
+	return result;
+}
+
+Value* NaiveBlockSparseMatrix::rectifiedLinearDerivative() const
+{
+	auto result = new NaiveBlockSparseMatrix(isRowSparse());
+
+	result->resize(blocks());
+	
+	// TODO: in parallel
+	auto resultBlock = result->begin();
+	for(auto matrix = begin(); matrix != end(); ++matrix, ++resultBlock)
+	{
+		*resultBlock = std::move(matrix->rectifiedLinearDerivative());
+	}
+	
+	return result;
+}
+
 Value* NaiveBlockSparseMatrix::klDivergence(float sparsity) const
 {
 	auto result = new NaiveBlockSparseMatrix(isRowSparse());
@@ -459,6 +557,24 @@ void NaiveBlockSparseMatrix::sigmoidDerivativeSelf()
 	for(auto& matrix : *this)
 	{
 		matrix.sigmoidDerivativeSelf();
+	}
+}
+
+void NaiveBlockSparseMatrix::rectifiedLinearSelf()
+{
+	// TODO: in parallel
+	for(auto& matrix : *this)
+	{
+		matrix.rectifiedLinearSelf();
+	}
+}
+
+void NaiveBlockSparseMatrix::rectifiedLinearDerivativeSelf()
+{
+	// TODO: in parallel
+	for(auto& matrix : *this)
+	{
+		matrix.rectifiedLinearDerivativeSelf();
 	}
 }
 

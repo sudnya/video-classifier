@@ -31,12 +31,15 @@ public:
 	BlockSparseMatrixVector(size_t elements, const BlockSparseMatrix& value);
 
 public:
+	BlockSparseMatrixVector(std::initializer_list<BlockSparseMatrix> l);
+
+public:
 	BlockSparseMatrixVector(const BlockSparseMatrixVector&);
-	BlockSparseMatrixVector(const BlockSparseMatrixVector&&);
+	BlockSparseMatrixVector(BlockSparseMatrixVector&&);
 
 public:
 	BlockSparseMatrixVector& operator=(const BlockSparseMatrixVector&  );
-	BlockSparseMatrixVector& operator=(const BlockSparseMatrixVector&& );
+	BlockSparseMatrixVector& operator=(BlockSparseMatrixVector&& );
 
 public:
 	reference_type operator[](size_t i);
@@ -90,7 +93,11 @@ public:
 
 public:
 	void push_back(const BlockSparseMatrix&  );
-	void push_back(const BlockSparseMatrix&& );
+	void push_back(BlockSparseMatrix&&);
+	void push_back(BlockSparseMatrixVector&&);
+
+public:
+	void pop_back();
 
 public:
 	BlockSparseMatrix& back();

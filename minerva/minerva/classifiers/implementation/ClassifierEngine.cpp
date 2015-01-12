@@ -7,9 +7,11 @@
 // Minerva Includes
 #include <minerva/classifiers/interface/ClassifierEngine.h>
 
-#include <minerva/neuralnetwork/interface/NeuralNetwork.h>
+#include <minerva/network/interface/NeuralNetwork.h>
 
-#include <minerva/results/interface/LabelResultProcessor.h>
+#include <minerva/model/interface/Model.h>
+
+#include <minerva/results/interface/ResultProcessorFactory.h>
 #include <minerva/results/interface/LabelMatchResult.h>
 #include <minerva/results/interface/LabelResult.h>
 #include <minerva/results/interface/ResultVector.h>
@@ -25,9 +27,10 @@ namespace classifiers
 {
 
 ClassifierEngine::ClassifierEngine()
-: _shouldUseLabeledData(false)
+: _shouldUseLabeledData(true)
 {
-	setResultProcessor(new results::LabelResultProcessor);
+	setResultProcessor(results::ResultProcessorFactory::create("LabelMatchResultProcessor"));
+	setEpochs(1);
 }	
 
 ClassifierEngine::~ClassifierEngine()
@@ -41,7 +44,7 @@ void ClassifierEngine::setUseLabeledData(bool shouldUse)
 }
 
 util::StringVector convertActivationsToLabels(matrix::Matrix&& activations,
-	const neuralnetwork::NeuralNetwork& network)
+	const model::Model& model)
 {
 	size_t samples = activations.rows();
 	size_t columns = activations.columns();
@@ -62,7 +65,7 @@ util::StringVector convertActivationsToLabels(matrix::Matrix&& activations,
 			}
 		}
 		
-		labels.push_back(network.getLabelForOutputNeuron(maxColumn));
+		labels.push_back(model.getOutputLabel(maxColumn));
 	}
 	
 	return labels;
@@ -97,15 +100,18 @@ ClassifierEngine::ResultVector ClassifierEngine::runOnBatch(Matrix&& input, Matr
 {
 	auto network = getAggregateNetwork();
 	
-	auto result = network.runInputs(std::move(input));
+	auto result = network->runInputs(std::move(input));
 
-	auto labels = convertActivationsToLabels(std::move(result), network);
+	auto labels = convertActivationsToLabels(std::move(result), *_model);
 	
-	restoreAggregateNetwork(network);
+	restoreAggregateNetwork();
 	
 	if(_shouldUseLabeledData)
 	{
-		return compareWithReference(labels, convertActivationsToLabels(std::move(reference), network));
+		if(reference.rows() == input.rows())
+		{
+			return compareWithReference(labels, convertActivationsToLabels(std::move(reference), *_model));
+		}
 	}
 	
 	return recordLabels(labels);

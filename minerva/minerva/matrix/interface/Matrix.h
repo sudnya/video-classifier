@@ -93,8 +93,12 @@ public:
 	Matrix sqrt() const;
 	Matrix abs() const;
 	Matrix negate() const;
+	
 	Matrix sigmoid() const;
 	Matrix sigmoidDerivative() const;
+
+	Matrix rectifiedLinear() const;
+	Matrix rectifiedLinearDerivative() const;
 
 	Matrix klDivergence(float sparsity) const;
 	Matrix klDivergenceDerivative(float sparsity) const;
@@ -109,6 +113,8 @@ public:
 	void logSelf();
     void sigmoidSelf();
     void sigmoidDerivativeSelf();
+    void rectifiedLinearSelf();
+    void rectifiedLinearDerivativeSelf();
     void klDivergenceSelf(float sparsity);
     void klDivergenceDerivativeSelf(float sparsity);
 	void minSelf(float f);

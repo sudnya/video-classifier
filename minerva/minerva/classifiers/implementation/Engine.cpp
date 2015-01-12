@@ -7,8 +7,12 @@
 // Minerva Includes
 #include <minerva/classifiers/interface/Engine.h>
 
-#include <minerva/results/interface/NullResultProcessor.h>
+#include <minerva/network/interface/NeuralNetwork.h>
+#include <minerva/network/interface/Layer.h>
+
+#include <minerva/results/interface/ResultProcessorFactory.h>
 #include <minerva/results/interface/ResultVector.h>
+#include <minerva/results/interface/ResultProcessor.h>
 
 #include <minerva/input/interface/InputDataProducerFactory.h>
 #include <minerva/input/interface/InputDataProducer.h>
@@ -36,8 +40,9 @@ namespace classifiers
 {
 
 Engine::Engine()
+: _dataProducer(input::InputDataProducerFactory::create()), _resultProcessor(results::ResultProcessorFactory::create("NullResultProcessor"))
 {
-	setResultProcessor(new results::NullResultProcessor);
+	
 }
 
 Engine::~Engine()
@@ -78,14 +83,24 @@ void Engine::runOnDatabaseFile(const std::string& path)
 	
 	_setupProducer(path);
 	
-	while(!_dataProducer->empty())
+	_dataProducer->initialize();
+
+	util::log("Engine") << "Running for " << _dataProducer->getEpochs() <<  " epochs.\n";
+	for(size_t epoch = 0; epoch != _dataProducer->getEpochs(); ++epoch)
 	{
-		auto dataAndReference = std::move(_dataProducer->pop());
+		while(!_dataProducer->empty())
+		{
+			auto dataAndReference = std::move(_dataProducer->pop());
+			
+			auto results = runOnBatch(std::move(dataAndReference.first),
+				std::move(dataAndReference.second));
+			
+			_resultProcessor->process(std::move(results));
+		}
+			
+		util::log("Engine") << " Finished epoch " << epoch <<  ".\n";
 		
-		auto results = runOnBatch(std::move(dataAndReference.first),
-			std::move(dataAndReference.second));
-		
-		_resultProcessor->process(std::move(results));
+		_dataProducer->reset();
 	}
 
 	// close
@@ -127,9 +142,9 @@ void Engine::setBatchSize(size_t samples)
 	_dataProducer->setBatchSize(samples);
 }
 
-void Engine::setAllowSamplingWithReplacement(bool allow)
+void Engine::setEpochs(size_t epochs)
 {
-	_dataProducer->setAllowSamplingWithReplacement(allow);
+	_dataProducer->setEpochs(epochs);
 }
 
 void Engine::registerModel()
@@ -152,28 +167,33 @@ void Engine::saveModel()
 	if(_model) _model->save();
 }
 
-neuralnetwork::NeuralNetwork Engine::getAggregateNetwork()
+network::NeuralNetwork* Engine::getAggregateNetwork()
 {
-	neuralnetwork::NeuralNetwork network;
+	if(!_aggregateNetwork)
+	{
+		_aggregateNetwork.reset(new NeuralNetwork);
+	}
 	
 	auto& featureSelector = _model->getNeuralNetwork("FeatureSelector");
 	auto& classifier      = _model->getNeuralNetwork("Classifier");
 	
-	for(auto&& layer : featureSelector)
+	for(auto& layer : featureSelector)
 	{
-		network.addLayer(std::move(layer));
+		_aggregateNetwork->addLayer(layer.release());
 	}
 	
-	for(auto&& layer : classifier)
+	for(auto& layer : classifier)
 	{
-		network.addLayer(std::move(layer));
+		_aggregateNetwork->addLayer(layer.release());
 	}
 	
-	return network;
+	return _aggregateNetwork.get();
 }
 
-void Engine::restoreAggregateNetwork(neuralnetwork::NeuralNetwork& network)
+void Engine::restoreAggregateNetwork()
 {
+	assert(_aggregateNetwork);
+
 	auto& featureSelector = _model->getNeuralNetwork("FeatureSelector");
 	auto& classifier      = _model->getNeuralNetwork("Classifier");
 	
@@ -181,23 +201,31 @@ void Engine::restoreAggregateNetwork(neuralnetwork::NeuralNetwork& network)
 	
 	for(auto& layer : featureSelector)
 	{
-		layer = std::move(network[layerId]);
+		layer = std::move((*_aggregateNetwork)[layerId]);
 		++layerId;
 	}
 	
 	for(auto& layer : classifier)
 	{
-		layer = std::move(network[layerId]);
+		layer = std::move((*_aggregateNetwork)[layerId]);
 		++layerId;
 	}
+	
+	_aggregateNetwork->clear();
 }
 
 void Engine::_setupProducer(const std::string& path)
 {
-	_dataProducer.reset(
-		input::InputDataProducerFactory::createForDatabase(path));
+	std::unique_ptr<InputDataProducer> newProducer(input::InputDataProducerFactory::createForDatabase(path));
 	
-	_dataProducer->setRequiresLabeledData(requiresLabeledData());
+	newProducer->setRequiresLabeledData(requiresLabeledData());
+	newProducer->setEpochs(_dataProducer->getEpochs());
+	newProducer->setMaximumSamplesToRun(_dataProducer->getMaximumSamplesToRun());
+	newProducer->setBatchSize(_dataProducer->getBatchSize());
+	newProducer->setModel(_model.get());
+
+	_dataProducer = std::move(newProducer);
+	
 }
 
 

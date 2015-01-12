@@ -3,7 +3,9 @@
  * A unit test that implements a neural network to perform XOR 
 */
 
-#include <minerva/neuralnetwork/interface/NeuralNetwork.h>
+#include <minerva/network/interface/NeuralNetwork.h>
+#include <minerva/network/interface/FeedForwardLayer.h>
+#include <minerva/network/interface/ActivationFunctionFactory.h>
 
 #include <minerva/matrix/interface/Matrix.h>
 
@@ -18,34 +20,28 @@ namespace minerva
 namespace classifiers
 {
 
-typedef neuralnetwork::Layer Layer;
+typedef network::FeedForwardLayer FeedForwardLayer;
 typedef matrix::Matrix Matrix;
 
-neuralnetwork::NeuralNetwork createAndInitializeNeuralNetwork(unsigned networkSize, float epsilon)
+network::NeuralNetwork createAndInitializeNeuralNetwork(unsigned networkSize, float epsilon)
 {
-    neuralnetwork::NeuralNetwork ann;
+    network::NeuralNetwork ann;
 
-	size_t convolutionalLayers = 1;//std::min(networkSize/4, 1U);
+	size_t hiddenSize = (networkSize * 3) / 2;
 
     // Layer 1
-    ann.addLayer(Layer(convolutionalLayers,networkSize/convolutionalLayers,
-		networkSize/convolutionalLayers));
-
-	size_t step = 8;
+    ann.addLayer(new FeedForwardLayer(1, networkSize, hiddenSize));
 	
-	size_t convolutionalLayersTwo = 1;//std::min(networkSize/4, 1U);
-	size_t layerTwoStep = (networkSize / convolutionalLayersTwo) / step;
+	ann.back()->setActivationFunction(network::ActivationFunctionFactory::create("SigmoidActivationFunction"));
 
     // Layer 2
-    ann.addLayer(Layer(convolutionalLayersTwo, networkSize/convolutionalLayersTwo,
-		networkSize/convolutionalLayersTwo, layerTwoStep));
-
-    // Layer 3
-    ann.addLayer(Layer(1,networkSize * step,networkSize/2));
+    ann.addLayer(new FeedForwardLayer(1, hiddenSize, networkSize/2));
+	
+	ann.back()->setActivationFunction(network::ActivationFunctionFactory::create("SigmoidActivationFunction"));
 
 	std::default_random_engine engine;
 	
-	engine.seed(0);
+	engine.seed(177);
 	
     ann.initializeRandomly(engine, epsilon);
 
@@ -54,7 +50,6 @@ neuralnetwork::NeuralNetwork createAndInitializeNeuralNetwork(unsigned networkSi
 
 Matrix generateRandomMatrix(unsigned rows, unsigned columns, std::default_random_engine& generator)
 {
-    
     std::bernoulli_distribution distribution(0.5f);
     
     Matrix matrix(rows, columns);
@@ -88,7 +83,7 @@ Matrix matrixXor(const Matrix& inputs)
     {
         for (unsigned j = 0; j < inputs.columns()/2; ++j)
         {
-            output(i,j) = floatXor(inputs(i,j), inputs(i, (inputs.columns()/2 + j)));
+            output(i,j) = floatXor(inputs(i, j * 2), inputs(i, j * 2 + 1));
         }
     }
     return output;
@@ -113,28 +108,9 @@ Matrix threshold(const Matrix& output)
     return temp;
 }
 
-float computeEntropy(const Matrix& thresholdOutput)
+void trainNeuralNetwork(network::NeuralNetwork& ann, unsigned trainingIter, std::default_random_engine& generator)
 {
-	float totalColumnEntropy = 0;
-
-	for(size_t column = 0; column < thresholdOutput.columns(); ++column)
-	{
-		float totalBits = 0.0f;
-		
-		for(size_t row = 0; row < thresholdOutput.rows(); ++row)
-		{
-			totalBits += thresholdOutput(row, column);
-		}
-		
-		totalColumnEntropy += 0.5f - std::fabs(0.5f - (totalBits / thresholdOutput.rows()));
-	}
-	
-	return totalColumnEntropy / thresholdOutput.columns();
-}
-
-void trainNeuralNetwork(neuralnetwork::NeuralNetwork& ann, unsigned trainingIter, std::default_random_engine& generator)
-{
-    unsigned samplesPerIter = ann.getInputCount() * 50;
+    unsigned samplesPerIter = ann.getInputCount() * 100;
 
     util::log("TestClassifier") << "Starting training\n";
 
@@ -148,7 +124,6 @@ void trainNeuralNetwork(neuralnetwork::NeuralNetwork& ann, unsigned trainingIter
 		{
 			util::log("TestClassifier") << " Input is:     " << input.toString();
 			util::log("TestClassifier") << " Output is:    " << threshold(ann.runInputs(input)).toString();
-			util::log("TestClassifier") << "  Output entropy is " << computeEntropy(threshold(ann.runInputs(input))) << "\n";
 			util::log("TestClassifier") << " Reference is: " << referenceMatrix.toString();
 		}
 		
@@ -181,11 +156,11 @@ unsigned compare(const Matrix& output, const Matrix& reference)
     return bitsThatMatch;
 }
 
-float classify(const neuralnetwork::NeuralNetwork& ann, unsigned iterations, std::default_random_engine& generator)
+float classify(const network::NeuralNetwork& ann, unsigned iterations, std::default_random_engine& generator)
 {
     float accuracy = 0.0f;
     unsigned correctBits = 0;
-    unsigned samplesPerIter = ann.getInputCount() * 10;
+    unsigned samplesPerIter = ann.getInputCount() * 100;
 
     util::log("TestClassifier") << "Starting classification\n";
 
@@ -213,7 +188,7 @@ void runTest(unsigned iterations, bool seed, unsigned networkSize, float epsilon
     
     // Create neural network
     // 3 layers
-    neuralnetwork::NeuralNetwork ann = createAndInitializeNeuralNetwork(networkSize, epsilon); 
+    network::NeuralNetwork ann = createAndInitializeNeuralNetwork(networkSize, epsilon); 
 
     // Train network against reference XOR function
 
@@ -266,7 +241,7 @@ int main(int argc, char** argv)
 	unsigned networkSize = 0;
 	float epsilon = 1.0f;
 
-    parser.description("The Minerva image classifier.");
+    parser.description("A minerva nerual network sanity test.");
 
     parser.parse("-i", "--iterations", iterations, 15,
         "The number of iterations to train for");

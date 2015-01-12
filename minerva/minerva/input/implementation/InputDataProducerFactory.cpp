@@ -37,6 +37,11 @@ InputDataProducer* InputDataProducerFactory::create(const std::string& producerN
 	return nullptr;
 }
 
+InputDataProducer* InputDataProducerFactory::create()
+{
+	return create("InputVisualDataProducer", "");
+}
+
 InputDataProducer* InputDataProducerFactory::createForDatabase(const std::string& databaseName)
 {
 	database::SampleDatabase database(databaseName);

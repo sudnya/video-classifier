@@ -5,7 +5,7 @@
 
 
 #include <minerva/optimizer/interface/NeuralNetworkSolver.h>
-#include <minerva/optimizer/interface/TiledConvolutionalSolver.h>
+#include <minerva/optimizer/interface/SimpleNeuralNetworkSolver.h>
 
 #include <minerva/util/interface/debug.h>
 #include <minerva/util/interface/Knobs.h>
@@ -15,8 +15,8 @@ namespace minerva
 namespace optimizer
 {
 
-NeuralNetworkSolver::NeuralNetworkSolver(BackPropagation* b)
-: m_backPropDataPtr(b)
+NeuralNetworkSolver::NeuralNetworkSolver(NeuralNetwork* n)
+: _network(n)
 {
 
 }
@@ -26,18 +26,23 @@ NeuralNetworkSolver::~NeuralNetworkSolver()
 
 }
 
-void NeuralNetworkSolver::solve()
+void NeuralNetworkSolver::setInput(const BlockSparseMatrix* input)
 {
-    assertM(false, "Not implemented yet");
+	_input = input;
 }
 
-NeuralNetworkSolver* NeuralNetworkSolver::create(BackPropagation* d)
+void NeuralNetworkSolver::setReference(const BlockSparseMatrix* reference)
+{
+	_reference = reference;
+}
+
+NeuralNetworkSolver* NeuralNetworkSolver::create(NeuralNetwork* n)
 {
 	auto solverName = util::KnobDatabase::getKnobValue("Solver::Type",
-		"TiledConvolutionalSolver");
-
-	// Fall back to tiled solver
-	return new TiledConvolutionalSolver(d);
+		"SimpleNeuralNetworkSolver");
+	
+	// Fall back to simple solver
+	return new SimpleNeuralNetworkSolver(n);
 }
 
 }

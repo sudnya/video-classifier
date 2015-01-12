@@ -26,6 +26,11 @@ InputAudioDataProducer::~InputAudioDataProducer()
 
 }
 
+void InputAudioDataProducer::initialize()
+{
+	
+}
+
 InputAudioDataProducer::InputAndReferencePair InputAudioDataProducer::pop()
 {
 	assertM(false, "Not implemented.");

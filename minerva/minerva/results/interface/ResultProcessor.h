@@ -30,6 +30,10 @@ public:
 	virtual void process(const ResultVector& ) = 0;
 
 public:
+	/*! \brief Return a description of the results. */
+	virtual std::string toString() const = 0;
+
+public:
 	virtual void setOutputFilename(const std::string& filename);
 
 };

@@ -46,6 +46,10 @@ public:
 	virtual Value* negate() const;
 	virtual Value* sigmoid() const;
 	virtual Value* sigmoidDerivative() const;
+	
+	virtual Value* rectifiedLinear() const;
+	virtual Value* rectifiedLinearDerivative() const;
+
 	virtual Value* klDivergence(float sparsity) const;
 	virtual Value* klDivergenceDerivative(float sparsity) const;
 
@@ -59,6 +63,8 @@ public:
 	virtual void absSelf();
     virtual void sigmoidSelf();
     virtual void sigmoidDerivativeSelf();
+    virtual void rectifiedLinearSelf();
+    virtual void rectifiedLinearDerivativeSelf();
     virtual void klDivergenceSelf(float sparsity);
     virtual void klDivergenceDerivativeSelf(float sparsity);
     virtual void minSelf(float f);

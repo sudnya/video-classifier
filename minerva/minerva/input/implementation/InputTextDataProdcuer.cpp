@@ -26,6 +26,11 @@ InputTextDataProducer::~InputTextDataProducer()
 
 }
 
+void InputTextDataProducer::initialize()
+{
+
+}
+
 InputTextDataProducer::InputAndReferencePair InputTextDataProducer::pop()
 {
 	assertM(false, "Not implemented.");

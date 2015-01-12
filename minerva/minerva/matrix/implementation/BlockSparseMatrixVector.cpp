@@ -27,13 +27,19 @@ BlockSparseMatrixVector::BlockSparseMatrixVector(size_t elements, const BlockSpa
 
 }
 
+BlockSparseMatrixVector::BlockSparseMatrixVector(std::initializer_list<BlockSparseMatrix> l)
+: _matrix(l)
+{
+
+}
+
 BlockSparseMatrixVector::BlockSparseMatrixVector(const BlockSparseMatrixVector& m)
 : _matrix(m._matrix)
 {
 
 }
 
-BlockSparseMatrixVector::BlockSparseMatrixVector(const BlockSparseMatrixVector&& m)
+BlockSparseMatrixVector::BlockSparseMatrixVector(BlockSparseMatrixVector&& m)
 : _matrix(std::move(m._matrix))
 {
 
@@ -46,7 +52,7 @@ BlockSparseMatrixVector& BlockSparseMatrixVector::operator=(const BlockSparseMat
 	return *this;
 }
 
-BlockSparseMatrixVector& BlockSparseMatrixVector::operator=(const BlockSparseMatrixVector&& m)
+BlockSparseMatrixVector& BlockSparseMatrixVector::operator=(BlockSparseMatrixVector&& m)
 {
 	_matrix = std::move(m._matrix);
 	
@@ -275,9 +281,22 @@ void BlockSparseMatrixVector::push_back(const BlockSparseMatrix& m)
 	_matrix.push_back(m);
 }
 
-void BlockSparseMatrixVector::push_back(const BlockSparseMatrix&& m)
+void BlockSparseMatrixVector::push_back(BlockSparseMatrix&& m)
 {
 	_matrix.push_back(std::move(m));
+}
+
+void BlockSparseMatrixVector::push_back(BlockSparseMatrixVector&& v)
+{
+	for(auto& m : v)
+	{
+		_matrix.push_back(std::move(m));	
+	}
+}
+
+void BlockSparseMatrixVector::pop_back()
+{
+	_matrix.pop_back();
 }
 
 BlockSparseMatrix& BlockSparseMatrixVector::back()

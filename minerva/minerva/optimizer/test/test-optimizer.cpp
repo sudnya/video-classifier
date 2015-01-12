@@ -8,11 +8,11 @@
 #include <minerva/optimizer/interface/GeneralDifferentiableSolverFactory.h>
 #include <minerva/optimizer/interface/GeneralDifferentiableSolver.h>
 #include <minerva/optimizer/interface/CostAndGradientFunction.h>
-#include <minerva/optimizer/interface/SparseMatrixFormat.h>
 
 #include <minerva/matrix/interface/Matrix.h>
 #include <minerva/matrix/interface/BlockSparseMatrixVector.h>
 #include <minerva/matrix/interface/BlockSparseMatrix.h>
+#include <minerva/matrix/interface/SparseMatrixFormat.h>
 
 #include <minerva/util/interface/ArgumentParser.h>
 #include <minerva/util/interface/string.h>

@@ -8,6 +8,10 @@
 #include <minerva/model/interface/ModelSpecification.h>
 #include <minerva/model/interface/Model.h>
 
+#include <minerva/network/interface/NeuralNetwork.h>
+#include <minerva/network/interface/Layer.h>
+#include <minerva/network/interface/LayerFactory.h>
+
 #include <minerva/util/interface/json.h>
 
 // Standard Library Includes
@@ -132,13 +136,13 @@ void ModelSpecificationImplementation::initializeModel(Model& model)
 		}
 	}
 
-	if(objectVisitor.find("neuralnetworks") == 0)
+	if(objectVisitor.find("networks") == 0)
 	{
-		throw std::runtime_error("Specification does not include an 'neuralnetworks' member.");
+		throw std::runtime_error("Specification does not include an 'networks' member.");
 	}
 	
 	util::json::Visitor networksVisitor(
-		objectVisitor["neuralnetworks"]);		
+		objectVisitor["networks"]);		
 	
 	for(auto networkObject = networksVisitor.begin_array();
 		networkObject != networksVisitor.end_array(); ++networkObject)
@@ -160,17 +164,8 @@ void ModelSpecificationImplementation::initializeModel(Model& model)
 		std::string name = networkVisitor["name"];
 		std::string costFunctionType = networkVisitor["costFunction"];
 		
-		neuralnetwork::NeuralNetwork network;
+		network::NeuralNetwork network;
 	
-		if(costFunctionType == "sparse")
-		{
-			network.setUseSparseCostFunction(true);
-		}
-		else
-		{
-			network.setUseSparseCostFunction(false);
-		}
-		
 		if(networkVisitor.find("layers") == 0)
 		{
 			throw std::runtime_error("Neural network specification "
@@ -182,44 +177,20 @@ void ModelSpecificationImplementation::initializeModel(Model& model)
 		for(auto layerObject = layersVisitor.begin_array();
 			layerObject != layersVisitor.end_array(); ++layerObject)
 		{
-			util::json::Visitor layerVisitor(*layerObject);
+			util::json::Emitter emitter;
 			
-			if(layerVisitor.find("tiles") == 0)
-			{
-				throw std::runtime_error("Neural network layer specification "
-					"does not include a 'tiles' member.");
-			}
+			std::stringstream layerDescription;
 			
-			if(layerVisitor.find("inputsPerTile") == 0)
-			{
-				throw std::runtime_error("Neural network layer specification "
-					"does not include a 'inputsPerTile' member.");
-			}
-			
-			if(layerVisitor.find("outputsPerTile") == 0)
-			{
-				throw std::runtime_error("Neural network layer specification "
-					"does not include a 'outputsPerTile' member.");
-			}
-			
-			size_t tiles = (int)layerVisitor["tiles"];
-			size_t inputsPerTile = (int)layerVisitor["inputsPerTile"];
-			size_t outputsPerTile = (int)layerVisitor["outputsPerTile"];
-			size_t tileSpacing = inputsPerTile;
-			
-			if(layerVisitor.find("tileSpacing") != 0)
-			{
-				tileSpacing = (int)layerVisitor["tileSpacing"];
-			}
-			
-			network.addLayer(neuralnetwork::Layer(tiles, inputsPerTile, outputsPerTile, tileSpacing));
+			emitter.emit(layerDescription, *layerObject);
+
+			network.addLayer(network::LayerFactory::create(layerDescription.str()));
 		}
 		
 		if(networkObject == --networksVisitor.end_array())
 		{
 			if(!defaultOutputs)
 			{
-				if(network.getOutputNeurons() != outputs.size())
+				if(network.getOutputCount() != outputs.size())
 				{
 					throw std::runtime_error("Output neuron names does not "
 						"match the network output count for network " + name);
@@ -229,7 +200,7 @@ void ModelSpecificationImplementation::initializeModel(Model& model)
 				{
 					size_t index = &outputName - &outputs[0];
 					
-					network.setLabelForOutputNeuron(index, outputName);
+					model.setOutputLabel(index, outputName);
 				}
 			}
 		}

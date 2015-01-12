@@ -7,6 +7,8 @@
 // Minerva Includes
 #include <minerva/results/interface/LabelResultProcessor.h>
 
+#include <minerva/util/interface/debug.h>
+
 // Standard Library Includes
 #include <unordered_map>
 
@@ -26,6 +28,12 @@ void LabelResultProcessor::process(const ResultVector& v)
 	typedef std::unordered_map<std::string, size_t> LabelMap;
 	
 	// TODO
+}
+
+std::string LabelResultProcessor::toString() const
+{
+	// TODO:
+	assertM(false, "Not implemented.");
 }
 
 }

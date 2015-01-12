@@ -9,7 +9,8 @@
 
 #include <minerva/model/interface/Model.h>
 
-#include <minerva/neuralnetwork/interface/NeuralNetwork.h>
+#include <minerva/network/interface/NeuralNetwork.h>
+#include <minerva/network/interface/Layer.h>
 
 #include <minerva/results/interface/ResultVector.h>
 
@@ -43,19 +44,7 @@ void UnsupervisedLearnerEngine::setLayersPerIteration(size_t l)
 
 static size_t getTotalLayers(model::Model& model)
 {
-	#if 0
-	// use all layers
-	size_t layers = 0;
-	
-	for(auto& network : model)
-	{
-		layers += network.size();
-	}
-	
-	return layers;
-	#else
 	return model.getNeuralNetwork("FeatureSelector").size();
-	#endif
 }
 
 UnsupervisedLearnerEngine::ResultVector UnsupervisedLearnerEngine::runOnBatch(Matrix&& input, Matrix&& reference)
@@ -95,19 +84,17 @@ UnsupervisedLearnerEngine::ResultVector UnsupervisedLearnerEngine::runOnBatch(Ma
 	return ResultVector();
 }
 
-neuralnetwork::NeuralNetwork UnsupervisedLearnerEngine::_formAugmentedNetwork(size_t layerBegin, size_t layerEnd)
+network::NeuralNetwork UnsupervisedLearnerEngine::_formAugmentedNetwork(size_t layerBegin, size_t layerEnd)
 {
 	// Move the network into the temporary
 	auto& featureSelector = _model->getNeuralNetwork("FeatureSelector");
 	
-	neuralnetwork::NeuralNetwork network;
+	network::NeuralNetwork network;
 	
 	for(size_t layerId = layerBegin; layerId < layerEnd; ++layerId)
 	{	
 		network.addLayer(std::move(featureSelector[layerId]));
 	}
-	
-	network.setParameters(featureSelector);
 	
 	// Create or restore the augmentor layers
 	auto& augmentor = _getOrCreateAugmentor("FeatureSelector", layerBegin, network);
@@ -121,7 +108,7 @@ neuralnetwork::NeuralNetwork UnsupervisedLearnerEngine::_formAugmentedNetwork(si
 	return network;
 }
 
-void UnsupervisedLearnerEngine::_restoreAugmentedNetwork(neuralnetwork::NeuralNetwork& network, size_t layerBegin)
+void UnsupervisedLearnerEngine::_restoreAugmentedNetwork(network::NeuralNetwork& network, size_t layerBegin)
 {
 	auto& featureSelector = _model->getNeuralNetwork("FeatureSelector");
 	auto& augmentor = _getAugmentor("FeatureSelector", layerBegin);
@@ -141,8 +128,13 @@ void UnsupervisedLearnerEngine::_restoreAugmentedNetwork(neuralnetwork::NeuralNe
 	}
 }
 
-neuralnetwork::NeuralNetwork& UnsupervisedLearnerEngine::_getOrCreateAugmentor(const std::string& name,
-	size_t layer, neuralnetwork::NeuralNetwork& network)
+static void mirrorNeuralNetwork(network::NeuralNetwork& network)
+{
+	network.addLayer(network.front()->mirror());
+}
+
+network::NeuralNetwork& UnsupervisedLearnerEngine::_getOrCreateAugmentor(const std::string& name,
+	size_t layer, network::NeuralNetwork& network)
 {
 	std::stringstream stream;
 	
@@ -153,15 +145,15 @@ neuralnetwork::NeuralNetwork& UnsupervisedLearnerEngine::_getOrCreateAugmentor(c
 	if(augmentor == _augmentorNetworks.end())
 	{
 		augmentor = _augmentorNetworks.insert(std::make_pair(stream.str(),
-			neuralnetwork::NeuralNetwork())).first;
+			network::NeuralNetwork())).first;
 		
-		augmentor->second.mirror(network.front());
+		mirrorNeuralNetwork(augmentor->second);
 	}
 	
 	return augmentor->second;
 }
 
-neuralnetwork::NeuralNetwork& UnsupervisedLearnerEngine::_getAugmentor(const std::string& name,
+network::NeuralNetwork& UnsupervisedLearnerEngine::_getAugmentor(const std::string& name,
 	size_t layer)
 {
 	std::stringstream stream;

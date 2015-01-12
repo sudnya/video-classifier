@@ -99,7 +99,6 @@ static double lbfgsCallback(void* instance, const double* x, double* g,
 	
 	// TODO: get rid of these copies	
 	copyData(weights,  x);
-	//copyData(gradient, g); // can we comment this guy out?
 	
 	float cost = callback->computeCostAndGradient(gradient, weights);
 	
@@ -112,18 +111,9 @@ static int lbfgsProgress(void* instance, const double* x,
 	const double* g, const double fx, const double xnorm, const double gnorm,
 	const double step, int n, int k, int ls)
 {
-	const CostAndGradientFunction* callback =
-		reinterpret_cast<const CostAndGradientFunction*>(instance);
-
 	util::log("LBFGSSolver") << "LBFGS Update (cost " << fx << ", xnorm "
 		<< xnorm << ", gnorm " << gnorm << ", step " << step << ", n " << n
 		<< ", k " << k << ", ls " << ls << ")\n";
-
-	// Early exit if cost is low enough
-	if(fx < callback->initialCost * callback->costReductionFactor)
-	{
-		return 1;
-	}
 
 	return 0;
 }

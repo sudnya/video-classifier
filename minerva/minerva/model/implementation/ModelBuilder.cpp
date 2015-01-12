@@ -10,7 +10,7 @@
 #include <minerva/model/interface/ModelSpecification.h>
 #include <minerva/model/interface/BuiltInSpecifications.h>
 
-#include <minerva/neuralnetwork/interface/NeuralNetwork.h>
+#include <minerva/network/interface/NeuralNetwork.h>
 
 #include <minerva/util/interface/Knobs.h>
 #include <minerva/util/interface/debug.h>
@@ -21,8 +21,8 @@ namespace minerva
 namespace model
 {
 
-typedef minerva::neuralnetwork::NeuralNetwork NeuralNetwork;
-typedef minerva::neuralnetwork::Layer Layer;
+typedef minerva::network::NeuralNetwork NeuralNetwork;
+typedef minerva::network::Layer Layer;
 typedef minerva::matrix::Matrix Matrix;
 
 static void initializeModelFromSpecification(Model* model, const std::string& specification)

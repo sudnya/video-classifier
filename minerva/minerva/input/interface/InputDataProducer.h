@@ -34,6 +34,9 @@ public:
 	virtual ~InputDataProducer();
 
 public:
+	/*! \brief Initialize the state of the producer after all parameters have been set. */
+	virtual void initialize() = 0;
+
 	/*! \brief Deque a set of samples from the producer.
 
 		Note: the caller must ensure that the producer is not empty.
@@ -52,8 +55,8 @@ public:
 	virtual size_t getUniqueSampleCount() const = 0;
 	
 public:
-	void setAllowSamplingWithReplacement(bool allowReplacement);
-	bool getAllowSamplingWithReplacement() const;
+	void   setEpochs(size_t epochs);
+	size_t getEpochs() const;
 
 public:
 	void   setBatchSize(size_t batchSize);
@@ -69,6 +72,7 @@ public:
 
 public:
 	void setModel(const model::Model* model);
+	const model::Model* getModel() const;
 
 protected:
 	size_t getInputCount() const;
@@ -78,7 +82,7 @@ protected:
 	util::StringVector getOutputLabels() const;
 	
 private:
-	bool   _allowSamplingWithReplacement;
+	size_t _epochs;
 	bool   _requiresLabeledData;
 	size_t _batchSize;
 	size_t _maximumSamplesToRun;

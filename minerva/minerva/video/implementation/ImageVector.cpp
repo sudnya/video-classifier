@@ -7,7 +7,7 @@
 // Minerva Includes
 #include <minerva/video/interface/ImageVector.h>
 
-#include <minerva/neuralnetwork/interface/NeuralNetwork.h>
+#include <minerva/network/interface/NeuralNetwork.h>
 
 #include <minerva/util/interface/debug.h>
 #include <minerva/util/interface/math.h>
@@ -164,11 +164,11 @@ ImageVector::Matrix ImageVector::getReference(const util::StringVector& labels) 
 		
 			if((*this)[imageId].label() == labels[outputNeuron])
 			{
-				matrix(imageId, outputNeuron) = 0.9f;
+				matrix(imageId, outputNeuron) = 10.0f;
 			}
 			else
 			{
-				matrix(imageId, outputNeuron) = 0.1f;
+				matrix(imageId, outputNeuron) = -10.0f;
 			}
 		}
 	}

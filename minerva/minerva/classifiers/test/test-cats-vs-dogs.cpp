@@ -5,21 +5,22 @@
 */
 
 // Minerva Includes
-#include <minerva/classifiers/interface/ClassifierFactory.h>
-#include <minerva/classifiers/interface/ClassifierEngine.h>
-#include <minerva/classifiers/interface/UnsupervisedLearnerEngine.h>
-#include <minerva/classifiers/interface/FinalClassifierEngine.h>
-#include <minerva/classifiers/interface/LearnerEngine.h>
+#include <minerva/classifiers/interface/Engine.h>
+#include <minerva/classifiers/interface/EngineFactory.h>
 
-#include <minerva/model/interface/ClassificationModel.h>
+#include <minerva/visualization/interface/NeuronVisualizer.h>
+
+#include <minerva/model/interface/Model.h>
+
+#include <minerva/results/interface/ResultProcessor.h>
+#include <minerva/results/interface/LabelMatchResultProcessor.h>
+
+#include <minerva/network/interface/FeedForwardLayer.h>
+#include <minerva/network/interface/NeuralNetwork.h>
+#include <minerva/network/interface/ActivationFunctionFactory.h>
 
 #include <minerva/video/interface/Image.h>
 #include <minerva/video/interface/ImageVector.h>
-#include <minerva/neuralnetwork/interface/NeuralNetwork.h>
-
-#include <minerva/matrix/interface/Matrix.h>
-
-#include <minerva/visualization/interface/NeuronVisualizer.h>
 
 #include <minerva/util/interface/debug.h>
 #include <minerva/util/interface/paths.h>
@@ -27,15 +28,14 @@
 
 // Type definitions
 typedef minerva::video::Image Image;
-typedef minerva::neuralnetwork::NeuralNetwork NeuralNetwork;
-typedef minerva::neuralnetwork::Layer Layer;
+typedef minerva::network::NeuralNetwork NeuralNetwork;
+typedef minerva::network::FeedForwardLayer FeedForwardLayer;
 typedef minerva::video::ImageVector ImageVector;
 typedef minerva::matrix::Matrix Matrix;
 typedef minerva::visualization::NeuronVisualizer NeuronVisualizer;
-typedef minerva::model::ClassificationModel ClassificationModel;
-typedef minerva::classifiers::UnsupervisedLearnerEngine UnsupervisedLearnerEngine;
-typedef minerva::classifiers::FinalClassifierEngine FinalClassifierEngine;
-typedef minerva::classifiers::LearnerEngine LearnerEngine;
+typedef minerva::model::Model Model;
+typedef minerva::classifiers::Engine Engine;
+typedef minerva::results::LabelMatchResultProcessor LabelMatchResultProcessor;
 
 class Parameters
 {
@@ -49,7 +49,7 @@ public:
 	
 	size_t blockStep;
 	
-	size_t trainingIterations;
+	size_t epochs;
 	size_t batchSize;
 
 	std::string inputPath;
@@ -57,115 +57,78 @@ public:
 	std::string outputPath;
 
 	bool seed;
-	bool useFeatureSelector;
 
 public:
 	Parameters()
-	: blockX(8), blockY(8), blockStep(1)
+	: blockX(32), blockY(32), blockStep(32*32/4)
 	{
 		
 	}
 
 };
 
-static void addFeatureSelector(ClassificationModel& model, const Parameters& parameters,
+static void addFeatureSelector(Model& model, const Parameters& parameters,
 	std::default_random_engine& engine)
 {
-	if(!parameters.useFeatureSelector)
-	{
-		return;
-	}
-	
 	NeuralNetwork featureSelector;
 	
-	size_t totalPixels = parameters.xPixels * parameters.yPixels * parameters.colors;
-
 	// derive parameters from image dimensions 
-	const size_t blockSize = std::min(parameters.xPixels, parameters.blockX) *
-		std::min(parameters.yPixels, parameters.blockY) * parameters.colors;
-	const size_t blocks    = totalPixels / blockSize;
-	const size_t blockStep = blockSize / parameters.blockStep;
+	const size_t blockSize = parameters.blockX * parameters.blockY * parameters.colors;
+	const size_t blocks    = 1;
+	const size_t blockStep = parameters.blockStep;
 
 	size_t blockReductionFactor   = 2;
-	size_t poolingReductionFactor = 4;
+	size_t poolingReductionFactor = 2;
 
-	// convolutional layer
-	featureSelector.addLayer(Layer(blocks, blockSize,
-		blockSize / blockReductionFactor, blockStep));
+	// convolutional layer 1
+	featureSelector.addLayer(new FeedForwardLayer(blocks, blockSize, blockSize / blockReductionFactor, blockStep));
 	
-	// pooling layer
+	// pooling layer 2
 	featureSelector.addLayer(
-		Layer(blocks / poolingReductionFactor,
-			poolingReductionFactor * featureSelector.back().getOutputBlockingFactor(),
-			poolingReductionFactor * featureSelector.back().getOutputBlockingFactor()));
+		new FeedForwardLayer(blocks,
+			featureSelector.back()->getOutputBlockingFactor(),
+			featureSelector.back()->getOutputBlockingFactor() / poolingReductionFactor));
 	
-	// contrast normalization
-	featureSelector.addLayer(Layer(featureSelector.back().blocks(),
-		featureSelector.back().getOutputBlockingFactor(),
-		featureSelector.back().getOutputBlockingFactor()));
+	// pooling layer 3
+	featureSelector.addLayer(new FeedForwardLayer(featureSelector.back()->getBlocks(),
+		featureSelector.back()->getOutputBlockingFactor(),
+		featureSelector.back()->getOutputBlockingFactor()));
 
 	featureSelector.initializeRandomly(engine);
-	minerva::util::log("TestFirstLayerFeatures")
+	minerva::util::log("TestCatsVsDogs")
 		<< "Building feature selector network with "
-		<< featureSelector.getOutputCount() << " output neurons\n";
-
-	featureSelector.setUseSparseCostFunction(true);
+		<< featureSelector.getOutputCountForInputCount(
+		parameters.xPixels * parameters.yPixels * parameters.colors) << " output neurons\n";
 
 	model.setNeuralNetwork("FeatureSelector", featureSelector);
 }
 
-static void addClassifier(ClassificationModel& model, const Parameters& parameters,
+static void addClassifier(Model& model, const Parameters& parameters,
 	std::default_random_engine& engine)
 {
 	NeuralNetwork classifier;
 	
-	size_t fullyConnectedInputs = parameters.xPixels * parameters.yPixels * parameters.colors;
-
-	if(parameters.useFeatureSelector)
-	{
-		NeuralNetwork& featureSelector = model.getNeuralNetwork("FeatureSelector");
-		
-		fullyConnectedInputs = featureSelector.getOutputCount();
-	}
-	else
-	{
-		// Add in locally connected layers
-		const size_t blockSize = std::min(parameters.xPixels, parameters.blockX) *
-			std::min(parameters.yPixels, parameters.blockY) * parameters.colors;
-		const size_t blocks    = fullyConnectedInputs / blockSize;
-		const size_t blockStep = blockSize / parameters.blockStep;
-
-		size_t blockReductionFactor = 4;
-
-		// convolutional layer
-		classifier.addLayer(Layer(blocks, blockSize,
-			blockSize / blockReductionFactor, blockStep));
-		
-		// contrast normalization
-		classifier.addLayer(Layer(classifier.back().blocks(),
-			classifier.back().getOutputBlockingFactor(),
-			classifier.back().getOutputBlockingFactor()));
-		
-		fullyConnectedInputs = classifier.getOutputCount();
-	}
+	NeuralNetwork& featureSelector = model.getNeuralNetwork("FeatureSelector");
 	
-	size_t fullyConnectedSize = 256;
+	size_t fullyConnectedInputs = featureSelector.getOutputCountForInputCount(parameters.xPixels * parameters.yPixels * parameters.colors);
+	
+	size_t fullyConnectedSize = 128;
 	
 	// connect the network
-	classifier.addLayer(Layer(1, fullyConnectedInputs, fullyConnectedSize));
-	classifier.addLayer(Layer(1, fullyConnectedSize,   fullyConnectedSize));
-	classifier.addLayer(Layer(1, fullyConnectedSize,   2                 ));
+	classifier.addLayer(new FeedForwardLayer(1, fullyConnectedInputs, fullyConnectedSize));
+	classifier.addLayer(new FeedForwardLayer(1, fullyConnectedSize,   fullyConnectedSize));
+	classifier.addLayer(new FeedForwardLayer(1, fullyConnectedSize,   2                 ));
+	//classifier.back()->setActivationFunction(minerva::network::ActivationFunctionFactory::create("SigmoidActivationFunction"));
 	
 	classifier.initializeRandomly(engine);
-	classifier.setUseSparseCostFunction(false);
 	
-	classifier.setLabelForOutputNeuron(0, "cat");
-	classifier.setLabelForOutputNeuron(1, "dog");
+	model.setOutputLabel(0, "cat");
+	model.setOutputLabel(1, "dog");
 	
 	model.setNeuralNetwork("Classifier", classifier);
 }
 
-static void createModel(ClassificationModel& model, const Parameters& parameters,
+static void createModel(Model& model, const Parameters& parameters,
 	std::default_random_engine& engine)
 {
 	model.setInputImageResolution(parameters.xPixels, parameters.yPixels, parameters.colors);
@@ -174,86 +137,47 @@ static void createModel(ClassificationModel& model, const Parameters& parameters
 	addClassifier(model, parameters, engine);
 }
 
-static void unsupervisedLearning(ClassificationModel& model, const Parameters& parameters)
+static void trainNetwork(Model& model, const Parameters& parameters)
 {
-	// engine will now be an unsupervised Learner
-	std::unique_ptr<UnsupervisedLearnerEngine> unsupervisedLearnerEngine(
-		static_cast<UnsupervisedLearnerEngine*>(
-		minerva::classifiers::ClassifierFactory::create("UnsupervisedLearnerEngine")));
-
-	unsupervisedLearnerEngine->setMaximumSamplesToRun(parameters.trainingIterations *
-		parameters.batchSize);
-	unsupervisedLearnerEngine->setMultipleSamplesAllowed(true);
-	unsupervisedLearnerEngine->setModel(&model);
-	unsupervisedLearnerEngine->setBatchSize(parameters.batchSize);
-	unsupervisedLearnerEngine->setLayersPerIteration(3);
-
-	// read from database and use model to train
-    unsupervisedLearnerEngine->runOnDatabaseFile(parameters.inputPath);
-}
-
-static void supervisedLearning(ClassificationModel& model, const Parameters& parameters)
-{
-	// engine will now be an unsupervised Learner
-	std::unique_ptr<LearnerEngine> learnerEngine(
-		static_cast<LearnerEngine*>(
-		minerva::classifiers::ClassifierFactory::create("LearnerEngine")));
-
-	learnerEngine->setMaximumSamplesToRun(parameters.trainingIterations *
-		parameters.batchSize);
-	learnerEngine->setMultipleSamplesAllowed(true);
-	learnerEngine->setModel(&model);
-	learnerEngine->setBatchSize(parameters.batchSize);
-
-	// read from database and use model to train
-    learnerEngine->runOnDatabaseFile(parameters.inputPath);
-}
-
-static void trainNetwork(ClassificationModel& model, const Parameters& parameters)
-{
-	if(parameters.useFeatureSelector)
-	{
-		unsupervisedLearning(model, parameters);
-	}
+	// Train the network
+	std::unique_ptr<Engine> engine(minerva::classifiers::EngineFactory::create("LearnerEngine"));
 	
-	supervisedLearning(model, parameters);
+	engine->setModel(&model);
+	engine->setEpochs(parameters.epochs);
+	engine->setBatchSize(parameters.batchSize);
+
+	// read from database and use model to train
+    engine->runOnDatabaseFile(parameters.inputPath);
+	
+	// take ownership of the model back
+	engine->extractModel();
 }
 
-static float testNetwork(ClassificationModel& model, const Parameters& parameters)
+static float testNetwork(Model& model, const Parameters& parameters)
 {
-	std::unique_ptr<FinalClassifierEngine> classifierEngine(static_cast<FinalClassifierEngine*>(
-		minerva::classifiers::ClassifierFactory::create("FinalClassifierEngine")));
-
-	classifierEngine->setMaximumSamplesToRun(parameters.trainingIterations *
-		parameters.batchSize);
-	classifierEngine->setMultipleSamplesAllowed(false);
-	classifierEngine->setBatchSize(parameters.batchSize);
-	classifierEngine->setModel(&model);
+	std::unique_ptr<Engine> engine(minerva::classifiers::EngineFactory::create("ClassifierEngine"));
+	
+	engine->setBatchSize(parameters.batchSize);
+	engine->setModel(&model);
 
 	// read from database and use model to test 
-    classifierEngine->runOnDatabaseFile(parameters.testPath);
-
-	minerva::util::log("TestCatsVsDogs") << classifierEngine->reportStatisticsString();
+    engine->runOnDatabaseFile(parameters.testPath);
 	
-	return classifierEngine->getAccuracy();
+	// take ownership of the model back
+	engine->extractModel();
+	
+	// get the result processor
+	auto resultProcessor = static_cast<LabelMatchResultProcessor*>(engine->getResultProcessor());
+
+	minerva::util::log("TestCatsVsDogs") << resultProcessor->toString();
+	
+	return resultProcessor->getAccuracy();
 }
 
-static void createCollage(ClassificationModel& model, const Parameters& parameters)
+static void createCollage(Model& model, const Parameters& parameters)
 {
 	// Visualize the network 
-	auto network = &model.getNeuralNetwork("Classifier");
-
-	if(parameters.useFeatureSelector)
-	{
-		auto& featureSelector = model.getNeuralNetwork("FeatureSelector");
-		
-		for(auto& layer : *network)
-		{
-			featureSelector.addLayer(layer);
-		}
-		
-		network = &featureSelector;
-	}
+	auto network = &model.getNeuralNetwork("FeatureSelector");
 
 	minerva::visualization::NeuronVisualizer visualizer(network);
 
@@ -273,8 +197,8 @@ static void runTest(const Parameters& parameters)
 		generator.seed(std::time(0));
 	}
 
-	// Create a model for first layer classification
-	ClassificationModel model;
+	// Create a deep model for first layer classification
+	Model model;
 	
 	createModel(model, parameters, generator);
 	
@@ -282,9 +206,9 @@ static void runTest(const Parameters& parameters)
 	
 	float accuracy = testNetwork(model, parameters);
 	
-	std::cout << "Accuracy is " << (accuracy * 100.0f) << "%\n";
+	std::cout << "Accuracy is " << (accuracy) << "%\n";
 	
-	if(accuracy < 0.90)
+	if(accuracy < 90.0f)
 	{
 		std::cout << " Test Failed\n";
 	}
@@ -308,7 +232,7 @@ int main(int argc, char** argv)
 	parser.description("A test for minerva difficult classication performance.");
 
     parser.parse("-i", "--input-path", parameters.inputPath,
-		"examples/cats-dogs-explicit-training.txt",
+		"examples/cats-dogs-explicit-training-small.txt",
         "The path of the database of training image files.");
     parser.parse("-t", "--test-path", parameters.testPath,
 		"examples/cats-dogs-explicit-test.txt",
@@ -317,9 +241,9 @@ int main(int argc, char** argv)
 		"visualization/cat-dog-neurons.jpg",
         "The output path to generate visualization results.");
 
-    parser.parse("-I", "--iterations", parameters.trainingIterations, 3,
-        "The number of iterations to train the network for.");
-    parser.parse("-b", "--batch-size", parameters.batchSize, 1000,
+    parser.parse("-e", "--epochs", parameters.epochs, 3,
+        "The number of epochs (passes over all inputs) to train the network for.");
+    parser.parse("-b", "--batch-size", parameters.batchSize, 128,
         "The number of images to use for each iteration.");
     
 	parser.parse("-L", "--log-module", loggingEnabledModules, "",
@@ -335,8 +259,6 @@ int main(int argc, char** argv)
 	parser.parse("-c", "--colors", parameters.colors, 3,
 		"The number of color components (e.g. RGB) to consider from the input image");
 	
-    parser.parse("-f", "--use-feature-selector", parameters.useFeatureSelector, false,
-        "Use feature selector neural network.");
     parser.parse("-v", "--verbose", verbose, false,
         "Print out log messages during execution");
 

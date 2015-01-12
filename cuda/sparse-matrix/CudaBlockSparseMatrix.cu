@@ -276,6 +276,33 @@ extern "C" __global__ void sigmoid(float* result, const float* left, uint64_t si
 	}
 }
 
+__device__ float computeRectifiedLinear(float v)
+{
+	return max(min(20.0f, v), -20.0f);
+}
+
+extern "C" __global__ void rectifiedLinearSelf(float* result, uint64_t size)
+{
+	uint64_t step  = blockDim.x * gridDim.x;
+	uint64_t start = blockIdx.x * blockDim.x + threadIdx.x;
+
+	for(uint64_t i = start; i < size; i += step)
+	{
+		result[i] = computeRectifiedLinear(result[i]);
+	}
+}
+
+extern "C" __global__ void rectifiedLinear(float* result, const float* left, uint64_t size)
+{
+	uint64_t step  = blockDim.x * gridDim.x;
+	uint64_t start = blockIdx.x * blockDim.x + threadIdx.x;
+
+	for(uint64_t i = start; i < size; i += step)
+	{
+		result[i] = computeRectifiedLinear(left[i]);
+	}
+}
+
 __device__ float computeSigmoidDerivative(float v)
 {
 	return v * (1.0f - v);
@@ -300,6 +327,33 @@ extern "C" __global__ void sigmoidDerivativeSelf(float* result, uint64_t size)
 	for(uint64_t i = start; i < size; i += step)
 	{
 		result[i] = computeSigmoidDerivative(result[i]);
+	}
+}
+
+__device__ float computeRectifiedLinearDerivative(float f)
+{
+	return (f < -20.0f || f > 20.0f) ? 0.0f : 1.0f;
+}
+
+extern "C" __global__ void rectifiedLinearDerivative(float* result, const float* left, uint64_t size)
+{
+	uint64_t step  = blockDim.x * gridDim.x;
+	uint64_t start = blockIdx.x * blockDim.x + threadIdx.x;
+
+	for(uint64_t i = start; i < size; i += step)
+	{
+		result[i] = computeRectifiedLinearDerivative(left[i]);
+	}
+}
+
+extern "C" __global__ void rectifiedLinearDerivativeSelf(float* result, uint64_t size)
+{
+	uint64_t step  = blockDim.x * gridDim.x;
+	uint64_t start = blockIdx.x * blockDim.x + threadIdx.x;
+
+	for(uint64_t i = start; i < size; i += step)
+	{
+		result[i] = computeRectifiedLinearDerivative(result[i]);
 	}
 }
 

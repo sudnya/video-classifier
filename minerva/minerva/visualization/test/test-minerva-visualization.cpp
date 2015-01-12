@@ -31,13 +31,13 @@ static NeuralNetwork createNeuralNetwork(size_t xPixels, size_t yPixels,
 	NeuralNetwork network;
 
 	// 5x5 convolutional layer
-	network.addLayer(Layer(xPixels, yPixels * colors, yPixels * colors));
+	network.addLayer(FeedForwardLayer(xPixels, yPixels * colors, yPixels * colors));
 
 	// 2x2 pooling layer
 	//network.addLayer(Layer(1, xPixels, xPixels));
 
 	// final prediction layer
-	network.addLayer(Layer(1, network.getOutputCount(), 1));
+	network.addLayer(FeedForwardLayer(1, network.getOutputCount(), 1));
 
 	network.initializeRandomly(engine);
 

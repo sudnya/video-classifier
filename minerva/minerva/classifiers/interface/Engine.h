@@ -14,12 +14,12 @@
 #include <memory>
 
 // Forward Declarations
-namespace minerva { namespace model         { class Model; } }
-namespace minerva { namespace input         { class InputDataProducer;   } }
-namespace minerva { namespace results       { class ResultProcessor;     } }
-namespace minerva { namespace neuralnetwork { class NeuralNetwork;       } }
-namespace minerva { namespace results       { class ResultVector;        } }
-namespace minerva { namespace matrix        { class Matrix;              } }
+namespace minerva { namespace model   { class Model;             } }
+namespace minerva { namespace input   { class InputDataProducer; } }
+namespace minerva { namespace results { class ResultProcessor;   } }
+namespace minerva { namespace network { class NeuralNetwork;     } }
+namespace minerva { namespace results { class ResultVector;      } }
+namespace minerva { namespace matrix  { class Matrix;            } }
 
 namespace minerva
 {
@@ -33,12 +33,12 @@ namespace classifiers
 class Engine
 {
 public:
-	typedef input::InputDataProducer     InputDataProducer;
-	typedef model::Model   Model;
-	typedef results::ResultProcessor     ResultProcessor;
-	typedef results::ResultVector        ResultVector;
-	typedef neuralnetwork::NeuralNetwork NeuralNetwork;
-	typedef matrix::Matrix               Matrix;
+	typedef input::InputDataProducer InputDataProducer;
+	typedef model::Model             Model;
+	typedef results::ResultProcessor ResultProcessor;
+	typedef results::ResultVector    ResultVector;
+	typedef network::NeuralNetwork   NeuralNetwork;
+	typedef matrix::Matrix           Matrix;
 
 public:
 	Engine();
@@ -77,10 +77,10 @@ public:
 public:
 	/*! \brief Set the maximum samples to be run by the engine */
 	void setMaximumSamplesToRun(size_t samples);
+	/*! \brief Set the epochs (passes over the entire training set) to be run by the engine */
+	void setEpochs(size_t epochs);
 	/*! \brief Set the number of samples to be run in a batch by the engine */
 	void setBatchSize(size_t samples);
-	/*! \brief Should the engine be allowed to run the same sample multiple times */
-	void setAllowSamplingWithReplacement(bool);
 
 protected:
 	/*! \brief Called before the engine starts running on a given model */
@@ -97,10 +97,10 @@ protected:
 
 protected:
 	/*! \brief Extract and merge all networks from the model. */
-	NeuralNetwork getAggregateNetwork();
+	NeuralNetwork* getAggregateNetwork();
 
 	/*! \brief Unpack and restore networks back to the model. */
-	void restoreAggregateNetwork(NeuralNetwork& network);
+	void restoreAggregateNetwork();
 	
 public:
 	/*! \brief Run the engine on the specified batch. */
@@ -117,6 +117,9 @@ protected:
 	std::unique_ptr<Model>              _model;
 	std::unique_ptr<InputDataProducer>  _dataProducer;
 	std::unique_ptr<ResultProcessor>    _resultProcessor;
+
+protected:
+	std::unique_ptr<NeuralNetwork> _aggregateNetwork;
 
 };
 

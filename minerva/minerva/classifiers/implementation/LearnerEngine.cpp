@@ -7,9 +7,10 @@
 // Minerva Includes
 #include <minerva/classifiers/interface/LearnerEngine.h>
 
-#include <minerva/neuralnetwork/interface/NeuralNetwork.h>
+#include <minerva/network/interface/NeuralNetwork.h>
 
 #include <minerva/results/interface/ResultVector.h>
+
 #include <minerva/matrix/interface/Matrix.h>
 
 #include <minerva/util/interface/debug.h>
@@ -35,7 +36,7 @@ LearnerEngine::~LearnerEngine()
 
 void LearnerEngine::closeModel()
 {
-	saveModel();
+	//saveModel();
 }
 	
 LearnerEngine::ResultVector LearnerEngine::runOnBatch(Matrix&& input, Matrix&& reference)
@@ -45,9 +46,9 @@ LearnerEngine::ResultVector LearnerEngine::runOnBatch(Matrix&& input, Matrix&& r
 	
 	auto network = getAggregateNetwork();
 	
-	network.train(std::move(input), std::move(reference));
+	network->train(std::move(input), std::move(reference));
 	
-	restoreAggregateNetwork(network);
+	restoreAggregateNetwork();
 	
 	return ResultVector();
 }
