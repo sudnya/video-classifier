@@ -60,7 +60,7 @@ public:
 
 public:
 	Parameters()
-	: blockX(32), blockY(32), blockStep(32*32/4)
+	: blockX(8), blockY(8), blockStep(8*8)
 	{
 		
 	}
@@ -75,7 +75,7 @@ static void addFeatureSelector(Model& model, const Parameters& parameters,
 	// derive parameters from image dimensions 
 	const size_t blockSize = parameters.blockX * parameters.blockY * parameters.colors;
 	const size_t blocks    = 1;
-	const size_t blockStep = parameters.blockStep;
+	const size_t blockStep = parameters.blockStep * parameters.colors;
 
 	size_t blockReductionFactor   = 2;
 	size_t poolingReductionFactor = 2;
@@ -126,6 +126,14 @@ static void addClassifier(Model& model, const Parameters& parameters,
 	model.setOutputLabel(1, "dog");
 	
 	model.setNeuralNetwork("Classifier", classifier);
+	
+	minerva::util::log("TestCatsVsDogs")
+		<< "Feature Selector Architecture "
+		<< featureSelector.shapeString() << "\n";
+	
+	minerva::util::log("TestCatsVsDogs")
+		<< "Classifier Architecture "
+		<< classifier.shapeString() << "\n";
 }
 
 static void createModel(Model& model, const Parameters& parameters,

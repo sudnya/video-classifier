@@ -241,8 +241,8 @@ size_t FeedForwardLayer::getOutputCountForInputCount(size_t inputCount) const
 	
 	size_t inputBlocks     = inputCount / getInputBlockingFactor();
 	size_t partitionSize   = (getBlocks() + inputBlocks - 1) / inputBlocks;
-	size_t fullPartitions  = getBlocks() / partitionSize;
-	size_t remainingBlocks = getBlocks() % partitionSize;
+	size_t fullPartitions  = inputBlocks / partitionSize;
+	size_t remainingBlocks = inputBlocks % partitionSize;
 	
 	size_t partiallyFullPartitions = remainingBlocks > 0 ? 1 : 0;
 	

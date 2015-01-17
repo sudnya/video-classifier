@@ -84,7 +84,8 @@ const model::Model* InputDataProducer::getModel() const
 
 size_t InputDataProducer::getInputCount() const
 {
-	return _model->begin()->getInputCount();
+	// TODO: specialize this for different data types
+	return _model->xPixels() * _model->yPixels() * _model->colors();
 }
 
 size_t InputDataProducer::getInputBlockingFactor() const
