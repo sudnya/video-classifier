@@ -60,15 +60,18 @@ Value* NaiveBlockSparseMatrix::multiply(const Value* matrix) const
 	return result;
 }
 
-static Matrix gatherLeftForConvolutionalMultiply(const NaiveBlockSparseMatrix* left, size_t blockId, size_t filterSize, size_t partitionSize, size_t step)
+static Matrix gatherLeftForConvolutionalMultiply(const NaiveBlockSparseMatrix* left, size_t blockId, size_t filterSize,
+	size_t partitionSize, size_t resultPartitionSize, size_t step)
 {
-	size_t partitionId = blockId / partitionSize;
-	size_t remainder   = blockId % partitionSize;
+	size_t partitionId = blockId / resultPartitionSize;
+	size_t remainder   = blockId % resultPartitionSize;
 
 	size_t partitionColumns = (partitionSize * left->columnsPerBlock());
 
 	size_t columnStart = partitionColumns * partitionId + remainder * step;
 	size_t columnEnd   = std::min(columnStart + filterSize, left->columns());
+	
+	assert(columnStart < columnEnd);
 
 	return left->slice(0, columnStart, left->rows(), columnEnd - columnStart);
 }
@@ -96,8 +99,11 @@ Value* NaiveBlockSparseMatrix::convolutionalMultiply(const Value* matrix, size_t
 
 	size_t partiallyFullPartitions = remainingBlocks > 0 ? 1 : 0;
 
-	size_t resultBlocks = fullPartitions * ((partitionSize * columnsPerBlock() - filterSize + step) / step) +
-		partiallyFullPartitions * ((remainingBlocks * columnsPerBlock() - filterSize + step) / step);
+	size_t resultBlocksPerFullPartition    = ((partitionSize   * columnsPerBlock() - filterSize + step) / step);
+	size_t resultBlocksPerPartialPartition = ((remainingBlocks * columnsPerBlock() - filterSize + step) / step);
+
+	size_t resultBlocks = fullPartitions * resultBlocksPerFullPartition +
+		partiallyFullPartitions * resultBlocksPerPartialPartition;
 	
 	auto result = new NaiveBlockSparseMatrix(isRowSparse());
 	
@@ -107,8 +113,9 @@ Value* NaiveBlockSparseMatrix::convolutionalMultiply(const Value* matrix, size_t
 	size_t resultBlockId = 0;
 	for(auto& resultBlock : *result)
 	{
-		auto left  = gatherLeftForConvolutionalMultiply( this, resultBlockId, m->rowsPerBlock(), partitionSize, step);
-		auto right = gatherRightForConvolutionalMultiply(m,    resultBlockId, partitionSize);
+		auto left  = gatherLeftForConvolutionalMultiply(this, resultBlockId, m->rowsPerBlock(),
+			partitionSize, resultBlocksPerFullPartition, step);
+		auto right = gatherRightForConvolutionalMultiply(m, resultBlockId, resultBlocksPerFullPartition);
 		
 		resultBlock = std::move(left.multiply(right));
 		
@@ -118,15 +125,19 @@ Value* NaiveBlockSparseMatrix::convolutionalMultiply(const Value* matrix, size_t
 	return result;
 }
 	
-Value* NaiveBlockSparseMatrix::computeConvolutionalGradient(const Value* activation, const SparseMatrixFormat& weightFormat, size_t step) const
+Value* NaiveBlockSparseMatrix::computeConvolutionalGradient(const Value* activation,
+	const SparseMatrixFormat& weightFormat, size_t step) const
 {
 	auto a = dynamic_cast<const NaiveBlockSparseMatrix*>(activation);
 	assert(a != nullptr);
 	
 	// Just multiply if there is a 1 to 1 match between blocks
-	if(a->blocks() == blocks())
+	if(weightFormat.blocks == blocks() && blocks() == a->blocks())
 	{
-		return multiply(a);
+		auto transposed = transpose();
+		transposed->isRowSparse() = true;
+		
+		return transposed->multiply(a)->transpose();
 	}
 	
 	// Otherwise, compute the convolutional gradient
@@ -138,6 +149,8 @@ Value* NaiveBlockSparseMatrix::computeConvolutionalGradient(const Value* activat
 	size_t fullPartitions = a->blocks() / partitionSize;
 	size_t remainingBlocks = a->blocks() % partitionSize;
 	size_t filterSize = weightFormat.rowsPerBlock;
+	
+	size_t resultBlocksPerFullPartition = ((partitionSize * a->columnsPerBlock() - filterSize + step) / step);
 
 	size_t resultBlockId = 0;
 	size_t deltaBlockId  = 0;
@@ -147,36 +160,85 @@ Value* NaiveBlockSparseMatrix::computeConvolutionalGradient(const Value* activat
 		size_t inputBlocksInThisPartition = (resultBlockId < fullPartitions) ? partitionSize : remainingBlocks;
 		size_t blocksInThisPartition = (inputBlocksInThisPartition * a->columnsPerBlock() - filterSize + step) / step;
 		
-		Matrix gradient(weightFormat.rowsPerBlock, weightFormat.columnsPerBlock);
+		Matrix gradient(weightFormat.columnsPerBlock, weightFormat.rowsPerBlock);
 		
 		for(size_t blockInThisPartition = 0; blockInThisPartition < blocksInThisPartition; ++blockInThisPartition, ++deltaBlockId)
 		{	
 			auto left  = (*this)[deltaBlockId];
-			auto right = gatherLeftForConvolutionalMultiply(a, deltaBlockId, filterSize, partitionSize, step);
+			auto right = gatherLeftForConvolutionalMultiply(a, deltaBlockId, filterSize, partitionSize,
+				resultBlocksPerFullPartition, step);
 			
-			gradient = gradient.add(left.multiply(right));
+			gradient = gradient.add(left.transpose().multiply(right));
 		}
 		
 		resultBlock = std::move(gradient);
 		
 		++resultBlockId;
 	}
+	
+	return result->transpose();
+}
+	
+Value* NaiveBlockSparseMatrix::computeConvolutionalBiasGradient(const SparseMatrixFormat& activationFormat,
+	const SparseMatrixFormat& weightFormat, size_t step) const
+{
+	// Just reduce if there is a 1 to 1 match between blocks
+	if(weightFormat.blocks == 1)
+	{
+		std::unique_ptr<Value> copy(clone());
+		
+		copy->isRowSparse() = true;
 
+		return copy->reduceSumAlongRows();
+	}
+	
+	// Otherwise, compute the convolutional gradient
+	auto result = new NaiveBlockSparseMatrix(isRowSparse());
+	
+	result->resize(weightFormat.blocks);
+	
+	size_t partitionSize = (activationFormat.blocks + weightFormat.blocks - 1) / weightFormat.blocks;
+	size_t fullPartitions = activationFormat.blocks / partitionSize;
+	size_t remainingBlocks = activationFormat.blocks % partitionSize;
+	size_t filterSize = weightFormat.rowsPerBlock;
+	
+	size_t resultBlockId = 0;
+	size_t deltaBlockId  = 0;
+	
+	for(auto& resultBlock : *result)
+	{
+		size_t inputBlocksInThisPartition = (resultBlockId < fullPartitions) ? partitionSize : remainingBlocks;
+		size_t blocksInThisPartition = (inputBlocksInThisPartition * activationFormat.columnsPerBlock - filterSize + step) / step;
+		
+		Matrix gradient(1, weightFormat.columnsPerBlock);
+		
+		for(size_t blockInThisPartition = 0; blockInThisPartition < blocksInThisPartition; ++blockInThisPartition, ++deltaBlockId)
+		{	
+			auto left  = (*this)[deltaBlockId];
+			
+			gradient = gradient.add(left.reduceSumAlongRows());
+		}
+		
+		resultBlock = std::move(gradient);
+		
+		++resultBlockId;
+	}
+	
 	return result;
 }
 
 static void mergeResultForConvolutionalDeltas(NaiveBlockSparseMatrix* result, const Matrix& resultBlock,
-	size_t blockId, size_t filterSize, size_t partitionSize, size_t step)
+	size_t blockId, size_t filterSize, size_t partitionSize, size_t resultPartitionSize, size_t step)
 {
-	size_t partitionId = blockId / partitionSize;
-	size_t remainder   = blockId % partitionSize;
+	size_t partitionId = blockId / resultPartitionSize;
+	size_t remainder   = blockId % resultPartitionSize;
 
 	size_t partitionColumns = (partitionSize * result->columnsPerBlock());
 
 	size_t columnStart = partitionColumns * partitionId + remainder * step;
 	
 	// copy
-	result->assign(0, columnStart, resultBlock);
+	result->assign(0, columnStart, resultBlock.add(result->slice(0, columnStart, result->rows(), resultBlock.columns())));
 }
 
 Value* NaiveBlockSparseMatrix::computeConvolutionalDeltas(const Value* weights, const SparseMatrixFormat& deltasFormat, size_t step) const
@@ -199,16 +261,19 @@ Value* NaiveBlockSparseMatrix::computeConvolutionalDeltas(const Value* weights, 
 	
 	size_t partitionSize = (deltasFormat.blocks + w->blocks() - 1) / w->blocks();
 	size_t filterSize = w->rowsPerBlock();
+	
+	size_t resultBlocksPerFullPartition = ((partitionSize * deltasFormat.columnsPerBlock - filterSize + step) / step);
 
 	size_t resultBlockId = 0;
 	for(auto& block : *this)
 	{
 		auto& left  = block;
-		auto  right = gatherRightForConvolutionalMultiply(w, resultBlockId, partitionSize).transpose();
+		auto  right = gatherRightForConvolutionalMultiply(w, resultBlockId, resultBlocksPerFullPartition).transpose();
 		
 		auto resultBlock = left.multiply(right);
 		
-		mergeResultForConvolutionalDeltas(result, resultBlock, resultBlockId, filterSize, partitionSize, step);
+		mergeResultForConvolutionalDeltas(result, resultBlock, resultBlockId, filterSize, partitionSize,
+			resultBlocksPerFullPartition, step);
 		
 		++resultBlockId;
 	}

@@ -244,6 +244,13 @@ BlockSparseMatrix BlockSparseMatrix::computeConvolutionalGradient(
 		activation._implementation, format, step));
 }
 
+BlockSparseMatrix BlockSparseMatrix::computeConvolutionalBiasGradient(
+	const SparseMatrixFormat& inputFormat, const SparseMatrixFormat& format, size_t step) const
+{
+	return BlockSparseMatrix(_implementation->computeConvolutionalBiasGradient(
+		inputFormat, format, step));
+}
+
 BlockSparseMatrix BlockSparseMatrix::computeConvolutionalDeltas(
 	const BlockSparseMatrix& weights, const SparseMatrixFormat& deltasFormat, size_t step) const
 {

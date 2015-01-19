@@ -98,11 +98,8 @@ static NeuralNetwork createFeedForwardLocallyConnectedConvolutionalNetwork(
 	return network;
 }
 
-static Matrix generateInput(NeuralNetwork& network,
-	std::default_random_engine& engine)
+static Matrix generateInput(size_t inputs, std::default_random_engine& engine)
 {
-	size_t inputs = network.getInputCount();
-
 	Matrix inputData(1, inputs);
 
 	std::uniform_real_distribution<float> distribution(-1.0f, 1.0f);
@@ -115,10 +112,10 @@ static Matrix generateInput(NeuralNetwork& network,
 	return inputData;
 }
 
-static Matrix generateReference(NeuralNetwork& network,
+static Matrix generateReference(size_t inputCount, NeuralNetwork& network,
 	std::default_random_engine& engine)
 {
-	size_t outputs = network.getOutputCount();
+	size_t outputs = network.getOutputCountForInputCount(inputCount);
 
 	Matrix outputData(1, outputs);
 
@@ -137,7 +134,7 @@ static bool isInRange(float value, float epsilon)
 	return value < epsilon;
 }
 
-static bool gradientCheck(NeuralNetwork& network, std::default_random_engine& engine)
+static bool gradientCheck(size_t inputCount, NeuralNetwork& network, std::default_random_engine& engine)
 {
 	const float epsilon = 5.0e-4f;
 
@@ -147,8 +144,8 @@ static bool gradientCheck(NeuralNetwork& network, std::default_random_engine& en
 	size_t layerId  = 0;
 	size_t matrixId = 0;
 	
-	auto input     = generateInput(    network, engine);
-	auto reference = generateReference(network, engine);
+	auto input     = generateInput(inputCount, engine);
+	auto reference = generateReference(inputCount, network, engine);
 	
 	BlockSparseMatrixVector gradient;
 	
@@ -216,7 +213,7 @@ static bool runTestFeedForwardFullyConnected(size_t layerSize, size_t layerCount
 	
 	auto network = createFeedForwardFullyConnectedNetwork(layerSize, layerCount, generator);
 	
-	if(gradientCheck(network, generator))
+	if(gradientCheck(network.getInputCount(), network, generator))
 	{
 		std::cout << "Test Feed Forward Fully Connected Network Passed\n";
 		
@@ -245,7 +242,7 @@ static bool runTestFeedForwardLocallyConnected(size_t layerSize, size_t blockCou
 	
 	auto network = createFeedForwardLocallyConnectedNetwork(layerSize, blockCount, layerCount, generator);
 	
-	if(gradientCheck(network, generator))
+	if(gradientCheck(network.getInputCount(), network, generator))
 	{
 		std::cout << "Test Feed Forward Locally Connected Network Passed\n";
 			
@@ -259,7 +256,7 @@ static bool runTestFeedForwardLocallyConnected(size_t layerSize, size_t blockCou
 	}
 }
 
-static bool runTestFeedForwardFullyConnectedConvolutional(size_t layerSize, size_t layerCount, bool seed)
+static bool runTestFeedForwardFullyConnectedConvolutional(size_t inputCount, size_t layerSize, size_t layerCount, bool seed)
 {
 	std::default_random_engine generator;
 
@@ -274,7 +271,7 @@ static bool runTestFeedForwardFullyConnectedConvolutional(size_t layerSize, size
 	
 	auto network = createFeedForwardFullyConnectedConvolutionalNetwork(layerSize, layerCount, generator);
 	
-	if(gradientCheck(network, generator))
+	if(gradientCheck(inputCount, network, generator))
 	{
 		std::cout << "Test Feed Forward Fully Connected Convolutional Network Passed\n";
 		
@@ -288,7 +285,8 @@ static bool runTestFeedForwardFullyConnectedConvolutional(size_t layerSize, size
 	}
 }
 
-static bool runTestFeedForwardLocallyConnectedConvolutional(size_t layerSize, size_t blockCount, size_t layerCount, bool seed)
+static bool runTestFeedForwardLocallyConnectedConvolutional(size_t inputCount, size_t layerSize,
+	size_t blockCount, size_t layerCount, bool seed)
 {
 	std::default_random_engine generator;
 
@@ -303,7 +301,7 @@ static bool runTestFeedForwardLocallyConnectedConvolutional(size_t layerSize, si
 	
 	auto network = createFeedForwardLocallyConnectedConvolutionalNetwork(layerSize, blockCount, layerCount, generator);
 	
-	if(gradientCheck(network, generator))
+	if(gradientCheck(inputCount * blockCount, network, generator))
 	{
 		std::cout << "Test Feed Forward Locally Connected Convolutional Network Passed\n";
 		
@@ -318,9 +316,11 @@ static bool runTestFeedForwardLocallyConnectedConvolutional(size_t layerSize, si
 	}
 }
 
-static void runTest(size_t layerSize, size_t blockCount, size_t layerCount, bool seed)
+static void runTest(size_t inputCount, size_t layerSize, size_t blockCount, size_t layerCount, bool seed)
 {
-	bool result = runTestFeedForwardFullyConnected(layerSize, layerCount, seed);
+	bool result = true;
+	
+	result &= runTestFeedForwardFullyConnected(layerSize, layerCount, seed);
 	
 	if(!result)
 	{
@@ -334,14 +334,14 @@ static void runTest(size_t layerSize, size_t blockCount, size_t layerCount, bool
 		return;
 	}
 	
-	result &= runTestFeedForwardFullyConnectedConvolutional(layerSize, layerCount, seed);
+	result &= runTestFeedForwardFullyConnectedConvolutional(inputCount, layerSize, layerCount, seed);
 	
 	if(!result)
 	{
 		return;
 	}
-	
-	result &= runTestFeedForwardLocallyConnectedConvolutional(layerSize, blockCount, layerCount, seed);
+
+	result &= runTestFeedForwardLocallyConnectedConvolutional(inputCount, layerSize, blockCount, layerCount, seed);
 	
 	if(!result)
 	{
@@ -364,10 +364,13 @@ int main(int argc, char** argv)
 	size_t layerSize  = 0;
 	size_t blockCount = 0;
 	size_t layerCount = 0;
+	size_t inputCount = 0;
 
     parser.description("The minerva neural network gradient check.");
 
-    parser.parse("-S", "--layer-size", layerSize, 16,
+	parser.parse("-i", "--input-count", inputCount, 16,
+		"The number of inputs to convolutional networks.");
+    parser.parse("-S", "--layer-size", layerSize, 8,
         "The number of neurons per layer.");
 	parser.parse("-b", "--blocks", blockCount, 4,
 		"The number of blocks per layer.");
@@ -397,7 +400,7 @@ int main(int argc, char** argv)
     
     try
     {
-        minerva::network::runTest(layerSize, blockCount, layerCount, seed);
+        minerva::network::runTest(inputCount, layerSize, blockCount, layerCount, seed);
     }
     catch(const std::exception& e)
     {

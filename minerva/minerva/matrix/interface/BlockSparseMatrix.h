@@ -103,8 +103,12 @@ public:
 	BlockSparseMatrix multiply(const BlockSparseMatrix& m) const;
 	BlockSparseMatrix convolutionalMultiply(const BlockSparseMatrix& m, size_t step) const;
 
-	BlockSparseMatrix computeConvolutionalGradient(const BlockSparseMatrix& activation, const SparseMatrixFormat& weightFormat, size_t step) const;
-	BlockSparseMatrix computeConvolutionalDeltas(const BlockSparseMatrix& weights, const SparseMatrixFormat& deltasFormat, size_t step) const;
+	BlockSparseMatrix computeConvolutionalGradient(const BlockSparseMatrix& activation,
+		const SparseMatrixFormat& weightFormat, size_t step) const;
+	BlockSparseMatrix computeConvolutionalBiasGradient(const SparseMatrixFormat& activationFormat,
+		const SparseMatrixFormat& weightFormat, size_t step) const;
+	BlockSparseMatrix computeConvolutionalDeltas(const BlockSparseMatrix& weights,
+		const SparseMatrixFormat& deltasFormat, size_t step) const;
 
 	BlockSparseMatrix multiply(float f) const;
 	BlockSparseMatrix elementMultiply(const BlockSparseMatrix& m) const;

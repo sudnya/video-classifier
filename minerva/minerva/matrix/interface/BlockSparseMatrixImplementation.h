@@ -46,8 +46,12 @@ public:
 	virtual Value* multiply(const Value* m) const = 0;
 	virtual Value* convolutionalMultiply(const Value* m, size_t step) const = 0;
 
-	virtual Value* computeConvolutionalGradient(const Value* activation, const SparseMatrixFormat& weightFormat, size_t step) const = 0;
-	virtual Value* computeConvolutionalDeltas(const Value* weights, const SparseMatrixFormat& deltasFormat, size_t step) const = 0;
+	virtual Value* computeConvolutionalGradient(const Value* activation,
+		const SparseMatrixFormat& weightFormat, size_t step) const = 0;
+	virtual Value* computeConvolutionalBiasGradient(const SparseMatrixFormat& activationFormat,
+		const SparseMatrixFormat& weightFormat, size_t step) const = 0;
+	virtual Value* computeConvolutionalDeltas(const Value* weights,
+		const SparseMatrixFormat& deltasFormat, size_t step) const = 0;
 
 	virtual Value* multiply(float f) const = 0;
 	virtual Value* elementMultiply(const Value* m) const = 0;

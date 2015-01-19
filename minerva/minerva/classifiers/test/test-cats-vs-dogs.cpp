@@ -60,7 +60,7 @@ public:
 
 public:
 	Parameters()
-	: blockX(8), blockY(8), blockStep(8*8)
+	: blockX(8), blockY(8), blockStep(8*8/2)
 	{
 		
 	}
@@ -78,22 +78,36 @@ static void addFeatureSelector(Model& model, const Parameters& parameters,
 	const size_t blockStep = parameters.blockStep * parameters.colors;
 
 	size_t blockReductionFactor   = 2;
-	size_t poolingReductionFactor = 2;
+	size_t poolingReductionFactor = 4;
 
 	// convolutional layer 1
 	featureSelector.addLayer(new FeedForwardLayer(blocks, blockSize, blockSize / blockReductionFactor, blockStep));
 	
 	// pooling layer 2
+	featureSelector.addLayer(new FeedForwardLayer(featureSelector.back()->getBlocks(),
+		featureSelector.back()->getOutputBlockingFactor() * poolingReductionFactor,
+		featureSelector.back()->getOutputBlockingFactor()));
+	
+	// contrast normalization layer 3
 	featureSelector.addLayer(
 		new FeedForwardLayer(blocks,
 			featureSelector.back()->getOutputBlockingFactor(),
-			featureSelector.back()->getOutputBlockingFactor() / poolingReductionFactor));
+			featureSelector.back()->getOutputBlockingFactor()));
 	
-	// pooling layer 3
+	// convolutional layer 4
+	featureSelector.addLayer(new FeedForwardLayer(blocks, blockSize, blockSize / blockReductionFactor, blockStep));
+	
+	// pooling layer 5
 	featureSelector.addLayer(new FeedForwardLayer(featureSelector.back()->getBlocks(),
-		featureSelector.back()->getOutputBlockingFactor(),
+		featureSelector.back()->getOutputBlockingFactor() * poolingReductionFactor,
 		featureSelector.back()->getOutputBlockingFactor()));
-
+	
+	// contrast normalization layer 6
+	featureSelector.addLayer(
+		new FeedForwardLayer(blocks,
+			featureSelector.back()->getOutputBlockingFactor(),
+			featureSelector.back()->getOutputBlockingFactor()));
+	
 	featureSelector.initializeRandomly(engine);
 	minerva::util::log("TestCatsVsDogs")
 		<< "Building feature selector network with "

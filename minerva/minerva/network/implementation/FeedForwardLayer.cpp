@@ -67,9 +67,9 @@ BlockSparseMatrix FeedForwardLayer::runForward(const BlockSparseMatrix& m) const
 
 	if(util::isLogEnabled("FeedForwardLayer::Detail"))
 	{
-		util::log("FeedForwardLayer::Detail") << "  input: " << m.debugString() << "\n";
-		util::log("FeedForwardLayer::Detail") << "  layer: " << _weights.debugString() << "\n";
-		util::log("FeedForwardLayer::Detail") << "  bias:  " << _bias.debugString() << "\n";
+		util::log("FeedForwardLayer::Detail") << "  input: " << m.debugString();
+		util::log("FeedForwardLayer::Detail") << "  layer: " << _weights.debugString();
+		util::log("FeedForwardLayer::Detail") << "  bias:  " << _bias.debugString();
 	}
 
 	auto unbiasedOutput = m.convolutionalMultiply(_weights, _blockStep);
@@ -78,7 +78,7 @@ BlockSparseMatrix FeedForwardLayer::runForward(const BlockSparseMatrix& m) const
 
 	if(util::isLogEnabled("FeedForwardLayer::Detail"))
 	{
-		util::log("FeedForwardLayer::Detail") << "  output: " << output.debugString() << "\n";
+		util::log("FeedForwardLayer::Detail") << "  output: " << output.debugString();
 	}
 	else
 	{
@@ -89,7 +89,7 @@ BlockSparseMatrix FeedForwardLayer::runForward(const BlockSparseMatrix& m) const
 	
 	if(util::isLogEnabled("FeedForwardLayer::Detail"))
 	{
-		util::log("FeedForwardLayer::Detail") << "  activation: " << activation.debugString() << "\n";
+		util::log("FeedForwardLayer::Detail") << "  activation: " << activation.debugString();
 	}
 	else
 	{
@@ -111,7 +111,7 @@ BlockSparseMatrix FeedForwardLayer::runReverse(BlockSparseMatrixVector& gradient
 			<< getBlocks() << " blocks, "
 			<< getInputCount() << " inputs, " << getOutputCount()
 			<< " outputs, " << _blockStep << " block step).\n";
-		util::log("Layer") << "  layer: " << _weights.shapeString() << "\n";
+		util::log("FeedForwardLayer") << "  layer: " << _weights.shapeString() << "\n";
   	}
 	
 	if(util::isLogEnabled("FeedForwardLayer"))
@@ -121,33 +121,33 @@ BlockSparseMatrix FeedForwardLayer::runReverse(BlockSparseMatrixVector& gradient
 
 	if(util::isLogEnabled("FeedForwardLayer::Detail"))
 	{
-		util::log("FeedForwardLayer::Detail") << "  input: " << difference.debugString() << "\n";
+		util::log("FeedForwardLayer::Detail") << "  input: " << difference.debugString();
 	}
 
 	// finish computing the deltas
 	auto deltas = getActivationFunction()->applyDerivative(outputActivations).elementMultiply(difference);
 	
 	// compute gradient for the weights
-	auto transposedDeltas = deltas.transpose();
-	
-	transposedDeltas.setRowSparse();
-	
-	auto unnormalizedWeightGradient = transposedDeltas.computeConvolutionalGradient(inputActivations, SparseMatrixFormat(_weights), _blockStep);
+	auto unnormalizedWeightGradient = deltas.computeConvolutionalGradient(inputActivations,
+		SparseMatrixFormat(_weights), _blockStep);
 
 	auto samples = outputActivations.rows();
-	auto weightGradient = unnormalizedWeightGradient.multiply(1.0f / samples).transpose();
+	auto weightGradient = unnormalizedWeightGradient.multiply(1.0f / samples);
 	
 	// add in the weight cost function term
 	if(getWeightCostFunction() != nullptr)
 	{
 		weightGradient = weightGradient.add(getWeightCostFunction()->getGradient(_weights));
 	}
+	
+	assert(weightGradient.blocks() == _weights.blocks());
 
 	gradients.push_back(std::move(weightGradient));
 	
 	// compute gradient for the bias
-	auto biasGradient = transposedDeltas.reduceSumAlongColumns().multiply(1.0f / samples).transpose();
-	
+	auto biasGradient = deltas.computeConvolutionalBiasGradient(
+		SparseMatrixFormat(inputActivations), SparseMatrixFormat(_weights), _blockStep).multiply(1.0f / samples);
+
 	if(util::isLogEnabled("FeedForwardLayer"))
 	{
 		util::log("FeedForwardLayer") << "  bias grad: " << biasGradient.shapeString() << "\n";
@@ -155,8 +155,11 @@ BlockSparseMatrix FeedForwardLayer::runReverse(BlockSparseMatrixVector& gradient
 
 	if(util::isLogEnabled("FeedForwardLayer::Detail"))
 	{
-		util::log("FeedForwardLayer::Detail") << "  bias grad: " << biasGradient.debugString() << "\n";
+		util::log("FeedForwardLayer::Detail") << "  bias grad: " << biasGradient.debugString();
 	}
+	
+	assert(biasGradient.blocks() == _bias.blocks());
+	assert(biasGradient.columns() == _bias.columns());
 	
 	gradients.push_back(std::move(biasGradient));
 	
@@ -183,7 +186,7 @@ BlockSparseMatrix FeedForwardLayer::runReverse(BlockSparseMatrixVector& gradient
 
 	if(util::isLogEnabled("FeedForwardLayer::Detail"))
 	{
-		util::log("FeedForwardLayer::Detail") << "  output: " << previousLayerDeltas.debugString() << "\n";
+		util::log("FeedForwardLayer::Detail") << "  output: " << previousLayerDeltas.debugString();
 	}
 
 	return previousLayerDeltas;
@@ -213,10 +216,6 @@ size_t FeedForwardLayer::getOutputCount() const
 {
 	size_t outputCount = getOutputCountForInputCount(getInputCount());
 
-	util::log("FeedForwardLayer") << _weights.shapeString()
-		<< ": Output count for input count " << getInputCount()
-		<< " is " << outputCount << "\n";
-
 	return outputCount;
 }
    
@@ -239,8 +238,8 @@ size_t FeedForwardLayer::getOutputCountForInputCount(size_t inputCount) const
 {
 	size_t filterSize = getInputBlockingFactor();
 	
-	size_t inputBlocks     = inputCount / getInputBlockingFactor();
-	size_t partitionSize   = (getBlocks() + inputBlocks - 1) / inputBlocks;
+	size_t inputBlocks     = std::max((size_t)1, inputCount / filterSize);
+	size_t partitionSize   = (inputBlocks + getBlocks() - 1) / getBlocks();
 	size_t fullPartitions  = inputBlocks / partitionSize;
 	size_t remainingBlocks = inputBlocks % partitionSize;
 	
@@ -250,10 +249,6 @@ size_t FeedForwardLayer::getOutputCountForInputCount(size_t inputCount) const
 		partiallyFullPartitions * ((remainingBlocks * _weights.rowsPerBlock() - filterSize + _blockStep) / _blockStep);
 
 	size_t outputCount = (resultBlocks) * (_weights.columnsPerBlock());
-
-	util::log("FeedForwardLayer") << _weights.shapeString()
-		<< ": Output count for input count " << inputCount
-		<< " is " << outputCount << "\n";
 
 	return outputCount;
 }

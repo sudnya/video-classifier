@@ -151,12 +151,25 @@ Value* CudaBlockSparseMatrix::convolutionalMultiply(const Value* m, size_t step)
 	return result;
 }
 	
-Value* CudaBlockSparseMatrix::computeConvolutionalGradient(const Value* activation, const SparseMatrixFormat& weightFormat, size_t step) const
+Value* CudaBlockSparseMatrix::computeConvolutionalGradient(const Value* activation,
+	const SparseMatrixFormat& weightFormat, size_t step) const
 {
 	// Just multiply if there is a 1 to 1 match between blocks
 	if(activation->blocks() == blocks())
 	{
-		return multiply(activation);
+		return transpose()->multiply(activation)->transpose();
+	}
+
+	assertM(false, "Not implemented.");
+}
+	
+Value* CudaBlockSparseMatrix::computeConvolutionalBiasGradient(const SparseMatrixFormat& activationFormat,
+	const SparseMatrixFormat& weightFormat, size_t step) const
+{
+	// Just reduce if there is a 1 to 1 match between blocks
+	if(weightFormat.blocks == 1)
+	{
+		return reduceSumAlongColumns()->transpose();
 	}
 
 	assertM(false, "Not implemented.");
