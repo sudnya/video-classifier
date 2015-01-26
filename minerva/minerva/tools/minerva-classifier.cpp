@@ -245,6 +245,7 @@ static void setupKnobs(size_t maximumSamples, size_t batchSize)
 		util::KnobDatabase::setKnob("InputDataProducer::MaximumSampleCount",
 			toString(maximumSamples));
 	}
+	
 	if(batchSize > 0)
 	{
 		util::KnobDatabase::setKnob("InputDataProducer::BatchSize",

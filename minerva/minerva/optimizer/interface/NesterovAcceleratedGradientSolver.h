@@ -34,10 +34,11 @@ private:
 	float _runningExponentialCostSum;
 	
 private:
-	float _learningRate;
-	float _momentum;
-	float _annealingRate;
-	float _maxGradNorm;
+	float  _learningRate;
+	float  _momentum;
+	float  _annealingRate;
+	float  _maxGradNorm;
+	size_t _iterations;
 	
 
 };

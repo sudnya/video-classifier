@@ -15,6 +15,7 @@
 #include <minerva/matrix/interface/SparseMatrixFormat.h>
 
 #include <minerva/util/interface/ArgumentParser.h>
+#include <minerva/util/interface/Knobs.h>
 #include <minerva/util/interface/string.h>
 #include <minerva/util/interface/debug.h>
 
@@ -168,6 +169,18 @@ static bool test(const std::string& name)
 	return success;
 }
 
+static void setupSolverParameters()
+{
+	minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::LearningRate", "1.0e-2");
+	minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::Momentum", "0.999");
+	minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::AnnealingRate", "1.000");
+	minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::MaxGradNorm", "2000.0");
+	minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::IterationsPerBatch", "100000");
+	
+	minerva::util::KnobDatabase::setKnob("GradientDescentSolver::Iterations", "1000");
+	minerva::util::KnobDatabase::setKnob("GradientDescentSolver::LearningRate", "0.02");
+}
+
 int main(int argc, char** argv)
 {
 	minerva::util::ArgumentParser parser(argc, argv);
@@ -186,6 +199,8 @@ int main(int argc, char** argv)
 	}
 	
 	minerva::util::enableSpecificLogs(logs);
+
+	setupSolverParameters();
 
 	auto solvers = minerva::optimizer::GeneralDifferentiableSolverFactory::enumerate();
 	

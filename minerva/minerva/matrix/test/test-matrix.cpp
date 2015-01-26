@@ -215,7 +215,7 @@ bool testSparseConvolutionalMultiply()
 	
 	BlockSparseMatrix b(1, 2, 3, true);
 	
-	BlockSparseMatrix c(4, 3, 3, false);
+	BlockSparseMatrix c(3, 3, 3, false);
 	
 	
 	a[0](0, 0) = 1;
@@ -274,18 +274,6 @@ bool testSparseConvolutionalMultiply()
 	c[2](2, 0) = 59;
 	c[2](2, 1) = 82;
 	c[2](2, 2) = 105;
-
-	c[3](0, 0) = 8;
-	c[3](0, 1) = 16;
-	c[3](0, 2) = 24;
-
-	c[3](1, 0) = 10;
-	c[3](1, 1) = 20;
-	c[3](1, 2) = 30;
-
-	c[3](2, 0) = 12;
-	c[3](2, 1) = 24;
-	c[3](2, 2) = 36;
 
 	BlockSparseMatrix computed = a.convolutionalMultiply(b, 1);
 	

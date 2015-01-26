@@ -9,6 +9,7 @@
 
 #include <minerva/matrix/interface/Matrix.h>
 
+#include <minerva/util/interface/Knobs.h>
 #include <minerva/util/interface/debug.h>
 #include <minerva/util/interface/ArgumentParser.h>
 
@@ -185,6 +186,8 @@ float classify(const network::NeuralNetwork& ann, unsigned iterations, std::defa
 
 void runTest(unsigned iterations, bool seed, unsigned networkSize, float epsilon)
 {
+
+	util::KnobDatabase::setKnob("GeneralDifferentiableSolver::Type", "LBFGSSolver");
     
     // Create neural network
     // 3 layers

@@ -215,13 +215,13 @@ static bool runTestFeedForwardFullyConnected(size_t layerSize, size_t layerCount
 	
 	if(gradientCheck(network.getInputCount(), network, generator))
 	{
-		std::cout << "Test Feed Forward Fully Connected Network Passed\n";
+		std::cout << "Feed Forward Fully Connected Network Test Passed\n";
 		
 		return true;
 	}
 	else
 	{
-		std::cout << "Test Feed Forward Fully Connected Network Failed\n";
+		std::cout << "Feed Forward Fully Connected Network Test Failed\n";
 		
 		return false;
 	}
@@ -244,13 +244,13 @@ static bool runTestFeedForwardLocallyConnected(size_t layerSize, size_t blockCou
 	
 	if(gradientCheck(network.getInputCount(), network, generator))
 	{
-		std::cout << "Test Feed Forward Locally Connected Network Passed\n";
+		std::cout << "Feed Forward Locally Connected Network Test Passed\n";
 			
 		return true;
 	}
 	else
 	{
-		std::cout << "Test Feed Forward Locally Connected Network Failed\n";
+		std::cout << "Feed Forward Locally Connected Network Test Failed\n";
 		
 		return false;
 	}
@@ -273,13 +273,13 @@ static bool runTestFeedForwardFullyConnectedConvolutional(size_t inputCount, siz
 	
 	if(gradientCheck(inputCount, network, generator))
 	{
-		std::cout << "Test Feed Forward Fully Connected Convolutional Network Passed\n";
+		std::cout << "Feed Forward Fully Connected Convolutional Network Test Passed\n";
 		
 		return true;
 	}
 	else
 	{
-		std::cout << "Test Feed Forward Fully Connected Convolutional Network Failed\n";
+		std::cout << "Feed Forward Fully Connected Convolutional Network Test Failed\n";
 
 		return false;
 	}
