@@ -103,7 +103,9 @@ void ModelSpecificationImplementation::initializeModel(Model& model)
 	size_t yPixels = (int) objectVisitor["yPixels"];	
 	size_t colors  = (int) objectVisitor["colors" ];
 
-	model.setInputImageResolution(xPixels, yPixels, colors);
+	model.setAttribute("ResolutionX",     xPixels);
+	model.setAttribute("ResolutionY",     yPixels);
+	model.setAttribute("ColorComponents", colors );
 	
 	if(objectVisitor.find("output-names") == 0)
 	{

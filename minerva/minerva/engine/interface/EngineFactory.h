@@ -10,12 +10,12 @@
 #include <string>
 
 // Forward Declarations
-namespace minerva { namespace classifiers { class Engine; } }
+namespace minerva { namespace engine { class Engine; } }
 
 namespace minerva
 {
 
-namespace classifiers
+namespace engine
 {
 
 /*! \brief A factory for classifier engines */

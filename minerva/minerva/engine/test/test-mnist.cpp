@@ -1,12 +1,12 @@
-/*! \file   test-cats-vs-dogs.cpp
+/*! \file   test-mnist.cpp
 	\date   Wednesday June 25, 2014
 	\author Gregory Diamos <gregory.diamos@gmail.com>
-	\brief  A unit test for classifying cats vs dogs.
+	\brief  A unit test for classifying mnist digits.
 */
 
 // Minerva Includes
-#include <minerva/classifiers/interface/Engine.h>
-#include <minerva/classifiers/interface/EngineFactory.h>
+#include <minerva/engine/interface/Engine.h>
+#include <minerva/engine/interface/EngineFactory.h>
 
 #include <minerva/visualization/interface/NeuronVisualizer.h>
 
@@ -34,13 +34,12 @@ typedef minerva::video::ImageVector ImageVector;
 typedef minerva::matrix::Matrix Matrix;
 typedef minerva::visualization::NeuronVisualizer NeuronVisualizer;
 typedef minerva::model::Model Model;
-typedef minerva::classifiers::Engine Engine;
+typedef minerva::engine::Engine Engine;
 typedef minerva::results::LabelMatchResultProcessor LabelMatchResultProcessor;
 
 class Parameters
 {
 public:
-	size_t colors;
 	size_t xPixels;
 	size_t yPixels;
 
@@ -60,7 +59,7 @@ public:
 
 public:
 	Parameters()
-	: blockX(8), blockY(8), blockStep(8*8/2)
+	: blockX(8), blockY(8), blockStep(4)
 	{
 		
 	}
@@ -73,12 +72,12 @@ static void addFeatureSelector(Model& model, const Parameters& parameters,
 	NeuralNetwork featureSelector;
 	
 	// derive parameters from image dimensions 
-	const size_t blockSize = parameters.blockX * parameters.blockY * parameters.colors;
+	const size_t blockSize = parameters.blockX * parameters.blockY;
 	const size_t blocks    = 1;
-	const size_t blockStep = parameters.blockStep * parameters.colors;
+	const size_t blockStep = parameters.blockStep;
 
 	size_t blockReductionFactor   = 2;
-	size_t poolingReductionFactor = 4;
+	size_t poolingReductionFactor = 16;
 
 	// convolutional layer 1
 	featureSelector.addLayer(new FeedForwardLayer(blocks, blockSize, blockSize / blockReductionFactor, blockStep));
@@ -94,25 +93,11 @@ static void addFeatureSelector(Model& model, const Parameters& parameters,
 			featureSelector.back()->getOutputBlockingFactor(),
 			featureSelector.back()->getOutputBlockingFactor()));
 	
-	// convolutional layer 4
-	featureSelector.addLayer(new FeedForwardLayer(blocks, blockSize, blockSize / blockReductionFactor, blockStep));
-	
-	// pooling layer 5
-	featureSelector.addLayer(new FeedForwardLayer(featureSelector.back()->getBlocks(),
-		featureSelector.back()->getOutputBlockingFactor() * poolingReductionFactor,
-		featureSelector.back()->getOutputBlockingFactor()));
-	
-	// contrast normalization layer 6
-	featureSelector.addLayer(
-		new FeedForwardLayer(blocks,
-			featureSelector.back()->getOutputBlockingFactor(),
-			featureSelector.back()->getOutputBlockingFactor()));
-	
 	featureSelector.initializeRandomly(engine);
-	minerva::util::log("TestCatsVsDogs")
+	minerva::util::log("TestMNIST")
 		<< "Building feature selector network with "
 		<< featureSelector.getOutputCountForInputCount(
-		parameters.xPixels * parameters.yPixels * parameters.colors) << " output neurons\n";
+		parameters.xPixels * parameters.yPixels) << " output neurons\n";
 
 	model.setNeuralNetwork("FeatureSelector", featureSelector);
 }
@@ -124,28 +109,33 @@ static void addClassifier(Model& model, const Parameters& parameters,
 	
 	NeuralNetwork& featureSelector = model.getNeuralNetwork("FeatureSelector");
 	
-	size_t fullyConnectedInputs = featureSelector.getOutputCountForInputCount(parameters.xPixels * parameters.yPixels * parameters.colors);
+	size_t fullyConnectedInputs = featureSelector.getOutputCountForInputCount(parameters.xPixels * parameters.yPixels);
 	
-	size_t fullyConnectedSize = 128;
+	size_t fullyConnectedSize = 256;
 	
 	// connect the network
 	classifier.addLayer(new FeedForwardLayer(1, fullyConnectedInputs, fullyConnectedSize));
 	classifier.addLayer(new FeedForwardLayer(1, fullyConnectedSize,   fullyConnectedSize));
-	classifier.addLayer(new FeedForwardLayer(1, fullyConnectedSize,   2                 ));
-	//classifier.back()->setActivationFunction(minerva::network::ActivationFunctionFactory::create("SigmoidActivationFunction"));
+	classifier.addLayer(new FeedForwardLayer(1, fullyConnectedSize,   10                ));
 	
 	classifier.initializeRandomly(engine);
 	
-	model.setOutputLabel(0, "cat");
-	model.setOutputLabel(1, "dog");
-	
+	for(size_t i = 0; i < 10; ++i)
+	{
+		std::stringstream stream;
+
+		stream << i;
+
+		model.setOutputLabel(i, stream.str());
+	}
+
 	model.setNeuralNetwork("Classifier", classifier);
 	
-	minerva::util::log("TestCatsVsDogs")
+	minerva::util::log("TestMNIST")
 		<< "Feature Selector Architecture "
 		<< featureSelector.shapeString() << "\n";
 	
-	minerva::util::log("TestCatsVsDogs")
+	minerva::util::log("TestMNIST")
 		<< "Classifier Architecture "
 		<< classifier.shapeString() << "\n";
 }
@@ -153,16 +143,31 @@ static void addClassifier(Model& model, const Parameters& parameters,
 static void createModel(Model& model, const Parameters& parameters,
 	std::default_random_engine& engine)
 {
-	model.setInputImageResolution(parameters.xPixels, parameters.yPixels, parameters.colors);
+	model.setAttribute("ResolutionX",     parameters.xPixels);
+	model.setAttribute("ResolutionY",     parameters.yPixels);
+	model.setAttribute("ColorComponents", 1                 );
 	
 	addFeatureSelector(model, parameters, engine);
 	addClassifier(model, parameters, engine);
 }
 
+static void setSampleStatistics(Model& model, const Parameters& parameters)
+{
+	// Setup sample stats
+	std::unique_ptr<Engine> engine(minerva::engine::EngineFactory::create("SampleStatisticsEngine"));
+	
+	engine->setModel(&model);
+	engine->setBatchSize(128);
+
+	// read from database and use model to train
+    engine->runOnDatabaseFile(parameters.inputPath);
+
+}
+
 static void trainNetwork(Model& model, const Parameters& parameters)
 {
 	// Train the network
-	std::unique_ptr<Engine> engine(minerva::classifiers::EngineFactory::create("LearnerEngine"));
+	std::unique_ptr<Engine> engine(minerva::engine::EngineFactory::create("LearnerEngine"));
 	
 	engine->setModel(&model);
 	engine->setEpochs(parameters.epochs);
@@ -170,14 +175,11 @@ static void trainNetwork(Model& model, const Parameters& parameters)
 
 	// read from database and use model to train
     engine->runOnDatabaseFile(parameters.inputPath);
-	
-	// take ownership of the model back
-	engine->extractModel();
 }
 
 static float testNetwork(Model& model, const Parameters& parameters)
 {
-	std::unique_ptr<Engine> engine(minerva::classifiers::EngineFactory::create("ClassifierEngine"));
+	std::unique_ptr<Engine> engine(minerva::engine::EngineFactory::create("ClassifierEngine"));
 	
 	engine->setBatchSize(parameters.batchSize);
 	engine->setModel(&model);
@@ -185,13 +187,10 @@ static float testNetwork(Model& model, const Parameters& parameters)
 	// read from database and use model to test 
     engine->runOnDatabaseFile(parameters.testPath);
 	
-	// take ownership of the model back
-	engine->extractModel();
-	
 	// get the result processor
 	auto resultProcessor = static_cast<LabelMatchResultProcessor*>(engine->getResultProcessor());
 
-	minerva::util::log("TestCatsVsDogs") << resultProcessor->toString();
+	minerva::util::log("TestMNIST") << resultProcessor->toString();
 	
 	return resultProcessor->getAccuracy();
 }
@@ -224,6 +223,8 @@ static void runTest(const Parameters& parameters)
 	
 	createModel(model, parameters, generator);
 	
+	setSampleStatistics(model, parameters);
+	
 	trainNetwork(model, parameters);
 	
 	float accuracy = testNetwork(model, parameters);
@@ -254,13 +255,13 @@ int main(int argc, char** argv)
 	parser.description("A test for minerva difficult classication performance.");
 
     parser.parse("-i", "--input-path", parameters.inputPath,
-		"examples/cats-dogs-explicit-training-small.txt",
+		"examples/mnist-explicit-training.txt",
         "The path of the database of training image files.");
     parser.parse("-t", "--test-path", parameters.testPath,
-		"examples/cats-dogs-explicit-test.txt",
+		"examples/mnist-explicit-test.txt",
         "The path of the database of test image files.");
     parser.parse("-o", "--output-path", parameters.outputPath,
-		"visualization/cat-dog-neurons.jpg",
+		"visualization/mnist-neurons.jpg",
         "The output path to generate visualization results.");
 
     parser.parse("-e", "--epochs", parameters.epochs, 3,
@@ -274,12 +275,10 @@ int main(int argc, char** argv)
 
     parser.parse("-s", "--seed", parameters.seed, false, "Seed with time.");
 	
-    parser.parse("-x", "--x-pixels", parameters.xPixels, 16,
+    parser.parse("-x", "--x-pixels", parameters.xPixels, 32,
         "The number of X pixels to consider from the input image.");
-	parser.parse("-y", "--y-pixels", parameters.yPixels, 16,
+	parser.parse("-y", "--y-pixels", parameters.yPixels, 32,
 		"The number of Y pixels to consider from the input image");
-	parser.parse("-c", "--colors", parameters.colors, 3,
-		"The number of color components (e.g. RGB) to consider from the input image");
 	
     parser.parse("-v", "--verbose", verbose, false,
         "Print out log messages during execution");
@@ -295,7 +294,7 @@ int main(int argc, char** argv)
 		minerva::util::enableSpecificLogs(loggingEnabledModules);
 	}
     
-    minerva::util::log("TestCatsVsDogs") << "Test begins\n";
+    minerva::util::log("TestMNIST") << "Test begins\n";
     
     try
     {
@@ -303,11 +302,12 @@ int main(int argc, char** argv)
     }
     catch(const std::exception& e)
     {
-        std::cout << "Minerva Cats vs Dogs Test Failed:\n";
+        std::cout << "Minerva MNIST Test Failed:\n";
         std::cout << "Message: " << e.what() << "\n\n";
     }
 
     return 0;
 }
+
 
 

@@ -5,7 +5,7 @@
 */
 
 // Minerva Includes
-#include <minerva/classifiers/interface/UnsupervisedLearnerEngine.h>
+#include <minerva/engine/interface/UnsupervisedLearnerEngine.h>
 
 #include <minerva/model/interface/Model.h>
 
@@ -22,7 +22,7 @@
 namespace minerva
 {
 
-namespace classifiers
+namespace engine
 {
 
 UnsupervisedLearnerEngine::UnsupervisedLearnerEngine()

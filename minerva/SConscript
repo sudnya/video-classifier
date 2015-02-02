@@ -21,7 +21,7 @@ env['MINERVA_PATH'] = Dir('.').abspath
 env['path_to_root_dir'] = os.path.abspath(minerva_path_to_root_dir)
 
 # find all source files in the source tree
-directories = ['minerva/driver', 'minerva/util', 'minerva/classifiers',
+directories = ['minerva/driver', 'minerva/util', 'minerva/engine',
 	'minerva/matrix', 'minerva/model', 'minerva/network',
 	'minerva/optimizer', 'minerva/video', 'minerva/visualization',
 	'minerva/database', 'minerva/input', 'minerva/results']
@@ -50,7 +50,7 @@ tools.append(env.Program('minerva-classifier', \
 	['minerva/tools/minerva-classifier.cpp'], LIBS=minerva_libs))
 
 tools.append(env.Program('test-classifier', \
-	['minerva/classifiers/test/test-classifier.cpp'], LIBS=minerva_libs))
+	['minerva/engine/test/test-classifier.cpp'], LIBS=minerva_libs))
 
 tools.append(env.Program('test-matrix', \
 	['minerva/matrix/test/test-matrix.cpp'], LIBS=minerva_libs))
@@ -67,8 +67,11 @@ tools.append(env.Program('test-minerva-performance', \
 tools.append(env.Program('test-gradient', \
 	['minerva/network/test/test-gradient-check.cpp'], LIBS=minerva_libs))
 
+tools.append(env.Program('test-mnist', \
+	['minerva/engine/test/test-mnist.cpp'], LIBS=minerva_libs))
+
 #tools.append(env.Program('test-cats-vs-dogs', \
-#	['minerva/classifiers/test/test-cats-vs-dogs.cpp'], LIBS=minerva_libs))
+#	['minerva/engine/test/test-cats-vs-dogs.cpp'], LIBS=minerva_libs))
 
 tools.append(env.Program('test-optimizer', \
 	['minerva/optimizer/test/test-optimizer.cpp'], LIBS=minerva_libs))

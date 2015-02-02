@@ -5,7 +5,7 @@
 */
 
 // Minerva Includes
-#include <minerva/classifiers/interface/ClassifierEngine.h>
+#include <minerva/engine/interface/ClassifierEngine.h>
 
 #include <minerva/network/interface/NeuralNetwork.h>
 
@@ -23,7 +23,7 @@
 namespace minerva
 {
 
-namespace classifiers
+namespace engine
 {
 
 ClassifierEngine::ClassifierEngine()

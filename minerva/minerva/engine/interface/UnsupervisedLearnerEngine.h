@@ -7,7 +7,7 @@
 #pragma once
 
 // Minerva Includes
-#include <minerva/classifiers/interface/Engine.h>
+#include <minerva/engine/interface/Engine.h>
 
 // Standard Library Includes
 #include <map>
@@ -15,7 +15,7 @@
 namespace minerva
 {
 
-namespace classifiers
+namespace engine
 {
 
 

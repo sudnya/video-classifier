@@ -5,17 +5,18 @@
 */
 
 // Minerva Includes
-#include <minerva/classifiers/interface/EngineFactory.h>
+#include <minerva/engine/interface/EngineFactory.h>
 
-#include <minerva/classifiers/interface/ClassifierEngine.h>
-#include <minerva/classifiers/interface/FeatureExtractorEngine.h>
-#include <minerva/classifiers/interface/LearnerEngine.h>
-#include <minerva/classifiers/interface/UnsupervisedLearnerEngine.h>
+#include <minerva/engine/interface/ClassifierEngine.h>
+#include <minerva/engine/interface/FeatureExtractorEngine.h>
+#include <minerva/engine/interface/LearnerEngine.h>
+#include <minerva/engine/interface/UnsupervisedLearnerEngine.h>
+#include <minerva/engine/interface/SampleStatisticsEngine.h>
 
 namespace minerva
 {
 
-namespace classifiers
+namespace engine
 {
 
 Engine* EngineFactory::create(const std::string& classifierName)
@@ -38,6 +39,11 @@ Engine* EngineFactory::create(const std::string& classifierName)
 	if(classifierName == "FeatureExtractorEngine")
 	{
 		return new FeatureExtractorEngine;
+	}
+	
+	if(classifierName == "SampleStatisticsEngine")
+	{
+		return new SampleStatisticsEngine;
 	}
 
 	return nullptr;

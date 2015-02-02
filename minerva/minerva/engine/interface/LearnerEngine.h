@@ -7,15 +7,15 @@
 #pragma once
 
 // Minerva Includes
-#include <minerva/classifiers/interface/Engine.h>
+#include <minerva/engine/interface/Engine.h>
 
 // Forward Declarations
-namespace minerva { namespace classifiers { class Learner; } }
+namespace minerva { namespace engine { class Learner; } }
 
 namespace minerva
 {
 
-namespace classifiers
+namespace engine
 {
 
 class LearnerEngine : public Engine

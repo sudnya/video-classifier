@@ -8,6 +8,8 @@
 // Minerva Includes
 #include <minerva/input/interface/InputVisualDataProducer.h>
 
+#include <minerva/model/interface/Model.h>
+
 #include <minerva/database/interface/SampleDatabase.h>
 #include <minerva/database/interface/Sample.h>
 
@@ -85,7 +87,9 @@ InputVisualDataProducer::InputAndReferencePair InputVisualDataProducer::pop()
 	
 	// TODO: specialize this logic
 	auto input = batch.convertToStandardizedMatrix(getInputCount(),
-		getInputBlockingFactor(), _colorComponents);
+		getInputBlockingFactor(), _colorComponents,
+		_model->getAttribute<float>("InputSampleMean"),
+		_model->getAttribute<float>("InputSampleStandardDeviation"));
 	auto reference = batch.getReference(getOutputLabels());
 	
 	util::log("InputVisualDataProducer") << "Loaded batch of '" << batch.size()

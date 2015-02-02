@@ -24,7 +24,7 @@ namespace minerva { namespace matrix  { class Matrix;            } }
 namespace minerva
 {
 
-namespace classifiers
+namespace engine
 {
 
 /*! \brief A generic interface to a classifier with support for an arbitrarily
@@ -45,10 +45,7 @@ public:
 	virtual ~Engine();
 
 public:
-	/*! \brief Load a model from a file, the engine takes ownership. */
-	void loadModel(const std::string& pathToModelFile);
-	
-	/*! \brief Add model directly, the engine takes ownership. */
+	/*! \brief Add model directly, the caller retains takes ownership. */
 	void setModel(Model* model);
 	
 	/*! \brief Set the result handler, the engine takes ownership. */
@@ -61,14 +58,11 @@ public:
 	void setOutputFilename(const std::string& filename);
 
 public:
-	/*! \brief Get the model, the caller takes ownership. */
-	Model* extractModel();
-	
 	/*! \brief Get the result handler, the caller takes ownership */
 	ResultProcessor* extractResultProcessor();
 
 public:
-	/*! \brief Get the model, the engine retains ownership */
+	/*! \brief Get the model, the caller retains ownership */
 	Model* getModel();
 	
 	/*! \brief Get the result handler, the enginer retains ownership */
@@ -114,7 +108,7 @@ private:
 	void _setupProducer(const std::string& databasePath);
 
 protected:
-	std::unique_ptr<Model>              _model;
+	Model*                              _model;
 	std::unique_ptr<InputDataProducer>  _dataProducer;
 	std::unique_ptr<ResultProcessor>    _resultProcessor;
 

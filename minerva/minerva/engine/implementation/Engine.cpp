@@ -5,7 +5,7 @@
 */
 
 // Minerva Includes
-#include <minerva/classifiers/interface/Engine.h>
+#include <minerva/engine/interface/Engine.h>
 
 #include <minerva/network/interface/NeuralNetwork.h>
 #include <minerva/network/interface/Layer.h>
@@ -36,7 +36,7 @@
 namespace minerva
 {
 
-namespace classifiers
+namespace engine
 {
 
 Engine::Engine()
@@ -50,19 +50,9 @@ Engine::~Engine()
 
 }
 
-void Engine::loadModel(const std::string& pathToModelFile)
-{
-	util::log("Engine") << "Loading model file '" << pathToModelFile
-		<<  "'...\n";
-	
-	_model.reset(new Model(pathToModelFile));
-
-	util::log("Engine") << " model loaded.\n";
-}
-
 void Engine::setModel(Model* model)
 {
-	_model.reset(model);
+	_model = model;
 }
 
 void Engine::setResultProcessor(ResultProcessor* processor)
@@ -112,11 +102,6 @@ void Engine::setOutputFilename(const std::string& filename)
 	_resultProcessor->setOutputFilename(filename);
 }
 
-Engine::Model* Engine::extractModel()
-{
-	return _model.release();
-}
-
 Engine::ResultProcessor* Engine::extractResultProcessor()
 {
 	return _resultProcessor.release();
@@ -124,7 +109,7 @@ Engine::ResultProcessor* Engine::extractResultProcessor()
 
 Engine::Model* Engine::getModel()
 {
-	return _model.get();
+	return _model;
 }
 
 Engine::ResultProcessor* Engine::getResultProcessor()
@@ -222,7 +207,7 @@ void Engine::_setupProducer(const std::string& path)
 	newProducer->setEpochs(_dataProducer->getEpochs());
 	newProducer->setMaximumSamplesToRun(_dataProducer->getMaximumSamplesToRun());
 	newProducer->setBatchSize(_dataProducer->getBatchSize());
-	newProducer->setModel(_model.get());
+	newProducer->setModel(_model);
 
 	_dataProducer = std::move(newProducer);
 	

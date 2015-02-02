@@ -5,8 +5,8 @@
 */
 
 // Minerva Includes
-#include <minerva/classifiers/interface/EngineFactory.h>
-#include <minerva/classifiers/interface/Engine.h>
+#include <minerva/engine/interface/EngineFactory.h>
+#include <minerva/engine/interface/Engine.h>
 
 #include <minerva/visualization/interface/NeuronVisualizer.h>
 
@@ -25,6 +25,7 @@
 // Standard Library Includes
 #include <stdexcept>
 #include <fstream>
+#include <memory>
 
 namespace minerva
 {
@@ -38,7 +39,7 @@ static void checkInputs(const std::string& inputFileNames,
 	bool& shouldTrain, bool& shouldLearnFeatures,
 	bool& shouldExtractFeatures);
 
-static classifiers::Engine* createEngine(
+static std::unique_ptr<engine::Engine> createEngine(
 	const std::string& outputFilename, bool shouldClassify,
 	bool shouldTrain, bool shouldLearnFeatures,
 	bool shouldExtractFeatures);
@@ -93,14 +94,12 @@ static void runClassifier(const std::string& outputFilename,
 {
 	util::log("minerva-classifier") << "Loading classifier.\n";
 
-	classifiers::Engine* engine = nullptr;
-
 	try
 	{
 		checkInputs(inputFileNames, modelFileName, shouldClassify,
 			shouldTrain, shouldLearnFeatures, shouldExtractFeatures);
 	
-		engine = createEngine(outputFilename, shouldClassify, shouldTrain,
+		auto engine = createEngine(outputFilename, shouldClassify, shouldTrain,
 			shouldLearnFeatures, shouldExtractFeatures);
 		
 		if(engine == nullptr)
@@ -108,18 +107,16 @@ static void runClassifier(const std::string& outputFilename,
 			throw std::runtime_error("Failed to create classifier engine.");
 		}
 
-		engine->loadModel(modelFileName);
+		model::Model newModel(modelFileName);
+
+		engine->setModel(&newModel);
 
 		engine->runOnDatabaseFile(inputFileNames);
-		
-		delete engine;
 	}
 	catch(const std::exception& e)
 	{
 		std::cout << "Minerva Classifier Failed:\n";
 		std::cout << "Message: " << e.what() << "\n\n";
-		
-		delete engine;
 	}
 	
 }
@@ -166,35 +163,33 @@ static void checkInputs(const std::string& inputFileNames,
 	}
 }
 
-static classifiers::Engine* createEngine(
+static std::unique_ptr<engine::Engine> createEngine(
 	const std::string& outputFilename, bool shouldClassify,
 	bool shouldTrain, bool shouldLearnFeatures, bool shouldExtractFeatures)
 {
-	classifiers::Engine* engine = nullptr;
+	typedef std::unique_ptr<engine::Engine> EnginePointer;
 	
 	if(shouldTrain)
 	{
-		engine = classifiers::EngineFactory::create("LearnerEngine");
+		return EnginePointer(engine::EngineFactory::create("LearnerEngine"));
 	}
 	else if(shouldLearnFeatures)
 	{
-		engine = classifiers::EngineFactory::create("UnsupervisedLearnerEngine");
+		return EnginePointer(engine::EngineFactory::create("UnsupervisedLearnerEngine"));
 	}
 	else if(shouldExtractFeatures)
 	{
-		engine = classifiers::EngineFactory::create("FeatureExtractorEngine");
+		auto engine = EnginePointer(engine::EngineFactory::create("FeatureExtractorEngine"));
 		
-		if(engine != nullptr)
+		if(engine)
 		{
 			engine->setOutputFilename(outputFilename);
 		}
-	}
-	else
-	{
-		engine = classifiers::EngineFactory::create("ClassifierEngine");
+		
+		return engine;
 	}
 	
-	return engine;
+	return EnginePointer(engine::EngineFactory::create("ClassifierEngine"));
 }
 
 static std::string loadFile(const std::string& path)

@@ -90,7 +90,7 @@ void ImageVector::clear()
 }
 
 ImageVector::Matrix ImageVector::convertToStandardizedMatrix(size_t sampleCount,
-	size_t xTileSize, size_t yTileSize, size_t colors) const
+	size_t xTileSize, size_t yTileSize, size_t colors, float mean, float standardDeviation) const
 {
 	size_t rows    = _images.size();
 	size_t columns = sampleCount;
@@ -114,13 +114,13 @@ ImageVector::Matrix ImageVector::convertToStandardizedMatrix(size_t sampleCount,
 	matrix.data() = data;
 	
 	// remove mean
-	matrix = matrix.add(-matrix.reduceSum()/matrix.size());
+	matrix = matrix.add(-mean);
 
 	// truncate to 3 standard deviations
-	float standardDeviation = 3.0f * std::sqrt(matrix.elementMultiply(matrix).reduceSum() / matrix.size());
+	float threeStandardDeviations = 3.0f * standardDeviation;
 
-	matrix.maxSelf(-standardDeviation);
-	matrix.minSelf( standardDeviation);
+	matrix.maxSelf(-threeStandardDeviations);
+	matrix.minSelf( threeStandardDeviations);
 
 	// scale from [-1,1]
 	matrix = matrix.multiply(1.0f/(standardDeviation));
@@ -134,14 +134,14 @@ ImageVector::Matrix ImageVector::convertToStandardizedMatrix(size_t sampleCount,
 }
 
 ImageVector::Matrix ImageVector::convertToStandardizedMatrix(size_t sampleCount, size_t tileSize,
-	size_t colors) const
+	size_t colors, float mean, float standardDeviation) const
 {
 	size_t x = 0;
 	size_t y = 0;
 	
 	util::getNearestToSquareFactors(x, y, tileSize / colors);
 
-	return convertToStandardizedMatrix(sampleCount, x, y, colors);
+	return convertToStandardizedMatrix(sampleCount, x, y, colors, mean, standardDeviation);
 }
 
 ImageVector::Matrix ImageVector::getReference(const util::StringVector& labels) const

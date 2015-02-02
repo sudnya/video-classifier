@@ -87,7 +87,7 @@ private:
 	size_t _batchSize;
 	size_t _maximumSamplesToRun;
 
-private:
+protected:
 	const model::Model* _model;
 
 };

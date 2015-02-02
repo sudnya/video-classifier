@@ -5,7 +5,7 @@
 */
 
 // Minerva Includes
-#include <minerva/classifiers/interface/FeatureExtractorEngine.h>
+#include <minerva/engine/interface/FeatureExtractorEngine.h>
 
 #include <minerva/network/interface/NeuralNetwork.h>
 
@@ -24,7 +24,7 @@
 namespace minerva
 {
 
-namespace classifiers
+namespace engine
 {
 
 FeatureExtractorEngine::FeatureExtractorEngine()

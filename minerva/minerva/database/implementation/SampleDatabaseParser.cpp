@@ -127,11 +127,25 @@ static void parseLabeledPath(SampleDatabase* database, const std::string& line,
 	
 		database->addSample(Sample(filePath, label, startFrame, endFrame));
 	}
+	else if(util::isDirectory(filePath))
+	{
+		auto contents = util::listDirectoryRecursively(filePath);
+		
+		for(auto& suffix : contents)
+		{
+			auto path = util::getRelativePath(filePath, suffix);
+
+			if(util::isFile(path))
+			{
+				database->addSample(Sample(path, label));
+			}
+		}
+	}
 	else
 	{
-		throw std::runtime_error("Path '" + filePath + " with extension '" +
+		throw std::runtime_error("Path '" + filePath + "' with extension '" +
 			util::getExtension(filePath) +
-			"' is not an image or video.");
+			"' is not an image, video, or directory.");
 	}
 }
 

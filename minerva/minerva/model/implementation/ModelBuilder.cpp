@@ -49,7 +49,9 @@ Model* ModelBuilder::create(const std::string& path)
 	size_t y      = util::KnobDatabase::getKnobValue("ModelBuilder::ResolutionY",     32);
 	size_t colors = util::KnobDatabase::getKnobValue("ModelBuilder::ColorComponents", 3 );
 
-	model->setInputImageResolution(x, y, colors);
+	model->setAttribute("ResolutionX",     x     );
+	model->setAttribute("ResolutionY",     y     );
+	model->setAttribute("ColorComponents", colors);
 
 	size_t classifierOutputSize = util::KnobDatabase::getKnobValue("Classifier::NeuralNetwork::Outputs", 1);
 

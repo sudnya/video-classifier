@@ -18,7 +18,7 @@
 
 namespace minerva
 {
-namespace classifiers
+namespace engine
 {
 
 typedef network::FeedForwardLayer FeedForwardLayer;
@@ -268,14 +268,14 @@ int main(int argc, char** argv)
 	}
 	else
 	{
-		minerva::classifiers::enableSpecificLogs(loggingEnabledModules);
+		minerva::engine::enableSpecificLogs(loggingEnabledModules);
 	}
     
     minerva::util::log("TestClassifier") << "Test begings\n";
     
     try
     {
-        minerva::classifiers::runTest(iterations, seed, networkSize, epsilon);
+        minerva::engine::runTest(iterations, seed, networkSize, epsilon);
     }
     catch(const std::exception& e)
     {
