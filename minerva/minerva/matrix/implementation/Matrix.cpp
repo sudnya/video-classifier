@@ -187,6 +187,15 @@ Matrix Matrix::elementMultiply(const Matrix& m) const
 	return Matrix(_matrix->elementMultiply(m._matrix));
 }
 
+Matrix Matrix::divideBroadcastColumn(const Matrix& m) const
+{
+	assert(_matrix != nullptr);
+	
+	assert(m.rows() == rows());
+
+	return Matrix(_matrix->divideBroadcastColumn(m._matrix));
+}
+
 Matrix Matrix::add(const Matrix& m) const
 {
 	assert(_matrix != nullptr);
@@ -273,6 +282,13 @@ Matrix Matrix::log() const
 	return Matrix(_matrix->log());
 }
 
+Matrix Matrix::exp() const
+{
+	assert(_matrix != nullptr);
+	
+	return Matrix(_matrix->exp());
+}
+
 Matrix Matrix::abs() const
 {
 	assert(_matrix != nullptr);
@@ -341,6 +357,13 @@ void Matrix::logSelf()
 	assert(_matrix != nullptr);
 
 	_matrix->logSelf();
+}
+
+void Matrix::expSelf()
+{
+	assert(_matrix != nullptr);
+
+	_matrix->expSelf();
 }
 
 void Matrix::sigmoidSelf()

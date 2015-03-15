@@ -9,8 +9,6 @@
 // Minerva Includes
 #include <minerva/network/interface/Layer.h>
 
-#include <minerva/matrix/interface/BlockSparseMatrixVector.h>
-
 namespace minerva
 {
 namespace network
@@ -20,22 +18,22 @@ namespace network
 class FeedForwardLayer : public Layer
 {
 public:
-	FeedForwardLayer(size_t blocks = 1, size_t inputsPerBlock = 1, size_t outputsPerBlock = 1, size_t blockStep = 0);
+	FeedForwardLayer(size_t inputsPerBlock = 1, size_t outputsPerBlock = 1, size_t blockStep = 0);
     virtual ~FeedForwardLayer();
 
 public:
     virtual void initializeRandomly(std::default_random_engine& engine, float epsilon);
 
 public:
-    virtual BlockSparseMatrix runForward(const BlockSparseMatrix& m) const;
-    virtual BlockSparseMatrix runReverse(BlockSparseMatrixVector& gradients,
-		const BlockSparseMatrix& inputActivations,
-		const BlockSparseMatrix& outputActivations,
-		const BlockSparseMatrix& deltas) const;
+    virtual Matrix runForward(const Matrix& m) const;
+    virtual Matrix runReverse(MatrixVector& gradients,
+		const Matrix& inputActivations,
+		const Matrix& outputActivations,
+		const Matrix& deltas) const;
 
 public:
-    virtual       BlockSparseMatrixVector& weights();
-    virtual const BlockSparseMatrixVector& weights() const;
+    virtual       MatrixVector& weights();
+    virtual const MatrixVector& weights() const;
 
 public:
 	virtual float computeWeightCost() const;
@@ -43,10 +41,6 @@ public:
 public:
     virtual size_t getInputCount()  const;
     virtual size_t getOutputCount() const;
-
-    virtual size_t getBlocks() const;
-    virtual size_t getInputBlockingFactor()  const;
-    virtual size_t getOutputBlockingFactor() const;
 
 public:
     virtual size_t getOutputCountForInputCount(size_t inputCount) const;
@@ -68,9 +62,9 @@ public:
 
 public:
 	/*! \brief Move the weight matrices outside of the network. */
-	virtual void extractWeights(BlockSparseMatrixVector&  weights);
+	virtual void extractWeights(MatrixVector&  weights);
 	/*! \brief Replace the weight matrices contained in the network with the specified weights */
-	virtual void restoreWeights(BlockSparseMatrixVector&& weights);
+	virtual void restoreWeights(MatrixVector&& weights);
 	/*! \brief Get the sparse matrix format used by the weight matrices */
 	virtual SparseMatrixVectorFormat getWeightFormat() const;
 
@@ -86,11 +80,11 @@ public:
 	FeedForwardLayer& operator=(const FeedForwardLayer&);
 
 private:
-	BlockSparseMatrixVector _parameters;
+	MatrixVector _parameters;
 
 private:
-	BlockSparseMatrix& _weights;
-	BlockSparseMatrix& _bias;
+	Matrix& _weights;
+	Matrix& _bias;
 
 private:
 	size_t _blockStep;

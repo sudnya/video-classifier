@@ -6,8 +6,7 @@
 #pragma once
 
 // Forward Declarations
-namespace minerva { namespace matrix  { class BlockSparseMatrix;       } }
-namespace minerva { namespace matrix  { class BlockSparseMatrixVector; } }
+namespace minerva { namespace matrix  { class Matrix;                  } }
 namespace minerva { namespace network { class ActivationFunction;      } }
 namespace minerva { namespace network { class ActivationCostFunction;  } }
 namespace minerva { namespace network { class WeightCostFunction;      } }
@@ -27,11 +26,11 @@ namespace network
 class Layer
 {
 public:
-    typedef matrix::BlockSparseMatrix       BlockSparseMatrix;
-    typedef matrix::BlockSparseMatrixVector BlockSparseMatrixVector;
+    typedef matrix::Matrix                  Matrix;
+    typedef matrix::MatrixVector            MatrixVector;
 	typedef matrix::SparseMatrixFormat      SparseMatrixFormat;
 	typedef std::vector<SparseMatrixFormat> SparseMatrixVectorFormat;
-    typedef std::set<size_t> NeuronSet;
+    typedef std::set<size_t>                NeuronSet;
 
 public:
 	Layer();
@@ -46,15 +45,15 @@ public:
 		float epsilon = 6.0f) = 0;
 
 public:
-    virtual BlockSparseMatrix runForward(const BlockSparseMatrix& m) const = 0;
-    virtual BlockSparseMatrix runReverse(BlockSparseMatrixVector& gradients,
-		const BlockSparseMatrix& inputActivations,
-		const BlockSparseMatrix& outputActivations,
-		const BlockSparseMatrix& deltas) const = 0;
+    virtual Matrix runForward(const Matrix& m) const = 0;
+    virtual Matrix runReverse(MatrixVector& gradients,
+		const Matrix& inputActivations,
+		const Matrix& outputActivations,
+		const Matrix& deltas) const = 0;
 
 public:
-    virtual       BlockSparseMatrixVector& weights()       = 0;
-    virtual const BlockSparseMatrixVector& weights() const = 0;
+    virtual       MatrixVector& weights()       = 0;
+    virtual const MatrixVector& weights() const = 0;
 
 public:
 	virtual float computeWeightCost() const = 0;
@@ -62,10 +61,6 @@ public:
 public:
     virtual size_t getInputCount()  const = 0;
     virtual size_t getOutputCount() const = 0;
-
-    virtual size_t getBlocks()  const = 0;
-    virtual size_t getInputBlockingFactor()  const = 0;
-    virtual size_t getOutputBlockingFactor() const = 0;
 
 public:
     virtual size_t getOutputCountForInputCount(size_t inputCount) const = 0;
@@ -89,9 +84,9 @@ public:
 
 public:
 	/*! \brief Move the weight matrices outside of the network. */
-	virtual void extractWeights(BlockSparseMatrixVector&  weights) = 0;
+	virtual void extractWeights(MatrixVector&  weights) = 0;
 	/*! \brief Replace the weight matrices contained in the network with the specified weights */
-	virtual void restoreWeights(BlockSparseMatrixVector&& weights) = 0;
+	virtual void restoreWeights(MatrixVector&& weights) = 0;
 	/*! \brief Get the sparse matrix format used by the weight matrices */
 	virtual SparseMatrixVectorFormat getWeightFormat() const = 0;
 

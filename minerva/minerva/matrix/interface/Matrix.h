@@ -9,10 +9,14 @@
 // Standard Library Includes
 #include <string>
 #include <cstddef>
-#include <random>
 
 // Forward Declarations
-namespace minerva { namespace matrix { class MatrixImplementation; } }
+namespace minerva { namespace matrix { class Reference;      } }
+namespace minerva { namespace matrix { class ConstReference; } }
+namespace minerva { namespace matrix { class Pointer;        } }
+namespace minerva { namespace matrix { class ConstPointer;   } }
+namespace minerva { namespace matrix { class Dimension;      } }
+namespace minerva { namespace matrix { class Matrix;         } }
 
 namespace minerva
 {
@@ -20,143 +24,73 @@ namespace minerva
 namespace matrix
 {
 
+/*! \brief An interface to operations on a general purpose array. */
 class Matrix
 {
 public:
-	typedef std::vector<float> FloatVector;
+	typedef      Pointer       iterator;
+	typedef ConstPointer const_iterator;
 
 public:
-	typedef       float& FloatReference;
-	typedef const float& ConstFloatReference;
-	typedef       float* FloatPointer;
-	typedef const float* ConstFloatPointer;
-
-	typedef FloatVector::iterator       iterator;
-	typedef FloatVector::const_iterator const_iterator;
+	Matrix();
+	Matrix(const Dimension& size);
+	Matrix(const Dimension& size, const Dimension& stride);
+	Matrix(const Dimension& size, const Dimension& stride, const Precision& precision);
+	Matrix(const Dimension& size, const Dimension& stride, const Precision& precision, const Allocation& allocation);
 
 public:
-	explicit Matrix(size_t rows = 0, size_t colums = 0,
-		const FloatVector& data = FloatVector());
-	explicit Matrix(Matrix&&);
 	~Matrix();
-
-public:
-	Matrix(const Matrix&);
-	Matrix& operator=(const Matrix&);
-	Matrix& operator=(Matrix&&);
-
-public:
-	iterator	   begin();
-	const_iterator begin() const;
-
-	iterator	   end();
-	const_iterator end() const;
-
-public:
-	     FloatReference operator[](size_t index);
-	ConstFloatReference operator[](size_t index) const;
-
-	     FloatReference operator()(size_t row, size_t column);
-	ConstFloatReference operator()(size_t row, size_t column) const;
-
-public:
-	Matrix getColumn(size_t number) const;
-	Matrix getRow(size_t number) const;
 	
 public:
-	Matrix appendColumns(const Matrix& m) const;
-	Matrix appendRows(const Matrix& m) const;
-	void resize(size_t rows, size_t columns);
-	
-public:
-	size_t size()  const;
-	bool   empty() const;
-
-    size_t columns() const;
-	size_t rows()	const;
- 
- 	size_t getPosition(size_t row, size_t column) const;
- 
-public: 
-	Matrix multiply(const Matrix& m) const;
-	Matrix multiply(float f) const;
-	Matrix elementMultiply(const Matrix& m) const;
-
-	Matrix add(const Matrix& m) const;
-	Matrix addBroadcastRow(const Matrix& m) const;
-	Matrix add(float f) const;
-
-	Matrix subtract(const Matrix& m) const;
-	Matrix subtract(float f) const;
-
-	Matrix log() const;
-	Matrix sqrt() const;
-	Matrix abs() const;
-	Matrix negate() const;
-	
-	Matrix sigmoid() const;
-	Matrix sigmoidDerivative() const;
-
-	Matrix rectifiedLinear() const;
-	Matrix rectifiedLinearDerivative() const;
-
-	Matrix klDivergence(float sparsity) const;
-	Matrix klDivergenceDerivative(float sparsity) const;
+	const Dimension& size()   const;
+	const Dimension& stride() const;
 
 public:
-	Matrix slice(size_t startRow, size_t startColumn,
-		size_t rows, size_t columns) const;
-	Matrix transpose() const;
+	const Precision& precision() const;
 
 public:
-	void negateSelf();
-	void logSelf();
-    void sigmoidSelf();
-    void sigmoidDerivativeSelf();
-    void rectifiedLinearSelf();
-    void rectifiedLinearDerivativeSelf();
-    void klDivergenceSelf(float sparsity);
-    void klDivergenceDerivativeSelf(float sparsity);
-	void minSelf(float f);
-	void maxSelf(float f);
-	void assignSelf(float f);
-
-	void transposeSelf();
-
-	void assignUniformRandomValues(
-		std::default_random_engine& engine, float min, float max);
-
-public:
-	Matrix greaterThanOrEqual(float f) const;
-	Matrix equals(const Matrix& m) const;
-	Matrix lessThanOrEqual(float f) const;
-
-public:
-    float  reduceSum()             const;
-	Matrix reduceSumAlongColumns() const;
-	Matrix reduceSumAlongRows()    const;
+	size_t elements() const;
 
 public:
 	void clear();
 
 public:
-	const FloatVector& data() const;
-	FloatVector& data();
-
-public:
-	bool operator==(const Matrix& m) const;
-	bool operator!=(const Matrix& m) const;
+	Allocation allocation();
 
 public:
     std::string toString(size_t maxRows = 20, size_t maxColumns = 20) const;
 	std::string debugString() const;
 	std::string shapeString() const;
 
-private:
-	Matrix(MatrixImplementation* implementation);
+public:
+	template<typename... Args>
+	FloatReference operator()(Args... args)
+	{
+		return (*this)[Dimension(args)];
+	}
+
+	template<typename... Args>
+	ConstFloatReference operator()(Args... args) const
+	{
+		return (*this)[Dimension[args]];
+	}
+
+public:
+	FloatReference      operator[](const Dimension& d);
+	ConstFloatReference operator[](const Dimension& d) const;
 
 private:
-	MatrixImplementation* _matrix;
+	Allocation _allocation;
+
+private:
+	void* _data_begin;
+	
+private:
+	Dimension _size;
+	Dimension _stride;
+
+private:
+	Precision _precision;
 
 };
 

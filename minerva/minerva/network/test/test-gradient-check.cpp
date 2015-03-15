@@ -7,6 +7,7 @@
 // Minerva Includes
 #include <minerva/network/interface/NeuralNetwork.h>
 #include <minerva/network/interface/FeedForwardLayer.h>
+#include <minerva/network/interface/CostFunctionFactory.h>
 
 #include <minerva/matrix/interface/Matrix.h>
 #include <minerva/matrix/interface/BlockSparseMatrixVector.h>
@@ -98,6 +99,24 @@ static NeuralNetwork createFeedForwardLocallyConnectedConvolutionalNetwork(
 	return network;
 }
 
+static NeuralNetwork createFeedForwardFullyConnectedSoftmaxNetwork(
+	size_t layerSize, size_t layerCount,
+	std::default_random_engine& engine)
+{
+	NeuralNetwork network;
+	
+	for(size_t layer = 0; layer < layerCount; ++layer)
+	{
+		network.addLayer(new FeedForwardLayer(1, layerSize, layerSize));
+	}
+	
+	network.setCostFunction(CostFunctionFactory::create("SoftMaxCostFunction"));
+
+	network.initializeRandomly(engine);
+
+	return network;
+}
+
 static Matrix generateInput(size_t inputs, std::default_random_engine& engine)
 {
 	Matrix inputData(1, inputs);
@@ -113,19 +132,43 @@ static Matrix generateInput(size_t inputs, std::default_random_engine& engine)
 }
 
 static Matrix generateReference(size_t inputCount, NeuralNetwork& network,
-	std::default_random_engine& engine)
+	std::default_random_engine& engine, bool oneHotEncoding)
 {
 	size_t outputs = network.getOutputCountForInputCount(inputCount);
 
 	Matrix outputData(1, outputs);
 
-	std::uniform_real_distribution<float> distribution(0.1f, 0.9f);
-
-	for(auto& value : outputData)
+	if(oneHotEncoding)
 	{
-		value = distribution(engine);
-	}
+		std::uniform_int_distribution<size_t> distribution(0, outputs);
+		
+		size_t index = distribution(engine);
+		size_t i     = 0;
 
+		for(auto& value : outputData)
+		{
+			if(i == index)
+			{
+				value = 1.0f;
+			}
+			else
+			{
+				value = 0.0f;
+			}
+			
+			++i;
+		}
+	}
+	else
+	{
+		std::uniform_real_distribution<float> distribution(0.0f, 1.0f);
+
+		for(auto& value : outputData)
+		{
+			value = distribution(engine);
+		}
+	}
+	
 	return outputData;
 }
 
@@ -134,7 +177,7 @@ static bool isInRange(float value, float epsilon)
 	return value < epsilon;
 }
 
-static bool gradientCheck(size_t inputCount, NeuralNetwork& network, std::default_random_engine& engine)
+static bool gradientCheck(size_t inputCount, NeuralNetwork& network, std::default_random_engine& engine, bool oneHotEncoding)
 {
 	const float epsilon = 5.0e-4f;
 
@@ -145,7 +188,7 @@ static bool gradientCheck(size_t inputCount, NeuralNetwork& network, std::defaul
 	size_t matrixId = 0;
 	
 	auto input     = generateInput(inputCount, engine);
-	auto reference = generateReference(inputCount, network, engine);
+	auto reference = generateReference(inputCount, network, engine, oneHotEncoding);
 	
 	BlockSparseMatrixVector gradient;
 	
@@ -213,7 +256,7 @@ static bool runTestFeedForwardFullyConnected(size_t layerSize, size_t layerCount
 	
 	auto network = createFeedForwardFullyConnectedNetwork(layerSize, layerCount, generator);
 	
-	if(gradientCheck(network.getInputCount(), network, generator))
+	if(gradientCheck(network.getInputCount(), network, generator, false))
 	{
 		std::cout << "Feed Forward Fully Connected Network Test Passed\n";
 		
@@ -242,7 +285,7 @@ static bool runTestFeedForwardLocallyConnected(size_t layerSize, size_t blockCou
 	
 	auto network = createFeedForwardLocallyConnectedNetwork(layerSize, blockCount, layerCount, generator);
 	
-	if(gradientCheck(network.getInputCount(), network, generator))
+	if(gradientCheck(network.getInputCount(), network, generator, false))
 	{
 		std::cout << "Feed Forward Locally Connected Network Test Passed\n";
 			
@@ -271,7 +314,7 @@ static bool runTestFeedForwardFullyConnectedConvolutional(size_t inputCount, siz
 	
 	auto network = createFeedForwardFullyConnectedConvolutionalNetwork(layerSize, layerCount, generator);
 	
-	if(gradientCheck(inputCount, network, generator))
+	if(gradientCheck(inputCount, network, generator, false))
 	{
 		std::cout << "Feed Forward Fully Connected Convolutional Network Test Passed\n";
 		
@@ -301,7 +344,7 @@ static bool runTestFeedForwardLocallyConnectedConvolutional(size_t inputCount, s
 	
 	auto network = createFeedForwardLocallyConnectedConvolutionalNetwork(layerSize, blockCount, layerCount, generator);
 	
-	if(gradientCheck(inputCount * blockCount, network, generator))
+	if(gradientCheck(inputCount * blockCount, network, generator, false))
 	{
 		std::cout << "Test Feed Forward Locally Connected Convolutional Network Passed\n";
 		
@@ -316,9 +359,45 @@ static bool runTestFeedForwardLocallyConnectedConvolutional(size_t inputCount, s
 	}
 }
 
+static bool runTestFeedForwardFullyConnectedSoftmax(size_t layerSize, size_t layerCount, bool seed)
+{
+	std::default_random_engine generator;
+
+	if(seed)
+	{
+		generator.seed(std::time(0));
+	}
+	else
+	{
+		generator.seed(377);
+	}
+	
+	auto network = createFeedForwardFullyConnectedSoftmaxNetwork(layerSize, layerCount, generator);
+	
+	if(gradientCheck(network.getInputCount(), network, generator, true))
+	{
+		std::cout << "Feed Forward Fully Connected Network Softmax Test Passed\n";
+		
+		return true;
+	}
+	else
+	{
+		std::cout << "Feed Forward Fully Connected Network Softmax Test Failed\n";
+		
+		return false;
+	}
+}
+
 static void runTest(size_t inputCount, size_t layerSize, size_t blockCount, size_t layerCount, bool seed)
 {
 	bool result = true;
+
+	result &= runTestFeedForwardFullyConnectedSoftmax(layerSize, layerCount, seed);
+	
+	if(!result)
+	{
+		return;
+	}
 	
 	result &= runTestFeedForwardFullyConnected(layerSize, layerCount, seed);
 	

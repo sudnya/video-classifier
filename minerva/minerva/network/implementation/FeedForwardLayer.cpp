@@ -28,10 +28,10 @@ namespace network
 typedef matrix::BlockSparseMatrix BlockSparseMatrix;
 typedef matrix::BlockSparseMatrixVector BlockSparseMatrixVector;
 
-FeedForwardLayer::FeedForwardLayer(size_t blocks, size_t inputsPerBlock, size_t outputsPerBlock, size_t blockStep)
-: _parameters({BlockSparseMatrix(blocks, inputsPerBlock, outputsPerBlock, true), BlockSparseMatrix(blocks, 1, outputsPerBlock, false)}), 
+FeedForwardLayer::FeedForwardLayer(size_t inputs, size_t outputs, size_t blockStep)
+: _parameters({Matrix(Dimension(inputs, outputs)), Matrix(Dimension(outputs))}), 
  _weights(_parameters[0]), _bias(_parameters[1]),
- _blockStep((blockStep > 0) ? blockStep : inputsPerBlock)
+ _blockStep((blockStep > 0) ? blockStep : inputs)
 {
 
 }
@@ -45,24 +45,19 @@ void FeedForwardLayer::initializeRandomly(std::default_random_engine& engine, fl
 {
 	e = util::KnobDatabase::getKnobValue("Layer::RandomInitializationEpsilon", e);
 
-	float epsilon = std::sqrt((e) / (getInputBlockingFactor() + getOutputBlockingFactor() + 1));
-
-	_weights.assignUniformRandomValues(engine, -epsilon, epsilon);
+	float epsilon = std::sqrt((e) / (getInputCount() + getOutputCount() + 1));
+	
+	uniformRandom(_weights, engine, -epsilon, epslion);
 
 	// assign bias to 0.0f
-	_bias.assignSelf(0.0f);
+	apply(_bias, Fill(0.0f));
 }
 
-BlockSparseMatrix FeedForwardLayer::runForward(const BlockSparseMatrix& m) const
+Matrix FeedForwardLayer::runForward(const Matrix& m) const
 {
 	if(util::isLogEnabled("FeedForwardLayer"))
 	{
-		util::log("FeedForwardLayer") << " Running forward propagation on matrix (" << m.rows()
-			<< " rows, " << m.columns() << " columns) through layer with dimensions ("
-			<< _weights.blocks() << " blocks, "
-			<< getInputCount() << " inputs, " << getOutputCount()
-			<< " outputs, " << _blockStep << " block step).\n";
-		util::log("FeedForwardLayer") << "  layer: " << _weights.shapeString() << "\n";
+		util::log("FeedForwardLayer") << " Running forward propagation through layer: " << _weights.shapeString() << "\n";
 	}
 
 	if(util::isLogEnabled("FeedForwardLayer::Detail"))
@@ -72,9 +67,9 @@ BlockSparseMatrix FeedForwardLayer::runForward(const BlockSparseMatrix& m) const
 		util::log("FeedForwardLayer::Detail") << "  bias:  " << _bias.debugString();
 	}
 
-	auto unbiasedOutput = m.convolutionalMultiply(_weights, _blockStep);
+	auto unbiasedOutput = convolutionalMultiply(m, _weights, _blockStep);
 
-	auto output = unbiasedOutput.convolutionalAddBroadcastRow(_bias);
+	auto output = convolutionalAddBroadcastRow(unbiasedOutput, _bias);
 
 	if(util::isLogEnabled("FeedForwardLayer::Detail"))
 	{
@@ -99,7 +94,7 @@ BlockSparseMatrix FeedForwardLayer::runForward(const BlockSparseMatrix& m) const
 	return activation;
 }
 
-BlockSparseMatrix FeedForwardLayer::runReverse(BlockSparseMatrixVector& gradients,
+Matrix FeedForwardLayer::runReverse(BlockSparseMatrixVector& gradients,
 	const BlockSparseMatrix& inputActivations,
 	const BlockSparseMatrix& outputActivations,
 	const BlockSparseMatrix& difference) const

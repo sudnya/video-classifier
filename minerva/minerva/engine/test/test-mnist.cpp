@@ -111,7 +111,7 @@ static void addClassifier(Model& model, const Parameters& parameters,
 	
 	size_t fullyConnectedInputs = featureSelector.getOutputCountForInputCount(parameters.xPixels * parameters.yPixels);
 	
-	size_t fullyConnectedSize = 256;
+	size_t fullyConnectedSize = 128;
 	
 	// connect the network
 	classifier.addLayer(new FeedForwardLayer(1, fullyConnectedInputs, fullyConnectedSize));
