@@ -6,7 +6,8 @@
 
 // Minerva Includes
 #include <minerva/matrix/interface/Matrix.h>
-#include <minerva/matrix/interface/MatrixImplementation.h>
+#include <minerva/matrix/interface/Allocation.h>
+#include <minerva/matrix/interface/MatrixTransformations.h>
 
 #include <minerva/util/interface/debug.h>
 
@@ -18,33 +19,56 @@ namespace minerva
 
 namespace matrix
 {
+
+static Dimension linearStride(const Dimension& size)
+{
+	Dimension stride;
+	
+	size_t step = 1;
+	
+	for (auto sizeStep : size)
+	{
+		stride.push_back(step);
+		step *= sizeStep;
+	}
+	
+	return stride;
+}
 	
 Matrix::Matrix()
-: _precision(SinglePrecision())
+: _data_begin(nullptr), _precision(SinglePrecision())
 {
 
 }
 
 Matrix::Matrix(const Dimension& size)
-: _size(size), _stride(linearStride(size)), _precision(SinglePrecision()), _allocation(std::make_shared<Allocation>(size.product() * SinglePrecision().size()))
+: _allocation(std::make_shared<Allocation>(size.product() * SinglePrecision().size())),
+  _data_begin(_allocation->data()),
+  _size(size), _stride(linearStride(size)), _precision(SinglePrecision())
 {
 
 }
 
 Matrix::Matrix(const Dimension& size, const Dimension& stride)
-: _size(size), _stride(stride), _precision(SinglePrecision()), _allocation(std::make_shared<Allocation>(size.product() * SinglePrecision().size()))
+: _allocation(std::make_shared<Allocation>(size.product() * SinglePrecision().size())),
+  _data_begin(_allocation->data()),
+  _size(size), _stride(stride), _precision(SinglePrecision()) 
 {
 
 }
 
 Matrix::Matrix(const Dimension& size, const Dimension& stride, const Precision& precision)
-: _size(size), _stride(stride), _precision(precision), _allocation(std::make_shared<Allocation>(size.product() * precision.size()))
+: _allocation(std::make_shared<Allocation>(size.product() * precision.size())),
+  _data_begin(_allocation->data()),
+  _size(size), _stride(stride), _precision(precision)
 {
 
 }
 
 Matrix::Matrix(const Dimension& size, const Dimension& stride, const Precision& precision, const std::shared_ptr<Allocation>& allocation)
-: _size(size), _stride(stride), _precision(precision), _allocation(std::make_shared<Allocation>(size.product() * precision.size()))
+: _allocation(std::make_shared<Allocation>(size.product() * precision.size())),
+  _data_begin(_allocation->data()),
+  _size(size), _stride(stride), _precision(precision)
 {
 
 }
@@ -71,7 +95,7 @@ const Precision& Matrix::precision() const
 
 size_t Matrix::elements() const
 {
-	return flatten(size());
+	return size().product();
 }
 
 std::shared_ptr<Allocation> Matrix::allocation()
@@ -81,7 +105,7 @@ std::shared_ptr<Allocation> Matrix::allocation()
 
 std::string Matrix::toString() const
 {
-	auto matrix = reshape(*this, {matrix.size()[0], matrix.size()[1]});
+	auto matrix = reshape(*this, {size()[0], size()[1]});
 
     std::stringstream stream;
 
@@ -120,15 +144,36 @@ std::string Matrix::shapeString() const
 {
 	return size().toString();
 }
-	
-Matrix::FloatReference Matrix::operator[](const Dimension& d)
+
+static size_t getOffset(const Dimension& stride, const Dimension& position)
 {
-	return FloatReference(flatten(d));
+	size_t offset = 0;
+	
+	for(auto i = 0; i < stride.size(); ++i)
+	{
+		offset += stride[i] * position[i];
+	}
+	
+	return offset;
 }
 
-Matrix::ConstFloatReference Matrix::operator[](const Dimension& d) const
+static void* getAddress(const Dimension& stride, const Dimension& position, void* data, const Precision& precision)
 {
-	return ConstFloatReference(flatten(d));
+	size_t offset = getOffset(stride, position);
+	
+	uint8_t* address = static_cast<uint8_t*>(data);
+	
+	return address + precision.size() * offset;
+}
+	
+FloatReference Matrix::operator[](const Dimension& d)
+{
+	return FloatReference(getAddress(stride(), d, _data_begin, precision), _precision);
+}
+
+ConstFloatReference Matrix::operator[](const Dimension& d) const
+{
+	return ConstFloatReference(getAddress(stride(), d, _data_begin, precision), _precision);
 }
 
 }
