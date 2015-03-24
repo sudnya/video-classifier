@@ -46,8 +46,8 @@ void ClassifierEngine::setUseLabeledData(bool shouldUse)
 util::StringVector convertActivationsToLabels(matrix::Matrix&& activations,
 	const model::Model& model)
 {
-	size_t samples = activations.rows();
-	size_t columns = activations.columns();
+	size_t samples = activations.size()[0];
+	size_t columns = activations.size()[1];
 	
 	util::StringVector labels;
 	
@@ -108,7 +108,7 @@ ClassifierEngine::ResultVector ClassifierEngine::runOnBatch(Matrix&& input, Matr
 	
 	if(_shouldUseLabeledData)
 	{
-		if(reference.rows() == input.rows())
+		if(reference.size()[0] == input.size()[0])
 		{
 			return compareWithReference(labels, convertActivationsToLabels(std::move(reference), *_model));
 		}

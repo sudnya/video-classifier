@@ -9,7 +9,7 @@
 
 #include <minerva/optimizer/interface/CostAndGradientFunction.h>
 
-#include <minerva/matrix/interface/BlockSparseMatrixVector.h>
+#include <minerva/matrix/interface/MatrixVector.h>
 
 #include <minerva/util/interface/Knobs.h>
 #include <minerva/util/interface/debug.h>
@@ -62,11 +62,11 @@ BacktrackingLineSearch::~BacktrackingLineSearch()
 
 void BacktrackingLineSearch::search(
 	const CostAndGradientFunction& costFunction,
-	BlockSparseMatrixVector& inputs, float& cost,
-	BlockSparseMatrixVector& gradient,
-	const BlockSparseMatrixVector& direction,
-	float step, const BlockSparseMatrixVector& previousInputs,
-	const BlockSparseMatrixVector& previousGradients)
+	MatrixVector& inputs, float& cost,
+	MatrixVector& gradient,
+	const MatrixVector& direction,
+	float step, const MatrixVector& previousInputs,
+	const MatrixVector& previousGradients)
 {
 	float increase = util::KnobDatabase::getKnobValue("BacktrackingLineSearch::Increase", 2.1f);
 	float decrease = util::KnobDatabase::getKnobValue("BacktrackingLineSearch::Decrease", 0.5f);

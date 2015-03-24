@@ -20,7 +20,7 @@ public:
 	virtual ~GradientDescentSolver();
 
 public:
-	virtual float solve(BlockSparseMatrixVector& inputs,
+	virtual float solve(MatrixVector& inputs,
 		const CostAndGradientFunction& callback);
 
 public:

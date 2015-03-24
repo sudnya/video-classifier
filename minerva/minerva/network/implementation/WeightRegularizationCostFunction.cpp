@@ -6,7 +6,7 @@
 
 // Minerva Includes
 #include <minerva/network/interface/WeightRegularizationCostFunction.h>
-#include <minerva/matrix/interface/BlockSparseMatrix.h>
+#include <minerva/matrix/interface/Matrix.h>
 
 #include <minerva/util/interface/Knobs.h>
 
@@ -21,18 +21,18 @@ WeightRegularizationCostFunction::~WeightRegularizationCostFunction()
 
 }
 
-float WeightRegularizationCostFunction::getCost(const BlockSparseMatrix& weights) const
+double WeightRegularizationCostFunction::getCost(const Matrix& weights) const
 {
-	float lambda = util::KnobDatabase::getKnobValue("NeuralNetwork::Lambda", 0.001);
+	double lambda = util::KnobDatabase::getKnobValue("NeuralNetwork::Lambda", 0.001);
 
-	return weights.elementMultiply(weights).reduceSum() * (lambda / 2.0f);
+	return reduce(apply(weights, Square()), {}, Sum())[0] * (lambda / 2.0);
 }
 
-WeightRegularizationCostFunction::BlockSparseMatrix WeightRegularizationCostFunction::getGradient(const BlockSparseMatrix& weights) const
+WeightRegularizationCostFunction::Matrix WeightRegularizationCostFunction::getGradient(const Matrix& weights) const
 {
-	float lambda = util::KnobDatabase::getKnobValue("NeuralNetwork::Lambda", 0.001);
+	double lambda = util::KnobDatabase::getKnobValue("NeuralNetwork::Lambda", 0.001);
 	
-	return weights.multiply(lambda);
+	return apply(weights, Multiply(lambda));
 }
 
 WeightCostFunction* WeightRegularizationCostFunction::clone() const

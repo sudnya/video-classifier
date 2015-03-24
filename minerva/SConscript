@@ -70,9 +70,6 @@ tools.append(env.Program('test-gradient', \
 tools.append(env.Program('test-mnist', \
 	['minerva/engine/test/test-mnist.cpp'], LIBS=minerva_libs))
 
-#tools.append(env.Program('test-cats-vs-dogs', \
-#	['minerva/engine/test/test-cats-vs-dogs.cpp'], LIBS=minerva_libs))
-
 tools.append(env.Program('test-optimizer', \
 	['minerva/optimizer/test/test-optimizer.cpp'], LIBS=minerva_libs))
 

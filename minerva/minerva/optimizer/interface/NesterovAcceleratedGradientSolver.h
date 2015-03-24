@@ -23,14 +23,14 @@ public:
 	virtual ~NesterovAcceleratedGradientSolver();
 
 public:
-	virtual float solve(BlockSparseMatrixVector& inputs,
+	virtual float solve(MatrixVector& inputs,
 		const CostAndGradientFunction& callback);
 
 public:
 	static double getMemoryOverhead();
 
 private:
-	std::unique_ptr<BlockSparseMatrixVector> _velocity;
+	std::unique_ptr<MatrixVector> _velocity;
 	float _runningExponentialCostSum;
 	
 private:

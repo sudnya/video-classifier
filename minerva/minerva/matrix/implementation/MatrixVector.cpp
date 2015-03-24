@@ -1,11 +1,11 @@
-/*	\file   BlockSparseMatrixVector.cpp
+/*	\file   MatrixVector.cpp
 	\date   Sunday August 11, 2014
 	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The source file for the BlockSparseMatrixVector class.
+	\brief  The source file for the MatrixVector class.
 */
 
 // Minerva Includes
-#include <minerva/matrix/interface/BlockSparseMatrixVector.h>
+#include <minerva/matrix/interface/MatrixVector.h>
 
 // Standard Library Includes
 #include <cassert>
@@ -16,62 +16,56 @@ namespace minerva
 namespace matrix
 {
 
-BlockSparseMatrixVector::BlockSparseMatrixVector()
+MatrixVector::MatrixVector()
 {
 
 }
 
-BlockSparseMatrixVector::BlockSparseMatrixVector(size_t elements, const BlockSparseMatrix& value)
-: _matrix(elements, value)
-{
-
-}
-
-BlockSparseMatrixVector::BlockSparseMatrixVector(std::initializer_list<BlockSparseMatrix> l)
+MatrixVector::MatrixVector(std::initializer_list<Matrix> l)
 : _matrix(l)
 {
 
 }
 
-BlockSparseMatrixVector::BlockSparseMatrixVector(const BlockSparseMatrixVector& m)
+MatrixVector::MatrixVector(const MatrixVector& m)
 : _matrix(m._matrix)
 {
 
 }
 
-BlockSparseMatrixVector::BlockSparseMatrixVector(BlockSparseMatrixVector&& m)
+MatrixVector::MatrixVector(MatrixVector&& m)
 : _matrix(std::move(m._matrix))
 {
 
 }
 
-BlockSparseMatrixVector& BlockSparseMatrixVector::operator=(const BlockSparseMatrixVector& m)
+MatrixVector& MatrixVector::operator=(const MatrixVector& m)
 {
 	_matrix = m._matrix;
 	
 	return *this;
 }
 
-BlockSparseMatrixVector& BlockSparseMatrixVector::operator=(BlockSparseMatrixVector&& m)
+MatrixVector& MatrixVector::operator=(MatrixVector&& m)
 {
 	_matrix = std::move(m._matrix);
 	
 	return *this;
 }
 
-BlockSparseMatrixVector::reference_type BlockSparseMatrixVector::operator[](size_t i)
+MatrixVector::reference_type MatrixVector::operator[](size_t i)
 {
 	return _matrix[i];
 }
 
-BlockSparseMatrixVector::const_reference_type BlockSparseMatrixVector::operator[](size_t i) const
+MatrixVector::const_reference_type MatrixVector::operator[](size_t i) const
 {
 	return _matrix[i];
 }
 
-BlockSparseMatrixVector BlockSparseMatrixVector::negate() const
+MatrixVector MatrixVector::negate() const
 {
-	BlockSparseMatrixVector result;
+	MatrixVector result;
 	
 	result.reserve(size());
 
@@ -84,11 +78,11 @@ BlockSparseMatrixVector BlockSparseMatrixVector::negate() const
 	return result;
 }
 
-BlockSparseMatrixVector BlockSparseMatrixVector::subtract(const BlockSparseMatrixVector& m) const
+MatrixVector MatrixVector::subtract(const MatrixVector& m) const
 {
 	assert(m.size() == size());
 	
-	BlockSparseMatrixVector result;
+	MatrixVector result;
 	
 	result.reserve(size());
 
@@ -101,11 +95,11 @@ BlockSparseMatrixVector BlockSparseMatrixVector::subtract(const BlockSparseMatri
 	return result;
 }
 
-BlockSparseMatrixVector BlockSparseMatrixVector::add(const BlockSparseMatrixVector& m) const
+MatrixVector MatrixVector::add(const MatrixVector& m) const
 {
 	assert(m.size() == size());
 	
-	BlockSparseMatrixVector result;
+	MatrixVector result;
 	
 	result.reserve(size());
 
@@ -118,11 +112,11 @@ BlockSparseMatrixVector BlockSparseMatrixVector::add(const BlockSparseMatrixVect
 	return result;
 }
 
-BlockSparseMatrixVector BlockSparseMatrixVector::elementMultiply(const BlockSparseMatrixVector& m) const
+MatrixVector MatrixVector::elementMultiply(const MatrixVector& m) const
 {
 	assert(m.size() == size());
 	
-	BlockSparseMatrixVector result;
+	MatrixVector result;
 	
 	result.reserve(size());
 
@@ -135,9 +129,9 @@ BlockSparseMatrixVector BlockSparseMatrixVector::elementMultiply(const BlockSpar
 	return result;
 }
 
-BlockSparseMatrixVector BlockSparseMatrixVector::add(float f) const
+MatrixVector MatrixVector::add(float f) const
 {
-	BlockSparseMatrixVector result;
+	MatrixVector result;
 	
 	result.reserve(size());
 
@@ -150,9 +144,9 @@ BlockSparseMatrixVector BlockSparseMatrixVector::add(float f) const
 	return result;
 }
 
-BlockSparseMatrixVector BlockSparseMatrixVector::multiply(float f) const
+MatrixVector MatrixVector::multiply(float f) const
 {
-	BlockSparseMatrixVector result;
+	MatrixVector result;
 	
 	result.reserve(size());
 
@@ -165,7 +159,7 @@ BlockSparseMatrixVector BlockSparseMatrixVector::multiply(float f) const
 	return result;
 }
 
-void BlockSparseMatrixVector::addSelf(const BlockSparseMatrixVector& m)
+void MatrixVector::addSelf(const MatrixVector& m)
 {
 	assert(m.size() == size());
 	
@@ -178,7 +172,7 @@ void BlockSparseMatrixVector::addSelf(const BlockSparseMatrixVector& m)
 	}
 }
 
-void BlockSparseMatrixVector::multiplySelf(float f)
+void MatrixVector::multiplySelf(float f)
 {
 	// TODO: in parallel
 	for(auto& i : *this)
@@ -188,7 +182,7 @@ void BlockSparseMatrixVector::multiplySelf(float f)
 	}
 }
 
-float BlockSparseMatrixVector::dotProduct(const BlockSparseMatrixVector& m) const
+float MatrixVector::dotProduct(const MatrixVector& m) const
 {
 	assert(m.size() == size());
 	
@@ -203,7 +197,7 @@ float BlockSparseMatrixVector::dotProduct(const BlockSparseMatrixVector& m) cons
 	return sum;
 }
 
-float BlockSparseMatrixVector::reduceSum() const
+float MatrixVector::reduceSum() const
 {
 	float sum = 0.0f;
 	
@@ -216,77 +210,77 @@ float BlockSparseMatrixVector::reduceSum() const
 	return sum;
 }
 
-bool BlockSparseMatrixVector::empty() const
+bool MatrixVector::empty() const
 {
 	return _matrix.empty();
 }
 
-size_t BlockSparseMatrixVector::size() const
+size_t MatrixVector::size() const
 {
 	return _matrix.size();
 }
 
-void BlockSparseMatrixVector::reserve(size_t size)
+void MatrixVector::reserve(size_t size)
 {
 	_matrix.reserve(size);
 }
 
-void BlockSparseMatrixVector::resize(size_t size)
+void MatrixVector::resize(size_t size)
 {
 	_matrix.resize(size);
 }
 
-BlockSparseMatrixVector::iterator BlockSparseMatrixVector::begin()
+MatrixVector::iterator MatrixVector::begin()
 {
 	return _matrix.begin();
 }
 
-BlockSparseMatrixVector::const_iterator BlockSparseMatrixVector::begin() const
+MatrixVector::const_iterator MatrixVector::begin() const
 {
 	return _matrix.begin();
 }
 
-BlockSparseMatrixVector::iterator BlockSparseMatrixVector::end()
+MatrixVector::iterator MatrixVector::end()
 {
 	return _matrix.end();
 }
 
-BlockSparseMatrixVector::const_iterator BlockSparseMatrixVector::end() const
+MatrixVector::const_iterator MatrixVector::end() const
 {
 	return _matrix.end();
 }
 
-BlockSparseMatrixVector::reverse_iterator BlockSparseMatrixVector::rbegin()
+MatrixVector::reverse_iterator MatrixVector::rbegin()
 {
 	return _matrix.rbegin();
 }
 
-BlockSparseMatrixVector::const_reverse_iterator BlockSparseMatrixVector::rbegin() const
+MatrixVector::const_reverse_iterator MatrixVector::rbegin() const
 {
 	return _matrix.rbegin();
 }
 
-BlockSparseMatrixVector::reverse_iterator BlockSparseMatrixVector::rend()
+MatrixVector::reverse_iterator MatrixVector::rend()
 {
 	return _matrix.rend();
 }
 
-BlockSparseMatrixVector::const_reverse_iterator BlockSparseMatrixVector::rend() const
+MatrixVector::const_reverse_iterator MatrixVector::rend() const
 {
 	return _matrix.rend();
 }
 
-void BlockSparseMatrixVector::push_back(const BlockSparseMatrix& m)
+void MatrixVector::push_back(const Matrix& m)
 {
 	_matrix.push_back(m);
 }
 
-void BlockSparseMatrixVector::push_back(BlockSparseMatrix&& m)
+void MatrixVector::push_back(Matrix&& m)
 {
 	_matrix.push_back(std::move(m));
 }
 
-void BlockSparseMatrixVector::push_back(BlockSparseMatrixVector&& v)
+void MatrixVector::push_back(MatrixVector&& v)
 {
 	for(auto& m : v)
 	{
@@ -294,32 +288,32 @@ void BlockSparseMatrixVector::push_back(BlockSparseMatrixVector&& v)
 	}
 }
 
-void BlockSparseMatrixVector::pop_back()
+void MatrixVector::pop_back()
 {
 	_matrix.pop_back();
 }
 
-BlockSparseMatrix& BlockSparseMatrixVector::back()
+Matrix& MatrixVector::back()
 {
 	return _matrix.back();
 }
 
-const BlockSparseMatrix& BlockSparseMatrixVector::back() const
+const Matrix& MatrixVector::back() const
 {
 	return _matrix.back();
 }
 
-BlockSparseMatrix& BlockSparseMatrixVector::front()
+Matrix& MatrixVector::front()
 {
 	return _matrix.front();
 }
 
-const BlockSparseMatrix& BlockSparseMatrixVector::front() const
+const Matrix& MatrixVector::front() const
 {
 	return _matrix.front();
 }
 
-std::string BlockSparseMatrixVector::toString() const
+std::string MatrixVector::toString() const
 {
 	if(empty())
 	{

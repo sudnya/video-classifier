@@ -38,7 +38,6 @@ public:
 
 public:
 	MatrixVector();
-	MatrixVector(size_t elements, const Matrix& value);
 
 public:
 	MatrixVector(std::initializer_list<Matrix> l);

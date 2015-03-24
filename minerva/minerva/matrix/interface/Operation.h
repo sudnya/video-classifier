@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include <minerva/parallel/interface/cuda.h>
+
 namespace minerva
 {
 namespace matrix
@@ -16,14 +18,12 @@ namespace matrix
 class Operation
 {
 public:
-	Operation(enum Type);
-
-public:
 	enum Type
 	{
 		Add,
 		Subtract,
 		Multiply,
+		Divide,
 		Log,
 		Exp,
 		Abs,
@@ -38,31 +38,80 @@ public:
 		Min,
 		Equal,
 		LessThan,
-		NotEqual
-		
+		NotEqual,
+		Fill		
 	};
+
+public:
+	Operation(Type t);
 
 
 
 };
 
-template<typename T>
 class Add : public Operation
 {
 public:
-	Add() : Operation(Operation::Add)
+	CUDA_DECORATOR Add() : Operation(Operation::Add), _value(0.0)
 	{
 
+	}
+
+	CUDA_DECORATOR Add(double d) : Operation(Operation::Add), _value(d)
+	{
+		
 	}
 
 public:
-	T operator()(const T& l, const T& r)
+	template<typename T>
+	CUDA_DECORATOR T operator()(const T& l, const T& r)
 	{
 		return l + r;
 	}
+	
+	template<typename T>
+	CUDA_DECORATOR T operator()(const T& r)
+	{
+		return _value + r;
+	}
+	
+private:
+	double _value;
+
 };
 
-typedef std::tuple<Add> AllOperations;
+class Multiply : public Operation
+{
+public:
+	CUDA_DECORATOR Multiply() : Operation(Operation::Multiply), _value(0.0)
+	{
+
+	}
+
+	CUDA_DECORATOR Multiply(double d) : Operation(Operation::Multiply), _value(d)
+	{
+		
+	}
+
+public:
+	template<typename T>
+	CUDA_DECORATOR T operator()(const T& l, const T& r)
+	{
+		return l * r;
+	}
+	
+	template<typename T>
+	CUDA_DECORATOR T operator()(const T& r)
+	{
+		return _value * r;
+	}
+	
+private:
+	double _value;
+
+};
+
+typedef std::tuple<Add, Multiply> AllOperations;
 
 }
 }

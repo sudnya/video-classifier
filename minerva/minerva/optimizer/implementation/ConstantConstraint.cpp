@@ -8,7 +8,7 @@
 #include <minerva/optimizer/interface/ConstantConstraint.h>
 
 #include <minerva/matrix/interface/Matrix.h>
-#include <minerva/matrix/interface/BlockSparseMatrix.h>
+#include <minerva/matrix/interface/Matrix.h>
 
 #include <minerva/util/interface/debug.h>
 
@@ -33,11 +33,11 @@ bool ConstantConstraint::isSatisfied(const Matrix& m) const
 {
 	if(_comparison == LessThanOrEqual)
 	{
-		return m.greaterThanOrEqual(_value).reduceSum() == 0;
+		return reduce(apply(m, LessThanOrEqual(_value)), {}, Sum()) == 0.0;
 	}
 	else if(_comparison == GreaterThanOrEqual)
 	{
-		return m.lessThanOrEqual(_value).reduceSum() == 0;
+		return reduce(apply(m, GreaterThanOrEqual(_value)), {}, Sum()) == 0.0;
 	}
 	else
 	{
@@ -47,15 +47,15 @@ bool ConstantConstraint::isSatisfied(const Matrix& m) const
 	return false;
 } 
 
-void ConstantConstraint::apply(BlockSparseMatrix& m) const
+void ConstantConstraint::apply(Matrix& m) const
 {
 	if(_comparison == LessThanOrEqual)
 	{
-		m.minSelf(_value);
+		apply(m, m, Min(_value));
 	}
 	else if(_comparison == GreaterThanOrEqual)
 	{
-		m.maxSelf(_value);
+		apply(m, m, Max(_value));
 	}
 	else
 	{

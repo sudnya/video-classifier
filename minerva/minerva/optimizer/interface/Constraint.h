@@ -8,7 +8,7 @@
 
 // Forward Declarations
 namespace minerva { namespace matrix { class Matrix;            } }
-namespace minerva { namespace matrix { class BlockSparseMatrix; } }
+namespace minerva { namespace matrix { class Matrix; } }
 
 namespace minerva
 {
@@ -21,7 +21,7 @@ class Constraint
 {
 public:
 	typedef matrix::Matrix            Matrix;
-	typedef matrix::BlockSparseMatrix BlockSparseMatrix;
+	typedef matrix::Matrix Matrix;
 
 public:
 	virtual ~Constraint();
@@ -31,7 +31,7 @@ public:
 	virtual bool isSatisfied(const Matrix& ) const = 0; 
 
 public:
-	virtual void apply(BlockSparseMatrix& ) const = 0;
+	virtual void apply(Matrix& ) const = 0;
 
 public:
 	virtual Constraint* clone() const = 0;

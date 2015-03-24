@@ -15,6 +15,9 @@
 
 #include <minerva/util/interface/debug.h>
 
+// Standard Library Includes
+#include <cmath>
+
 namespace minerva
 {
 
@@ -33,18 +36,18 @@ SampleStatisticsEngine::~SampleStatisticsEngine()
 
 void SampleStatisticsEngine::registerModel()
 {
-	_mean = 0.0f;
-	_standardDeviation = 0.0f;
-	_samples = 0.0f;
-	_sumOfSquaresOfDifferences = 0.0f;
+	_mean = 0.0;
+	_standardDeviation = 0.0;
+	_samples = 0.0;
+	_sumOfSquaresOfDifferences = 0.0;
 	
-	_model->setAttribute("InputSampleMean",              0.0f);
-	_model->setAttribute("InputSampleStandardDeviation", 1.0f);
+	_model->setAttribute("InputSampleMean",              0.0);
+	_model->setAttribute("InputSampleStandardDeviation", 1.0);
 }
 
 void SampleStatisticsEngine::closeModel()
 {
-	_standardDeviation = std::sqrtf(_sumOfSquaresOfDifferences / (_samples - 1.0f));
+	_standardDeviation = std::sqrt(_sumOfSquaresOfDifferences / (_samples - 1.0));
 	
 	_model->setAttribute("InputSampleMean",              _mean);
 	_model->setAttribute("InputSampleStandardDeviation", _standardDeviation);
@@ -55,7 +58,7 @@ void SampleStatisticsEngine::closeModel()
 	
 SampleStatisticsEngine::ResultVector SampleStatisticsEngine::runOnBatch(Matrix&& input, Matrix&& reference)
 {
-	util::log("SimpleStatisticsEngine") << "Computing sample statistics over " << input.rows() <<  " images...\n";
+	util::log("SimpleStatisticsEngine") << "Computing sample statistics over " << input.size()[1] <<  " images...\n";
 	
 	for(auto element : input)
 	{

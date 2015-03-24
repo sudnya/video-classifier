@@ -9,6 +9,7 @@
 
 #include <minerva/network/interface/FeedForwardLayer.h>
 #include <minerva/network/interface/RecurrentLayer.h>
+#include <minerva/network/interface/ConvolutionalLayer.h>
 
 namespace minerva
 {
@@ -25,6 +26,10 @@ Layer* LayerFactory::create(const std::string& name)
 	else if ("RecurrentLayer" == name)
 	{
 		return new RecurrentLayer;
+	}
+	else if ("ConvolutionalLayer" == name)
+	{
+		return new ConvolutionalLayer;
 	}
 
 	return nullptr;

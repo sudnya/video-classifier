@@ -17,6 +17,7 @@
 #include <minerva/model/interface/Model.h>
 
 #include <minerva/matrix/interface/Matrix.h>
+#include <minerva/matrix/interface/MatrixOperations.h>
 
 // Standard Library Includes
 #include <cassert>
@@ -39,13 +40,13 @@ FeatureExtractorEngine::ResultVector FeatureExtractorEngine::runOnBatch(Matrix&&
 	auto features = featureSelector.runInputs(input);
 	
 	// convert to results
-	size_t samples = features.rows();
+	size_t samples = features.size()[1];
 	
 	ResultVector result;
 	
 	for(size_t sample = 0; sample < samples; ++sample)
 	{
-		result.push_back(new results::FeatureResult(features.slice(sample, 0, 1, features.columns())));
+		result.push_back(new results::FeatureResult(slice(features, {0, sample}, {features.size()[0], sample + 1})));
 	}
 	
 	return result;

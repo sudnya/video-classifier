@@ -4,6 +4,7 @@
 
 // Standard Library Includes
 #include <cstdint>
+#include <cstddef>
 
 namespace minerva
 {
@@ -21,15 +22,19 @@ public:
 	Allocation(size_t size);
 
 public:
+	~Allocation();
+
+public:
 	      pointer data();
 	const_pointer data() const;
 
 private:
-	typedef std::shared_ptr<uint8_t> shared_pointer;
+	Allocation(const Allocation&) = delete;
+	Allocation& operator=(const Allocation&) = delete;
 
 private:
-	shared_pointer _begin;
-	       pointer _end;
+	pointer _begin;
+	pointer _end;
 
 };
 

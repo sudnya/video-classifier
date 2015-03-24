@@ -22,10 +22,10 @@ public:
 
 public:
 	/*! \brief Run the cost function on the specified weights. */
-	virtual float getCost(const BlockSparseMatrix& weights) const;
+	virtual float getCost(const Matrix& weights) const;
 
 	/*! \brief Compute the gradient with respect to the weights. */
-	virtual BlockSparseMatrix getGradient(const BlockSparseMatrix& weights) const;
+	virtual Matrix getGradient(const Matrix& weights) const;
 
 public:
 	virtual WeightCostFunction* clone() const;

@@ -12,14 +12,13 @@
 #include <random>
 
 // Forward Declaration
-namespace minerva { namespace network   { class Layer;                   } }
-namespace minerva { namespace network   { class CostFunction;            } }
-namespace minerva { namespace matrix    { class Matrix;                  } }
-namespace minerva { namespace matrix    { class Matrix;       } }
-namespace minerva { namespace matrix    { class MatrixVector; } }
-namespace minerva { namespace optimizer { class NeuralNetworkSolver;     } }
-namespace minerva { namespace matrix    { class SparseMatrixFormat;      } }
-namespace minerva { namespace util      { class TarArchive;              } }
+namespace minerva { namespace network   { class Layer;               } }
+namespace minerva { namespace network   { class CostFunction;        } }
+namespace minerva { namespace matrix    { class Matrix;              } }
+namespace minerva { namespace matrix    { class MatrixVector;        } }
+namespace minerva { namespace matrix    { class Precision;           } }
+namespace minerva { namespace util      { class TarArchive;          } }
+namespace minerva { namespace optimizer { class NeuralNetworkSolver; } }
 
 namespace minerva
 {
@@ -29,12 +28,9 @@ namespace network
 class NeuralNetwork
 {
 public:
-    typedef matrix::Matrix                  Matrix;
-    typedef matrix::Matrix       Matrix;
-    typedef matrix::MatrixVector MatrixVector;
-	typedef optimizer::NeuralNetworkSolver  NeuralNetworkSolver;
-	typedef matrix::SparseMatrixFormat      SparseMatrixFormat;
-	typedef std::vector<SparseMatrixFormat> SparseMatrixVectorFormat;
+    typedef matrix::Matrix                 Matrix;
+    typedef matrix::MatrixVector           MatrixVector;
+	typedef optimizer::NeuralNetworkSolver NeuralNetworkSolver;
 
 public:
     NeuralNetwork();
@@ -42,37 +38,19 @@ public:
 
 public:
 	/*! \brief Initialize the network weights */
-    void initializeRandomly(std::default_random_engine& engine, float epsilon = 3.0f);
-	/*! \brief Initialize the network weights */
-    void initializeRandomly(float epsilon = 3.0f);
-
-public:
-	/*! \brief Train the network on the specified input and reference. */
-    void train(const Matrix& input, const Matrix& reference);
-	/*! \brief Train the network on the specified input and reference. */
-    void train(Matrix&& input, Matrix&& reference);
+    void initialize();
 
 public:
 	/*! \brief Get the cost and gradient. */
-	float getCostAndGradient(MatrixVector& gradient, const Matrix& input, const Matrix& reference) const;
+	double getCostAndGradient(MatrixVector& gradient, const Matrix& input, const Matrix& reference) const;
 	/*! \brief Get the cost. */
-	float getCost(const Matrix& input, const Matrix& reference) const;
-	
-	/*! \brief Get the cost and gradient. */
-	float getCostAndGradient(MatrixVector& gradient, const Matrix& input, const Matrix& reference) const;
-	/*! \brief Get the cost. */
-	float getCost(const Matrix& input, const Matrix& reference) const;
+	double getCost(const Matrix& input, const Matrix& reference) const;
 
 public:
 	/*! \brief Get the cost and gradient with respect to the inputs. */
-	float getInputCostAndGradient(Matrix& gradient, const Matrix& input, const Matrix& reference) const;
-	
-	/*! \brief Get the cost and gradient. */
-	float getInputCostAndGradient(Matrix& gradient, const Matrix& input, const Matrix& reference) const;
+	double getInputCostAndGradient(Matrix& gradient, const Matrix& input, const Matrix& reference) const;
 
 public:
-	/*! \brief Run input samples through the network, return the output */
-    Matrix runInputs(const Matrix& m) const;
 	/*! \brief Run input samples through the network, return the output */
     Matrix runInputs(const Matrix& m) const;
 
@@ -112,11 +90,6 @@ public:
     size_t getInputCount()  const;
     size_t getOutputCount() const;
 
-    size_t getOutputCountForInputCount(size_t inputCount) const;
-
-    size_t getInputBlockingFactor()  const;
-    size_t getOutputBlockingFactor() const;
-
 public:
     size_t totalNeurons()     const;
     size_t totalConnections() const;
@@ -125,8 +98,8 @@ public:
     size_t getFloatingPointOperationCount() const;
 
 public:
-    size_t totalWeights()     const;
-    size_t totalActivations() const;
+	/*! \brief Train the network on the specified input and reference. */
+    void train(const Matrix& input, const Matrix& reference);
 
 public:
     typedef std::vector<LayerPointer> LayerVector;
@@ -149,21 +122,6 @@ public:
 
     reverse_iterator       rend();
     const_reverse_iterator rend() const;
-
-public:
-    NeuralNetwork getSubgraphConnectedToThisOutput(unsigned neuron) const;
-
-public:
-	/*! \brief Move the weight matrices outside of the network. */
-	void extractWeights(MatrixVector&  weights);
-	/*! \brief Replace the weight matrices contained in the network with the specified weights */
-	void restoreWeights(MatrixVector&& weights);
-	/*! \brief Get the sparse matrix format used by the weight matrices */
-	SparseMatrixVectorFormat getWeightFormat() const;
-
-public:	
-	/*! \brief Get the sparse matrix format used by the input matrices */
-	SparseMatrixVectorFormat getInputFormat() const;
 
 public:
 	/*! \brief Set the network cost function, the network takes ownership */

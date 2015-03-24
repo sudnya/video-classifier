@@ -41,7 +41,7 @@ Matrix SoftmaxCostFunction::computeCost(const Matrix& output, const Matrix& refe
 
 	auto result = apply(Log(), softmaxResult);
 
-	return apply(reference, result, Multiply()).apply(Negate());
+	return apply(apply(reference, result, Multiply()), Negate());
 }
 
 Matrix SoftmaxCostFunction::computeDelta(const Matrix& output, const Matrix& reference) const

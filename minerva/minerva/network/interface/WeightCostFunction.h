@@ -7,7 +7,7 @@
 #pragma once
 
 // Forward Declarations
-namespace minerva { namespace matrix { class BlockSparseMatrix; } }
+namespace minerva { namespace matrix { class Matrix; } }
 
 namespace minerva
 {
@@ -18,17 +18,17 @@ namespace network
 class WeightCostFunction
 {
 public:
-	typedef matrix::BlockSparseMatrix BlockSparseMatrix;
+	typedef matrix::Matrix Matrix;
 
 public:
 	virtual ~WeightCostFunction();
 
 public:
 	/*! \brief Run the cost function on the specified weights. */
-	virtual float getCost(const BlockSparseMatrix& weights) const = 0;
+	virtual float getCost(const Matrix& weights) const = 0;
 
 	/*! \brief Compute the gradient with respect to the weights. */
-	virtual BlockSparseMatrix getGradient(const BlockSparseMatrix& weights) const = 0;
+	virtual Matrix getGradient(const Matrix& weights) const = 0;
 
 public:
 	virtual WeightCostFunction* clone() const = 0;

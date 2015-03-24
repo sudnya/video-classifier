@@ -19,7 +19,6 @@
 #include <minerva/optimizer/interface/CostFunction.h>
 #include <minerva/optimizer/interface/ConstantConstraint.h>
 
-#include <minerva/matrix/interface/BlockSparseMatrixVector.h>
 #include <minerva/matrix/interface/Matrix.h>
 #include <minerva/matrix/interface/SparseMatrixFormat.h>
 
@@ -39,7 +38,6 @@ namespace visualization
 {
 
 typedef matrix::Matrix Matrix;
-typedef matrix::BlockSparseMatrixVector BlockSparseMatrixVector;
 typedef network::NeuralNetwork NeuralNetwork;
 typedef video::Image Image;
 typedef optimizer::ConstantConstraint ConstantConstraint;
@@ -249,7 +247,7 @@ private:
 class CostAndGradientFunction : public optimizer::CostAndGradientFunction
 {
 public:
-	CostAndGradientFunction(const NeuralNetwork* n, const BlockSparseMatrix* r)
+	CostAndGradientFunction(const NeuralNetwork* n, const Matrix* r)
 	: optimizer::CostAndGradientFunction(n->getInputFormat()), _network(n), _reference(r)
 	{
 	
@@ -257,12 +255,12 @@ public:
 
 
 public:
-	virtual float computeCostAndGradient(BlockSparseMatrixVector& gradients,
-		const BlockSparseMatrixVector& inputs) const
+	virtual float computeCostAndGradient(MatrixVector& gradients,
+		const MatrixVector& inputs) const
 	{
 		util::log("NeuronVisualizer::Detail") << " inputs are : " << inputs.front().toString();
 		
-		BlockSparseMatrix gradient;
+		Matrix gradient;
 		float newCost = _network->getInputCostAndGradient(gradient, inputs.front(), *_reference);
 		
 		gradients.push_back(std::move(gradient));
@@ -275,7 +273,7 @@ public:
 
 private:
 	const NeuralNetwork*     _network;
-	const BlockSparseMatrix* _reference;
+	const Matrix* _reference;
 };
 
 static Matrix generateReferenceForNeuron(const NeuralNetwork* network,
@@ -298,8 +296,8 @@ static void addConstraints(optimizer::GeneralDifferentiableSolver& solver)
 static Matrix optimizeWithDerivative(float& bestCost, const NeuralNetwork* network,
 	const Matrix& initialData, unsigned int neuron)
 {
-	auto input     = network->convertToBlockSparseForLayerInput(*network->front(), initialData);
-	auto reference = network->convertToBlockSparseForLayerOutput(*network->back(),
+	auto input     = network->convertToForLayerInput(*network->front(), initialData);
+	auto reference = network->convertToForLayerOutput(*network->back(),
 		generateReferenceForNeuron(network, neuron));
 	
 	auto bestSoFar = input;

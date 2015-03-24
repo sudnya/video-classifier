@@ -6,17 +6,19 @@
 
 #pragma once
 
+// Minerva Includes
+#include <minerva/matrix/interface/FloatReference.h>
+#include <minerva/matrix/interface/FloatIterator.h>
+#include <minerva/matrix/interface/Dimension.h>
+#include <minerva/matrix/interface/Precision.h>
+
 // Standard Library Includes
 #include <string>
 #include <cstddef>
+#include <memory>
 
 // Forward Declarations
-namespace minerva { namespace matrix { class Reference;      } }
-namespace minerva { namespace matrix { class ConstReference; } }
-namespace minerva { namespace matrix { class Pointer;        } }
-namespace minerva { namespace matrix { class ConstPointer;   } }
-namespace minerva { namespace matrix { class Dimension;      } }
-namespace minerva { namespace matrix { class Matrix;         } }
+namespace minerva { namespace matrix { class Allocation; } }
 
 namespace minerva
 {
@@ -27,10 +29,6 @@ namespace matrix
 /*! \brief An interface to operations on a general purpose array. */
 class Matrix
 {
-public:
-	typedef      Pointer       iterator;
-	typedef ConstPointer const_iterator;
-
 public:
 	Matrix();
 	Matrix(const Dimension& size);
@@ -52,13 +50,17 @@ public:
 	size_t elements() const;
 
 public:
-	void clear();
+	FloatIterator begin();
+	FloatIterator end();
+	
+	ConstFloatIterator begin() const;
+	ConstFloatIterator end()   const;
 
 public:
-	Allocation allocation();
+	std::shared_ptr<Allocation> allocation();
 
 public:
-    std::string toString(size_t maxRows = 20, size_t maxColumns = 20) const;
+    std::string toString() const;
 	std::string debugString() const;
 	std::string shapeString() const;
 
@@ -66,13 +68,13 @@ public:
 	template<typename... Args>
 	FloatReference operator()(Args... args)
 	{
-		return (*this)[Dimension(args)];
+		return (*this)[Dimension(args...)];
 	}
 
 	template<typename... Args>
 	ConstFloatReference operator()(Args... args) const
 	{
-		return (*this)[Dimension[args]];
+		return (*this)[Dimension(args...)];
 	}
 
 public:
@@ -80,7 +82,7 @@ public:
 	ConstFloatReference operator[](const Dimension& d) const;
 
 private:
-	Allocation _allocation;
+	std::shared_ptr<Allocation> _allocation;
 
 private:
 	void* _data_begin;

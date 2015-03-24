@@ -27,11 +27,11 @@ public:
 public:
 	virtual void search(
 		const CostAndGradientFunction& costFunction,
-		BlockSparseMatrixVector& inputs, float& cost,
-		BlockSparseMatrixVector& gradient,
-		const BlockSparseMatrixVector& direction,
-		float step, const BlockSparseMatrixVector& previousInputs,
-		const BlockSparseMatrixVector& previousGradients);
+		MatrixVector& inputs, float& cost,
+		MatrixVector& gradient,
+		const MatrixVector& direction,
+		float step, const MatrixVector& previousInputs,
+		const MatrixVector& previousGradients);
 
 private:
 	float _xTolerance;

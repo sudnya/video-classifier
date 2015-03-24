@@ -15,6 +15,8 @@
 #include <minerva/results/interface/ResultVector.h>
 
 #include <minerva/matrix/interface/Matrix.h>
+#include <minerva/matrix/interface/MatrixOperations.h>
+#include <minerva/matrix/interface/Operation.h>
 
 #include <minerva/util/interface/debug.h>
 #include <minerva/util/interface/Knobs.h>
@@ -50,11 +52,11 @@ static size_t getTotalLayers(model::Model& model)
 UnsupervisedLearnerEngine::ResultVector UnsupervisedLearnerEngine::runOnBatch(Matrix&& input, Matrix&& reference)
 {
 	util::log("UnsupervisedLearnerEngine") << "Performing unsupervised "
-		"learning on " << input.rows() <<  " samples...\n";
+		"learning on " << input.size()[1] <<  " samples...\n";
 	
 	auto totalLayers = getTotalLayers(*_model);
 	
-	auto inputReference = input.add(1.0f).multiply(0.4f).add(0.1f);
+	auto inputReference = matrix::apply(matrix::apply(matrix::apply(input, matrix::Add(1.0)), matrix::Multiply(0.4)), matrix::Add(0.1));
 	
 	auto layerInput = std::move(input);
 

@@ -9,8 +9,8 @@
 
 #include <minerva/matrix/interface/SparseMatrixFormat.h>
 
-#include <minerva/matrix/interface/BlockSparseMatrix.h>
-#include <minerva/matrix/interface/BlockSparseMatrixVector.h>
+#include <minerva/matrix/interface/Matrix.h>
+#include <minerva/matrix/interface/MatrixVector.h>
 
 namespace minerva
 {
@@ -19,8 +19,7 @@ namespace optimizer
 {
 
 typedef matrix::Matrix                   Matrix;
-typedef matrix::BlockSparseMatrix        BlockSparseMatrix;
-typedef matrix::BlockSparseMatrixVector  BlockSparseMatrixVector;
+typedef matrix::MatrixVector             MatrixVector;
 typedef matrix::SparseMatrixFormat       SparseMatrixFormat;
 typedef matrix::SparseMatrixVectorFormat SparseMatrixVectorFormat;
 
@@ -30,7 +29,7 @@ CostAndGradientFunction::CostAndGradientFunction(const SparseMatrixVectorFormat&
 
 }
 
-static SparseMatrixVectorFormat convertToFormat(const BlockSparseMatrixVector& vector)
+static SparseMatrixVectorFormat convertToFormat(const MatrixVector& vector)
 {
 	SparseMatrixVectorFormat format;
 	
@@ -51,7 +50,7 @@ static SparseMatrixVectorFormat convertToFormat(const Matrix& matrix)
 	return format;
 }
 
-CostAndGradientFunction::CostAndGradientFunction(const BlockSparseMatrixVector& vector)
+CostAndGradientFunction::CostAndGradientFunction(const MatrixVector& vector)
 : format(convertToFormat(vector))
 {
 
@@ -68,15 +67,15 @@ CostAndGradientFunction::~CostAndGradientFunction()
 
 }
 
-BlockSparseMatrixVector CostAndGradientFunction::getUninitializedDataStructure() const
+MatrixVector CostAndGradientFunction::getUninitializedDataStructure() const
 {
-	BlockSparseMatrixVector vector;
+	MatrixVector vector;
 	
 	vector.reserve(format.size());
 	
 	for(auto& sparseMatrixFormat : format)
 	{
-		vector.push_back(BlockSparseMatrix(sparseMatrixFormat.blocks,
+		vector.push_back(Matrix(sparseMatrixFormat.blocks,
 			sparseMatrixFormat.rowsPerBlock,
 			sparseMatrixFormat.columnsPerBlock,
 			sparseMatrixFormat.isRowSparse));

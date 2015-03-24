@@ -30,10 +30,10 @@ private:
 	virtual ResultVector runOnBatch(Matrix&& input, Matrix&& reference);
 
 private:
-	float _samples;
-	float _mean;
-	float _standardDeviation;
-	float _sumOfSquaresOfDifferences;
+	double _samples;
+	double _mean;
+	double _standardDeviation;
+	double _sumOfSquaresOfDifferences;
 
 };
 

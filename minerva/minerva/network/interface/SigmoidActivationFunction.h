@@ -10,7 +10,7 @@
 #include <minerva/network/interface/ActivationFunction.h>
 
 // Forward Declarations
-namespace minerva { namespace matrix { class BlockSparseMatrix; } }
+namespace minerva { namespace matrix { class Matrix; } }
 
 namespace minerva
 {
@@ -21,17 +21,17 @@ namespace network
 class SigmoidActivationFunction : public ActivationFunction
 {
 public:
-	typedef matrix::BlockSparseMatrix BlockSparseMatrix;
+	typedef matrix::Matrix Matrix;
 
 public:
 	virtual ~SigmoidActivationFunction();
 
 public:
 	/*! \brief Run the activation function on the specified input. */
-	virtual BlockSparseMatrix apply(const BlockSparseMatrix&) const;
+	virtual Matrix apply(const Matrix&) const;
 
 	/*! \brief Run the activation function derivative on the specified input. */
-	virtual BlockSparseMatrix applyDerivative(const BlockSparseMatrix&) const;
+	virtual Matrix applyDerivative(const Matrix&) const;
 
 public:
 	virtual ActivationFunction* clone() const;
