@@ -27,6 +27,9 @@ public:
 public:
 	size_t size() const;
 
+public:
+	bool operator==(const Precision&) const;
+
 private:
 	Type _type;
 
@@ -35,6 +38,9 @@ private:
 class HalfPrecision : public Precision
 {
 public:
+	typedef float type;
+
+public:
 	HalfPrecision();
 
 };
@@ -42,12 +48,18 @@ public:
 class SinglePrecision : public Precision
 {
 public:
+	typedef float type;
+
+public:
 	SinglePrecision();
 
 };
 
 class DoublePrecision : public Precision
 {
+public:
+	typedef double type;
+
 public:
 	DoublePrecision();
 

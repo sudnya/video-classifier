@@ -9,6 +9,12 @@
 // Minerva Includes
 #include <minerva/network/interface/Layer.h>
 
+// Standard Library Includes
+#include <memory>
+
+// Fordward Declarations
+namespace minerva { namespace network { class Precision; } }
+
 namespace minerva
 {
 namespace network
@@ -65,7 +71,7 @@ public:
 	virtual std::string getTypeName() const;
 
 private:
-	MatrixVector _parameters;
+	std::unique_ptr<MatrixVector> _parameters;
 
 private:
 	Matrix& _weights;

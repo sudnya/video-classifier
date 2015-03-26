@@ -32,6 +32,7 @@ class Matrix
 public:
 	Matrix();
 	Matrix(const Dimension& size);
+	Matrix(const Dimension& size, const Precision& precision);
 	Matrix(const Dimension& size, const Dimension& stride);
 	Matrix(const Dimension& size, const Dimension& stride, const Precision& precision);
 	Matrix(const Dimension& size, const Dimension& stride, const Precision& precision, const std::shared_ptr<Allocation>& allocation);
@@ -58,6 +59,13 @@ public:
 
 public:
 	std::shared_ptr<Allocation> allocation();
+
+public:
+	      void* data();
+	const void* data() const;
+
+public:
+	bool isContiguous() const;
 
 public:
     std::string toString() const;

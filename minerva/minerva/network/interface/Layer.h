@@ -11,6 +11,7 @@
 
 // Forward Declarations
 namespace minerva { namespace matrix  { class Matrix;                 } }
+namespace minerva { namespace matrix  { class MatrixVector;           } }
 namespace minerva { namespace network { class ActivationFunction;     } }
 namespace minerva { namespace network { class ActivationCostFunction; } }
 namespace minerva { namespace network { class WeightCostFunction;     } }

@@ -1,6 +1,8 @@
 
 #pragma once
 
+#include <minerva/parallel/interface/ConcurrentCollectives.h>
+
 namespace minerva
 {
 namespace parallel
@@ -22,7 +24,8 @@ void launchCudaKernel(FunctionType function)
 	size_t ctasPerSM = 0;
 	size_t threads   = 128;
 
-	checkCudaErrors(cudaOccupancyMaxActiveBlocksPerMultiprocessor(static_cast<int*>(&ctasPerSM), kernelLauncher<FunctionType>, threads, 0));
+	checkCudaErrors(cudaOccupancyMaxActiveBlocksPerMultiprocessor(
+		static_cast<int*>(&ctasPerSM), kernelLauncher<FunctionType>, threads, 0));
 
 	size_t multiprocessorCount = 0;
 	

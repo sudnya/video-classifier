@@ -12,9 +12,7 @@
 #include <minerva/network/interface/WeightCostFunction.h>
 
 #include <minerva/matrix/interface/Matrix.h>
-#include <minerva/matrix/interface/Matrix.h>
-
-#include <minerva/matrix/interface/SparseMatrixFormat.h>
+#include <minerva/matrix/interface/MatrixVector.h>
 
 #include <minerva/util/interface/debug.h>
 #include <minerva/util/interface/knobs.h>
@@ -29,8 +27,8 @@ typedef matrix::Matrix Matrix;
 typedef matrix::MatrixVector MatrixVector;
 
 FeedForwardLayer::FeedForwardLayer(size_t inputs, size_t outputs)
-: _parameters({Matrix(Dimension(inputs, outputs)), Matrix(Dimension(outputs))}), 
- _weights(_parameters[0]), _bias(_parameters[1])
+: _parameters(std::make_unique<MatrixVector>({Matrix(Dimension(inputs, outputs)), Matrix(Dimension(outputs))})), 
+ _weights(*_parameters[0]), _bias(*_parameters[1])
 {
 
 }
@@ -42,7 +40,7 @@ FeedForwardLayer::~FeedForwardLayer()
 
 void FeedForwardLayer::initialize()
 {
-	double e = util::KnobDatabase::getKnobValue("Layer::RandomInitializationEpsilon", 0.3);
+	double e = util::KnobDatabase::getKnobValue("Layer::RandomInitializationEpsilon", 6);
 
 	double epsilon = std::sqrt((e) / (getInputCount() + getOutputCount() + 1));
 	

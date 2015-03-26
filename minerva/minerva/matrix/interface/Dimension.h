@@ -25,6 +25,8 @@ public:
 	{
 		fill(_storage, _arity, args...);
 	}
+	
+	Dimension();
 
 	Dimension(std::initializer_list<size_t>);
 	Dimension(const Dimension& );
@@ -52,6 +54,9 @@ public:
 
 public:
 	std::string toString() const;
+
+public:
+	bool operator==(const Dimension& ) const;
 
 private:
 	template<typename T>

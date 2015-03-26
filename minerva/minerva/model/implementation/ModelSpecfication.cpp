@@ -34,12 +34,7 @@ public:
 	void initializeModel(Model& model);
 
 private:
-	
-
-private:
 	std::unique_ptr<util::json::Object> _specification;
-
-	std::default_random_engine _randomEngine;
 };
 
 
@@ -207,7 +202,7 @@ void ModelSpecificationImplementation::initializeModel(Model& model)
 			}
 		}
 		
-		network.initializeRandomly(_randomEngine);
+		network.initialize();
 					
 		model.setNeuralNetwork(name, network);
 	}

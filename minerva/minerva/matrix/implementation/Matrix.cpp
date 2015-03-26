@@ -168,12 +168,12 @@ static void* getAddress(const Dimension& stride, const Dimension& position, void
 	
 FloatReference Matrix::operator[](const Dimension& d)
 {
-	return FloatReference(getAddress(stride(), d, _data_begin, precision), _precision);
+	return FloatReference(precision(), getAddress(stride(), d, _data_begin, precision()));
 }
 
 ConstFloatReference Matrix::operator[](const Dimension& d) const
 {
-	return ConstFloatReference(getAddress(stride(), d, _data_begin, precision), _precision);
+	return ConstFloatReference(precision(), getAddress(stride(), d, _data_begin, precision()));
 }
 
 }

@@ -45,7 +45,8 @@ public:
 public:
 	Operation(Type t);
 
-
+public:
+	bool operator==(const Operation&) const;
 
 };
 
@@ -64,13 +65,13 @@ public:
 
 public:
 	template<typename T>
-	CUDA_DECORATOR T operator()(const T& l, const T& r)
+	CUDA_DECORATOR T operator()(const T& l, const T& r) const
 	{
 		return l + r;
 	}
 	
 	template<typename T>
-	CUDA_DECORATOR T operator()(const T& r)
+	CUDA_DECORATOR T operator()(const T& r) const
 	{
 		return _value + r;
 	}
@@ -95,13 +96,13 @@ public:
 
 public:
 	template<typename T>
-	CUDA_DECORATOR T operator()(const T& l, const T& r)
+	CUDA_DECORATOR T operator()(const T& l, const T& r) const
 	{
 		return l * r;
 	}
 	
 	template<typename T>
-	CUDA_DECORATOR T operator()(const T& r)
+	CUDA_DECORATOR T operator()(const T& r) const
 	{
 		return _value * r;
 	}
@@ -112,6 +113,8 @@ private:
 };
 
 typedef std::tuple<Add, Multiply> AllOperations;
+
+typedef std::tuple<Add, Multiply> AllBinaryOperations;
 
 }
 }

@@ -1,8 +1,16 @@
 
 // Minerva Includes
 #include <minerva/matrix/interface/MatrixOperations.h>
+#include <minerva/matrix/interface/MatrixTransformations.h>
+#include <minerva/matrix/interface/Matrix.h>
+#include <minerva/matrix/interface/Operation.h>
 
 #include <minerva/parallel/interface/MultiBulkSynchronousParallel.h>
+
+#include <minerva/util/interface/Metaprogramming.h>
+
+// Standard Library Includes
+#include <tuple>
 
 namespace minerva
 {
@@ -12,26 +20,28 @@ namespace matrix
 namespace detail
 {
 
-template<typename T>
-template<typename std::tuple<T>, typename OperationType>
-void applyOverPrecisions(Matrix& result, const Matrix& left, const Matrix& right, const Operation& op, const Precision& precision)
+template<typename OperationType, typename T>
+void applyOverPrecisions(Matrix& result, const Matrix& left, const Matrix& right,
+	const Operation& op, const Precision& precision, std::tuple<T> precisions)
 {
-	typedef T PrecisionType;
-	typedef typename PrecisionType::type PrecisionPrimitive;
+	typedef T PrecisionPrimitive;
+	typedef typename PrecisionPrimitive::type NativeType;
 
-	assert(precision == PrecisionType());
+	assert(precision == PrecisionPrimitive());
 	
 	auto nativeOperation = static_cast<const OperationType&>(op);
 	
-	auto rawResult = static_cast<PrecisionPrimitive>(result.data());
-	auto rawLeft   = static_cast<PrecisionPrimitive>(left.data());
-	auto rawRight  = static_cast<PrecisionPrimitive>(right.data());
+	assert(result.isContiguous() && left.isContiguous() && right.isContiguous()); // TODO: handle complex strides
+	
+	auto rawResult = static_cast<NativeType*>(result.data());
+	auto rawLeft   = static_cast<const NativeType*>(left.data());
+	auto rawRight  = static_cast<const NativeType*>(right.data());
 	
 	auto flattenedResult = flatten(result);
 	
 	size_t elements = flattenedResult.elements();
 
-	multiBulkSynchronousParallel([=](ThreadGroup threadGroup)
+	parallel::multiBulkSynchronousParallel([=](parallel::ThreadGroup threadGroup)
 	{
 		for(size_t i = threadGroup.id(); i < elements; i += threadGroup.size())
 		{
@@ -40,55 +50,59 @@ void applyOverPrecisions(Matrix& result, const Matrix& left, const Matrix& right
 	});
 }
 
-template<typename PossiblePrecisions, template OperationType>
-void applyOverPrecisions(Matrix& result, const Matrix& left, const Matrix& right, const Operation& op, const Precision& precision)
+template<typename OperationType, typename PossiblePrecisions>
+void applyOverPrecisions(Matrix& result, const Matrix& left, const Matrix& right, const Operation& op,
+	const Precision& precision, PossiblePrecisions precisions)
 {
-	typedef std::tuple_element<0, decltype(PossiblePrecisions)>::type PossiblePrecisionType;
+	typedef typename std::tuple_element<0, PossiblePrecisions>::type PossiblePrecisionType;
 
 	if(precision == PossiblePrecisionType())
 	{
-		applyOverPrecisions<std::tuple<PossiblePrecisionType>, OperationType>(result, left, right, op, precision);
+		applyOverPrecisions<OperationType>(result, left, right, op, precision,
+			std::tuple<PossiblePrecisionType>());
 	}
 	else
 	{
-		typedef RemoveFirstType<PossiblePrecisions>::type RemainingOperations;
+		typedef typename util::RemoveFirstType<PossiblePrecisions>::type RemainingPrecisions;
 		
-		applyOverPrecisions<RemainingPrecisions, OperationType>(result, left, right, op, precision);
+		applyOverPrecisions<OperationType>(result, left, right, op, precision, RemainingPrecisions());
 	}
 }
 
 
 template<typename T>
-template<std::tuple<T>>
-void applyOverOperations(Matrix& result, const Matrix& left, const Matrix& right, const Operation& op, const Precision& precision)
+void applyOverOperations(Matrix& result, const Matrix& left, const Matrix& right, const Operation& op,
+	const Precision& precision, const std::tuple<T>& operations)
 {
 	typedef T PossibleOperationType;
 
 	assert(op == PossibleOperationType());
 	
-	applyOverPrecisions<AllPrecisions, PossibleOperationType>(result, left, right, op, precision);
+	applyOverPrecisions<PossibleOperationType, AllPrecisions>(result, left, right, op, precision, AllPrecisions());
 }
 
 template<typename PossibleOperations>
-void applyOverOperations(Matrix& result, const Matrix& left, const Matrix& right, const Operation& op, const Precision& precision)
+void applyOverOperations(Matrix& result, const Matrix& left, const Matrix& right,
+	const Operation& op, const Precision& precision, const PossibleOperations& operations)
 {
-	typedef std::tuple_element<0, decltype(PossibleOperations)>::type PossibleOperationType;
+	typedef typename std::tuple_element<0, PossibleOperations>::type PossibleOperationType;
 
 	if(op == PossibleOperationType())
 	{
-		applyOverPrecisions<AllPrecisions, PossibleOperationType>(result, left, right, op, precision);
+		applyOverOperations(result, left, right, op, precision, std::tuple<PossibleOperationType>());
 	}
 	else
 	{
-		typedef RemoveFirstType<PossibleOperations>::type RemainingOperations;
+		typedef typename util::RemoveFirstType<PossibleOperations>::type RemainingOperations;
 		
-		applyOverOperations<RemainingOperations>(result, left, right, op, precision);
+		applyOverOperations(result, left, right, op, precision, RemainingOperations());
 	}
 }
 
-void applyOverOperations(Matrix& result, const Matrix& left, const Matrix& right, const Operation& op, const Precision& precision)
+void applyOverOperations(Matrix& result, const Matrix& left, const Matrix& right,
+	const Operation& op, const Precision& precision)
 {
-	applyOverOperations<AllBinaryOperations>(result, left, right, op, precision);
+	applyOverOperations<AllBinaryOperations>(result, left, right, op, precision, AllBinaryOperations());
 }
 
 }
@@ -114,12 +128,12 @@ Matrix apply(const Matrix& left, const Matrix& right, const Operation& op)
 
 void apply(Matrix& result, const Matrix& input, const Operation& op)
 {
-	auto precision = input.precision();
+	//auto precision = input.precision();
 	
-	detail::applyOverOperations(result, input, op, precision);
+	//detail::applyOverOperations(result, input, op, precision);
 }
 
-Matrix apply(Matrix& result, const Matrix& input, const Operation& op)
+Matrix apply(const Matrix& input, const Operation& op)
 {
 	Matrix result(input.size());
 	
@@ -137,29 +151,22 @@ Matrix broadcast(const Matrix& left, const Matrix& right, const Operation& op);
 void copy(Matrix& result, const Matrix& input);
 Matrix copy(const Matrix& input);
 
-void copy(Matrix& result, const Matrix& input, const Precision&)
-{
+void copy(Matrix& result, const Matrix& input, const Precision&);
 
-}
-
-Matrix copy(const Matrix& input, const Precision& )
+Matrix copy(const Matrix& input, const Precision& precision)
 {
-	Matrix result(input.size());
+	Matrix result(input.size(), precision);
 	
-	if(hasCudaSupport())
-	{
-		
-	}
+	copy(result, input, precision);
+	
+	return result;
 }
  
 Matrix slice(Matrix input, const Dimension& begin, const Dimension& end);
 Matrix slice(Matrix input, const Dimension& begin, const Dimension& end, const Dimension& stride);
 Matrix resize(Matrix input, const Dimension& size);
 
-Matrix reshape(Matrix input, const Dimension& size)
-{
-	
-}
+Matrix reshape(Matrix input, const Dimension& size);
 
 void gemm(Matrix& result, const Matrix& left, const Matrix& right);
 Matrix gemm(const Matrix& left, const Matrix& right);
