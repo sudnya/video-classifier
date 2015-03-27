@@ -13,7 +13,7 @@
 #include <memory>
 
 // Fordward Declarations
-namespace minerva { namespace network { class Precision; } }
+namespace minerva { namespace matrix { class Precision; } }
 
 namespace minerva
 {
@@ -24,7 +24,7 @@ namespace network
 class FeedForwardLayer : public Layer
 {
 public:
-	FeedForwardLayer(size_t inputs, size_t outputs, const Precision&);
+	FeedForwardLayer(size_t inputs, size_t outputs, const matrix::Precision&);
     virtual ~FeedForwardLayer();
 
 public:

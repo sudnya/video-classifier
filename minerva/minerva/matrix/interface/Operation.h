@@ -112,9 +112,31 @@ private:
 
 };
 
+class Fill : public Operation
+{
+public:
+	CUDA_DECORATOR Fill(double d) : Operation(Operation::Fill), _value(d)
+	{
+		
+	}
+
+public:
+	template<typename T>
+	CUDA_DECORATOR T operator()(const T& r) const
+	{
+		return _value;
+	}
+	
+private:
+	double _value;
+
+};
+
 typedef std::tuple<Add, Multiply> AllOperations;
 
 typedef std::tuple<Add, Multiply> AllBinaryOperations;
+
+typedef std::tuple<Add, Multiply, Fill> AllUnaryOperations;
 
 }
 }

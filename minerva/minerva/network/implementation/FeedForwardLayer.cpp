@@ -12,10 +12,17 @@
 #include <minerva/network/interface/WeightCostFunction.h>
 
 #include <minerva/matrix/interface/Matrix.h>
+#include <minerva/matrix/interface/MatrixOperations.h>
+#include <minerva/matrix/interface/RandomOperations.h>
+#include <minerva/matrix/interface/Operation.h>
 #include <minerva/matrix/interface/MatrixVector.h>
 
 #include <minerva/util/interface/debug.h>
 #include <minerva/util/interface/knobs.h>
+#include <minerva/util/interface/memory.h>
+
+// Standard Library Includes
+#include <memory>
 
 namespace minerva
 {
@@ -26,9 +33,9 @@ namespace network
 typedef matrix::Matrix Matrix;
 typedef matrix::MatrixVector MatrixVector;
 
-FeedForwardLayer::FeedForwardLayer(size_t inputs, size_t outputs)
-: _parameters(std::make_unique<MatrixVector>({Matrix(Dimension(inputs, outputs)), Matrix(Dimension(outputs))})), 
- _weights(*_parameters[0]), _bias(*_parameters[1])
+FeedForwardLayer::FeedForwardLayer(size_t inputs, size_t outputs, const matrix::Precision& precision)
+: _parameters(new MatrixVector({Matrix({inputs, outputs}, precision), Matrix({outputs}, precision)})), 
+ _weights((*_parameters)[0]), _bias((*_parameters)[1])
 {
 
 }
@@ -44,11 +51,11 @@ void FeedForwardLayer::initialize()
 
 	double epsilon = std::sqrt((e) / (getInputCount() + getOutputCount() + 1));
 	
-	rand(_weights);
-	apply(_weights, _weights, Multiply(epsilon));
+	matrix::rand(_weights);
+	apply(_weights, _weights, matrix::Multiply(epsilon));
 
 	// assign bias to 0.0f
-	apply(_bias, Fill(0.0f));
+	apply(_bias, _bias, matrix::Fill(0.0f));
 }
 
 Matrix FeedForwardLayer::runForward(const Matrix& m) const

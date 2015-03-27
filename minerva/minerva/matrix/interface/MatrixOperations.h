@@ -24,9 +24,6 @@ Matrix reduce(const Matrix& left, const Matrix& right, const Dimension& d, const
 void broadcast(Matrix& result, const Matrix& left, const Matrix& right, const Operation& op);
 Matrix broadcast(const Matrix& left, const Matrix& right, const Operation& op);
 
-void fill(Matrix& result, const Operation& op);
-Matrix fill(const Operation& op, const Precision& precision);
-
 void zeros(Matrix& result);
 Matrix zeros(const Dimension& size, const Precision& precision);
 
