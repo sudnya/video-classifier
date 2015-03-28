@@ -8,6 +8,8 @@
 #include <minerva/network/interface/SigmoidActivationFunction.h>
 
 #include <minerva/matrix/interface/Matrix.h>
+#include <minerva/matrix/interface/MatrixOperations.h>
+#include <minerva/matrix/interface/Operation.h>
 
 namespace minerva
 {
@@ -24,12 +26,12 @@ SigmoidActivationFunction::~SigmoidActivationFunction()
 
 Matrix SigmoidActivationFunction::apply(const Matrix& activations) const
 {
-	return apply(activations, Sigmoid());
+	return matrix::apply(activations, matrix::Sigmoid());
 }
 
 Matrix SigmoidActivationFunction::applyDerivative(const Matrix& activations) const
 {
-	return apply(activations, SigmoidDerivative();
+	return matrix::apply(activations, matrix::SigmoidDerivative());
 }
 
 ActivationFunction* SigmoidActivationFunction::clone() const

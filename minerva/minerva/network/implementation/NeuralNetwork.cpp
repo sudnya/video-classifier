@@ -13,6 +13,9 @@
 #include <minerva/optimizer/interface/NeuralNetworkSolver.h>
 
 #include <minerva/matrix/interface/Matrix.h>
+#include <minerva/matrix/interface/MatrixVector.h>
+#include <minerva/matrix/interface/Operation.h>
+#include <minerva/matrix/interface/MatrixOperations.h>
 
 #include <minerva/util/interface/Knobs.h>
 #include <minerva/util/interface/debug.h>
@@ -42,59 +45,19 @@ NeuralNetwork::~NeuralNetwork()
 
 }
 
-void NeuralNetwork::initializeRandomly(std::default_random_engine& engine, float epsilon)
+void NeuralNetwork::initialize()
 {
 	util::log("NeuralNetwork") << "Initializing neural network randomly.\n";
 	
 	for(auto& layer : *this)
 	{
-		layer->initializeRandomly(engine, epsilon);
+		layer->initialize();
 	}
 }
 
-void NeuralNetwork::initializeRandomly(float epsilon)
+double NeuralNetwork::getCostAndGradient(MatrixVector& gradient, const Matrix& input, const Matrix& reference) const
 {
-	std::default_random_engine engine(std::time(0));
-	
-	initializeRandomly(engine, epsilon);
-}
-
-void NeuralNetwork::train(const Matrix& inputMatrix, const Matrix& referenceOutput)
-{
-	auto inputData     = convertToBlockSparseForLayerInput(*front(), inputMatrix);
-	auto referenceData = convertToBlockSparseForLayerOutput(*back(),  referenceOutput);
-	
-	train(inputData, referenceData);
-}
-
-void NeuralNetwork::train(Matrix&& inputMatrix, Matrix&& referenceOutput)
-{
-	auto inputData     = convertToBlockSparseForLayerInput(*front(), inputMatrix);
-	auto referenceData = convertToBlockSparseForLayerOutput(*back(),  referenceOutput);
-	
-	inputMatrix.clear();
-	referenceOutput.clear();
-	
-	train(inputData, referenceData);
-}
-
-void NeuralNetwork::train(BlockSparseMatrix& input, BlockSparseMatrix& reference)
-{
-	//create a backpropagate-data class
-	//given the neural network, inputs & reference outputs 
-	util::log("NeuralNetwork") << "Running back propagation on input matrix (" << input.rows() << ") rows, ("
-	   << input.columns() << ") columns. Using reference output of (" << reference.rows() << ") rows, ("
-	   << reference.columns() << ") columns. \n";
-
-	getSolver()->setInput(&input);
-	getSolver()->setReference(&reference);
-	
-	getSolver()->solve();
-}
-
-float NeuralNetwork::getCostAndGradient(BlockSparseMatrixVector& gradient, const BlockSparseMatrix& input, const BlockSparseMatrix& reference) const
-{
-	BlockSparseMatrixVector activations;
+	MatrixVector activations;
 
 	activations.push_back(input);
 
@@ -119,12 +82,10 @@ float NeuralNetwork::getCostAndGradient(BlockSparseMatrixVector& gradient, const
 	
 	for(auto layer = rbegin(); layer != rend(); ++layer, ++activation)
 	{
-		BlockSparseMatrixVector grad;
+		MatrixVector grad;
 
 		auto previousActivation = activation; ++previousActivation;
 		
-		formatOutputForLayer(**layer, delta);
-
 		delta = (*layer)->runReverse(grad, *previousActivation, *activation, delta);
 		
 		for(auto gradMatrix = grad.rbegin(); gradMatrix != grad.rend(); ++gradMatrix, ++gradientMatrix)
@@ -133,19 +94,19 @@ float NeuralNetwork::getCostAndGradient(BlockSparseMatrixVector& gradient, const
 		}
 	}
 	
-	float weightCost = 0.0f;
+	auto weightCost = 0.0;
 	
 	for(auto& layer : *this)
 	{
 		weightCost += layer->computeWeightCost();
 	}
 	
-	return weightCost + getCostFunction()->computeCost(activations.back(), reference).reduceSum();
+	return weightCost + reduce(getCostFunction()->computeCost(activations.back(), reference), {}, matrix::Add())[0];
 }
 	
-float NeuralNetwork::getInputCostAndGradient(BlockSparseMatrix& gradient, const BlockSparseMatrix& input, const BlockSparseMatrix& reference) const
+double NeuralNetwork::getInputCostAndGradient(Matrix& gradient, const Matrix& input, const Matrix& reference) const
 {
-	BlockSparseMatrixVector activations;
+	MatrixVector activations;
 
 	activations.push_back(input);
 
@@ -162,40 +123,28 @@ float NeuralNetwork::getInputCostAndGradient(BlockSparseMatrix& gradient, const 
 	
 	for(auto layer = rbegin(); layer != rend(); ++layer, ++activation)
 	{
-		BlockSparseMatrixVector grad;
+		MatrixVector grad;
 
 		auto nextActivation = activation; ++nextActivation;
-		
-		formatOutputForLayer(**layer, delta);
 		
 		delta = (*layer)->runReverse(grad, *nextActivation, *activation, delta);
 	}
 	
-	auto samples = activation->rows();
+	auto samples = activation->size()[2];
 	
-	gradient = delta.multiply(1.0f / samples);
+	gradient = apply(delta, matrix::Multiply(1.0 / samples));
 	
-	float weightCost = 0.0f;
+	auto weightCost = 0.0;
 	
 	for(auto& layer : *this)
 	{
 		weightCost += layer->computeWeightCost();
 	}
 	
-	return weightCost + getCostFunction()->computeCost(activations.back(), reference).reduceSum();
+	return weightCost + reduce(getCostFunction()->computeCost(activations.back(), reference), {}, matrix::Add())[0];
 }
 
-float NeuralNetwork::getInputCostAndGradient(BlockSparseMatrix& gradient, const Matrix& input, const Matrix& reference) const
-{
-	auto tempInput     = convertToBlockSparseForLayerInput(*front(), input);
-	auto tempReference = convertToBlockSparseForLayerOutput(*back(), reference);
-	
-	float cost = getInputCostAndGradient(gradient, tempInput, tempReference);
-
-	return cost;
-}
-
-float NeuralNetwork::getCost(const BlockSparseMatrix& input, const BlockSparseMatrix& reference) const
+double NeuralNetwork::getCost(const Matrix& input, const Matrix& reference) const
 {
 	auto result = runInputs(input);
 	
@@ -206,41 +155,14 @@ float NeuralNetwork::getCost(const BlockSparseMatrix& input, const BlockSparseMa
 		weightCost += layer->computeWeightCost();
 	}
 	
-	return weightCost + getCostFunction()->computeCost(result, reference).reduceSum();
-}
-
-float NeuralNetwork::getCostAndGradient(BlockSparseMatrixVector& gradient, const Matrix& input, const Matrix& reference) const
-{
-	auto tempInput     = convertToBlockSparseForLayerInput(*front(), input);
-	auto tempReference = convertToBlockSparseForLayerOutput(*back(), reference);
-	
-	float cost = getCostAndGradient(gradient, tempInput, tempReference);
-
-	return cost;
-}
-
-float NeuralNetwork::getCost(const Matrix& input, const Matrix& reference) const
-{
-	auto tempInput     = convertToBlockSparseForLayerInput(*front(), input);
-	auto tempReference = convertToBlockSparseForLayerOutput(*back(), reference);
-	
-	float cost = getCost(tempInput, tempReference);
-
-	return cost;
+	return weightCost + reduce(getCostFunction()->computeCost(result, reference), {}, matrix::Add())[0];
 }
 
 NeuralNetwork::Matrix NeuralNetwork::runInputs(const Matrix& m) const
 {
-	auto temp = convertToBlockSparseForLayerInput(*front(), m);
-
-	return runInputs(temp).toMatrix();
-}
-
-NeuralNetwork::BlockSparseMatrix NeuralNetwork::runInputs(const BlockSparseMatrix& m) const
-{
 	auto temp = m;
 
-	for (auto i = _layers.begin(); i != _layers.end(); ++i)
+	for (auto i = begin(); i != end(); ++i)
 	{
 		util::log("NeuralNetwork") << " Running forward propagation through layer "
 			<< std::distance(_layers.begin(), i) << "\n";
@@ -249,11 +171,6 @@ NeuralNetwork::BlockSparseMatrix NeuralNetwork::runInputs(const BlockSparseMatri
 	}
 
 	return temp;
-}
-
-void NeuralNetwork::addLayer(Layer* l)
-{
-	_layers.push_back(LayerPointer(l));
 }
    
 void NeuralNetwork::addLayer(std::unique_ptr<Layer>&& l)
@@ -306,7 +223,6 @@ bool NeuralNetwork::empty() const
 	return _layers.empty();
 }
 
-
 size_t NeuralNetwork::getInputCount() const
 {
 	if(empty())
@@ -317,49 +233,34 @@ size_t NeuralNetwork::getInputCount() const
 
 size_t NeuralNetwork::getOutputCount() const
 {
-	return getOutputCountForInputCount(getInputCount());
-}
-
-size_t NeuralNetwork::getOutputCountForInputCount(
-	size_t inputCount) const
-{
-	if(empty())
-		return 0;
-	
-	size_t outputCount = inputCount;
-	
-	for(auto& layer : *this)
-	{
-		outputCount = layer->getOutputCountForInputCount(outputCount);
-	}
-	
-	return outputCount;
-}
-
-size_t NeuralNetwork::getInputBlockingFactor() const
-{
 	if(empty())
 		return 0;
 
-	return front()->getInputBlockingFactor();
-}
-
-size_t NeuralNetwork::getOutputBlockingFactor() const
-{
-	if(empty())
-		return 0;
-
-	return back()->getOutputBlockingFactor();
+	return back()->getOutputCount();
 }
 
 size_t NeuralNetwork::totalNeurons() const
 {
-	return totalActivations();
+	size_t activations = 0;
+	
+	for(auto& layer : *this)
+	{
+		activations += layer->getOutputCount();
+	}
+	
+	return activations;
 }
 
 size_t NeuralNetwork::totalConnections() const
 {
-	return totalWeights();
+	size_t weights = 0;
+	
+	for(auto& layer : *this)
+	{
+		weights += layer->totalConnections();
+	}
+	
+	return weights;
 }
 
 size_t NeuralNetwork::getFloatingPointOperationCount() const
@@ -374,35 +275,12 @@ size_t NeuralNetwork::getFloatingPointOperationCount() const
 	return flops;
 }
 
-size_t NeuralNetwork::totalWeights() const
+void NeuralNetwork::train(const Matrix& input, const Matrix& reference)
 {
-	size_t weights = 0;
+	getSolver()->setInput(&input);
+	getSolver()->setReference(&reference);
 	
-	for(auto& layer : *this)
-	{
-		weights += layer->totalConnections();
-	}
-	
-	return weights;
-}
-
-size_t NeuralNetwork::totalActivations() const
-{
-	size_t activations = 0;
-	size_t inputCount  = 0;
-
-	if(!empty())
-	{
-		inputCount = front()->getInputCount();
-	}
-	
-	for(auto& layer : *this)
-	{
-		inputCount   = layer->getOutputCountForInputCount(inputCount);
-		activations += inputCount;
-	}
-	
-	return activations;
+	getSolver()->solve();
 }
 
 NeuralNetwork::iterator NeuralNetwork::begin()
@@ -443,51 +321,6 @@ NeuralNetwork::reverse_iterator NeuralNetwork::rend()
 NeuralNetwork::const_reverse_iterator NeuralNetwork::rend() const
 {
 	return _layers.rend();
-}
-
-NeuralNetwork NeuralNetwork::getSubgraphConnectedToThisOutput(
-	unsigned neuron) const
-{
-	NeuralNetworkSubgraphExtractor extractor(const_cast<NeuralNetwork*>(this));
-	
-	return extractor.copySubgraphConnectedToThisOutput(neuron);
-}
-
-void NeuralNetwork::extractWeights(BlockSparseMatrixVector& weights)
-{
-	for(auto& layer : *this)
-	{
-		layer->extractWeights(weights);
-	}
-}
-
-void NeuralNetwork::restoreWeights(BlockSparseMatrixVector&& weights)
-{
-	for(auto layer = rbegin(); layer != rend(); ++layer)
-	{
-		(*layer)->restoreWeights(std::move(weights));
-	}
-}
-
-NeuralNetwork::SparseMatrixVectorFormat NeuralNetwork::getWeightFormat() const
-{
-	matrix::SparseMatrixVectorFormat format;
-	
-	for(auto& layer : *this)
-	{
-		auto layerFormat = layer->getWeightFormat();
-		
-		format.insert(format.end(), layerFormat.begin(), layerFormat.end());
-	}
-	
-	return format;
-}
-
-NeuralNetwork::SparseMatrixVectorFormat NeuralNetwork::getInputFormat() const
-{
-	return {SparseMatrixFormat(front()->getBlocks(),
-				front()->getInputBlockingFactor(),
-				front()->getOutputBlockingFactor())};
 }
 	
 void NeuralNetwork::setCostFunction(CostFunction* f)
@@ -535,9 +368,7 @@ std::string NeuralNetwork::shapeString() const
 	std::stringstream stream;
 	
 	stream << "Neural Network [" << size() << " layers, " << getInputCount()
-		<< " inputs (" << getInputBlockingFactor() << " way blocked), "
-		<< getOutputCount() << " outputs (" << getOutputBlockingFactor()
-		<< " way blocked)]\n";
+		<< " inputs, " << getOutputCount() << " outputs ]\n";
 
 	for(auto& layer : *this)
 	{
@@ -576,75 +407,6 @@ NeuralNetwork& NeuralNetwork::operator=(const NeuralNetwork& n)
 	}
 	
 	return *this;
-}
-
-NeuralNetwork::BlockSparseMatrix NeuralNetwork::convertToBlockSparseForLayerInput(
-	const Layer& layer, const Matrix& m) const
-{
-	assert(m.columns() % layer.getInputCount() == 0);
-	
-	BlockSparseMatrix result;
-
-	size_t blockingFactor = layer.getInputBlockingFactor();
-
-	for(size_t column = 0; column < m.columns(); column += blockingFactor)
-	{
-		size_t columns = std::min(m.columns() - column, blockingFactor);
-		
-		result.push_back(m.slice(0, column, m.rows(), columns));
-	}
-	
-	result.setColumnSparse();
-
-	return result;
-}
-
-void NeuralNetwork::formatInputForLayer(const Layer& layer, BlockSparseMatrix& m) const
-{
-	//assertM(layer.getInputCount() == m.columns(), "Layer input count "
-	//	<< layer.getInputCount() << " does not match the input count "
-	//	<< m.columns());
-	assert(m.columns() % layer.getInputCount() == 0);
-	
-	if(layer.getBlocks() == m.blocks()) return;
-
-	assert(m.isColumnSparse());
-
-	// TODO: faster
-	m = convertToBlockSparseForLayerInput(layer, m.toMatrix());
-}
-
-void NeuralNetwork::formatOutputForLayer(const Layer& layer, BlockSparseMatrix& m) const
-{
-	assert(m.columns() % layer.getOutputCount() == 0);
-	
-	if(layer.getBlocks() == m.blocks() && layer.getOutputBlockingFactor() == m.columnsPerBlock()) return;
-
-	assert(m.isColumnSparse());
-
-	// TODO: faster
-	m = convertToBlockSparseForLayerOutput(layer, m.toMatrix());
-}
-
-NeuralNetwork::BlockSparseMatrix NeuralNetwork::convertToBlockSparseForLayerOutput(
-	const Layer& layer, const Matrix& m) const
-{
-	assert(m.columns() % layer.getOutputCount() == 0);
-	
-	BlockSparseMatrix result;
-
-	size_t blockingFactor = layer.getOutputBlockingFactor();
-
-	for(size_t column = 0; column < m.columns(); column += blockingFactor)
-	{
-		size_t columns = std::min(m.columns() - column, blockingFactor);
-		
-		result.push_back(m.slice(0, column, m.rows(), columns));
-	}
-	
-	result.setColumnSparse();
-
-	return result;
 }
 
 }

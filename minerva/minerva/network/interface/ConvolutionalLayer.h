@@ -1,7 +1,7 @@
-/*  \file   RecurrentLayer.h
+/*  \file   ConvolutionalLayer.h
 	\author Gregory Diamos
  	\date   Dec 24, 2014
- 	\brief  The interface for the RecurrentLayer class.
+ 	\brief  The interface for the ConvolutionalLayer class.
 */
 
 #pragma once
@@ -15,16 +15,16 @@ namespace network
 {
 
 /* \brief An implementation of a generic recurrent layer. */
-class RecurrentLayer : public Layer
+class ConvolutionalLayer : public Layer
 {
 public:
-	RecurrentLayer();
-	RecurrentLayer(size_t inputs, size_t outputs, const matrix::Precision&);
-    virtual ~RecurrentLayer();
+	ConvolutionalLayer();
+	ConvolutionalLayer(size_t inputs, size_t outputs, const matrix::Precision&);
+    virtual ~ConvolutionalLayer();
 
 public:
-	RecurrentLayer(const RecurrentLayer& );
-	RecurrentLayer& operator=(const RecurrentLayer&);
+	ConvolutionalLayer(const ConvolutionalLayer& );
+	ConvolutionalLayer& operator=(const ConvolutionalLayer&);
 
 public:
     virtual void initialize();
@@ -72,6 +72,7 @@ public:
 }
 
 }
+
 
 
 

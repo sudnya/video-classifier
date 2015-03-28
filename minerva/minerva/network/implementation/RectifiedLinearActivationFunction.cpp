@@ -8,6 +8,8 @@
 #include <minerva/network/interface/RectifiedLinearActivationFunction.h>
 
 #include <minerva/matrix/interface/Matrix.h>
+#include <minerva/matrix/interface/MatrixOperations.h>
+#include <minerva/matrix/interface/Operation.h>
 
 namespace minerva
 {
@@ -24,12 +26,12 @@ RectifiedLinearActivationFunction::~RectifiedLinearActivationFunction()
 
 Matrix RectifiedLinearActivationFunction::apply(const Matrix& activations) const
 {
-	return apply(activations, RectifiedLinear());
+	return matrix::apply(activations, matrix::RectifiedLinear());
 }
 
 Matrix RectifiedLinearActivationFunction::applyDerivative(const Matrix& activations) const
 {
-	return apply(activations, RectifiedLinearDerivative());
+	return matrix::apply(activations, matrix::RectifiedLinearDerivative());
 }
 
 ActivationFunction* RectifiedLinearActivationFunction::clone() const

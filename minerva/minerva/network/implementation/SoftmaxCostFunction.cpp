@@ -8,6 +8,8 @@
 #include <minerva/network/interface/SoftmaxCostFunction.h>
 
 #include <minerva/matrix/interface/Matrix.h>
+#include <minerva/matrix/interface/MatrixOperations.h>
+#include <minerva/matrix/interface/Operation.h>
 
 #include <minerva/util/interface/debug.h>
 

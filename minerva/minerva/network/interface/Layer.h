@@ -12,6 +12,7 @@
 // Forward Declarations
 namespace minerva { namespace matrix  { class Matrix;                 } }
 namespace minerva { namespace matrix  { class MatrixVector;           } }
+namespace minerva { namespace matrix  { class Precision;              } }
 namespace minerva { namespace network { class ActivationFunction;     } }
 namespace minerva { namespace network { class ActivationCostFunction; } }
 namespace minerva { namespace network { class WeightCostFunction;     } }
@@ -52,11 +53,14 @@ public:
     virtual const MatrixVector& weights() const = 0;
 
 public:
+	virtual const matrix::Precision& precision() const = 0;
+
+public:
 	virtual double computeWeightCost() const = 0;
 
 public:
-    virtual size_t getInputCount()  const = 0;
-    virtual size_t getOutputCount() const = 0;
+    virtual Dimension getInputSize()  const = 0;
+    virtual Dimension getOutputSize() const = 0;
 
 public:
     virtual size_t totalNeurons()	  const = 0;

@@ -110,8 +110,8 @@ std::string Layer::shapeString() const
 	std::stringstream stream;
 	
 	stream << "(" << getTypeName() << " type, "
-		<< getBlocks() << " blocks, " << getInputBlockingFactor()
-		<< " inputs, " << getOutputBlockingFactor() << " outputs)";
+		<< getInputCount()
+		<< " inputs, " << getOutputCount() << " outputs)";
 
 	return stream.str();
 }

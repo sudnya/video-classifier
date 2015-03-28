@@ -20,10 +20,11 @@ namespace minerva
 namespace network
 {
 
-/* \brief A neural network layer interface. */
+/* \brief An implementation of a generic fully connected feed forward layer. */
 class FeedForwardLayer : public Layer
 {
 public:
+	FeedForwardLayer();
 	FeedForwardLayer(size_t inputs, size_t outputs, const matrix::Precision&);
     virtual ~FeedForwardLayer();
 
@@ -44,6 +45,9 @@ public:
 public:
     virtual       MatrixVector& weights();
     virtual const MatrixVector& weights() const;
+
+public:
+	virtual const matrix::Precision& precision() const;
 
 public:
 	virtual double computeWeightCost() const;

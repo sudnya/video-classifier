@@ -74,7 +74,7 @@ Matrix FeedForwardLayer::runForward(const Matrix& m) const
 
 	auto unbiasedOutput = gemm(1.0, _weights, false, 1.0, m, false);
 
-	auto output = broadcast(unbiasedOutput, bias, {1}, Sum());
+	auto output = broadcast(unbiasedOutput, _bias, {1}, matrix::Add());
 
 	if(util::isLogEnabled("FeedForwardLayer::Detail"))
 	{
@@ -106,11 +106,9 @@ Matrix FeedForwardLayer::runReverse(MatrixVector& gradients,
 {
 	if(util::isLogEnabled("FeedForwardLayer"))
 	{
-		util::log("FeedForwardLayer") << " Running reverse propagation on matrix (" << difference.rows()
-			<< " rows, " << difference.columns() << " columns) through layer with dimensions ("
-			<< getBlocks() << " blocks, "
-			<< getInputCount() << " inputs, " << getOutputCount()
-			<< " outputs, " << _blockStep << " block step).\n";
+		util::log("FeedForwardLayer") << " Running reverse propagation on matrix (" << difference.size()[0]
+			<< " rows, " << difference.size()[1] << " columns) through layer with dimensions ("
+			<< getInputCount() << " inputs, " << getOutputCount() << " outputs).\n";
 		util::log("FeedForwardLayer") << "  layer: " << _weights.shapeString() << "\n";
   	}
 	
@@ -125,26 +123,25 @@ Matrix FeedForwardLayer::runReverse(MatrixVector& gradients,
 	}
 
 	// finish computing the deltas
-	auto deltas = apply(getActivationFunction()->applyDerivative(outputActivations), difference, Multiply());
+	auto deltas = apply(getActivationFunction()->applyDerivative(outputActivations), difference, matrix::Multiply());
 	
 	// compute gradient for the weights
-	auto unnormalizedWeightGradient = gemm(0.0, deltas, inputActivations, true, 1.0 / samples);
-
 	auto samples = outputActivations.size()[1];
-	auto weightGradient = apply(unnormalizedWeightGradient, Divide(samples));
+
+	auto unnormalizedWeightGradient = gemm(0.0, deltas, false, 1.0 / samples, inputActivations, true);
+
+	auto weightGradient = apply(unnormalizedWeightGradient, matrix::Divide(samples));
 	
 	// add in the weight cost function term
 	if(getWeightCostFunction() != nullptr)
 	{
-		weightGradient = apply(weightGradient, getWeightCostFunction()->getGradient(_weights), Add());
+		apply(weightGradient, weightGradient, getWeightCostFunction()->getGradient(_weights), matrix::Add());
 	}
 	
-	assert(weightGradient.blocks() == _weights.blocks());
-
 	gradients.push_back(std::move(weightGradient));
 	
 	// compute gradient for the bias
-	auto biasGradient = reduce(apply(deltas, Divide(samples)), {1}, Plus());
+	auto biasGradient = reduce(apply(deltas, matrix::Divide(samples)), {1}, matrix::Add());
 
 	if(util::isLogEnabled("FeedForwardLayer"))
 	{
@@ -156,8 +153,7 @@ Matrix FeedForwardLayer::runReverse(MatrixVector& gradients,
 		util::log("FeedForwardLayer::Detail") << "  bias grad: " << biasGradient.debugString();
 	}
 	
-	assert(biasGradient.blocks() == _bias.blocks());
-	assert(biasGradient.columns() == _bias.columns());
+	assert(biasGradient.size() == _bias.size());
 	
 	gradients.push_back(std::move(biasGradient));
 	
@@ -170,11 +166,11 @@ Matrix FeedForwardLayer::runReverse(MatrixVector& gradients,
 	{
 		auto activationCostFunctionGradient = getActivationCostFunction()->getGradient(outputActivations);
 		
-		previousLayerDeltas = apply(deltasPropagatedReverse, activationCostFunctionGradient, Multiply());
+		apply(previousLayerDeltas, deltasPropagatedReverse, activationCostFunctionGradient, matrix::Multiply());
 	}
 	else
 	{
-		previousLayerDeltas = deltasPropagatedReverse;
+		previousLayerDeltas = std::move(deltasPropagatedReverse);
 	}
 	
 	if(util::isLogEnabled("FeedForwardLayer"))
@@ -192,27 +188,27 @@ Matrix FeedForwardLayer::runReverse(MatrixVector& gradients,
 
 MatrixVector& FeedForwardLayer::weights()
 {
-	return _parameters;
+	return *_parameters;
 }
 
 const MatrixVector& FeedForwardLayer::weights() const
 {
-	return _parameters;
+	return *_parameters;
 }
 
-float FeedForwardLayer::computeWeightCost() const
+double FeedForwardLayer::computeWeightCost() const
 {
 	return getWeightCostFunction()->getCost(_weights);
 }
 
 size_t FeedForwardLayer::getInputCount() const
 {
-	return _weights.rows();
+	return _weights.size()[1];
 }
 
 size_t FeedForwardLayer::getOutputCount() const
 {
-	return _weights.columns();
+	return _weights.size()[0];
 }
 
 size_t FeedForwardLayer::totalNeurons()	const
@@ -222,7 +218,7 @@ size_t FeedForwardLayer::totalNeurons()	const
 
 size_t FeedForwardLayer::totalConnections() const
 {
-	return _weights.size() + _bias.size();
+	return _weights.elements() + _bias.elements();
 }
 
 size_t FeedForwardLayer::getFloatingPointOperationCount() const
@@ -240,14 +236,14 @@ void FeedForwardLayer::load(const util::TarArchive& archive, const std::string& 
 	assertM(false, "Not implemented");
 }
 
-Layer* FeedForwardLayer::clone() const
+std::unique_ptr<Layer> FeedForwardLayer::clone() const
 {
-	return new FeedForwardLayer(*this);
+	return std::make_unique<FeedForwardLayer>(*this);
 }
 
-Layer* FeedForwardLayer::mirror() const
+std::unique_ptr<Layer> FeedForwardLayer::mirror() const
 {
-	return new FeedForwardLayer(getBlocks(), getOutputBlockingFactor(), getInputBlockingFactor());
+	return std::make_unique<FeedForwardLayer>(getInputCount(), getOutputCount(), precision());
 }
 
 std::string FeedForwardLayer::getTypeName() const
@@ -256,7 +252,7 @@ std::string FeedForwardLayer::getTypeName() const
 }
 
 FeedForwardLayer::FeedForwardLayer(const FeedForwardLayer& l)
-: _parameters(l._parameters), _weights(_parameters[0]), _bias(_parameters[1]), _blockStep(l._blockStep)
+: _parameters(std::make_unique<MatrixVector>(*l._parameters)), _weights((*_parameters)[0]), _bias((*_parameters)[1])
 {
 
 }
@@ -268,8 +264,7 @@ FeedForwardLayer& FeedForwardLayer::operator=(const FeedForwardLayer& l)
 		return *this;
 	}
 	
-	_parameters = l._parameters;
-	_blockStep = l._blockStep;
+	_parameters = std::move(std::make_unique<MatrixVector>(*l._parameters));
 	
 	return *this;
 }

@@ -6,7 +6,11 @@
 
 #pragma once
 
+// Minerva Includes
 #include <minerva/parallel/interface/cuda.h>
+
+// Standard Library Includes
+#include <cmath>
 
 namespace minerva
 {
@@ -112,6 +116,37 @@ private:
 
 };
 
+class Divide : public Operation
+{
+public:
+	CUDA_DECORATOR Divide() : Operation(Operation::Divide), _value(0.0)
+	{
+
+	}
+
+	CUDA_DECORATOR Divide(double d) : Operation(Operation::Divide), _value(d)
+	{
+		
+	}
+
+public:
+	template<typename T>
+	CUDA_DECORATOR T operator()(const T& l, const T& r) const
+	{
+		return l / r;
+	}
+	
+	template<typename T>
+	CUDA_DECORATOR T operator()(const T& r) const
+	{
+		return r / _value;
+	}
+	
+private:
+	double _value;
+
+};
+
 class Fill : public Operation
 {
 public:
@@ -132,11 +167,81 @@ private:
 
 };
 
-typedef std::tuple<Add, Multiply> AllOperations;
+class RectifiedLinear : public Operation
+{
+public:
+	CUDA_DECORATOR RectifiedLinear() : Operation(Operation::RectifiedLinear)
+	{
 
-typedef std::tuple<Add, Multiply> AllBinaryOperations;
+	}
 
-typedef std::tuple<Add, Multiply, Fill> AllUnaryOperations;
+public:
+	template<typename T>
+	CUDA_DECORATOR T operator()(const T& l) const
+	{
+		return l > 20.0 ? 20.0 : l < 0.0 ? 0.0 : l;
+	}
+	
+};
+
+class RectifiedLinearDerivative : public Operation
+{
+public:
+	CUDA_DECORATOR RectifiedLinearDerivative() : Operation(Operation::RectifiedLinearDerivative)
+	{
+
+	}
+
+public:
+	template<typename T>
+	CUDA_DECORATOR T operator()(const T& l) const
+	{
+		return l > 20.0 ? 0.0 : l < 0.0 ? 0.0 : 1.0;
+	}
+	
+};
+
+class Sigmoid : public Operation
+{
+public:
+	CUDA_DECORATOR Sigmoid() : Operation(Operation::Sigmoid)
+	{
+
+	}
+
+public:
+	template<typename T>
+	CUDA_DECORATOR T operator()(const T& l) const
+	{
+		return T(1.0) / (T(1.0) + T(std::exp(-l)));
+	}
+	
+};
+
+class SigmoidDerivative : public Operation
+{
+public:
+	CUDA_DECORATOR SigmoidDerivative() : Operation(Operation::SigmoidDerivative)
+	{
+
+	}
+
+public:
+	template<typename T>
+	CUDA_DECORATOR T operator()(const T& l) const
+	{
+		return 1.0 - matrix::Sigmoid()(l);
+	}
+	
+};
+
+typedef std::tuple<Add, Multiply, Fill, Divide, RectifiedLinear,
+				   RectifiedLinearDerivative, Sigmoid, SigmoidDerivative> AllOperations;
+
+typedef std::tuple<Add, Multiply, Divide> AllBinaryOperations;
+
+typedef std::tuple<Add, Multiply, Fill, Divide, RectifiedLinear, RectifiedLinearDerivative,
+				   Sigmoid, SigmoidDerivative> AllUnaryOperations;
 
 }
 }

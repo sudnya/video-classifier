@@ -164,12 +164,12 @@ network::NeuralNetwork* Engine::getAggregateNetwork()
 	
 	for(auto& layer : featureSelector)
 	{
-		_aggregateNetwork->addLayer(layer.release());
+		_aggregateNetwork->addLayer(std::move(layer));
 	}
 	
 	for(auto& layer : classifier)
 	{
-		_aggregateNetwork->addLayer(layer.release());
+		_aggregateNetwork->addLayer(std::move(layer));
 	}
 	
 	return _aggregateNetwork.get();

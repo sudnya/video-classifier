@@ -55,8 +55,6 @@ public:
     Matrix runInputs(const Matrix& m) const;
 
 public:
-	/*! \brief Add a new layer, the network takes ownership */
-    void addLayer(Layer*);
 	/*! \brief Add an existing layer, the network takes ownership */
     void addLayer(std::unique_ptr<Layer>&& );
 
@@ -87,8 +85,8 @@ public:
     bool   empty() const;
 
 public:
-    size_t getInputCount()  const;
-    size_t getOutputCount() const;
+    Dimension getInputSize()  const;
+    Dimension getOutputSize() const;
 
 public:
     size_t totalNeurons()     const;
