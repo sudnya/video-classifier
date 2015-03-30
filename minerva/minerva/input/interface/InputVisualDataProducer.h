@@ -12,6 +12,9 @@
 #include <minerva/video/interface/ImageVector.h>
 #include <minerva/video/interface/Video.h>
 
+// Stanard Library Includes
+#include <random>
+
 namespace minerva
 {
 

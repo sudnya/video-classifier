@@ -82,6 +82,7 @@ public:
 	void push_back(const Matrix&  );
 	void push_back(Matrix&&);
 	void push_back(MatrixVector&&);
+	void push_back(const MatrixVector&);
 
 public:
 	void pop_back();

@@ -5,8 +5,8 @@
 
 #pragma once
 
-namespace minerva { namespace network { class NeuralNetwork;     } }
-namespace minerva { namespace matrix  { class Matrix; } }
+namespace minerva { namespace network { class NeuralNetwork; } }
+namespace minerva { namespace matrix  { class Matrix;        } }
 
 namespace minerva
 {
@@ -19,7 +19,7 @@ class NeuralNetworkSolver
 {
 public:
 	typedef network::NeuralNetwork NeuralNetwork;
-	typedef matrix::Matrix Matrix;
+	typedef matrix::Matrix         Matrix;
 
 public:
 	NeuralNetworkSolver(NeuralNetwork* n);

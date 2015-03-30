@@ -9,7 +9,9 @@
 
 #include <minerva/optimizer/interface/CostAndGradientFunction.h>
 
-#include <minerva/matrix/interface/BlockSparseMatrixVector.h>
+#include <minerva/matrix/interface/MatrixVector.h>
+#include <minerva/matrix/interface/MatrixVectorOperations.h>
+#include <minerva/matrix/interface/Operation.h>
 
 #include <minerva/util/interface/Knobs.h>
 #include <minerva/util/interface/debug.h>
@@ -26,7 +28,7 @@ namespace minerva
 namespace optimizer
 {
 
-static bool isSignDifferent(float left, float right)
+static bool isSignDifferent(double left, double right)
 {
 	return std::copysign(1.0f, left) != std::copysign(1.0f, right);
 }
@@ -42,95 +44,95 @@ static bool isSignDifferent(float left, float right)
  *  @param  dv      The value of f'(v).
  */
 
-static float findCubicMinimizer(float leftStep, float leftCost,
-	float leftGradientDirection, float rightStep, float rightCost,
-	float rightGradientDirection)
+static double findCubicMinimizer(double leftStep, double leftCost,
+	double leftGradientDirection, double rightStep, double rightCost,
+	double rightGradientDirection)
 {
     //d = (v) - (u);
-	float difference = rightStep - leftStep;
+	double difference = rightStep - leftStep;
 
     //theta = ((fu) - (fv)) * 3 / d + (du) + (dv);
-	float theta = ((leftCost - rightCost) * 3.0f / difference) +
+	double theta = ((leftCost - rightCost) * 3.0 / difference) +
 		leftGradientDirection + rightGradientDirection;
     
 	// p = fabs(theta);
-	float p = std::fabs(theta);
+	double p = std::fabs(theta);
 
     // q = fabs(du);
-	float q = std::fabs(leftGradientDirection);
+	double q = std::fabs(leftGradientDirection);
 
     // r = fabs(dv);
-	float r = std::fabs(rightGradientDirection);
+	double r = std::fabs(rightGradientDirection);
 
     // s = max3(p, q, r);
-	float s = std::max(p, std::max(q, r));
+	double s = std::max(p, std::max(q, r));
 
     /* gamma = s*sqrt((theta/s)**2 - (du/s) * (dv/s)) */
     // a = theta / s;
-	float a = theta / s;
+	double a = theta / s;
 
     // gamma = s * sqrt(a * a - ((du) / s) * ((dv) / s));
-	float gamma = s *
+	double gamma = s *
 		std::sqrtf(a * a - (leftGradientDirection / s) * (rightGradientDirection / s));
 
     //if ((v) < (u)) gamma = -gamma;
     if ((rightStep) < (leftStep)) gamma = -gamma; 
 
     // p = gamma - (du) + theta;
-	float p1 = gamma - leftGradientDirection + theta;
+	double p1 = gamma - leftGradientDirection + theta;
 
     // q = gamma - (du) + gamma + (dv);
-	float q1 = gamma - leftGradientDirection + gamma + rightGradientDirection;
+	double q1 = gamma - leftGradientDirection + gamma + rightGradientDirection;
 	
     // r = p / q;
-    float r1 = p1 / q1;
+    double r1 = p1 / q1;
 	
 	// (cm) = (u) + r * d;
 	return leftStep + r1 * difference;
 }
 
-static float findCubicMinimizer(float leftStep, float leftCost,
-	float leftGradientDirection, float rightStep, float rightCost,
-	float rightGradientDirection, float minStep, float maxStep)
+static double findCubicMinimizer(double leftStep, double leftCost,
+	double leftGradientDirection, double rightStep, double rightCost,
+	double rightGradientDirection, double minStep, double maxStep)
 {
     //d = (v) - (u);
-	float difference = rightStep - leftStep;
+	double difference = rightStep - leftStep;
 
     //theta = ((fu) - (fv)) * 3 / d + (du) + (dv);
-	float theta = ((leftCost - rightCost) * 3.0f / difference) +
+	double theta = ((leftCost - rightCost) * 3.0 / difference) +
 		leftGradientDirection + rightGradientDirection;
     
 	// p = fabs(theta);
-	float p = std::fabs(theta);
+	double p = std::fabs(theta);
 
     // q = fabs(du);
-	float q = std::fabs(leftGradientDirection);
+	double q = std::fabs(leftGradientDirection);
 
     // r = fabs(dv);
-	float r = std::fabs(rightGradientDirection);
+	double r = std::fabs(rightGradientDirection);
 
     // s = max3(p, q, r);
-	float s = std::max(p, std::max(q, r));
+	double s = std::max(p, std::max(q, r));
 
     /* gamma = s*sqrt((theta/s)**2 - (du/s) * (dv/s)) */
     // a = theta / s;
-	float a = theta / s;
+	double a = theta / s;
 
     // gamma = s * sqrt(a * a - ((du) / s) * ((dv) / s));
-	float gamma = s * std::sqrtf(std::max(0.0f, a * a - (leftGradientDirection / s) *
+	double gamma = s * std::sqrtf(std::max(0.0, a * a - (leftGradientDirection / s) *
 		(rightGradientDirection / s)));
 
     //if ((v) < (u)) gamma = -gamma;
     if ((rightStep) < (leftStep)) gamma = -gamma; 
 
     // p = gamma - (dv) + theta;
-	float p1 = gamma - rightGradientDirection + theta;
+	double p1 = gamma - rightGradientDirection + theta;
 
     // q = gamma - (dv) + gamma + (du);
-	float q1 = gamma - rightGradientDirection + gamma + leftGradientDirection;
+	double q1 = gamma - rightGradientDirection + gamma + leftGradientDirection;
 	
     // r = p / q;
-    float r1 = p1 / q1;
+    double r1 = p1 / q1;
     
 	/*
 	if (r < 0. && gamma != 0.) { \
@@ -141,11 +143,11 @@ static float findCubicMinimizer(float leftStep, float leftCost,
         (cm) = (xmin); \
     } */
 	
-	if(r1 < 0.0f && gamma != 0.0f)
+	if(r1 < 0.0 && gamma != 0.0)
 	{
 		return rightStep - r1 * difference;
 	}
-	else if(a < 0.0f)
+	else if(a < 0.0)
 	{
 		return maxStep;
 	}
@@ -155,23 +157,23 @@ static float findCubicMinimizer(float leftStep, float leftCost,
 	}
 }
 
-static float findQuadraticMinimizer(float leftStep, float leftCost,
-	float leftGradientDirection, float rightStep, float rightCost)
+static double findQuadraticMinimizer(double leftStep, double leftCost,
+	double leftGradientDirection, double rightStep, double rightCost)
 {
     // a = (v) - (u);
-	float a = rightStep - leftStep;
+	double a = rightStep - leftStep;
 	
     // (qm) = (u) + (du) / (((fu) - (fv)) / a + (du)) / 2 * a;
 	return leftStep +
 		(leftGradientDirection / ((leftCost - rightCost) / a + leftGradientDirection)) /
-		(2.0f * a);
+		(2.0 * a);
 }
 
-static float findQuadraticMinimizer(float leftStep,
-	float leftGradientDirection, float rightStep, float rightGradientDirection)
+static double findQuadraticMinimizer(double leftStep,
+	double leftGradientDirection, double rightStep, double rightGradientDirection)
 {
     // a = (u) - (v);
-	float a = leftStep - rightStep;
+	double a = leftStep - rightStep;
 
     // (qm) = (v) + (dv) / ((dv) - (du)) * a;
 	return rightStep +
@@ -210,10 +212,10 @@ static float findQuadraticMinimizer(float leftStep,
    @see liblbfgs.c
  */
 static void updateIntervalOfUncertainty(
-	float& bestStep, float& bestCost, float& bestGradientDirection,
-	float& intervalEndStep, float& intervalEndCost, float& intervalEndGradientDirection,
-	float& step, float& cost, float& gradientDirection,
-	float minStep, float maxStep, bool& bracket)
+	double& bestStep, double& bestCost, double& bestGradientDirection,
+	double& intervalEndStep, double& intervalEndCost, double& intervalEndGradientDirection,
+	double& step, double& cost, double& gradientDirection,
+	double minStep, double maxStep, bool& bracket)
 {
 	// Check for parameter errors
 	if(bracket)
@@ -239,9 +241,9 @@ static void updateIntervalOfUncertainty(
 	
 	bool gradientSignDiffers = isSignDifferent(gradientDirection, bestGradientDirection);
 	
-	float cubicMinimizerStep     = 0.0f;
-	float quadraticMinimizerStep = 0.0f;
-	float newStep                = 0.0f;
+	double cubicMinimizerStep     = 0.0;
+	double quadraticMinimizerStep = 0.0;
+	double newStep                = 0.0;
 
 	bool bounded = false;
 	
@@ -268,7 +270,7 @@ static void updateIntervalOfUncertainty(
 		else
 		{
 			newStep = cubicMinimizerStep +
-				0.5f * (quadraticMinimizerStep - cubicMinimizerStep);
+				0.5 * (quadraticMinimizerStep - cubicMinimizerStep);
 		}
 	}
 	else if(gradientSignDiffers)
@@ -402,7 +404,7 @@ static void updateIntervalOfUncertainty(
 	// Adjust the trial step if it is too close to the upper bound
 	if(bracket and bounded)
 	{
-		float quadraticMinimizer = bestStep + (2.0f/3.0f) * (intervalEndStep - bestStep);
+		double quadraticMinimizer = bestStep + (2.0/3.0) * (intervalEndStep - bestStep);
 		
 		if(bestStep < intervalEndStep)
 		{
@@ -420,29 +422,29 @@ static void updateIntervalOfUncertainty(
 
 
 MoreThuenteLineSearch::MoreThuenteLineSearch()
-: _xTolerance(util::KnobDatabase::getKnobValue("LineSearch::MachinePrecision", 1.0e-13f)),
-  _gTolerance(util::KnobDatabase::getKnobValue("LineSearch::GradientAccuracy", 0.9f)),
-  _fTolerance(util::KnobDatabase::getKnobValue("LineSearch::FunctionAccuracy", 1.0e-4f)),
-  _maxStep(util::KnobDatabase::getKnobValue("LineSearch::MaximumStep", 1.0e20f)),
-  _minStep(util::KnobDatabase::getKnobValue("LineSearch::MinimumStep", 1.0e-20f)),
+: _xTolerance(util::KnobDatabase::getKnobValue("LineSearch::MachinePrecision", 1.0e-13)),
+  _gTolerance(util::KnobDatabase::getKnobValue("LineSearch::GradientAccuracy", 0.9)),
+  _fTolerance(util::KnobDatabase::getKnobValue("LineSearch::FunctionAccuracy", 1.0e-4)),
+  _maxStep(util::KnobDatabase::getKnobValue("LineSearch::MaximumStep", 1.0e20)),
+  _minStep(util::KnobDatabase::getKnobValue("LineSearch::MinimumStep", 1.0e-20)),
   _maxLineSearch(util::KnobDatabase::getKnobValue("LineSearch::MaximumIterations", 10))
 {
-	if(_fTolerance < 0.0f)
+	if(_fTolerance < 0.0)
 	{
 		throw std::invalid_argument("Function accuracy must be non-negative.");
 	}
 	
-	if(_gTolerance < 0.0f)
+	if(_gTolerance < 0.0)
 	{
 		throw std::invalid_argument("Gradient accuracy must be non-negative.");
 	}
 	
-	if(_xTolerance < 0.0f)
+	if(_xTolerance < 0.0)
 	{
 		throw std::invalid_argument("Machine precision must be non-negative.");
 	}
 	
-	if(_minStep < 0.0f)
+	if(_minStep < 0.0)
 	{
 		throw std::invalid_argument("Minimum step must be non-negative.");
 	}
@@ -456,23 +458,23 @@ MoreThuenteLineSearch::MoreThuenteLineSearch()
 
 void MoreThuenteLineSearch::search(
 	const CostAndGradientFunction& costFunction,
-	BlockSparseMatrixVector& inputs, float& cost,
-	BlockSparseMatrixVector& gradient, const BlockSparseMatrixVector& direction,
-	float step, const BlockSparseMatrixVector& previousInputs,
-	const BlockSparseMatrixVector& previousGradients)
+	MatrixVector& inputs, double& cost,
+	MatrixVector& gradient, const MatrixVector& direction,
+	double step, const MatrixVector& previousInputs,
+	const MatrixVector& previousGradients)
 {
 	util::log("MoreThuenteLineSearch") << "Starting line search with initial cost " << cost << "\n";
 	
 	// check the inputs for errors
-	assert(step > 0.0f);
+	assert(step > 0.0);
 	
 	// compute the initial gradient in the search direction
-	float initialGradientDirection = gradient.dotProduct(direction);
+	double initialGradientDirection = matrix::dotProduct(gradient, direction);
 	
 	assert(!std::isnan(initialGradientDirection));
 	
 	// make sure that we are pointed in a descent direction
-	if(initialGradientDirection > 0.0f)
+	if(initialGradientDirection > 0.0)
 	{
 		std::stringstream stream;
 		
@@ -485,22 +487,22 @@ void MoreThuenteLineSearch::search(
 	// Local variables
 	bool  bracket              = false;
 	bool  stageOne             = true;
-	float initialCost          = cost;
+	double initialCost          = cost;
 
-	float gradientDirectionTest = initialGradientDirection * _fTolerance;
+	double gradientDirectionTest = initialGradientDirection * _fTolerance;
 
-	float intervalWidth         = _maxStep - _minStep;
-	float previousIntervalWidth = 2.0f * intervalWidth;
+	double intervalWidth         = _maxStep - _minStep;
+	double previousIntervalWidth = 2.0 * intervalWidth;
 
 	// Search variables
-	float bestStep = 0.0f;
-	float bestCost = initialCost;
-	float bestGradientDirection = initialGradientDirection;
+	double bestStep = 0.0;
+	double bestCost = initialCost;
+	double bestGradientDirection = initialGradientDirection;
 	
 	// End of interval of uncertainty variables
-	float intervalEndStep = 0.0f;
-	float intervalEndCost = initialCost;
-	float intervalEndGradientDirection = initialGradientDirection;
+	double intervalEndStep = 0.0;
+	double intervalEndCost = initialCost;
+	double intervalEndGradientDirection = initialGradientDirection;
 	
 	size_t iteration = 0;
 	
@@ -509,8 +511,8 @@ void MoreThuenteLineSearch::search(
 		util::log("MoreThuenteLineSearch") << " iteration " << iteration << "\n";
 
 		// Set the min/max steps to correspond to the current interval of uncertainty
-		float minStep = 0.0f;
-		float maxStep = 0.0f;
+		double minStep = 0.0;
+		double maxStep = 0.0;
 		
 		if(bracket)
 		{
@@ -520,7 +522,7 @@ void MoreThuenteLineSearch::search(
 		else
 		{
 			minStep = bestStep;
-			maxStep = step + 4.0f * (step - bestStep);
+			maxStep = step + 4.0 * (step - bestStep);
 		}
 		
 		// Clip the step in the range of [minstep, maxstep]
@@ -546,13 +548,13 @@ void MoreThuenteLineSearch::search(
 		}
 		
 		// Compute the current value of : inputs <- previousInputs + step * direction
-		inputs = previousInputs.add(direction.multiply(step));
+		inputs = apply(previousInputs, apply(direction, matrix::Multiply(step)), matrix::Add());
 		
 		// Evaluate the function and gradient at the current value	
 		cost = costFunction.computeCostAndGradient(gradient, inputs);
-		float gradientDirection = gradient.dotProduct(direction);
+		double gradientDirection = matrix::dotProduct(gradient, direction);
 		
-		float testCost = initialCost + step * gradientDirectionTest;
+		double testCost = initialCost + step * gradientDirectionTest;
 		++iteration;
 		
 		// Test for rounding errors
@@ -618,15 +620,15 @@ void MoreThuenteLineSearch::search(
 		if(stageOne && testCost < cost && cost <= bestCost)
 		{
 			// Define the modified function and derivative values
-			float modifiedCost     = cost - step * gradientDirectionTest;
-			float modifiedBestCost = bestCost - bestStep * gradientDirectionTest;
-			float modifiedIntervalEndCost = intervalEndCost - intervalEndStep * gradientDirectionTest;
+			double modifiedCost     = cost - step * gradientDirectionTest;
+			double modifiedBestCost = bestCost - bestStep * gradientDirectionTest;
+			double modifiedIntervalEndCost = intervalEndCost - intervalEndStep * gradientDirectionTest;
 			
-			float modifiedGradientDirection     = gradientDirection - gradientDirectionTest;
-			float modifiedBestGradientDirection =
+			double modifiedGradientDirection     = gradientDirection - gradientDirectionTest;
+			double modifiedBestGradientDirection =
 					bestGradientDirection - gradientDirectionTest;
 			
-			float modifiedIntervalEndGradientDirection =
+			double modifiedIntervalEndGradientDirection =
 				intervalEndGradientDirection - gradientDirectionTest;
 			
 			// update the interval of uncertainty and compute the new step size
@@ -658,9 +660,9 @@ void MoreThuenteLineSearch::search(
 		// Force a sufficient decrease in the interval of uncertainty
 		if(bracket)
 		{
-			if ((2.0f/3.0f) * previousIntervalWidth <= std::fabs(intervalEndStep - bestStep))
+			if ((2.0/3.0) * previousIntervalWidth <= std::fabs(intervalEndStep - bestStep))
 			{
-				step = bestStep + 0.5f * (intervalEndStep - bestStep);
+				step = bestStep + 0.5 * (intervalEndStep - bestStep);
 			}
 			previousIntervalWidth = intervalWidth;
 			intervalWidth = std::fabs(intervalEndStep - bestStep);

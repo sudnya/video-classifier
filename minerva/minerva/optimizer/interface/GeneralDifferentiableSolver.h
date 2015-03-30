@@ -13,8 +13,7 @@
 
 // Forward Declarations
 namespace minerva { namespace matrix    { class Matrix;                  } }
-namespace minerva { namespace matrix    { class Matrix;       } }
-namespace minerva { namespace matrix    { class MatrixVector; } }
+namespace minerva { namespace matrix    { class MatrixVector;            } }
 namespace minerva { namespace optimizer { class CostAndGradientFunction; } }
 
 namespace minerva
@@ -27,7 +26,6 @@ class GeneralDifferentiableSolver : public Solver
 {
 public:
 	typedef matrix::Matrix       Matrix;
-	typedef matrix::Matrix                  Matrix;
 	typedef matrix::MatrixVector MatrixVector;
 
 public:
@@ -44,13 +42,7 @@ public:
 	
 		\return A floating point value representing the final cost.
 	 */
-	virtual float solve(MatrixVector& inputs, const CostAndGradientFunction& callBack) = 0;
-
-public:
-	/* \brief A helper function with inputs formatted as a matrix */
-	float solve(Matrix& inputs, const CostAndGradientFunction& callBack);
-	/* \brief A helper function with inputs formatted as a block sparse matrix */
-	float solve(Matrix& inputs, const CostAndGradientFunction& callBack);
+	virtual double solve(MatrixVector& inputs, const CostAndGradientFunction& callBack) = 0;
 
 };
 

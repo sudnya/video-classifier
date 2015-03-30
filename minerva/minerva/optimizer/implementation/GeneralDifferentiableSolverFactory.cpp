@@ -6,9 +6,7 @@
 
 // Minerva Includes
 #include <minerva/optimizer/interface/GeneralDifferentiableSolverFactory.h>
-#include <minerva/optimizer/interface/LimitedMemoryBroydenFletcherGoldfarbShannoSolver.h>
 #include <minerva/optimizer/interface/GPULBFGSSolver.h>
-#include <minerva/optimizer/interface/GradientDescentSolver.h>
 #include <minerva/optimizer/interface/NesterovAcceleratedGradientSolver.h>
 
 #include <minerva/util/interface/Knobs.h>
@@ -30,14 +28,6 @@ GeneralDifferentiableSolver* GeneralDifferentiableSolverFactory::create(const st
 		{
 			solver = new GPULBFGSSolver;
 		}
-		else if(LBFGSSolver::isSupported())
-		{
-			solver = new LBFGSSolver;
-		}
-	}
-	else if("GradientDescentSolver" == name || "GDSolver" == name)
-	{
-		solver = new GDSolver;
 	}
 	else if("NesterovAcceleratedGradientSolver" == name || "NAGSolver" == name)
 	{
@@ -65,14 +55,10 @@ double GeneralDifferentiableSolverFactory::getMemoryOverheadForSolver(const std:
 	if("LimitedMemoryBroydenFletcherGoldfarbShannoSolver" == name ||
 		"LBFGSSolver" == name)
 	{
-		if(LBFGSSolver::isSupported())
+		if(GPULBFGSSolver::isSupported())
 		{
-			return LBFGSSolver::getMemoryOverhead();
+			return GPULBFGSSolver::getMemoryOverhead();
 		}
-	}
-	else if("GradientDescentSolver" == name || "GDSolver" == name)
-	{
-		return GDSolver::getMemoryOverhead();
 	}
 	else if("NesterovAcceleratedGradientSolver" == name || "NAGSolver" == name)
 	{

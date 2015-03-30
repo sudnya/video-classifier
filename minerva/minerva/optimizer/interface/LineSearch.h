@@ -9,8 +9,7 @@
 
 // Forward Declarations
 namespace minerva { namespace matrix    { class Matrix;                  } }
-namespace minerva { namespace matrix    { class Matrix;       } }
-namespace minerva { namespace matrix    { class MatrixVector; } }
+namespace minerva { namespace matrix    { class MatrixVector;            } }
 namespace minerva { namespace optimizer { class CostAndGradientFunction; } }
 
 namespace minerva
@@ -24,7 +23,6 @@ class LineSearch
 {
 public:
 	typedef matrix::Matrix       Matrix;
-	typedef matrix::Matrix                  Matrix;
 	typedef matrix::MatrixVector MatrixVector;
 	
 public:
@@ -33,10 +31,10 @@ public:
 public:
 	virtual void search(
 		const CostAndGradientFunction& costFunction,
-		MatrixVector& inputs, float& cost,
+		MatrixVector& inputs, double& cost,
 		MatrixVector& gradient,
 		const MatrixVector& direction,
-		float step, const MatrixVector& previousInputs,
+		double step, const MatrixVector& previousInputs,
 		const MatrixVector& previousGradients) = 0;
 
 };

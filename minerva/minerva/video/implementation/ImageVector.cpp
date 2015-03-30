@@ -7,8 +7,6 @@
 // Minerva Includes
 #include <minerva/video/interface/ImageVector.h>
 
-#include <minerva/network/interface/NeuralNetwork.h>
-
 #include <minerva/util/interface/debug.h>
 #include <minerva/util/interface/math.h>
 
@@ -89,64 +87,38 @@ void ImageVector::clear()
 	_images.clear();
 }
 
-ImageVector::Matrix ImageVector::convertToStandardizedMatrix(size_t sampleCount,
-	size_t xTileSize, size_t yTileSize, size_t colors, float mean, float standardDeviation) const
+ImageVector::Matrix ImageVector::getFeatureMatrix(size_t sampleCount,
+	size_t xTileSize, size_t yTileSize, size_t colors) const
 {
-	size_t rows    = _images.size();
-	size_t columns = sampleCount;
+	size_t images = _images.size();
 	
-	Matrix matrix(rows, columns);
+	Matrix matrix({xTileSize, yTileSize, colors, images});
 	
-	Matrix::FloatVector data(rows * columns);
-	
-    size_t offset = 0;
+	size_t offset = 0;
 	for(auto& image : _images)
 	{
-		assert(colors == image.colorComponents());
-		
-		auto samples = image.getSampledData(columns, xTileSize, yTileSize);
-		
-		std::copy(samples.begin(), samples.end(), data.begin() + offset);
-		
-		offset += columns;
+		auto sample = image.downsample(xTileSize, yTileSize, colors);
+
+		for(size_t c = 0; c < colors; ++c)
+		{
+			for(size_t y = 0; y < yTileSize; ++y)
+			{
+				for(size_t x = 0; x < xTileSize; ++x)
+				{
+					matrix(x, y, c, offset) = sample.getComponentAt(x, y, c);
+				}
+			}
+		}
+
+		++offset;
 	}
-	
-	matrix.data() = data;
-	
-	// remove mean
-	matrix = matrix.add(-mean);
-
-	// truncate to 3 standard deviations
-	float threeStandardDeviations = 3.0f * standardDeviation;
-
-	matrix.maxSelf(-threeStandardDeviations);
-	matrix.minSelf( threeStandardDeviations);
-
-	// scale from [-1,1]
-	matrix = matrix.multiply(1.0f/(standardDeviation));
-
-	// rescale from [-1,1] to [0.1, 0.9]
-	//matrix = matrix.add(1.0f).multiply(0.4f).add(0.1f);
-	
-	//std::cout << "Matrix " << matrix.debugString();
 	
 	return matrix;
 }
 
-ImageVector::Matrix ImageVector::convertToStandardizedMatrix(size_t sampleCount, size_t tileSize,
-	size_t colors, float mean, float standardDeviation) const
-{
-	size_t x = 0;
-	size_t y = 0;
-	
-	util::getNearestToSquareFactors(x, y, tileSize / colors);
-
-	return convertToStandardizedMatrix(sampleCount, x, y, colors, mean, standardDeviation);
-}
-
 ImageVector::Matrix ImageVector::getReference(const util::StringVector& labels) const
 {
-	Matrix matrix(size(), labels.size());
+	Matrix reference(matrix::Dimension({size(), labels.size()}));
 	
 	util::log("ImageVector") << "Generating reference image:\n";
 	
@@ -164,30 +136,18 @@ ImageVector::Matrix ImageVector::getReference(const util::StringVector& labels) 
 		
 			if((*this)[imageId].label() == labels[outputNeuron])
 			{
-				matrix(imageId, outputNeuron) = 10.0f;
+				reference(imageId, outputNeuron) = 10.0;
 			}
 			else
 			{
-				matrix(imageId, outputNeuron) = -10.0f;
+				reference(imageId, outputNeuron) = 0.0;
 			}
 		}
 	}
 	
-	util::log("ImageVector") << " Generated matrix: " << matrix.toString() << "\n";
+	util::log("ImageVector") << " Generated matrix: " << reference.toString() << "\n";
 	
-	return matrix;
-}
-
-size_t ImageVector::_getSampledImageSize() const
-{
-	size_t maxSize = 0;
-	
-	for(auto& image : _images)
-	{
-		maxSize = std::max(image.totalSize(), maxSize);
-	}
-	
-	return maxSize;
+	return reference;
 }
 
 }

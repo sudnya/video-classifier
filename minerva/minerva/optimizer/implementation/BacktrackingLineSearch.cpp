@@ -10,6 +10,8 @@
 #include <minerva/optimizer/interface/CostAndGradientFunction.h>
 
 #include <minerva/matrix/interface/MatrixVector.h>
+#include <minerva/matrix/interface/MatrixVectorOperations.h>
+#include <minerva/matrix/interface/Operation.h>
 
 #include <minerva/util/interface/Knobs.h>
 #include <minerva/util/interface/debug.h>
@@ -62,37 +64,37 @@ BacktrackingLineSearch::~BacktrackingLineSearch()
 
 void BacktrackingLineSearch::search(
 	const CostAndGradientFunction& costFunction,
-	MatrixVector& inputs, float& cost,
+	MatrixVector& inputs, double& cost,
 	MatrixVector& gradient,
 	const MatrixVector& direction,
-	float step, const MatrixVector& previousInputs,
+	double step, const MatrixVector& previousInputs,
 	const MatrixVector& previousGradients)
 {
-	float increase = util::KnobDatabase::getKnobValue("BacktrackingLineSearch::Increase", 2.1f);
-	float decrease = util::KnobDatabase::getKnobValue("BacktrackingLineSearch::Decrease", 0.5f);
-	float wolfe    = util::KnobDatabase::getKnobValue("BacktrackingLineSearch::WolfeCondition", 0.9f);
+	double increase = util::KnobDatabase::getKnobValue("BacktrackingLineSearch::Increase", 2.1f);
+	double decrease = util::KnobDatabase::getKnobValue("BacktrackingLineSearch::Decrease", 0.5f);
+	double wolfe    = util::KnobDatabase::getKnobValue("BacktrackingLineSearch::WolfeCondition", 0.9f);
 
-	float initialCost = cost;
+	double initialCost = cost;
 
 	util::log("BacktrackingLineSearch") << "Starting line search with initial cost " << cost << "\n";
 
 	size_t iteration = 0;
-	float  initialGradientDirection = gradient.dotProduct(direction);
+	double  initialGradientDirection = dotProduct(gradient, direction);
 
 	if(initialGradientDirection > 0.0f)
 	{
 		//throw std::runtime_error("Initial direction increases the function.");
 	}
 
-	float test = _fTolerance * initialGradientDirection;
+	double test = _fTolerance * initialGradientDirection;
 
 	while(true)
 	{
-		float width = 0.0f;
+		double width = 0.0f;
 
 		// Compute the current value of : inputs <- previousInputs + step * direction
 		// TODO: use and offset rather than saving the initial inputs
-		inputs = previousInputs.add(direction.multiply(step));
+		inputs = apply(previousInputs, apply(direction, matrix::Multiply(step)), matrix::Add());
 		
 		// Evaluate the function and gradient at the current value
 		cost = costFunction.computeCostAndGradient(gradient, inputs);
@@ -103,7 +105,7 @@ void BacktrackingLineSearch::search(
 		}
 		else
 		{
-			float gradientDirection = gradient.dotProduct(direction);
+			double gradientDirection = dotProduct(gradient, direction);
 			
 			if(gradientDirection < wolfe * initialGradientDirection)
 			{

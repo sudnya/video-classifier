@@ -23,7 +23,7 @@ public:
 	virtual ~NesterovAcceleratedGradientSolver();
 
 public:
-	virtual float solve(MatrixVector& inputs,
+	virtual double solve(MatrixVector& inputs,
 		const CostAndGradientFunction& callback);
 
 public:
@@ -31,14 +31,14 @@ public:
 
 private:
 	std::unique_ptr<MatrixVector> _velocity;
-	float _runningExponentialCostSum;
+	double _runningExponentialCostSum;
 	
 private:
-	float  _learningRate;
-	float  _momentum;
-	float  _annealingRate;
-	float  _maxGradNorm;
-	size_t _iterations;
+	double  _learningRate;
+	double  _momentum;
+	double  _annealingRate;
+	double  _maxGradNorm;
+	size_t  _iterations;
 	
 
 };

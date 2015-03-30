@@ -25,7 +25,7 @@ public:
 
 public:
 	/*! \brief Run the cost function on the specified weights. */
-	virtual float getCost(const Matrix& weights) const = 0;
+	virtual double getCost(const Matrix& weights) const = 0;
 
 	/*! \brief Compute the gradient with respect to the weights. */
 	virtual Matrix getGradient(const Matrix& weights) const = 0;

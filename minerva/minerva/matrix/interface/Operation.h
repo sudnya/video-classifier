@@ -38,12 +38,16 @@ public:
 		KLDivergence,
 		KLDivergenceDerivative,
 		Negate,
-		Max,
-		Min,
+		Maximum,
+		Minimum,
 		Equal,
 		LessThan,
 		NotEqual,
-		Fill		
+		LessThanOrEqual,
+		GreaterThanOrEqual,
+		Fill,
+		Square,
+		SquareAndScale	
 	};
 
 public:
@@ -83,6 +87,100 @@ public:
 private:
 	double _value;
 
+};
+
+class Subtract : public Operation
+{
+public:
+	CUDA_DECORATOR Subtract() : Operation(Operation::Subtract), _value(0.0)
+	{
+
+	}
+
+	CUDA_DECORATOR Subtract(double d) : Operation(Operation::Subtract), _value(d)
+	{
+		
+	}
+
+public:
+	template<typename T>
+	CUDA_DECORATOR T operator()(const T& l, const T& r) const
+	{
+		return l - r;
+	}
+	
+	template<typename T>
+	CUDA_DECORATOR T operator()(const T& r) const
+	{
+		return r - _value;
+	}
+	
+private:
+	double _value;
+
+};
+
+class Log : public Operation
+{
+public:
+	CUDA_DECORATOR Log() : Operation(Operation::Log)
+	{
+
+	}
+
+public:
+	template<typename T>
+	CUDA_DECORATOR T operator()(const T& l) const
+	{
+		return std::log(l);
+	}
+	
+	CUDA_DECORATOR float operator()(const float& l) const
+	{
+		return std::logf(l);
+	}
+};
+
+class Exp : public Operation
+{
+public:
+	CUDA_DECORATOR Exp() : Operation(Operation::Exp)
+	{
+
+	}
+
+public:
+	template<typename T>
+	CUDA_DECORATOR T operator()(const T& l) const
+	{
+		return std::exp(l);
+	}
+	
+	CUDA_DECORATOR float operator()(const float& l) const
+	{
+		return std::expf(l);
+	}
+};
+
+class Abs : public Operation
+{
+public:
+	CUDA_DECORATOR Abs() : Operation(Operation::Abs)
+	{
+
+	}
+
+public:
+	template<typename T>
+	CUDA_DECORATOR T operator()(const T& l) const
+	{
+		return std::abs(l);
+	}
+	
+	CUDA_DECORATOR float operator()(const float& l) const
+	{
+		return std::fabs(l);
+	}
 };
 
 class Multiply : public Operation
@@ -147,24 +245,38 @@ private:
 
 };
 
-class Fill : public Operation
+class Sigmoid : public Operation
 {
 public:
-	CUDA_DECORATOR Fill(double d) : Operation(Operation::Fill), _value(d)
+	CUDA_DECORATOR Sigmoid() : Operation(Operation::Sigmoid)
 	{
-		
+
 	}
 
 public:
 	template<typename T>
-	CUDA_DECORATOR T operator()(const T& r) const
+	CUDA_DECORATOR T operator()(const T& l) const
 	{
-		return _value;
+		return T(1.0) / (T(1.0) + T(std::exp(-l)));
 	}
 	
-private:
-	double _value;
+};
 
+class SigmoidDerivative : public Operation
+{
+public:
+	CUDA_DECORATOR SigmoidDerivative() : Operation(Operation::SigmoidDerivative)
+	{
+
+	}
+
+public:
+	template<typename T>
+	CUDA_DECORATOR T operator()(const T& l) const
+	{
+		return 1.0 - matrix::Sigmoid()(l);
+	}
+	
 };
 
 class RectifiedLinear : public Operation
@@ -201,10 +313,10 @@ public:
 	
 };
 
-class Sigmoid : public Operation
+class Negate : public Operation
 {
 public:
-	CUDA_DECORATOR Sigmoid() : Operation(Operation::Sigmoid)
+	CUDA_DECORATOR Negate() : Operation(Operation::Negate)
 	{
 
 	}
@@ -213,35 +325,295 @@ public:
 	template<typename T>
 	CUDA_DECORATOR T operator()(const T& l) const
 	{
-		return T(1.0) / (T(1.0) + T(std::exp(-l)));
+		return -l;
 	}
 	
 };
 
-class SigmoidDerivative : public Operation
+class Maximum : public Operation
 {
 public:
-	CUDA_DECORATOR SigmoidDerivative() : Operation(Operation::SigmoidDerivative)
+	CUDA_DECORATOR Maximum() : Operation(Operation::Maximum), _value(0.0)
 	{
 
+	}
+
+	CUDA_DECORATOR Maximum(double d) : Operation(Operation::Maximum), _value(d)
+	{
+		
 	}
 
 public:
 	template<typename T>
-	CUDA_DECORATOR T operator()(const T& l) const
+	CUDA_DECORATOR T operator()(const T& l, const T& r) const
 	{
-		return 1.0 - matrix::Sigmoid()(l);
+		return std::max(l, r);
 	}
 	
+	template<typename T>
+	CUDA_DECORATOR T operator()(const T& r) const
+	{
+		return std::max(T(_value), r);
+	}
+	
+private:
+	double _value;
+
 };
 
-typedef std::tuple<Add, Multiply, Fill, Divide, RectifiedLinear,
-				   RectifiedLinearDerivative, Sigmoid, SigmoidDerivative> AllOperations;
+class Minimum : public Operation
+{
+public:
+	CUDA_DECORATOR Minimum() : Operation(Operation::Minimum), _value(0.0)
+	{
 
-typedef std::tuple<Add, Multiply, Divide> AllBinaryOperations;
+	}
 
-typedef std::tuple<Add, Multiply, Fill, Divide, RectifiedLinear, RectifiedLinearDerivative,
-				   Sigmoid, SigmoidDerivative> AllUnaryOperations;
+	CUDA_DECORATOR Minimum(double d) : Operation(Operation::Minimum), _value(d)
+	{
+		
+	}
+
+public:
+	template<typename T>
+	CUDA_DECORATOR T operator()(const T& l, const T& r) const
+	{
+		return std::min(l, r);
+	}
+	
+	template<typename T>
+	CUDA_DECORATOR T operator()(const T& r) const
+	{
+		return std::min(T(_value), r);
+	}
+	
+private:
+	double _value;
+
+};
+
+class Equal : public Operation
+{
+public:
+	CUDA_DECORATOR Equal() : Operation(Operation::Equal), _value(0.0)
+	{
+
+	}
+
+	CUDA_DECORATOR Equal(double d) : Operation(Operation::Equal), _value(d)
+	{
+		
+	}
+
+public:
+	template<typename T>
+	CUDA_DECORATOR T operator()(const T& l, const T& r) const
+	{
+		return T(l == r);
+	}
+	
+	template<typename T>
+	CUDA_DECORATOR T operator()(const T& r) const
+	{
+		return T(_value == r);
+	}
+	
+private:
+	double _value;
+
+};
+
+class LessThan : public Operation
+{
+public:
+	CUDA_DECORATOR LessThan() : Operation(Operation::LessThan), _value(0.0)
+	{
+
+	}
+
+	CUDA_DECORATOR LessThan(double d) : Operation(Operation::LessThan), _value(d)
+	{
+		
+	}
+
+public:
+	template<typename T>
+	CUDA_DECORATOR T operator()(const T& l, const T& r) const
+	{
+		return T(l < r);
+	}
+	
+	template<typename T>
+	CUDA_DECORATOR T operator()(const T& r) const
+	{
+		return T(r < _value);
+	}
+	
+private:
+	double _value;
+
+};
+
+class NotEqual : public Operation
+{
+public:
+	CUDA_DECORATOR NotEqual() : Operation(Operation::NotEqual), _value(0.0)
+	{
+
+	}
+
+	CUDA_DECORATOR NotEqual(double d) : Operation(Operation::NotEqual), _value(d)
+	{
+		
+	}
+
+public:
+	template<typename T>
+	CUDA_DECORATOR T operator()(const T& l, const T& r) const
+	{
+		return T(l != r);
+	}
+	
+	template<typename T>
+	CUDA_DECORATOR T operator()(const T& r) const
+	{
+		return T(_value != r);
+	}
+	
+private:
+	double _value;
+
+};
+
+class GreaterThanOrEqual : public Operation
+{
+public:
+	CUDA_DECORATOR GreaterThanOrEqual() : Operation(Operation::GreaterThanOrEqual), _value(0.0)
+	{
+
+	}
+
+	CUDA_DECORATOR GreaterThanOrEqual(double d) : Operation(Operation::GreaterThanOrEqual), _value(d)
+	{
+		
+	}
+
+public:
+	template<typename T>
+	CUDA_DECORATOR T operator()(const T& l, const T& r) const
+	{
+		return T(l >= r);
+	}
+	
+	template<typename T>
+	CUDA_DECORATOR T operator()(const T& r) const
+	{
+		return T(r >= _value);
+	}
+	
+private:
+	double _value;
+
+};
+
+class LessThanOrEqual : public Operation
+{
+public:
+	CUDA_DECORATOR LessThanOrEqual() : Operation(Operation::LessThanOrEqual), _value(0.0)
+	{
+
+	}
+
+	CUDA_DECORATOR LessThanOrEqual(double d) : Operation(Operation::LessThanOrEqual), _value(d)
+	{
+		
+	}
+
+public:
+	template<typename T>
+	CUDA_DECORATOR T operator()(const T& l, const T& r) const
+	{
+		return T(l <= r);
+	}
+	
+	template<typename T>
+	CUDA_DECORATOR T operator()(const T& r) const
+	{
+		return T(r <= _value);
+	}
+	
+private:
+	double _value;
+
+};
+
+class Fill : public Operation
+{
+public:
+	CUDA_DECORATOR Fill(double d) : Operation(Operation::Fill), _value(d)
+	{
+		
+	}
+
+public:
+	template<typename T>
+	CUDA_DECORATOR T operator()(const T& r) const
+	{
+		return _value;
+	}
+	
+private:
+	double _value;
+
+};
+
+class Square : public Operation
+{
+public:
+	CUDA_DECORATOR Square() : Operation(Operation::Square)
+	{
+		
+	}
+
+public:
+	template<typename T>
+	CUDA_DECORATOR T operator()(const T& r) const
+	{
+		return r * r;
+	}
+
+};
+
+class SquareAndScale : public Operation
+{
+public:
+	CUDA_DECORATOR SquareAndScale(double d) : Operation(Operation::SquareAndScale), _value(d)
+	{
+		
+	}
+
+public:
+	template<typename T>
+	CUDA_DECORATOR T operator()(const T& r) const
+	{
+		return r * r * _value;
+	}
+	
+private:
+	double _value;
+
+};
+
+typedef std::tuple<Add, Subtract, Multiply, Divide, Log, Exp, Abs, RectifiedLinear,
+				   RectifiedLinearDerivative, Sigmoid, SigmoidDerivative, Negate, Maximum,
+				   Minimum, Equal, LessThan, NotEqual, Fill, Square, SquareAndScale> AllOperations;
+
+typedef std::tuple<Add, Subtract, Multiply, Divide, Maximum, Minimum,
+				   Equal, LessThan, NotEqual> AllBinaryOperations;
+
+typedef std::tuple<Add, Subtract, Multiply, Divide, Log, Exp, Abs, RectifiedLinear,
+				   RectifiedLinearDerivative, Sigmoid, SigmoidDerivative, Negate, Maximum,
+				   Minimum, Equal, LessThan, NotEqual, Fill, Square, SquareAndScale> AllUnaryOperations;
 
 }
 }

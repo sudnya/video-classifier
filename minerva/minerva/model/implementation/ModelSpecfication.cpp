@@ -12,6 +12,8 @@
 #include <minerva/network/interface/Layer.h>
 #include <minerva/network/interface/LayerFactory.h>
 
+#include <minerva/matrix/interface/Dimension.h>
+
 #include <minerva/util/interface/json.h>
 
 // Standard Library Includes

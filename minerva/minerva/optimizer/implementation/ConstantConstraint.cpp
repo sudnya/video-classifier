@@ -8,7 +8,8 @@
 #include <minerva/optimizer/interface/ConstantConstraint.h>
 
 #include <minerva/matrix/interface/Matrix.h>
-#include <minerva/matrix/interface/Matrix.h>
+#include <minerva/matrix/interface/MatrixOperations.h>
+#include <minerva/matrix/interface/Operation.h>
 
 #include <minerva/util/interface/debug.h>
 
@@ -33,11 +34,11 @@ bool ConstantConstraint::isSatisfied(const Matrix& m) const
 {
 	if(_comparison == LessThanOrEqual)
 	{
-		return reduce(apply(m, LessThanOrEqual(_value)), {}, Sum()) == 0.0;
+		return reduce(matrix::apply(m, matrix::LessThanOrEqual(_value)), {}, matrix::Add())[0] == 0.0;
 	}
 	else if(_comparison == GreaterThanOrEqual)
 	{
-		return reduce(apply(m, GreaterThanOrEqual(_value)), {}, Sum()) == 0.0;
+		return reduce(matrix::apply(m, matrix::GreaterThanOrEqual(_value)), {}, matrix::Add())[0] == 0.0;
 	}
 	else
 	{
@@ -51,11 +52,11 @@ void ConstantConstraint::apply(Matrix& m) const
 {
 	if(_comparison == LessThanOrEqual)
 	{
-		apply(m, m, Min(_value));
+		matrix::apply(m, m, matrix::Minimum(_value));
 	}
 	else if(_comparison == GreaterThanOrEqual)
 	{
-		apply(m, m, Max(_value));
+		matrix::apply(m, m, matrix::Maximum(_value));
 	}
 	else
 	{

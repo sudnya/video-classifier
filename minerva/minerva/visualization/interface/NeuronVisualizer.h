@@ -6,6 +6,9 @@
 
 #pragma once
 
+// Standard Library Includes
+#include <cstddef>
+
 // Forward Declaration
 namespace minerva { namespace network { class NeuralNetwork; } }
 namespace minerva { namespace video   { class Image;         } }
@@ -26,8 +29,8 @@ public:
 	NeuronVisualizer(const NeuralNetwork* network);
 
 public:
-	void visualizeNeuron(Image& image, unsigned int outputNeuron);
-	Image visualizeInputTileForNeuron(unsigned int outputNeuron);
+	void visualizeNeuron(Image& image, size_t outputNeuron);
+	Image visualizeInputTileForNeuron(size_t outputNeuron);
 	Image visualizeInputTilesForAllNeurons();
 
 public:

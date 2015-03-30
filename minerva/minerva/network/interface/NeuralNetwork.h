@@ -17,6 +17,7 @@ namespace minerva { namespace network   { class CostFunction;        } }
 namespace minerva { namespace matrix    { class Matrix;              } }
 namespace minerva { namespace matrix    { class MatrixVector;        } }
 namespace minerva { namespace matrix    { class Precision;           } }
+namespace minerva { namespace matrix    { class Dimension;           } }
 namespace minerva { namespace util      { class TarArchive;          } }
 namespace minerva { namespace optimizer { class NeuralNetworkSolver; } }
 
@@ -83,10 +84,13 @@ public:
 public:
     size_t size() const;
     bool   empty() const;
+	
+public:
+	const matrix::Precision& precision() const;
 
 public:
-    Dimension getInputSize()  const;
-    Dimension getOutputSize() const;
+    size_t getInputCount()  const;
+    size_t getOutputCount() const;
 
 public:
     size_t totalNeurons()     const;

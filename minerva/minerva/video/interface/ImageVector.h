@@ -66,14 +66,8 @@ public:
 	void push_back(const Image& image);
 
 public:
-	Matrix convertToStandardizedMatrix(size_t sampleCount,
-		size_t xTileSize, size_t yTileSize, size_t colors, float mean, float standardDeviation) const;
-	Matrix convertToStandardizedMatrix(size_t sampleCount,
-		size_t tileSize, size_t colors, float mean, float standardDeviation) const;
+	Matrix getFeatureMatrix(size_t sampleCount, size_t xTileSize, size_t yTileSize, size_t colors) const;
     Matrix getReference(const util::StringVector& labels) const;
-
-private:
-	size_t _getSampledImageSize() const;
 
 private:
 	BaseImageVector _images;

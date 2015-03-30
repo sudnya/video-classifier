@@ -28,27 +28,27 @@ SoftmaxCostFunction::~SoftmaxCostFunction()
 
 static Matrix softmax(const Matrix& output)
 {
-	auto normalizedOutput = broadcast(output, reduce(output, Maximum(), {1}), Subtract());
+	auto normalizedOutput = broadcast(output, reduce(output, {1}, matrix::Maximum()), {1}, matrix::Subtract());
 
-	auto expOutput = apply(normalizedOutput, Exp());
+	auto expOutput = apply(normalizedOutput, matrix::Exp());
 	
-	auto sums = reduce(expOutput, Sum(), {1});
+	auto sums = reduce(expOutput, {1}, matrix::Add());
 	
-	return broadcast(expOutput, sums, Divide());
+	return broadcast(expOutput, sums, {1}, matrix::Divide());
 }
 
 Matrix SoftmaxCostFunction::computeCost(const Matrix& output, const Matrix& reference) const
 {
 	auto softmaxResult = softmax(output);
 
-	auto result = apply(Log(), softmaxResult);
+	auto result = apply(softmaxResult, matrix::Log());
 
-	return apply(apply(reference, result, Multiply()), Negate());
+	return apply(apply(reference, result, matrix::Multiply()), matrix::Negate());
 }
 
 Matrix SoftmaxCostFunction::computeDelta(const Matrix& output, const Matrix& reference) const
 {
-	return apply(softmax(output), reference, Subtract());
+	return apply(softmax(output), reference, matrix::Subtract());
 }
 
 CostFunction* SoftmaxCostFunction::clone() const

@@ -26,12 +26,12 @@ NeuralNetworkSolver::~NeuralNetworkSolver()
 
 }
 
-void NeuralNetworkSolver::setInput(const BlockSparseMatrix* input)
+void NeuralNetworkSolver::setInput(const Matrix* input)
 {
 	_input = input;
 }
 
-void NeuralNetworkSolver::setReference(const BlockSparseMatrix* reference)
+void NeuralNetworkSolver::setReference(const Matrix* reference)
 {
 	_reference = reference;
 }

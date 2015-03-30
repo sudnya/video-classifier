@@ -85,12 +85,9 @@ const model::Model* InputDataProducer::getModel() const
 size_t InputDataProducer::getInputCount() const
 {
 	// TODO: specialize this for different data types
-	return _model->getAttribute<size_t>("ResolutionX") * _model->getAttribute<size_t>("ResolutionY") * _model->getAttribute<size_t>("ColorComponents");
-}
-
-size_t InputDataProducer::getInputBlockingFactor() const
-{
-	return _model->begin()->getInputBlockingFactor();
+	return _model->getAttribute<size_t>("ResolutionX") *
+		   _model->getAttribute<size_t>("ResolutionY") *
+		   _model->getAttribute<size_t>("ColorComponents");
 }
 
 util::StringVector InputDataProducer::getOutputLabels() const

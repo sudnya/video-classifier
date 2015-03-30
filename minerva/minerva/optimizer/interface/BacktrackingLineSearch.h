@@ -27,18 +27,18 @@ public:
 public:
 	virtual void search(
 		const CostAndGradientFunction& costFunction,
-		MatrixVector& inputs, float& cost,
+		MatrixVector& inputs, double& cost,
 		MatrixVector& gradient,
 		const MatrixVector& direction,
-		float step, const MatrixVector& previousInputs,
+		double step, const MatrixVector& previousInputs,
 		const MatrixVector& previousGradients);
 
 private:
-	float _xTolerance;
-	float _gTolerance;
-	float _fTolerance;
-	float _maxStep;
-	float _minStep;
+	double _xTolerance;
+	double _gTolerance;
+	double _fTolerance;
+	double _maxStep;
+	double _minStep;
 	size_t _maxLineSearch;
 
 };

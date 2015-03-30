@@ -11,11 +11,11 @@
 #include <minerva/optimizer/interface/CostAndGradientFunction.h>
 
 #include <minerva/network/interface/NeuralNetwork.h>
-#include <minerva/network/interface/NeuralNetworkSubgraphExtractor.h>
+#include <minerva/network/interface/Layer.h>
 
 #include <minerva/matrix/interface/Matrix.h>
-#include <minerva/matrix/interface/BlockSparseMatrix.h>
-#include <minerva/matrix/interface/BlockSparseMatrixVector.h>
+#include <minerva/matrix/interface/Matrix.h>
+#include <minerva/matrix/interface/MatrixVector.h>
 #include <minerva/matrix/interface/SparseMatrixFormat.h>
 
 #include <minerva/util/interface/Knobs.h>
@@ -33,11 +33,9 @@ namespace minerva
 namespace optimizer
 {
 
-typedef network::NeuralNetwork NeuralNetwork;
-typedef network::NeuralNetworkSubgraphExtractor NeuralNetworkSubgraphExtractor;
-typedef matrix::Matrix Matrix;
-typedef matrix::BlockSparseMatrix BlockSparseMatrix;
-typedef GeneralDifferentiableSolver::BlockSparseMatrixVector BlockSparseMatrixVector;
+typedef network::NeuralNetwork                    NeuralNetwork;
+typedef matrix::Matrix                            Matrix;
+typedef GeneralDifferentiableSolver::MatrixVector MatrixVector;
 
 SimpleNeuralNetworkSolver::SimpleNeuralNetworkSolver(NeuralNetwork* n)
 : NeuralNetworkSolver(n), _solver(GeneralDifferentiableSolverFactory::create())
@@ -71,8 +69,8 @@ SimpleNeuralNetworkSolver& SimpleNeuralNetworkSolver::operator=(const SimpleNeur
 class NeuralNetworkCostAndGradient : public CostAndGradientFunction
 {
 public:
-	NeuralNetworkCostAndGradient(NeuralNetwork* n, const BlockSparseMatrix* i, const BlockSparseMatrix* r)
-	: CostAndGradientFunction(n->getWeightFormat()), _network(n), _input(i), _reference(r)
+	NeuralNetworkCostAndGradient(NeuralNetwork* n, const Matrix* i, const Matrix* r)
+	: _network(n), _input(i), _reference(r)
 	{
 	
 	}
@@ -83,15 +81,11 @@ public:
 	}
 	
 public:
-	virtual float computeCostAndGradient(BlockSparseMatrixVector& gradient,
-		const BlockSparseMatrixVector& weights) const
+	virtual double computeCostAndGradient(MatrixVector& gradient,
+		const MatrixVector& weights) const
 	{
-		_network->restoreWeights(std::move(const_cast<BlockSparseMatrixVector&>(weights)));
+		double newCost = _network->getCostAndGradient(gradient, *_input, *_reference);
 		
-		float newCost = _network->getCostAndGradient(gradient, *_input, *_reference);
-		
-		_network->extractWeights(const_cast<BlockSparseMatrixVector&>(weights));
-
 		if(util::isLogEnabled("SimpleNeuralNetworkSolver::Detail"))
 		{	
 			util::log("SimpleNeuralNetworkSolver::Detail") << " new gradient is : " << gradient[1].toString();
@@ -103,15 +97,27 @@ public:
 	}
 
 private:
-	NeuralNetwork*           _network;
-	const BlockSparseMatrix* _input;
-	const BlockSparseMatrix* _reference;
+	NeuralNetwork* _network;
+	const Matrix*  _input;
+	const Matrix*  _reference;
 };
 
-static float differentiableSolver(NeuralNetwork* network, const BlockSparseMatrix* input, const BlockSparseMatrix* reference, GeneralDifferentiableSolver* solver)
+static MatrixVector getWeights(NeuralNetwork* network)
+{
+	MatrixVector weights;
+
+	for(auto& layer : *network)
+	{
+		weights.push_back(layer->weights());
+	}
+
+	return weights;
+}
+
+static double differentiableSolver(NeuralNetwork* network, const Matrix* input, const Matrix* reference, GeneralDifferentiableSolver* solver)
 {
 	util::log("SimpleNeuralNetworkSolver") << "  starting general solver\n";
-	float newCost = std::numeric_limits<float>::infinity();
+	double newCost = std::numeric_limits<double>::infinity();
 	
 	if(!solver)
 	{
@@ -121,16 +127,12 @@ static float differentiableSolver(NeuralNetwork* network, const BlockSparseMatri
 	
 	NeuralNetworkCostAndGradient costAndGradient(network, input, reference);
 
-	BlockSparseMatrixVector weights;
-	
-	network->extractWeights(weights);
-	
+	auto weights = getWeights(network);
+
 	newCost = solver->solve(weights, costAndGradient);
 	
 	util::log("SimpleNeuralNetworkSolver") << "   solver produced new cost: "
 		<< newCost << ".\n";
-
-	network->restoreWeights(std::move(weights));
 
 	return newCost;
 }

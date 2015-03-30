@@ -226,7 +226,9 @@ bool NeuralNetwork::empty() const
 size_t NeuralNetwork::getInputCount() const
 {
 	if(empty())
+	{
 		return 0;
+	}
 
 	return front()->getInputCount();
 }
@@ -234,7 +236,9 @@ size_t NeuralNetwork::getInputCount() const
 size_t NeuralNetwork::getOutputCount() const
 {
 	if(empty())
+	{
 		return 0;
+	}
 
 	return back()->getOutputCount();
 }

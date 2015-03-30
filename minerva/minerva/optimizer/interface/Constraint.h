@@ -7,7 +7,6 @@
 #pragma once
 
 // Forward Declarations
-namespace minerva { namespace matrix { class Matrix;            } }
 namespace minerva { namespace matrix { class Matrix; } }
 
 namespace minerva
@@ -20,7 +19,6 @@ namespace optimizer
 class Constraint
 {
 public:
-	typedef matrix::Matrix            Matrix;
 	typedef matrix::Matrix Matrix;
 
 public:

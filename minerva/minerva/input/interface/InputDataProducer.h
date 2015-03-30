@@ -76,7 +76,6 @@ public:
 
 protected:
 	size_t getInputCount() const;
-	size_t getInputBlockingFactor() const;
 
 protected:
 	util::StringVector getOutputLabels() const;

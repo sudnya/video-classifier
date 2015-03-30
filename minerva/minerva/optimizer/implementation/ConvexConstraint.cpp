@@ -25,7 +25,7 @@ bool ConvexConstraint::isSatisfied(const Matrix& ) const
 	assertM(false, "Not implemented.");
 }
 
-void ConvexConstraint::apply(BlockSparseMatrix& ) const
+void ConvexConstraint::apply(Matrix& ) const
 {
 	assertM(false, "Not implemented.");
 }
