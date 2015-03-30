@@ -168,15 +168,38 @@ Matrix resize(Matrix input, const Dimension& size);
 
 Matrix reshape(Matrix input, const Dimension& size);
 
-void gemm(Matrix& result, const Matrix& left, const Matrix& right);
-Matrix gemm(const Matrix& left, const Matrix& right);
+void gemm(Matrix& result, const Matrix& left, const Matrix& right)
+{
+	gemm(result, 0.0, left, false, 1.0, right, false);
+}
+
+Matrix gemm(const Matrix& left, const Matrix& right)
+{
+	Matrix result({left.size()[0], right.size()[1]});
+
+	gemm(result, left, right);
+	
+	return result;
+}
 
 void gemm(Matrix& result, double beta,
 	const Matrix& left, bool transposeLeft, double alpha,
-	const Matrix& right, bool transposeRight);
+	const Matrix& right, bool transposeRight)
+{
+
+}
+
 Matrix gemm(double beta,
 	const Matrix& left, bool transposeLeft, double alpha,
-	const Matrix& right, bool transposeRight);
+	const Matrix& right, bool transposeRight)
+{
+	size_t rows    = transposeLeft  ? left.size()[1]  : left.size()[0];
+	size_t columns = transposeRight ? right.size()[0] : right.size()[1];
+	
+	Matrix result({rows, columns}, left.precision());
+	
+	gemm(result, beta, left, transposeLeft, alpha, right, transposeRight);
+}
 
 }
 }
