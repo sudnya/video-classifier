@@ -78,6 +78,11 @@ static ImageVector getBatch(ImageVector& images, VideoVector& video,
 	size_t& remainingSamples, size_t batchSize, std::default_random_engine& generator,
 	bool requiresLabeledData);
 
+static void standardizeInput(const matrix::Matrix& )
+{
+	assert(false);
+}
+
 InputVisualDataProducer::InputAndReferencePair InputVisualDataProducer::pop()
 {
 	assert(_initialized);
@@ -85,12 +90,16 @@ InputVisualDataProducer::InputAndReferencePair InputVisualDataProducer::pop()
 	ImageVector batch = getBatch(_images, _videos, _remainingSamples,
 		getBatchSize(), _generator, getRequiresLabeledData());
 	
+	size_t x = 0;
+	size_t y = 0;
+	
+	util::getNearestToSquareFactors(x, y, getInputCount());
+	
 	// TODO: specialize this logic
-	auto input = batch.convertToStandardizedMatrix(getInputCount(),
-		getInputBlockingFactor(), _colorComponents,
-		_model->getAttribute<float>("InputSampleMean"),
-		_model->getAttribute<float>("InputSampleStandardDeviation"));
+	auto input = batch.getFeatureMatrix(x, y, _colorComponents);
 	auto reference = batch.getReference(getOutputLabels());
+	
+	standardizeInput(input);
 	
 	util::log("InputVisualDataProducer") << "Loaded batch of '" << batch.size()
 		<<  "' image frames, " << _remainingSamples << " remaining in this epoch.\n";

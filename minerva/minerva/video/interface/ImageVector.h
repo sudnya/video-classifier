@@ -66,7 +66,7 @@ public:
 	void push_back(const Image& image);
 
 public:
-	Matrix getFeatureMatrix(size_t sampleCount, size_t xTileSize, size_t yTileSize, size_t colors) const;
+	Matrix getFeatureMatrix(size_t xTileSize, size_t yTileSize, size_t colors) const;
     Matrix getReference(const util::StringVector& labels) const;
 
 private:

@@ -3,6 +3,7 @@
 // Standard Library Includes
 #include <array>
 #include <cassert>
+#include <string>
 
 namespace minerva
 {
@@ -12,7 +13,10 @@ namespace matrix
 class Dimension
 {
 private:
-	typedef std::array<size_t, 9> Storage;
+	static constexpr size_t capacity = 9;
+
+private:
+	typedef std::array<size_t, capacity> Storage;
 
 public:
 	typedef Storage::iterator       iterator;
@@ -27,9 +31,7 @@ public:
 	}
 	
 	Dimension();
-
 	Dimension(std::initializer_list<size_t>);
-	Dimension(const Dimension& );
 
 public:
 	void push_back(size_t );
@@ -62,7 +64,7 @@ private:
 	template<typename T>
 	void fill(Storage& storage, size_t& arity, T argument)
 	{
-		assert(arity < 9);
+		assert(arity < capacity);
 		storage[arity++] = argument;
 	}
 	

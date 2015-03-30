@@ -87,8 +87,7 @@ void ImageVector::clear()
 	_images.clear();
 }
 
-ImageVector::Matrix ImageVector::getFeatureMatrix(size_t sampleCount,
-	size_t xTileSize, size_t yTileSize, size_t colors) const
+ImageVector::Matrix ImageVector::getFeatureMatrix(size_t xTileSize, size_t yTileSize, size_t colors) const
 {
 	size_t images = _images.size();
 	
