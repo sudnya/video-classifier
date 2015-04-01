@@ -2,6 +2,7 @@
 // Minerva Includes
 #include <minerva/matrix/interface/MatrixOperations.h>
 #include <minerva/matrix/interface/MatrixTransformations.h>
+#include <minerva/matrix/interface/CopyOperations.h>
 #include <minerva/matrix/interface/Matrix.h>
 #include <minerva/matrix/interface/Operation.h>
 
@@ -126,11 +127,96 @@ Matrix apply(const Matrix& left, const Matrix& right, const Operation& op)
 	return temp;
 }
 
+namespace detail
+{
+
+template<typename OperationType, typename T>
+void applyOverPrecisions(Matrix& result, const Matrix& input,
+	const Operation& op, const Precision& precision, std::tuple<T> precisions)
+{
+	typedef T PrecisionPrimitive;
+	typedef typename PrecisionPrimitive::type NativeType;
+
+	assert(precision == PrecisionPrimitive());
+	
+	auto nativeOperation = static_cast<const OperationType&>(op);
+	
+	assert(result.isContiguous() && input.isContiguous()); // TODO: handle complex strides
+	
+	auto rawResult = static_cast<NativeType*>(result.data());
+	auto rawInput  = static_cast<const NativeType*>(input.data());
+	
+	size_t elements = result.elements();
+
+	parallel::multiBulkSynchronousParallel([=](parallel::ThreadGroup threadGroup)
+	{
+		for(size_t i = threadGroup.id(); i < elements; i += threadGroup.size())
+		{
+			rawResult[i] = nativeOperation(rawInput[i]);
+		}
+	});
+}
+
+template<typename OperationType, typename PossiblePrecisions>
+void applyOverPrecisions(Matrix& result, const Matrix& input, const Operation& op,
+	const Precision& precision, PossiblePrecisions precisions)
+{
+	typedef typename std::tuple_element<0, PossiblePrecisions>::type PossiblePrecisionType;
+
+	if(precision == PossiblePrecisionType())
+	{
+		applyOverPrecisions<OperationType>(result, input, op, precision,
+			std::tuple<PossiblePrecisionType>());
+	}
+	else
+	{
+		typedef typename util::RemoveFirstType<PossiblePrecisions>::type RemainingPrecisions;
+		
+		applyOverPrecisions<OperationType>(result, input, op, precision, RemainingPrecisions());
+	}
+}
+
+
+template<typename T>
+void applyOverOperations(Matrix& result, const Matrix& input, const Operation& op,
+	const Precision& precision, const std::tuple<T>& operations)
+{
+	typedef T PossibleOperationType;
+
+	assert(op == PossibleOperationType());
+	
+	applyOverPrecisions<PossibleOperationType, AllPrecisions>(result, input, op, precision, AllPrecisions());
+}
+
+template<typename PossibleOperations>
+void applyOverOperations(Matrix& result, const Matrix& input,
+	const Operation& op, const Precision& precision, const PossibleOperations& operations)
+{
+	typedef typename std::tuple_element<0, PossibleOperations>::type PossibleOperationType;
+
+	if(op == PossibleOperationType())
+	{
+		applyOverOperations(result, input, op, precision, std::tuple<PossibleOperationType>());
+	}
+	else
+	{
+		typedef typename util::RemoveFirstType<PossibleOperations>::type RemainingOperations;
+		
+		applyOverOperations(result, input, op, precision, RemainingOperations());
+	}
+}
+
+void applyOverOperations(Matrix& result, const Matrix& input,
+	const Operation& op, const Precision& precision)
+{
+	applyOverOperations<AllUnaryOperations>(result, input, op, precision, AllUnaryOperations());
+}
+
+}
+
 void apply(Matrix& result, const Matrix& input, const Operation& op)
 {
-	//auto precision = input.precision();
-	
-	//detail::applyOverOperations(result, input, op, precision);
+	detail::applyOverOperations(result, input, op, input.precision());
 }
 
 Matrix apply(const Matrix& input, const Operation& op)
@@ -148,57 +234,55 @@ Matrix reduce(const Matrix& left, const Matrix& right, const Operation& op, cons
 void broadcast(Matrix& result, const Matrix& left, const Matrix& right, const Operation& op);
 Matrix broadcast(const Matrix& left, const Matrix& right, const Operation& op);
 
-void copy(Matrix& result, const Matrix& input);
-Matrix copy(const Matrix& input);
-
-void copy(Matrix& result, const Matrix& input, const Precision&);
-
-Matrix copy(const Matrix& input, const Precision& precision)
+Matrix slice(Matrix input, const Dimension& begin, const Dimension& end)
 {
-	Matrix result(input.size(), precision);
-	
-	copy(result, input, precision);
-	
-	return result;
-}
- 
-Matrix slice(Matrix input, const Dimension& begin, const Dimension& end);
-Matrix slice(Matrix input, const Dimension& begin, const Dimension& end, const Dimension& stride);
-Matrix resize(Matrix input, const Dimension& size);
+	auto size = end - begin;
 
-Matrix reshape(Matrix input, const Dimension& size);
-
-void gemm(Matrix& result, const Matrix& left, const Matrix& right)
-{
-	gemm(result, 0.0, left, false, 1.0, right, false);
+	return Matrix(size, linearStride(size), input.precision(), input.allocation(), input[begin].address());
 }
 
-Matrix gemm(const Matrix& left, const Matrix& right)
+Matrix slice(Matrix input, const Dimension& begin, const Dimension& end, const Dimension& stride)
 {
-	Matrix result({left.size()[0], right.size()[1]});
+	auto size = (end - begin) / stride;
 
-	gemm(result, left, right);
+	return Matrix(size, stride, input.precision(), input.allocation(), input[begin].address());
+}
+
+Matrix resize(Matrix input, const Dimension& size)
+{
+	Matrix result(size, input.precision());
+	
+	copy(result, size);
 	
 	return result;
 }
 
-void gemm(Matrix& result, double beta,
-	const Matrix& left, bool transposeLeft, double alpha,
-	const Matrix& right, bool transposeRight)
+static Dimension fillInDimension(const Dimension& newSize, const Dimension& inputSize)
 {
+	Dimension size(newSize);
+	
+	// fill in remaining dimensions
+	size_t remaining = inputSize.product() / size.product();
 
+	size_t dimension = size.size();
+	
+	assert(inputSize.product() % size.product() == 0);
+	
+	// TODO: be smarter about the remainder
+	for(size_t d = dimension; d < inputSize.size(); ++d)
+	{
+		size.push_back(remaining);
+		remaining /= remaining;
+	}
+
+	assert(size.product() == inputSize.product());
+	
+	return size;
 }
 
-Matrix gemm(double beta,
-	const Matrix& left, bool transposeLeft, double alpha,
-	const Matrix& right, bool transposeRight)
+Matrix reshape(Matrix input, const Dimension& size)
 {
-	size_t rows    = transposeLeft  ? left.size()[1]  : left.size()[0];
-	size_t columns = transposeRight ? right.size()[0] : right.size()[1];
-	
-	Matrix result({rows, columns}, left.precision());
-	
-	gemm(result, beta, left, transposeLeft, alpha, right, transposeRight);
+	return Matrix(fillInDimension(size, input.size()), input.stride(), input.precision(), input.allocation(), input.data());
 }
 
 }

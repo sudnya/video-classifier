@@ -12,6 +12,8 @@ namespace matrix
 Matrix reshape(const Matrix& matrix, const Dimension& );
 Matrix flatten(const Matrix& matrix);
 
+Dimension linearStride(const Dimension& );
+
 }
 }
 

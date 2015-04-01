@@ -67,8 +67,14 @@ public:
 
 	static void cublasSgemm(cublasOperation_t transa,
 		cublasOperation_t transb, int m, int n, int k, 
-		const float* alpha, const float *A, int lda, 
-		const float *B, int ldb, const float* beta, float *C, 
+		const float* alpha, const float* A, int lda, 
+		const float* B, int ldb, const float* beta, float* C, 
+		int ldc);
+
+	static void cublasDgemm(cublasOperation_t transa,
+		cublasOperation_t transb, int m, int n, int k, 
+		const double* alpha, const double* A, int lda, 
+		const double* B, int ldb, const double* beta, double* C, 
 		int ldc);
 	
 	static void cublasSgemmBatched(cublasOperation_t transa,

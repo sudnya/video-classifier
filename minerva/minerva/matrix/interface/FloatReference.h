@@ -18,6 +18,10 @@ public:
 	
 public:
 	operator double() const;
+
+public:
+	      void* address();
+	const void* address() const;
 	
 private:
 	Precision _precision;
@@ -32,6 +36,10 @@ public:
 	
 public:
 	operator double() const;
+
+public:
+	      void* address();
+	const void* address() const;
 
 private:
 	Precision   _precision;

@@ -31,11 +31,13 @@ class Matrix
 {
 public:
 	Matrix();
+	Matrix(std::initializer_list<size_t>);
 	Matrix(const Dimension& size);
 	Matrix(const Dimension& size, const Precision& precision);
 	Matrix(const Dimension& size, const Dimension& stride);
 	Matrix(const Dimension& size, const Dimension& stride, const Precision& precision);
 	Matrix(const Dimension& size, const Dimension& stride, const Precision& precision, const std::shared_ptr<Allocation>& allocation);
+	Matrix(const Dimension& size, const Dimension& stride, const Precision& precision, const std::shared_ptr<Allocation>& allocation, void* start);
 
 public:
 	~Matrix();
@@ -66,6 +68,7 @@ public:
 
 public:
 	bool isContiguous() const;
+	bool isLeadingDimensionContiguous() const;
 
 public:
     std::string toString() const;

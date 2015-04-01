@@ -13,6 +13,7 @@
 
 #include <minerva/matrix/interface/Matrix.h>
 #include <minerva/matrix/interface/MatrixOperations.h>
+#include <minerva/matrix/interface/BlasOperations.h>
 #include <minerva/matrix/interface/RandomOperations.h>
 #include <minerva/matrix/interface/Operation.h>
 #include <minerva/matrix/interface/MatrixVector.h>

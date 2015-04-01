@@ -47,7 +47,8 @@ public:
 		GreaterThanOrEqual,
 		Fill,
 		Square,
-		SquareAndScale	
+		SquareAndScale,
+		Copy	
 	};
 
 public:
@@ -550,7 +551,7 @@ private:
 class Fill : public Operation
 {
 public:
-	CUDA_DECORATOR Fill(double d) : Operation(Operation::Fill), _value(d)
+	CUDA_DECORATOR Fill(double d = 0.0) : Operation(Operation::Fill), _value(d)
 	{
 		
 	}
@@ -587,7 +588,7 @@ public:
 class SquareAndScale : public Operation
 {
 public:
-	CUDA_DECORATOR SquareAndScale(double d) : Operation(Operation::SquareAndScale), _value(d)
+	CUDA_DECORATOR SquareAndScale(double d = 1.0) : Operation(Operation::SquareAndScale), _value(d)
 	{
 		
 	}
