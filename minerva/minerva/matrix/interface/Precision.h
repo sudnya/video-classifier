@@ -14,7 +14,7 @@ public:
 	enum Type
 	{
 		Half,
-		Float,
+		Single,
 		Double,
 	};
 

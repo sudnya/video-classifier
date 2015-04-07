@@ -106,6 +106,44 @@ void CublasLibrary::cublasSgemm(
 	}
 }
 
+void CublasLibrary::cublasDgemm(
+	cublasOperation_t transa, cublasOperation_t transb,
+	int m, int n, int k, const double* alpha, const double* A, int lda, 
+	const double* B, int ldb, const double* beta, double* C, int ldc)
+{
+	_check();
+	
+	util::log("CublasLibrary") << " CUBLAS DGEMM: ("
+		"handle: " << _interface.handle <<  ", "
+		"transa: " << transa <<  ", "
+		"transb: " << transb <<  ", "
+
+		"m: " << m <<  ", "
+		"n: " << n <<  ", "
+		"k: " << k <<  ", "
+
+		"alpha: " << alpha <<  " (" << *alpha << "), "
+		"A: " << A <<  ", "
+		"lda: " << lda <<  ", "
+
+		"B: " << B <<  ", "
+		"ldb: " << ldb <<  ", "
+		"beta: " << beta <<  " (" << *beta << "), "
+
+		"C: " << C <<  ", "
+		"ldc: " << ldc << ")\n";
+	
+	cublasStatus_t status = (*_interface.cublasDgemm_v2)(_interface.handle,
+		transa, transb, m, n, k, alpha, A, lda, B, ldb,
+		beta, C, ldc);
+		
+	if(status != CUBLAS_STATUS_SUCCESS)
+	{
+		throw std::runtime_error("Cuda DGEMM failed: " +
+			cublasGetErrorString(status));
+	}
+}
+
 void CublasLibrary::cublasSgemmBatched(
 	cublasOperation_t transa, cublasOperation_t transb,
 	int m, int n, int k, const float* alpha, const float *A, int lda, 
@@ -234,7 +272,6 @@ void CublasLibrary::Interface::load()
 	
     #ifdef __APPLE__
     const char* libraryName = "libcublas.dylib";
-    //const char* libraryName = "libcublas-optimized.dylib";
     #else
     const char* libraryName = "libcublas.so";
     #endif
@@ -260,6 +297,7 @@ void CublasLibrary::Interface::load()
 			
 		DynLink(cublasSgeam);
 		DynLink(cublasSgemm_v2);
+		DynLink(cublasDgemm_v2);
 		DynLink(cublasSgemmBatched);
 		
 		DynLink(cublasCreate_v2);

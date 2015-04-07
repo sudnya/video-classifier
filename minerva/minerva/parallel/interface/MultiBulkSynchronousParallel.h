@@ -13,9 +13,9 @@ namespace detail
 #ifdef __NVCC__
 
 template<typename FunctionType>
-__global__ void kernelLauncher(FunctionType function, ThreadGroup threadGroup)
+__global__ void kernelLauncher(FunctionType function)
 {
-	function(threadGroup):
+	function(threadGroup, ThreadGroup(blockDim.x * gridDim.x, threadIdx.x + blockIdx.x * blockDim.x));
 }
 
 template<typename FunctionType>
@@ -33,7 +33,7 @@ void launchCudaKernel(FunctionType function)
 
 	size_t ctas = multiprocessorCount * ctasPerSM;
 
-	kernelLauncher<<<ctas, threads>>>(f, ThreadGroup(ctas * threads));
+	kernelLauncher<<<ctas, threads>>>(f);
 }
 #endif
 
@@ -45,7 +45,7 @@ void multiBulkSynchronousParallel(FunctionType function)
 	#ifdef __NVCC__
 	detail::launchCudaKernel(function);
 	#else
-	function(ThreadGroup(1));
+	function(ThreadGroup(1, 0));
 	#endif
 }
 

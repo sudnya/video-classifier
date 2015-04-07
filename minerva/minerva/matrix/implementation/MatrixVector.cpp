@@ -30,6 +30,9 @@ MatrixVector::MatrixVector(std::initializer_list<Matrix> l)
 MatrixVector::MatrixVector(const MatrixVector& m) = default;
 
 MatrixVector::MatrixVector(MatrixVector&& m) = default;
+	
+MatrixVector& MatrixVector::operator=(const MatrixVector&  ) = default;
+MatrixVector& MatrixVector::operator=(MatrixVector&& ) = default;
 
 MatrixVector::reference_type MatrixVector::operator[](size_t i)
 {
@@ -116,6 +119,14 @@ void MatrixVector::push_back(MatrixVector&& v)
 	for(auto& m : v)
 	{
 		_matrix.push_back(std::move(m));	
+	}
+}
+
+void MatrixVector::push_back(const MatrixVector& v)
+{
+	for(auto& m : v)
+	{
+		_matrix.push_back(m);	
 	}
 }
 

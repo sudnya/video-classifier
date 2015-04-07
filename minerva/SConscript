@@ -23,7 +23,7 @@ env['path_to_root_dir'] = os.path.abspath(minerva_path_to_root_dir)
 # find all source files in the source tree
 directories = ['minerva/driver', 'minerva/util', 'minerva/engine',
 	'minerva/matrix', 'minerva/model', 'minerva/network',
-	'minerva/optimizer', 'minerva/video', 'minerva/visualization',
+	'minerva/optimizer', 'minerva/parallel', 'minerva/video', 'minerva/visualization',
 	'minerva/database', 'minerva/input', 'minerva/results']
 
 source_directories = [os.path.join(i, 'implementation') for i in directories]

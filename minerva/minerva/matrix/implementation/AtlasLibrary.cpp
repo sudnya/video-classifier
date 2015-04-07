@@ -42,6 +42,18 @@ void AtlasLibrary::sgemm(const int Order, const int TransA,
 		ldb, beta, C, ldc);
 }
 
+void AtlasLibrary::dgemm(const int Order, const int TransA,
+         const int TransB, const int M, const int N,
+         const int K, const double alpha, const double* A,
+         const int lda, const double* B, const int ldb,
+         const double beta, double* C, const int ldc)
+{
+	_check();
+	
+	(*_interface.cblas_dgemm)(Order, TransA, TransB, M, N, K, alpha, A, lda, B,
+		ldb, beta, C, ldc);
+}
+
 void AtlasLibrary::_check()
 {
 	load();
@@ -101,6 +113,7 @@ void AtlasLibrary::Interface::load()
 		dlsym(_library, #function)); checkFunction((void*)function, #function)
 	
 	DynLink(cblas_sgemm);
+	DynLink(cblas_dgemm);
 	
 	#undef DynLink	
 
