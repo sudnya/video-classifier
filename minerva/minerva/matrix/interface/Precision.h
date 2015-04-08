@@ -13,12 +13,14 @@ class Precision
 public:
 	enum Type
 	{
+		NoType,
 		Half,
 		Single,
 		Double,
 	};
 
 public:
+	Precision();
 	Precision(Type t);
 
 public:

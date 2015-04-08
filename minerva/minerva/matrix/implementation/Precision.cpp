@@ -2,10 +2,18 @@
 // Minerva Includes
 #include <minerva/matrix/interface/Precision.h>
 
+#include <minerva/util/interface/debug.h>
+
 namespace minerva
 {
 namespace matrix
 {
+
+Precision::Precision()
+: _type(NoType)
+{
+
+}
 
 Precision::Precision(Type t)
 : _type(t)
@@ -25,6 +33,9 @@ size_t Precision::size() const
 	case Half: return sizeof(float)/2;
 	case Single: return sizeof(float);
 	case Double: return sizeof(double);
+	default:
+		assertM(false, "Invalid type.");
+		return 0;
 	}
 }
 

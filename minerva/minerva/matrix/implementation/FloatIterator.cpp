@@ -1,6 +1,7 @@
 
 // Minerva Includes
 #include <minerva/matrix/interface/FloatIterator.h>
+#include <minerva/matrix/interface/MatrixTransformations.h>
 
 namespace minerva
 {
@@ -16,7 +17,7 @@ static Dimension advance(const Dimension& offset, const Dimension& size)
 	
 	bool carry = true;
 	
-	for(auto i = 0, end = offset.size(); i < end; ++i)
+	for(size_t i = 0, end = offset.size(); i < end; ++i)
 	{
 		if(carry)
 		{
@@ -43,8 +44,9 @@ static Dimension advance(const Dimension& offset, const Dimension& size)
 
 FloatIterator::FloatIterator() = default;
 
-FloatIterator::FloatIterator(const Precision& p, const Dimension& s, void* d)
-: _data(d), _stride(s), _precision(p)
+FloatIterator::FloatIterator(const Precision& p, const Dimension& size,
+	const Dimension& stride, const Dimension& offset, void* d)
+: _data(d), _stride(stride), _size(size), _offset(offset), _precision(p)
 {
 
 }
@@ -55,7 +57,7 @@ FloatIterator& FloatIterator::operator=(const FloatIterator&) = default;
 
 FloatReference FloatIterator::operator*()
 {
-	return FloatReference(_precision, detail::getAddress(_data, ));
+	return FloatReference(_precision, getAddress(_stride, _offset, _data, _precision));
 }
 
 FloatIterator FloatIterator::operator++()
@@ -63,7 +65,7 @@ FloatIterator FloatIterator::operator++()
 	return FloatIterator(_precision, _size, _stride, detail::advance(_offset, _size), _data);
 }
 
-bool FloatIterator::operator==(const FloatIterator& i)
+bool FloatIterator::operator==(const FloatIterator& i) const
 {
 	return (_data == i._data) &&
 		   (_precision == i._precision) &&
@@ -72,36 +74,92 @@ bool FloatIterator::operator==(const FloatIterator& i)
 		   (_stride == i._stride);
 }
 
-bool FloatIterator::operator==(const ConstFloatIterator&);
+bool FloatIterator::operator==(const ConstFloatIterator& i) const
+{
+	return (_data == i._data) &&
+		   (_precision == i._precision) &&
+		   (_offset == i._offset) &&
+		   (_size == i._size) &&
+		   (_stride == i._stride);
+}
 
-bool FloatIterator::operator!=(const FloatIterator& i)
+bool FloatIterator::operator!=(const FloatIterator& i) const
 {
 	return !(*this == i);
 }
 
-bool FloatIterator::operator!=(const ConstFloatIterator& i)
+bool FloatIterator::operator!=(const ConstFloatIterator& i) const
 {
 	return !(*this == i);
 }
 
-ConstFloatIterator::ConstFloatIterator();
-ConstFloatIterator::ConstFloatIterator(const Precision& p, const Dimension& s, const void* d);
+ConstFloatIterator::ConstFloatIterator() = default;
 
-ConstFloatIterator::ConstFloatIterator(const FloatIterator& );
-ConstFloatIterator::ConstFloatIterator(const ConstFloatIterator& );
+ConstFloatIterator::ConstFloatIterator(const Precision& p, const Dimension& size,
+	const Dimension& stride, const Dimension& offset, const void* d)
+: _data(d), _stride(stride), _size(size), _offset(offset), _precision(p)
+{
 
-ConstFloatIterator& ConstFloatIterator::operator=(const FloatIterator&);
-ConstFloatIterator& ConstFloatIterator::operator=(const ConstFloatIterator&);
+}
 
-ConstFloatReference ConstFloatIterator::operator*();
+ConstFloatIterator::ConstFloatIterator(const FloatIterator& i)
+: _data(i._data), _stride(i._stride), _size(i._size), _offset(i._offset), _precision(i._precision)
+{
 
-ConstFloatIterator ConstFloatIterator::operator++();
+}
 
-bool ConstFloatIterator::operator==(const FloatIterator&);
-bool ConstFloatIterator::operator==(const ConstFloatIterator&);
+ConstFloatIterator::ConstFloatIterator(const ConstFloatIterator& ) = default;
 
-bool ConstFloatIterator::operator!=(const FloatIterator&);
-bool ConstFloatIterator::operator!=(const ConstFloatIterator&);
+ConstFloatIterator& ConstFloatIterator::operator=(const FloatIterator& i)
+{
+	_data      = i._data;
+	_stride    = i._stride;
+	_size      = i._size;
+	_offset    = i._offset;
+	_precision = i._precision;
+
+	return *this;
+}
+
+ConstFloatIterator& ConstFloatIterator::operator=(const ConstFloatIterator&) = default;
+
+ConstFloatReference ConstFloatIterator::operator*()
+{
+	return ConstFloatReference(_precision, getAddress(_stride, _offset, _data, _precision));
+}
+
+ConstFloatIterator ConstFloatIterator::operator++()
+{
+	return ConstFloatIterator(_precision, _size, _stride, detail::advance(_offset, _size), _data);
+}
+
+bool ConstFloatIterator::operator==(const FloatIterator& i) const
+{
+	return (_data == i._data) &&
+		   (_precision == i._precision) &&
+		   (_offset == i._offset) &&
+		   (_size == i._size) &&
+		   (_stride == i._stride);
+}
+
+bool ConstFloatIterator::operator==(const ConstFloatIterator& i) const
+{
+	return (_data == i._data) &&
+		   (_precision == i._precision) &&
+		   (_offset == i._offset) &&
+		   (_size == i._size) &&
+		   (_stride == i._stride);
+}
+
+bool ConstFloatIterator::operator!=(const FloatIterator& i) const
+{
+	return !(*this == i);
+}
+
+bool ConstFloatIterator::operator!=(const ConstFloatIterator& i) const
+{
+	return !(*this == i);
+}
 
 }
 }

@@ -91,46 +91,25 @@ size_t Matrix::elements() const
 {
 	return size().product();
 }
-
-static size_t getOffset(const Dimension& stride, const Dimension& position)
-{
-	size_t offset = 0;
-	
-	for(auto i = 0; i < stride.size(); ++i)
-	{
-		offset += stride[i] * position[i];
-	}
-	
-	return offset;
-}
-
-static void* getAddress(const Dimension& stride, const Dimension& position, void* data, const Precision& precision)
-{
-	size_t offset = getOffset(stride, position);
-	
-	uint8_t* address = static_cast<uint8_t*>(data);
-	
-	return address + precision.size() * offset;
-}
 	
 FloatIterator Matrix::begin()
 {
-	return FloatIterator(precision(), stride(), _data_begin);
+	return FloatIterator(precision(), size(), stride(), zeros(size()), _data_begin);
 }
 
 FloatIterator Matrix::end()
 {
-	return FloatIterator(precision(), stride(), getAddress(stride(), size(), _data_begin, precision()));
+	return FloatIterator(precision(), size(), stride(), size(), _data_begin);
 }
 
 ConstFloatIterator Matrix::begin() const
 {
-	return ConstFloatIterator(precision(), stride(), _data_begin);
+	return ConstFloatIterator(precision(), size(), stride(), zeros(size()), _data_begin);
 }
 
 ConstFloatIterator Matrix::end() const
 {
-	return FloatIterator(precision(), stride(), getAddress(stride(), size(), _data_begin, precision()));
+	return FloatIterator(precision(), size(), stride(), zeros(size()), _data_begin);
 }
 
 std::shared_ptr<Allocation> Matrix::allocation()
