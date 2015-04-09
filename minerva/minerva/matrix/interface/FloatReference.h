@@ -38,7 +38,6 @@ public:
 	operator double() const;
 
 public:
-	      void* address();
 	const void* address() const;
 
 private:
