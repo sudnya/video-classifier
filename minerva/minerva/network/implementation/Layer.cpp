@@ -14,8 +14,6 @@
 #include <minerva/network/interface/ActivationFunctionFactory.h>
 #include <minerva/network/interface/WeightCostFunctionFactory.h>
 
-#include <minerva/matrix/interface/BlockSparseMatrix.h>
-
 // Standard Library Includes
 #include <sstream>
 
