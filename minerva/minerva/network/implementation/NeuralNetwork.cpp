@@ -5,7 +5,6 @@
 
 // Minerva Includes
 #include <minerva/network/interface/NeuralNetwork.h>
-#include <minerva/network/interface/NeuralNetworkSubgraphExtractor.h>
 #include <minerva/network/interface/CostFunction.h>
 #include <minerva/network/interface/CostFunctionFactory.h>
 #include <minerva/network/interface/Layer.h>

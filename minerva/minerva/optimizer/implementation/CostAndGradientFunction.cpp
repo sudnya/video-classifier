@@ -7,8 +7,6 @@
 // Minerva Includes
 #include <minerva/optimizer/interface/CostAndGradientFunction.h>
 
-#include <minerva/matrix/interface/SparseMatrixFormat.h>
-
 #include <minerva/matrix/interface/Matrix.h>
 #include <minerva/matrix/interface/MatrixVector.h>
 

@@ -14,9 +14,7 @@
 #include <minerva/network/interface/Layer.h>
 
 #include <minerva/matrix/interface/Matrix.h>
-#include <minerva/matrix/interface/Matrix.h>
 #include <minerva/matrix/interface/MatrixVector.h>
-#include <minerva/matrix/interface/SparseMatrixFormat.h>
 
 #include <minerva/util/interface/Knobs.h>
 #include <minerva/util/interface/SystemCompatibility.h>
