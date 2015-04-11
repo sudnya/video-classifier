@@ -75,7 +75,7 @@ Matrix FeedForwardLayer::runForward(const Matrix& m) const
 
 	auto unbiasedOutput = gemm(1.0, _weights, false, 1.0, m, false);
 
-	auto output = broadcast(unbiasedOutput, _bias, {1}, matrix::Add());
+	auto output = broadcast(unbiasedOutput, _bias, matrix::Add());
 
 	if(util::isLogEnabled("FeedForwardLayer::Detail"))
 	{

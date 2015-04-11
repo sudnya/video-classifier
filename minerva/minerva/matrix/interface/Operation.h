@@ -11,6 +11,7 @@
 
 // Standard Library Includes
 #include <cmath>
+#include <algorithm>
 
 namespace minerva
 {
@@ -56,6 +57,9 @@ public:
 
 public:
 	bool operator==(const Operation&) const;
+
+private:
+	Type _type;
 
 };
 

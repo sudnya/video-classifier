@@ -4,6 +4,7 @@
 #include <minerva/matrix/interface/MatrixTransformations.h>
 #include <minerva/matrix/interface/CopyOperations.h>
 #include <minerva/matrix/interface/Matrix.h>
+#include <minerva/matrix/interface/MatrixView.h>
 #include <minerva/matrix/interface/Operation.h>
 
 #include <minerva/parallel/interface/MultiBulkSynchronousParallel.h>
@@ -38,9 +39,7 @@ void applyOverPrecisions(Matrix& result, const Matrix& left, const Matrix& right
 	auto rawLeft   = static_cast<const NativeType*>(left.data());
 	auto rawRight  = static_cast<const NativeType*>(right.data());
 	
-	auto flattenedResult = flatten(result);
-	
-	size_t elements = flattenedResult.elements();
+	size_t elements = result.elements();
 
 	parallel::multiBulkSynchronousParallel([=](parallel::ThreadGroup threadGroup)
 	{
@@ -231,8 +230,93 @@ Matrix apply(const Matrix& input, const Operation& op)
 void reduce(Matrix& result, const Matrix& left, const Matrix& right, const Operation& op);
 Matrix reduce(const Matrix& left, const Matrix& right, const Operation& op, const Dimension& d);
 
-void broadcast(Matrix& result, const Matrix& left, const Matrix& right, const Operation& op);
-Matrix broadcast(const Matrix& left, const Matrix& right, const Operation& op);
+namespace detail
+{
+
+template <typename ActualOperation, typename ActualPrecision>
+void broadcast(Matrix& result, const Matrix& left, const Matrix& right, const Operation& op, const std::tuple<ActualPrecision>& p)
+{
+	typedef typename ActualPrecision::type NativeType;
+	
+	assert(ActualPrecision()  == result.precision());
+	assert(result.precision() == left.precision());
+	assert(result.precision() == right.precision());
+	assert(result.size()      == left.size());
+	
+	size_t elements = result.elements();
+
+	auto nativeOperation = static_cast<const ActualOperation&>(op);
+	
+	MatrixView<NativeType>      resultView(result);
+	ConstMatrixView<NativeType> leftView(left);
+	ConstMatrixView<NativeType> rightView(right);
+	
+	parallel::multiBulkSynchronousParallel([=](parallel::ThreadGroup threadGroup)
+	{
+		for(size_t i = threadGroup.id(); i < elements; i += threadGroup.size())
+		{
+			auto fullDimension = linearToDimension(i, resultView.size());
+			auto reducedDimension = fullDimension;
+
+			reducedDimension.pop_back(fullDimension.size() - rightView.size().size());
+			
+			resultView(fullDimension) = nativeOperation(leftView(fullDimension), rightView(reducedDimension));
+		}
+	});
+}
+
+template <typename ActualOperation, typename PossiblePrecisions>
+void broadcast(Matrix& result, const Matrix& left, const Matrix& right, const Operation& op, const PossiblePrecisions& possiblePrecisions)
+{
+	typedef typename std::tuple_element<0, PossiblePrecisions>::type PossiblePrecisionType;
+	if(result.precision() == PossiblePrecisionType())
+	{
+		broadcast<ActualOperation>(result, left, right, op, std::tuple<PossiblePrecisionType>());
+	}
+	else
+	{
+		typedef typename util::RemoveFirstType<PossiblePrecisions>::type RemainingPrecisions;
+		broadcast<ActualOperation>(result, left, right, op, RemainingPrecisions());
+	}
+}
+
+template <typename PossibleOperation>
+void broadcast(Matrix& result, const Matrix& left, const Matrix& right, const Operation& op, const std::tuple<PossibleOperation>& p)
+{
+	assert(PossibleOperation() == op);
+	broadcast<PossibleOperation>(result, left, right, op, AllPrecisions());
+}
+
+template <typename PossibleOperations>
+void broadcast(Matrix& result, const Matrix& left, const Matrix& right, const Operation& op, const PossibleOperations& possibleOperations)
+{
+	typedef typename std::tuple_element<0, PossibleOperations>::type PossibleOperationType;
+	if(op == PossibleOperationType())
+	{
+		broadcast(result, left, right, op, std::tuple<PossibleOperationType>());
+	}
+	else
+	{
+		typedef typename util::RemoveFirstType<PossibleOperations>::type RemainingOperations;
+
+		broadcast(result, left, right, op, RemainingOperations());
+	}
+	
+}
+
+}
+
+void broadcast(Matrix& result, const Matrix& left, const Matrix& right, const Operation& op)
+{
+	detail::broadcast(result, left, right, op, AllBinaryOperations());
+}
+
+Matrix broadcast(const Matrix& left, const Matrix& right, const Operation& op) 
+{
+	Matrix retVal (left.size(), left.precision());
+	broadcast(retVal, left, right, op);
+	return retVal;	
+}
 
 Matrix slice(Matrix input, const Dimension& begin, const Dimension& end)
 {

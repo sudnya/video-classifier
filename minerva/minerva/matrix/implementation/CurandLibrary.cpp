@@ -55,6 +55,19 @@ void CurandLibrary::curandDestroyGenerator(curandGenerator_t generator)
 	}
 }
 
+void CurandLibrary::curandSetPseudoRandomGeneratorSeed(curandGenerator_t generator, unsigned long long seed)
+{
+	_check();
+	
+	curandStatus_t status = (*_interface.curandSetPseudoRandomGeneratorSeed)(generator, seed);
+	
+	if(status != CURAND_STATUS_SUCCESS)
+	{
+		throw std::runtime_error("Cuda seed generator failed: " +
+			curandGetErrorString(status));
+	}
+}
+
 void CurandLibrary::curandGenerateUniform(curandGenerator_t generator, float* outputPtr, size_t num)
 {
 	_check();
@@ -67,6 +80,46 @@ void CurandLibrary::curandGenerateUniform(curandGenerator_t generator, float* ou
 			curandGetErrorString(status));
 	}
 }
+
+void CurandLibrary::curandGenerateNormal(curandGenerator_t generator, float* outputPtr, size_t num, float mean, float stddev)
+{
+	_check();
+	
+	curandStatus_t status = (*_interface.curandGenerateNormal)(generator, outputPtr, num, mean, stddev);
+	
+	if(status != CURAND_STATUS_SUCCESS)
+	{
+		throw std::runtime_error("Cuda generate normal failed: " +
+			curandGetErrorString(status));
+	}
+}
+
+void CurandLibrary::curandGenerateUniformDouble(curandGenerator_t generator, double* outputPtr, size_t num)
+{
+	_check();
+	
+	curandStatus_t status = (*_interface.curandGenerateUniformDouble)(generator, outputPtr, num);
+	
+	if(status != CURAND_STATUS_SUCCESS)
+	{
+		throw std::runtime_error("Cuda generate uniform double failed: " +
+			curandGetErrorString(status));
+	}
+}
+
+void CurandLibrary::curandGenerateNormalDouble(curandGenerator_t generator, double* outputPtr, size_t num, double mean, double stddev)
+{
+	_check();
+	
+	curandStatus_t status = (*_interface.curandGenerateNormalDouble)(generator, outputPtr, num, mean, stddev);
+	
+	if(status != CURAND_STATUS_SUCCESS)
+	{
+		throw std::runtime_error("Cuda generate normal double failed: " +
+			curandGetErrorString(status));
+	}
+}
+
 
 std::string CurandLibrary::curandGetErrorString(curandStatus error)
 {
@@ -207,7 +260,13 @@ void CurandLibrary::Interface::load()
 		DynLink(curandCreateGenerator);
 		DynLink(curandDestroyGenerator);
 		
+		DynLink(curandSetPseudoRandomGeneratorSeed);
+		
 		DynLink(curandGenerateUniform);
+		DynLink(curandGenerateNormal);
+		
+		DynLink(curandGenerateUniformDouble);
+		DynLink(curandGenerateNormalDouble);
 		
 		#undef DynLink	
 

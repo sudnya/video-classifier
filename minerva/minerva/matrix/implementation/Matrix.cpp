@@ -117,6 +117,16 @@ std::shared_ptr<Allocation> Matrix::allocation()
 	return _allocation;
 }
 
+void* Matrix::data()
+{
+	return _data_begin;
+}
+
+const void* Matrix::data() const
+{
+	return _data_begin;
+}
+
 std::string Matrix::toString() const
 {
 	auto matrix = reshape(*this, {size()[0], size()[1]});

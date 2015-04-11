@@ -36,6 +36,9 @@ public:
 public:
 	void push_back(size_t );
 
+	void pop_back();
+	void pop_back(size_t );
+
 public:
 	size_t size() const;
 	bool empty() const;

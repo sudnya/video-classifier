@@ -20,11 +20,17 @@ void gemm(Matrix& result, const Matrix& left, const Matrix& right)
 
 Matrix gemm(const Matrix& left, const Matrix& right)
 {
-	Matrix result({left.size()[0], right.size()[1]});
+	return gemm(0.0, left, false, 1.0, right, false);
+}
 
-	gemm(result, left, right);
-	
-	return result;
+void gemm(Matrix& result, const Matrix& left, bool transposeLeft, const Matrix& right, bool transposeRight)
+{
+	gemm(result, 0.0, left, transposeLeft, 1.0, right, transposeRight);
+}
+
+Matrix gemm(const Matrix& left, bool transposeLeft, const Matrix& right, bool transposeRight)
+{
+	return gemm(0.0, left, transposeLeft, 1.0, right, transposeRight);
 }
 
 void gemm(Matrix& result, double beta,

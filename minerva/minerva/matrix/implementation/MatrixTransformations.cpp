@@ -2,6 +2,9 @@
 // Minerva Includes
 #include <minerva/matrix/interface/MatrixTransformations.h>
 
+// Standard Library Includes
+#include <set>
+
 namespace minerva
 {
 namespace matrix
@@ -29,6 +32,33 @@ Dimension zeros(const Dimension& size)
 	for(size_t i = 0, arity = size.size(); i < arity; ++i)
 	{
 		result.push_back(0);
+	}
+	
+	return result;
+}
+
+Dimension removeDimensions(const Dimension& base, const Dimension& toRemove)
+{
+	if(toRemove.size() == 0)
+	{
+		return Dimension({1});
+	}
+	
+	std::set<size_t> removed;
+	
+	for(auto i : toRemove)
+	{
+		removed.insert(i);
+	}
+	
+	Dimension result;
+	
+	for(auto i : toRemove)
+	{
+		if(removed.count(i) == 0)
+		{
+			result.push_back(i);
+		}
 	}
 	
 	return result;

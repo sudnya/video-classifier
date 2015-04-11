@@ -65,8 +65,18 @@ public:
 	static void curandDestroyGenerator(
 		curandGenerator_t generator);
 	
+	static void curandSetPseudoRandomGeneratorSeed(curandGenerator_t generator,
+		unsigned long long seed);	
+	
 	static void curandGenerateUniform(curandGenerator_t generator,
 		float *outputPtr, size_t num);
+	static void curandGenerateNormal(curandGenerator_t generator,
+		float *outputPtr, size_t num, float mean, float stddev);
+	
+	static void curandGenerateUniformDouble(curandGenerator_t generator,
+		double *outputPtr, size_t num);
+	static void curandGenerateNormalDouble(curandGenerator_t generator,
+		double *outputPtr, size_t num, double mean, double stddev);
 
 public:
 	static std::string curandGetErrorString(curandStatus error); 
@@ -82,8 +92,18 @@ private:
 			curandRngType_t rng_type);	
 		curandStatus_t (*curandDestroyGenerator)(curandGenerator_t generator);
 		
+		curandStatus_t (*curandSetPseudoRandomGeneratorSeed)(curandGenerator_t generator,
+			unsigned long long seet);	
+		
 		curandStatus_t (*curandGenerateUniform)(curandGenerator_t generator,
 			float *outputPtr, size_t num);
+		curandStatus_t (*curandGenerateNormal)(curandGenerator_t generator,
+			float *outputPtr, size_t num, float mean, float stddev);
+		
+		curandStatus_t (*curandGenerateUniformDouble)(curandGenerator_t generator,
+			double *outputPtr, size_t num);
+		curandStatus_t (*curandGenerateNormalDouble)(curandGenerator_t generator,
+			double *outputPtr, size_t num, double mean, double stddev);
 		
 	public:
 		/*! \brief The constructor zeros out all of the pointers */
