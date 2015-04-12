@@ -10,9 +10,12 @@
 #include <minerva/network/interface/CostFunctionFactory.h>
 
 #include <minerva/matrix/interface/Matrix.h>
-#include <minerva/matrix/interface/BlockSparseMatrixVector.h>
+#include <minerva/matrix/interface/MatrixVector.h>
+
+#include <minerva/matrix/interface/RandomOperations.h>
 
 #include <minerva/util/interface/debug.h>
+#include <minerva/util/interface/memory.h>
 #include <minerva/util/interface/ArgumentParser.h>
 #include <minerva/util/interface/Knobs.h>
 #include <minerva/util/interface/Timer.h>
@@ -32,144 +35,50 @@ namespace network
 
 typedef network::FeedForwardLayer FeedForwardLayer;
 typedef matrix::Matrix Matrix;
-typedef matrix::BlockSparseMatrixVector BlockSparseMatrixVector;
+typedef matrix::MatrixVector MatrixVector;
+typedef matrix::DoublePrecision DoublePrecision;
 typedef network::NeuralNetwork NeuralNetwork;
 
 static NeuralNetwork createFeedForwardFullyConnectedNetwork(
-	size_t layerSize, size_t layerCount,
-	std::default_random_engine& engine)
+	size_t layerSize, size_t layerCount)
 {
 	NeuralNetwork network;
 	
 	for(size_t layer = 0; layer < layerCount; ++layer)
 	{
-		network.addLayer(new FeedForwardLayer(1, layerSize, layerSize));
+		network.addLayer(std::make_unique<FeedForwardLayer>(layerSize, layerSize, DoublePrecision()));
 	}
 
-	network.initializeRandomly(engine);
-
-	return network;
-}
-
-static NeuralNetwork createFeedForwardLocallyConnectedNetwork(
-	size_t layerSize, size_t blockCount, size_t layerCount,
-	std::default_random_engine& engine)
-{
-	NeuralNetwork network;
-	
-	for(size_t layer = 0; layer < layerCount; ++layer)
-	{
-		network.addLayer(new FeedForwardLayer(blockCount, layerSize, layerSize));
-	}
-
-	network.initializeRandomly(engine);
-
-	return network;
-}
-
-static NeuralNetwork createFeedForwardFullyConnectedConvolutionalNetwork(
-	size_t layerSize, size_t layerCount,
-	std::default_random_engine& engine)
-{
-	NeuralNetwork network;
-	
-	for(size_t layer = 0; layer < layerCount; ++layer)
-	{
-		network.addLayer(new FeedForwardLayer(1, layerSize, layerSize, layerSize / 2));
-	}
-
-	network.initializeRandomly(engine);
-
-	return network;
-}
-
-static NeuralNetwork createFeedForwardLocallyConnectedConvolutionalNetwork(
-	size_t layerSize, size_t blockCount, size_t layerCount,
-	std::default_random_engine& engine)
-{
-	NeuralNetwork network;
-	
-	for(size_t layer = 0; layer < layerCount; ++layer)
-	{
-		network.addLayer(new FeedForwardLayer(blockCount, layerSize, layerSize, layerSize / 2));
-	}
-
-	network.initializeRandomly(engine);
+	network.initialize();
 
 	return network;
 }
 
 static NeuralNetwork createFeedForwardFullyConnectedSoftmaxNetwork(
-	size_t layerSize, size_t layerCount,
-	std::default_random_engine& engine)
+	size_t layerSize, size_t layerCount)
 {
 	NeuralNetwork network;
 	
 	for(size_t layer = 0; layer < layerCount; ++layer)
 	{
-		network.addLayer(new FeedForwardLayer(1, layerSize, layerSize));
+		network.addLayer(std::make_unique<FeedForwardLayer>(layerSize, layerSize, DoublePrecision()));
 	}
 	
 	network.setCostFunction(CostFunctionFactory::create("SoftMaxCostFunction"));
 
-	network.initializeRandomly(engine);
+	network.initialize();
 
 	return network;
 }
 
-static Matrix generateInput(size_t inputs, std::default_random_engine& engine)
+static Matrix generateInput(size_t inputs)
 {
-	Matrix inputData(1, inputs);
-
-	std::uniform_real_distribution<float> distribution(-1.0f, 1.0f);
-
-	for(auto& value : inputData)
-	{
-		value = distribution(engine);
-	}
-
-	return inputData;
+	return matrix::rand({1, inputs}, DoublePrecision());
 }
 
-static Matrix generateReference(size_t inputCount, NeuralNetwork& network,
-	std::default_random_engine& engine, bool oneHotEncoding)
+static Matrix generateReference(size_t inputCount, NeuralNetwork& network)
 {
-	size_t outputs = network.getOutputCountForInputCount(inputCount);
-
-	Matrix outputData(1, outputs);
-
-	if(oneHotEncoding)
-	{
-		std::uniform_int_distribution<size_t> distribution(0, outputs);
-		
-		size_t index = distribution(engine);
-		size_t i     = 0;
-
-		for(auto& value : outputData)
-		{
-			if(i == index)
-			{
-				value = 1.0f;
-			}
-			else
-			{
-				value = 0.0f;
-			}
-			
-			++i;
-		}
-	}
-	else
-	{
-		std::uniform_real_distribution<float> distribution(0.0f, 1.0f);
-
-		for(auto& value : outputData)
-		{
-			value = distribution(engine);
-		}
-	}
-	
-	return outputData;
+	return matrix::rand({1, network.getOutputCount()}, DoublePrecision());
 }
 
 static bool isInRange(float value, float epsilon)
@@ -177,57 +86,50 @@ static bool isInRange(float value, float epsilon)
 	return value < epsilon;
 }
 
-static bool gradientCheck(size_t inputCount, NeuralNetwork& network, std::default_random_engine& engine, bool oneHotEncoding)
+static bool gradientCheck(size_t inputCount, NeuralNetwork& network)
 {
-	const float epsilon = 5.0e-4f;
+	const double epsilon = 5.0e-6f;
 
-	float total = 0.0f;
-	float difference = 0.0f;
+	double total = 0.0f;
+	double difference = 0.0f;
 	
 	size_t layerId  = 0;
 	size_t matrixId = 0;
 	
-	auto input     = generateInput(inputCount, engine);
-	auto reference = generateReference(inputCount, network, engine, oneHotEncoding);
+	auto input     = generateInput(inputCount);
+	auto reference = generateReference(inputCount, network);
 	
-	BlockSparseMatrixVector gradient;
+	MatrixVector gradient;
 	
-	float cost = network.getCostAndGradient(gradient, input, reference);
+	double cost = network.getCostAndGradient(gradient, input, reference);
 	
 	for(auto& layer : network)
 	{
 		for(auto& matrix : layer->weights())
 		{
-			size_t blockId = 0;
-
-			for (auto& block : matrix)
+			size_t weightId = 0;
+			
+			for(auto weight : matrix)
 			{
-				size_t weightId = 0;
+				weight += epsilon;
 				
-				for(auto& weight : block)
-				{
-					weight += epsilon;
-					
-					float newCost = network.getCost(input, reference);
-					
-					weight -= epsilon;
-					
-					float estimatedGradient = (newCost - cost) / epsilon;
-					float computedGradient = gradient[matrixId][blockId][weightId];
-					
-					float thisDifference = std::pow(estimatedGradient - computedGradient, 2.0f);
-					
-					difference += thisDifference;
-					total += std::pow(computedGradient, 2.0f);
-					
-					minerva::util::log("TestGradientCheck") << " (layer " << layerId << ", matrix " << matrixId << ", block "
-						<< blockId << ", weight " << weightId << ") value is " << computedGradient << " estimate is "
-						<< estimatedGradient << " (newCost " << newCost << ", oldCost " << cost << ")" << " difference is " << thisDifference << " \n";
-					
-					++weightId;
-				}
+				double newCost = network.getCost(input, reference);
 				
-				++blockId;
+				weight -= epsilon;
+				
+				double estimatedGradient = (newCost - cost) / epsilon;
+				double computedGradient = gradient[matrixId][weightId];
+				
+				double thisDifference = std::pow(estimatedGradient - computedGradient, 2.0);
+				
+				difference += thisDifference;
+				total += std::pow(computedGradient, 2.0);
+				
+				minerva::util::log("TestGradientCheck") << " (layer " << layerId << ", matrix " << matrixId
+					<< ", weight " << weightId << ") value is " << computedGradient << " estimate is "
+					<< estimatedGradient << " (newCost " << newCost << ", oldCost " << cost << ")" << " difference is " << thisDifference << " \n";
+				
+				++weightId;
 			}
 			
 			++matrixId;
@@ -243,20 +145,18 @@ static bool gradientCheck(size_t inputCount, NeuralNetwork& network, std::defaul
 
 static bool runTestFeedForwardFullyConnected(size_t layerSize, size_t layerCount, bool seed)
 {
-	std::default_random_engine generator;
-
 	if(seed)
 	{
-		generator.seed(std::time(0));
+		matrix::srand(std::time(0));
 	}
 	else
 	{
-		generator.seed(377);
+		matrix::srand(377);
 	}
 	
-	auto network = createFeedForwardFullyConnectedNetwork(layerSize, layerCount, generator);
+	auto network = createFeedForwardFullyConnectedNetwork(layerSize, layerCount);
 	
-	if(gradientCheck(network.getInputCount(), network, generator, false))
+	if(gradientCheck(network.getInputCount(), network))
 	{
 		std::cout << "Feed Forward Fully Connected Network Test Passed\n";
 		
@@ -270,111 +170,20 @@ static bool runTestFeedForwardFullyConnected(size_t layerSize, size_t layerCount
 	}
 }
 
-static bool runTestFeedForwardLocallyConnected(size_t layerSize, size_t blockCount, size_t layerCount, bool seed)
-{
-	std::default_random_engine generator;
-
-	if(seed)
-	{
-		generator.seed(std::time(0));
-	}
-	else
-	{
-		generator.seed(377);
-	}
-	
-	auto network = createFeedForwardLocallyConnectedNetwork(layerSize, blockCount, layerCount, generator);
-	
-	if(gradientCheck(network.getInputCount(), network, generator, false))
-	{
-		std::cout << "Feed Forward Locally Connected Network Test Passed\n";
-			
-		return true;
-	}
-	else
-	{
-		std::cout << "Feed Forward Locally Connected Network Test Failed\n";
-		
-		return false;
-	}
-}
-
-static bool runTestFeedForwardFullyConnectedConvolutional(size_t inputCount, size_t layerSize, size_t layerCount, bool seed)
-{
-	std::default_random_engine generator;
-
-	if(seed)
-	{
-		generator.seed(std::time(0));
-	}
-	else
-	{
-		generator.seed(377);
-	}
-	
-	auto network = createFeedForwardFullyConnectedConvolutionalNetwork(layerSize, layerCount, generator);
-	
-	if(gradientCheck(inputCount, network, generator, false))
-	{
-		std::cout << "Feed Forward Fully Connected Convolutional Network Test Passed\n";
-		
-		return true;
-	}
-	else
-	{
-		std::cout << "Feed Forward Fully Connected Convolutional Network Test Failed\n";
-
-		return false;
-	}
-}
-
-static bool runTestFeedForwardLocallyConnectedConvolutional(size_t inputCount, size_t layerSize,
-	size_t blockCount, size_t layerCount, bool seed)
-{
-	std::default_random_engine generator;
-
-	if(seed)
-	{
-		generator.seed(std::time(0));
-	}
-	else
-	{
-		generator.seed(377);
-	}
-	
-	auto network = createFeedForwardLocallyConnectedConvolutionalNetwork(layerSize, blockCount, layerCount, generator);
-	
-	if(gradientCheck(inputCount * blockCount, network, generator, false))
-	{
-		std::cout << "Test Feed Forward Locally Connected Convolutional Network Passed\n";
-		
-		return true;
-	}
-	else
-	{
-		std::cout << "Test Feed Forward Locally Connected Convolutional Network Failed\n";
-		
-		return false;
-		
-	}
-}
-
 static bool runTestFeedForwardFullyConnectedSoftmax(size_t layerSize, size_t layerCount, bool seed)
 {
-	std::default_random_engine generator;
-
 	if(seed)
 	{
-		generator.seed(std::time(0));
+		matrix::srand(std::time(0));
 	}
 	else
 	{
-		generator.seed(377);
+		matrix::srand(377);
 	}
 	
-	auto network = createFeedForwardFullyConnectedSoftmaxNetwork(layerSize, layerCount, generator);
+	auto network = createFeedForwardFullyConnectedSoftmaxNetwork(layerSize, layerCount);
 	
-	if(gradientCheck(network.getInputCount(), network, generator, true))
+	if(gradientCheck(network.getInputCount(), network))
 	{
 		std::cout << "Feed Forward Fully Connected Network Softmax Test Passed\n";
 		
@@ -391,13 +200,6 @@ static bool runTestFeedForwardFullyConnectedSoftmax(size_t layerSize, size_t lay
 static void runTest(size_t inputCount, size_t layerSize, size_t blockCount, size_t layerCount, bool seed)
 {
 	bool result = true;
-
-	result &= runTestFeedForwardFullyConnectedSoftmax(layerSize, layerCount, seed);
-	
-	if(!result)
-	{
-		return;
-	}
 	
 	result &= runTestFeedForwardFullyConnected(layerSize, layerCount, seed);
 	
@@ -405,27 +207,8 @@ static void runTest(size_t inputCount, size_t layerSize, size_t blockCount, size
 	{
 		return;
 	}
-	
-	result &= runTestFeedForwardLocallyConnected(layerSize, blockCount, layerCount, seed);
-	
-	if(!result)
-	{
-		return;
-	}
-	
-	result &= runTestFeedForwardFullyConnectedConvolutional(inputCount, layerSize, layerCount, seed);
-	
-	if(!result)
-	{
-		return;
-	}
 
-	result &= runTestFeedForwardLocallyConnectedConvolutional(inputCount, layerSize, blockCount, layerCount, seed);
-	
-	if(!result)
-	{
-		return;
-	}
+	result &= runTestFeedForwardFullyConnectedSoftmax(layerSize, layerCount, seed);
 }
 
 }

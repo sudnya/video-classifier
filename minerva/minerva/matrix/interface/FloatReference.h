@@ -15,6 +15,8 @@ public:
 
 public:
 	FloatReference& operator=(double);
+	FloatReference& operator+=(double);
+	FloatReference& operator-=(double);
 	
 public:
 	operator double() const;

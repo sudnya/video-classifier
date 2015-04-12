@@ -8,9 +8,11 @@
 #include <minerva/network/interface/ActivationFunctionFactory.h>
 
 #include <minerva/matrix/interface/Matrix.h>
+#include <minerva/matrix/interface/Precision.h>
 
 #include <minerva/util/interface/Knobs.h>
 #include <minerva/util/interface/debug.h>
+#include <minerva/util/interface/memory.h>
 #include <minerva/util/interface/ArgumentParser.h>
 
 #include <random>
@@ -23,28 +25,25 @@ namespace engine
 
 typedef network::FeedForwardLayer FeedForwardLayer;
 typedef matrix::Matrix Matrix;
+typedef matrix::SinglePrecision SinglePrecision;
 
-network::NeuralNetwork createAndInitializeNeuralNetwork(unsigned networkSize, float epsilon)
+network::NeuralNetwork createAndInitializeNeuralNetwork(unsigned networkSize)
 {
     network::NeuralNetwork ann;
 
 	size_t hiddenSize = (networkSize * 3) / 2;
 
     // Layer 1
-    ann.addLayer(new FeedForwardLayer(1, networkSize, hiddenSize));
+    ann.addLayer(std::make_unique<FeedForwardLayer>(networkSize, hiddenSize, SinglePrecision()));
 	
 	ann.back()->setActivationFunction(network::ActivationFunctionFactory::create("SigmoidActivationFunction"));
 
     // Layer 2
-    ann.addLayer(new FeedForwardLayer(1, hiddenSize, networkSize/2));
+    ann.addLayer(std::make_unique<FeedForwardLayer>(hiddenSize, networkSize/2, SinglePrecision()));
 	
 	ann.back()->setActivationFunction(network::ActivationFunctionFactory::create("SigmoidActivationFunction"));
 
-	std::default_random_engine engine;
-	
-	engine.seed(177);
-	
-    ann.initializeRandomly(engine, epsilon);
+    ann.initialize();
 
     return ann;
 }
@@ -53,7 +52,7 @@ Matrix generateRandomMatrix(unsigned rows, unsigned columns, std::default_random
 {
     std::bernoulli_distribution distribution(0.5f);
     
-    Matrix matrix(rows, columns);
+    Matrix matrix({rows, columns}, SinglePrecision());
 
     for(auto value = matrix.begin(); value != matrix.end(); ++value)
     {
@@ -77,14 +76,15 @@ float floatXor(float x, float y)
 
 Matrix matrixXor(const Matrix& inputs)
 {
-    assertM(inputs.columns()%2 == 0, "Incompatible size of input bit vectors");
-    Matrix output(inputs.rows(), inputs.columns()/2);
+    assertM(inputs.size()[0] % 2 == 0, "Incompatible size of input bit vectors");
+	
+    Matrix output(inputs.size()[0] / 2, inputs.size()[1]);
 
-    for (unsigned i = 0; i < inputs.rows(); ++i)
+    for (unsigned i = 0; i < inputs.size()[1]; ++i)
     {
-        for (unsigned j = 0; j < inputs.columns()/2; ++j)
+        for (unsigned j = 0; j < inputs.size()[0]/2; ++j)
         {
-            output(i,j) = floatXor(inputs(i, j * 2), inputs(i, j * 2 + 1));
+            output(j, i) = floatXor(inputs(j * 2, i), inputs(j * 2 + 1, i));
         }
     }
     return output;
@@ -118,7 +118,7 @@ void trainNeuralNetwork(network::NeuralNetwork& ann, unsigned trainingIter, std:
     for(unsigned i = 0; i < trainingIter; ++i)
     {
         // matrix is (samples) rows x (features) columns
-        Matrix input = generateRandomMatrix(samplesPerIter, ann.getInputCount(), generator);
+        Matrix input = generateRandomMatrix(ann.getInputCount(), samplesPerIter, generator);
         Matrix referenceMatrix = matrixXor(input);
 
 		if(util::isLogEnabled("TestClassifier"))
@@ -139,12 +139,12 @@ void trainNeuralNetwork(network::NeuralNetwork& ann, unsigned trainingIter, std:
 
 unsigned compare(const Matrix& output, const Matrix& reference)
 {
-    assertM(output.rows() == reference.rows() && output.columns() == reference.columns(),
+    assertM(output.size() == reference.size(),
 		"Output and reference matrix have incompatible dimensions");
     unsigned bitsThatMatch = 0;
-    for (unsigned i = 0; i < output.rows(); ++i)
+    for (unsigned i = 0; i < output.size()[0]; ++i)
     {
-        for (unsigned j = 0; j < output.columns(); ++j)
+        for (unsigned j = 0; j < output.size()[1]; ++j)
         {
             bool outputIsTrue    = output(i,j)    > 0.5f;
             bool referenceIsTrue = reference(i,j) > 0.5f;
@@ -168,7 +168,7 @@ float classify(const network::NeuralNetwork& ann, unsigned iterations, std::defa
     for(unsigned i = 0; i < iterations; ++i)
     {
         // matrix is 100 rows x 1024 columns
-        Matrix input = generateRandomMatrix(samplesPerIter, ann.getInputCount(), generator);
+        Matrix input = generateRandomMatrix(ann.getInputCount(), samplesPerIter, generator);
         Matrix referenceMatrix = matrixXor(input);
 
         Matrix output = ann.runInputs(input);
@@ -184,14 +184,11 @@ float classify(const network::NeuralNetwork& ann, unsigned iterations, std::defa
     return accuracy;
 }
 
-void runTest(unsigned iterations, bool seed, unsigned networkSize, float epsilon)
+void runTest(unsigned iterations, bool seed, unsigned networkSize)
 {
-
-	util::KnobDatabase::setKnob("GeneralDifferentiableSolver::Type", "LBFGSSolver");
-    
     // Create neural network
     // 3 layers
-    network::NeuralNetwork ann = createAndInitializeNeuralNetwork(networkSize, epsilon); 
+    network::NeuralNetwork ann = createAndInitializeNeuralNetwork(networkSize); 
 
     // Train network against reference XOR function
 
@@ -242,11 +239,10 @@ int main(int argc, char** argv)
 	
 	unsigned iterations = 0;
 	unsigned networkSize = 0;
-	float epsilon = 1.0f;
 
     parser.description("A minerva nerual network sanity test.");
 
-    parser.parse("-i", "--iterations", iterations, 15,
+    parser.parse("-i", "--iterations", iterations, 50,
         "The number of iterations to train for");
     parser.parse("-L", "--log-module", loggingEnabledModules, "",
 		"Print out log messages during execution for specified modules "
@@ -255,8 +251,6 @@ int main(int argc, char** argv)
         "Seed with time.");
     parser.parse("-n", "--network-size", networkSize, 8,
         "The number of inputs to the network.");
-    parser.parse("-e", "--epsilon", epsilon, 6.0f,
-        "Range to intiialize the network with.");
     parser.parse("-v", "--verbose", verbose, false,
         "Print out log messages during execution");
 
@@ -275,7 +269,7 @@ int main(int argc, char** argv)
     
     try
     {
-        minerva::engine::runTest(iterations, seed, networkSize, epsilon);
+        minerva::engine::runTest(iterations, seed, networkSize);
     }
     catch(const std::exception& e)
     {

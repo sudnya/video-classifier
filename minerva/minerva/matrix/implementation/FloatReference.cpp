@@ -101,6 +101,20 @@ FloatReference& FloatReference::operator=(double value)
 	return *this;
 }
 
+FloatReference& FloatReference::operator+=(double value)
+{
+	detail::set(_precision, _data, detail::get(_precision, _data) + value);
+	
+	return *this;
+}
+
+FloatReference& FloatReference::operator-=(double value)
+{
+	detail::set(_precision, _data, detail::get(_precision, _data) - value);
+	
+	return *this;
+}
+
 FloatReference::operator double() const
 {
 	return detail::get(_precision, _data);
