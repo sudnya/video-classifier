@@ -31,6 +31,18 @@ void Dimension::push_back(size_t size)
 	_storage[_arity++] = size;
 }
 
+void Dimension::pop_back()
+{
+	pop_back(1);
+}
+
+void Dimension::pop_back(size_t size)
+{
+	assert(_arity >= size);
+	
+	_arity -= size;
+}
+
 size_t Dimension::size() const
 {
 	return _arity;
@@ -102,6 +114,34 @@ std::string Dimension::toString() const
 	}
 	
 	return stream.str();
+}
+	
+Dimension Dimension::operator-(const Dimension& d) const
+{
+	assert(size() == d.size());
+
+	Dimension result;
+	
+	for(auto left = begin(), right = d.begin(); left != end(); ++left, ++right)
+	{
+		result.push_back(*left - *right);
+	}
+	
+	return result;
+}
+
+Dimension Dimension::operator/(const Dimension& d) const
+{
+	assert(size() == d.size());
+
+	Dimension result;
+	
+	for(auto left = begin(), right = d.begin(); left != end(); ++left, ++right)
+	{
+		result.push_back(*left / *right);
+	}
+	
+	return result;
 }
 
 bool Dimension::operator==(const Dimension& d) const

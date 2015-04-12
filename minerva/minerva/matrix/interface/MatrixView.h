@@ -54,7 +54,13 @@ class ConstMatrixView
 {
 public:
 	ConstMatrixView(const Matrix& matrix)
-	: _data(static_cast<const T*>(matrix.data())), _size(matrix.size()), _stride(matrix.stride())
+	: ConstMatrixView(static_cast<const T*>(matrix.data()), matrix.size(), matrix.stride())
+	{
+	
+	}
+	
+	ConstMatrixView(const T* data, const Dimension& size, const Dimension& stride)
+	: _data(data), _size(size), _stride(stride)
 	{
 	
 	}
@@ -68,6 +74,12 @@ public:
 	const Dimension& stride() const
 	{
 		return _stride;
+	}
+
+public:
+	size_t elements() const
+	{
+		return _size.product();
 	}
 
 public:
@@ -89,6 +101,11 @@ private:
 
 };
 
+template<typename T>
+ConstMatrixView<T> slice(const ConstMatrixView<T>& input, const Dimension& begin, const Dimension& end)
+{
+	return ConstMatrixView<T>(&input(begin), end-begin, input.stride());
+}
 
 }
 }

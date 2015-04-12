@@ -19,7 +19,7 @@ class RecurrentLayer : public Layer
 {
 public:
 	RecurrentLayer();
-	RecurrentLayer(size_t inputs, size_t outputs, const matrix::Precision&);
+	RecurrentLayer(size_t size, const matrix::Precision&);
     virtual ~RecurrentLayer();
 
 public:
@@ -67,6 +67,16 @@ public:
 
 public:
 	virtual std::string getTypeName() const;
+
+private:
+	std::unique_ptr<MatrixVector> _parameters;
+
+private:
+	Matrix& _forwardWeights;
+	Matrix& _bias;
+
+private:
+	Matrix& _recurrentWeights;
 
 };
 }

@@ -17,7 +17,7 @@
 #include <minerva/model/interface/Model.h>
 
 #include <minerva/matrix/interface/Matrix.h>
-#include <minerva/matrix/interface/MatrixOperations.h>
+#include <minerva/matrix/interface/MatrixTransformations.h>
 
 // Standard Library Includes
 #include <cassert>

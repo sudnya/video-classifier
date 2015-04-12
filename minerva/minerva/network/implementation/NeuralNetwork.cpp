@@ -222,6 +222,13 @@ bool NeuralNetwork::empty() const
 	return _layers.empty();
 }
 
+const matrix::Precision& NeuralNetwork::precision() const
+{
+	assert(!empty());
+	
+	return front()->precision();
+}
+
 size_t NeuralNetwork::getInputCount() const
 {
 	if(empty())

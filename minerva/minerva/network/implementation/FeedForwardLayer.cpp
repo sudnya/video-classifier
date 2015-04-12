@@ -33,6 +33,12 @@ namespace network
 
 typedef matrix::Matrix Matrix;
 typedef matrix::MatrixVector MatrixVector;
+	
+FeedForwardLayer::FeedForwardLayer()
+: FeedForwardLayer(0, 0, matrix::SinglePrecision())
+{
+
+}
 
 FeedForwardLayer::FeedForwardLayer(size_t inputs, size_t outputs, const matrix::Precision& precision)
 : _parameters(new MatrixVector({Matrix({inputs, outputs}, precision), Matrix({outputs}, precision)})), 
@@ -44,6 +50,24 @@ FeedForwardLayer::FeedForwardLayer(size_t inputs, size_t outputs, const matrix::
 FeedForwardLayer::~FeedForwardLayer()
 {
 
+}
+
+FeedForwardLayer::FeedForwardLayer(const FeedForwardLayer& l)
+: _parameters(std::make_unique<MatrixVector>(*l._parameters)), _weights((*_parameters)[0]), _bias((*_parameters)[1])
+{
+
+}
+
+FeedForwardLayer& FeedForwardLayer::operator=(const FeedForwardLayer& l)
+{
+	if(&l == this)
+	{
+		return *this;
+	}
+	
+	_parameters = std::move(std::make_unique<MatrixVector>(*l._parameters));
+	
+	return *this;
 }
 
 void FeedForwardLayer::initialize()
@@ -196,6 +220,11 @@ const MatrixVector& FeedForwardLayer::weights() const
 {
 	return *_parameters;
 }
+	
+const matrix::Precision& FeedForwardLayer::precision() const
+{
+	return _weights.precision();
+}
 
 double FeedForwardLayer::computeWeightCost() const
 {
@@ -224,7 +253,7 @@ size_t FeedForwardLayer::totalConnections() const
 
 size_t FeedForwardLayer::getFloatingPointOperationCount() const
 {
-	return totalConnections();
+	return 2 * totalConnections();
 }
 
 void FeedForwardLayer::save(util::TarArchive& archive) const
@@ -250,24 +279,6 @@ std::unique_ptr<Layer> FeedForwardLayer::mirror() const
 std::string FeedForwardLayer::getTypeName() const
 {
 	return "FeedForwardLayer";
-}
-
-FeedForwardLayer::FeedForwardLayer(const FeedForwardLayer& l)
-: _parameters(std::make_unique<MatrixVector>(*l._parameters)), _weights((*_parameters)[0]), _bias((*_parameters)[1])
-{
-
-}
-
-FeedForwardLayer& FeedForwardLayer::operator=(const FeedForwardLayer& l)
-{
-	if(&l == this)
-	{
-		return *this;
-	}
-	
-	_parameters = std::move(std::make_unique<MatrixVector>(*l._parameters));
-	
-	return *this;
 }
 
 }

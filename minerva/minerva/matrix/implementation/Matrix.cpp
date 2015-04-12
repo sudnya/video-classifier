@@ -26,10 +26,24 @@ Matrix::Matrix()
 
 }
 
+Matrix::Matrix(std::initializer_list<size_t> i)
+: Matrix(Dimension(i))
+{
+
+}
+
 Matrix::Matrix(const Dimension& size)
 : _allocation(std::make_shared<Allocation>(size.product() * SinglePrecision().size())),
   _data_begin(_allocation->data()),
   _size(size), _stride(linearStride(size)), _precision(SinglePrecision())
+{
+
+}
+
+Matrix::Matrix(const Dimension& size, const Precision& precision)
+: _allocation(std::make_shared<Allocation>(size.product() * precision.size())),
+  _data_begin(_allocation->data()),
+  _size(size), _stride(linearStride(size)), _precision(precision)
 {
 
 }
@@ -125,6 +139,16 @@ void* Matrix::data()
 const void* Matrix::data() const
 {
 	return _data_begin;
+}
+	
+bool Matrix::isContiguous() const
+{
+	return linearStride(size()) == stride();
+}
+
+bool Matrix::isLeadingDimensionContiguous() const
+{
+	return stride()[0] == 1;
 }
 
 std::string Matrix::toString() const

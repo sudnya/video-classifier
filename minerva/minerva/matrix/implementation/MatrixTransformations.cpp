@@ -1,6 +1,7 @@
 
 // Minerva Includes
 #include <minerva/matrix/interface/MatrixTransformations.h>
+#include <minerva/matrix/interface/CopyOperations.h>
 
 // Standard Library Includes
 #include <set>
@@ -9,6 +10,73 @@ namespace minerva
 {
 namespace matrix
 {
+
+static Dimension fillInDimension(const Dimension& newSize, const Dimension& inputSize)
+{
+	Dimension size(newSize);
+	
+	// fill in remaining dimensions
+	size_t remaining = inputSize.product() / size.product();
+
+	size_t dimension = size.size();
+	
+	assert(inputSize.product() % size.product() == 0);
+	
+	// TODO: be smarter about the remainder
+	for(size_t d = dimension; d < inputSize.size(); ++d)
+	{
+		size.push_back(remaining);
+		remaining /= remaining;
+	}
+
+	assert(size.product() == inputSize.product());
+	
+	return size;
+}
+
+Matrix reshape(const Matrix& input, const Dimension& size)
+{
+	Matrix tempInput(input);
+	
+	return Matrix(fillInDimension(size, input.size()), input.stride(), input.precision(), tempInput.allocation(), tempInput.data());
+}
+
+Matrix flatten(const Matrix& matrix)
+{
+	return reshape(matrix, {matrix.elements()});
+}
+
+Matrix slice(const Matrix& input, const Dimension& begin, const Dimension& end)
+{
+	auto size = end - begin;
+	
+	Matrix tempInput(input);
+
+	return Matrix(size, linearStride(size), input.precision(), tempInput.allocation(), tempInput[begin].address());
+}
+
+Matrix slice(const Matrix& input, const Dimension& begin, const Dimension& end, const Dimension& stride)
+{
+	auto size = (end - begin) / stride;
+	
+	Matrix tempInput(input);
+
+	return Matrix(size, stride, input.precision(), tempInput.allocation(), tempInput[begin].address());
+}
+ 
+Matrix resize(const Matrix& input, const Dimension& size)
+{
+	Matrix result(size, input.precision());
+	
+	auto overlap = intersection(size, input.size());
+	
+	auto resultSlice = slice(result, zeros(overlap), overlap);
+	auto inputSlice  = slice(input,  zeros(overlap), overlap);
+	
+	copy(resultSlice, inputSlice);
+	
+	return result;
+}
 
 Dimension linearStride(const Dimension& size)
 {
@@ -58,6 +126,72 @@ Dimension removeDimensions(const Dimension& base, const Dimension& toRemove)
 		if(removed.count(i) == 0)
 		{
 			result.push_back(i);
+		}
+	}
+	
+	return result;
+}
+
+Dimension intersection(const Dimension& left, const Dimension& right)
+{
+	size_t totalDimensions = std::min(left.size(), right.size());
+	
+	Dimension result;
+	
+	for(size_t i = 0; i < totalDimensions; ++i)
+	{
+		result.push_back(std::min(left[i], right[i]));
+	}
+	
+	return result;
+}
+
+size_t dotProduct(const Dimension& left, const Dimension& right)
+{
+	assert(left.size() == right.size());
+
+	size_t product = 0;
+	
+	for(auto i = left.begin(), j = right.begin(); i != left.end(); ++i, ++j)
+	{
+		product += *i * *j;
+	}
+	
+	return product;
+}
+
+Dimension linearToDimension(size_t linearIndex, const Dimension& size)
+{
+	Dimension result;
+	
+	for(auto dimensionSize : size)
+	{
+		result.push_back(linearIndex % dimensionSize);
+	
+		linearIndex /= dimensionSize;
+	}
+	
+	return result;
+}
+
+Dimension selectNamedDimensions(const Dimension& selectedDimensions, const Dimension& left, const Dimension& right)
+{
+	Dimension result;
+	
+	size_t selectedDimensionIndex = 0;
+	size_t leftIndex = 0;
+	
+	for(size_t rightIndex = 0; rightIndex != right.size(); ++rightIndex)
+	{
+		if(selectedDimensions[selectedDimensionIndex] == rightIndex)
+		{
+			result.push_back(right[rightIndex]);
+			++selectedDimensionIndex;
+		}
+		else
+		{
+			result.push_back(left[leftIndex]);
+			++leftIndex;
 		}
 	}
 	

@@ -19,7 +19,7 @@ class ConvolutionalLayer : public Layer
 {
 public:
 	ConvolutionalLayer();
-	ConvolutionalLayer(size_t inputs, size_t outputs, const matrix::Precision&);
+	ConvolutionalLayer(const matrix::Dimension& size, const matrix::Dimension& stride, const matrix::Precision&);
     virtual ~ConvolutionalLayer();
 
 public:
@@ -67,6 +67,15 @@ public:
 
 public:
 	virtual std::string getTypeName() const;
+
+private:
+	std::unique_ptr<MatrixVector> _parameters;
+
+private:
+	Matrix& _weights;
+
+private:
+	std::unique_ptr<matrix::Dimension> _stride;
 
 };
 }
