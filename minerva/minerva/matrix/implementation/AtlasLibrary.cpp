@@ -27,6 +27,8 @@ void AtlasLibrary::load()
 
 bool AtlasLibrary::loaded()
 {
+	load();
+
 	return _interface.loaded();
 }
 

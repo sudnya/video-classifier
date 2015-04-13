@@ -31,6 +31,7 @@ public:
 
 public:
 	bool operator==(const Precision&) const;
+	bool operator!=(const Precision&) const;
 
 private:
 	Type _type;

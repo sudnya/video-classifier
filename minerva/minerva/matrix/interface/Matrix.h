@@ -92,6 +92,18 @@ public:
 	FloatReference      operator[](const Dimension& d);
 	ConstFloatReference operator[](const Dimension& d) const;
 
+public:
+	bool operator==(const Matrix& m) const;
+	bool operator!=(const Matrix& m) const;
+
+public:
+	template<typename... Sizes>
+	Matrix(Sizes... sizes)
+	: Matrix(Dimension(sizes...))
+	{
+		
+	}
+
 private:
 	std::shared_ptr<Allocation> _allocation;
 

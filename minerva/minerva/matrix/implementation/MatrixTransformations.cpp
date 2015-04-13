@@ -13,6 +13,13 @@ namespace matrix
 
 static Dimension fillInDimension(const Dimension& newSize, const Dimension& inputSize)
 {
+	if(newSize.size() > inputSize.size())
+	{
+		assert(newSize.product() == inputSize.product());
+	
+		return newSize;
+	}
+	
 	Dimension size(newSize);
 	
 	// fill in remaining dimensions
@@ -105,6 +112,18 @@ Dimension zeros(const Dimension& size)
 	return result;
 }
 
+Dimension ones(const Dimension& size)
+{
+	Dimension result;
+	
+	for(size_t i = 0, arity = size.size(); i < arity; ++i)
+	{
+		result.push_back(1);
+	}
+	
+	return result;
+}
+
 Dimension removeDimensions(const Dimension& base, const Dimension& toRemove)
 {
 	if(toRemove.size() == 0)
@@ -121,11 +140,11 @@ Dimension removeDimensions(const Dimension& base, const Dimension& toRemove)
 	
 	Dimension result;
 	
-	for(auto i : toRemove)
+	for(size_t i = 0; i < base.size(); ++i)
 	{
 		if(removed.count(i) == 0)
 		{
-			result.push_back(i);
+			result.push_back(base[i]);
 		}
 	}
 	
@@ -178,12 +197,17 @@ Dimension selectNamedDimensions(const Dimension& selectedDimensions, const Dimen
 {
 	Dimension result;
 	
+	if(selectedDimensions.size() == 0)
+	{
+		return right;
+	}
+	
 	size_t selectedDimensionIndex = 0;
 	size_t leftIndex = 0;
 	
 	for(size_t rightIndex = 0; rightIndex != right.size(); ++rightIndex)
 	{
-		if(selectedDimensions[selectedDimensionIndex] == rightIndex)
+		if(selectedDimensionIndex < selectedDimensions.size() && selectedDimensions[selectedDimensionIndex] == rightIndex)
 		{
 			result.push_back(right[rightIndex]);
 			++selectedDimensionIndex;

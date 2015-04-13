@@ -8,6 +8,8 @@
 #include <minerva/matrix/interface/Matrix.h>
 #include <minerva/matrix/interface/Allocation.h>
 #include <minerva/matrix/interface/MatrixTransformations.h>
+#include <minerva/matrix/interface/MatrixOperations.h>
+#include <minerva/matrix/interface/Operation.h>
 
 #include <minerva/util/interface/debug.h>
 
@@ -153,7 +155,22 @@ bool Matrix::isLeadingDimensionContiguous() const
 
 std::string Matrix::toString() const
 {
-	auto matrix = reshape(*this, {size()[0], size()[1]});
+	size_t rows = 1;
+	
+	if(size().size() > 0)
+	{
+		rows = size()[0];
+	}
+	
+	size_t columns = 1;
+	
+	if(size().size() > 1)
+	{
+		rows = size()[1];
+	}
+
+
+	auto matrix = reshape(*this, {rows, columns});
 
     std::stringstream stream;
 
@@ -201,6 +218,26 @@ FloatReference Matrix::operator[](const Dimension& d)
 ConstFloatReference Matrix::operator[](const Dimension& d) const
 {
 	return ConstFloatReference(precision(), getAddress(stride(), d, _data_begin, precision()));
+}
+	
+bool Matrix::operator==(const Matrix& m) const
+{
+	if(size() != m.size())
+	{
+		return false;
+	}
+	
+	if(precision() != m.precision())
+	{
+		return false;
+	}
+
+	return reduce(apply(*this, m, NotEqual()), {}, Add())[0] == 0;
+}
+
+bool Matrix::operator!=(const Matrix& m) const
+{
+	return !(*this == m);
 }
 
 }

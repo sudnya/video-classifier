@@ -62,10 +62,12 @@ public:
 
 public:
 	Dimension operator-(const Dimension& ) const;
+	Dimension operator+(const Dimension& ) const;
 	Dimension operator/(const Dimension& ) const;
 
 public:
 	bool operator==(const Dimension& ) const;
+	bool operator!=(const Dimension& ) const;
 
 private:
 	template<typename T>

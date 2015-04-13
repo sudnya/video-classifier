@@ -44,6 +44,11 @@ bool Precision::operator==(const Precision& p) const
 	return type() == p.type();
 }
 
+bool Precision::operator!=(const Precision& p) const
+{
+	return !(*this == p);
+}
+
 HalfPrecision::HalfPrecision()
 : Precision(Half)
 {

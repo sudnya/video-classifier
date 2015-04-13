@@ -19,6 +19,7 @@ Matrix reshape(const Matrix& input, const Dimension& size);
 
 Dimension linearStride(const Dimension& );
 Dimension zeros(const Dimension& );
+Dimension ones(const Dimension& );
 Dimension removeDimensions(const Dimension& base, const Dimension& toRemove);
 Dimension intersection(const Dimension& base, const Dimension& toRemove);
 size_t dotProduct(const Dimension& left, const Dimension& right);

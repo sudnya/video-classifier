@@ -10,9 +10,9 @@
 #include <minerva/optimizer/interface/CostAndGradientFunction.h>
 
 #include <minerva/matrix/interface/Matrix.h>
-#include <minerva/matrix/interface/BlockSparseMatrixVector.h>
-#include <minerva/matrix/interface/BlockSparseMatrix.h>
-#include <minerva/matrix/interface/SparseMatrixFormat.h>
+#include <minerva/matrix/interface/MatrixVector.h>
+#include <minerva/matrix/interface/MatrixVectorOperations.h>
+#include <minerva/matrix/interface/Operation.h>
 
 #include <minerva/util/interface/ArgumentParser.h>
 #include <minerva/util/interface/Knobs.h>
@@ -22,16 +22,17 @@
 // Standard Library Includes
 #include <iostream>
 #include <cassert>
+#include <cmath>
 
 class SimpleQuadraticCostAndGradientFunction : public minerva::optimizer::CostAndGradientFunction
 {
 public:
-	virtual float computeCostAndGradient(BlockSparseMatrixVector& gradient,
-		const BlockSparseMatrixVector& inputs) const
+	virtual double computeCostAndGradient(MatrixVector& gradient,
+		const MatrixVector& inputs) const
 	{
-		float cost = inputs.dotProduct(inputs);
+		double cost = minerva::matrix::dotProduct(inputs, inputs);
 		
-		gradient = inputs.multiply(2.0f);
+		gradient = apply(inputs, minerva::matrix::Multiply(2.0));
 		
 		return cost;
 	}
@@ -48,29 +49,29 @@ static bool testSimpleQuadratic(const std::string& name)
 	
 	minerva::matrix::Matrix input(4, 4);
 	
-	input(0, 0) = 0.5f;
-	input(0, 1) = 0.5f;
-	input(0, 2) = 0.5f;
-	input(0, 3) = 0.5f;
+	input(0, 0) = 0.5;
+	input(0, 1) = 0.5;
+	input(0, 2) = 0.5;
+	input(0, 3) = 0.5;
 	
-	input(1, 0) = 0.5f;
-	input(1, 1) = 0.5f;
-	input(1, 2) = 0.5f;
-	input(1, 3) = 0.5f;
+	input(1, 0) = 0.5;
+	input(1, 1) = 0.5;
+	input(1, 2) = 0.5;
+	input(1, 3) = 0.5;
 	
-	input(2, 0) = 0.5f;
-	input(2, 1) = 0.5f;
-	input(2, 2) = 0.5f;
-	input(2, 3) = 0.5f;
+	input(2, 0) = 0.5;
+	input(2, 1) = 0.5;
+	input(2, 2) = 0.5;
+	input(2, 3) = 0.5;
 	
-	input(3, 0) = 0.5f;
-	input(3, 1) = 0.5f;
-	input(3, 2) = 0.5f;
-	input(3, 3) = 0.5f;
+	input(3, 0) = 0.5;
+	input(3, 1) = 0.5;
+	input(3, 2) = 0.5;
+	input(3, 3) = 0.5;
 	
 	float finalCost = solver->solve(input, SimpleQuadraticCostAndGradientFunction());
 	
-	bool success = std::fabs(finalCost) < 1.0e-6f;
+	bool success = std::abs(finalCost) < 1.0e-6;
 	
 	if(success)
 	{
@@ -87,15 +88,16 @@ static bool testSimpleQuadratic(const std::string& name)
 class SimpleQuarticCostAndGradientFunction : public minerva::optimizer::CostAndGradientFunction
 {
 public:
-	virtual float computeCostAndGradient(BlockSparseMatrixVector& gradient,
-		const BlockSparseMatrixVector& inputs) const
+	virtual double computeCostAndGradient(MatrixVector& gradient,
+		const MatrixVector& inputs) const
 	{
-		auto shiftedInputs = inputs.add(-3.0f);
-		auto shiftedInputsCubed = shiftedInputs.elementMultiply(shiftedInputs).elementMultiply(shiftedInputs);
+		auto shiftedInputs = apply(inputs, minerva::matrix::Add(-3.0));
 
-		float cost = shiftedInputsCubed.elementMultiply(shiftedInputs).reduceSum();
+		auto shiftedInputsCubed = apply(apply(shiftedInputs, minerva::matrix::Square()), shiftedInputs, minerva::matrix::Multiply());
+
+		auto cost = reduce(apply(MatrixVector(shiftedInputsCubed), shiftedInputs, minerva::matrix::Multiply()), {}, minerva::matrix::Add())[0][0];
 		
-		gradient = shiftedInputsCubed.multiply(4.0f);
+		gradient = apply(shiftedInputsCubed, minerva::matrix::Multiply(4.0));
 		
 		return cost;
 	}
@@ -111,29 +113,29 @@ static bool testSimpleQuartic(const std::string& name)
 	
 	minerva::matrix::Matrix input(4, 4);
 	
-	input(0, 0) = 0.5f;
-	input(0, 1) = 0.5f;
-	input(0, 2) = 0.5f;
-	input(0, 3) = 0.5f;
+	input(0, 0) = 0.5;
+	input(0, 1) = 0.5;
+	input(0, 2) = 0.5;
+	input(0, 3) = 0.5;
 	
-	input(1, 0) = 0.5f;
-	input(1, 1) = 0.5f;
-	input(1, 2) = 0.5f;
-	input(1, 3) = 0.5f;
+	input(1, 0) = 0.5;
+	input(1, 1) = 0.5;
+	input(1, 2) = 0.5;
+	input(1, 3) = 0.5;
 	
-	input(2, 0) = 0.5f;
-	input(2, 1) = 0.5f;
-	input(2, 2) = 0.5f;
-	input(2, 3) = 0.5f;
+	input(2, 0) = 0.5;
+	input(2, 1) = 0.5;
+	input(2, 2) = 0.5;
+	input(2, 3) = 0.5;
 	
-	input(3, 0) = 0.5f;
-	input(3, 1) = 0.5f;
-	input(3, 2) = 0.5f;
-	input(3, 3) = 0.5f;
+	input(3, 0) = 0.5;
+	input(3, 1) = 0.5;
+	input(3, 2) = 0.5;
+	input(3, 3) = 0.5;
 	
 	float finalCost = solver->solve(input, SimpleQuarticCostAndGradientFunction());
 	
-	bool success = std::fabs(finalCost) < 1.0e-6f;
+	bool success = std::abs(finalCost) < 1.0e-6;
 	
 	if(success)
 	{
