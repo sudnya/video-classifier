@@ -14,27 +14,27 @@ namespace matrix
 class Allocation
 {
 public:
-	typedef uint8_t* pointer;
-	typedef const pointer const_pointer;
+    typedef uint8_t* pointer;
+    typedef const pointer const_pointer;
 
 public:
-	Allocation();
-	Allocation(size_t size);
+    Allocation();
+    Allocation(size_t size);
 
 public:
-	~Allocation();
+    ~Allocation();
 
 public:
-	      pointer data();
-	const_pointer data() const;
+          pointer data();
+    const_pointer data() const;
 
 private:
-	Allocation(const Allocation&) = delete;
-	Allocation& operator=(const Allocation&) = delete;
+    Allocation(const Allocation&) = delete;
+    Allocation& operator=(const Allocation&) = delete;
 
 private:
-	pointer _begin;
-	pointer _end;
+    pointer _begin;
+    pointer _end;
 
 };
 

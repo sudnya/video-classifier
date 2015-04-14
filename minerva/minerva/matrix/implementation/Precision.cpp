@@ -23,30 +23,30 @@ Precision::Precision(Type t)
 
 Precision::Type Precision::type() const
 {
-	return _type;
+    return _type;
 }
 
 size_t Precision::size() const
 {
-	switch(type())
-	{
-	case Half: return sizeof(float)/2;
-	case Single: return sizeof(float);
-	case Double: return sizeof(double);
-	default:
-		assertM(false, "Invalid type.");
-		return 0;
-	}
+    switch(type())
+    {
+    case Half: return sizeof(float)/2;
+    case Single: return sizeof(float);
+    case Double: return sizeof(double);
+    default:
+        assertM(false, "Invalid type.");
+        return 0;
+    }
 }
 
 bool Precision::operator==(const Precision& p) const
 {
-	return type() == p.type();
+    return type() == p.type();
 }
 
 bool Precision::operator!=(const Precision& p) const
 {
-	return !(*this == p);
+    return !(*this == p);
 }
 
 HalfPrecision::HalfPrecision()
