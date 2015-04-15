@@ -59,7 +59,7 @@ Matrix slice(const Matrix& input, const Dimension& begin, const Dimension& end)
     
     Matrix tempInput(input);
 
-    return Matrix(size, linearStride(size), input.precision(), tempInput.allocation(), tempInput[begin].address());
+    return Matrix(size, input.stride(), input.precision(), tempInput.allocation(), tempInput[begin].address());
 }
 
 Matrix slice(const Matrix& input, const Dimension& begin, const Dimension& end, const Dimension& stride)
@@ -68,7 +68,7 @@ Matrix slice(const Matrix& input, const Dimension& begin, const Dimension& end, 
     
     Matrix tempInput(input);
 
-    return Matrix(size, stride, input.precision(), tempInput.allocation(), tempInput[begin].address());
+    return Matrix(size, input.stride() * stride, input.precision(), tempInput.allocation(), tempInput[begin].address());
 }
  
 Matrix resize(const Matrix& input, const Dimension& size)

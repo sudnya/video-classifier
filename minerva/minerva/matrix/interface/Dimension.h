@@ -64,6 +64,7 @@ public:
 	Dimension operator-(const Dimension& ) const;
 	Dimension operator+(const Dimension& ) const;
 	Dimension operator/(const Dimension& ) const;
+	Dimension operator*(const Dimension& ) const;
 
 public:
 	bool operator==(const Dimension& ) const;

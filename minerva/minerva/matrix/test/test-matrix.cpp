@@ -346,6 +346,99 @@ bool test2dReduce2()
     
     return computed == c;
 }
+/*
+	Broadcast vector over matrix
+	[ 1 3 5 7]     				[7]   	[  8 10 12 14]
+	[ 7 1 3 5] broadcast(add) 	[8]  =	[ 15  9 11 13]
+	[ 0 4 8 2]					[9]		[  9 13 17 11]
+
+*/
+bool testBroadcast()
+{
+	Matrix a(3, 4);
+	Matrix b(3);
+	Matrix ref(3,4);
+
+	a(0, 0) = 1;
+	a(0, 1) = 3;
+	a(0, 2) = 5;
+	a(0, 3) = 7;
+	a(1, 0) = 7;
+	a(1, 1) = 1;
+	a(1, 2) = 3;
+	a(1, 3) = 5;
+	a(2, 0) = 0;
+	a(2, 1) = 4;
+	a(2, 2) = 8;
+	a(2, 3) = 2;
+
+	b(0) = 7;
+	b(1) = 8;
+	b(2) = 9;
+
+	ref(0, 0) = 8;
+	ref(0, 1) = 10;
+	ref(0, 2) = 12;
+	ref(0, 3) = 14;
+	ref(1, 0) = 15;
+	ref(1, 1) = 9;
+	ref(1, 2) = 11;
+	ref(1, 3) = 13;
+	ref(2, 0) = 9;
+	ref(2, 1) = 13;
+	ref(2, 2) = 17;
+	ref(2, 3) = 11;
+
+	Matrix computed = broadcast(a, b, minerva::matrix::Add());
+	
+    if(computed != ref)
+    {
+        std::cout << " Matrix broadcast Test Failed:\n";
+        std::cout << "  result matrix " << computed.toString();
+        std::cout << "  does not match reference matrix " << ref.toString();
+    }
+    else
+    {
+        std::cout << " Matrix broadcast Test Passed\n";
+    }
+    
+    return computed == ref;
+ 
+}
+
+bool testZeros()
+{
+	Matrix ref(3,4);
+	
+	ref(0, 0) = 0; 
+	ref(0, 1) = 0; 
+	ref(0, 2) = 0; 
+	ref(0, 3) = 0; 
+	ref(1, 0) = 0; 
+	ref(1, 1) = 0; 
+	ref(1, 2) = 0; 
+	ref(1, 3) = 0; 
+	ref(2, 0) = 0; 
+	ref(2, 1) = 0; 
+	ref(2, 2) = 0; 
+	ref(2, 3) = 0; 
+
+	Matrix computed = zeros(ref.size(), ref.precision());
+    
+	if(computed != ref)
+    {
+        std::cout << " Matrix zeros Test Failed:\n";
+        std::cout << "  result matrix " << computed.toString();
+        std::cout << "  does not match reference matrix " << ref.toString();
+    }
+    else
+    {
+        std::cout << " Matrix zeros Test Passed\n";
+    }
+    
+    return computed == ref;
+}
+
 
 int main(int argc, char** argv)
 {
@@ -355,13 +448,15 @@ int main(int argc, char** argv)
     
     bool passed = true;
     
-    passed &= testMultiply();
     passed &= testMultiplySlice();
+    passed &= testMultiply();
     passed &= testAddition();
     passed &= testScalarAddition();
     passed &= testReduce();
     passed &= test2dReduce();
     passed &= test2dReduce2();
+	passed &= testBroadcast();
+	passed &= testZeros();
 
     if(not passed)
     {

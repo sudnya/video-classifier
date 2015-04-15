@@ -424,9 +424,23 @@ void broadcast(Matrix& result, const Matrix& left, const Matrix& right, const Op
 
 Matrix broadcast(const Matrix& left, const Matrix& right, const Operation& op) 
 {
-    Matrix retVal (left.size(), left.precision());
+    Matrix retVal(left.size(), left.precision());
     broadcast(retVal, left, right, op);
     return retVal;    
+}
+
+void zeros(Matrix& result)
+{
+	apply(result, result, Fill(0.0));
+}
+
+Matrix zeros(const Dimension& size, const Precision& precision)
+{
+    Matrix retVal(size, precision);
+
+    zeros(retVal);
+
+    return retVal;
 }
 
 }

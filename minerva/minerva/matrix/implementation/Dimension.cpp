@@ -158,6 +158,20 @@ Dimension Dimension::operator/(const Dimension& d) const
     return result;
 }
 
+Dimension Dimension::operator*(const Dimension& d) const
+{
+    assert(size() == d.size());
+
+    Dimension result;
+    
+    for(auto left = begin(), right = d.begin(); left != end(); ++left, ++right)
+    {
+        result.push_back(*left * *right);
+    }
+    
+    return result;
+}
+
 bool Dimension::operator==(const Dimension& d) const
 {
     if(d.size() != size())
