@@ -41,11 +41,38 @@ static Dimension fillInDimension(const Dimension& newSize, const Dimension& inpu
     return size;
 }
 
+static Dimension fillInStride(const Dimension& newSize, const Dimension& inputStride)
+{
+	Dimension newStride;
+
+	size_t copySize = std::min(newSize.size(), inputStride.size());
+
+	for(size_t i = 0; i < copySize; ++i)
+	{
+		newStride.push_back(inputStride[i]);
+	}
+	
+	size_t product = newStride.product();
+	product *= newSize[0];
+	
+	for(size_t i = newStride.size(); i < newSize.size(); ++i)
+	{
+		newStride.push_back(product);
+		product *= newSize[i];
+
+	}
+	
+	return newStride;
+}
+
 Matrix reshape(const Matrix& input, const Dimension& size)
 {
     Matrix tempInput(input);
+
+	auto newSize = fillInDimension(size, input.size());
     
-    return Matrix(fillInDimension(size, input.size()), input.stride(), input.precision(), tempInput.allocation(), tempInput.data());
+    return Matrix(newSize, fillInStride(newSize, input.stride()),
+		input.precision(), tempInput.allocation(), tempInput.data());
 }
 
 Matrix flatten(const Matrix& matrix)

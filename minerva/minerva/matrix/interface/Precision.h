@@ -21,7 +21,7 @@ public:
 
 public:
 	Precision();
-	Precision(Type t);
+	explicit Precision(Type t);
 
 public:
 	Type type() const;

@@ -393,13 +393,13 @@ bool testBroadcast()
 	
     if(computed != ref)
     {
-        std::cout << " Matrix broadcast Test Failed:\n";
+        std::cout << " Matrix Broadcast Test Failed:\n";
         std::cout << "  result matrix " << computed.toString();
         std::cout << "  does not match reference matrix " << ref.toString();
     }
     else
     {
-        std::cout << " Matrix broadcast Test Passed\n";
+        std::cout << " Matrix Broadcast Test Passed\n";
     }
     
     return computed == ref;
@@ -427,18 +427,143 @@ bool testZeros()
     
 	if(computed != ref)
     {
-        std::cout << " Matrix zeros Test Failed:\n";
+        std::cout << " Matrix Zeros Test Failed:\n";
         std::cout << "  result matrix " << computed.toString();
         std::cout << "  does not match reference matrix " << ref.toString();
     }
     else
     {
-        std::cout << " Matrix zeros Test Passed\n";
+        std::cout << " Matrix Zeros Test Passed\n";
     }
     
     return computed == ref;
 }
 
+/*
+    A simple reshape test.
+    
+    [ 1 ] reshape = [ 1 5 4 ] 
+    [ 3 ]           [ 3 2 6 ]
+    [ 5 ]               
+    [ 2 ]
+    [ 4 ]
+    [ 6 ]
+    
+*/
+bool testReshape()
+{
+    Matrix a(6);
+    
+	a(0) = 1;
+    a(1) = 3;
+    a(2) = 5;
+    a(3) = 2;
+    a(4) = 4;
+    a(5) = 6;
+    
+    Matrix c(2, 3);
+    
+    c(0, 0) = 1;
+    c(0, 1) = 5;
+    c(0, 2) = 4;
+    c(1, 0) = 3;
+    c(1, 1) = 2;
+    c(1, 2) = 6;
+    
+    Matrix computed = reshape(a, c.size());
+    
+    if(computed != c)
+    {
+        std::cout << " Matrix Reshape Test Failed:\n";
+        std::cout << "  result matrix " << computed.toString();
+        std::cout << "  does not match reference matrix " << c.toString();
+    }
+    else
+    {
+        std::cout << " Matrix Reshape Test Passed\n";
+    }
+    
+    return computed == c;
+}
+
+/*
+    Test matrix copy
+    
+    [ 1 2 ]  = [ 1 2 ]
+    [ 3 4 ]    [ 3 4 ]
+    [ 5 6 ]    [ 5 6 ]
+    
+*/
+bool testCopy()
+{
+    Matrix a(3, 2);
+    
+    a(0, 0) = 1;
+    a(0, 1) = 2;
+    a(1, 0) = 3;
+    a(1, 1) = 4;
+    a(2, 0) = 5;
+    a(2, 1) = 6;
+    
+    Matrix computed = copy(a);
+    
+    if(computed != a)
+    {
+        std::cout << " Matrix Copy Test Failed:\n";
+        std::cout << "  result matrix " << computed.toString();
+        std::cout << "  does not match reference matrix " << a.toString();
+    }
+    else
+    {
+        std::cout << " Matrix Copy Test Passed\n";
+    }
+    
+    return computed == a;
+}
+
+/*
+    Test matrix copy between precisions
+    
+    [ 1 2 ]  = [ 1 2 ]
+    [ 3 4 ]    [ 3 4 ]
+    [ 5 6 ]    [ 5 6 ]
+    
+*/
+bool testCopyBetweenPrecisions()
+{
+    Matrix a({3, 2}, minerva::matrix::SinglePrecision());
+    
+    a(0, 0) = 1;
+    a(0, 1) = 2;
+    a(1, 0) = 3;
+    a(1, 1) = 4;
+    a(2, 0) = 5;
+    a(2, 1) = 6;
+    
+	Matrix c({3, 2}, minerva::matrix::DoublePrecision());
+    
+    c(0, 0) = 1;
+    c(0, 1) = 2;
+    c(1, 0) = 3;
+    c(1, 1) = 4;
+    c(2, 0) = 5;
+    c(2, 1) = 6;
+    
+    Matrix computed = copy(Matrix(a), minerva::matrix::DoublePrecision());
+    
+    if(computed != c)
+    {
+        std::cout << " Matrix Copy Between Precisions Test Failed:\n";
+        std::cout << "  result matrix " << computed.toString();
+        std::cout << "  does not match reference matrix " << c.toString();
+    }
+    else
+    {
+        std::cout << " Matrix Copy Between Precisions Test Passed\n";
+    }
+    
+    return computed == c;
+}
 
 int main(int argc, char** argv)
 {
@@ -457,6 +582,9 @@ int main(int argc, char** argv)
     passed &= test2dReduce2();
 	passed &= testBroadcast();
 	passed &= testZeros();
+	passed &= testReshape();
+	passed &= testCopy();
+	passed &= testCopyBetweenPrecisions();
 
     if(not passed)
     {
@@ -469,8 +597,5 @@ int main(int argc, char** argv)
 
     return 0;
 }
-
-
-
 
 
