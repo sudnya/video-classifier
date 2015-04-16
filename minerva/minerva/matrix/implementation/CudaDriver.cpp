@@ -7,6 +7,8 @@
 // Minerva Includes
 #include <minerva/matrix/interface/CudaDriver.h>
 
+#include <minerva/parallel/interface/cuda.h>
+
 #include <minerva/util/interface/Casts.h>
 #include <minerva/util/interface/debug.h>
 
@@ -27,6 +29,8 @@ void CudaDriver::load()
 
 bool CudaDriver::loaded()
 {
+	load();
+
     return _interface.loaded();
 }
 
@@ -452,6 +456,7 @@ static void checkFunction(void* pointer, const std::string& name)
 void CudaDriver::Interface::load()
 {
     if(loaded()) return;
+	if(!parallel::isCudaEnabled()) return;
     
     #ifdef __APPLE__
     const char* libraryName = "libcuda.dylib";

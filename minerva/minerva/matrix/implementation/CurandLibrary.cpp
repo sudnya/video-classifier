@@ -7,6 +7,8 @@
 // Minerva Includes
 #include <minerva/matrix/interface/CurandLibrary.h>
 
+#include <minerva/parallel/interface/cuda.h>
+
 #include <minerva/util/interface/Casts.h>
 
 // System-Specific Includes
@@ -26,6 +28,8 @@ void CurandLibrary::load()
 
 bool CurandLibrary::loaded()
 {
+	load();
+	
     return _interface.loaded();
 }
 
@@ -231,6 +235,7 @@ void CurandLibrary::Interface::load()
 {
     if(_failed)  return;
     if(loaded()) return;
+	if(!parallel::isCudaEnabled()) return;
     
     #ifdef __APPLE__
     //const char* libraryName = "libcurand-optimized.dylib";

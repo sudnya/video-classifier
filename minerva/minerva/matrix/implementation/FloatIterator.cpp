@@ -36,6 +36,11 @@ static Dimension advance(const Dimension& offset, const Dimension& size)
             result.push_back(offset[i]);
         }
     }
+	
+	if(carry)
+	{
+		return size;
+	}
     
     return result;
 }
@@ -60,9 +65,11 @@ FloatReference FloatIterator::operator*()
     return FloatReference(_precision, getAddress(_stride, _offset, _data, _precision));
 }
 
-FloatIterator FloatIterator::operator++()
+FloatIterator& FloatIterator::operator++()
 {
-    return FloatIterator(_precision, _size, _stride, detail::advance(_offset, _size), _data);
+    _offset = detail::advance(_offset, _size);
+
+	return *this;
 }
 
 bool FloatIterator::operator==(const FloatIterator& i) const
@@ -128,9 +135,11 @@ ConstFloatReference ConstFloatIterator::operator*()
     return ConstFloatReference(_precision, getAddress(_stride, _offset, _data, _precision));
 }
 
-ConstFloatIterator ConstFloatIterator::operator++()
+ConstFloatIterator& ConstFloatIterator::operator++()
 {
-    return ConstFloatIterator(_precision, _size, _stride, detail::advance(_offset, _size), _data);
+	_offset = detail::advance(_offset, _size);
+	
+	return *this;
 }
 
 bool ConstFloatIterator::operator==(const FloatIterator& i) const

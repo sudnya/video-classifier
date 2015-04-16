@@ -52,7 +52,9 @@ private:
             _cpuEngine.reset(new std::default_random_engine);
         }
         
-        if(!_cudaEngine)
+		CurandLibrary::load();
+		
+        if(!_cudaEngine && CurandLibrary::loaded())
         {
             _cudaEngine.reset(new CurandLibrary::curandGenerator_t);
 

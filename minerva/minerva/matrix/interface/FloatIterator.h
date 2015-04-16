@@ -28,7 +28,7 @@ public:
 	FloatReference operator*();
 
 public:
-	FloatIterator operator++();
+	FloatIterator& operator++();
 
 public:
 	bool operator==(const FloatIterator&) const;
@@ -68,7 +68,7 @@ public:
 	ConstFloatReference operator*();
 
 public:
-	ConstFloatIterator operator++();
+	ConstFloatIterator& operator++();
 
 public:
 	bool operator==(const FloatIterator&) const;

@@ -6,6 +6,9 @@
 
 // Minerva Includes
 #include <minerva/matrix/interface/CublasLibrary.h>
+
+#include <minerva/parallel/interface/cuda.h>
+
 #include <minerva/util/interface/Casts.h>
 
 // Standard Library Includes
@@ -269,6 +272,7 @@ void CublasLibrary::Interface::load()
 {
     if(_failed)  return;
     if(loaded()) return;
+	if(!parallel::isCudaEnabled()) return;
     
     #ifdef __APPLE__
     const char* libraryName = "libcublas.dylib";

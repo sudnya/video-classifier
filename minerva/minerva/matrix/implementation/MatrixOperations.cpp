@@ -119,7 +119,7 @@ Matrix apply(const Matrix& left, const Matrix& right, const Operation& op)
     assert(left.size() == right.size());
     assert(left.precision() == right.precision());
     
-    Matrix temp(left.size());
+    Matrix temp(left.size(), left.precision());
     
     apply(temp, left, right, op);
     
@@ -220,7 +220,7 @@ void apply(Matrix& result, const Matrix& input, const Operation& op)
 
 Matrix apply(const Matrix& input, const Operation& op)
 {
-    Matrix result(input.size());
+    Matrix result(input.size(), input.precision());
     
     apply(result, input, op);
     

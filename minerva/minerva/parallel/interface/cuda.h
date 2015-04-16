@@ -7,4 +7,14 @@
 #define CUDA_DECORATOR
 #endif
 
+namespace minerva
+{
+namespace parallel
+{
+
+bool isCudaEnabled();
+
+}
+}
+
 

@@ -9,6 +9,7 @@
 #include <minerva/matrix/interface/BlasOperations.h>
 #include <minerva/matrix/interface/CopyOperations.h>
 #include <minerva/matrix/interface/MatrixOperations.h>
+#include <minerva/matrix/interface/RandomOperations.h>
 #include <minerva/matrix/interface/MatrixTransformations.h>
 #include <minerva/matrix/interface/Operation.h>
 
@@ -565,6 +566,35 @@ bool testCopyBetweenPrecisions()
     return computed == c;
 }
 
+/*
+	Test uniform random matrix.
+*/
+bool testUniformRandom()
+{
+	minerva::matrix::srand(377);
+	
+	size_t size = 100;
+	
+	auto a = minerva::matrix::rand({size, size}, minerva::matrix::SinglePrecision());
+	
+	auto mean = reduce(apply(a, minerva::matrix::Divide(1.0 / (size * size))), {}, minerva::matrix::Add())[0];
+	
+	bool passed = (mean < 0.1 && mean > -0.1);
+	
+	if(!passed)
+	{
+        std::cout << " Matrix Uniform Random Test Failed:\n";
+        std::cout << "  result mean " << mean << " is out of bounds.\n";
+    }
+    else
+    {
+        std::cout << " Matrix Uniform Random Test Passed\n";
+	}
+	
+	return passed;
+}
+
+
 int main(int argc, char** argv)
 {
     minerva::util::enableAllLogs();
@@ -585,6 +615,7 @@ int main(int argc, char** argv)
 	passed &= testReshape();
 	passed &= testCopy();
 	passed &= testCopyBetweenPrecisions();
+	passed &= testUniformRandom();
 
     if(not passed)
     {

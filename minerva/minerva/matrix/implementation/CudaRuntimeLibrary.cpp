@@ -6,6 +6,9 @@
 
 // Minerva Includes
 #include <minerva/matrix/interface/CudaRuntimeLibrary.h>
+
+#include <minerva/parallel/interface/cuda.h>
+
 #include <minerva/util/interface/Casts.h>
 
 // Standard Library Includes
@@ -27,6 +30,8 @@ void CudaRuntimeLibrary::load()
 
 bool CudaRuntimeLibrary::loaded()
 {
+	load();
+
     return _interface.loaded();
 }
 
@@ -135,6 +140,7 @@ void CudaRuntimeLibrary::Interface::load()
 {
     if(_failed)  return;
     if(loaded()) return;
+	if(!parallel::isCudaEnabled()) return;
     
     #ifdef __APPLE__
     const char* libraryName = "libcudart.dylib";
