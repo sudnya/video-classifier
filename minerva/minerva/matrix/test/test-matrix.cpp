@@ -488,6 +488,59 @@ bool testReshape()
 }
 
 /*
+    Test reshaping a slice.
+    
+    [ 1  7 ] slice = [  7 ] reshape = [ 7  9 11 ]
+    [ 2  8 ]         [  8 ]           [ 8 10 12 ]
+    [ 3  9 ]         [  9 ]      
+    [ 4 10 ]         [ 10 ]
+    [ 5 11 ]         [ 11 ]
+    [ 6 12 ]         [ 12 ]
+    
+*/
+bool testReshapeSlice()
+{
+    Matrix a(6, 2);
+    
+	a(0, 0) = 1;
+    a(1, 0) = 2;
+    a(2, 0) = 3;
+    a(3, 0) = 4;
+    a(4, 0) = 5;
+    a(5, 0) = 6;
+	a(0, 1) = 7;
+    a(1, 1) = 8;
+    a(2, 1) = 9;
+    a(3, 1) = 10;
+    a(4, 1) = 11;
+    a(5, 1) = 12;
+   
+    Matrix c(2, 3);
+    
+    c(0, 0) = 7;
+    c(0, 1) = 9;
+    c(0, 2) = 11;
+    c(1, 0) = 8;
+    c(1, 1) = 10;
+    c(1, 2) = 12;
+    
+    Matrix computed = reshape(slice(a, {0, 1}, {6, 2}), c.size());
+    
+    if(computed != c)
+    {
+        std::cout << " Matrix Reshape Slice Test Failed:\n";
+        std::cout << "  result matrix " << computed.toString();
+        std::cout << "  does not match reference matrix " << c.toString();
+    }
+    else
+    {
+        std::cout << " Matrix Reshape Slice Test Passed\n";
+    }
+    
+    return computed == c;
+}
+
+/*
     Test matrix copy
     
     [ 1 2 ]  = [ 1 2 ]
@@ -594,6 +647,34 @@ bool testUniformRandom()
 	return passed;
 }
 
+/*
+	Test normal random matrix.
+*/
+bool testNormalRandom()
+{
+	minerva::matrix::srand(377);
+	
+	size_t size = 100;
+	
+	auto a = minerva::matrix::randn({size, size}, minerva::matrix::SinglePrecision());
+	
+	auto mean = reduce(apply(a, minerva::matrix::Divide(1.0 / (size * size))), {}, minerva::matrix::Add())[0];
+	
+	bool passed = (mean < 0.1 && mean > -0.1);
+	
+	if(!passed)
+	{
+        std::cout << " Matrix Normal Random Test Failed:\n";
+        std::cout << "  result mean " << mean << " is out of bounds.\n";
+    }
+    else
+    {
+        std::cout << " Matrix Normal Random Test Passed\n";
+	}
+	
+	return passed;
+}
+
 
 int main(int argc, char** argv)
 {
@@ -613,9 +694,11 @@ int main(int argc, char** argv)
 	passed &= testBroadcast();
 	passed &= testZeros();
 	passed &= testReshape();
+	passed &= testReshapeSlice();
 	passed &= testCopy();
 	passed &= testCopyBetweenPrecisions();
 	passed &= testUniformRandom();
+	passed &= testNormalRandom();
 
     if(not passed)
     {
