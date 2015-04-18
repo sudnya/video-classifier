@@ -13,6 +13,8 @@
 
 #include <minerva/util/interface/debug.h>
 
+#include <string>
+
 namespace minerva
 {
 
@@ -28,13 +30,13 @@ SoftmaxCostFunction::~SoftmaxCostFunction()
 
 static Matrix softmax(const Matrix& output)
 {
-	auto normalizedOutput = broadcast(output, reduce(output, {1}, matrix::Maximum()), matrix::Subtract());
+	auto normalizedOutput = broadcast(output, reduce(output, {0}, matrix::Maximum()), {0}, matrix::Subtract());
 
 	auto expOutput = apply(normalizedOutput, matrix::Exp());
-	
-	auto sums = reduce(expOutput, {1}, matrix::Add());
-	
-	return broadcast(expOutput, sums, matrix::Divide());
+
+	auto sums = reduce(expOutput, {0}, matrix::Add());
+
+	return broadcast(expOutput, sums, {0}, matrix::Divide());
 }
 
 Matrix SoftmaxCostFunction::computeCost(const Matrix& output, const Matrix& reference) const

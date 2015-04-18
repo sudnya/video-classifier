@@ -266,8 +266,9 @@ Dimension selectNamedDimensions(const Dimension& selectedDimensions, const Dimen
 static size_t getOffset(const Dimension& stride, const Dimension& position)
 {
     size_t offset = 0;
+    size_t arity = std::min(stride.size(), position.size());
 
-    for(auto i = 0; i < stride.size(); ++i)
+    for(auto i = 0; i < arity; ++i)
     {
         offset += stride[i] * position[i];
     }

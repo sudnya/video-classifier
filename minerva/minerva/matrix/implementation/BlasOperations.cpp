@@ -20,7 +20,7 @@ void gemm(Matrix& result, const Matrix& left, const Matrix& right)
 
 Matrix gemm(const Matrix& left, const Matrix& right)
 {
-    return gemm(0.0, left, false, 1.0, right, false);
+    return gemm(left, false, 1.0, right, false);
 }
 
 void gemm(Matrix& result, const Matrix& left, bool transposeLeft, const Matrix& right, bool transposeRight)
@@ -30,7 +30,7 @@ void gemm(Matrix& result, const Matrix& left, bool transposeLeft, const Matrix& 
 
 Matrix gemm(const Matrix& left, bool transposeLeft, const Matrix& right, bool transposeRight)
 {
-    return gemm(0.0, left, transposeLeft, 1.0, right, transposeRight);
+    return gemm(left, transposeLeft, 1.0, right, transposeRight);
 }
 
 void gemm(Matrix& result, double beta,
@@ -40,10 +40,10 @@ void gemm(Matrix& result, double beta,
     assert(left.size().size() == right.size().size());
     assert(left.size().size() == result.size().size());
     assert(left.size().size() == 2);
-    
+
     assert(left.precision() == right.precision());
     assert(left.precision() == result.precision());
-    
+
     assert(left.isLeadingDimensionContiguous());
     assert(right.isLeadingDimensionContiguous());
     assert(result.isLeadingDimensionContiguous());
@@ -52,12 +52,12 @@ void gemm(Matrix& result, double beta,
     size_t n = transposeRight ? right.size()[0] : right.size()[1];
     size_t k = transposeLeft  ? left.size()[0]  : left.size()[1];
 
-    assert(k == transposeRight ? right.size()[1] : right.size()[0]);
-    
-    size_t lda = transposeLeft  ?  left.stride()[0] :  left.stride()[1];
-    size_t ldb = transposeRight ? right.stride()[0] : right.stride()[1];
+    assert(k == (transposeRight ? right.size()[1] : right.size()[0]));
+
+    size_t lda = left.stride()[1];
+    size_t ldb = right.stride()[1];
     size_t ldc = result.stride()[1];
-    
+
     if(CublasLibrary::loaded())
     {
         if(left.precision() == SinglePrecision())
@@ -119,17 +119,16 @@ void gemm(Matrix& result, double beta,
     }
 }
 
-Matrix gemm(double beta,
-    const Matrix& left, bool transposeLeft, double alpha,
+Matrix gemm(const Matrix& left, bool transposeLeft, double alpha,
     const Matrix& right, bool transposeRight)
 {
     size_t rows    = transposeLeft  ? left.size()[1]  : left.size()[0];
     size_t columns = transposeRight ? right.size()[0] : right.size()[1];
-    
+
     Matrix result({rows, columns}, left.precision());
-    
-    gemm(result, beta, left, transposeLeft, alpha, right, transposeRight);
-    
+
+    gemm(result, 0.0, left, transposeLeft, alpha, right, transposeRight);
+
     return result;
 }
 

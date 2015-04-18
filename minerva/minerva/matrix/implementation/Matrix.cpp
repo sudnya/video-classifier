@@ -53,7 +53,7 @@ Matrix::Matrix(const Dimension& size, const Precision& precision)
 Matrix::Matrix(const Dimension& size, const Dimension& stride)
 : _allocation(std::make_shared<Allocation>(size.product() * SinglePrecision().size())),
   _data_begin(_allocation->data()),
-  _size(size), _stride(stride), _precision(SinglePrecision()) 
+  _size(size), _stride(stride), _precision(SinglePrecision())
 {
 
 }
@@ -107,7 +107,7 @@ size_t Matrix::elements() const
 {
     return size().product();
 }
-    
+
 FloatIterator Matrix::begin()
 {
     return FloatIterator(precision(), size(), stride(), zeros(size()), _data_begin);
@@ -142,7 +142,7 @@ const void* Matrix::data() const
 {
     return _data_begin;
 }
-    
+
 bool Matrix::isContiguous() const
 {
     return linearStride(size()) == stride();
@@ -156,14 +156,14 @@ bool Matrix::isLeadingDimensionContiguous() const
 std::string Matrix::toString() const
 {
     size_t rows = 1;
-    
+
     if(size().size() > 0)
     {
         rows = size()[0];
     }
-    
+
     size_t columns = 1;
-    
+
     if(size().size() > 1)
     {
         columns = size()[1];
@@ -173,10 +173,10 @@ std::string Matrix::toString() const
 
     std::stringstream stream;
 
-    stream << shapeString() << " ";
+    stream << shapeString() << "\n";
 
     stream << "[ ";
-    
+
     size_t maxRows    = 10;
     size_t maxColumns = 10;
 
@@ -190,7 +190,7 @@ std::string Matrix::toString() const
         {
             stream << matrix(row, column) << " ";
         }
-        
+
         if(row + 1 != finalRow) stream << "\n ";
     }
 
@@ -208,7 +208,7 @@ std::string Matrix::shapeString() const
 {
     return size().toString();
 }
-    
+
 FloatReference Matrix::operator[](const Dimension& d)
 {
     return FloatReference(precision(), getAddress(stride(), d, _data_begin, precision()));
@@ -218,14 +218,14 @@ ConstFloatReference Matrix::operator[](const Dimension& d) const
 {
     return ConstFloatReference(precision(), getAddress(stride(), d, _data_begin, precision()));
 }
-    
+
 bool Matrix::operator==(const Matrix& m) const
 {
     if(size() != m.size())
     {
         return false;
     }
-    
+
     if(precision() != m.precision())
     {
         return false;
