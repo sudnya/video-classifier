@@ -20,7 +20,7 @@ namespace optimizer
 GeneralDifferentiableSolver* GeneralDifferentiableSolverFactory::create(const std::string& name)
 {
 	GeneralDifferentiableSolver* solver = nullptr;
-	
+
 	if("LimitedMemoryBroydenFletcherGoldfarbShannoSolver" == name ||
 		"LBFGSSolver" == name)
 	{
@@ -33,7 +33,7 @@ GeneralDifferentiableSolver* GeneralDifferentiableSolverFactory::create(const st
 	{
 		solver = new NAGSolver;
 	}
-	
+
 	return solver;
 }
 
@@ -46,7 +46,7 @@ static std::string getSolverName()
 GeneralDifferentiableSolver* GeneralDifferentiableSolverFactory::create()
 {
 	auto solverName = getSolverName();
-	
+
 	return create(solverName);
 }
 
@@ -64,24 +64,23 @@ double GeneralDifferentiableSolverFactory::getMemoryOverheadForSolver(const std:
 	{
 		return NAGSolver::getMemoryOverhead();
 	}
-	
+
 	return 2.0;
 }
 
 double GeneralDifferentiableSolverFactory::getMemoryOverheadForSolver()
 {
 	auto solverName = getSolverName();
-	 
+
 	return getMemoryOverheadForSolver(solverName);
 }
 
 GeneralDifferentiableSolverFactory::StringVector GeneralDifferentiableSolverFactory::enumerate()
 {
-	return 
+	return
 	{
-		"LimitedMemoryBroydenFletcherGoldfarbShannoSolver",
-		"GradientDescentSolver",
-		"NesterovAcceleratedGradientSolver"
+		"NesterovAcceleratedGradientSolver",
+		"LimitedMemoryBroydenFletcherGoldfarbShannoSolver"
 	};
 }
 

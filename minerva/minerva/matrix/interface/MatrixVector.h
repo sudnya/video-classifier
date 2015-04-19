@@ -28,6 +28,7 @@ private:
 
 public:
 	typedef std::vector<value_type> Vector;
+    typedef std::vector<Dimension> DimensionVector;
 
 public:
 	typedef Vector::iterator       iterator;
@@ -38,6 +39,10 @@ public:
 
 public:
 	MatrixVector();
+
+public:
+    MatrixVector(const DimensionVector& sizes);
+	MatrixVector(const DimensionVector& sizes, const Precision& p);
 
 public:
 	MatrixVector(std::initializer_list<Matrix> l);
@@ -59,6 +64,7 @@ public:
 
 public:
 	size_t size() const;
+    DimensionVector sizes() const;
 
 public:
 	void reserve(size_t size);
@@ -74,7 +80,7 @@ public:
 public:
 	reverse_iterator       rbegin();
 	const_reverse_iterator rbegin() const;
-	
+
 	reverse_iterator       rend();
 	const_reverse_iterator rend() const;
 
@@ -96,7 +102,11 @@ public:
 
 public:
 	std::string toString() const;
-	
+
+public:
+    bool operator==(const MatrixVector&) const;
+    bool operator!=(const MatrixVector&) const;
+
 private:
 	Vector _matrix;
 

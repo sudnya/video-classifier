@@ -21,6 +21,20 @@ MatrixVector::MatrixVector()
 
 }
 
+MatrixVector::MatrixVector(const DimensionVector& sizes)
+: MatrixVector(sizes, SinglePrecision())
+{
+
+}
+
+MatrixVector::MatrixVector(const DimensionVector& sizes, const Precision& precision)
+{
+    for(auto& size : sizes)
+    {
+        push_back(Matrix(size, precision));
+    }
+}
+
 MatrixVector::MatrixVector(std::initializer_list<Matrix> l)
 : _matrix(l)
 {
@@ -30,7 +44,7 @@ MatrixVector::MatrixVector(std::initializer_list<Matrix> l)
 MatrixVector::MatrixVector(const MatrixVector& m) = default;
 
 MatrixVector::MatrixVector(MatrixVector&& m) = default;
-    
+
 MatrixVector& MatrixVector::operator=(const MatrixVector&  ) = default;
 MatrixVector& MatrixVector::operator=(MatrixVector&& ) = default;
 
@@ -52,6 +66,18 @@ bool MatrixVector::empty() const
 size_t MatrixVector::size() const
 {
     return _matrix.size();
+}
+
+MatrixVector::DimensionVector MatrixVector::sizes() const
+{
+    DimensionVector sizes;
+
+    for(auto& matrix : *this)
+    {
+        sizes.push_back(matrix.size());
+    }
+
+    return sizes;
 }
 
 void MatrixVector::reserve(size_t size)
@@ -118,7 +144,7 @@ void MatrixVector::push_back(MatrixVector&& v)
 {
     for(auto& m : v)
     {
-        _matrix.push_back(std::move(m));    
+        _matrix.push_back(std::move(m));
     }
 }
 
@@ -126,7 +152,7 @@ void MatrixVector::push_back(const MatrixVector& v)
 {
     for(auto& m : v)
     {
-        _matrix.push_back(m);    
+        _matrix.push_back(m);
     }
 }
 
@@ -161,8 +187,18 @@ std::string MatrixVector::toString() const
     {
         return "[]";
     }
-    
+
     return front().toString();
+}
+
+bool MatrixVector::operator==(const MatrixVector& l) const
+{
+    return _matrix == l._matrix;
+}
+
+bool MatrixVector::operator!=(const MatrixVector& l) const
+{
+    return _matrix != l._matrix;
 }
 
 }

@@ -1,4 +1,4 @@
-/*    \file   test-matrix.h
+/*  \file   test-matrix.h
     \date   Sunday August 11, 2013
     \author Gregory Diamos <solusstultus@gmail.com>
     \brief  The source file for the matrix unit test class.

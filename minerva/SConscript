@@ -55,6 +55,9 @@ tools.append(env.Program('test-classifier', \
 tools.append(env.Program('test-matrix', \
 	['minerva/matrix/test/test-matrix.cpp'], LIBS=minerva_libs))
 
+tools.append(env.Program('test-matrix-vector', \
+	['minerva/matrix/test/test-matrix-vector.cpp'], LIBS=minerva_libs))
+
 #tools.append(env.Program('test-minerva-visualization', \
 #	['minerva/visualization/test/test-minerva-visualization.cpp'], LIBS=minerva_libs))
 
@@ -76,7 +79,7 @@ tools.append(env.Program('test-optimizer', \
 for tool in tools:
 	env.Depends(tool, libminerva)
 
-# install it all 
+# install it all
 if env['install']:
 	installed   = []
 	executables = []
@@ -85,33 +88,33 @@ if env['install']:
 
 	installed.append(env.Install(os.path.join(env['install_path'], "bin"),
 		'scripts/which.py'))
-	
+
 	for tool in tools:
 		executables.append(env.Install(
 			os.path.join(env['install_path'], "bin"), tool))
-	
+
 	# install headers
 	header_directories = [os.path.join(i, 'interface') for i in directories]
 	header_extensions = ['*.h']
-	
+
 	headers = []
 	for dir in header_directories:
 		for ext in header_extensions:
 			regexp = os.path.join(dir, ext)
 			headers.extend(env.Glob(regexp))
-	
+
 	for header in headers:
 		(directoryPath, headerName) = os.path.split( \
 			os.path.relpath(str(header), env['path_to_root_dir']))
 		installed.append(env.Install(os.path.join( \
 			env['install_path'], "include", directoryPath), header))
-	
+
 	# set permissions
 	for i in executables:
 		env.AddPostAction(i, Chmod(i, 0755))
 	for i in installed:
 		env.AddPostAction(i, Chmod(i, 0644))
-	
+
 	# Run the install rules by default
 	install_alias = env.Alias('install', env['install_path'])
 	Default(install_alias)

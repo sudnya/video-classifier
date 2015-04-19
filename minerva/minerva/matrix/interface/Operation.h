@@ -31,6 +31,7 @@ public:
         Divide,
         Log,
         Exp,
+        Pow,
         Abs,
         Sigmoid,
         SigmoidDerivative,
@@ -165,6 +166,35 @@ public:
     {
         return std::expf(l);
     }
+};
+
+class Pow : public Operation
+{
+public:
+    CUDA_DECORATOR Pow() : Operation(Operation::Pow), _value(0.0)
+    {
+
+    }
+
+    CUDA_DECORATOR Pow(double v) : Operation(Operation::Pow), _value(v)
+    {
+
+    }
+
+public:
+    template<typename T>
+    CUDA_DECORATOR T operator()(const T& l) const
+    {
+        return std::pow(l, _value);
+    }
+
+    CUDA_DECORATOR float operator()(const float& l) const
+    {
+        return std::powf(l, _value);
+    }
+
+public:
+    double _value;
 };
 
 class Abs : public Operation
@@ -609,14 +639,14 @@ private:
 
 };
 
-typedef std::tuple<Add, Subtract, Multiply, Divide, Log, Exp, Abs, RectifiedLinear,
+typedef std::tuple<Add, Subtract, Multiply, Divide, Log, Exp, Pow, Abs, RectifiedLinear,
                    RectifiedLinearDerivative, Sigmoid, SigmoidDerivative, Negate, Maximum,
                    Minimum, Equal, LessThan, NotEqual, Fill, Square, SquareAndScale> AllOperations;
 
 typedef std::tuple<Add, Subtract, Multiply, Divide, Maximum, Minimum,
                    Equal, LessThan, NotEqual> AllBinaryOperations;
 
-typedef std::tuple<Add, Subtract, Multiply, Divide, Log, Exp, Abs, RectifiedLinear,
+typedef std::tuple<Add, Subtract, Multiply, Divide, Log, Exp, Pow, Abs, RectifiedLinear,
                    RectifiedLinearDerivative, Sigmoid, SigmoidDerivative, Negate, Maximum,
                    Minimum, Equal, LessThan, NotEqual, Fill, Square, SquareAndScale> AllUnaryOperations;
 
