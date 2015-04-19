@@ -140,19 +140,19 @@ bool testReduction()
     a[1](1, 0) = 2;
     a[1](1, 1) = 4;
 
-    double computed = reduce(a, {}, minerva::matrix::Add())[0][0] + reduce(a, {}, minerva::matrix::Add())[1][0];
+    double computed = reduce(a, {}, minerva::matrix::Add())[0][0];
 
     auto c = 20.0;
 
     if(computed != c)
     {
-        std::cout << " Matrix Vector Dot Product Test Failed:\n";
+        std::cout << " Matrix Vector Reduction Test Failed:\n";
         std::cout << "  result value " << computed << "\n";
         std::cout << "  does not match reference value " << c << "\n";
     }
     else
     {
-        std::cout << " Matrix Vector Addition Test Passed\n";
+        std::cout << " Matrix Vector Reduction Test Passed\n";
     }
 
     return computed == c;
@@ -203,7 +203,7 @@ bool testDotProduct()
     }
     else
     {
-        std::cout << " Matrix Vector Addition Test Passed\n";
+        std::cout << " Matrix Vector Dot Product Test Passed\n";
     }
 
     return computed == c;

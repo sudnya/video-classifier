@@ -34,7 +34,7 @@ typedef GPULBFGSSolver::MatrixVector MatrixVector;
 
 GPULBFGSSolver::~GPULBFGSSolver()
 {
-    
+
 }
 
 class GPULBFGSSolverParameters
@@ -50,7 +50,7 @@ public:
 	size_t maximumIterations;
 	/*! The magnitude of the gradient used to determine that a solution has been found */
 	double stoppingGradientEpsilon;
-	/*! The minimum acceptable improvement */ 
+	/*! The minimum acceptable improvement */
 	double minimumImprovement;
 
 public:
@@ -58,7 +58,7 @@ public:
 };
 
 GPULBFGSSolverParameters::GPULBFGSSolverParameters()
-: maximumIterations(util::KnobDatabase::getKnobValue("LBFGSSolver::MaxIterations", 500)), 
+: maximumIterations(util::KnobDatabase::getKnobValue("LBFGSSolver::MaxIterations", 500)),
   stoppingGradientEpsilon(util::KnobDatabase::getKnobValue("LBFGSSolver::StoppingGradientEpsilon", 1e-6f)),
   minimumImprovement(util::KnobDatabase::getKnobValue("LBFGSSolver::MinimumImprovement", 1e-6f)),
   historySize(util::KnobDatabase::getKnobValue("LBFGSSolver::HistorySize", 5))
@@ -73,13 +73,13 @@ void GPULBFGSSolverParameters::check()
 		throw std::invalid_argument("Stopping gradient "
 			"epsilon must be non-negative.");
 	}
-	
+
 	if(minimumImprovement < 0.0f)
 	{
 		throw std::invalid_argument("Minimum improvement "
 			"must be non-negative.");
 	}
-	
+
 }
 
 class GPULBFGSSolverHistoryEntry
@@ -90,13 +90,13 @@ public:
 public:
 	MatrixVector inputDifference;
 	MatrixVector gradientDifference;
-	
+
 public:
 	double inputGradientDifferenceProduct;
 
 public:
 	double alpha;
-	
+
 };
 
 class GPULBFGSSolverHistory
@@ -107,7 +107,7 @@ public:
 public:
 	typedef HistoryQueue::iterator       iterator;
 	typedef HistoryQueue::const_iterator const_iterator;
-	
+
 	typedef HistoryQueue::reverse_iterator       reverse_iterator;
 	typedef HistoryQueue::const_reverse_iterator const_reverse_iterator;
 
@@ -140,7 +140,7 @@ public:
 public:
 	reverse_iterator       rbegin();
 	const_reverse_iterator rbegin() const;
-	
+
 	reverse_iterator       rend();
 	const_reverse_iterator rend() const;
 
@@ -149,13 +149,13 @@ private:
 	size_t       _maximumSize;
 
 };
-	
+
 GPULBFGSSolverHistory::GPULBFGSSolverHistory(size_t historySize)
 : _maximumSize(historySize)
 {
-	
+
 }
-	
+
 void GPULBFGSSolverHistory::setCost(double f)
 {
 	assert(!_queue.empty());
@@ -167,7 +167,7 @@ void GPULBFGSSolverHistory::setInputAndGradientDifference(MatrixVector&& inputDi
 	double inputGradientDifferenceProduct)
 {
 	assert(!_queue.empty());
-	
+
 	_queue.back().inputDifference = std::move(inputDifference);
 	_queue.back().gradientDifference = std::move(gradientDifference);
 	_queue.back().inputGradientDifferenceProduct = inputGradientDifferenceProduct;
@@ -179,7 +179,7 @@ void GPULBFGSSolverHistory::newEntry()
 	{
 		_queue.pop_front();
 	}
-	
+
 	_queue.push_back(GPULBFGSSolverHistoryEntry());
 }
 
@@ -242,7 +242,7 @@ GPULBFGSSolverHistory::const_reverse_iterator GPULBFGSSolverHistory::rend() cons
 class GPULBFGSSolverImplementation
 {
 public:
-	GPULBFGSSolverImplementation(MatrixVector& inputs, 
+	GPULBFGSSolverImplementation(MatrixVector& inputs,
     	const CostAndGradientFunction& callback);
 
 public:
@@ -267,7 +267,7 @@ private:
 	std::unique_ptr<LineSearch> _lineSearch;
 
 };
-	
+
 GPULBFGSSolverImplementation::GPULBFGSSolverImplementation(MatrixVector& inputs,
 	const CostAndGradientFunction& callback)
 : _inputs(inputs), _history(_parameters.historySize), _costAndGradientFunction(callback), _lineSearch(LineSearchFactory::create())
@@ -275,11 +275,11 @@ GPULBFGSSolverImplementation::GPULBFGSSolverImplementation(MatrixVector& inputs,
 
 }
 
-double GPULBFGSSolver::solve(MatrixVector& inputs, 
+double GPULBFGSSolver::solve(MatrixVector& inputs,
     const CostAndGradientFunction& callback)
 {
 	GPULBFGSSolverImplementation solver(inputs, callback);
-	
+
 	return solver.solve();
 }
 
@@ -298,7 +298,7 @@ bool GPULBFGSSolver::isSupported()
 
 static double computeNorm(const MatrixVector& matrix)
 {
-	return std::sqrt(reduce(apply(matrix, matrix, matrix::Add()), {}, matrix::Add())[0][0]);
+	return std::sqrt(reduce(apply(matrix, matrix::Square()), {}, matrix::Add())[0][0]);
 }
 
 static double computeInverseNorm(const MatrixVector& matrix)
@@ -324,31 +324,31 @@ double GPULBFGSSolverImplementation::solve()
 
 	// Evaluate the function and gradient
 	MatrixVector gradient;
-	
+
 	auto cost = _costAndGradientFunction.computeCostAndGradient(gradient, _inputs);
-	
+
 	// Compute the direction
 	// Initially, the hessian is the identity, so the direction is just the -gradient
 	auto direction = apply(gradient, matrix::Negate());
-	
+
 	// Make sure that the initial values are not a minimizer
 	auto inputNorm    = computeNorm(_inputs);
 	auto gradientNorm = computeNorm(gradient);
-	
+
 	if(inputNorm < 1.0)
 	{
 		inputNorm = 1.0;
 	}
-	
+
 	if((gradientNorm / inputNorm) <= _parameters.stoppingGradientEpsilon)
 	{
 		// The initial values are a minimizer, nothing to do
 		return cost;
 	}
-	
+
 	// Compute the initial step
 	auto step = computeInverseNorm(direction);
-	
+
 	size_t currentIteration = 0;
 
 	// Iterate
@@ -357,7 +357,7 @@ double GPULBFGSSolverImplementation::solve()
 		// save the inputs and gradient
 		auto previousInputs   = _inputs;
 		auto previousGradient = gradient;
-		
+
 		// search for an optimal step using a line search
 		try
 		{
@@ -369,42 +369,42 @@ double GPULBFGSSolverImplementation::solve()
 			// revert
 			_inputs  = previousInputs;
 			gradient = previousGradient;
-			
+
 			throw;
 		}
-		
+
 		// Compute the norms
 		auto inputNorm    = computeNorm(_inputs);
 		auto gradientNorm = computeNorm(gradient);
-		
+
 		// Report progress
 		reportProgress(cost, gradient, inputNorm, gradientNorm, step, currentIteration,
 			_parameters.maximumIterations);
-		
+
 		// Test for convergence
 		if(inputNorm < 1.0)
 		{
 			inputNorm = 1.0;
 		}
-		
+
 		if((gradientNorm / inputNorm) <= _parameters.stoppingGradientEpsilon)
 		{
-			// Success 
+			// Success
 			return cost;
 		}
-		
+
 		// Test for stopping criteria, if there is enough history to be sure
 		if(_history.historySize() < currentIteration)
 		{
 			auto improvementRate = (_history.previousCost() - cost) / cost;
-			
+
 			// Not enough improvement to justify continuing
 			if(improvementRate < _parameters.minimumImprovement)
 			{
 				return cost;
 			}
 		}
-		
+
 		// Test for iteration limits
 		if(_parameters.maximumIterations < currentIteration)
 		{
@@ -414,7 +414,7 @@ double GPULBFGSSolverImplementation::solve()
 		// Compute new search direction
 		_computeNewSearchDirection(direction, _inputs, previousInputs,
 			gradient, previousGradient);
-	
+
 		// Save the current cost value
 		_history.setCost(cost);
 
@@ -428,7 +428,7 @@ double GPULBFGSSolverImplementation::solve()
 		// Save the history
 		_history.saveEntry();
 	}
-	
+
 	return cost;
 }
 
@@ -441,25 +441,25 @@ void GPULBFGSSolverImplementation::_computeNewSearchDirection(
 {
 	// Start the new direction with the negative gradient
 	direction = apply(gradient, matrix::Negate());
-	
+
 	auto inputDifference    = apply(inputs,   previousInputs,   matrix::Subtract()); // s
 	auto gradientDifference = apply(gradient, previousGradient, matrix::Subtract()); // y
-	
+
 	auto inputGradientDifferenceProduct    = matrix::dotProduct(gradientDifference, inputDifference);
 	auto gradientGradientDifferenceProduct = matrix::dotProduct(gradientDifference, gradientDifference); // yy
-	
+
 	_history.newEntry();
-	
+
 	_history.setInputAndGradientDifference(std::move(inputDifference),
 		std::move(gradientDifference), inputGradientDifferenceProduct);
-	
+
 	// Update alpha
 	for(auto entry = _history.rbegin(); entry != _history.rend(); ++entry)
 	{
 		entry->alpha = matrix::dotProduct(entry->inputDifference, direction);
 
 		entry->alpha /= entry->inputGradientDifferenceProduct;
-		
+
 		apply(direction, direction, apply(entry->gradientDifference, matrix::Multiply(-entry->alpha)), matrix::Add());
 	}
 
@@ -472,7 +472,7 @@ void GPULBFGSSolverImplementation::_computeNewSearchDirection(
 		auto beta = matrix::dotProduct(entry->gradientDifference, direction);
 
 		beta /= entry->inputGradientDifferenceProduct;
-		
+
 		apply(direction, direction, apply(entry->inputDifference, matrix::Multiply(entry->alpha - beta)), matrix::Add());
 	}
 }

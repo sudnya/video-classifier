@@ -86,6 +86,16 @@ void reduce(MatrixVector& result, const MatrixVector& input, const Dimension& d,
             reduce(result[i], input[i], d, op);
         }
     });
+
+    if(d.empty())
+    {
+        for(size_t i = 1; i < result.size(); ++i)
+        {
+            apply(result[0], result[0], result[i], op);
+        }
+
+        result.resize(1);
+    }
 }
 
 MatrixVector reduce(const MatrixVector& input, const Dimension& d, const Operation& op)
