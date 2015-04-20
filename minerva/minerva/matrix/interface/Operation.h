@@ -292,6 +292,9 @@ public:
     template<typename T>
     CUDA_DECORATOR T operator()(const T& l) const
     {
+        if(l < -50.0) return -50.0;
+        if(l >  50.0) return  50.0;
+
         return T(1.0) / (T(1.0) + T(std::exp(-l)));
     }
 
@@ -309,7 +312,7 @@ public:
     template<typename T>
     CUDA_DECORATOR T operator()(const T& l) const
     {
-        return 1.0 - matrix::Sigmoid()(l);
+        return l * (1.0 - l);
     }
 
 };

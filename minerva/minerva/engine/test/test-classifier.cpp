@@ -1,6 +1,6 @@
 /* Author: Sudnya Padalikar
  * Date  : 09/06/2013
- * A unit test that implements a neural network to perform XOR 
+ * A unit test that implements a neural network to perform XOR
 */
 
 #include <minerva/network/interface/NeuralNetwork.h>
@@ -31,17 +31,17 @@ network::NeuralNetwork createAndInitializeNeuralNetwork(unsigned networkSize)
 {
     network::NeuralNetwork ann;
 
-	size_t hiddenSize = (networkSize * 3) / 2;
+    size_t hiddenSize = (networkSize * 3) / 2;
 
     // Layer 1
     ann.addLayer(std::make_unique<FeedForwardLayer>(networkSize, hiddenSize, SinglePrecision()));
-	
-	ann.back()->setActivationFunction(network::ActivationFunctionFactory::create("SigmoidActivationFunction"));
+
+    ann.back()->setActivationFunction(network::ActivationFunctionFactory::create("SigmoidActivationFunction"));
 
     // Layer 2
     ann.addLayer(std::make_unique<FeedForwardLayer>(hiddenSize, networkSize/2, SinglePrecision()));
-	
-	ann.back()->setActivationFunction(network::ActivationFunctionFactory::create("SigmoidActivationFunction"));
+
+    ann.back()->setActivationFunction(network::ActivationFunctionFactory::create("SigmoidActivationFunction"));
 
     ann.initialize();
 
@@ -51,7 +51,7 @@ network::NeuralNetwork createAndInitializeNeuralNetwork(unsigned networkSize)
 Matrix generateRandomMatrix(unsigned rows, unsigned columns, std::default_random_engine& generator)
 {
     std::bernoulli_distribution distribution(0.5f);
-    
+
     Matrix matrix({rows, columns}, SinglePrecision());
 
     for(auto value = matrix.begin(); value != matrix.end(); ++value)
@@ -77,7 +77,7 @@ float floatXor(float x, float y)
 Matrix matrixXor(const Matrix& inputs)
 {
     assertM(inputs.size()[0] % 2 == 0, "Incompatible size of input bit vectors");
-	
+
     Matrix output(inputs.size()[0] / 2, inputs.size()[1]);
 
     for (unsigned i = 0; i < inputs.size()[1]; ++i)
@@ -121,26 +121,26 @@ void trainNeuralNetwork(network::NeuralNetwork& ann, unsigned trainingIter, std:
         Matrix input = generateRandomMatrix(ann.getInputCount(), samplesPerIter, generator);
         Matrix referenceMatrix = matrixXor(input);
 
-		if(util::isLogEnabled("TestClassifier"))
-		{
-			util::log("TestClassifier") << " Input is:     " << input.toString();
-			util::log("TestClassifier") << " Output is:    " << threshold(ann.runInputs(input)).toString();
-			util::log("TestClassifier") << " Reference is: " << referenceMatrix.toString();
-		}
-		
-		ann.train(input, referenceMatrix);
-		
-		if(util::isLogEnabled("TestClassifier"))
-		{
-        	util::log("TestClassifier") << " After BackProp, output is:    " << threshold(ann.runInputs(input)).toString();
-    	}
-	}
+        if(util::isLogEnabled("TestClassifier"))
+        {
+            util::log("TestClassifier") << " Input is:     " << input.toString();
+            util::log("TestClassifier") << " Output is:    " << threshold(ann.runInputs(input)).toString();
+            util::log("TestClassifier") << " Reference is: " << referenceMatrix.toString();
+        }
+
+        ann.train(input, referenceMatrix);
+
+        if(util::isLogEnabled("TestClassifier"))
+        {
+            util::log("TestClassifier") << " After BackProp, output is:    " << threshold(ann.runInputs(input)).toString();
+        }
+    }
 }
 
 unsigned compare(const Matrix& output, const Matrix& reference)
 {
     assertM(output.size() == reference.size(),
-		"Output and reference matrix have incompatible dimensions");
+        "Output and reference matrix have incompatible dimensions");
     unsigned bitsThatMatch = 0;
     for (unsigned i = 0; i < output.size()[0]; ++i)
     {
@@ -148,7 +148,7 @@ unsigned compare(const Matrix& output, const Matrix& reference)
         {
             bool outputIsTrue    = output(i,j)    > 0.5f;
             bool referenceIsTrue = reference(i,j) > 0.5f;
-            
+
             if (outputIsTrue == referenceIsTrue)
                 ++bitsThatMatch;
         }
@@ -172,13 +172,13 @@ float classify(const network::NeuralNetwork& ann, unsigned iterations, std::defa
         Matrix referenceMatrix = matrixXor(input);
 
         Matrix output = ann.runInputs(input);
-    
+
         util::log("TestClassifier") << " Input is:     " << input.toString();
         util::log("TestClassifier") << " Output is:    " << threshold(output).toString();
         util::log("TestClassifier") << " Reference is: " << referenceMatrix.toString();
 
         correctBits += compare(output, referenceMatrix);
-    }    
+    }
 
     accuracy = correctBits/(float)(samplesPerIter*iterations*ann.getOutputCount());
     return accuracy;
@@ -188,14 +188,14 @@ void runTest(unsigned iterations, bool seed, unsigned networkSize)
 {
     // Create neural network
     // 3 layers
-    network::NeuralNetwork ann = createAndInitializeNeuralNetwork(networkSize); 
+    network::NeuralNetwork ann = createAndInitializeNeuralNetwork(networkSize);
 
     // Train network against reference XOR function
 
     std::default_random_engine generator(seed ? std::time(0) : 0);
-	
-	trainNeuralNetwork(ann, iterations, generator);
-	
+
+    trainNeuralNetwork(ann, iterations, generator);
+
     // Run classifier and record accuracy
     float accuracy = classify(ann, std::max(1U, iterations/10), generator);
 
@@ -206,47 +206,56 @@ void runTest(unsigned iterations, bool seed, unsigned networkSize)
     {
         std::cout << "Test Passed\n";
 
-		std::cout << " with accuracy " << accuracy 
+        std::cout << " with accuracy " << accuracy
             << " which is more than expected threshold " << threshold << "\n";
     }
     else
     {
-        std::cout << "Test FAILED with accuracy " << accuracy 
+        std::cout << "Test FAILED with accuracy " << accuracy
             << " which is less than expected threshold " << threshold << "\n";
     }
 }
 
 static void enableSpecificLogs(const std::string& modules)
 {
-	auto individualModules = util::split(modules, ",");
-	
-	for(auto& module : individualModules)
-	{
-		util::enableLog(module);
-	}
+    auto individualModules = util::split(modules, ",");
+
+    for(auto& module : individualModules)
+    {
+        util::enableLog(module);
+    }
 }
 
 }
+}
+
+static void setupSolverParameters()
+{
+    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::LearningRate", "3");
+    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::Momentum", "0.99");
+    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::AnnealingRate", "1.000");
+    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::MaxGradNorm", "2000.0");
+    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::IterationsPerBatch", "10");
 }
 
 int main(int argc, char** argv)
 {
     minerva::util::ArgumentParser parser(argc, argv);
-    
+
     bool verbose = false;
     bool seed = false;
     std::string loggingEnabledModules;
-	
-	unsigned iterations = 0;
-	unsigned networkSize = 0;
+
+    unsigned iterations = 0;
+    unsigned networkSize = 0;
 
     parser.description("A minerva nerual network sanity test.");
 
     parser.parse("-i", "--iterations", iterations, 50,
         "The number of iterations to train for");
     parser.parse("-L", "--log-module", loggingEnabledModules, "",
-		"Print out log messages during execution for specified modules "
-		"(comma-separated list of modules, e.g. NeuralNetwork, Layer, ...).");
+        "Print out log messages during execution for specified modules "
+        "(comma-separated list of modules, e.g. NeuralNetwork, Layer, ...).");
     parser.parse("-s", "--seed", seed, false,
         "Seed with time.");
     parser.parse("-n", "--network-size", networkSize, 8,
@@ -254,19 +263,21 @@ int main(int argc, char** argv)
     parser.parse("-v", "--verbose", verbose, false,
         "Print out log messages during execution");
 
-	parser.parse();
+    parser.parse();
+
+    setupSolverParameters();
 
     if(verbose)
-	{
-		minerva::util::enableAllLogs();
-	}
-	else
-	{
-		minerva::engine::enableSpecificLogs(loggingEnabledModules);
-	}
-    
+    {
+        minerva::util::enableAllLogs();
+    }
+    else
+    {
+        minerva::engine::enableSpecificLogs(loggingEnabledModules);
+    }
+
     minerva::util::log("TestClassifier") << "Test begings\n";
-    
+
     try
     {
         minerva::engine::runTest(iterations, seed, networkSize);

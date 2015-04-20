@@ -8,6 +8,7 @@
 #include <minerva/network/interface/NeuralNetwork.h>
 #include <minerva/network/interface/FeedForwardLayer.h>
 #include <minerva/network/interface/CostFunctionFactory.h>
+#include <minerva/network/interface/ActivationFunctionFactory.h>
 
 #include <minerva/matrix/interface/Matrix.h>
 #include <minerva/matrix/interface/MatrixVector.h>
@@ -49,6 +50,22 @@ static NeuralNetwork createFeedForwardFullyConnectedNetwork(
     for(size_t layer = 0; layer < layerCount; ++layer)
     {
         network.addLayer(std::make_unique<FeedForwardLayer>(layerSize, layerSize, DoublePrecision()));
+    }
+
+    network.initialize();
+
+    return network;
+}
+
+static NeuralNetwork createFeedForwardFullyConnectedSigmoidNetwork(
+    size_t layerSize, size_t layerCount)
+{
+    NeuralNetwork network;
+
+    for(size_t layer = 0; layer < layerCount; ++layer)
+    {
+        network.addLayer(std::make_unique<FeedForwardLayer>(layerSize, layerSize, DoublePrecision()));
+        network.back()->setActivationFunction(ActivationFunctionFactory::create("SigmoidActivationFunction"));
     }
 
     network.initialize();
@@ -201,6 +218,33 @@ static bool runTestFeedForwardFullyConnected(size_t layerSize, size_t layerCount
     }
 }
 
+static bool runTestFeedForwardFullyConnectedSigmoid(size_t layerSize, size_t layerCount, bool seed)
+{
+    if(seed)
+    {
+        matrix::srand(std::time(0));
+    }
+    else
+    {
+        matrix::srand(377);
+    }
+
+    auto network = createFeedForwardFullyConnectedSigmoidNetwork(layerSize, layerCount);
+
+    if(gradientCheck(network.getInputCount(), network, false))
+    {
+        std::cout << "Feed Forward Fully Connected Sigmoid Network Test Passed\n";
+
+        return true;
+    }
+    else
+    {
+        std::cout << "Feed Forward Fully Connected Sigmoid Network Test Failed\n";
+
+        return false;
+    }
+}
+
 static bool runTestFeedForwardFullyConnectedSoftmax(size_t layerSize, size_t layerCount, bool seed)
 {
     if(seed)
@@ -232,7 +276,7 @@ static void runTest(size_t layerSize, size_t layerCount, bool seed)
 {
     bool result = true;
 
-    result &= runTestFeedForwardFullyConnectedSoftmax(layerSize, layerCount, seed);
+    result &= runTestFeedForwardFullyConnectedSigmoid(layerSize, layerCount, seed);
 
     if(!result)
     {
@@ -240,6 +284,13 @@ static void runTest(size_t layerSize, size_t layerCount, bool seed)
     }
 
     result &= runTestFeedForwardFullyConnected(layerSize, layerCount, seed);
+
+    if(!result)
+    {
+        return;
+    }
+
+    result &= runTestFeedForwardFullyConnectedSoftmax(layerSize, layerCount, seed);
 }
 
 }
