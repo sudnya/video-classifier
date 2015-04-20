@@ -36,12 +36,8 @@ network::NeuralNetwork createAndInitializeNeuralNetwork(unsigned networkSize)
     // Layer 1
     ann.addLayer(std::make_unique<FeedForwardLayer>(networkSize, hiddenSize, SinglePrecision()));
 
-    ann.back()->setActivationFunction(network::ActivationFunctionFactory::create("SigmoidActivationFunction"));
-
     // Layer 2
     ann.addLayer(std::make_unique<FeedForwardLayer>(hiddenSize, networkSize/2, SinglePrecision()));
-
-    ann.back()->setActivationFunction(network::ActivationFunctionFactory::create("SigmoidActivationFunction"));
 
     ann.initialize();
 
@@ -231,7 +227,7 @@ static void enableSpecificLogs(const std::string& modules)
 
 static void setupSolverParameters()
 {
-    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::LearningRate", "3");
+    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::LearningRate", "3e-1");
     minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::Momentum", "0.99");
     minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::AnnealingRate", "1.000");
     minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::MaxGradNorm", "2000.0");
