@@ -1,7 +1,7 @@
 /*  \file   ConvolutionalLayer.h
-	\author Gregory Diamos
- 	\date   Dec 24, 2014
- 	\brief  The interface for the ConvolutionalLayer class.
+    \author Gregory Diamos
+     \date   Dec 24, 2014
+     \brief  The interface for the ConvolutionalLayer class.
 */
 
 #pragma once
@@ -18,13 +18,16 @@ namespace network
 class ConvolutionalLayer : public Layer
 {
 public:
-	ConvolutionalLayer();
-	ConvolutionalLayer(const matrix::Dimension& size, const matrix::Dimension& stride, const matrix::Precision&);
+    ConvolutionalLayer();
     virtual ~ConvolutionalLayer();
 
 public:
-	ConvolutionalLayer(const ConvolutionalLayer& );
-	ConvolutionalLayer& operator=(const ConvolutionalLayer&);
+    ConvolutionalLayer(const Dimension& inputSize, const matrix::Dimension& filterSize,
+        const matrix::Dimension& filterStride, const matrix::Precision&);
+
+public:
+    ConvolutionalLayer(const ConvolutionalLayer& );
+    ConvolutionalLayer& operator=(const ConvolutionalLayer&);
 
 public:
     virtual void initialize();
@@ -32,50 +35,51 @@ public:
 public:
     virtual Matrix runForward(const Matrix& m) const;
     virtual Matrix runReverse(MatrixVector& gradients,
-		const Matrix& inputActivations,
-		const Matrix& outputActivations,
-		const Matrix& deltas) const;
+        const Matrix& inputActivations,
+        const Matrix& outputActivations,
+        const Matrix& deltas) const;
 
 public:
     virtual       MatrixVector& weights();
     virtual const MatrixVector& weights() const;
 
 public:
-	virtual const matrix::Precision& precision() const;
+    virtual const matrix::Precision& precision() const;
 
 public:
-	virtual double computeWeightCost() const;
+    virtual double computeWeightCost() const;
 
 public:
     virtual size_t getInputCount()  const;
     virtual size_t getOutputCount() const;
 
 public:
-    virtual size_t totalNeurons()	  const;
+    virtual size_t totalNeurons()      const;
     virtual size_t totalConnections() const;
 
 public:
     virtual size_t getFloatingPointOperationCount() const;
 
 public:
-	virtual void save(util::TarArchive& archive) const;
-	virtual void load(const util::TarArchive& archive, const std::string& name);
+    virtual void save(util::TarArchive& archive) const;
+    virtual void load(const util::TarArchive& archive, const std::string& name);
 
 public:
-	virtual std::unique_ptr<Layer> clone() const;
-	virtual std::unique_ptr<Layer> mirror() const;
+    virtual std::unique_ptr<Layer> clone() const;
+    virtual std::unique_ptr<Layer> mirror() const;
 
 public:
-	virtual std::string getTypeName() const;
+    virtual std::string getTypeName() const;
 
 private:
-	std::unique_ptr<MatrixVector> _parameters;
+    std::unique_ptr<MatrixVector> _parameters;
 
 private:
-	Matrix& _weights;
+    Matrix& _weights;
 
 private:
-	std::unique_ptr<matrix::Dimension> _stride;
+    std::unique_ptr<matrix::Dimension> _inputSize;
+    std::unique_ptr<matrix::Dimension> _filterStride;
 
 };
 }

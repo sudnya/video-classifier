@@ -16,10 +16,10 @@ void gemm(Matrix& result, const Matrix& left, bool transposeLeft, const Matrix& 
 Matrix gemm(const Matrix& left, bool transposeLeft, const Matrix& right, bool transposeRight);
 
 void gemm(Matrix& result, double beta,
-	const Matrix& left, bool transposeLeft, double alpha,
-	const Matrix& right, bool transposeRight);
+    const Matrix& left, bool transposeLeft, double alpha,
+    const Matrix& right, bool transposeRight);
 Matrix gemm(const Matrix& left, bool transposeLeft, double alpha,
-	const Matrix& right, bool transposeRight);
+    const Matrix& right, bool transposeRight);
 
 }
 }

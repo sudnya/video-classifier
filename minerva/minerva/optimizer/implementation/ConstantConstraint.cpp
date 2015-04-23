@@ -1,7 +1,7 @@
 /*! \file   ConstantConstraint.cpp
-	\author Gregory Diamos <gregory.diamos@gmail.com>
-	\date   Sunday March 9, 2014
-	\brief  The source file for the ConstantConstraint class.
+    \author Gregory Diamos <gregory.diamos@gmail.com>
+    \date   Sunday March 9, 2014
+    \brief  The source file for the ConstantConstraint class.
 */
 
 // Minerva Includes
@@ -32,41 +32,41 @@ ConstantConstraint::~ConstantConstraint()
 
 bool ConstantConstraint::isSatisfied(const Matrix& m) const
 {
-	if(_comparison == LessThanOrEqual)
-	{
-		return reduce(matrix::apply(m, matrix::LessThanOrEqual(_value)), {}, matrix::Add())[0] == 0.0;
-	}
-	else if(_comparison == GreaterThanOrEqual)
-	{
-		return reduce(matrix::apply(m, matrix::GreaterThanOrEqual(_value)), {}, matrix::Add())[0] == 0.0;
-	}
-	else
-	{
-		assertM(false, "not implemented");
-	}
-	
-	return false;
-} 
+    if(_comparison == LessThanOrEqual)
+    {
+        return reduce(matrix::apply(m, matrix::LessThanOrEqual(_value)), {}, matrix::Add())[0] == 0.0;
+    }
+    else if(_comparison == GreaterThanOrEqual)
+    {
+        return reduce(matrix::apply(m, matrix::GreaterThanOrEqual(_value)), {}, matrix::Add())[0] == 0.0;
+    }
+    else
+    {
+        assertM(false, "not implemented");
+    }
+
+    return false;
+}
 
 void ConstantConstraint::apply(Matrix& m) const
 {
-	if(_comparison == LessThanOrEqual)
-	{
-		matrix::apply(m, m, matrix::Minimum(_value));
-	}
-	else if(_comparison == GreaterThanOrEqual)
-	{
-		matrix::apply(m, m, matrix::Maximum(_value));
-	}
-	else
-	{
-		assertM(false, "not implemented");
-	}
+    if(_comparison == LessThanOrEqual)
+    {
+        matrix::apply(m, m, matrix::Minimum(_value));
+    }
+    else if(_comparison == GreaterThanOrEqual)
+    {
+        matrix::apply(m, m, matrix::Maximum(_value));
+    }
+    else
+    {
+        assertM(false, "not implemented");
+    }
 }
 
 Constraint* ConstantConstraint::clone() const
 {
-	return new ConstantConstraint(*this);
+    return new ConstantConstraint(*this);
 }
 
 }

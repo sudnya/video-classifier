@@ -1,7 +1,7 @@
-/*	\file   ConvexSolver.cpp
-	\date   Sunday August 11, 2013
-	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The source file for the ConvexSolver class.
+/*    \file   ConvexSolver.cpp
+    \date   Sunday August 11, 2013
+    \author Gregory Diamos <solusstultus@gmail.com>
+    \brief  The source file for the ConvexSolver class.
 */
 
 // Minerva Includes

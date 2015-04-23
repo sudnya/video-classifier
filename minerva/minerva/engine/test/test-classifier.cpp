@@ -232,6 +232,8 @@ static void setupSolverParameters()
     minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::AnnealingRate", "1.000");
     minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::MaxGradNorm", "2000.0");
     minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::IterationsPerBatch", "10");
+    minerva::util::KnobDatabase::setKnob("GeneralDifferentiableSolver::Type", "NesterovAcceleratedGradientSolver");
+
 }
 
 int main(int argc, char** argv)
@@ -247,7 +249,7 @@ int main(int argc, char** argv)
 
     parser.description("A minerva nerual network sanity test.");
 
-    parser.parse("-i", "--iterations", iterations, 50,
+    parser.parse("-i", "--iterations", iterations, 30,
         "The number of iterations to train for");
     parser.parse("-L", "--log-module", loggingEnabledModules, "",
         "Print out log messages during execution for specified modules "

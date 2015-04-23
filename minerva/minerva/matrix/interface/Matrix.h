@@ -1,7 +1,7 @@
-/*	\file   Matrix.h
-	\date   Sunday August 11, 2013
-	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The header file for the Matrix class.
+/*    \file   Matrix.h
+    \date   Sunday August 11, 2013
+    \author Gregory Diamos <solusstultus@gmail.com>
+    \brief  The header file for the Matrix class.
 */
 
 #pragma once
@@ -30,92 +30,92 @@ namespace matrix
 class Matrix
 {
 public:
-	Matrix();
-	Matrix(std::initializer_list<size_t>);
-	Matrix(const Dimension& size);
-	Matrix(const Dimension& size, const Precision& precision);
-	Matrix(const Dimension& size, const Dimension& stride);
-	Matrix(const Dimension& size, const Dimension& stride, const Precision& precision);
-	Matrix(const Dimension& size, const Dimension& stride, const Precision& precision, const std::shared_ptr<Allocation>& allocation);
-	Matrix(const Dimension& size, const Dimension& stride, const Precision& precision, const std::shared_ptr<Allocation>& allocation, void* start);
+    Matrix();
+    Matrix(std::initializer_list<size_t>);
+    Matrix(const Dimension& size);
+    Matrix(const Dimension& size, const Precision& precision);
+    Matrix(const Dimension& size, const Dimension& stride);
+    Matrix(const Dimension& size, const Dimension& stride, const Precision& precision);
+    Matrix(const Dimension& size, const Dimension& stride, const Precision& precision, const std::shared_ptr<Allocation>& allocation);
+    Matrix(const Dimension& size, const Dimension& stride, const Precision& precision, const std::shared_ptr<Allocation>& allocation, void* start);
 
 public:
-	~Matrix();
-	
-public:
-	const Dimension& size()   const;
-	const Dimension& stride() const;
+    ~Matrix();
 
 public:
-	const Precision& precision() const;
+    const Dimension& size()   const;
+    const Dimension& stride() const;
 
 public:
-	size_t elements() const;
+    const Precision& precision() const;
 
 public:
-	FloatIterator begin();
-	FloatIterator end();
-	
-	ConstFloatIterator begin() const;
-	ConstFloatIterator end()   const;
+    size_t elements() const;
 
 public:
-	std::shared_ptr<Allocation> allocation();
+    FloatIterator begin();
+    FloatIterator end();
+
+    ConstFloatIterator begin() const;
+    ConstFloatIterator end()   const;
 
 public:
-	      void* data();
-	const void* data() const;
+    std::shared_ptr<Allocation> allocation();
 
 public:
-	bool isContiguous() const;
-	bool isLeadingDimensionContiguous() const;
+          void* data();
+    const void* data() const;
+
+public:
+    bool isContiguous() const;
+    bool isLeadingDimensionContiguous() const;
 
 public:
     std::string toString() const;
-	std::string debugString() const;
-	std::string shapeString() const;
+    std::string debugString() const;
+    std::string shapeString() const;
 
 public:
-	template<typename... Args>
-	FloatReference operator()(Args... args)
-	{
-		return (*this)[Dimension(args...)];
-	}
+    template<typename... Args>
+    FloatReference operator()(Args... args)
+    {
+        return (*this)[Dimension(args...)];
+    }
 
-	template<typename... Args>
-	ConstFloatReference operator()(Args... args) const
-	{
-		return (*this)[Dimension(args...)];
-	}
-
-public:
-	FloatReference      operator[](const Dimension& d);
-	ConstFloatReference operator[](const Dimension& d) const;
+    template<typename... Args>
+    ConstFloatReference operator()(Args... args) const
+    {
+        return (*this)[Dimension(args...)];
+    }
 
 public:
-	bool operator==(const Matrix& m) const;
-	bool operator!=(const Matrix& m) const;
+    FloatReference      operator[](const Dimension& d);
+    ConstFloatReference operator[](const Dimension& d) const;
 
 public:
-	template<typename... Sizes>
-	Matrix(Sizes... sizes)
-	: Matrix(Dimension(sizes...))
-	{
-		
-	}
+    bool operator==(const Matrix& m) const;
+    bool operator!=(const Matrix& m) const;
+
+public:
+    template<typename... Sizes>
+    Matrix(Sizes... sizes)
+    : Matrix(Dimension(sizes...))
+    {
+
+    }
 
 private:
-	std::shared_ptr<Allocation> _allocation;
+    std::shared_ptr<Allocation> _allocation;
 
 private:
-	void* _data_begin;
-	
-private:
-	Dimension _size;
-	Dimension _stride;
+    void* _data_begin;
 
 private:
-	Precision _precision;
+    Dimension _size;
+    Dimension _stride;
+
+private:
+    Precision _precision;
 
 };
 

@@ -11,60 +11,60 @@ namespace matrix
 class Precision
 {
 public:
-	enum Type
-	{
-		NoType,
-		Half,
-		Single,
-		Double,
-	};
+    enum Type
+    {
+        NoType,
+        Half,
+        Single,
+        Double,
+    };
 
 public:
-	Precision();
-	explicit Precision(Type t);
+    Precision();
+    explicit Precision(Type t);
 
 public:
-	Type type() const;
+    Type type() const;
 
 public:
-	size_t size() const;
+    size_t size() const;
 
 public:
-	bool operator==(const Precision&) const;
-	bool operator!=(const Precision&) const;
+    bool operator==(const Precision&) const;
+    bool operator!=(const Precision&) const;
 
 private:
-	Type _type;
+    Type _type;
 
 };
 
 class HalfPrecision : public Precision
 {
 public:
-	typedef float type;
+    typedef float type;
 
 public:
-	HalfPrecision();
+    HalfPrecision();
 
 };
 
 class SinglePrecision : public Precision
 {
 public:
-	typedef float type;
+    typedef float type;
 
 public:
-	SinglePrecision();
+    SinglePrecision();
 
 };
 
 class DoublePrecision : public Precision
 {
 public:
-	typedef double type;
+    typedef double type;
 
 public:
-	DoublePrecision();
+    DoublePrecision();
 
 };
 

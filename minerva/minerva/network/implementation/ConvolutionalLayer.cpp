@@ -1,7 +1,7 @@
 /*  \file   ConvolutionalLayer.cpp
-	\author Gregory Diamos
- 	\date   Dec 24, 2014
- 	\brief  The source for the ConvolutionalLayer class.
+    \author Gregory Diamos
+     \date   Dec 24, 2014
+     \brief  The source for the ConvolutionalLayer class.
 */
 
 // Minerva Includes
@@ -39,129 +39,282 @@ ConvolutionalLayer::ConvolutionalLayer()
 
 }
 
-ConvolutionalLayer::ConvolutionalLayer(const matrix::Dimension& size, const matrix::Dimension& stride, const matrix::Precision& precision)
-: _parameters(new MatrixVector({Matrix(size, precision)})), 
-  _weights((*_parameters)[0]), _stride(std::make_unique<matrix::Dimension>(stride))
-{
-
-}
-
 ConvolutionalLayer::~ConvolutionalLayer()
 {
 
 }
 
+ConvolutionalLayer::ConvolutionalLayer(const matrix::Dimension& inputSize,
+    const matrix::Dimension& size, const matrix::Dimension& stride, const matrix::Precision& precision)
+: _parameters(new MatrixVector({Matrix(size, precision)})),
+  _weights((*_parameters)[0]),
+  _inputSize(std::make_unique<matrix::Dimension>(inputSize)),
+  _stride(std::make_unique<matrix::Dimension>(stride))
+{
+
+}
+
 ConvolutionalLayer::ConvolutionalLayer(const ConvolutionalLayer& l)
-: _parameters(std::make_unique<MatrixVector>(*l._parameters)), _weights((*_parameters)[0]), _stride(std::make_unique<matrix::Dimension>(*l._stride)) 
+: _parameters(std::make_unique<MatrixVector>(*l._parameters)),
+  _weights((*_parameters)[0]),
+  _inputSize(std::make_unique<matrix::Dimension>(*l._inputSize)),
+  _stride(std::make_unique<matrix::Dimension>(*l._stride))
 {
 
 }
 
 ConvolutionalLayer& ConvolutionalLayer::operator=(const ConvolutionalLayer& l)
 {
-	if(&l == this)
-	{
-		return *this;
-	}
-	
-	_parameters = std::move(std::make_unique<MatrixVector>(*l._parameters));
-	_stride     = std::move(std::make_unique<matrix::Dimension>(*l._stride));
-	
-	return *this;
+    if(&l == this)
+    {
+        return *this;
+    }
+
+    _parameters = std::move(std::make_unique<MatrixVector>(*l._parameters));
+    _inputSize  = std::move(std::make_unique<matrix::Dimension>(*l._inputSize));
+    _stride     = std::move(std::make_unique<matrix::Dimension>(*l._stride));
+
+    return *this;
 }
 
 void ConvolutionalLayer::initialize()
 {
-	double e = util::KnobDatabase::getKnobValue("Layer::RandomInitializationEpsilon", 6);
+    double e = util::KnobDatabase::getKnobValue("Layer::RandomInitializationEpsilon", 6);
 
-	double epsilon = std::sqrt((e) / (getInputCount() + getOutputCount() + 1));
-	
-	matrix::rand(_weights);
-	apply(_weights, _weights, matrix::Multiply(epsilon));
+    double epsilon = std::sqrt((e) / (getInputCount() + getOutputCount() + 1));
+
+    // generate uniform random values between [0, 1]
+    matrix::rand(_weights);
+
+    // shift to center on 0, the range is now [-0.5, 0.5]
+    apply(_weights, _weights, matrix::Add(-0.5));
+
+    // scale, the range is now [-epsilon, epsilon]
+    apply(_weights, _weights, matrix::Multiply(2.0 * epsilon));
+
+    // assign bias to 0.0
+    apply(_bias, _bias, matrix::Fill(0.0));
 }
 
 Matrix ConvolutionalLayer::runForward(const Matrix& m) const
 {
-	assertM(false, "Not implemented.");
+    if(util::isLogEnabled("ConvolutionalLayer"))
+    {
+        util::log("ConvolutionalLayer") << " Running forward propagation through layer: " << _weights.shapeString() << "\n";
+    }
+
+    if(util::isLogEnabled("ConvolutionalLayer::Detail"))
+    {
+        util::log("ConvolutionalLayer::Detail") << "  input: " << m.debugString();
+        util::log("ConvolutionalLayer::Detail") << "  layer: " << _weights.debugString();
+        util::log("ConvolutionalLayer::Detail") << "  bias:  " << _bias.debugString();
+    }
+
+    auto unbiasedOutput = matrix::forwardConvolution(m, _weights);
+
+    auto output = broadcast(unbiasedOutput, _bias, {}, matrix::Add());
+
+    if(util::isLogEnabled("ConvolutionalLayer::Detail"))
+    {
+        util::log("ConvolutionalLayer::Detail") << "  output: " << output.debugString();
+    }
+    else
+    {
+        util::log("ConvolutionalLayer") << "  output: " << output.shapeString() << "\n";
+    }
+
+    auto activation = getActivationFunction()->apply(output);
+
+    if(util::isLogEnabled("ConvolutionalLayer::Detail"))
+    {
+        util::log("ConvolutionalLayer::Detail") << "  activation: " << activation.debugString();
+    }
+    else
+    {
+        util::log("ConvolutionalLayer") << "  activation: " << activation.shapeString() << "\n";
+    }
+
+    return activation;
 }
 
 Matrix ConvolutionalLayer::runReverse(MatrixVector& gradients,
-	const Matrix& inputActivations,
-	const Matrix& outputActivations,
-	const Matrix& deltas) const
+    const Matrix& inputActivations,
+    const Matrix& outputActivations,
+    const Matrix& deltas) const
 {
-	assertM(false, "Not implemented.");
+    if(util::isLogEnabled("ConvolutionalLayer"))
+    {
+        util::log("ConvolutionalLayer") << " Running reverse propagation on matrix (" << difference.size()[0]
+            << " rows, " << difference.size()[1] << " columns) through layer with dimensions ("
+            << getInputCount() << " inputs, " << getOutputCount() << " outputs).\n";
+        util::log("ConvolutionalLayer") << "  layer: " << _weights.shapeString() << "\n";
+      }
+
+    if(util::isLogEnabled("ConvolutionalLayer"))
+    {
+        util::log("ConvolutionalLayer") << "  difference size: " << difference.shapeString() << "\n";
+    }
+
+    if(util::isLogEnabled("ConvolutionalLayer::Detail"))
+    {
+        util::log("ConvolutionalLayer::Detail") << "  difference: " << difference.debugString();
+    }
+
+    if(util::isLogEnabled("ConvolutionalLayer"))
+    {
+        util::log("ConvolutionalLayer") << "  output size: " << outputActivations.shapeString() << "\n";
+    }
+
+    if(util::isLogEnabled("ConvolutionalLayer::Detail"))
+    {
+        util::log("ConvolutionalLayer::Detail") << "  output: " << outputActivations.debugString();
+    }
+
+    // finish computing the deltas
+    auto deltas = apply(getActivationFunction()->applyDerivative(outputActivations), difference, matrix::Multiply());
+
+    if(util::isLogEnabled("ConvolutionalLayer::Detail"))
+    {
+        util::log("ConvolutionalLayer::Detail") << "  deltas: " << deltas.debugString();
+    }
+
+    // compute gradient for the weights
+    auto weightGradient = reverseConvolutionGradients(_weights, inputActivations, deltas);
+
+    // add in the weight cost function term
+    if(getWeightCostFunction() != nullptr)
+    {
+        apply(weightGradient, weightGradient, getWeightCostFunction()->getGradient(_weights), matrix::Add());
+    }
+
+    gradients.push_back(std::move(weightGradient));
+
+    if(util::isLogEnabled("ConvolutionalLayer"))
+    {
+        util::log("ConvolutionalLayer") << "  weight grad shape: " << weightGradient.shapeString() << "\n";
+    }
+
+    if(util::isLogEnabled("ConvolutionalLayer::Detail"))
+    {
+        util::log("ConvolutionalLayer::Detail") << "  weight grad: " << weightGradient.debugString();
+    }
+
+    // compute gradient for the bias
+    auto biasGradient = reduce(apply(deltas, matrix::Divide(samples)), {1}, matrix::Add());
+
+    if(util::isLogEnabled("ConvolutionalLayer"))
+    {
+        util::log("ConvolutionalLayer") << "  bias grad shape: " << biasGradient.shapeString() << "\n";
+    }
+
+    if(util::isLogEnabled("ConvolutionalLayer::Detail"))
+    {
+        util::log("ConvolutionalLayer::Detail") << "  bias grad: " << biasGradient.debugString();
+    }
+
+    assert(biasGradient.size() == _bias.size());
+
+    gradients.push_back(std::move(biasGradient));
+
+    // compute deltas for previous layer
+    auto deltasPropagatedReverse = reverseConvolutionDeltas(_weights, deltas);
+
+    Matrix previousLayerDeltas;
+
+    if(getActivationCostFunction() != nullptr)
+    {
+        auto activationCostFunctionGradient = getActivationCostFunction()->getGradient(outputActivations);
+
+        apply(previousLayerDeltas, deltasPropagatedReverse, activationCostFunctionGradient, matrix::Multiply());
+    }
+    else
+    {
+        previousLayerDeltas = std::move(deltasPropagatedReverse);
+    }
+
+    if(util::isLogEnabled("ConvolutionalLayer"))
+    {
+        util::log("ConvolutionalLayer") << "  output shape: " << previousLayerDeltas.shapeString() << "\n";
+    }
+
+    if(util::isLogEnabled("ConvolutionalLayer::Detail"))
+    {
+        util::log("ConvolutionalLayer::Detail") << "  output: " << previousLayerDeltas.debugString();
+    }
+
+    return previousLayerDeltas;
 }
 
 MatrixVector& ConvolutionalLayer::weights()
 {
-	return *_parameters;
+    return *_parameters;
 }
 
 const MatrixVector& ConvolutionalLayer::weights() const
 {
-	return *_parameters;
+    return *_parameters;
 }
 
 const matrix::Precision& ConvolutionalLayer::precision() const
 {
-	return _weights.precision();
+    return _weights.precision();
 }
 
 double ConvolutionalLayer::computeWeightCost() const
 {
-	return getWeightCostFunction()->getCost(_weights);
+    return getWeightCostFunction()->getCost(_weights);
 }
 
 size_t ConvolutionalLayer::getInputCount() const
 {
-	return _weights.size()[0] * _weights.size()[1] * _weights.size()[2];
+    return _weights.size()[0] * _weights.size()[1] * _weights.size()[2];
 }
 
 size_t ConvolutionalLayer::getOutputCount() const
 {
-	return _weights.size()[3];
+    return _weights.size()[3];
 }
 
 size_t ConvolutionalLayer::totalNeurons() const
 {
-	return getOutputCount();
+    return getOutputCount();
 }
 
 size_t ConvolutionalLayer::totalConnections() const
 {
-	return _weights.elements();
+    return _weights.elements();
 }
 
 size_t ConvolutionalLayer::getFloatingPointOperationCount() const
 {
-	return 2 * totalConnections();
+    return 2 * totalConnections();
 }
 
 void ConvolutionalLayer::save(util::TarArchive& archive) const
 {
-	assertM(false, "Not implemented.");
+    assertM(false, "Not implemented.");
 }
 
 void ConvolutionalLayer::load(const util::TarArchive& archive, const std::string& name)
 {
-	assertM(false, "Not implemented.");
+    assertM(false, "Not implemented.");
 }
 
 std::unique_ptr<Layer> ConvolutionalLayer::clone() const
 {
-	return std::make_unique<ConvolutionalLayer>(*this);
+    return std::make_unique<ConvolutionalLayer>(*this);
 }
 
 std::unique_ptr<Layer> ConvolutionalLayer::mirror() const
 {
-	return std::make_unique<ConvolutionalLayer>(matrix::Dimension({_weights.size()[0], _weights.size()[1], _weights.size()[3], _weights.size()[2]}),
-		*_stride, precision());
+    return std::make_unique<ConvolutionalLayer>(*_inputSize,
+        matrix::Dimension(_weights.size()[0], _weights.size()[1], _weights.size()[3], _weights.size()[2]}),
+        *_stride, precision());
 }
 
 std::string ConvolutionalLayer::getTypeName() const
 {
-	return "ConvolutionalLayer";
+    return "ConvolutionalLayer";
 }
 
 }

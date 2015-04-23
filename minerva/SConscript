@@ -1,10 +1,10 @@
 #! /usr/bin/python
 
 ################################################################################
-#	\file   SConscript
-#	\author Gregory Diamos <solusstultus@gmail.com>
+#    \file   SConscript
+#    \author Gregory Diamos <solusstultus@gmail.com>
 #   \date   Saturday August 10, 2013
-#	\brief  The SCons master build script for the image classifier
+#    \brief  The SCons master build script for the image classifier
 ################################################################################
 
 # set environment variables
@@ -22,102 +22,102 @@ env['path_to_root_dir'] = os.path.abspath(minerva_path_to_root_dir)
 
 # find all source files in the source tree
 directories = ['minerva/driver', 'minerva/util', 'minerva/engine',
-	'minerva/matrix', 'minerva/model', 'minerva/network',
-	'minerva/optimizer', 'minerva/parallel', 'minerva/video', 'minerva/visualization',
-	'minerva/database', 'minerva/input', 'minerva/results']
+    'minerva/matrix', 'minerva/model', 'minerva/network',
+    'minerva/optimizer', 'minerva/parallel', 'minerva/video', 'minerva/visualization',
+    'minerva/database', 'minerva/input', 'minerva/results']
 
 source_directories = [os.path.join(i, 'implementation') for i in directories]
 extensions = ['*.cpp']
 
 sources = []
 for dir in source_directories:
-	for ext in extensions:
-		regexp = os.path.join(dir, ext)
-		sources.extend(env.Glob(regexp))
+    for ext in extensions:
+        regexp = os.path.join(dir, ext)
+        sources.extend(env.Glob(regexp))
 
 # create the library
 libminerva = env.SharedLibrary('minerva', sources, LIBS=env['EXTRA_LIBS'])
 minerva_libs = ['minerva'] + env['EXTRA_LIBS']
 
 if env['install']:
-	libminerva = env.Install(os.path.join(env['install_path'], "lib"),
-		libminerva)
+    libminerva = env.Install(os.path.join(env['install_path'], "lib"),
+        libminerva)
 
 # create the tools
 tools = []
 
 tools.append(env.Program('minerva-classifier', \
-	['minerva/tools/minerva-classifier.cpp'], LIBS=minerva_libs))
+    ['minerva/tools/minerva-classifier.cpp'], LIBS=minerva_libs))
 
 tools.append(env.Program('test-classifier', \
-	['minerva/engine/test/test-classifier.cpp'], LIBS=minerva_libs))
+    ['minerva/engine/test/test-classifier.cpp'], LIBS=minerva_libs))
 
 tools.append(env.Program('test-matrix', \
-	['minerva/matrix/test/test-matrix.cpp'], LIBS=minerva_libs))
+    ['minerva/matrix/test/test-matrix.cpp'], LIBS=minerva_libs))
 
 tools.append(env.Program('test-matrix-vector', \
-	['minerva/matrix/test/test-matrix-vector.cpp'], LIBS=minerva_libs))
+    ['minerva/matrix/test/test-matrix-vector.cpp'], LIBS=minerva_libs))
 
 #tools.append(env.Program('test-minerva-visualization', \
-#	['minerva/visualization/test/test-minerva-visualization.cpp'], LIBS=minerva_libs))
+#    ['minerva/visualization/test/test-minerva-visualization.cpp'], LIBS=minerva_libs))
 
 tools.append(env.Program('test-minerva-display', \
-	['minerva/video/test/test-display.cpp'], LIBS=minerva_libs))
+    ['minerva/video/test/test-display.cpp'], LIBS=minerva_libs))
 
 #tools.append(env.Program('test-minerva-performance', \
-#	['minerva/network/test/test-neuralnetwork-performance.cpp'], LIBS=minerva_libs))
+#    ['minerva/network/test/test-neuralnetwork-performance.cpp'], LIBS=minerva_libs))
 
 tools.append(env.Program('test-gradient', \
-	['minerva/network/test/test-gradient-check.cpp'], LIBS=minerva_libs))
+    ['minerva/network/test/test-gradient-check.cpp'], LIBS=minerva_libs))
 
-#tools.append(env.Program('test-mnist', \
-#	['minerva/engine/test/test-mnist.cpp'], LIBS=minerva_libs))
+tools.append(env.Program('test-mnist', \
+    ['minerva/engine/test/test-mnist.cpp'], LIBS=minerva_libs))
 
 tools.append(env.Program('test-optimizer', \
-	['minerva/optimizer/test/test-optimizer.cpp'], LIBS=minerva_libs))
+    ['minerva/optimizer/test/test-optimizer.cpp'], LIBS=minerva_libs))
 
 for tool in tools:
-	env.Depends(tool, libminerva)
+    env.Depends(tool, libminerva)
 
 # install it all
 if env['install']:
-	installed   = []
-	executables = []
+    installed   = []
+    executables = []
 
-	print 'Installing Minerva'
+    print 'Installing Minerva'
 
-	installed.append(env.Install(os.path.join(env['install_path'], "bin"),
-		'scripts/which.py'))
+    installed.append(env.Install(os.path.join(env['install_path'], "bin"),
+        'scripts/which.py'))
 
-	for tool in tools:
-		executables.append(env.Install(
-			os.path.join(env['install_path'], "bin"), tool))
+    for tool in tools:
+        executables.append(env.Install(
+            os.path.join(env['install_path'], "bin"), tool))
 
-	# install headers
-	header_directories = [os.path.join(i, 'interface') for i in directories]
-	header_extensions = ['*.h']
+    # install headers
+    header_directories = [os.path.join(i, 'interface') for i in directories]
+    header_extensions = ['*.h']
 
-	headers = []
-	for dir in header_directories:
-		for ext in header_extensions:
-			regexp = os.path.join(dir, ext)
-			headers.extend(env.Glob(regexp))
+    headers = []
+    for dir in header_directories:
+        for ext in header_extensions:
+            regexp = os.path.join(dir, ext)
+            headers.extend(env.Glob(regexp))
 
-	for header in headers:
-		(directoryPath, headerName) = os.path.split( \
-			os.path.relpath(str(header), env['path_to_root_dir']))
-		installed.append(env.Install(os.path.join( \
-			env['install_path'], "include", directoryPath), header))
+    for header in headers:
+        (directoryPath, headerName) = os.path.split( \
+            os.path.relpath(str(header), env['path_to_root_dir']))
+        installed.append(env.Install(os.path.join( \
+            env['install_path'], "include", directoryPath), header))
 
-	# set permissions
-	for i in executables:
-		env.AddPostAction(i, Chmod(i, 0755))
-	for i in installed:
-		env.AddPostAction(i, Chmod(i, 0644))
+    # set permissions
+    for i in executables:
+        env.AddPostAction(i, Chmod(i, 0755))
+    for i in installed:
+        env.AddPostAction(i, Chmod(i, 0644))
 
-	# Run the install rules by default
-	install_alias = env.Alias('install', env['install_path'])
-	Default(install_alias)
+    # Run the install rules by default
+    install_alias = env.Alias('install', env['install_path'])
+    Default(install_alias)
 
 
 

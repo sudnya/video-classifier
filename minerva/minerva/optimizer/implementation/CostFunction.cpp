@@ -1,7 +1,7 @@
 /*! \file:   CostFunction.cpp
-	\author: Gregory Diamos <gregory.diamos@gatech.edu>
-	\date:   Tuesday January 21, 2014
-	\brief   The source file for the CostFunction class.
+    \author: Gregory Diamos <gregory.diamos@gatech.edu>
+    \date:   Tuesday January 21, 2014
+    \brief   The source file for the CostFunction class.
 */
 
 // Minerva Includes
