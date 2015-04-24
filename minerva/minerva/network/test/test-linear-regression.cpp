@@ -537,13 +537,13 @@ matrix::Matrix loadInputDataMatrix()
     size_t columns = 14;
     size_t rows    = 506;
 
-    matrix::Matrix inputData({rows, columns}, matrix::DoublePrecision());
+    matrix::Matrix inputData({columns, rows}, matrix::DoublePrecision());
 
-    for(size_t column = 0; column < columns; ++columns)
+    for(size_t column = 0; column < columns; ++column)
     {
         for(size_t row = 0; row < rows; ++row)
         {
-            inputData(row, column) = data[column + row * columns];
+            inputData(column, row) = data[column + row * columns];
         }
     }
 
@@ -554,14 +554,14 @@ matrix::Matrix loadReferenceData()
 {
     auto matrix = loadInputDataMatrix();
 
-    return slice(matrix, {0, matrix.size()[1] - 1}, {matrix.size()[0], matrix.size()[1]});
+    return slice(matrix, {matrix.size()[0] - 1, 0}, {matrix.size()[0], matrix.size()[1]});
 }
 
 matrix::Matrix loadInputData()
 {
     auto matrix = loadInputDataMatrix();
 
-    return slice(matrix, {0, 0}, {matrix.size()[0], matrix.size()[1] - 1});
+    return slice(matrix, {0, 0}, {matrix.size()[0] - 1, matrix.size()[1]});
 }
 
 void compare(const matrix::Matrix& predictions, const matrix::Matrix& reference)
@@ -584,17 +584,17 @@ void linearRegressionExample()
     auto inputData     = loadInputData();
     auto referenceData = loadReferenceData();
 
-    size_t inputCount   = inputData.size()[1];
-    size_t inputSamples = inputData.size()[0];
+    size_t inputCount   = inputData.size()[0];
+    size_t inputSamples = inputData.size()[1];
 
     size_t trainingSamples   = (inputSamples * 8) / 10;
     //size_t validationSamples = inputSamples - trainingSamples;
 
-    auto trainingData      = slice(inputData,     {0, 0}, {trainingSamples, inputCount});
-    auto trainingReference = slice(referenceData, {0, 0}, {trainingSamples, 1         });
+    auto trainingData      = slice(inputData,     {0, 0}, {inputCount, trainingSamples});
+    auto trainingReference = slice(referenceData, {0, 0}, {1,          trainingSamples});
 
-    auto validationData      = slice(inputData,     {trainingSamples, 0}, {inputSamples, inputCount});
-    auto validationReference = slice(referenceData, {trainingSamples, 0}, {inputSamples, 1         });
+    auto validationData      = slice(inputData,     {0, trainingSamples}, {inputCount, inputSamples});
+    auto validationReference = slice(referenceData, {0, trainingSamples}, {1,          inputSamples});
 
     // Create the network
     network::NeuralNetwork simpleNetwork;

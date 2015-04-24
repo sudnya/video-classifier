@@ -27,6 +27,9 @@ Matrix broadcast(const Matrix& left, const Matrix& right, const Dimension& d, co
 void zeros(Matrix& result);
 Matrix zeros(const Dimension& size, const Precision& precision);
 
+void ones(Matrix& result);
+Matrix ones(const Dimension& size, const Precision& precision);
+
 }
 }
 

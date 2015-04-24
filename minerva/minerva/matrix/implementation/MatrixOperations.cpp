@@ -467,6 +467,20 @@ Matrix zeros(const Dimension& size, const Precision& precision)
     return retVal;
 }
 
+void ones(Matrix& result)
+{
+	apply(result, result, Fill(1.0));
+}
+
+Matrix ones(const Dimension& size, const Precision& precision)
+{
+    Matrix retVal(size, precision);
+
+    ones(retVal);
+
+    return retVal;
+}
+
 }
 }
 
