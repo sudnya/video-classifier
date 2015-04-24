@@ -5,20 +5,26 @@
 */
 
 // Minerva Includes
-#include <minerva/network/interface/NeuralNetwork.h>
-#include <minerva/network/interface/FeedForwardLayer.h>
+#include <minerva/network/interface/ActivationFunctionFactory.h>
 #include <minerva/network/interface/CostFunctionFactory.h>
+#include <minerva/network/interface/FeedForwardLayer.h>
+#include <minerva/network/interface/NeuralNetwork.h>
 
 #include <minerva/matrix/interface/Matrix.h>
+#include <minerva/matrix/interface/MatrixTransformations.h>
+#include <minerva/matrix/interface/MatrixOperations.h>
+#include <minerva/matrix/interface/Precision.h>
+#include <minerva/matrix/interface/Operation.h>
 
-#include <minerva/util/interface/debug.h>
 #include <minerva/util/interface/ArgumentParser.h>
+#include <minerva/util/interface/debug.h>
 #include <minerva/util/interface/Knobs.h>
+#include <minerva/util/interface/memory.h>
 
 namespace minerva
 {
 
-double[] data = {
+double data[] = {
     0.00632,18.00,2.310,0,0.5380,6.5750,65.20,4.0900,1,296.0,15.30,396.90,4.98,24.00,
     0.02731,0.00,7.070,0,0.4690,6.4210,78.90,4.9671,2,242.0,17.80,396.90,9.14,21.60,
     0.02729,0.00,7.070,0,0.4690,7.1850,61.10,4.9671,2,242.0,17.80,392.83,4.03,34.70,
@@ -526,12 +532,12 @@ double[] data = {
     0.10959,0.00,11.930,0,0.5730,6.7940,89.30,2.3889,1,273.0,21.00,393.45,6.48,22.00,
     0.04741,0.00,11.930,0,0.5730,6.0300,80.80,2.5050,1,273.0,21.00,396.90,7.88,11.90 };
 
-Matrix loadInputDataMatrix()
+matrix::Matrix loadInputDataMatrix()
 {
     size_t columns = 14;
     size_t rows    = 506;
 
-    Matrix inputData({rows, columns}, DoublePrecision());
+    matrix::Matrix inputData({rows, columns}, matrix::DoublePrecision());
 
     for(size_t column = 0; column < columns; ++columns)
     {
@@ -544,22 +550,29 @@ Matrix loadInputDataMatrix()
     return inputData;
 }
 
-Matrix loadInputData()
+matrix::Matrix loadReferenceData()
+{
+    auto matrix = loadInputDataMatrix();
+
+    return slice(matrix, {0, matrix.size()[1] - 1}, {matrix.size()[0], matrix.size()[1]});
+}
+
+matrix::Matrix loadInputData()
 {
     auto matrix = loadInputDataMatrix();
 
     return slice(matrix, {0, 0}, {matrix.size()[0], matrix.size()[1] - 1});
 }
 
-void compare(const Matrix& predictions, const Matrix& reference)
+void compare(const matrix::Matrix& predictions, const matrix::Matrix& reference)
 {
     size_t samples = predictions.size()[0];
 
-    auto differences = apply(predictions, reference, Subtract());
-    auto squareDifferences = apply(differences, Square());
-    auto normalizedSquareDifferences = apply(squareDifferences, Divide(samples * 2.0));
+    auto differences = apply(predictions, reference, matrix::Subtract());
+    auto squareDifferences = apply(differences, matrix::Square());
+    auto normalizedSquareDifferences = apply(squareDifferences, matrix::Divide(samples * 2.0));
 
-    auto cost = reduce(normalizedDifferences, {}, Sum())[0];
+    auto cost = reduce(normalizedSquareDifferences, {}, matrix::Add())[0];
 
     std::cout << "Total error was " << cost << "\n";
 }
@@ -575,7 +588,7 @@ void linearRegressionExample()
     size_t inputSamples = inputData.size()[0];
 
     size_t trainingSamples   = (inputSamples * 8) / 10;
-    size_t validationSamples = inputSamples - trainingSamples;
+    //size_t validationSamples = inputSamples - trainingSamples;
 
     auto trainingData      = slice(inputData,     {0, 0}, {trainingSamples, inputCount});
     auto trainingReference = slice(referenceData, {0, 0}, {trainingSamples, 1         });
@@ -584,18 +597,18 @@ void linearRegressionExample()
     auto validationReference = slice(referenceData, {trainingSamples, 0}, {inputSamples, 1         });
 
     // Create the network
-    network::NeuralNetwork simpleNetwork(DoublePrecision());
+    network::NeuralNetwork simpleNetwork;
 
-    simpleNetwork.addLayer(std::make_unique<FeedForwardLayer>(inputCount, 1));
-    simpleNetwork.back()->setActivationFunction(std::make_unique<NullActivationFunction>());
-    simpleNetwork.setCostFunction(std::make_unique<SumOfSquaresCostFunction>());
+    simpleNetwork.addLayer(std::make_unique<network::FeedForwardLayer>(inputCount, 1, matrix::DoublePrecision()));
+    simpleNetwork.back()->setActivationFunction(network::ActivationFunctionFactory::create("NullActivationFunction"));
+    simpleNetwork.setCostFunction(network::CostFunctionFactory::create("SumOfSquaresCostFunction"));
     simpleNetwork.initialize();
 
     // Train it
-    trainNetwork(simpleNetwork, trainingData, trainingReference);
+    simpleNetwork.train(trainingData, trainingReference);
 
     // Evaluate it on validation set
-    auto predictions = evaluateNetwork(simpleNetwork, validationData);
+    auto predictions = simpleNetwork.runInputs(validationData);
 
     compare(predictions, validationReference);
 }

@@ -507,7 +507,10 @@ Dimension getReverseConvolutionDeltasSize(const Dimension& filterSize, const Dim
 }
 
 
-void reverseConvolutionDeltas(Matrix& resultDeltas, const Matrix& filter, const Matrix& deltas);
+void reverseConvolutionDeltas(Matrix& resultDeltas, const Matrix& filter, const Matrix& deltas)
+{
+    // TODO
+}
 
 Matrix reverseConvolutionDeltas(const Matrix& filter, const Matrix& deltas)
 {
@@ -518,7 +521,10 @@ Matrix reverseConvolutionDeltas(const Matrix& filter, const Matrix& deltas)
     return result;
 }
 
-void reverseConvolutionGradients(Matrix& gradients, const Matrix& filter, const Matrix& inputs, const Matrix& deltas);
+void reverseConvolutionGradients(Matrix& gradients, const Matrix& filter, const Matrix& inputs, const Matrix& deltas)
+{
+    // TODO
+}
 
 Matrix reverseConvolutionGradients(const Matrix& filter, const Matrix& inputs, const Matrix& deltas)
 {

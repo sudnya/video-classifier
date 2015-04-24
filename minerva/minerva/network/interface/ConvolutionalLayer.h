@@ -22,7 +22,7 @@ public:
     virtual ~ConvolutionalLayer();
 
 public:
-    ConvolutionalLayer(const Dimension& inputSize, const matrix::Dimension& filterSize,
+    ConvolutionalLayer(const matrix::Dimension& inputSize, const matrix::Dimension& filterSize,
         const matrix::Dimension& filterStride, const matrix::Precision&);
 
 public:
@@ -76,6 +76,7 @@ private:
 
 private:
     Matrix& _weights;
+    Matrix& _bias;
 
 private:
     std::unique_ptr<matrix::Dimension> _inputSize;
