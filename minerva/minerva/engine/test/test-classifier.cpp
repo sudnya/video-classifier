@@ -227,8 +227,8 @@ static void enableSpecificLogs(const std::string& modules)
 
 static void setupSolverParameters()
 {
-    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::LearningRate", "3e-1");
-    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::Momentum", "0.99");
+    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::LearningRate", "4.0e-2");
+    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::Momentum", "0.95");
     minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::AnnealingRate", "1.000");
     minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::MaxGradNorm", "2000.0");
     minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::IterationsPerBatch", "10");

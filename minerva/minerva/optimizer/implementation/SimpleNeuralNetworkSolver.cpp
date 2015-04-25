@@ -64,6 +64,19 @@ SimpleNeuralNetworkSolver& SimpleNeuralNetworkSolver::operator=(const SimpleNeur
     return *this;
 }
 
+static void setWeights(NeuralNetwork& network, const MatrixVector& weights)
+{
+    size_t weight = 0;
+
+    for(auto& layer : network)
+    {
+        for(auto& weightMatrix : layer->weights())
+        {
+            weightMatrix = weights[weight++];
+        }
+    }
+}
+
 class NeuralNetworkCostAndGradient : public CostAndGradientFunction
 {
 public:
@@ -82,6 +95,8 @@ public:
     virtual double computeCostAndGradient(MatrixVector& gradient,
         const MatrixVector& weights) const
     {
+        setWeights(*_network, weights);
+
         double newCost = _network->getCostAndGradient(gradient, *_input, *_reference);
 
         if(util::isLogEnabled("SimpleNeuralNetworkSolver::Detail"))
@@ -131,6 +146,8 @@ static double differentiableSolver(NeuralNetwork* network, const Matrix* input, 
 
     util::log("SimpleNeuralNetworkSolver") << "   solver produced new cost: "
         << newCost << ".\n";
+
+    setWeights(*network, weights);
 
     return newCost;
 }
