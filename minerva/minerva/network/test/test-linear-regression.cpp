@@ -566,15 +566,34 @@ matrix::Matrix loadInputData()
 
 void compare(const matrix::Matrix& predictions, const matrix::Matrix& reference)
 {
-    size_t samples = predictions.size()[0];
+    size_t samples = predictions.size()[1];
 
     auto differences = apply(predictions, reference, matrix::Subtract());
     auto squareDifferences = apply(differences, matrix::Square());
-    auto normalizedSquareDifferences = apply(squareDifferences, matrix::Divide(samples * 2.0));
+    auto normalizedSquareDifferences = apply(squareDifferences, matrix::Divide(samples));
 
-    auto cost = reduce(normalizedSquareDifferences, {}, matrix::Add())[0];
+    double cost = std::sqrt(reduce(normalizedSquareDifferences, {}, matrix::Add())[0]);
 
-    std::cout << "Total error was " << cost << "\n";
+    std::cout << "Total RMS error was " << cost << "\n";
+
+    if(cost < 15.0)
+    {
+        std::cout << "Test Passed\n";
+    }
+    else
+    {
+        std::cout << "Test Failed\n";
+    }
+}
+
+void setupParameters()
+{
+    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::LearningRate", "1.3e-5");
+    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::Momentum", "0.93");
+    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::AnnealingRate", "1.00002");
+    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::MaxGradNorm", "2000.0");
+    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::IterationsPerBatch", "2500");
+    minerva::util::KnobDatabase::setKnob("GeneralDifferentiableSolver::Type", "NesterovAcceleratedGradientSolver");
 }
 
 void linearRegressionExample()
@@ -587,7 +606,7 @@ void linearRegressionExample()
     size_t inputCount   = inputData.size()[0];
     size_t inputSamples = inputData.size()[1];
 
-    size_t trainingSamples   = (inputSamples * 8) / 10;
+    size_t trainingSamples   = 400;
     //size_t validationSamples = inputSamples - trainingSamples;
 
     auto trainingData      = slice(inputData,     {0, 0}, {inputCount, trainingSamples});
@@ -595,6 +614,8 @@ void linearRegressionExample()
 
     auto validationData      = slice(inputData,     {0, trainingSamples}, {inputCount, inputSamples});
     auto validationReference = slice(referenceData, {0, trainingSamples}, {1,          inputSamples});
+
+    setupParameters();
 
     // Create the network
     network::NeuralNetwork simpleNetwork;
@@ -606,6 +627,11 @@ void linearRegressionExample()
 
     // Train it
     simpleNetwork.train(trainingData, trainingReference);
+
+    // Evaluate it on test set
+    //auto trainingPredictions = simpleNetwork.runInputs(trainingData);
+
+    //compare(trainingPredictions, trainingReference);
 
     // Evaluate it on validation set
     auto predictions = simpleNetwork.runInputs(validationData);

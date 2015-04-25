@@ -25,6 +25,7 @@ class FeedForwardLayer : public Layer
 {
 public:
 	FeedForwardLayer();
+	FeedForwardLayer(size_t inputs, size_t outputs);
 	FeedForwardLayer(size_t inputs, size_t outputs, const matrix::Precision&);
     virtual ~FeedForwardLayer();
 

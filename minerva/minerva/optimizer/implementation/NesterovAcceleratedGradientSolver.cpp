@@ -51,6 +51,8 @@ static void reportProgress(double cost, double gradientNorm, double step)
 double NesterovAcceleratedGradientSolver::solve(MatrixVector& inputs,
     const CostAndGradientFunction& callback)
 {
+    assert(!inputs.empty());
+
     double futurePointCost = 0.0;
     for (size_t i = 0; i < _iterations; ++i) {
         // detect cold start
@@ -58,7 +60,7 @@ double NesterovAcceleratedGradientSolver::solve(MatrixVector& inputs,
 
         if(coldStart)
         {
-            _velocity.reset(new MatrixVector(inputs.sizes()));
+            _velocity.reset(new MatrixVector(inputs.sizes(), inputs.front().precision()));
             matrix::zeros(*_velocity);
         }
 
@@ -74,10 +76,13 @@ double NesterovAcceleratedGradientSolver::solve(MatrixVector& inputs,
         double scale = gradNorm > _maxGradNorm ? -(_learningRate * _maxGradNorm) / gradNorm : -_learningRate;
 
         // Update parameters
-        apply(inputs, inputs, apply(futurePointDerivative, matrix::Multiply(scale)), matrix::Add());
+        apply(inputs, futureInputs, apply(futurePointDerivative, matrix::Multiply(scale)), matrix::Add());
 
         // Update velocity
-        apply(*_velocity, apply(*_velocity, matrix::Multiply(_momentum)), apply(futurePointDerivative, matrix::Multiply(scale)), matrix::Add());
+        auto multipliedMom = apply(*_velocity, matrix::Multiply(_momentum));
+        auto scaledFpd = apply(futurePointDerivative, matrix::Multiply(scale));
+        apply(*_velocity, multipliedMom, scaledFpd, matrix::Add());
+        //apply(*_velocity, apply(*_velocity, matrix::Multiply(_momentum)), apply(futurePointDerivative, matrix::Multiply(scale)), matrix::Add());
 
         if(coldStart)
         {

@@ -1,4 +1,4 @@
-/*    \file   CudnnLibrary.h
+/*  \file   CudnnLibrary.h
     \date   April 22, 2015
     \author Gregory Diamos <solusstultus@gmail.com>
     \brief  The header file for the CudnnLibrary class.
@@ -8,7 +8,7 @@
 
 // Standard Library Includes
 #include <cstddef>
-
+#include <string>
 
 namespace minerva
 {
@@ -274,6 +274,12 @@ private:
         bool loaded() const;
         /*! \brief unloads the library */
         void unload();
+
+    public:
+        cudnnHandle_t getHandle();
+
+    public:
+        std::string getErrorString(cudnnStatus_t status);
 
     private:
         void* _library;

@@ -36,11 +36,11 @@ bool CublasLibrary::loaded()
 void CublasLibrary::cublasSgeam(
     cublasOperation_t transa, cublasOperation_t transb,
     int m, int n, const float *alpha, const float *A,
-    int lda, const float *beta, const float *B, int ldb, 
+    int lda, const float *beta, const float *B, int ldb,
     float *C, int ldc)
 {
     _check();
-    
+
     util::log("CublasLibrary") << " CUBLAS SGEAM: ("
         "handle: " << _interface.handle <<  ", "
         "transa: " << transa <<  ", "
@@ -59,10 +59,10 @@ void CublasLibrary::cublasSgeam(
 
         "C: " << C <<  ", "
         "ldc: " << ldc << ")\n";
-    
+
     cublasStatus_t status = (*_interface.cublasSgeam)(_interface.handle,
         transa, transb, m, n, alpha, A, lda, beta, B, ldb, C, ldc);
-        
+
     if(status != CUBLAS_STATUS_SUCCESS)
     {
         throw std::runtime_error("Cuda SGEAM failed: " +
@@ -73,11 +73,11 @@ void CublasLibrary::cublasSgeam(
 
 void CublasLibrary::cublasSgemm(
     cublasOperation_t transa, cublasOperation_t transb,
-    int m, int n, int k, const float* alpha, const float *A, int lda, 
+    int m, int n, int k, const float* alpha, const float *A, int lda,
     const float *B, int ldb, const float* beta, float *C, int ldc)
 {
     _check();
-    
+
     util::log("CublasLibrary") << " CUBLAS SGEMM: ("
         "handle: " << _interface.handle <<  ", "
         "transa: " << transa <<  ", "
@@ -97,11 +97,11 @@ void CublasLibrary::cublasSgemm(
 
         "C: " << C <<  ", "
         "ldc: " << ldc << ")\n";
-    
+
     cublasStatus_t status = (*_interface.cublasSgemm_v2)(_interface.handle,
         transa, transb, m, n, k, alpha, A, lda, B, ldb,
         beta, C, ldc);
-        
+
     if(status != CUBLAS_STATUS_SUCCESS)
     {
         throw std::runtime_error("Cuda SGEMM failed: " +
@@ -111,11 +111,11 @@ void CublasLibrary::cublasSgemm(
 
 void CublasLibrary::cublasDgemm(
     cublasOperation_t transa, cublasOperation_t transb,
-    int m, int n, int k, const double* alpha, const double* A, int lda, 
+    int m, int n, int k, const double* alpha, const double* A, int lda,
     const double* B, int ldb, const double* beta, double* C, int ldc)
 {
     _check();
-    
+
     util::log("CublasLibrary") << " CUBLAS DGEMM: ("
         "handle: " << _interface.handle <<  ", "
         "transa: " << transa <<  ", "
@@ -135,11 +135,11 @@ void CublasLibrary::cublasDgemm(
 
         "C: " << C <<  ", "
         "ldc: " << ldc << ")\n";
-    
+
     cublasStatus_t status = (*_interface.cublasDgemm_v2)(_interface.handle,
         transa, transb, m, n, k, alpha, A, lda, B, ldb,
         beta, C, ldc);
-        
+
     if(status != CUBLAS_STATUS_SUCCESS)
     {
         throw std::runtime_error("Cuda DGEMM failed: " +
@@ -149,12 +149,12 @@ void CublasLibrary::cublasDgemm(
 
 void CublasLibrary::cublasSgemmBatched(
     cublasOperation_t transa, cublasOperation_t transb,
-    int m, int n, int k, const float* alpha, const float *A, int lda, 
+    int m, int n, int k, const float* alpha, const float *A, int lda,
     const float *B, int ldb, const float* beta, float *C, int ldc,
     int batch)
 {
     _check();
-    
+
     util::log("CublasLibrary") << " CUBLAS SGEMM BATCH: ("
         "handle: " << _interface.handle <<  ", "
         "transa: " << transa <<  ", "
@@ -175,11 +175,11 @@ void CublasLibrary::cublasSgemmBatched(
         "C: " << C <<  ", "
         "ldc: " << ldc << ", "
         "batch: " << batch << ")\n";
-    
+
     cublasStatus_t status = (*_interface.cublasSgemmBatched)(_interface.handle,
         transa, transb, m, n, k, alpha, A, lda, B, ldb,
         beta, C, ldc, batch);
-        
+
     if(status != CUBLAS_STATUS_SUCCESS)
     {
         throw std::runtime_error("Cuda SGEMM failed: " +
@@ -232,14 +232,14 @@ std::string CublasLibrary::cublasGetErrorString(cublasStatus_t error)
         break;
     }
     }
-    
+
     return "Unknown error.";
 }
 
 void CublasLibrary::_check()
 {
     load();
-    
+
     if(!loaded())
     {
         throw std::runtime_error("Tried to call CUBLAS function when "
@@ -273,7 +273,7 @@ void CublasLibrary::Interface::load()
     if(_failed)  return;
     if(loaded()) return;
 	if(!parallel::isCudaEnabled()) return;
-    
+
     #ifdef __APPLE__
     const char* libraryName = "libcublas.dylib";
     #else
@@ -294,24 +294,24 @@ void CublasLibrary::Interface::load()
 
     try
     {
-    
+
         #define DynLink( function ) \
             util::bit_cast(function, dlsym(_library, #function)); \
             checkFunction((void*)function, #function)
-            
+
         DynLink(cublasSgeam);
         DynLink(cublasSgemm_v2);
         DynLink(cublasDgemm_v2);
         DynLink(cublasSgemmBatched);
-        
+
         DynLink(cublasCreate_v2);
         DynLink(cublasDestroy_v2);
-        
-        #undef DynLink    
+
+        #undef DynLink
 
         util::log("CublasLibrary") << " Loaded library '" << libraryName
             << "' successfully, creating handle...\n";
-            
+
         _createHandle();
 
         util::log("CublasLibrary") << "  success....\n";

@@ -33,6 +33,9 @@ public:
     bool operator==(const Precision&) const;
     bool operator!=(const Precision&) const;
 
+public:
+    static Precision getDefaultPrecision();
+
 private:
     Type _type;
 

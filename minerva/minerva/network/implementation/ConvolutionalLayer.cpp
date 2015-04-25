@@ -46,6 +46,13 @@ ConvolutionalLayer::~ConvolutionalLayer()
 }
 
 ConvolutionalLayer::ConvolutionalLayer(const matrix::Dimension& inputSize,
+    const matrix::Dimension& size, const matrix::Dimension& stride)
+: ConvolutionalLayer(inputSize, size, stride, matrix::Precision::getDefaultPrecision())
+{
+
+}
+
+ConvolutionalLayer::ConvolutionalLayer(const matrix::Dimension& inputSize,
     const matrix::Dimension& size, const matrix::Dimension& stride, const matrix::Precision& precision)
 : _parameters(new MatrixVector({Matrix(size, precision), Matrix({size[0]}, precision)})), //TODO: fix this bias!
   _weights((*_parameters)[0]),

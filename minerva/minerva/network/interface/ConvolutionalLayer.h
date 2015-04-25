@@ -23,6 +23,8 @@ public:
 
 public:
     ConvolutionalLayer(const matrix::Dimension& inputSize, const matrix::Dimension& filterSize,
+        const matrix::Dimension& filterStride);
+    ConvolutionalLayer(const matrix::Dimension& inputSize, const matrix::Dimension& filterSize,
         const matrix::Dimension& filterStride, const matrix::Precision&);
 
 public:

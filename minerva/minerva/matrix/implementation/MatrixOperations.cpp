@@ -33,11 +33,9 @@ void applyOverPrecisions(Matrix& result, const Matrix& left, const Matrix& right
 
     auto nativeOperation = static_cast<const OperationType&>(op);
 
-    assert(result.isContiguous() && left.isContiguous() && right.isContiguous()); // TODO: handle complex strides
-
-    auto rawResult = static_cast<NativeType*>(result.data());
-    auto rawLeft   = static_cast<const NativeType*>(left.data());
-    auto rawRight  = static_cast<const NativeType*>(right.data());
+    MatrixView<NativeType>      resultView(result);
+    ConstMatrixView<NativeType> leftView(left);
+    ConstMatrixView<NativeType> rightView(right);
 
     size_t elements = result.elements();
 
@@ -45,7 +43,9 @@ void applyOverPrecisions(Matrix& result, const Matrix& left, const Matrix& right
     {
         for(size_t i = threadGroup.id(); i < elements; i += threadGroup.size())
         {
-            rawResult[i] = nativeOperation(rawLeft[i], rawRight[i]);
+            auto fullDimension = linearToDimension(i, resultView.size());
+
+            resultView(fullDimension) = nativeOperation(leftView(fullDimension), rightView(fullDimension));
         }
     });
 }
@@ -111,6 +111,11 @@ void apply(Matrix& result, const Matrix& left, const Matrix& right, const Operat
 {
     auto precision = left.precision();
 
+    assert(left.size() == right.size());
+    assert(result.size() == right.size());
+    assert(left.precision() == right.precision());
+    assert(result.precision() == right.precision());
+
     detail::applyOverOperations(result, left, right, op, precision);
 }
 
@@ -140,10 +145,8 @@ void applyOverPrecisions(Matrix& result, const Matrix& input,
 
     auto nativeOperation = static_cast<const OperationType&>(op);
 
-    assert(result.isContiguous() && input.isContiguous()); // TODO: handle complex strides
-
-    auto rawResult = static_cast<NativeType*>(result.data());
-    auto rawInput  = static_cast<const NativeType*>(input.data());
+    MatrixView<NativeType>      resultView(result);
+    ConstMatrixView<NativeType> inputView(input);
 
     size_t elements = result.elements();
 
@@ -151,7 +154,9 @@ void applyOverPrecisions(Matrix& result, const Matrix& input,
     {
         for(size_t i = threadGroup.id(); i < elements; i += threadGroup.size())
         {
-            rawResult[i] = nativeOperation(rawInput[i]);
+            auto dimension = linearToDimension(i, resultView.size());
+
+            resultView(dimension) = nativeOperation(inputView(dimension));
         }
     });
 }

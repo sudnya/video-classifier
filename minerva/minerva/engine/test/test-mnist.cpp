@@ -32,6 +32,7 @@
 typedef minerva::video::Image Image;
 typedef minerva::network::NeuralNetwork NeuralNetwork;
 typedef minerva::network::FeedForwardLayer FeedForwardLayer;
+typedef minerva::network::ConvolutionalLayer ConvolutionalLayer;
 typedef minerva::video::ImageVector ImageVector;
 typedef minerva::matrix::Matrix Matrix;
 typedef minerva::visualization::NeuronVisualizer NeuronVisualizer;

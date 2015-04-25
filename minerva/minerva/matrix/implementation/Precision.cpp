@@ -3,6 +3,7 @@
 #include <minerva/matrix/interface/Precision.h>
 
 #include <minerva/util/interface/debug.h>
+#include <minerva/util/interface/knobs.h>
 
 namespace minerva
 {
@@ -47,6 +48,22 @@ bool Precision::operator==(const Precision& p) const
 bool Precision::operator!=(const Precision& p) const
 {
     return !(*this == p);
+}
+
+Precision Precision::getDefaultPrecision()
+{
+    auto precision = util::KnobDatabase::getKnobValue("Matrix::DefaultPrecision", "SinglePrecision");
+
+    if(precision == "SinglePrecision")
+    {
+        return SinglePrecision();
+    }
+    else if(precision == "HalfPrecision")
+    {
+        return HalfPrecision();
+    }
+
+    return DoublePrecision();
 }
 
 HalfPrecision::HalfPrecision()
