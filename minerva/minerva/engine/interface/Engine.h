@@ -1,7 +1,7 @@
-/*	\file   Engine.h
-	\date   Saturday August 10, 2013
-	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The header file for the Engine class.
+/*    \file   Engine.h
+    \date   Saturday August 10, 2013
+    \author Gregory Diamos <solusstultus@gmail.com>
+    \brief  The header file for the Engine class.
 */
 
 #pragma once
@@ -28,92 +28,94 @@ namespace engine
 {
 
 /*! \brief A generic interface to a classifier with support for an arbitrarily
-	large input data stream.
+    large input data stream.
  */
 class Engine
 {
 public:
-	typedef input::InputDataProducer InputDataProducer;
-	typedef model::Model             Model;
-	typedef results::ResultProcessor ResultProcessor;
-	typedef results::ResultVector    ResultVector;
-	typedef network::NeuralNetwork   NeuralNetwork;
-	typedef matrix::Matrix           Matrix;
+    typedef input::InputDataProducer InputDataProducer;
+    typedef model::Model             Model;
+    typedef results::ResultProcessor ResultProcessor;
+    typedef results::ResultVector    ResultVector;
+    typedef network::NeuralNetwork   NeuralNetwork;
+    typedef matrix::Matrix           Matrix;
 
 public:
-	Engine();
-	virtual ~Engine();
+    Engine();
+    virtual ~Engine();
 
 public:
-	/*! \brief Add model directly, the caller retains takes ownership. */
-	void setModel(Model* model);
-	
-	/*! \brief Set the result handler, the engine takes ownership. */
-	void setResultProcessor(ResultProcessor* processor);
+    /*! \brief Add model directly, the caller retains takes ownership. */
+    void setModel(Model* model);
 
-	/*! \brief Run on a single image/video database file */
-	void runOnDatabaseFile(const std::string& pathToDatabase);
+    /*! \brief Set the result handler, the engine takes ownership. */
+    void setResultProcessor(ResultProcessor* processor);
 
-	/*! \brief Set the output file name */
-	void setOutputFilename(const std::string& filename);
+    /*! \brief Run on a single image/video database file */
+    void runOnDatabaseFile(const std::string& pathToDatabase);
 
-public:
-	/*! \brief Get the result handler, the caller takes ownership */
-	ResultProcessor* extractResultProcessor();
+    /*! \brief Set the output file name */
+    void setOutputFilename(const std::string& filename);
 
 public:
-	/*! \brief Get the model, the caller retains ownership */
-	Model* getModel();
-	
-	/*! \brief Get the result handler, the enginer retains ownership */
-	ResultProcessor* getResultProcessor();
+    /*! \brief Get the result handler, the caller takes ownership */
+    ResultProcessor* extractResultProcessor();
 
 public:
-	/*! \brief Set the maximum samples to be run by the engine */
-	void setMaximumSamplesToRun(size_t samples);
-	/*! \brief Set the epochs (passes over the entire training set) to be run by the engine */
-	void setEpochs(size_t epochs);
-	/*! \brief Set the number of samples to be run in a batch by the engine */
-	void setBatchSize(size_t samples);
+    /*! \brief Get the model, the caller retains ownership */
+    Model* getModel();
+
+    /*! \brief Get the result handler, the enginer retains ownership */
+    ResultProcessor* getResultProcessor();
+
+public:
+    /*! \brief Set the maximum samples to be run by the engine */
+    void setMaximumSamplesToRun(size_t samples);
+    /*! \brief Set the epochs (passes over the entire training set) to be run by the engine */
+    void setEpochs(size_t epochs);
+    /*! \brief Set the number of samples to be run in a batch by the engine */
+    void setBatchSize(size_t samples);
+    /*! \brief Set should standardize input  */
+    void setStandardizeInput(bool standardize);
 
 protected:
-	/*! \brief Called before the engine starts running on a given model */
-	virtual void registerModel();
-	/*! \brief Called after the engine finishes running on a given model */
-	virtual void closeModel();
+    /*! \brief Called before the engine starts running on a given model */
+    virtual void registerModel();
+    /*! \brief Called after the engine finishes running on a given model */
+    virtual void closeModel();
 
-	/*! \brief Determines whether or not the engine must use labeled data */	
-	virtual bool requiresLabeledData() const;
-
-protected:
-	/*! \brief Save the model to persistent storage. */
-	void saveModel();
+    /*! \brief Determines whether or not the engine must use labeled data */
+    virtual bool requiresLabeledData() const;
 
 protected:
-	/*! \brief Extract and merge all networks from the model. */
-	NeuralNetwork* getAggregateNetwork();
+    /*! \brief Save the model to persistent storage. */
+    void saveModel();
 
-	/*! \brief Unpack and restore networks back to the model. */
-	void restoreAggregateNetwork();
-	
+protected:
+    /*! \brief Extract and merge all networks from the model. */
+    NeuralNetwork* getAggregateNetwork();
+
+    /*! \brief Unpack and restore networks back to the model. */
+    void restoreAggregateNetwork();
+
 public:
-	/*! \brief Run the engine on the specified batch. */
-	virtual ResultVector runOnBatch(Matrix&& batchOfSamples, Matrix&& referenceForEachSample) = 0;
-	
-private:
-	Engine(const Engine&) = delete;
-	Engine& operator=(const Engine&) = delete;
+    /*! \brief Run the engine on the specified batch. */
+    virtual ResultVector runOnBatch(Matrix&& batchOfSamples, Matrix&& referenceForEachSample) = 0;
 
 private:
-	void _setupProducer(const std::string& databasePath);
+    Engine(const Engine&) = delete;
+    Engine& operator=(const Engine&) = delete;
+
+private:
+    void _setupProducer(const std::string& databasePath);
 
 protected:
-	Model*                              _model;
-	std::unique_ptr<InputDataProducer>  _dataProducer;
-	std::unique_ptr<ResultProcessor>    _resultProcessor;
+    Model*                              _model;
+    std::unique_ptr<InputDataProducer>  _dataProducer;
+    std::unique_ptr<ResultProcessor>    _resultProcessor;
 
 protected:
-	std::unique_ptr<NeuralNetwork> _aggregateNetwork;
+    std::unique_ptr<NeuralNetwork> _aggregateNetwork;
 
 };
 

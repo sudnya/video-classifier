@@ -90,9 +90,9 @@ void ImageVector::clear()
 ImageVector::Matrix ImageVector::getFeatureMatrix(size_t xTileSize, size_t yTileSize, size_t colors) const
 {
 	size_t images = _images.size();
-	
+
 	Matrix matrix({xTileSize, yTileSize, colors, images});
-	
+
 	size_t offset = 0;
 	for(auto& image : _images)
 	{
@@ -111,28 +111,28 @@ ImageVector::Matrix ImageVector::getFeatureMatrix(size_t xTileSize, size_t yTile
 
 		++offset;
 	}
-	
+
 	return matrix;
 }
 
 ImageVector::Matrix ImageVector::getReference(const util::StringVector& labels) const
 {
 	Matrix reference(matrix::Dimension({size(), labels.size()}));
-	
+
 	util::log("ImageVector") << "Generating reference image:\n";
-	
+
 	for(unsigned int imageId = 0; imageId != size(); ++imageId)
 	{
 		util::log("ImageVector") << " For image" << imageId << " with label '"
 			<< (*this)[imageId].label() << "'\n";
-		
+
 		for(unsigned int outputNeuron = 0;
 			outputNeuron != labels.size(); ++outputNeuron)
 		{
 			util::log("ImageVector") << "  For output neuron" << outputNeuron
 				<< " with label '"
 				<< labels[outputNeuron] << "'\n";
-		
+
 			if((*this)[imageId].label() == labels[outputNeuron])
 			{
 				reference(imageId, outputNeuron) = 10.0;
@@ -143,9 +143,9 @@ ImageVector::Matrix ImageVector::getReference(const util::StringVector& labels) 
 			}
 		}
 	}
-	
+
 	util::log("ImageVector") << " Generated matrix: " << reference.toString() << "\n";
-	
+
 	return reference;
 }
 

@@ -54,7 +54,7 @@ ConvolutionalLayer::ConvolutionalLayer(const matrix::Dimension& inputSize,
 
 ConvolutionalLayer::ConvolutionalLayer(const matrix::Dimension& inputSize,
     const matrix::Dimension& size, const matrix::Dimension& stride, const matrix::Precision& precision)
-: _parameters(new MatrixVector({Matrix(size, precision), Matrix({size[0]}, precision)})), //TODO: fix this bias!
+: _parameters(std::make_unique<MatrixVector>(MatrixVector({Matrix(size, precision), Matrix({size[0]}, precision)}))), //TODO: fix this bias!
   _weights((*_parameters)[0]),
   _bias((*_parameters)[1]),
   _inputSize(std::make_unique<matrix::Dimension>(inputSize)),

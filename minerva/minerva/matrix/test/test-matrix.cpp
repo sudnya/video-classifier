@@ -5,13 +5,14 @@
 */
 
 // Minerva Includes
-#include <minerva/matrix/interface/Matrix.h>
 #include <minerva/matrix/interface/BlasOperations.h>
 #include <minerva/matrix/interface/CopyOperations.h>
 #include <minerva/matrix/interface/MatrixOperations.h>
 #include <minerva/matrix/interface/RandomOperations.h>
+#include <minerva/matrix/interface/ConvolutionalOperations.h>
 #include <minerva/matrix/interface/MatrixTransformations.h>
 #include <minerva/matrix/interface/Operation.h>
+#include <minerva/matrix/interface/Matrix.h>
 
 #include <minerva/util/interface/debug.h>
 
@@ -738,6 +739,66 @@ bool testNormalRandom()
     return passed;
 }
 
+/*
+    Test 1D forward convolution.
+
+    [ 0 ] conv [ 0 ] = [  1 ]
+    [ 1 ]      [ 1 ]   [  4 ]
+    [ 2 ]      [ 2 ]   [  7 ]
+    [ 3 ]              [ 10 ]
+    [ 4 ]
+    [ 5 ]
+
+*/
+bool test1dForwardConvolution()
+{
+    int n = 1;
+    int c = 1;
+    int h = 1;
+    int w = 6;
+
+    Matrix input(w, h, c, n);
+
+    input(0, 0, 0, 0) = 0;
+    input(1, 0, 0, 0) = 1;
+    input(2, 0, 0, 0) = 2;
+    input(3, 0, 0, 0) = 3;
+    input(4, 0, 0, 0) = 4;
+    input(5, 0, 0, 0) = 5;
+
+    int k = 1;
+    int r = 1;
+    int s = 3;
+
+    Matrix filter(s, r, c, k);
+
+    filter(0, 0, 0, 0) = 0;
+    filter(1, 0, 0, 0) = 1;
+    filter(2, 0, 0, 0) = 2;
+
+    Matrix reference(4, 1, 1, 1);
+
+    reference(0, 0, 0, 0) = 1;
+    reference(1, 0, 0, 0) = 4;
+    reference(2, 0, 0, 0) = 7;
+    reference(3, 0, 0, 0) = 10;
+
+    auto computed = forwardConvolution(input, filter, {1, 1});
+
+    if(reference != computed)
+    {
+        std::cout << " Matrix 1D Forward Convolution Test Failed:\n";
+        std::cout << "  result matrix " << computed.toString();
+        std::cout << "  does not match reference matrix " << reference.toString();
+    }
+    else
+    {
+        std::cout << " Matrix 1D Forward Convolution Test Passed\n";
+    }
+
+    return reference == computed;
+}
+
 
 int main(int argc, char** argv)
 {
@@ -763,6 +824,7 @@ int main(int argc, char** argv)
     passed &= testCopyBetweenPrecisions();
     passed &= testUniformRandom();
     passed &= testNormalRandom();
+    passed &= test1dForwardConvolution();
 
     if(not passed)
     {

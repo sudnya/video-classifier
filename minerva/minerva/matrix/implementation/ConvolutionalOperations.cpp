@@ -33,7 +33,7 @@ Dimension getForwardConvolutionOutputSize(const Dimension& inputSize, const Dime
     size_t width   = computeOutputSize(inputSize[1], filterSize[1], filterStride[1]);
     size_t outputs = filterSize[3];
 
-    return Dimension({height, width, outputs});
+    return Dimension({height, width, outputs, inputSize[3]});
 }
 
 CudnnLibrary::cudnnDataType_t getCudnnDataType(const Precision& precision)
@@ -231,12 +231,13 @@ Matrix gatherForwardConvolutionInputOverPrecisions(const Matrix& input, const Ma
     const std::tuple<PrecisionType>& )
 {
     assert(input.precision() == PrecisionType());
+    assert(input.precision() == filter.precision());
 
-    size_t p = computeOutputSize(input.size()[0], filter.size()[0], filterStride[0]);
-    size_t q = computeOutputSize(input.size()[1], filter.size()[1], filterStride[1]);
+    size_t p = computeOutputSize(input.size()[1], filter.size()[1], filterStride[1]);
+    size_t q = computeOutputSize(input.size()[0], filter.size()[0], filterStride[0]);
 
-    size_t r = filter.size()[0];
-    size_t s = filter.size()[1];
+    size_t r = filter.size()[1];
+    size_t s = filter.size()[0];
 
     size_t v = filterStride[0];
     size_t u = filterStride[1];
@@ -244,7 +245,7 @@ Matrix gatherForwardConvolutionInputOverPrecisions(const Matrix& input, const Ma
     size_t rows    = input.size()[2] * filter.size()[0] * filter.size()[1];
     size_t columns = input.size()[3] * p * q;
 
-    Matrix result(rows, columns);
+    Matrix result({rows, columns}, input.precision());
 
     typedef typename PrecisionType::type NativeType;
 
@@ -313,7 +314,7 @@ Matrix gatherForwardConvolutionFilterOverPrecisions(const Matrix& filter,
     size_t filterR = filter.size()[0];
     size_t filterS = filter.size()[1];
 
-    Matrix result(rows, columns);
+    Matrix result({rows, columns}, filter.precision());
 
     typedef typename PrecisionType::type NativeType;
 
@@ -337,7 +338,7 @@ Matrix gatherForwardConvolutionFilterOverPrecisions(const Matrix& filter,
             size_t s = filterTile % filterS;
             size_t r = filterTile / filterS;
 
-            resultView({row, column}) = filterView({filterS - s - 1, filterR - r - 1, c, k});
+            resultView({row, column}) = filterView({filterR - r - 1, filterS - s - 1, c, k});
         }
     });
 
@@ -373,10 +374,10 @@ void scatterForwardConvolutionResultOverPrecisions(Matrix& result, const Matrix&
 {
     assert(input.precision() == PrecisionType());
 
-    size_t miniBatches = input.size()[3];
-    size_t featureMaps = input.size()[2];
-    size_t height      = input.size()[1];
-    size_t width       = input.size()[0];
+    size_t miniBatches = result.size()[3];
+    size_t featureMaps = result.size()[2];
+    size_t height      = result.size()[1];
+    size_t width       = result.size()[0];
 
     typedef typename PrecisionType::type NativeType;
 
@@ -394,7 +395,7 @@ void scatterForwardConvolutionResultOverPrecisions(Matrix& result, const Matrix&
             size_t featureMap = (element / (width * height)) % featureMaps;
             size_t miniBatch  = (element / (width * height * featureMaps));
 
-            resultView({w, h, featureMap, miniBatch}) = inputView({featureMap, h, w, miniBatch});
+            resultView({w, h, featureMap, miniBatch}) = inputView({w, h, featureMap, miniBatch});
         }
     });
 }
@@ -427,7 +428,7 @@ void genericForwardConvolution(Matrix& result, const Matrix& input, const Matrix
     auto reshapedInput  = gatherForwardConvolutionInput( input, filter, stride);
     auto reshapedFilter = gatherForwardConvolutionFilter(filter);
 
-    auto reshapedResult = gemm(reshapedInput, reshapedFilter);
+    auto reshapedResult = gemm(reshapedFilter, reshapedInput);
 
     scatterForwardConvolutionResult(result, reshapedResult);
 }

@@ -1,7 +1,7 @@
-/*	\file   InputTextDataProducer.cpp
-	\date   Saturday August 10, 2014
-	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The source file for the InputTextDataProducer class.
+/*    \file   InputTextDataProducer.cpp
+    \date   Saturday August 10, 2014
+    \author Gregory Diamos <solusstultus@gmail.com>
+    \brief  The source file for the InputTextDataProducer class.
 */
 
 #include <minerva/input/interface/InputTextDataProducer.h>
@@ -18,7 +18,7 @@ namespace input
 
 InputTextDataProducer::InputTextDataProducer(const std::string& imageDatabaseFilename)
 {
-	
+
 }
 
 InputTextDataProducer::~InputTextDataProducer()
@@ -33,24 +33,24 @@ void InputTextDataProducer::initialize()
 
 InputTextDataProducer::InputAndReferencePair InputTextDataProducer::pop()
 {
-	assertM(false, "Not implemented.");
-	
-	return InputAndReferencePair();
+    assertM(false, "Not implemented.");
+
+    return InputAndReferencePair();
 }
 
 bool InputTextDataProducer::empty() const
 {
-	return true;
+    return true;
 }
 
 void InputTextDataProducer::reset()
 {
-	
+
 }
 
 size_t InputTextDataProducer::getUniqueSampleCount() const
 {
-	return 0;
+    return 0;
 }
 
 

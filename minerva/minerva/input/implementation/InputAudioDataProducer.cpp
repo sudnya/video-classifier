@@ -1,7 +1,7 @@
-/*	\file   InputAudioDataProducer.cpp
-	\date   Saturday August 10, 2014
-	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The source file for the InputAudioDataProducer class.
+/*    \file   InputAudioDataProducer.cpp
+    \date   Saturday August 10, 2014
+    \author Gregory Diamos <solusstultus@gmail.com>
+    \brief  The source file for the InputAudioDataProducer class.
 */
 
 #include <minerva/input/interface/InputAudioDataProducer.h>
@@ -18,7 +18,7 @@ namespace input
 
 InputAudioDataProducer::InputAudioDataProducer(const std::string& imageDatabaseFilename)
 {
-	
+
 }
 
 InputAudioDataProducer::~InputAudioDataProducer()
@@ -28,29 +28,29 @@ InputAudioDataProducer::~InputAudioDataProducer()
 
 void InputAudioDataProducer::initialize()
 {
-	
+
 }
 
 InputAudioDataProducer::InputAndReferencePair InputAudioDataProducer::pop()
 {
-	assertM(false, "Not implemented.");
-	
-	return InputAndReferencePair();
+    assertM(false, "Not implemented.");
+
+    return InputAndReferencePair();
 }
 
 bool InputAudioDataProducer::empty() const
 {
-	return true;
+    return true;
 }
 
 void InputAudioDataProducer::reset()
 {
-	
+
 }
 
 size_t InputAudioDataProducer::getUniqueSampleCount() const
 {
-	return 0;
+    return 0;
 }
 
 

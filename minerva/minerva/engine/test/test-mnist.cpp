@@ -24,8 +24,12 @@
 #include <minerva/video/interface/Image.h>
 #include <minerva/video/interface/ImageVector.h>
 
+#include <minerva/matrix/interface/RandomOperations.h>
+#include <minerva/matrix/interface/Matrix.h>
+
 #include <minerva/util/interface/debug.h>
 #include <minerva/util/interface/paths.h>
+#include <minerva/util/interface/memory.h>
 #include <minerva/util/interface/ArgumentParser.h>
 
 // Type definitions
@@ -35,6 +39,7 @@ typedef minerva::network::FeedForwardLayer FeedForwardLayer;
 typedef minerva::network::ConvolutionalLayer ConvolutionalLayer;
 typedef minerva::video::ImageVector ImageVector;
 typedef minerva::matrix::Matrix Matrix;
+typedef minerva::matrix::Dimension Dimension;
 typedef minerva::visualization::NeuronVisualizer NeuronVisualizer;
 typedef minerva::model::Model Model;
 typedef minerva::engine::Engine Engine;
@@ -74,21 +79,20 @@ public:
 
 };
 
-static void addFeatureSelector(Model& model, const Parameters& parameters,
-    std::default_random_engine& engine)
+static void addFeatureSelector(Model& model, const Parameters& parameters)
 {
     NeuralNetwork featureSelector;
 
     // convolutional layer 1
-    featureSelector.addLayer(new ConvolutionalLayer({parameters.xPixels, parameters.yPixels, parameters.colors},
-        {parameters.blockX, parameters.blockY, parameters.colors, parameters.blockOutputs},
-        {parameters.blockStrideX, parameters.blockStrideY}));
+    featureSelector.addLayer(std::make_unique<ConvolutionalLayer>(Dimension(parameters.xPixels, parameters.yPixels, parameters.colors),
+        Dimension(parameters.blockX, parameters.blockY, parameters.colors, parameters.blockOutputs),
+        Dimension(parameters.blockStrideX, parameters.blockStrideY)));
 
-    // pooling layer 2
-    featureSelector.addLayer(new FeedForwardLayer(featureSelector.getOutputCount(), parameters.layerSize));
+    // feed forward layer 2
+    featureSelector.addLayer(std::make_unique<FeedForwardLayer>(featureSelector.getOutputCount(), parameters.layerSize));
 
-    // contrast normalization layer 3
-    featureSelector.addLayer(new FeedForwardLayer(parameters.layerSize, parameters.layerSize));
+    // feed forward layer 3
+    featureSelector.addLayer(std::make_unique<FeedForwardLayer>(parameters.layerSize, parameters.layerSize));
 
     featureSelector.initialize();
     minerva::util::log("TestMNIST")
@@ -98,19 +102,18 @@ static void addFeatureSelector(Model& model, const Parameters& parameters,
     model.setNeuralNetwork("FeatureSelector", featureSelector);
 }
 
-static void addClassifier(Model& model, const Parameters& parameters,
-    std::default_random_engine& engine)
+static void addClassifier(Model& model, const Parameters& parameters)
 {
     NeuralNetwork classifier;
 
     NeuralNetwork& featureSelector = model.getNeuralNetwork("FeatureSelector");
 
     // connect the network
-    classifier.addLayer(new FeedForwardLayer(parameters.layerSize, parameters.layerSize));
-    classifier.addLayer(new FeedForwardLayer(parameters.layerSize, parameters.layerSize));
-    classifier.addLayer(new FeedForwardLayer(parameters.layerSize, 10                  ));
+    classifier.addLayer(std::make_unique<FeedForwardLayer>(parameters.layerSize, parameters.layerSize));
+    classifier.addLayer(std::make_unique<FeedForwardLayer>(parameters.layerSize, parameters.layerSize));
+    classifier.addLayer(std::make_unique<FeedForwardLayer>(parameters.layerSize, 10                  ));
 
-    classifier.initializeRandomly(engine);
+    classifier.initialize();
 
     for(size_t i = 0; i < 10; ++i)
     {
@@ -132,15 +135,14 @@ static void addClassifier(Model& model, const Parameters& parameters,
         << classifier.shapeString() << "\n";
 }
 
-static void createModel(Model& model, const Parameters& parameters,
-    std::default_random_engine& engine)
+static void createModel(Model& model, const Parameters& parameters)
 {
     model.setAttribute("ResolutionX",     parameters.xPixels);
     model.setAttribute("ResolutionY",     parameters.yPixels);
     model.setAttribute("ColorComponents", parameters.colors );
 
-    addFeatureSelector(model, parameters, engine);
-    addClassifier(model, parameters, engine);
+    addFeatureSelector(model, parameters);
+    addClassifier(model, parameters);
 }
 
 static void setSampleStatistics(Model& model, const Parameters& parameters)
@@ -204,17 +206,17 @@ static void runTest(const Parameters& parameters)
 {
     if(parameters.seed)
     {
-        matrix::srand(std::time(0));
+        minerva::matrix::srand(std::time(0));
     }
     else
     {
-        matrix::srand(377);
+        minerva::matrix::srand(377);
     }
 
     // Create a deep model for first layer classification
     Model model;
 
-    createModel(model, parameters, generator);
+    createModel(model, parameters);
 
     setSampleStatistics(model, parameters);
 
@@ -272,7 +274,7 @@ int main(int argc, char** argv)
         "The number of X pixels to consider from the input image.");
     parser.parse("-y", "--y-pixels", parameters.yPixels, 32,
         "The number of Y pixels to consider from the input image.");
-    parser.parse("-c", "--colors", parameters.colors, 1,
+    parser.parse("-c", "--colors", parameters.colors, 3,
         "The number of colors to consider from the input image.");
 
     parser.parse("-l", "--layer-size", parameters.layerSize, 32,
