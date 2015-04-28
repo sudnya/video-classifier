@@ -799,6 +799,70 @@ bool test1dForwardConvolution()
     return reference == computed;
 }
 
+/*
+    Test 2D forward convolution.
+
+   [ [  0  4  8 12 ] ] conv [ [ 0  3 ] ] = [ 5*0 + 4*1 + 3*2 + 2*4 + 1*5 + 0*6 = 23 ] + [ 11*16 + 10*17 + 9*18 + 8*20 + 7*21 + 6*22 ] = [  970 ]
+   [ [  1  5  9 13 ] ]      [ [ 1  4 ] ]   [ 5*1 + 4*2 + 3*3 + 2*5 + 1*6 + 0*7 = 38 ]   [ 11*17 + 10*18 + 9*19 + 8*21 + 7*22 + 6*23 ] = [ 1036 ]
+   [ [  2  6 10 14 ] ]      [ [ 2  5 ] ]
+   [ [  3  7 11 15 ] ]      [          ]
+   [                 ]      [ [ 6  9 ] ]
+   [ [ 16 20 24 28 ] ]      [ [ 7 10 ] ]
+   [ [ 17 21 25 29 ] ]      [ [ 8 11 ] ]
+   [ [ 18 22 26 30 ] ]
+   [ [ 19 23 27 31 ] ]
+
+*/
+bool test2dForwardConvolution()
+{
+    int n = 1;
+    int c = 2;
+    int h = 4;
+    int w = 4;
+
+    Matrix input(w, h, c, n);
+
+    for(int i = 0; i < input.elements(); ++i)
+    {
+        input(i) = i;
+    }
+
+    int k = 1;
+    int r = 2;
+    int s = 3;
+
+    Matrix filter(s, r, c, k);
+
+    for(int i = 0; i < filter.elements(); ++i)
+    {
+        filter(i) = i;
+    }
+
+    Matrix reference(2, 3, 1, 1);
+
+    reference(0, 0, 0, 0) = 970;
+    reference(1, 0, 0, 0) = 1036;
+    reference(0, 1, 0, 0) = 1234;
+    reference(1, 1, 0, 0) = 1300;
+    reference(0, 2, 0, 0) = 1498;
+    reference(1, 2, 0, 0) = 1564;
+
+    auto computed = forwardConvolution(input, filter, {1, 1});
+
+    if(reference != computed)
+    {
+        std::cout << " Matrix 2D Forward Convolution Test Failed:\n";
+        std::cout << "  result matrix " << computed.toString();
+        std::cout << "  does not match reference matrix " << reference.toString();
+    }
+    else
+    {
+        std::cout << " Matrix 2D Forward Convolution Test Passed\n";
+    }
+
+    return reference == computed;
+}
+
 
 int main(int argc, char** argv)
 {
@@ -824,6 +888,7 @@ int main(int argc, char** argv)
     passed &= testCopyBetweenPrecisions();
     passed &= testUniformRandom();
     passed &= testNormalRandom();
+    passed &= test2dForwardConvolution();
     passed &= test1dForwardConvolution();
 
     if(not passed)

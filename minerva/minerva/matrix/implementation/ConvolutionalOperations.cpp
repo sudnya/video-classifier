@@ -267,9 +267,9 @@ Matrix gatherForwardConvolutionInputOverPrecisions(const Matrix& input, const Ma
             size_t tileRow     = tileOffset % s;
             size_t tileColumn  = tileOffset / s;
 
-            size_t inputTile   = column % (p * q);
-            size_t inputRow    = ((inputTile / p) * v + tileRow);
-            size_t inputColumn = ((inputTile % p) * u + tileColumn);
+            size_t inputTileOffset = column % (p * q);
+            size_t inputRow        = ((inputTileOffset % q) * v + tileRow);
+            size_t inputColumn     = ((inputTileOffset / q) * u + tileColumn);
 
             resultView({row, column}) = inputView({inputRow, inputColumn, featureMap, miniBatch});
         }
@@ -335,8 +335,8 @@ Matrix gatherForwardConvolutionFilterOverPrecisions(const Matrix& filter,
             size_t c = column / (filterR * filterS);
             size_t filterTile = column % (filterR * filterS);
 
-            size_t s = filterTile % filterS;
-            size_t r = filterTile / filterS;
+            size_t s = filterTile / filterR;
+            size_t r = filterTile % filterR;
 
             resultView({row, column}) = filterView({filterR - r - 1, filterS - s - 1, c, k});
         }
