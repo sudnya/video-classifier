@@ -863,6 +863,145 @@ bool test2dForwardConvolution()
     return reference == computed;
 }
 
+/*
+    Test 2D strided forward convolution.
+
+
+   [ [  0  5 10 ] ]      [ [ 0 ] ] = [ [ [  0  10 ] ] ]
+   [ [  1  6 11 ] ] conv [ [ 1 ] ]   [ [ [  2  12 ] ] ]
+   [ [  2  7 12 ] ]      [       ]   [ [            ] ]
+   [ [  3  8 13 ] ]      [ [ 2 ] ]   [ [ [  2  52 ] ] ]
+   [ [  4  9 14 ] ]      [ [ 3 ] ]   [ [ [ 12  62 ] ] ]
+   [              ]                  [                ]
+   [ [ 15 20 25 ] ]                  [ [ [ 15  25 ] ] ]
+   [ [ 16 21 26 ] ]                  [ [ [ 17  27 ] ] ]
+   [ [ 17 22 27 ] ]                  [ [            ] ]
+   [ [ 18 23 28 ] ]                  [ [ [ 77 127 ] ] ]
+   [ [ 19 24 29 ] ]                  [ [ [ 87 137 ] ] ]
+
+*/
+bool test2dStridedForwardConvolution()
+{
+    int n = 2;
+    int c = 1;
+    int h = 3;
+    int w = 5;
+
+    Matrix input(w, h, c, n);
+
+    for(int i = 0; i < input.elements(); ++i)
+    {
+        input(i) = i;
+    }
+
+    int k = 2;
+    int r = 1;
+    int s = 2;
+
+    Matrix filter(s, r, c, k);
+
+    for(int i = 0; i < filter.elements(); ++i)
+    {
+        filter(i) = i;
+    }
+
+    Matrix reference(2, 2, k, n);
+
+    reference(0, 0, 0, 0) = 0;
+    reference(1, 0, 0, 0) = 2;
+    reference(0, 1, 0, 0) = 10;
+    reference(1, 1, 0, 0) = 12;
+
+    reference(0, 0, 1, 0) = 2;
+    reference(1, 0, 1, 0) = 12;
+    reference(0, 1, 1, 0) = 52;
+    reference(1, 1, 1, 0) = 62;
+
+    reference(0, 0, 0, 1) = 15;
+    reference(1, 0, 0, 1) = 17;
+    reference(0, 1, 0, 1) = 25;
+    reference(1, 1, 0, 1) = 27;
+
+    reference(0, 0, 1, 1) = 77;
+    reference(1, 0, 1, 1) = 87;
+    reference(0, 1, 1, 1) = 127;
+    reference(1, 1, 1, 1) = 137;
+
+    auto computed = forwardConvolution(input, filter, {2, 2});
+
+    if(reference != computed)
+    {
+        std::cout << " Matrix 2D Strided Forward Convolution Test Failed:\n";
+        std::cout << "  result matrix " << computed.toString();
+        std::cout << "  does not match reference matrix " << reference.toString();
+    }
+    else
+    {
+        std::cout << " Matrix 2D Strided Forward Convolution Test Passed\n";
+    }
+
+    return reference == computed;
+}
+
+/*
+    Test 1D backward convolution.
+
+    [ 0 ] conv-back [ 0 ] = [ 0 ]
+    [ 1 ]           [ 1 ]   [ 2 ]
+    [ 2 ]           [ 2 ]   [ 5 ]
+    [ 3 ]                   [ 8 ]
+                            [ 3 ]
+                            [ 0 ]
+*/
+bool test1dBackwardConvolution()
+{
+    int n = 1;
+    int c = 1;
+    int h = 1;
+    int w = 4;
+
+    Matrix deltas(w, h, c, n);
+
+    input(0, 0, 0, 0) = 0;
+    input(1, 0, 0, 0) = 1;
+    input(2, 0, 0, 0) = 2;
+    input(3, 0, 0, 0) = 3;
+
+    int k = 1;
+    int r = 1;
+    int s = 3;
+
+    Matrix filter(s, r, c, k);
+
+    filter(0, 0, 0, 0) = 0;
+    filter(1, 0, 0, 0) = 1;
+    filter(2, 0, 0, 0) = 2;
+
+    Matrix reference(6, 1, 1, 1);
+
+    reference(0, 0, 0, 0) = 0;
+    reference(1, 0, 0, 0) = 2;
+    reference(2, 0, 0, 0) = 5;
+    reference(3, 0, 0, 0) = 8;
+    reference(4, 0, 0, 0) = 3;
+    reference(5, 0, 0, 0) = 0;
+
+    auto computed = reverseConvolutionDeltas(filter, {1, 1}, deltas);
+
+    if(reference != computed)
+    {
+        std::cout << " Matrix 1D Backward Convolution Test Failed:\n";
+        std::cout << "  result matrix " << computed.toString();
+        std::cout << "  does not match reference matrix " << reference.toString();
+    }
+    else
+    {
+        std::cout << " Matrix 1D Backward Convolution Test Passed\n";
+    }
+
+    return reference == computed;
+}
+
 
 int main(int argc, char** argv)
 {
@@ -888,8 +1027,11 @@ int main(int argc, char** argv)
     passed &= testCopyBetweenPrecisions();
     passed &= testUniformRandom();
     passed &= testNormalRandom();
-    passed &= test2dForwardConvolution();
     passed &= test1dForwardConvolution();
+    passed &= test2dForwardConvolution();
+    passed &= test2dStridedForwardConvolution();
+
+    passed &= test1dBackwardConvolution();
 
     if(not passed)
     {
