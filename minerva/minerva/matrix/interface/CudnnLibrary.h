@@ -161,6 +161,17 @@ public:
                                         const cudnnTensorDescriptor_t      destDesc,
                                         void*                              destData);
 
+public:
+    static void cudnnConvolutionBackwardData(const void*                         alpha,
+                                             const cudnnFilterDescriptor_t       filterDesc,
+                                             const void                         *filterData,
+                                             const cudnnTensorDescriptor_t       diffDesc,
+                                             const void*                         diffData,
+                                             const cudnnConvolutionDescriptor_t  convDesc,
+                                             const void*                         beta,
+                                             const cudnnTensorDescriptor_t       gradDesc,
+                                             void*                               gradData);
+
 
 
 
@@ -261,6 +272,17 @@ private:
                                                  const void*                         beta,
                                                  const cudnnTensorDescriptor_t       destDesc,
                                                  void*                               destData);
+
+        cudnnStatus_t (*cudnnConvolutionBackwardData)(cudnnHandle_t                  handle,
+                                                 const void*                         alpha,
+                                                 const cudnnFilterDescriptor_t       filterDesc,
+                                                 const void                         *filterData,
+                                                 const cudnnTensorDescriptor_t       diffDesc,
+                                                 const void*                         diffData,
+                                                 const cudnnConvolutionDescriptor_t  convDesc,
+                                                 const void*                         beta,
+                                                 const cudnnTensorDescriptor_t       gradDesc,
+                                                 void*                               gradData);
 
     public:
         /*! \brief The constructor zeros out all of the pointers */

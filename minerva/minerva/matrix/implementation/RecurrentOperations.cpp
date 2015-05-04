@@ -34,14 +34,7 @@ void forwardRecurrentActivations(Matrix& input, const Matrix& weights, const Rec
         currentTimestep = reversed ? timesteps - timestep - 1 : timestep;
 
         auto nextInput = slice(input, {0, 0, currentTimestep}, {layerSize, miniBatchSize, currentTimestep + 1});
-        /*
-        wt    Current input
-        [1 2 3]   [1 2]
-        [4 6 7] * [2 1] => O/P (3,2)
-        [4 5 1]   [4 5]
 
-        O/P + nextInput
-        */
         gemm(
             reshape(nextInput,    {layerSize, miniBatchSize}),        1.0,
             weights,                                           false, 1.0,
@@ -110,10 +103,14 @@ void reverseRecurrentGradients(Matrix& gradients, const Matrix& activations, con
     size_t miniBatchSize = activations.size()[1];
     size_t layerSize     = activations.size()[0];
 
+    size_t deltaStart = reversed ?                0 : 1;
+    size_t deltaEnd   = reversed ? maxTimesteps - 1 : maxTimesteps;
 
-    auto currentDeltas = slice(deltas, {0, 0, 1}, {layerSize, miniBatchSize, maxTimesteps});
+    size_t activationStart = reversed ?            1 : 0;
+    size_t activationEnd   = reversed ? maxTimesteps : maxTimesteps - 1;
 
-    auto currentActivations = slice(activations, {0, 0, 0}, {layerSize, miniBatchSize, maxTimesteps-1});
+    auto currentDeltas      = slice(deltas,      {0, 0, deltaStart},      {layerSize, miniBatchSize, deltaEnd     });
+    auto currentActivations = slice(activations, {0, 0, activationStart}, {layerSize, miniBatchSize, activationEnd});
 
     gemm(
         gradients, 0.0,
@@ -130,7 +127,6 @@ Matrix reverseRecurrentGradients(const Matrix& inputs, const Matrix& deltas)
 
     return result;
 }
-
 
 }
 }
