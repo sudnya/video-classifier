@@ -249,6 +249,28 @@ void CudnnLibrary::cudnnConvolutionForward(const void*                        al
     }
 }
 
+void CudnnLibrary::cudnnConvolutionBackwardData(const void*        alpha,
+                                const cudnnFilterDescriptor_t      filterDesc,
+                                const void*                        filterData,
+                                const cudnnTensorDescriptor_t      diffDesc,
+                                const void*                        diffData,
+                                const cudnnConvolutionDescriptor_t convDesc,
+                                const void*                        beta,
+                                const cudnnTensorDescriptor_t      gradDesc,
+                                void*                              gradData)
+{
+    _check();
+
+    auto status = (*_interface.cudnnConvolutionBackwardData)(_interface.getHandle(),
+        alpha, filterDesc, filterData, diffDesc, diffData, convDesc,
+        beta, gradDesc, gradData);
+
+    if(status != CUDNN_STATUS_SUCCESS)
+    {
+        throw std::runtime_error("cudnnConvolutionBackwardData failed: " + _interface.getErrorString(status));
+    }
+}
+
 void CudnnLibrary::_check()
 {
     load();
@@ -330,6 +352,8 @@ void CudnnLibrary::Interface::load()
         DynLink(cudnnGetConvolutionForwardAlgorithm);
         DynLink(cudnnGetConvolutionForwardWorkspaceSize);
         DynLink(cudnnConvolutionForward);
+
+        DynLink(cudnnConvolutionBackwardData);
 
         #undef DynLink
 

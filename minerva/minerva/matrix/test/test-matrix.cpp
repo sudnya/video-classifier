@@ -962,10 +962,10 @@ bool test1dBackwardConvolution()
 
     Matrix deltas(w, h, c, n);
 
-    input(0, 0, 0, 0) = 0;
-    input(1, 0, 0, 0) = 1;
-    input(2, 0, 0, 0) = 2;
-    input(3, 0, 0, 0) = 3;
+    deltas(0, 0, 0, 0) = 0;
+    deltas(1, 0, 0, 0) = 1;
+    deltas(2, 0, 0, 0) = 2;
+    deltas(3, 0, 0, 0) = 3;
 
     int k = 1;
     int r = 1;
@@ -1002,6 +1002,83 @@ bool test1dBackwardConvolution()
     return reference == computed;
 }
 
+/*
+    Test 2D backward convolution.
+
+    [ 0 3 ] conv-back [ 0 2 4 ] = [  0 15  9 3 ]
+    [ 1 4 ]           [ 1 3 5 ]   [  5 35 19 4 ]
+    [ 2 5 ]                       [ 14 49 25 5 ]
+                                  [  8 24 10 0 ]
+
+
+*/
+bool test2dBackwardConvolution()
+{
+    int n = 1;
+    int c = 1;
+    int h = 2;
+    int w = 3;
+
+    Matrix deltas(w, h, c, n);
+
+    deltas(0, 0, 0, 0) = 0;
+    deltas(1, 0, 0, 0) = 1;
+    deltas(2, 0, 0, 0) = 2;
+    deltas(0, 1, 0, 0) = 3;
+    deltas(1, 1, 0, 0) = 4;
+    deltas(2, 1, 0, 0) = 5;
+
+    int k = 1;
+    int r = 3;
+    int s = 2;
+
+    Matrix filter(s, r, c, k);
+
+    filter(0, 0, 0, 0) = 0;
+    filter(1, 0, 0, 0) = 1;
+    filter(0, 1, 0, 0) = 2;
+    filter(1, 1, 0, 0) = 3;
+    filter(0, 2, 0, 0) = 4;
+    filter(1, 2, 0, 0) = 5;
+
+    Matrix reference(4, 4, 1, 1);
+
+    reference(0, 0, 0, 0) = 0;
+    reference(1, 0, 0, 0) = 5;
+    reference(2, 0, 0, 0) = 14;
+    reference(3, 0, 0, 0) = 8;
+
+    reference(0, 1, 0, 0) = 15;
+    reference(1, 1, 0, 0) = 35;
+    reference(2, 1, 0, 0) = 49;
+    reference(3, 1, 0, 0) = 24;
+
+    reference(0, 2, 0, 0) = 9;
+    reference(1, 2, 0, 0) = 19;
+    reference(2, 2, 0, 0) = 25;
+    reference(3, 2, 0, 0) = 10;
+
+    reference(0, 3, 0, 0) = 3;
+    reference(1, 3, 0, 0) = 4;
+    reference(2, 3, 0, 0) = 5;
+    reference(3, 3, 0, 0) = 0;
+
+    auto computed = reverseConvolutionDeltas(filter, {1, 1}, deltas);
+
+    if(reference != computed)
+    {
+        std::cout << " Matrix 2D Backward Convolution Test Failed:\n";
+        std::cout << "  result matrix " << computed.toString();
+        std::cout << "  does not match reference matrix " << reference.toString();
+    }
+    else
+    {
+        std::cout << " Matrix 2D Backward Convolution Test Passed\n";
+    }
+
+    return reference == computed;
+}
+
 
 int main(int argc, char** argv)
 {
@@ -1030,8 +1107,8 @@ int main(int argc, char** argv)
     passed &= test1dForwardConvolution();
     passed &= test2dForwardConvolution();
     passed &= test2dStridedForwardConvolution();
-
     passed &= test1dBackwardConvolution();
+    passed &= test2dBackwardConvolution();
 
     if(not passed)
     {

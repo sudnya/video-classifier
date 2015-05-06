@@ -228,7 +228,7 @@ Matrix ConvolutionalLayer::runReverse(MatrixVector& gradients,
     gradients.push_back(std::move(biasGradient));
 
     // compute deltas for previous layer
-    auto deltasPropagatedReverse = reverseConvolutionDeltas(_weights, deltas);
+    auto deltasPropagatedReverse = reverseConvolutionDeltas(_weights, *_filterStride, deltas);
 
     Matrix previousLayerDeltas;
 

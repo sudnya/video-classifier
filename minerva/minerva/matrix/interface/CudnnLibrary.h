@@ -164,16 +164,13 @@ public:
 public:
     static void cudnnConvolutionBackwardData(const void*                         alpha,
                                              const cudnnFilterDescriptor_t       filterDesc,
-                                             const void                         *filterData,
+                                             const void*                         filterData,
                                              const cudnnTensorDescriptor_t       diffDesc,
                                              const void*                         diffData,
                                              const cudnnConvolutionDescriptor_t  convDesc,
                                              const void*                         beta,
                                              const cudnnTensorDescriptor_t       gradDesc,
                                              void*                               gradData);
-
-
-
 
 private:
     static void _check();

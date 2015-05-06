@@ -549,17 +549,17 @@ Matrix gatherReverseConvolutionDeltasInput(const Matrix& deltas, const Matrix& f
             size_t inputRow        = ((inputTileOffset % q) * v + tileRow);
             size_t inputColumn     = ((inputTileOffset / q) * u + tileColumn);
 
-            if(inputRow < padWidth || (inputRow > (padWidth + w)))
+            if(inputRow < padWidth || (inputRow >= (padWidth + w)))
             {
-                resultView({row, columns}) = 0.0;
+                resultView({row, column}) = 0.0;
                 continue;
             }
 
             inputRow -= padWidth;
 
-            if(inputColumn < padHeight || (inputColumn > (padHeight + h)))
+            if(inputColumn < padHeight || (inputColumn >= (padHeight + h)))
             {
-                resultView({row, columns}) = 0.0;
+                resultView({row, column}) = 0.0;
                 continue;
             }
 
@@ -739,20 +739,20 @@ void reverseConvolutionDeltas(Matrix& resultDeltas, const Matrix& filter, const 
 namespace
 {
 
-Dimension getReverseConvolutionDeltasSize(const Dimension& filterSize, const Dimension& deltaSize)
+Dimension getReverseConvolutionDeltasSize(const Dimension& filterSize, const Dimension& filterStride, const Dimension& deltaSize)
 {
-    Dimension result;
+    size_t width   = computeOutputSize(deltaSize[0], filterSize[0], filterStride[0], filterSize[0] - 1);
+    size_t height  = computeOutputSize(deltaSize[1], filterSize[1], filterStride[1], filterSize[1] - 1);
+    size_t outputs = filterSize[3];
 
-    assert(false  && "not implemented");
-
-    return result;
+    return Dimension({width, height, outputs, deltaSize[3]});
 }
 
 }
 
 Matrix reverseConvolutionDeltas(const Matrix& filter, const Dimension& stride, const Matrix& deltas)
 {
-    Matrix result(getReverseConvolutionDeltasSize(filter.size(), deltas.size()));
+    Matrix result(getReverseConvolutionDeltasSize(filter.size(), stride, deltas.size()));
 
     reverseConvolutionDeltas(result, filter, stride, deltas);
 
