@@ -243,24 +243,34 @@ const matrix::Precision& NeuralNetwork::precision() const
     return front()->precision();
 }
 
-size_t NeuralNetwork::getInputCount() const
+NeuralNetwork::Dimension NeuralNetwork::getInputSize() const
 {
     if(empty())
     {
-        return 0;
+        return Dimension();
     }
 
-    return front()->getInputCount();
+    return front()->getInputSize();
+}
+
+NeuralNetwork::Dimension NeuralNetwork::getOutputSize() const
+{
+    if(empty())
+    {
+        return Dimension();
+    }
+
+    return back()->getOutputSize();
+}
+
+size_t NeuralNetwork::getInputCount() const
+{
+    return getInputSize().product();
 }
 
 size_t NeuralNetwork::getOutputCount() const
 {
-    if(empty())
-    {
-        return 0;
-    }
-
-    return back()->getOutputCount();
+    return getOutputSize().product();
 }
 
 size_t NeuralNetwork::totalNeurons() const

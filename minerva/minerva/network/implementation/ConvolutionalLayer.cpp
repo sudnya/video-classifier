@@ -31,11 +31,12 @@ namespace minerva
 namespace network
 {
 
-typedef matrix::Matrix Matrix;
+typedef matrix::Matrix       Matrix;
+typedef matrix::Dimension    Dimension;
 typedef matrix::MatrixVector MatrixVector;
 
 ConvolutionalLayer::ConvolutionalLayer()
-: ConvolutionalLayer({}, {}, {}, matrix::SinglePrecision())
+: ConvolutionalLayer({}, {}, {}, {}, matrix::SinglePrecision())
 {
 
 }
@@ -46,19 +47,32 @@ ConvolutionalLayer::~ConvolutionalLayer()
 }
 
 ConvolutionalLayer::ConvolutionalLayer(const matrix::Dimension& inputSize,
-    const matrix::Dimension& size, const matrix::Dimension& stride)
-: ConvolutionalLayer(inputSize, size, stride, matrix::Precision::getDefaultPrecision())
+    const matrix::Dimension& size, const matrix::Dimension& stride, const matrix::Dimension& padding)
+: ConvolutionalLayer(inputSize, size, stride, padding, matrix::Precision::getDefaultPrecision())
 {
 
 }
 
+static Dimension computeBiasSize(const matrix::Dimension& inputSize,
+    const matrix::Dimension& size, const matrix::Dimension& stride, const matrix::Dimension& padding)
+{
+    auto outputSize = forwardConvolutionOutputSize(inputSize, size, stride, padding);
+
+    outputSize.pop_back(1);
+
+    return outputSize;
+}
+
 ConvolutionalLayer::ConvolutionalLayer(const matrix::Dimension& inputSize,
-    const matrix::Dimension& size, const matrix::Dimension& stride, const matrix::Precision& precision)
-: _parameters(std::make_unique<MatrixVector>(MatrixVector({Matrix(size, precision), Matrix({size[0]}, precision)}))), //TODO: fix this bias!
+    const matrix::Dimension& size, const matrix::Dimension& stride, const matrix::Dimension& padding, const matrix::Precision& precision)
+: _parameters(std::make_unique<MatrixVector>(
+    MatrixVector({Matrix(size, precision),
+    Matrix(computeBiasSize(inputSize, size, stride, padding), precision)}))),
   _weights((*_parameters)[0]),
   _bias((*_parameters)[1]),
   _inputSize(std::make_unique<matrix::Dimension>(inputSize)),
-  _filterStride(std::make_unique<matrix::Dimension>(stride))
+  _filterStride(std::make_unique<matrix::Dimension>(stride)),
+  _inputPadding(std::make_unique<matrix::Dimension>(padding))
 {
 
 }
@@ -68,7 +82,8 @@ ConvolutionalLayer::ConvolutionalLayer(const ConvolutionalLayer& l)
   _weights((*_parameters)[0]),
   _bias((*_parameters)[1]),
   _inputSize(std::make_unique<matrix::Dimension>(*l._inputSize)),
-  _filterStride(std::make_unique<matrix::Dimension>(*l._filterStride))
+  _filterStride(std::make_unique<matrix::Dimension>(*l._filterStride)),
+  _inputPadding(std::make_unique<matrix::Dimension>(*l._inputPadding))
 {
 
 }
@@ -83,6 +98,7 @@ ConvolutionalLayer& ConvolutionalLayer::operator=(const ConvolutionalLayer& l)
     _parameters   = std::move(std::make_unique<MatrixVector>(*l._parameters));
     _inputSize    = std::move(std::make_unique<matrix::Dimension>(*l._inputSize));
     _filterStride = std::move(std::make_unique<matrix::Dimension>(*l._filterStride));
+    _inputPadding = std::move(std::make_unique<matrix::Dimension>(*l._inputPadding));
 
     return *this;
 }
@@ -120,7 +136,7 @@ Matrix ConvolutionalLayer::runForward(const Matrix& m) const
         util::log("ConvolutionalLayer::Detail") << "  bias:  " << _bias.debugString();
     }
 
-    auto unbiasedOutput = matrix::forwardConvolution(m, _weights, *_filterStride);
+    auto unbiasedOutput = matrix::forwardConvolution(m, _weights, *_filterStride, *_inputPadding);
 
     auto output = broadcast(unbiasedOutput, _bias, {}, matrix::Add());
 
@@ -189,7 +205,7 @@ Matrix ConvolutionalLayer::runReverse(MatrixVector& gradients,
     }
 
     // compute gradient for the weights
-    auto weightGradient = reverseConvolutionGradients(_weights, inputActivations, deltas);
+    auto weightGradient = reverseConvolutionGradients(inputActivations, deltas, *_filterStride, *_inputPadding);
 
     // add in the weight cost function term
     if(getWeightCostFunction() != nullptr)
@@ -210,8 +226,8 @@ Matrix ConvolutionalLayer::runReverse(MatrixVector& gradients,
     }
 
     // compute gradient for the bias
-    auto samples      = deltas.size()[1];
-    auto biasGradient = reduce(apply(deltas, matrix::Divide(samples)), {1}, matrix::Add());
+    auto samples      = deltas.size()[3];
+    auto biasGradient = reduce(apply(deltas, matrix::Divide(samples)), {3}, matrix::Add());
 
     if(util::isLogEnabled("ConvolutionalLayer"))
     {
@@ -228,7 +244,7 @@ Matrix ConvolutionalLayer::runReverse(MatrixVector& gradients,
     gradients.push_back(std::move(biasGradient));
 
     // compute deltas for previous layer
-    auto deltasPropagatedReverse = reverseConvolutionDeltas(_weights, *_filterStride, deltas);
+    auto deltasPropagatedReverse = reverseConvolutionDeltas(_weights, *_filterStride, deltas, *_inputPadding);
 
     Matrix previousLayerDeltas;
 
@@ -276,14 +292,24 @@ double ConvolutionalLayer::computeWeightCost() const
     return getWeightCostFunction()->getCost(_weights);
 }
 
+Dimension ConvolutionalLayer::getInputSize() const
+{
+    return *_inputSize;
+}
+
+Dimension ConvolutionalLayer::getOutputSize() const
+{
+    return forwardConvolutionOutputSize(*_inputSize, _weights.size(), *_filterStride, *_inputPadding);
+}
+
 size_t ConvolutionalLayer::getInputCount() const
 {
-    return _weights.size()[0] * _weights.size()[1] * _weights.size()[2];
+    return getInputSize().product();
 }
 
 size_t ConvolutionalLayer::getOutputCount() const
 {
-    return _weights.size()[3];
+    return getOutputSize().product();
 }
 
 size_t ConvolutionalLayer::totalNeurons() const
@@ -320,7 +346,7 @@ std::unique_ptr<Layer> ConvolutionalLayer::mirror() const
 {
     return std::make_unique<ConvolutionalLayer>(*_inputSize,
         matrix::Dimension(_weights.size()[0], _weights.size()[1], _weights.size()[3], _weights.size()[2]),
-        *_filterStride, precision());
+        *_filterStride, *_inputPadding, precision());
 }
 
 std::string ConvolutionalLayer::getTypeName() const

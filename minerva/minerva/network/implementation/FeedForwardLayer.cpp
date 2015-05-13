@@ -31,8 +31,9 @@ namespace minerva
 namespace network
 {
 
-typedef matrix::Matrix Matrix;
+typedef matrix::Matrix       Matrix;
 typedef matrix::MatrixVector MatrixVector;
+typedef matrix::Dimension    Dimension;
 
 FeedForwardLayer::FeedForwardLayer()
 : FeedForwardLayer(0, 0, matrix::SinglePrecision())
@@ -264,6 +265,16 @@ const matrix::Precision& FeedForwardLayer::precision() const
 double FeedForwardLayer::computeWeightCost() const
 {
     return getWeightCostFunction()->getCost(_weights);
+}
+
+Dimension FeedForwardLayer::getInputSize() const
+{
+    return {getInputCount(), 1};
+}
+
+Dimension FeedForwardLayer::getOutputSize() const
+{
+    return {getOutputCount(), 1};
 }
 
 size_t FeedForwardLayer::getInputCount() const

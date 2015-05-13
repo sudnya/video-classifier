@@ -23,9 +23,9 @@ public:
 
 public:
     ConvolutionalLayer(const matrix::Dimension& inputSize, const matrix::Dimension& filterSize,
-        const matrix::Dimension& filterStride);
+        const matrix::Dimension& filterStride, const matrix::Dimension& inputPadding);
     ConvolutionalLayer(const matrix::Dimension& inputSize, const matrix::Dimension& filterSize,
-        const matrix::Dimension& filterStride, const matrix::Precision&);
+        const matrix::Dimension& filterStride, const matrix::Dimension& inputPadding, const matrix::Precision&);
 
 public:
     ConvolutionalLayer(const ConvolutionalLayer& );
@@ -50,6 +50,10 @@ public:
 
 public:
     virtual double computeWeightCost() const;
+
+public:
+    virtual Dimension getInputSize()  const;
+    virtual Dimension getOutputSize() const;
 
 public:
     virtual size_t getInputCount()  const;
@@ -83,6 +87,7 @@ private:
 private:
     std::unique_ptr<matrix::Dimension> _inputSize;
     std::unique_ptr<matrix::Dimension> _filterStride;
+    std::unique_ptr<matrix::Dimension> _inputPadding;
 
 };
 }

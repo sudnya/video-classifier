@@ -410,6 +410,63 @@ bool testBroadcast()
 }
 
 /*
+    Test 4D reduce
+
+  [ [ [ 1  2 ] ] ] = [ [  8 12 ] ]
+  [ [ [ 3  4 ] ] ]   [ [ 11 15 ] ]
+  [ [ [ 5  6 ] ] ]   [ [ 14 18 ] ]
+  [              ]
+  [ [ [ 7 10 ] ] ]
+  [ [ [ 8 11 ] ] ]
+  [ [ [ 9 12 ] ] ]
+
+
+
+*/
+bool test4dReduce()
+{
+    Matrix a(3, 2, 1, 2);
+
+    Matrix c(3, 2, 1);
+
+    a(0, 0, 0, 0) = 1;
+    a(0, 1, 0, 0) = 2;
+    a(1, 0, 0, 0) = 3;
+    a(1, 1, 0, 0) = 4;
+    a(2, 0, 0, 0) = 5;
+    a(2, 1, 0, 0) = 6;
+
+    a(0, 0, 0, 1) = 7;
+    a(0, 1, 0, 1) = 10;
+    a(1, 0, 0, 1) = 8;
+    a(1, 1, 0, 1) = 11;
+    a(2, 0, 0, 1) = 9;
+    a(2, 1, 0, 1) = 12;
+
+    c(0, 0, 0, 0) = 8;
+    c(0, 1, 0, 0) = 12;
+    c(1, 0, 0, 0) = 11;
+    c(1, 1, 0, 0) = 15;
+    c(2, 0, 0, 0) = 14;
+    c(2, 1, 0, 0) = 18;
+
+    Matrix computed = reduce(a, {3}, minerva::matrix::Add());
+
+    if(computed != c)
+    {
+        std::cout << " Matrix 4D Reduction 1st 3 Dimension Test Failed:\n";
+        std::cout << "  result matrix " << computed.toString();
+        std::cout << "  does not match reference matrix " << c.toString();
+    }
+    else
+    {
+        std::cout << " Matrix 4D Reduction 1st 3 Dimension Test Passed\n";
+    }
+
+    return computed == c;
+}
+
+/*
     Broadcast vector over 0th matrix dimension
 
     [ 1 3 5 7]                                  [  8 5  9 10]
@@ -783,7 +840,7 @@ bool test1dForwardConvolution()
     reference(2, 0, 0, 0) = 7;
     reference(3, 0, 0, 0) = 10;
 
-    auto computed = forwardConvolution(input, filter, {1, 1});
+    auto computed = forwardConvolution(input, filter, {1, 1}, {0, 0});
 
     if(reference != computed)
     {
@@ -847,7 +904,7 @@ bool test2dForwardConvolution()
     reference(0, 2, 0, 0) = 1498;
     reference(1, 2, 0, 0) = 1564;
 
-    auto computed = forwardConvolution(input, filter, {1, 1});
+    auto computed = forwardConvolution(input, filter, {1, 1}, {0, 0});
 
     if(reference != computed)
     {
@@ -927,7 +984,7 @@ bool test2dStridedForwardConvolution()
     reference(0, 1, 1, 1) = 127;
     reference(1, 1, 1, 1) = 137;
 
-    auto computed = forwardConvolution(input, filter, {2, 2});
+    auto computed = forwardConvolution(input, filter, {2, 2}, {0, 0});
 
     if(reference != computed)
     {
@@ -986,7 +1043,7 @@ bool test1dBackwardConvolution()
     reference(4, 0, 0, 0) = 3;
     reference(5, 0, 0, 0) = 0;
 
-    auto computed = reverseConvolutionDeltas(filter, {1, 1}, deltas);
+    auto computed = reverseConvolutionDeltas(filter, {1, 1}, deltas, {2, 0});
 
     if(reference != computed)
     {
@@ -1063,7 +1120,7 @@ bool test2dBackwardConvolution()
     reference(2, 3, 0, 0) = 5;
     reference(3, 3, 0, 0) = 0;
 
-    auto computed = reverseConvolutionDeltas(filter, {1, 1}, deltas);
+    auto computed = reverseConvolutionDeltas(filter, {1, 1}, deltas, {1, 2});
 
     if(reference != computed)
     {
@@ -1078,6 +1135,184 @@ bool test2dBackwardConvolution()
 
     return reference == computed;
 }
+
+/*
+    Test 2D strided backward convolution.
+
+    [ 0 3 ] conv-back-2-2 [ 0 2 4 ] = [  0  9 ]
+    [ 1 4 ]               [ 1 3 5 ]   [ 14 25 ]
+    [ 2 5 ]
+
+*/
+bool test2dStridedBackwardConvolution()
+{
+    int n = 1;
+    int c = 1;
+    int h = 2;
+    int w = 3;
+
+    Matrix deltas(w, h, c, n);
+
+    deltas(0, 0, 0, 0) = 0;
+    deltas(1, 0, 0, 0) = 1;
+    deltas(2, 0, 0, 0) = 2;
+    deltas(0, 1, 0, 0) = 3;
+    deltas(1, 1, 0, 0) = 4;
+    deltas(2, 1, 0, 0) = 5;
+
+    int k = 1;
+    int r = 3;
+    int s = 2;
+
+    Matrix filter(s, r, c, k);
+
+    filter(0, 0, 0, 0) = 0;
+    filter(1, 0, 0, 0) = 1;
+    filter(0, 1, 0, 0) = 2;
+    filter(1, 1, 0, 0) = 3;
+    filter(0, 2, 0, 0) = 4;
+    filter(1, 2, 0, 0) = 5;
+
+    Matrix reference(2, 2, 1, 1);
+
+    reference(0, 0, 0, 0) = 0;
+    reference(1, 0, 0, 0) = 14;
+
+    reference(0, 1, 0, 0) = 9;
+    reference(1, 1, 0, 0) = 25;
+
+    auto computed = reverseConvolutionDeltas(filter, {2, 2}, deltas, {1, 2});
+
+    if(reference != computed)
+    {
+        std::cout << " Matrix 2D Strided Backward Convolution Test Failed:\n";
+        std::cout << "  result matrix " << computed.toString();
+        std::cout << "  does not match reference matrix " << reference.toString();
+    }
+    else
+    {
+        std::cout << " Matrix 2D Strided Backward Convolution Test Passed\n";
+    }
+
+    return reference == computed;
+}
+
+/*
+    Test 1D convolution gradient.
+
+    [ 0 ] conv-grad [ 0 ] = [ 5 ]
+    [ 1 ]           [ 1 ]   [ 8 ]
+    [ 2 ]           [ 2 ]
+    [ 3 ]
+
+
+*/
+bool test1dConvolutionGradient()
+{
+    int n = 1;
+    int c = 1;
+    int h = 1;
+    int w = 4;
+
+    Matrix input(w, h, c, n);
+
+    input(0, 0, 0, 0) = 0;
+    input(1, 0, 0, 0) = 1;
+    input(2, 0, 0, 0) = 2;
+    input(3, 0, 0, 0) = 3;
+
+    int k = 1;
+    int r = 1;
+    int s = 3;
+
+    Matrix deltas(s, r, c, k);
+
+    deltas(0, 0, 0, 0) = 0;
+    deltas(1, 0, 0, 0) = 1;
+    deltas(2, 0, 0, 0) = 2;
+
+    Matrix reference(2, 1, 1, 1);
+
+    reference(0, 0, 0, 0) = 5;
+    reference(1, 0, 0, 0) = 8;
+
+    auto computed = reverseConvolutionGradients(input, deltas, {1, 1}, {0, 0});
+
+    if(reference != computed)
+    {
+        std::cout << " Matrix 1D Convolution Gradients Test Failed:\n";
+        std::cout << "  result matrix " << computed.toString();
+        std::cout << "  does not match reference matrix " << reference.toString();
+    }
+    else
+    {
+        std::cout << " Matrix 1D Convolution Gradients Test Passed\n";
+    }
+
+    return reference == computed;
+}
+
+/*
+    Test 2D convolution gradient.
+
+    [ 0 3 6 ] conv-grad [ 0 2 ] = [ 19 37 ]
+    [ 1 4 7 ]           [ 1 3 ]   [ 25 43 ]
+    [ 2 5 8 ]
+
+*/
+bool test2dConvolutionGradient()
+{
+    int n = 1;
+    int c = 1;
+    int h = 3;
+    int w = 3;
+
+    Matrix input(w, h, c, n);
+
+    input(0, 0, 0, 0) = 0;
+    input(1, 0, 0, 0) = 1;
+    input(2, 0, 0, 0) = 2;
+    input(0, 1, 0, 0) = 3;
+    input(1, 1, 0, 0) = 4;
+    input(2, 1, 0, 0) = 5;
+    input(0, 2, 0, 0) = 6;
+    input(1, 2, 0, 0) = 7;
+    input(2, 2, 0, 0) = 8;
+
+    int k = 1;
+    int r = 2;
+    int s = 2;
+
+    Matrix deltas(s, r, c, k);
+
+    deltas(0, 0, 0, 0) = 0;
+    deltas(1, 0, 0, 0) = 1;
+    deltas(0, 1, 0, 0) = 2;
+    deltas(1, 1, 0, 0) = 3;
+
+    Matrix reference(2, 2, 1, 1);
+
+    reference(0, 0, 0, 0) = 19;
+    reference(1, 0, 0, 0) = 25;
+    reference(0, 1, 0, 0) = 37;
+    reference(1, 1, 0, 0) = 43;
+
+    auto computed = reverseConvolutionGradients(input, deltas, {1, 1}, {0, 0});
+
+    if(reference != computed)
+    {
+        std::cout << " Matrix 2D Convolution Gradients Test Failed:\n";
+        std::cout << "  result matrix " << computed.toString();
+        std::cout << "  does not match reference matrix " << reference.toString();
+    }
+    else
+    {
+        std::cout << " Matrix 2D Convolution Gradients Test Passed\n";
+    }
+
+    return reference == computed;
+}
+
 
 
 int main(int argc, char** argv)
@@ -1095,6 +1330,7 @@ int main(int argc, char** argv)
     passed &= testReduce();
     passed &= test2dReduce();
     passed &= test2dReduce2();
+    passed &= test4dReduce();
     passed &= testBroadcast();
     passed &= test2dBroadcast();
     passed &= testZeros();
@@ -1104,11 +1340,15 @@ int main(int argc, char** argv)
     passed &= testCopyBetweenPrecisions();
     passed &= testUniformRandom();
     passed &= testNormalRandom();
+
     passed &= test1dForwardConvolution();
     passed &= test2dForwardConvolution();
     passed &= test2dStridedForwardConvolution();
     passed &= test1dBackwardConvolution();
     passed &= test2dBackwardConvolution();
+    passed &= test2dStridedBackwardConvolution();
+    passed &= test1dConvolutionGradient();
+    passed &= test2dConvolutionGradient();
 
     if(not passed)
     {

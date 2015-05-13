@@ -30,6 +30,7 @@ class Layer
 public:
     typedef matrix::Matrix       Matrix;
     typedef matrix::MatrixVector MatrixVector;
+    typedef matrix::Dimension    Dimension;
 
 public:
 	Layer();
@@ -58,6 +59,10 @@ public:
 
 public:
 	virtual double computeWeightCost() const = 0;
+
+public:
+    virtual Dimension getInputSize()  const = 0;
+    virtual Dimension getOutputSize() const = 0;
 
 public:
     virtual size_t getInputCount()  const = 0;
@@ -98,7 +103,7 @@ public:
 	ActivationCostFunction* getActivationCostFunction();
 	/*! \brief Get the activation cost function component, the layer retains ownership. */
 	const ActivationCostFunction* getActivationCostFunction() const;
-	
+
 public:
 	/*! \brief Set the weight cost function component, the layer takes ownership. */
 	void setWeightCostFunction(WeightCostFunction*);

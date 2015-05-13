@@ -47,6 +47,10 @@ public:
 	virtual double computeWeightCost() const;
 
 public:
+    virtual Dimension getInputSize()  const;
+    virtual Dimension getOutputSize() const;
+
+public:
     virtual size_t getInputCount()  const;
     virtual size_t getOutputCount() const;
 

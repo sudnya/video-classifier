@@ -30,6 +30,7 @@ namespace network
 
 typedef matrix::Matrix Matrix;
 typedef matrix::MatrixVector MatrixVector;
+typedef matrix::Dimension Dimension;
 
 RecurrentLayer::RecurrentLayer()
 : RecurrentLayer(0, matrix::SinglePrecision())
@@ -38,7 +39,7 @@ RecurrentLayer::RecurrentLayer()
 }
 
 RecurrentLayer::RecurrentLayer(size_t size, const matrix::Precision& precision)
-: _parameters(new MatrixVector({Matrix({size, size}, precision), Matrix({size}, precision), Matrix({size, size}, precision)})), 
+: _parameters(new MatrixVector({Matrix({size, size}, precision), Matrix({size}, precision), Matrix({size, size}, precision)})),
  _forwardWeights((*_parameters)[0]), _bias((*_parameters)[1]), _recurrentWeights((*_parameters)[2])
 {
 
@@ -50,7 +51,7 @@ RecurrentLayer::~RecurrentLayer()
 }
 
 RecurrentLayer::RecurrentLayer(const RecurrentLayer& l)
-: _parameters(std::make_unique<MatrixVector>(*l._parameters)), 
+: _parameters(std::make_unique<MatrixVector>(*l._parameters)),
  _forwardWeights((*_parameters)[0]), _bias((*_parameters)[1]), _recurrentWeights((*_parameters)[2])
 {
 
@@ -62,9 +63,9 @@ RecurrentLayer& RecurrentLayer::operator=(const RecurrentLayer& l)
 	{
 		return *this;
 	}
-	
+
 	_parameters = std::move(std::make_unique<MatrixVector>(*l._parameters));
-	
+
 	return *this;
 }
 
@@ -73,14 +74,14 @@ void RecurrentLayer::initialize()
 	double e = util::KnobDatabase::getKnobValue("Layer::RandomInitializationEpsilon", 6);
 
 	double epsilon = std::sqrt((e) / (getInputCount() + getOutputCount() + 1));
-	
+
 	// initialize the feed forward layer
 	matrix::rand(_forwardWeights);
 	apply(_forwardWeights, _forwardWeights, matrix::Multiply(epsilon));
 
 	// assign bias to 0.0f
 	apply(_bias, _bias, matrix::Fill(0.0f));
-	
+
 	// initialize the recurrent weights
 	matrix::rand(_recurrentWeights);
 	apply(_recurrentWeights, _recurrentWeights, matrix::Multiply(epsilon));
@@ -119,9 +120,19 @@ double RecurrentLayer::computeWeightCost() const
 	return getWeightCostFunction()->getCost(_forwardWeights) + getWeightCostFunction()->getCost(_recurrentWeights);
 }
 
+Dimension RecurrentLayer::getInputSize() const
+{
+	return {_forwardWeights.size()[1], 1, 1};
+}
+
+Dimension RecurrentLayer::getOutputSize() const
+{
+	return getInputSize();
+}
+
 size_t RecurrentLayer::getInputCount() const
 {
-	return _forwardWeights.size()[1];
+	return getInputSize().product();
 }
 
 size_t RecurrentLayer::getOutputCount() const

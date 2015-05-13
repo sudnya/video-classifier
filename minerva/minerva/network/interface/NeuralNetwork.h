@@ -31,6 +31,7 @@ class NeuralNetwork
 public:
     typedef matrix::Matrix                 Matrix;
     typedef matrix::MatrixVector           MatrixVector;
+    typedef matrix::Dimension              Dimension;
 	typedef optimizer::NeuralNetworkSolver NeuralNetworkSolver;
 
 public:
@@ -84,9 +85,13 @@ public:
 public:
     size_t size() const;
     bool   empty() const;
-	
+
 public:
 	const matrix::Precision& precision() const;
+
+public:
+    Dimension getInputSize()  const;
+    Dimension getOutputSize() const;
 
 public:
     size_t getInputCount()  const;
@@ -159,7 +164,7 @@ private:
 
 private:
 	CostFunctionPointer _costFunction;
-	
+
 private:
 	NeuralNetworkSolverPointer _solver;
 

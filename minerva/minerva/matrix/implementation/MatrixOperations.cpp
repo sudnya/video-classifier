@@ -265,7 +265,7 @@ void reduce(Matrix& result, const Matrix& input, const Dimension& unsortedDimens
             auto inputBegin = selectNamedDimensions(dimensions, resultIndex, zeros(inputView.size()));
 
             // find the end of the input slice
-            auto inputEnd = selectNamedDimensions(dimensions, resultIndex + ones(inputBegin.size()), inputView.size());
+            auto inputEnd = selectNamedDimensions(dimensions, resultIndex + ones(resultView.size()), inputView.size());
 
             auto inputSlice = slice(inputView, inputBegin, inputEnd);
 

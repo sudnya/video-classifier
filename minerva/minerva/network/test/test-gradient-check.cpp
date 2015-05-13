@@ -7,6 +7,7 @@
 // Minerva Includes
 #include <minerva/network/interface/NeuralNetwork.h>
 #include <minerva/network/interface/FeedForwardLayer.h>
+#include <minerva/network/interface/ConvolutionalLayer.h>
 #include <minerva/network/interface/CostFunctionFactory.h>
 #include <minerva/network/interface/ActivationFunctionFactory.h>
 
@@ -38,6 +39,7 @@ namespace network
 
 typedef network::FeedForwardLayer FeedForwardLayer;
 typedef matrix::Matrix Matrix;
+typedef matrix::Dimension Dimension;
 typedef matrix::MatrixVector MatrixVector;
 typedef matrix::DoublePrecision DoublePrecision;
 typedef network::NeuralNetwork NeuralNetwork;
@@ -90,16 +92,37 @@ static NeuralNetwork createFeedForwardFullyConnectedSoftmaxNetwork(
     return network;
 }
 
-static Matrix generateInput(size_t inputs)
+static NeuralNetwork createConvolutionalNetwork(size_t layerSize, size_t layerCount)
 {
-    return matrix::rand({inputs, 1}, DoublePrecision());
+    NeuralNetwork network;
+
+    layerSize = 2 * ((layerSize + 1) / 2);
+
+    Dimension inputSize( layerSize,     layerSize, 1, 1);
+    Dimension filterSize(layerSize + 1, layerSize + 1, 1, 1);
+    Dimension filterStride(1, 1);
+    Dimension padding(layerSize / 2, layerSize / 2);
+
+    for(size_t layer = 0; layer < layerCount; ++layer)
+    {
+        network.addLayer(std::make_unique<ConvolutionalLayer>(inputSize, filterSize, filterStride, padding, DoublePrecision()));
+    }
+
+    network.initialize();
+
+    return network;
 }
 
-static Matrix generateReference(size_t inputCount, NeuralNetwork& network, bool useOneHot)
+static Matrix generateInput(NeuralNetwork& network)
+{
+    return matrix::rand(network.getInputSize(), DoublePrecision());
+}
+
+static Matrix generateReference(NeuralNetwork& network, bool useOneHot)
 {
     if(useOneHot)
     {
-        Matrix result = zeros({network.getOutputCount(), 1}, DoublePrecision());
+        Matrix result = zeros(network.getOutputSize(), DoublePrecision());
 
         Matrix position = apply(rand({1}, DoublePrecision()), minerva::matrix::Multiply(network.getOutputCount()));
 
@@ -109,7 +132,7 @@ static Matrix generateReference(size_t inputCount, NeuralNetwork& network, bool 
     }
     else
     {
-        return matrix::rand({network.getOutputCount(), 1}, DoublePrecision());
+        return matrix::rand(network.getOutputSize(), DoublePrecision());
     }
 }
 
@@ -128,7 +151,7 @@ static double getDifference(double difference, double total)
     return difference / total;
 }
 
-static bool gradientCheck(size_t inputCount, NeuralNetwork& network, bool useOneHot)
+static bool gradientCheck(NeuralNetwork& network, bool useOneHot)
 {
     const double epsilon = 1.0e-6;
 
@@ -138,8 +161,8 @@ static bool gradientCheck(size_t inputCount, NeuralNetwork& network, bool useOne
     size_t layerId  = 0;
     size_t matrixId = 0;
 
-    auto input     = generateInput(inputCount);
-    auto reference = generateReference(inputCount, network, useOneHot);
+    auto input     = generateInput(network);
+    auto reference = generateReference(network, useOneHot);
 
     MatrixVector gradient;
 
@@ -204,7 +227,7 @@ static bool runTestFeedForwardFullyConnected(size_t layerSize, size_t layerCount
 
     auto network = createFeedForwardFullyConnectedNetwork(layerSize, layerCount);
 
-    if(gradientCheck(network.getInputCount(), network, false))
+    if(gradientCheck(network, false))
     {
         std::cout << "Feed Forward Fully Connected Network Test Passed\n";
 
@@ -231,7 +254,7 @@ static bool runTestFeedForwardFullyConnectedSigmoid(size_t layerSize, size_t lay
 
     auto network = createFeedForwardFullyConnectedSigmoidNetwork(layerSize, layerCount);
 
-    if(gradientCheck(network.getInputCount(), network, false))
+    if(gradientCheck(network, false))
     {
         std::cout << "Feed Forward Fully Connected Sigmoid Network Test Passed\n";
 
@@ -258,7 +281,7 @@ static bool runTestFeedForwardFullyConnectedSoftmax(size_t layerSize, size_t lay
 
     auto network = createFeedForwardFullyConnectedSoftmaxNetwork(layerSize, layerCount);
 
-    if(gradientCheck(network.getInputCount(), network, true))
+    if(gradientCheck(network, true))
     {
         std::cout << "Feed Forward Fully Connected Network Softmax Test Passed\n";
 
@@ -272,9 +295,43 @@ static bool runTestFeedForwardFullyConnectedSoftmax(size_t layerSize, size_t lay
     }
 }
 
+static bool runTestConvolutional(size_t layerSize, size_t layerCount, bool seed)
+{
+    if(seed)
+    {
+        matrix::srand(std::time(0));
+    }
+    else
+    {
+        matrix::srand(377);
+    }
+
+    auto network = createConvolutionalNetwork(layerSize, layerCount);
+
+    if(gradientCheck(network, false))
+    {
+        std::cout << "Convolutional Network Test Passed\n";
+
+        return true;
+    }
+    else
+    {
+        std::cout << "Convolutional Network Test Failed\n";
+
+        return false;
+    }
+}
+
 static void runTest(size_t layerSize, size_t layerCount, bool seed)
 {
     bool result = true;
+
+    result &= runTestConvolutional(layerSize, layerCount, seed);
+
+    if(!result)
+    {
+        return;
+    }
 
     result &= runTestFeedForwardFullyConnectedSigmoid(layerSize, layerCount, seed);
 

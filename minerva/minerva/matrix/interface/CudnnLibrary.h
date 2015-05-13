@@ -172,6 +172,17 @@ public:
                                              const cudnnTensorDescriptor_t       gradDesc,
                                              void*                               gradData);
 
+public:
+    static void cudnnConvolutionBackwardFilter(const void*                         alpha,
+                                               const cudnnTensorDescriptor_t       srcDesc,
+                                               const void*                         srcData,
+                                               const cudnnTensorDescriptor_t       diffDesc,
+                                               const void*                         diffData,
+                                               const cudnnConvolutionDescriptor_t  convDesc,
+                                               const void*                         beta,
+                                               const cudnnFilterDescriptor_t       gradDesc,
+                                               void*                               gradData);
+
 private:
     static void _check();
 
@@ -273,12 +284,23 @@ private:
         cudnnStatus_t (*cudnnConvolutionBackwardData)(cudnnHandle_t                  handle,
                                                  const void*                         alpha,
                                                  const cudnnFilterDescriptor_t       filterDesc,
-                                                 const void                         *filterData,
+                                                 const void*                         filterData,
                                                  const cudnnTensorDescriptor_t       diffDesc,
                                                  const void*                         diffData,
                                                  const cudnnConvolutionDescriptor_t  convDesc,
                                                  const void*                         beta,
                                                  const cudnnTensorDescriptor_t       gradDesc,
+                                                 void*                               gradData);
+
+        cudnnStatus_t (*cudnnConvolutionBackwardFilter)(cudnnHandle_t                handle,
+                                                 const void*                         alpha,
+                                                 const cudnnTensorDescriptor_t       srcDesc,
+                                                 const void*                         srcData,
+                                                 const cudnnTensorDescriptor_t       diffDesc,
+                                                 const void*                         diffData,
+                                                 const cudnnConvolutionDescriptor_t  convDesc,
+                                                 const void*                         beta,
+                                                 const cudnnFilterDescriptor_t       gradDesc,
                                                  void*                               gradData);
 
     public:
