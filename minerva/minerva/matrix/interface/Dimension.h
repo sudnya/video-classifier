@@ -44,6 +44,13 @@ public:
     bool empty() const;
 
 public:
+    size_t& back();
+    size_t  back() const;
+
+    size_t& front();
+    size_t  front() const;
+
+public:
     size_t product() const;
 
 public:

@@ -10,8 +10,9 @@
 #include <minerva/util/interface/string.h>
 
 // Forward Declarations
-namespace minerva { namespace matrix { class Matrix; } }
-namespace minerva { namespace model  { class Model;  } }
+namespace minerva { namespace matrix { class Matrix;    } }
+namespace minerva { namespace matrix { class Dimension; } }
+namespace minerva { namespace model  { class Model;     } }
 
 // Standard Library Includes
 #include <utility>
@@ -27,6 +28,7 @@ class InputDataProducer
 {
 public:
     typedef matrix::Matrix Matrix;
+    typedef matrix::Dimension Dimension;
     typedef std::pair<Matrix, Matrix> InputAndReferencePair;
 
 public:
@@ -79,7 +81,7 @@ public:
     const model::Model* getModel() const;
 
 protected:
-    size_t getInputCount() const;
+    Dimension getInputSize() const;
 
 protected:
     util::StringVector getOutputLabels() const;

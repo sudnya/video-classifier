@@ -26,7 +26,7 @@ matrix::Matrix SumOfSquaresCostFunction::computeCost(const Matrix& output, const
 {
     auto difference = apply(output, reference, matrix::Subtract());
 
-    size_t samples = output.size()[1];
+    size_t samples = output.size().back();
 
     return apply(difference, matrix::SquareAndScale(0.5/samples));
 }

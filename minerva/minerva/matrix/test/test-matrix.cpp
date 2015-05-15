@@ -1200,8 +1200,8 @@ bool test2dStridedBackwardConvolution()
 /*
     Test 1D convolution gradient.
 
-    [ 0 ] conv-grad [ 0 ] = [ 5 ]
-    [ 1 ]           [ 1 ]   [ 8 ]
+    [ 0 ] conv-grad [ 0 ] = [ 8 ]
+    [ 1 ]           [ 1 ]   [ 5 ]
     [ 2 ]           [ 2 ]
     [ 3 ]
 
@@ -1233,8 +1233,8 @@ bool test1dConvolutionGradient()
 
     Matrix reference(2, 1, 1, 1);
 
-    reference(0, 0, 0, 0) = 5;
-    reference(1, 0, 0, 0) = 8;
+    reference(0, 0, 0, 0) = 8;
+    reference(1, 0, 0, 0) = 5;
 
     auto computed = reverseConvolutionGradients(input, deltas, {1, 1}, {0, 0});
 
@@ -1255,8 +1255,8 @@ bool test1dConvolutionGradient()
 /*
     Test 2D convolution gradient.
 
-    [ 0 3 6 ] conv-grad [ 0 2 ] = [ 19 37 ]
-    [ 1 4 7 ]           [ 1 3 ]   [ 25 43 ]
+    [ 0 3 6 ] conv-grad [ 0 2 ] = [ 43 25 ]
+    [ 1 4 7 ]           [ 1 3 ]   [ 37 19 ]
     [ 2 5 8 ]
 
 */
@@ -1292,10 +1292,10 @@ bool test2dConvolutionGradient()
 
     Matrix reference(2, 2, 1, 1);
 
-    reference(0, 0, 0, 0) = 19;
-    reference(1, 0, 0, 0) = 25;
-    reference(0, 1, 0, 0) = 37;
-    reference(1, 1, 0, 0) = 43;
+    reference(0, 0, 0, 0) = 43;
+    reference(1, 0, 0, 0) = 37;
+    reference(0, 1, 0, 0) = 25;
+    reference(1, 1, 0, 0) = 19;
 
     auto computed = reverseConvolutionGradients(input, deltas, {1, 1}, {0, 0});
 

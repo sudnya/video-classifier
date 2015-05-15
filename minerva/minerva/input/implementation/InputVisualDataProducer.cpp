@@ -30,7 +30,7 @@ namespace input
 {
 
 InputVisualDataProducer::InputVisualDataProducer(const std::string& imageDatabaseFilename)
-: _sampleDatabasePath(imageDatabaseFilename), _remainingSamples(0), _colorComponents(3), _initialized(false)
+: _sampleDatabasePath(imageDatabaseFilename), _remainingSamples(0), _initialized(false)
 {
 
 }
@@ -46,7 +46,7 @@ typedef video::Video       Video;
 typedef video::VideoVector VideoVector;
 
 static void parseImageDatabase(ImageVector& images, VideoVector& video,
-    const std::string& path, bool requiresLabeledData, size_t inputs, size_t colors);
+    const std::string& path, bool requiresLabeledData);
 
 void InputVisualDataProducer::initialize()
 {
@@ -70,8 +70,7 @@ void InputVisualDataProducer::initialize()
         _generator.seed(127);
     }
 
-    parseImageDatabase(_images, _videos, _sampleDatabasePath,
-        getRequiresLabeledData(), getInputCount(), _colorComponents);
+    parseImageDatabase(_images, _videos, _sampleDatabasePath, getRequiresLabeledData());
 
     reset();
 
@@ -102,13 +101,10 @@ InputVisualDataProducer::InputAndReferencePair InputVisualDataProducer::pop()
     ImageVector batch = getBatch(_images, _videos, _remainingSamples,
         getBatchSize(), _generator, getRequiresLabeledData());
 
-    size_t x = 0;
-    size_t y = 0;
-
-    util::getNearestToSquareFactors(x, y, getInputCount());
+    auto imageDimension = getInputSize();
 
     // TODO: specialize this logic
-    auto input = batch.getFeatureMatrix(x, y, _colorComponents);
+    auto input = batch.getFeatureMatrix(imageDimension[0], imageDimension[1], imageDimension[2]);
     auto reference = batch.getReference(getOutputLabels());
 
     if(getStandardizeInput())
@@ -140,14 +136,10 @@ size_t InputVisualDataProducer::getUniqueSampleCount() const
     return std::min(getMaximumSamplesToRun(), _images.size() + _videos.size());
 }
 
-static void sliceOutTilesToFitTheModel(ImageVector& images,
-    size_t inputCount, size_t colorComponents);
-
 static void consolidateLabels(ImageVector& images, VideoVector& videos);
 
 static void parseImageDatabase(ImageVector& images, VideoVector& videos,
-    const std::string& path, bool requiresLabeledData,
-    size_t inputCount, size_t colorComponents)
+    const std::string& path, bool requiresLabeledData)
 {
     util::log("InputVisualDataProducer") << " scanning image database '"
         << path << "'\n";
@@ -196,8 +188,6 @@ static void parseImageDatabase(ImageVector& images, VideoVector& videos,
                 sample.beginFrame(), sample.endFrame()));
         }
     }
-
-    sliceOutTilesToFitTheModel(images, inputCount, colorComponents);
 
     consolidateLabels(images, videos);
 }
@@ -348,115 +338,6 @@ IntVector getRandomOrder(unsigned int size, std::default_random_engine& generato
 
     return order;
 }
-
-static void sliceOutCenterOnly(ImageVector& images, size_t inputCount, size_t colorComponents)
-{
-    size_t xTile = 0;
-    size_t yTile = 0;
-
-    util::getNearestToSquareFactors(xTile, yTile, inputCount / colorComponents);
-
-    ImageVector slicedImages;
-
-    size_t frames = 0;
-
-    for(auto& image : images)
-    {
-        image.load();
-
-        size_t startX = (image.x() - xTile) / 2;
-        size_t startY = (image.y() - yTile) / 2;
-
-        size_t newX = xTile;
-        size_t newY = yTile;
-
-        if(newX + startX > image.x())
-        {
-            newX = image.x() - startX;
-        }
-
-        if(newY + startY > image.y())
-        {
-            newY = image.y() - startY;
-        }
-
-        slicedImages.push_back(image.getTile(startX, startY,
-            newX, newY, colorComponents));
-
-        frames += 1;
-    }
-
-    images = std::move(slicedImages);
-
-}
-
-static void sliceOutAllTiles(ImageVector& images, size_t inputCount, size_t colorComponents)
-{
-    size_t xTile = 0;
-    size_t yTile = 0;
-
-    util::getNearestToSquareFactors(xTile, yTile, inputCount / colorComponents);
-
-    ImageVector slicedImages;
-
-    size_t frames = 0;
-
-    for(auto& image : images)
-    {
-        image.load();
-
-        for(size_t startX = 0; startX < image.x(); startX += xTile)
-        {
-            for(size_t startY = 0; startY < image.y(); startY += yTile)
-            {
-                size_t newX = xTile;
-                size_t newY = yTile;
-
-                if(newX + startX > image.x())
-                {
-                    newX = image.x() - startX;
-                }
-
-                if(newY + startY > image.y())
-                {
-                    newY = image.y() - startY;
-                }
-
-                slicedImages.push_back(image.getTile(startX, startY,
-                    newX, newY, colorComponents));
-
-                ++frames;
-            }
-        }
-    }
-
-    images = std::move(slicedImages);
-}
-
-static void sliceOutTilesToFitTheModel(ImageVector& images,
-    size_t inputCount, size_t colorComponents)
-{
-    bool shouldSlice = util::KnobDatabase::getKnobValue(
-        "InputVisualDataProducer::SliceInputImagesToFitNetwork", false);
-
-    if(!shouldSlice)
-    {
-        return;
-    }
-
-    bool shouldSliceCenter = util::KnobDatabase::getKnobValue(
-        "InputVisualDataProducer::SliceOutCenterTileOnly", true);
-
-    if(shouldSliceCenter)
-    {
-        sliceOutCenterOnly(images, inputCount, colorComponents);
-    }
-    else
-    {
-        sliceOutAllTiles(images, inputCount, colorComponents);
-    }
-}
-
 
 static void getImageBatch(ImageVector& batch, ImageVector& images,
     size_t& remainingSamples, size_t maxBatchSize, std::default_random_engine& generator)

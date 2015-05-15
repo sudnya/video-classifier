@@ -126,7 +126,8 @@ Matrix ConvolutionalLayer::runForward(const Matrix& m) const
 {
     if(util::isLogEnabled("ConvolutionalLayer"))
     {
-        util::log("ConvolutionalLayer") << " Running forward propagation through layer: " << _weights.shapeString() << "\n";
+        util::log("ConvolutionalLayer") << " Running forward propagation through layer: (size " << _weights.shapeString()
+            << ") (stride " << _filterStride->toString() << ") (padding " << _inputPadding->toString() << ")\n";
     }
 
     if(util::isLogEnabled("ConvolutionalLayer::Detail"))

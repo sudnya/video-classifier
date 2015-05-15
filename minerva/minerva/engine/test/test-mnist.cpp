@@ -84,7 +84,7 @@ static void addFeatureSelector(Model& model, const Parameters& parameters)
     NeuralNetwork featureSelector;
 
     // convolutional layer 1
-    featureSelector.addLayer(std::make_unique<ConvolutionalLayer>(Dimension(parameters.xPixels, parameters.yPixels, parameters.colors),
+    featureSelector.addLayer(std::make_unique<ConvolutionalLayer>(Dimension(parameters.xPixels, parameters.yPixels, parameters.colors, 1),
         Dimension(parameters.blockX, parameters.blockY, parameters.colors, parameters.blockOutputs),
         Dimension(parameters.blockStrideX, parameters.blockStrideY), Dimension(0, 0)));
 

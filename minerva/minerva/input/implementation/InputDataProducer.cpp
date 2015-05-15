@@ -11,6 +11,8 @@
 
 #include <minerva/network/interface/NeuralNetwork.h>
 
+#include <minerva/matrix/interface/Dimension.h>
+
 #include <minerva/util/interface/Knobs.h>
 
 namespace minerva
@@ -92,12 +94,12 @@ const model::Model* InputDataProducer::getModel() const
     return _model;
 }
 
-size_t InputDataProducer::getInputCount() const
+matrix::Dimension InputDataProducer::getInputSize() const
 {
     // TODO: specialize this for different data types
-    return _model->getAttribute<size_t>("ResolutionX") *
-           _model->getAttribute<size_t>("ResolutionY") *
-           _model->getAttribute<size_t>("ColorComponents");
+    return {_model->getAttribute<size_t>("ResolutionX"),
+           _model->getAttribute<size_t>("ResolutionY"),
+           _model->getAttribute<size_t>("ColorComponents")};
 }
 
 util::StringVector InputDataProducer::getOutputLabels() const

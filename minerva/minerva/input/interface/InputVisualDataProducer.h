@@ -60,9 +60,6 @@ private:
     size_t _remainingSamples;
 
 private:
-    size_t _colorComponents;
-
-private:
     bool _initialized;
 
 private:

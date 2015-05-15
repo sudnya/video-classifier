@@ -39,7 +39,7 @@ void Dimension::pop_back()
 void Dimension::pop_back(size_t size)
 {
     assert(_arity >= size);
-    
+
     _arity -= size;
 }
 
@@ -56,13 +56,37 @@ bool Dimension::empty() const
 size_t Dimension::product() const
 {
     size_t size = 1;
-    
+
     for(auto element : *this)
     {
         size *= element;
     }
-    
+
     return size;
+}
+
+size_t& Dimension::back()
+{
+    assert(!empty());
+
+    return _storage[size() - 1];
+}
+
+size_t Dimension::back() const
+{
+    assert(!empty());
+
+    return _storage[size() - 1];
+}
+
+size_t& Dimension::front()
+{
+    return *begin();
+}
+
+size_t Dimension::front() const
+{
+    return *begin();
 }
 
 Dimension::iterator Dimension::begin()
@@ -88,21 +112,21 @@ Dimension::const_iterator Dimension::end() const
 size_t Dimension::operator[](size_t position) const
 {
     assert(position < size());
-    
+
     return _storage[position];
 }
 
 size_t& Dimension::operator[](size_t position)
 {
     assert(position < size());
-    
+
     return _storage[position];
 }
 
 std::string Dimension::toString() const
 {
     std::stringstream stream;
-    
+
     for(auto element : *this)
     {
         if(!stream.str().empty())
@@ -112,35 +136,35 @@ std::string Dimension::toString() const
 
         stream << element;
     }
-    
+
     return stream.str();
 }
-    
+
 Dimension Dimension::operator+(const Dimension& d) const
 {
     assert(size() == d.size());
 
     Dimension result;
-    
+
     for(auto left = begin(), right = d.begin(); left != end(); ++left, ++right)
     {
         result.push_back(*left + *right);
     }
-    
+
     return result;
 }
-    
+
 Dimension Dimension::operator-(const Dimension& d) const
 {
     assert(size() == d.size());
 
     Dimension result;
-    
+
     for(auto left = begin(), right = d.begin(); left != end(); ++left, ++right)
     {
         result.push_back(*left - *right);
     }
-    
+
     return result;
 }
 
@@ -149,12 +173,12 @@ Dimension Dimension::operator/(const Dimension& d) const
     assert(size() == d.size());
 
     Dimension result;
-    
+
     for(auto left = begin(), right = d.begin(); left != end(); ++left, ++right)
     {
         result.push_back(*left / *right);
     }
-    
+
     return result;
 }
 
@@ -163,12 +187,12 @@ Dimension Dimension::operator*(const Dimension& d) const
     assert(size() == d.size());
 
     Dimension result;
-    
+
     for(auto left = begin(), right = d.begin(); left != end(); ++left, ++right)
     {
         result.push_back(*left * *right);
     }
-    
+
     return result;
 }
 

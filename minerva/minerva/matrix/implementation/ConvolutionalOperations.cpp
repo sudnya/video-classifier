@@ -33,7 +33,7 @@ Dimension forwardConvolutionOutputSize(const Dimension& inputSize, const Dimensi
 {
     return {computeOutputSize(inputSize[0], filterSize[0], filterStride[0], padding[0]),
             computeOutputSize(inputSize[1], filterSize[1], filterStride[1], padding[1]),
-            filterSize[2],
+            filterSize[3],
             inputSize[3]};
 }
 
@@ -952,7 +952,7 @@ void scatterReverseConvolutionGradientsResult(Matrix& gradients, const Matrix& r
             size_t row    = element % rows;
             size_t column = element / rows;
 
-            gradientsView({w, h, inputMap, outputMap}) = reshapedGradientsView({row, column});
+            gradientsView({width - w - 1, height - h - 1, inputMap, outputMap}) = reshapedGradientsView({row, column});
         }
     });
 }

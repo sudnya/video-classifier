@@ -96,6 +96,8 @@ static NeuralNetwork createConvolutionalNetwork(size_t layerSize, size_t layerCo
 {
     NeuralNetwork network;
 
+    layerSize = std::min(layerSize, (size_t)6);
+
     layerSize = 2 * ((layerSize + 1) / 2);
 
     Dimension inputSize( layerSize,     layerSize, 1, 1);
@@ -303,7 +305,7 @@ static bool runTestConvolutional(size_t layerSize, size_t layerCount, bool seed)
     }
     else
     {
-        matrix::srand(377);
+        matrix::srand(477);
     }
 
     auto network = createConvolutionalNetwork(layerSize, layerCount);
@@ -326,13 +328,6 @@ static void runTest(size_t layerSize, size_t layerCount, bool seed)
 {
     bool result = true;
 
-    result &= runTestConvolutional(layerSize, layerCount, seed);
-
-    if(!result)
-    {
-        return;
-    }
-
     result &= runTestFeedForwardFullyConnectedSigmoid(layerSize, layerCount, seed);
 
     if(!result)
@@ -348,6 +343,13 @@ static void runTest(size_t layerSize, size_t layerCount, bool seed)
     }
 
     result &= runTestFeedForwardFullyConnectedSoftmax(layerSize, layerCount, seed);
+
+    if(!result)
+    {
+        return;
+    }
+
+    result &= runTestConvolutional(layerSize, layerCount, seed);
 }
 
 }
