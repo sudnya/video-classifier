@@ -212,6 +212,7 @@ void Engine::_setupProducer(const std::string& path)
     newProducer->setEpochs(_dataProducer->getEpochs());
     newProducer->setMaximumSamplesToRun(_dataProducer->getMaximumSamplesToRun());
     newProducer->setBatchSize(_dataProducer->getBatchSize());
+    newProducer->setStandardizeInput(_dataProducer->getStandardizeInput());
     newProducer->setModel(_model);
 
     _dataProducer = std::move(newProducer);

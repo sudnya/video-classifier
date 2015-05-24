@@ -1,7 +1,7 @@
-/*	\file   EngineFactory.cpp
-	\date   Saturday August 10, 2013
-	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The source file for the EngineFactory class.
+/*    \file   EngineFactory.cpp
+    \date   Saturday August 10, 2013
+    \author Gregory Diamos <solusstultus@gmail.com>
+    \brief  The source file for the EngineFactory class.
 */
 
 // Minerva Includes
@@ -21,32 +21,32 @@ namespace engine
 
 Engine* EngineFactory::create(const std::string& classifierName)
 {
-	if(classifierName == "ClassifierEngine")
-	{
-		return new ClassifierEngine;
-	}
-	
-	if(classifierName == "LearnerEngine")
-	{
-		return new LearnerEngine;
-	}
-	
-	if(classifierName == "UnsupervisedLearnerEngine")
-	{
-		return new UnsupervisedLearnerEngine;
-	}
-	
-	if(classifierName == "FeatureExtractorEngine")
-	{
-		return new FeatureExtractorEngine;
-	}
-	
-	if(classifierName == "SampleStatisticsEngine")
-	{
-		return new SampleStatisticsEngine;
-	}
+    if(classifierName == "ClassifierEngine")
+    {
+        return new ClassifierEngine;
+    }
 
-	return nullptr;
+    if(classifierName == "LearnerEngine")
+    {
+        return new LearnerEngine;
+    }
+
+    if(classifierName == "UnsupervisedLearnerEngine")
+    {
+        return new UnsupervisedLearnerEngine;
+    }
+
+    if(classifierName == "FeatureExtractorEngine")
+    {
+        return new FeatureExtractorEngine;
+    }
+
+    if(classifierName == "SampleStatisticsEngine")
+    {
+        return new SampleStatisticsEngine;
+    }
+
+    return nullptr;
 }
 
 }

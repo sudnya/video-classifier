@@ -35,8 +35,8 @@ public:
     virtual void initialize();
 
 public:
-    virtual Matrix runForward(const Matrix& m) const;
-    virtual Matrix runReverse(MatrixVector& gradients,
+    virtual Matrix runForwardImplementation(const Matrix& m) const;
+    virtual Matrix runReverseImplementation(MatrixVector& gradients,
         const Matrix& inputActivations,
         const Matrix& outputActivations,
         const Matrix& deltas) const;

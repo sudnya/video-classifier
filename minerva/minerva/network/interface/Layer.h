@@ -44,11 +44,11 @@ public:
     virtual void initialize() = 0;
 
 public:
-    virtual Matrix runForward(const Matrix& m) const = 0;
-    virtual Matrix runReverse(MatrixVector& gradients,
+    Matrix runForward(const Matrix& m) const;
+    Matrix runReverse(MatrixVector& gradients,
 		const Matrix& inputActivations,
 		const Matrix& outputActivations,
-		const Matrix& deltas) const = 0;
+		const Matrix& deltas) const;
 
 public:
     virtual       MatrixVector& weights()       = 0;
@@ -114,6 +114,13 @@ public:
 
 public:
 	std::string shapeString() const;
+
+protected:
+    virtual Matrix runForwardImplementation(const Matrix& m) const = 0;
+    virtual Matrix runReverseImplementation(MatrixVector& gradients,
+		const Matrix& inputActivations,
+		const Matrix& outputActivations,
+		const Matrix& deltas) const = 0;
 
 private:
 	std::unique_ptr<ActivationFunction>     _activationFunction;

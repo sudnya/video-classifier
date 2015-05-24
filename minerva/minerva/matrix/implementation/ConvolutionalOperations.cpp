@@ -613,8 +613,8 @@ Matrix gatherReverseConvolutionDeltasFilter(const Matrix& filter, const Precisio
 {
     assert(filter.precision() == PrecisionType());
 
-    size_t rows    = filter.size()[3];
-    size_t columns = filter.size()[2] * filter.size()[0] * filter.size()[1];
+    size_t rows    = filter.size()[2];
+    size_t columns = filter.size()[3] * filter.size()[0] * filter.size()[1];
 
     size_t filterR = filter.size()[0];
     size_t filterS = filter.size()[1];
@@ -643,7 +643,7 @@ Matrix gatherReverseConvolutionDeltasFilter(const Matrix& filter, const Precisio
             size_t s = filterTile / filterR;
             size_t r = filterTile % filterR;
 
-            resultView({row, column}) = filterView({r, s, c, k});
+            resultView({row, column}) = filterView({r, s, k, c});
         }
     });
 
@@ -930,7 +930,7 @@ void scatterReverseConvolutionGradientsResult(Matrix& gradients, const Matrix& r
     size_t height     = gradients.size()[1];
     size_t width      = gradients.size()[0];
 
-    size_t rows = reshapedGradients.size()[0];
+    size_t columns = reshapedGradients.size()[1];
 
     typedef typename PrecisionType::type NativeType;
 
@@ -949,8 +949,8 @@ void scatterReverseConvolutionGradientsResult(Matrix& gradients, const Matrix& r
             size_t inputMap  = (element / (width * height)) % inputMaps;
             size_t outputMap = (element / (width * height * inputMaps));
 
-            size_t row    = element % rows;
-            size_t column = element / rows;
+            size_t row    = element / columns;
+            size_t column = element % columns;
 
             gradientsView({width - w - 1, height - h - 1, inputMap, outputMap}) = reshapedGradientsView({row, column});
         }
@@ -959,7 +959,7 @@ void scatterReverseConvolutionGradientsResult(Matrix& gradients, const Matrix& r
 
 template<typename PrecisionType>
 void genericReverseConvolutionGradientsOverPrecisions(Matrix& gradients, const Matrix& input,
-    const Matrix& deltas, const Dimension& stride, const Dimension& padding, const std::tuple<PrecisionType>& )
+    const Matrix& deltas, const Dimension& stride, const Dimension& padding, double alpha, const std::tuple<PrecisionType>& )
 {
     assert(gradients.precision() == PrecisionType());
     assert(deltas.precision()    == PrecisionType());
@@ -970,37 +970,38 @@ void genericReverseConvolutionGradientsOverPrecisions(Matrix& gradients, const M
     auto reshapedDeltas = gatherReverseConvolutionGradientsDeltas(deltas, PrecisionType());
 
     // then multiply like forward convolution
-    auto reshapedGradients = gemm(reshapedDeltas, reshapedInput);
+    auto reshapedGradients = gemm(Matrix(reshapedDeltas), false, alpha, reshapedInput, false);
 
     scatterReverseConvolutionGradientsResult(gradients, reshapedGradients, PrecisionType());
 }
 
 template<typename PossiblePrecisions>
 void genericReverseConvolutionGradientsOverPrecisions(Matrix& gradients, const Matrix& input,
-    const Matrix& deltas, const Dimension& stride, const Dimension& padding, const PossiblePrecisions& possiblePrecisions)
+    const Matrix& deltas, const Dimension& stride, const Dimension& padding, double alpha, const PossiblePrecisions& possiblePrecisions)
 {
     typedef typename std::tuple_element<0, PossiblePrecisions>::type PossiblePrecisionType;
 
     if(deltas.precision() == PossiblePrecisionType())
     {
-        return genericReverseConvolutionGradientsOverPrecisions(gradients, input, deltas, stride, padding, std::tuple<PossiblePrecisionType>());
+        return genericReverseConvolutionGradientsOverPrecisions(gradients, input, deltas, stride, padding, alpha, std::tuple<PossiblePrecisionType>());
     }
     else
     {
         typedef typename util::RemoveFirstType<PossiblePrecisions>::type RemainingPrecisions;
 
-        return genericReverseConvolutionGradientsOverPrecisions(gradients, input, deltas, stride, padding, RemainingPrecisions());
+        return genericReverseConvolutionGradientsOverPrecisions(gradients, input, deltas, stride, padding, alpha, RemainingPrecisions());
     }
 }
 
-void genericReverseConvolutionGradients(Matrix& gradients, const Matrix& input, const Matrix& deltas, const Dimension& stride, const Dimension& padding)
+void genericReverseConvolutionGradients(Matrix& gradients, const Matrix& input, const Matrix& deltas,
+    const Dimension& stride, const Dimension& padding, double alpha)
 {
-    genericReverseConvolutionGradientsOverPrecisions(gradients, input, deltas, stride, padding, AllPrecisions());
+    genericReverseConvolutionGradientsOverPrecisions(gradients, input, deltas, stride, padding, alpha, AllPrecisions());
 }
 
 }
 
-void reverseConvolutionGradients(Matrix& gradients, const Matrix& inputs, const Matrix& deltas, const Dimension& stride, const Dimension& padding)
+void reverseConvolutionGradients(Matrix& gradients, const Matrix& inputs, const Matrix& deltas, const Dimension& stride, const Dimension& padding, double a)
 {
     if(CudnnLibrary::loaded())
     {
@@ -1022,7 +1023,7 @@ void reverseConvolutionGradients(Matrix& gradients, const Matrix& inputs, const 
         CudnnTensorDescriptor inputDescriptor(inputs);
         CudnnTensorDescriptor deltasDescriptor(deltas);
 
-        CudnnScalar alpha(1.0, deltas.precision());
+        CudnnScalar alpha(a,   deltas.precision());
         CudnnScalar beta( 1.0, deltas.precision());
 
         CudnnLibrary::cudnnConvolutionBackwardFilter(
@@ -1040,7 +1041,7 @@ void reverseConvolutionGradients(Matrix& gradients, const Matrix& inputs, const 
     }
     else
     {
-        genericReverseConvolutionGradients(gradients, inputs, deltas, stride, padding);
+        genericReverseConvolutionGradients(gradients, inputs, deltas, stride, padding, a);
     }
 }
 
@@ -1059,11 +1060,21 @@ Dimension getReverseConvolutionGradientsSize(const Dimension& inputSize, const D
 
 Matrix reverseConvolutionGradients(const Matrix& inputs, const Matrix& deltas, const Dimension& stride, const Dimension& padding)
 {
+    return reverseConvolutionGradients(inputs, deltas, stride, padding, 1.0);
+}
+
+Matrix reverseConvolutionGradients(const Matrix& inputs, const Matrix& deltas, const Dimension& stride, const Dimension& padding, double alpha)
+{
     Matrix result(getReverseConvolutionGradientsSize(inputs.size(), deltas.size(), stride, padding), inputs.precision());
 
-    reverseConvolutionGradients(result, inputs, deltas, stride, padding);
+    reverseConvolutionGradients(result, inputs, deltas, stride, padding, alpha);
 
     return result;
+}
+
+void reverseConvolutionGradients(Matrix& gradients, const Matrix& inputs, const Matrix& deltas, const Dimension& stride, const Dimension& padding)
+{
+    return reverseConvolutionGradients(gradients, inputs, deltas, stride, padding, 1.0);
 }
 
 }

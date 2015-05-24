@@ -92,6 +92,8 @@ static void standardizeInput(matrix::Matrix& input, double mean, double standard
 
     // divide by standard deviation
     apply(input, input, matrix::Divide(standardDeviation));
+
+    util::log("InputVisualDataProducer") << "Standardized input " << input.toString();
 }
 
 InputVisualDataProducer::InputAndReferencePair InputVisualDataProducer::pop()

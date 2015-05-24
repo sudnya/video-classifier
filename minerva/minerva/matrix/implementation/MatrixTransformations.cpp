@@ -22,7 +22,7 @@ static Dimension fillInDimension(const Dimension& newSize, const Dimension& inpu
 
     Dimension size(newSize);
 
-    // fill in remaining dimensions
+    // fill in remaining non-empty dimensions
     size_t remaining = inputSize.product() / size.product();
 
     size_t dimension = size.size();
@@ -32,6 +32,11 @@ static Dimension fillInDimension(const Dimension& newSize, const Dimension& inpu
     // TODO: be smarter about the remainder
     for(size_t d = dimension; d < inputSize.size(); ++d)
     {
+        if(remaining <= 1)
+        {
+            break;
+        }
+
         size.push_back(remaining);
         remaining /= remaining;
     }

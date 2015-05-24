@@ -1,7 +1,7 @@
-/*	\file   ClassifierEngine.cpp
-	\date   Sunday August 11, 2013
-	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The source file for the ClassifierEngine class.
+/*    \file   ClassifierEngine.cpp
+    \date   Sunday August 11, 2013
+    \author Gregory Diamos <solusstultus@gmail.com>
+    \brief  The source file for the ClassifierEngine class.
 */
 
 // Minerva Includes
@@ -29,9 +29,9 @@ namespace engine
 ClassifierEngine::ClassifierEngine()
 : _shouldUseLabeledData(true)
 {
-	setResultProcessor(results::ResultProcessorFactory::create("LabelMatchResultProcessor"));
-	setEpochs(1);
-}	
+    setResultProcessor(results::ResultProcessorFactory::create("LabelMatchResultProcessor"));
+    setEpochs(1);
+}
 
 ClassifierEngine::~ClassifierEngine()
 {
@@ -40,86 +40,83 @@ ClassifierEngine::~ClassifierEngine()
 
 void ClassifierEngine::setUseLabeledData(bool shouldUse)
 {
-	_shouldUseLabeledData = shouldUse;
+    _shouldUseLabeledData = shouldUse;
 }
 
 util::StringVector convertActivationsToLabels(matrix::Matrix&& activations,
-	const model::Model& model)
+    const model::Model& model)
 {
-	size_t samples = activations.size()[0];
-	size_t columns = activations.size()[1];
-	
-	util::StringVector labels;
-	
-	for(size_t sample = 0; sample < samples; ++sample)
-	{
-		size_t maxColumn = 0;
-		float  maxValue  = 0.0f;
-		
-		for(size_t column = 0; column < columns; ++column)
-		{
-			if(activations(sample, column) >= maxValue)
-			{
-				maxValue  = activations(sample, column);
-				maxColumn = column;
-			}
-		}
-		
-		labels.push_back(model.getOutputLabel(maxColumn));
-	}
-	
-	return labels;
+    size_t samples = activations.size()[1];
+    size_t columns = activations.size()[0];
+
+    util::StringVector labels;
+
+    for(size_t sample = 0; sample < samples; ++sample)
+    {
+        size_t maxColumn = 0;
+        double maxValue  = 0.0f;
+
+        for(size_t column = 0; column < columns; ++column)
+        {
+            if(activations(column, sample) >= maxValue)
+            {
+                maxValue  = activations(column, sample);
+                maxColumn = column;
+            }
+        }
+
+        labels.push_back(model.getOutputLabel(maxColumn));
+    }
+
+    return labels;
 }
 
 results::ResultVector compareWithReference(const util::StringVector& labels,
-	const util::StringVector& references)
+    const util::StringVector& references)
 {
-	results::ResultVector result;
-	
-	for(auto label = labels.begin(), reference = references.begin(); label != labels.end(); ++reference, ++label)
-	{
-		result.push_back(new results::LabelMatchResult(*label, *reference));
-	}
-	
-	return result;
+    results::ResultVector result;
+
+    for(auto label = labels.begin(), reference = references.begin(); label != labels.end(); ++reference, ++label)
+    {
+        result.push_back(new results::LabelMatchResult(*label, *reference));
+    }
+
+    return result;
 }
 
 results::ResultVector recordLabels(const util::StringVector& labels)
 {
-	results::ResultVector result;
-	
-	for(auto label : labels)
-	{
-		result.push_back(new results::LabelResult(label));
-	}
-	
-	return result;
+    results::ResultVector result;
+
+    for(auto label : labels)
+    {
+        result.push_back(new results::LabelResult(label));
+    }
+
+    return result;
 }
 
 ClassifierEngine::ResultVector ClassifierEngine::runOnBatch(Matrix&& input, Matrix&& reference)
 {
-	auto network = getAggregateNetwork();
-	
-	auto result = network->runInputs(std::move(input));
+    auto network = getAggregateNetwork();
 
-	auto labels = convertActivationsToLabels(std::move(result), *_model);
-	
-	restoreAggregateNetwork();
-	
-	if(_shouldUseLabeledData)
-	{
-		if(reference.size()[0] == input.size()[0])
-		{
-			return compareWithReference(labels, convertActivationsToLabels(std::move(reference), *_model));
-		}
-	}
-	
-	return recordLabels(labels);
+    auto result = network->runInputs(std::move(input));
+
+    auto labels = convertActivationsToLabels(std::move(result), *_model);
+
+    restoreAggregateNetwork();
+
+    if(_shouldUseLabeledData)
+    {
+        return compareWithReference(labels, convertActivationsToLabels(std::move(reference), *_model));
+    }
+
+    return recordLabels(labels);
 }
 
 bool ClassifierEngine::requiresLabeledData() const
 {
-	return _shouldUseLabeledData;
+    return _shouldUseLabeledData;
 }
 
 }

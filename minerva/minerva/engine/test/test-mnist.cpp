@@ -18,6 +18,7 @@
 #include <minerva/network/interface/NeuralNetwork.h>
 #include <minerva/network/interface/FeedForwardLayer.h>
 #include <minerva/network/interface/ConvolutionalLayer.h>
+#include <minerva/network/interface/CostFunctionFactory.h>
 
 #include <minerva/network/interface/ActivationFunctionFactory.h>
 
@@ -31,6 +32,7 @@
 #include <minerva/util/interface/paths.h>
 #include <minerva/util/interface/memory.h>
 #include <minerva/util/interface/ArgumentParser.h>
+#include <minerva/util/interface/Knobs.h>
 
 // Type definitions
 typedef minerva::video::Image Image;
@@ -72,7 +74,7 @@ public:
 
 public:
     Parameters()
-    : blockX(4), blockY(4), blockOutputs(1), blockStrideX(1), blockStrideY(1)
+    : blockX(3), blockY(3), blockOutputs(8), blockStrideX(1), blockStrideY(1)
     {
 
     }
@@ -92,7 +94,7 @@ static void addFeatureSelector(Model& model, const Parameters& parameters)
     featureSelector.addLayer(std::make_unique<FeedForwardLayer>(featureSelector.getOutputCount(), parameters.layerSize));
 
     // feed forward layer 3
-    featureSelector.addLayer(std::make_unique<FeedForwardLayer>(parameters.layerSize, parameters.layerSize));
+    //featureSelector.addLayer(std::make_unique<FeedForwardLayer>(parameters.layerSize, parameters.layerSize));
 
     featureSelector.initialize();
     minerva::util::log("TestMNIST")
@@ -109,9 +111,11 @@ static void addClassifier(Model& model, const Parameters& parameters)
     NeuralNetwork& featureSelector = model.getNeuralNetwork("FeatureSelector");
 
     // connect the network
-    classifier.addLayer(std::make_unique<FeedForwardLayer>(parameters.layerSize, parameters.layerSize));
-    classifier.addLayer(std::make_unique<FeedForwardLayer>(parameters.layerSize, parameters.layerSize));
+    //classifier.addLayer(std::make_unique<FeedForwardLayer>(parameters.layerSize, parameters.layerSize));
+    //classifier.addLayer(std::make_unique<FeedForwardLayer>(parameters.layerSize, parameters.layerSize));
     classifier.addLayer(std::make_unique<FeedForwardLayer>(parameters.layerSize, 10                  ));
+
+    classifier.setCostFunction(minerva::network::CostFunctionFactory::create("SoftMaxCostFunction"));
 
     classifier.initialize();
 
@@ -152,6 +156,7 @@ static void setSampleStatistics(Model& model, const Parameters& parameters)
 
     engine->setModel(&model);
     engine->setBatchSize(128);
+    engine->setMaximumSamplesToRun(1024);
 
     // read from database and use model to train
     engine->runOnDatabaseFile(parameters.inputPath);
@@ -165,6 +170,7 @@ static void trainNetwork(Model& model, const Parameters& parameters)
     engine->setModel(&model);
     engine->setEpochs(parameters.epochs);
     engine->setBatchSize(parameters.batchSize);
+    engine->setStandardizeInput(true);
 
     // read from database and use model to train
     engine->runOnDatabaseFile(parameters.inputPath);
@@ -176,6 +182,7 @@ static double testNetwork(Model& model, const Parameters& parameters)
 
     engine->setBatchSize(parameters.batchSize);
     engine->setModel(&model);
+    engine->setMaximumSamplesToRun(10000);
 
     // read from database and use model to test
     engine->runOnDatabaseFile(parameters.testPath);
@@ -226,7 +233,7 @@ static void runTest(const Parameters& parameters)
 
     std::cout << "Accuracy is " << (accuracy) << "%\n";
 
-    if(accuracy < 90.0f)
+    if(accuracy < 85.0)
     {
         std::cout << " Test Failed\n";
     }
@@ -238,6 +245,17 @@ static void runTest(const Parameters& parameters)
     createCollage(model, parameters);
 }
 
+static void setupSolverParameters(size_t maximumSamples)
+{
+    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::LearningRate", "1.0e-2");
+    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::Momentum", "0.9");
+    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::AnnealingRate", "1.00001");
+    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::MaxGradNorm", "10.0");
+    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::IterationsPerBatch", "1");
+    minerva::util::KnobDatabase::setKnob("InputDataProducer::MaximumSamplesToRun", std::to_string(maximumSamples));
+    minerva::util::KnobDatabase::setKnob("GeneralDifferentiableSolver::Type", "NesterovAcceleratedGradientSolver");
+}
+
 int main(int argc, char** argv)
 {
     minerva::util::ArgumentParser parser(argc, argv);
@@ -246,6 +264,7 @@ int main(int argc, char** argv)
 
     std::string loggingEnabledModules;
     bool verbose = false;
+    size_t maximumSamples = 8000;
 
     parser.description("A test for minerva difficult classication performance.");
 
@@ -259,9 +278,9 @@ int main(int argc, char** argv)
         "visualization/mnist-neurons.jpg",
         "The output path to generate visualization results.");
 
-    parser.parse("-e", "--epochs", parameters.epochs, 3,
+    parser.parse("-e", "--epochs", parameters.epochs, 1,
         "The number of epochs (passes over all inputs) to train the network for.");
-    parser.parse("-b", "--batch-size", parameters.batchSize, 128,
+    parser.parse("-b", "--batch-size", parameters.batchSize, 16,
         "The number of images to use for each iteration.");
 
     parser.parse("-L", "--log-module", loggingEnabledModules, "",
@@ -269,12 +288,13 @@ int main(int argc, char** argv)
         "(comma-separated list of modules, e.g. NeuralNetwork, Layer, ...).");
 
     parser.parse("-s", "--seed", parameters.seed, false, "Seed with time.");
+    parser.parse("-S", "--maximum-samples", maximumSamples, maximumSamples, "The maximum number of samples to train on.");
 
-    parser.parse("-x", "--x-pixels", parameters.xPixels, 32,
+    parser.parse("-x", "--x-pixels", parameters.xPixels, 28,
         "The number of X pixels to consider from the input image.");
-    parser.parse("-y", "--y-pixels", parameters.yPixels, 32,
+    parser.parse("-y", "--y-pixels", parameters.yPixels, 28,
         "The number of Y pixels to consider from the input image.");
-    parser.parse("-c", "--colors", parameters.colors, 3,
+    parser.parse("-c", "--colors", parameters.colors, 1,
         "The number of colors to consider from the input image.");
 
     parser.parse("-l", "--layer-size", parameters.layerSize, 32,
@@ -284,6 +304,8 @@ int main(int argc, char** argv)
         "Print out log messages during execution");
 
     parser.parse();
+
+    setupSolverParameters(maximumSamples);
 
     if(verbose)
     {

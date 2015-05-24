@@ -153,27 +153,25 @@ bool Matrix::isLeadingDimensionContiguous() const
     return stride()[0] == 1;
 }
 
-std::string Matrix::toString() const
+static std::string toString2D(const Matrix& m)
 {
     size_t rows = 1;
 
-    if(size().size() > 0)
+    if(m.size().size() > 0)
     {
-        rows = size()[0];
+        rows = m.size()[0];
     }
 
     size_t columns = 1;
 
-    if(size().size() > 1)
+    if(m.size().size() > 1)
     {
-        columns = size()[1];
+        columns = m.size()[1];
     }
 
-    auto matrix = reshape(*this, {rows, columns});
+    auto matrix = reshape(m, {rows, columns});
 
     std::stringstream stream;
-
-    stream << shapeString() << "\n";
 
     stream << "[ ";
 
@@ -194,9 +192,51 @@ std::string Matrix::toString() const
         if(row + 1 != finalRow) stream << "\n ";
     }
 
-    stream << "]\n";
+    stream << "]";
 
     return stream.str();
+}
+
+static std::string toString(const Matrix& matrix)
+{
+    if(matrix.size().size() <= 2)
+    {
+        return toString2D(matrix);
+    }
+
+    size_t lastDimension = matrix.size().back();
+
+    std::stringstream stream;
+
+    stream << "[\n";
+
+    for(size_t i = 0; i < lastDimension; ++i)
+    {
+        auto base = matrix.size();
+
+        auto start = zeros(base);
+        auto end   = base;
+
+        start.back() = i;
+        end.back()   = i + 1;
+
+        auto newSize = base;
+
+        newSize.pop_back();
+
+        stream << toString(reshape(slice(matrix, start, end), newSize));
+
+        stream << ",\n";
+    }
+
+    stream << "]";
+
+    return stream.str();
+}
+
+std::string Matrix::toString() const
+{
+    return shapeString() + "\n" + matrix::toString(*this) + "\n";
 }
 
 std::string Matrix::debugString() const

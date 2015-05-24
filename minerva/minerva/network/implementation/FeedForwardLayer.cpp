@@ -96,7 +96,7 @@ void FeedForwardLayer::initialize()
     apply(_bias, _bias, matrix::Fill(0.0));
 }
 
-Matrix FeedForwardLayer::runForward(const Matrix& m) const
+Matrix FeedForwardLayer::runForwardImplementation(const Matrix& m) const
 {
     if(util::isLogEnabled("FeedForwardLayer"))
     {
@@ -137,7 +137,7 @@ Matrix FeedForwardLayer::runForward(const Matrix& m) const
     return activation;
 }
 
-Matrix FeedForwardLayer::runReverse(MatrixVector& gradients,
+Matrix FeedForwardLayer::runReverseImplementation(MatrixVector& gradients,
     const Matrix& inputActivations,
     const Matrix& outputActivations,
     const Matrix& difference) const

@@ -14,6 +14,9 @@
 #include <minerva/network/interface/ActivationFunctionFactory.h>
 #include <minerva/network/interface/WeightCostFunctionFactory.h>
 
+#include <minerva/matrix/interface/Matrix.h>
+#include <minerva/matrix/interface/MatrixTransformations.h>
+
 // Standard Library Includes
 #include <sstream>
 
@@ -50,12 +53,61 @@ Layer& Layer::operator=(const Layer& l)
 	{
 		return *this;
 	}
-	
+
 	setActivationFunction(l.getActivationFunction()->clone());
 	setActivationCostFunction(l.getActivationCostFunction() == nullptr ? nullptr : l.getActivationCostFunction()->clone());
 	setWeightCostFunction(l.getWeightCostFunction() == nullptr ? nullptr : l.getWeightCostFunction()->clone());
-	
+
 	return *this;
+}
+
+static bool compareSize(matrix::Dimension inputSize, matrix::Dimension expectedSize)
+{
+    inputSize.pop_back();
+    expectedSize.pop_back();
+
+    return inputSize == expectedSize;
+}
+
+static bool compareCount(matrix::Dimension inputSize, size_t inputCount)
+{
+    inputSize.pop_back();
+
+    return inputSize.product() == inputCount;
+}
+
+static matrix::Matrix reshapeExceptMinibatch(const matrix::Matrix& m, matrix::Dimension size, size_t minibatch)
+{
+    size.pop_back();
+    size.push_back(minibatch);
+
+    return reshape(m, size);
+}
+
+matrix::Matrix Layer::runForward(const Matrix& m) const
+{
+    if(compareSize(m.size(), getInputSize()))
+    {
+        return runForwardImplementation(m);
+    }
+
+    if(compareCount(m.size(), getInputCount()))
+    {
+        return runForwardImplementation(reshapeExceptMinibatch(m, getInputSize(), m.size().back()));
+    }
+
+    throw std::runtime_error("Input activation matrix size " + m.size().toString() + " is not compatible with layer, expecting " + getInputSize().toString());
+}
+
+matrix::Matrix Layer::runReverse(MatrixVector& gradients,
+    const Matrix& inputActivations,
+    const Matrix& outputActivations,
+    const Matrix& deltas) const
+{
+    return runReverseImplementation(gradients,
+        reshapeExceptMinibatch(inputActivations, getInputSize(), inputActivations.size().back()),
+        outputActivations,
+        reshapeExceptMinibatch(deltas, getOutputSize(), deltas.size().back()));
 }
 
 void Layer::setActivationFunction(ActivationFunction* f)
@@ -106,7 +158,7 @@ const WeightCostFunction* Layer::getWeightCostFunction() const
 std::string Layer::shapeString() const
 {
 	std::stringstream stream;
-	
+
 	stream << "(" << getTypeName() << " type, "
 		<< getInputCount()
 		<< " inputs, " << getOutputCount() << " outputs)";

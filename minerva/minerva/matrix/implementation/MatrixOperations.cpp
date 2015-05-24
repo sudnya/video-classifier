@@ -33,21 +33,39 @@ void applyOverPrecisions(Matrix& result, const Matrix& left, const Matrix& right
 
     auto nativeOperation = static_cast<const OperationType&>(op);
 
-    MatrixView<NativeType>      resultView(result);
-    ConstMatrixView<NativeType> leftView(left);
-    ConstMatrixView<NativeType> rightView(right);
-
     size_t elements = result.elements();
 
-    parallel::multiBulkSynchronousParallel([=](parallel::ThreadGroup threadGroup)
+    if(result.isContiguous() && left.isContiguous() && right.isContiguous())
     {
-        for(size_t i = threadGroup.id(); i < elements; i += threadGroup.size())
-        {
-            auto fullDimension = linearToDimension(i, resultView.size());
+        auto resultBase = static_cast<NativeType*>(result.data());
+        auto leftBase   = static_cast<const NativeType*>(left.data());
+        auto rightBase  = static_cast<const NativeType*>(right.data());
 
-            resultView(fullDimension) = nativeOperation(leftView(fullDimension), rightView(fullDimension));
-        }
-    });
+        parallel::multiBulkSynchronousParallel([=](parallel::ThreadGroup threadGroup)
+        {
+            for(size_t i = threadGroup.id(), step = threadGroup.size(); i < elements; i += step)
+            {
+                resultBase[i] = nativeOperation(leftBase[i], rightBase[i]);
+            }
+        });
+
+    }
+    else
+    {
+        MatrixView<NativeType>      resultView(result);
+        ConstMatrixView<NativeType> leftView(left);
+        ConstMatrixView<NativeType> rightView(right);
+
+        parallel::multiBulkSynchronousParallel([=](parallel::ThreadGroup threadGroup)
+        {
+            for(size_t i = threadGroup.id(), step = threadGroup.size(); i < elements; i += step)
+            {
+                auto fullDimension = linearToDimension(i, resultView.size());
+
+                resultView(fullDimension) = nativeOperation(leftView(fullDimension), rightView(fullDimension));
+            }
+        });
+    }
 }
 
 template<typename OperationType, typename PossiblePrecisions>
@@ -145,20 +163,37 @@ void applyOverPrecisions(Matrix& result, const Matrix& input,
 
     auto nativeOperation = static_cast<const OperationType&>(op);
 
-    MatrixView<NativeType>      resultView(result);
-    ConstMatrixView<NativeType> inputView(input);
-
     size_t elements = result.elements();
 
-    parallel::multiBulkSynchronousParallel([=](parallel::ThreadGroup threadGroup)
+    if(input.isContiguous() && result.isContiguous())
     {
-        for(size_t i = threadGroup.id(); i < elements; i += threadGroup.size())
-        {
-            auto dimension = linearToDimension(i, resultView.size());
+        auto resultBase = static_cast<NativeType*>(result.data());
+        auto inputBase  = static_cast<const NativeType*>(input.data());
 
-            resultView(dimension) = nativeOperation(inputView(dimension));
-        }
-    });
+        parallel::multiBulkSynchronousParallel([=](parallel::ThreadGroup threadGroup)
+        {
+            for(size_t i = threadGroup.id(), step = threadGroup.size(); i < elements; i += step)
+            {
+                resultBase[i] = nativeOperation(inputBase[i]);
+            }
+        });
+    }
+    else
+    {
+
+        MatrixView<NativeType>      resultView(result);
+        ConstMatrixView<NativeType> inputView(input);
+
+        parallel::multiBulkSynchronousParallel([=](parallel::ThreadGroup threadGroup)
+        {
+            for(size_t i = threadGroup.id(), step = threadGroup.size(); i < elements; i += step)
+            {
+                auto dimension = linearToDimension(i, resultView.size());
+
+                resultView(dimension) = nativeOperation(inputView(dimension));
+            }
+        });
+    }
 }
 
 template<typename OperationType, typename PossiblePrecisions>

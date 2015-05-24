@@ -122,7 +122,7 @@ void ConvolutionalLayer::initialize()
     apply(_bias, _bias, matrix::Fill(0.0));
 }
 
-Matrix ConvolutionalLayer::runForward(const Matrix& m) const
+Matrix ConvolutionalLayer::runForwardImplementation(const Matrix& m) const
 {
     if(util::isLogEnabled("ConvolutionalLayer"))
     {
@@ -164,7 +164,7 @@ Matrix ConvolutionalLayer::runForward(const Matrix& m) const
     return activation;
 }
 
-Matrix ConvolutionalLayer::runReverse(MatrixVector& gradients,
+Matrix ConvolutionalLayer::runReverseImplementation(MatrixVector& gradients,
     const Matrix& inputActivations,
     const Matrix& outputActivations,
     const Matrix& difference) const
@@ -200,13 +200,17 @@ Matrix ConvolutionalLayer::runReverse(MatrixVector& gradients,
     // finish computing the deltas
     auto deltas = apply(getActivationFunction()->applyDerivative(outputActivations), difference, matrix::Multiply());
 
+    size_t samples = deltas.size()[3];
+
+    assert(samples != 0);
+
     if(util::isLogEnabled("ConvolutionalLayer::Detail"))
     {
         util::log("ConvolutionalLayer::Detail") << "  deltas: " << deltas.debugString();
     }
 
     // compute gradient for the weights
-    auto weightGradient = reverseConvolutionGradients(inputActivations, deltas, *_filterStride, *_inputPadding);
+    auto weightGradient = reverseConvolutionGradients(inputActivations, deltas, *_filterStride, *_inputPadding, 1.0 / samples);
 
     // add in the weight cost function term
     if(getWeightCostFunction() != nullptr)
@@ -227,7 +231,6 @@ Matrix ConvolutionalLayer::runReverse(MatrixVector& gradients,
     }
 
     // compute gradient for the bias
-    auto samples      = deltas.size()[3];
     auto biasGradient = reduce(apply(deltas, matrix::Divide(samples)), {3}, matrix::Add());
 
     if(util::isLogEnabled("ConvolutionalLayer"))
@@ -310,7 +313,11 @@ size_t ConvolutionalLayer::getInputCount() const
 
 size_t ConvolutionalLayer::getOutputCount() const
 {
-    return getOutputSize().product();
+    auto size = getOutputSize();
+
+    size.pop_back();
+
+    return size.product();
 }
 
 size_t ConvolutionalLayer::totalNeurons() const

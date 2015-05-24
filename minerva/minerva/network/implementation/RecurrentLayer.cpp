@@ -87,12 +87,12 @@ void RecurrentLayer::initialize()
 	apply(_recurrentWeights, _recurrentWeights, matrix::Multiply(epsilon));
 }
 
-Matrix RecurrentLayer::runForward(const Matrix& m) const
+Matrix RecurrentLayer::runForwardImplementation(const Matrix& m) const
 {
 	assertM(false, "Not impemented.");
 }
 
-Matrix RecurrentLayer::runReverse(MatrixVector& gradients,
+Matrix RecurrentLayer::runReverseImplementation(MatrixVector& gradients,
 	const Matrix& inputActivations,
 	const Matrix& outputActivations,
 	const Matrix& deltas) const
