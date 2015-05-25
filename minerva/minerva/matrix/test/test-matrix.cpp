@@ -751,9 +751,9 @@ bool testUniformRandom()
 
     auto a = minerva::matrix::rand({size, size}, minerva::matrix::SinglePrecision());
 
-    auto mean = reduce(apply(a, minerva::matrix::Divide(1.0 / (size * size))), {}, minerva::matrix::Add())[0];
+    double mean = reduce(apply(a, minerva::matrix::Divide((size * size))), {}, minerva::matrix::Add())[0];
 
-    bool passed = (mean < 0.1 && mean > -0.1);
+    bool passed = (mean < 0.6 && mean > 0.4);
 
     if(!passed)
     {
@@ -779,7 +779,7 @@ bool testNormalRandom()
 
     auto a = minerva::matrix::randn({size, size}, minerva::matrix::SinglePrecision());
 
-    auto mean = reduce(apply(a, minerva::matrix::Divide(1.0 / (size * size))), {}, minerva::matrix::Add())[0];
+    double mean = reduce(apply(a, minerva::matrix::Divide((size * size))), {}, minerva::matrix::Add())[0];
 
     bool passed = (mean < 0.1 && mean > -0.1);
 

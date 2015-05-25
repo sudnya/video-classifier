@@ -33,6 +33,7 @@ public:
         Exp,
         Pow,
         Abs,
+        Sqrt,
         Sigmoid,
         SigmoidDerivative,
         RectifiedLinear,
@@ -215,6 +216,27 @@ public:
     CUDA_DECORATOR float operator()(const float& l) const
     {
         return std::fabs(l);
+    }
+};
+
+class Sqrt : public Operation
+{
+public:
+    CUDA_DECORATOR Sqrt() : Operation(Operation::Sqrt)
+    {
+
+    }
+
+public:
+    template<typename T>
+    CUDA_DECORATOR T operator()(const T& l) const
+    {
+        return std::sqrt(l);
+    }
+
+    CUDA_DECORATOR float operator()(const float& l) const
+    {
+        return std::sqrtf(l);
     }
 };
 
@@ -642,14 +664,14 @@ private:
 
 };
 
-typedef std::tuple<Add, Subtract, Multiply, Divide, Log, Exp, Pow, Abs, RectifiedLinear,
+typedef std::tuple<Add, Subtract, Multiply, Divide, Log, Exp, Pow, Abs, Sqrt, RectifiedLinear,
                    RectifiedLinearDerivative, Sigmoid, SigmoidDerivative, Negate, Maximum,
                    Minimum, Equal, LessThan, NotEqual, Fill, Square, SquareAndScale> AllOperations;
 
 typedef std::tuple<Add, Subtract, Multiply, Divide, Maximum, Minimum,
                    Equal, LessThan, NotEqual> AllBinaryOperations;
 
-typedef std::tuple<Add, Subtract, Multiply, Divide, Log, Exp, Pow, Abs, RectifiedLinear,
+typedef std::tuple<Add, Subtract, Multiply, Divide, Log, Exp, Pow, Abs, Sqrt, RectifiedLinear,
                    RectifiedLinearDerivative, Sigmoid, SigmoidDerivative, Negate, Maximum,
                    Minimum, Equal, LessThan, NotEqual, Fill, Square, SquareAndScale> AllUnaryOperations;
 

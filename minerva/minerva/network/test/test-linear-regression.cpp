@@ -532,6 +532,19 @@ double data[] = {
     0.10959,0.00,11.930,0,0.5730,6.7940,89.30,2.3889,1,273.0,21.00,393.45,6.48,22.00,
     0.04741,0.00,11.930,0,0.5730,6.0300,80.80,2.5050,1,273.0,21.00,396.90,7.88,11.90 };
 
+matrix::Matrix standardize(const matrix::Matrix& input)
+{
+    auto means = apply(reduce(input, {1}, matrix::Add()), matrix::Divide(input.size()[1]));
+
+    auto inputMeanSubtracted = broadcast(input, means, {1}, matrix::Subtract());
+
+    auto stddevs = apply(reduce(apply(inputMeanSubtracted, matrix::SquareAndScale(1.0 / input.size()[1])), {1}, matrix::Add()), matrix::Sqrt());
+
+    std::cout << stddevs.toString();
+
+    return broadcast(inputMeanSubtracted, stddevs, {1}, matrix::Divide());
+}
+
 matrix::Matrix loadInputDataMatrix()
 {
     size_t columns = 14;
@@ -561,7 +574,7 @@ matrix::Matrix loadInputData()
 {
     auto matrix = loadInputDataMatrix();
 
-    return slice(matrix, {0, 0}, {matrix.size()[0] - 1, matrix.size()[1]});
+    return standardize(slice(matrix, {0, 0}, {matrix.size()[0] - 1, matrix.size()[1]}));
 }
 
 void compare(const matrix::Matrix& predictions, const matrix::Matrix& reference)
@@ -588,11 +601,11 @@ void compare(const matrix::Matrix& predictions, const matrix::Matrix& reference)
 
 void setupParameters()
 {
-    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::LearningRate", "2.0e-5");
-    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::Momentum", "0.997");
+    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::LearningRate", "1.0e-4");
+    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::Momentum", "0.95");
     minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::AnnealingRate", "1.00000");
-    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::MaxGradNorm", "50.0");
-    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::IterationsPerBatch", "2500");
+    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::MaxGradNorm", "10.0");
+    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::IterationsPerBatch", "5000");
     minerva::util::KnobDatabase::setKnob("GeneralDifferentiableSolver::Type", "NesterovAcceleratedGradientSolver");
     //minerva::util::KnobDatabase::setKnob("GeneralDifferentiableSolver::Type", "LBFGSSolver");
     minerva::util::KnobDatabase::setKnob("LBFGSSolver::MaxIterations", "5000");
@@ -640,10 +653,10 @@ void linearRegressionExample()
 
     compare(predictions, validationReference);
 
-    //for(size_t sample = 0; sample < validationSamples; ++ sample)
-   // {
-   //     std::cout << sample << ", " << predictions(0, sample) << ", " << validationReference(0, sample) << "\n";
-   // }
+   //for(size_t sample = 0; sample < validationSamples; ++ sample)
+    //{
+    //    std::cout << sample << ", " << predictions(0, sample) << ", " << validationReference(0, sample) << "\n";
+    //}
 }
 
 }

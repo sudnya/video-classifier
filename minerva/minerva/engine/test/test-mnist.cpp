@@ -70,7 +70,9 @@ public:
     std::string testPath;
     std::string outputPath;
 
+    size_t maximumSamples;
     bool seed;
+    bool visualize;
 
 public:
     Parameters()
@@ -171,6 +173,7 @@ static void trainNetwork(Model& model, const Parameters& parameters)
     engine->setEpochs(parameters.epochs);
     engine->setBatchSize(parameters.batchSize);
     engine->setStandardizeInput(true);
+    engine->setMaximumSamplesToRun(parameters.maximumSamples);
 
     // read from database and use model to train
     engine->runOnDatabaseFile(parameters.inputPath);
@@ -182,7 +185,7 @@ static double testNetwork(Model& model, const Parameters& parameters)
 
     engine->setBatchSize(parameters.batchSize);
     engine->setModel(&model);
-    engine->setMaximumSamplesToRun(10000);
+    engine->setMaximumSamplesToRun(parameters.maximumSamples);
 
     // read from database and use model to test
     engine->runOnDatabaseFile(parameters.testPath);
@@ -197,6 +200,11 @@ static double testNetwork(Model& model, const Parameters& parameters)
 
 static void createCollage(Model& model, const Parameters& parameters)
 {
+    if(!parameters.visualize)
+    {
+        return;
+    }
+
     // Visualize the network
     auto network = &model.getNeuralNetwork("FeatureSelector");
 
@@ -245,14 +253,13 @@ static void runTest(const Parameters& parameters)
     createCollage(model, parameters);
 }
 
-static void setupSolverParameters(size_t maximumSamples)
+static void setupSolverParameters()
 {
     minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::LearningRate", "1.0e-2");
     minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::Momentum", "0.9");
     minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::AnnealingRate", "1.00001");
     minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::MaxGradNorm", "10.0");
     minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::IterationsPerBatch", "1");
-    minerva::util::KnobDatabase::setKnob("InputDataProducer::MaximumSamplesToRun", std::to_string(maximumSamples));
     minerva::util::KnobDatabase::setKnob("GeneralDifferentiableSolver::Type", "NesterovAcceleratedGradientSolver");
 }
 
@@ -264,7 +271,6 @@ int main(int argc, char** argv)
 
     std::string loggingEnabledModules;
     bool verbose = false;
-    size_t maximumSamples = 8000;
 
     parser.description("A test for minerva difficult classication performance.");
 
@@ -288,7 +294,7 @@ int main(int argc, char** argv)
         "(comma-separated list of modules, e.g. NeuralNetwork, Layer, ...).");
 
     parser.parse("-s", "--seed", parameters.seed, false, "Seed with time.");
-    parser.parse("-S", "--maximum-samples", maximumSamples, maximumSamples, "The maximum number of samples to train on.");
+    parser.parse("-S", "--maximum-samples", parameters.maximumSamples, 8000, "The maximum number of samples to train/test on.");
 
     parser.parse("-x", "--x-pixels", parameters.xPixels, 28,
         "The number of X pixels to consider from the input image.");
@@ -300,12 +306,14 @@ int main(int argc, char** argv)
     parser.parse("-l", "--layer-size", parameters.layerSize, 32,
         "The size of each fully connected layer.");
 
+    parser.parse("-V", "--visualize", parameters.visualize, false,
+        "Visualize neurons.");
     parser.parse("-v", "--verbose", verbose, false,
         "Print out log messages during execution");
 
     parser.parse();
 
-    setupSolverParameters(maximumSamples);
+    setupSolverParameters();
 
     if(verbose)
     {

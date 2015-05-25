@@ -60,8 +60,6 @@ void NeuronVisualizer::visualizeNeuron(Image& image, size_t outputNeuron)
 
 static void getTileDimensions(size_t& x, size_t& y, size_t& colors,
 	const NeuralNetwork& tile);
-static NeuralNetwork extractTileFromNetwork(const NeuralNetwork& network,
-	size_t outputNeuron);
 static size_t sqrtRoundUp(size_t);
 static size_t getXPixelsPerTile(const NeuralNetwork& );
 static size_t getYPixelsPerTile(const NeuralNetwork& );
@@ -69,18 +67,16 @@ static size_t getColorsPerTile(const NeuralNetwork& );
 
 Image NeuronVisualizer::visualizeInputTileForNeuron(size_t outputNeuron)
 {
-	auto tile = extractTileFromNetwork(*_network, outputNeuron);
-	
 	size_t x      = 0;
 	size_t y      = 0;
 	size_t colors = 0;
-	
-	getTileDimensions(x, y, colors, tile);
-		
+
+	getTileDimensions(x, y, colors, *_network);
+
 	Image image(x, y, colors, 1);
-	
-	visualization::visualizeNeuron(tile, image, outputNeuron % tile.getOutputCount());
-	
+
+	visualization::visualizeNeuron(*_network, image, outputNeuron);
+
 	return image;
 }
 
@@ -95,15 +91,15 @@ Image NeuronVisualizer::visualizeInputTilesForAllNeurons()
 	size_t yPixelsPerTile = getYPixelsPerTile(*_network);
 
 	size_t colors = getColorsPerTile(*_network);
-	
+
 	size_t xPadding = std::max(xPixelsPerTile / 8, 1UL);
 	size_t yPadding = std::max(yPixelsPerTile / 8, 1UL);
-	
+
 	size_t x = xTiles * (xPixelsPerTile + xPadding);
 	size_t y = yTiles * (yPixelsPerTile + yPadding);
-	
+
 	Image image(x, y, colors, 1);
-	
+
 	for(size_t neuron = 0; neuron != _network->getOutputCount(); ++neuron)
 	{
 		util::log("NeuronVisualizer") << "Solving for neuron " << neuron << " / "
@@ -111,14 +107,14 @@ Image NeuronVisualizer::visualizeInputTilesForAllNeurons()
 
 		size_t xTile = neuron % xTiles;
 		size_t yTile = neuron / xTiles;
-		
+
 		size_t xPosition = xTile * (xPixelsPerTile + xPadding);
 		size_t yPosition = yTile * (yPixelsPerTile + yPadding);
-		
+
 		image.setTile(xPosition, yPosition, visualizeInputTileForNeuron(neuron));
 	}
-	
-	return image;	
+
+	return image;
 }
 
 static void getTileDimensions(size_t& x, size_t& y, size_t& colors,
@@ -126,34 +122,19 @@ static void getTileDimensions(size_t& x, size_t& y, size_t& colors,
 {
 	x = getXPixelsPerTile(tile);
 	y = getYPixelsPerTile(tile);
-	
+
 	colors = getColorsPerTile(tile);
-}
-
-static NeuralNetwork extractTileFromNetwork(const NeuralNetwork& network,
-	size_t outputNeuron)
-{
-	// Get the connected subgraph
-	// TODO
-	NeuralNetwork newNetwork;
-
-	//auto newNetwork = getSubgraphConnectedToThisOutput(network, outputNeuron); 
-
-	util::log("NeuronVisualizer")
-		<< "sliced out tile with shape: " << newNetwork.shapeString() << ".\n";
-		
-	return newNetwork;
 }
 
 static size_t sqrtRoundUp(size_t value)
 {
 	size_t result = std::sqrt((double) value);
-	
+
 	if(result * result < value)
 	{
 		result += 1;
 	}
-	
+
 	return result;
 }
 
@@ -165,14 +146,14 @@ static size_t getXPixelsPerTile(const NeuralNetwork& network)
 static size_t getYPixelsPerTile(const NeuralNetwork& network)
 {
 	size_t inputs = network.getInputCount();
-	
+
 	return sqrtRoundUp(inputs / getColorsPerTile(network));
 }
 
 static size_t getColorsPerTile(const NeuralNetwork& network)
 {
 	size_t inputs = network.getInputCount();
-	
+
 	return inputs % 3 == 0 ? 3 : 1;
 }
 
@@ -202,7 +183,7 @@ public:
 	CostAndGradientFunction(const NeuralNetwork* n, const Matrix* r)
 	: _network(n), _reference(r)
 	{
-	
+
 	}
 
 
@@ -211,15 +192,15 @@ public:
 		const MatrixVector& inputs) const
 	{
 		util::log("NeuronVisualizer::Detail") << " inputs are : " << inputs.front().toString();
-		
+
 		Matrix gradient;
 		double newCost = _network->getInputCostAndGradient(gradient, inputs.front(), *_reference);
-		
+
 		gradients.push_back(std::move(gradient));
-		
+
 		util::log("NeuronVisualizer::Detail") << " new gradient is : " << gradients.front().toString();
 		util::log("NeuronVisualizer::Detail") << " new cost is : " << newCost << "\n";
-		
+
 		return newCost;
 	}
 
@@ -229,12 +210,12 @@ private:
 };
 
 static Matrix generateReferenceForNeuron(const NeuralNetwork* network,
-	size_t neuron) 
+	size_t neuron)
 {
 	Matrix reference(1, network->getOutputCount());
-	
+
 	reference(0, 0) = 0.9f;
-	
+
 	return reference;
 }
 
@@ -249,32 +230,32 @@ static Matrix optimizeWithDerivative(double& bestCost, const NeuralNetwork* netw
 	const Matrix& input, size_t neuron)
 {
 	auto reference = generateReferenceForNeuron(network, neuron);
-	
+
 	auto bestSoFar = matrix::MatrixVector({input});
 	     bestCost  = network->getCost(input, reference);
-	
+
 	std::string solverType = util::KnobDatabase::getKnobValue(
 		"NeuronVisualizer::SolverType", "LBFGSSolver");
 
 	std::unique_ptr<optimizer::GeneralDifferentiableSolver> solver(optimizer::GeneralDifferentiableSolverFactory::create(solverType));
-	
+
 	assert(solver != nullptr);
 
 	addConstraints(*solver);
-	
+
 	util::log("NeuronVisualizer") << " Initial inputs are   : " << input.toString();
 	util::log("NeuronVisualizer") << " Initial reference is : " << generateReferenceForNeuron(network, neuron).toString();
 	util::log("NeuronVisualizer") << " Initial output is    : " << network->runInputs(input).toString();
 	util::log("NeuronVisualizer") << " Initial cost is      : " << bestCost << "\n";
-	
+
 	CostAndGradientFunction costAndGradient(network, &reference);
 
 	bestCost = solver->solve(bestSoFar, costAndGradient);
-	
+
 	util::log("NeuronVisualizer") << "  solver produced new cost: " << bestCost << ".\n";
 	util::log("NeuronVisualizer") << "  final input is : " << bestSoFar.toString();
 	util::log("NeuronVisualizer") << "  final output is : " << network->runInputs(bestSoFar.front()).toString();
-	
+
 	return bestSoFar.front();
 }
 
