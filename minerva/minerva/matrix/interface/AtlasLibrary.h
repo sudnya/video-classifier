@@ -45,6 +45,12 @@ public:
          const int lda, const float *B, const int ldb,
          const float beta, float *C, const int ldc);
 	
+	static void dgemm(const int Order, const int TransA,
+         const int TransB, const int M, const int N,
+         const int K, const double alpha, const double* A,
+         const int lda, const double* B, const int ldb,
+         const double beta, double* C, const int ldc);
+	
 private:
 	static void _check();
 	
@@ -57,6 +63,12 @@ private:
 		     const int K, const float alpha, const float *A,
 		     const int lda, const float *B, const int ldb,
 		     const float beta, float *C, const int ldc);
+		
+		void (*cblas_dgemm)(const int Order, const int TransA,
+		     const int TransB, const int M, const int N,
+		     const int K, const double alpha, const double *A,
+		     const int lda, const double *B, const int ldb,
+		     const double beta, double *C, const int ldc);
 		
 	public:
 		/*! \brief The constructor zeros out all of the pointers */

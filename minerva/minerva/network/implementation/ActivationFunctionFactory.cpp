@@ -9,6 +9,7 @@
 
 #include <minerva/network/interface/SigmoidActivationFunction.h>
 #include <minerva/network/interface/RectifiedLinearActivationFunction.h>
+#include <minerva/network/interface/NullActivationFunction.h>
 
 namespace minerva
 {
@@ -25,6 +26,10 @@ ActivationFunction* ActivationFunctionFactory::create(const std::string& name)
 	else if (name == "SigmoidActivationFunction")
 	{
 		return new SigmoidActivationFunction;
+	}
+	else if (name == "NullActivationFunction")
+	{
+		return new NullActivationFunction;
 	}
 
 	return nullptr;

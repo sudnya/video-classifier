@@ -8,6 +8,7 @@
 
 // Standard Library
 #include <string>
+#include <memory>
 
 // Forward Declarations
 namespace minerva { namespace network { class Layer; } }
@@ -22,7 +23,7 @@ namespace network
 class LayerFactory
 {
 public:
-    static Layer* create(const std::string& name);
+    static std::unique_ptr<Layer> create(const std::string& name);
 };
 
 }

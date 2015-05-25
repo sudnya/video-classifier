@@ -27,13 +27,13 @@ namespace model
 {
 
 Model::Model(const std::string& path)
-: _path(path), _loaded(false), _xPixels(0), _yPixels(0), _colors(3)
+: _path(path), _loaded(false)
 {
 
 }
 
 Model::Model()
-: _path("unknown-path"), _loaded(true), _xPixels(0), _yPixels(0), _colors(3)
+: _path("unknown-path"), _loaded(true)
 {
 
 }
@@ -95,28 +95,6 @@ std::string Model::getOutputLabel(size_t output) const
 size_t Model::getOutputCount() const
 {
 	return _outputLabels.size();
-}
-
-void Model::setInputImageResolution(size_t x, size_t y, size_t c)
-{
-	_xPixels = x;
-	_yPixels = y;
-	_colors  = c;
-}
-
-size_t Model::xPixels() const
-{
-	return _xPixels;
-}
-
-size_t Model::yPixels() const
-{
-	return _yPixels;
-}
-
-size_t Model::colors() const
-{
-	return _colors;
 }
 
 void Model::save() const

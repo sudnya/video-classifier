@@ -1,7 +1,7 @@
 /*! \file   Solver.cpp
-	\author Gregory Diamos <gregory.diamos@gmail.com>
-	\date   Saturday March 8, 2014
-	\brief  The source file for the Solver class.
+    \author Gregory Diamos <gregory.diamos@gmail.com>
+    \date   Saturday March 8, 2014
+    \brief  The source file for the Solver class.
 */
 
 // Minerva Includes
@@ -21,15 +21,15 @@ Solver::Solver()
 
 Solver::~Solver()
 {
-	for(auto constraint : _constraints)
-	{
-		delete constraint;
-	}
+    for(auto constraint : _constraints)
+    {
+        delete constraint;
+    }
 }
 
 void Solver::addConstraint(const Constraint& constraint)
 {
-	_constraints.push_back(constraint.clone());
+    _constraints.push_back(constraint.clone());
 }
 
 }

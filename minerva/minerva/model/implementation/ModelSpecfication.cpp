@@ -12,6 +12,8 @@
 #include <minerva/network/interface/Layer.h>
 #include <minerva/network/interface/LayerFactory.h>
 
+#include <minerva/matrix/interface/Dimension.h>
+
 #include <minerva/util/interface/json.h>
 
 // Standard Library Includes
@@ -34,12 +36,7 @@ public:
 	void initializeModel(Model& model);
 
 private:
-	
-
-private:
 	std::unique_ptr<util::json::Object> _specification;
-
-	std::default_random_engine _randomEngine;
 };
 
 
@@ -103,7 +100,9 @@ void ModelSpecificationImplementation::initializeModel(Model& model)
 	size_t yPixels = (int) objectVisitor["yPixels"];	
 	size_t colors  = (int) objectVisitor["colors" ];
 
-	model.setInputImageResolution(xPixels, yPixels, colors);
+	model.setAttribute("ResolutionX",     xPixels);
+	model.setAttribute("ResolutionY",     yPixels);
+	model.setAttribute("ColorComponents", colors );
 	
 	if(objectVisitor.find("output-names") == 0)
 	{
@@ -205,7 +204,7 @@ void ModelSpecificationImplementation::initializeModel(Model& model)
 			}
 		}
 		
-		network.initializeRandomly(_randomEngine);
+		network.initialize();
 					
 		model.setNeuralNetwork(name, network);
 	}

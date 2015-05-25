@@ -7,10 +7,8 @@
 // Minerva Includes
 #include <minerva/optimizer/interface/CostAndGradientFunction.h>
 
-#include <minerva/matrix/interface/SparseMatrixFormat.h>
-
-#include <minerva/matrix/interface/BlockSparseMatrix.h>
-#include <minerva/matrix/interface/BlockSparseMatrixVector.h>
+#include <minerva/matrix/interface/Matrix.h>
+#include <minerva/matrix/interface/MatrixVector.h>
 
 namespace minerva
 {
@@ -18,47 +16,10 @@ namespace minerva
 namespace optimizer
 {
 
-typedef matrix::Matrix                   Matrix;
-typedef matrix::BlockSparseMatrix        BlockSparseMatrix;
-typedef matrix::BlockSparseMatrixVector  BlockSparseMatrixVector;
-typedef matrix::SparseMatrixFormat       SparseMatrixFormat;
-typedef matrix::SparseMatrixVectorFormat SparseMatrixVectorFormat;
+typedef matrix::Matrix       Matrix;
+typedef matrix::MatrixVector MatrixVector;
 
-CostAndGradientFunction::CostAndGradientFunction(const SparseMatrixVectorFormat& f)
-: format(f)
-{
-
-}
-
-static SparseMatrixVectorFormat convertToFormat(const BlockSparseMatrixVector& vector)
-{
-	SparseMatrixVectorFormat format;
-	
-	for(auto& matrix : vector)
-	{
-		format.push_back(SparseMatrixFormat(matrix));
-	}
-	
-	return format;
-}
-
-static SparseMatrixVectorFormat convertToFormat(const Matrix& matrix)
-{
-	SparseMatrixVectorFormat format;
-	
-	format.push_back(SparseMatrixFormat(matrix));
-	
-	return format;
-}
-
-CostAndGradientFunction::CostAndGradientFunction(const BlockSparseMatrixVector& vector)
-: format(convertToFormat(vector))
-{
-
-}
-
-CostAndGradientFunction::CostAndGradientFunction(const Matrix& matrix)
-: format(convertToFormat(matrix))
+CostAndGradientFunction::CostAndGradientFunction()
 {
 
 }
@@ -66,23 +27,6 @@ CostAndGradientFunction::CostAndGradientFunction(const Matrix& matrix)
 CostAndGradientFunction::~CostAndGradientFunction()
 {
 
-}
-
-BlockSparseMatrixVector CostAndGradientFunction::getUninitializedDataStructure() const
-{
-	BlockSparseMatrixVector vector;
-	
-	vector.reserve(format.size());
-	
-	for(auto& sparseMatrixFormat : format)
-	{
-		vector.push_back(BlockSparseMatrix(sparseMatrixFormat.blocks,
-			sparseMatrixFormat.rowsPerBlock,
-			sparseMatrixFormat.columnsPerBlock,
-			sparseMatrixFormat.isRowSparse));
-	}
-	
-	return vector;
 }
 
 }

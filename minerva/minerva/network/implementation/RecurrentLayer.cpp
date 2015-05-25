@@ -7,11 +7,20 @@
 // Minerva Includes
 #include <minerva/network/interface/RecurrentLayer.h>
 
-#include <minerva/matrix/interface/BlockSparseMatrix.h>
+#include <minerva/network/interface/ActivationFunction.h>
+#include <minerva/network/interface/ActivationCostFunction.h>
+#include <minerva/network/interface/WeightCostFunction.h>
 
-#include <minerva/matrix/interface/SparseMatrixFormat.h>
+#include <minerva/matrix/interface/Matrix.h>
+#include <minerva/matrix/interface/MatrixOperations.h>
+#include <minerva/matrix/interface/BlasOperations.h>
+#include <minerva/matrix/interface/RandomOperations.h>
+#include <minerva/matrix/interface/Operation.h>
+#include <minerva/matrix/interface/MatrixVector.h>
 
 #include <minerva/util/interface/debug.h>
+#include <minerva/util/interface/knobs.h>
+#include <minerva/util/interface/memory.h>
 
 namespace minerva
 {
@@ -19,10 +28,19 @@ namespace minerva
 namespace network
 {
 
-typedef matrix::BlockSparseMatrix BlockSparseMatrix;
-typedef matrix::BlockSparseMatrixVector BlockSparseMatrixVector;
+typedef matrix::Matrix Matrix;
+typedef matrix::MatrixVector MatrixVector;
+typedef matrix::Dimension Dimension;
 
 RecurrentLayer::RecurrentLayer()
+: RecurrentLayer(0, matrix::SinglePrecision())
+{
+
+}
+
+RecurrentLayer::RecurrentLayer(size_t size, const matrix::Precision& precision)
+: _parameters(new MatrixVector({Matrix({size, size}, precision), Matrix({size}, precision), Matrix({size, size}, precision)})),
+ _forwardWeights((*_parameters)[0]), _bias((*_parameters)[1]), _recurrentWeights((*_parameters)[2])
 {
 
 }
@@ -32,122 +50,129 @@ RecurrentLayer::~RecurrentLayer()
 
 }
 
-void RecurrentLayer::initializeRandomly(std::default_random_engine& engine, float epsilon)
+RecurrentLayer::RecurrentLayer(const RecurrentLayer& l)
+: _parameters(std::make_unique<MatrixVector>(*l._parameters)),
+ _forwardWeights((*_parameters)[0]), _bias((*_parameters)[1]), _recurrentWeights((*_parameters)[2])
 {
-	assertM(false, "Not Implemented.");
+
 }
 
-BlockSparseMatrix RecurrentLayer::runForward(const BlockSparseMatrix& m) const
+RecurrentLayer& RecurrentLayer::operator=(const RecurrentLayer& l)
 {
-	assertM(false, "Not Implemented.");
+	if(&l == this)
+	{
+		return *this;
+	}
+
+	_parameters = std::move(std::make_unique<MatrixVector>(*l._parameters));
+
+	return *this;
 }
 
-BlockSparseMatrix RecurrentLayer::runReverse(BlockSparseMatrixVector& gradients,
-	const BlockSparseMatrix& inputActivations,
-	const BlockSparseMatrix& outputActivations,
-	const BlockSparseMatrix& deltas) const
+void RecurrentLayer::initialize()
 {
-	assertM(false, "Not Implemented.");
+	double e = util::KnobDatabase::getKnobValue("Layer::RandomInitializationEpsilon", 6);
+
+	double epsilon = std::sqrt((e) / (getInputCount() + getOutputCount() + 1));
+
+	// initialize the feed forward layer
+	matrix::rand(_forwardWeights);
+	apply(_forwardWeights, _forwardWeights, matrix::Multiply(epsilon));
+
+	// assign bias to 0.0f
+	apply(_bias, _bias, matrix::Fill(0.0f));
+
+	// initialize the recurrent weights
+	matrix::rand(_recurrentWeights);
+	apply(_recurrentWeights, _recurrentWeights, matrix::Multiply(epsilon));
 }
 
-BlockSparseMatrixVector& RecurrentLayer::weights()
+Matrix RecurrentLayer::runForwardImplementation(const Matrix& m) const
 {
-	assertM(false, "Not Implemented.");
+	assertM(false, "Not impemented.");
 }
 
-const BlockSparseMatrixVector& RecurrentLayer::weights() const
+Matrix RecurrentLayer::runReverseImplementation(MatrixVector& gradients,
+	const Matrix& inputActivations,
+	const Matrix& outputActivations,
+	const Matrix& deltas) const
 {
-	assertM(false, "Not Implemented.");
+	assertM(false, "Not impemented.");
 }
 
-float RecurrentLayer::computeWeightCost() const
+MatrixVector& RecurrentLayer::weights()
 {
-	assertM(false, "Not Implemented.");
+	return *_parameters;
+}
+
+const MatrixVector& RecurrentLayer::weights() const
+{
+	return *_parameters;
+}
+
+const matrix::Precision& RecurrentLayer::precision() const
+{
+	return _forwardWeights.precision();
+}
+
+double RecurrentLayer::computeWeightCost() const
+{
+	return getWeightCostFunction()->getCost(_forwardWeights) + getWeightCostFunction()->getCost(_recurrentWeights);
+}
+
+Dimension RecurrentLayer::getInputSize() const
+{
+	return {_forwardWeights.size()[1], 1, 1};
+}
+
+Dimension RecurrentLayer::getOutputSize() const
+{
+	return getInputSize();
 }
 
 size_t RecurrentLayer::getInputCount() const
 {
-	assertM(false, "Not Implemented.");
+	return getInputSize().product();
 }
 
 size_t RecurrentLayer::getOutputCount() const
 {
-	assertM(false, "Not Implemented.");
-}
-
-size_t RecurrentLayer::getBlocks() const
-{
-	assertM(false, "Not Implemented.");
-}
-
-size_t RecurrentLayer::getInputBlockingFactor() const
-{
-	assertM(false, "Not Implemented.");
-}
-
-size_t RecurrentLayer::getOutputBlockingFactor() const
-{
-	assertM(false, "Not Implemented.");
-}
-
-size_t RecurrentLayer::getOutputCountForInputCount(size_t inputCount) const
-{
-	assertM(false, "Not Implemented.");
+	return getInputCount();
 }
 
 size_t RecurrentLayer::totalNeurons() const
 {
-	assertM(false, "Not Implemented.");
+	return 2 * getInputCount();
 }
+
 size_t RecurrentLayer::totalConnections() const
 {
-	assertM(false, "Not Implemented.");
+	return 2 * _forwardWeights.elements() + _bias.elements();
 }
 
 size_t RecurrentLayer::getFloatingPointOperationCount() const
 {
-	assertM(false, "Not Implemented.");
-}
-
-Layer* RecurrentLayer::sliceSubgraphConnectedToTheseOutputs(
-	const NeuronSet& outputs) const
-{
-	assertM(false, "Not Implemented.");
+	return 2 * totalConnections();
 }
 
 void RecurrentLayer::save(util::TarArchive& archive) const
 {
-	assertM(false, "Not Implemented.");
+	assertM(false, "Not implemented.");
 }
 
 void RecurrentLayer::load(const util::TarArchive& archive, const std::string& name)
 {
-	assertM(false, "Not Implemented.");
+	assertM(false, "Not implemented.");
 }
 
-void RecurrentLayer::extractWeights(BlockSparseMatrixVector& weights)
+std::unique_ptr<Layer> RecurrentLayer::clone() const
 {
-	assertM(false, "Not Implemented.");
+	return std::make_unique<RecurrentLayer>(*this);
 }
 
-void RecurrentLayer::restoreWeights(BlockSparseMatrixVector&& weights)
+std::unique_ptr<Layer> RecurrentLayer::mirror() const
 {
-	assertM(false, "Not Implemented.");
-}
-
-RecurrentLayer::SparseMatrixVectorFormat RecurrentLayer::getWeightFormat() const
-{
-	return {};
-}
-	
-Layer* RecurrentLayer::clone() const
-{
-	return new RecurrentLayer(*this);
-}
-
-Layer* RecurrentLayer::mirror() const
-{
-	assertM(false, "Not Implemented.");
+	return clone();
 }
 
 std::string RecurrentLayer::getTypeName() const

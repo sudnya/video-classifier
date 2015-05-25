@@ -7,7 +7,7 @@
 // Minerva Includes
 #include <minerva/network/interface/NullActivationCostFunction.h>
 
-#include <minerva/matrix/interface/BlockSparseMatrix.h>
+#include <minerva/matrix/interface/Matrix.h>
 #include <minerva/util/interface/debug.h>
 
 namespace minerva
@@ -21,12 +21,12 @@ NullActivationCostFunction::~NullActivationCostFunction()
 
 }
 
-float NullActivationCostFunction::getCost(const BlockSparseMatrix& activations) const
+float NullActivationCostFunction::getCost(const Matrix& activations) const
 {
 	return 0.0f;
 }
 
-NullActivationCostFunction::BlockSparseMatrix NullActivationCostFunction::getGradient(const BlockSparseMatrix& activations) const
+NullActivationCostFunction::Matrix NullActivationCostFunction::getGradient(const Matrix& activations) const
 {
 	assertM(false, "Not implemented");
 }

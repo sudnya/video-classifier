@@ -1,13 +1,15 @@
-/*	\file   SumOfSquaresCostFunction.cpp
-	\date   November 19, 2014
-	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The source file for the SumOfSquaresCostFunction class.
+/*    \file   SumOfSquaresCostFunction.cpp
+    \date   November 19, 2014
+    \author Gregory Diamos <solusstultus@gmail.com>
+    \brief  The source file for the SumOfSquaresCostFunction class.
 */
 
 // Minerva Includes
 #include <minerva/network/interface/SumOfSquaresCostFunction.h>
 
-#include <minerva/matrix/interface/BlockSparseMatrix.h>
+#include <minerva/matrix/interface/Matrix.h>
+#include <minerva/matrix/interface/MatrixOperations.h>
+#include <minerva/matrix/interface/Operation.h>
 
 namespace minerva
 {
@@ -15,30 +17,28 @@ namespace minerva
 namespace network
 {
 
-typedef matrix::BlockSparseMatrix BlockSparseMatrix;
-
 SumOfSquaresCostFunction::~SumOfSquaresCostFunction()
 {
 
 }
 
-BlockSparseMatrix SumOfSquaresCostFunction::computeCost(const BlockSparseMatrix& output, const BlockSparseMatrix& reference) const
+matrix::Matrix SumOfSquaresCostFunction::computeCost(const Matrix& output, const Matrix& reference) const
 {
-	auto difference = output.subtract(reference);
+    auto difference = apply(output, reference, matrix::Subtract());
 
-	size_t samples = output.rows();
+    size_t samples = output.size().back();
 
-	return difference.elementMultiply(difference).multiply(1.0f / (samples * 2.0f));
+    return apply(difference, matrix::SquareAndScale(0.5/samples));
 }
 
-BlockSparseMatrix SumOfSquaresCostFunction::computeDelta(const BlockSparseMatrix& output, const BlockSparseMatrix& reference) const
+matrix::Matrix SumOfSquaresCostFunction::computeDelta(const Matrix& output, const Matrix& reference) const
 {
-	return output.subtract(reference);
+    return apply(output, reference, matrix::Subtract());
 }
 
 CostFunction* SumOfSquaresCostFunction::clone() const
 {
-	return new SumOfSquaresCostFunction;
+    return new SumOfSquaresCostFunction;
 }
 
 }

@@ -7,7 +7,7 @@
 #pragma once
 
 // Forward Declarations
-namespace minerva { namespace matrix { class BlockSparseMatrix; } }
+namespace minerva { namespace matrix { class Matrix; } }
 
 namespace minerva
 {
@@ -19,17 +19,17 @@ namespace network
 class ActivationCostFunction
 {
 public:
-	typedef matrix::BlockSparseMatrix BlockSparseMatrix;
+	typedef matrix::Matrix Matrix;
 
 public:
 	virtual ~ActivationCostFunction();
 
 public:
 	/*! \brief Run the activation cost function on the specified activations. */
-	virtual float getCost(const BlockSparseMatrix&) const = 0;
+	virtual float getCost(const Matrix&) const = 0;
 
 	/*! \brief Get the gradient for the given activations. */
-	virtual BlockSparseMatrix getGradient(const BlockSparseMatrix&) const = 0;
+	virtual Matrix getGradient(const Matrix&) const = 0;
 
 public:
 	virtual ActivationCostFunction* clone() const = 0;

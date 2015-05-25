@@ -36,7 +36,7 @@ public:
 	virtual bool isSatisfied(const Matrix& ) const; 
 
 public:
-	virtual void apply(BlockSparseMatrix& ) const;
+	virtual void apply(Matrix& ) const;
 
 public:
 	virtual Constraint* clone() const;

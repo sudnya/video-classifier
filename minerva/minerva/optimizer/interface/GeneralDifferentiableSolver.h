@@ -13,8 +13,7 @@
 
 // Forward Declarations
 namespace minerva { namespace matrix    { class Matrix;                  } }
-namespace minerva { namespace matrix    { class BlockSparseMatrix;       } }
-namespace minerva { namespace matrix    { class BlockSparseMatrixVector; } }
+namespace minerva { namespace matrix    { class MatrixVector;            } }
 namespace minerva { namespace optimizer { class CostAndGradientFunction; } }
 
 namespace minerva
@@ -26,9 +25,8 @@ namespace optimizer
 class GeneralDifferentiableSolver : public Solver
 {
 public:
-	typedef matrix::BlockSparseMatrix       BlockSparseMatrix;
-	typedef matrix::Matrix                  Matrix;
-	typedef matrix::BlockSparseMatrixVector BlockSparseMatrixVector;
+	typedef matrix::Matrix       Matrix;
+	typedef matrix::MatrixVector MatrixVector;
 
 public:
 	virtual ~GeneralDifferentiableSolver();
@@ -44,13 +42,19 @@ public:
 	
 		\return A floating point value representing the final cost.
 	 */
-	virtual float solve(BlockSparseMatrixVector& inputs, const CostAndGradientFunction& callBack) = 0;
-
-public:
-	/* \brief A helper function with inputs formatted as a matrix */
-	float solve(Matrix& inputs, const CostAndGradientFunction& callBack);
-	/* \brief A helper function with inputs formatted as a block sparse matrix */
-	float solve(BlockSparseMatrix& inputs, const CostAndGradientFunction& callBack);
+	virtual double solve(MatrixVector& inputs, const CostAndGradientFunction& callBack) = 0;
+	
+	/*! \brief Performs unconstrained optimization on a differentiable
+		function.
+	
+		\input inputs - The initial parameter values being optimized.
+		\input callBack - A CostAndGradient object that is used
+			by the optimization library to determine the gradient and
+			cost of new parameter values.
+	
+		\return A floating point value representing the final cost.
+	 */
+	double solve(Matrix& inputs, const CostAndGradientFunction& callBack);
 
 };
 

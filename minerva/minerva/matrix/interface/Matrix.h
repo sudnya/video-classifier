@@ -1,18 +1,24 @@
-/*	\file   Matrix.h
-	\date   Sunday August 11, 2013
-	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The header file for the Matrix class.
+/*    \file   Matrix.h
+    \date   Sunday August 11, 2013
+    \author Gregory Diamos <solusstultus@gmail.com>
+    \brief  The header file for the Matrix class.
 */
 
 #pragma once
 
+// Minerva Includes
+#include <minerva/matrix/interface/FloatReference.h>
+#include <minerva/matrix/interface/FloatIterator.h>
+#include <minerva/matrix/interface/Dimension.h>
+#include <minerva/matrix/interface/Precision.h>
+
 // Standard Library Includes
 #include <string>
 #include <cstddef>
-#include <random>
+#include <memory>
 
 // Forward Declarations
-namespace minerva { namespace matrix { class MatrixImplementation; } }
+namespace minerva { namespace matrix { class Allocation; } }
 
 namespace minerva
 {
@@ -20,143 +26,96 @@ namespace minerva
 namespace matrix
 {
 
+/*! \brief An interface to operations on a general purpose array. */
 class Matrix
 {
 public:
-	typedef std::vector<float> FloatVector;
+    Matrix();
+    Matrix(std::initializer_list<size_t>);
+    explicit Matrix(const Dimension& size);
+    Matrix(const Dimension& size, const Precision& precision);
+    Matrix(const Dimension& size, const Dimension& stride);
+    Matrix(const Dimension& size, const Dimension& stride, const Precision& precision);
+    Matrix(const Dimension& size, const Dimension& stride, const Precision& precision, const std::shared_ptr<Allocation>& allocation);
+    Matrix(const Dimension& size, const Dimension& stride, const Precision& precision, const std::shared_ptr<Allocation>& allocation, void* start);
 
 public:
-	typedef       float& FloatReference;
-	typedef const float& ConstFloatReference;
-	typedef       float* FloatPointer;
-	typedef const float* ConstFloatPointer;
-
-	typedef FloatVector::iterator       iterator;
-	typedef FloatVector::const_iterator const_iterator;
+    ~Matrix();
 
 public:
-	explicit Matrix(size_t rows = 0, size_t colums = 0,
-		const FloatVector& data = FloatVector());
-	explicit Matrix(Matrix&&);
-	~Matrix();
+    const Dimension& size()   const;
+    const Dimension& stride() const;
 
 public:
-	Matrix(const Matrix&);
-	Matrix& operator=(const Matrix&);
-	Matrix& operator=(Matrix&&);
+    const Precision& precision() const;
 
 public:
-	iterator	   begin();
-	const_iterator begin() const;
-
-	iterator	   end();
-	const_iterator end() const;
+    size_t elements() const;
 
 public:
-	     FloatReference operator[](size_t index);
-	ConstFloatReference operator[](size_t index) const;
+    FloatIterator begin();
+    FloatIterator end();
 
-	     FloatReference operator()(size_t row, size_t column);
-	ConstFloatReference operator()(size_t row, size_t column) const;
-
-public:
-	Matrix getColumn(size_t number) const;
-	Matrix getRow(size_t number) const;
-	
-public:
-	Matrix appendColumns(const Matrix& m) const;
-	Matrix appendRows(const Matrix& m) const;
-	void resize(size_t rows, size_t columns);
-	
-public:
-	size_t size()  const;
-	bool   empty() const;
-
-    size_t columns() const;
-	size_t rows()	const;
- 
- 	size_t getPosition(size_t row, size_t column) const;
- 
-public: 
-	Matrix multiply(const Matrix& m) const;
-	Matrix multiply(float f) const;
-	Matrix elementMultiply(const Matrix& m) const;
-
-	Matrix add(const Matrix& m) const;
-	Matrix addBroadcastRow(const Matrix& m) const;
-	Matrix add(float f) const;
-
-	Matrix subtract(const Matrix& m) const;
-	Matrix subtract(float f) const;
-
-	Matrix log() const;
-	Matrix sqrt() const;
-	Matrix abs() const;
-	Matrix negate() const;
-	
-	Matrix sigmoid() const;
-	Matrix sigmoidDerivative() const;
-
-	Matrix rectifiedLinear() const;
-	Matrix rectifiedLinearDerivative() const;
-
-	Matrix klDivergence(float sparsity) const;
-	Matrix klDivergenceDerivative(float sparsity) const;
+    ConstFloatIterator begin() const;
+    ConstFloatIterator end()   const;
 
 public:
-	Matrix slice(size_t startRow, size_t startColumn,
-		size_t rows, size_t columns) const;
-	Matrix transpose() const;
+    std::shared_ptr<Allocation> allocation();
 
 public:
-	void negateSelf();
-	void logSelf();
-    void sigmoidSelf();
-    void sigmoidDerivativeSelf();
-    void rectifiedLinearSelf();
-    void rectifiedLinearDerivativeSelf();
-    void klDivergenceSelf(float sparsity);
-    void klDivergenceDerivativeSelf(float sparsity);
-	void minSelf(float f);
-	void maxSelf(float f);
-	void assignSelf(float f);
-
-	void transposeSelf();
-
-	void assignUniformRandomValues(
-		std::default_random_engine& engine, float min, float max);
+          void* data();
+    const void* data() const;
 
 public:
-	Matrix greaterThanOrEqual(float f) const;
-	Matrix equals(const Matrix& m) const;
-	Matrix lessThanOrEqual(float f) const;
+    bool isContiguous() const;
+    bool isLeadingDimensionContiguous() const;
 
 public:
-    float  reduceSum()             const;
-	Matrix reduceSumAlongColumns() const;
-	Matrix reduceSumAlongRows()    const;
+    std::string toString() const;
+    std::string debugString() const;
+    std::string shapeString() const;
 
 public:
-	void clear();
+    template<typename... Args>
+    FloatReference operator()(Args... args)
+    {
+        return (*this)[Dimension(args...)];
+    }
+
+    template<typename... Args>
+    ConstFloatReference operator()(Args... args) const
+    {
+        return (*this)[Dimension(args...)];
+    }
 
 public:
-	const FloatVector& data() const;
-	FloatVector& data();
+    FloatReference      operator[](const Dimension& d);
+    ConstFloatReference operator[](const Dimension& d) const;
 
 public:
-	bool operator==(const Matrix& m) const;
-	bool operator!=(const Matrix& m) const;
+    bool operator==(const Matrix& m) const;
+    bool operator!=(const Matrix& m) const;
 
 public:
-    std::string toString(size_t maxRows = 20, size_t maxColumns = 20) const;
-	std::string debugString() const;
-	std::string shapeString() const;
+    template<typename... Sizes>
+    Matrix(Sizes... sizes)
+    : Matrix(Dimension(sizes...))
+    {
+
+    }
 
 private:
-	Matrix(MatrixImplementation* implementation);
+    std::shared_ptr<Allocation> _allocation;
 
 private:
-	MatrixImplementation* _matrix;
+    void* _data_begin;
+
+private:
+    Dimension _size;
+    Dimension _stride;
+
+private:
+    Precision _precision;
 
 };
 

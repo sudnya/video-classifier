@@ -45,19 +45,20 @@ public:
 
 public:
 	void setNeuralNetwork(const std::string& name, const NeuralNetwork& n);
-	void setInputImageResolution(size_t x, size_t y, size_t colors);
 
 public:
 	void setOutputLabel(size_t output, const std::string& label);
 	std::string getOutputLabel(size_t output) const;
 
 public:
-	size_t getOutputCount() const;
+	template<typename T>
+	void setAttribute(const std::string& name, const T& value);
+	
+	template<typename T>
+	T getAttribute(const std::string& name) const;
 
 public:
-	size_t xPixels() const;
-	size_t yPixels() const;
-	size_t colors()  const;
+	size_t getOutputCount() const;
 
 public:
 	void save() const;
@@ -87,6 +88,7 @@ private:
 private:
 	typedef std::map<std::string, iterator> NeuralNetworkMap;
 	typedef std::map<size_t, std::string> LabelMap;
+	typedef std::map<std::string, std::string> AttributeMap;
 	typedef std::vector<std::string> StringVector;
 	
 private:
@@ -104,10 +106,7 @@ private:
 	NeuralNetworkList _neuralNetworks;
 	NeuralNetworkMap  _neuralNetworkMap;
 	LabelMap          _outputLabels;
-
-	size_t _xPixels;
-	size_t _yPixels;
-	size_t _colors;
+	AttributeMap      _attributes;
 	
 };
 
@@ -115,4 +114,5 @@ private:
 
 }
 
+#include <minerva/model/implementation/Model-inl.h>
 

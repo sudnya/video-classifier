@@ -1,12 +1,12 @@
 /*! \file   CudaDriverTypes.h
-	\author Gregory Diamos <solusstultus@gmail.com>
-	\date   Wednesday November 13, 2013
-	\brief  The header file for the CudaDriverTypes class.
+    \author Gregory Diamos <solusstultus@gmail.com>
+    \date   Wednesday November 13, 2013
+    \brief  The header file for the CudaDriverTypes class.
 */
 
 #pragma once
 
-namespace minerva 
+namespace minerva
 {
 
 namespace matrix
@@ -189,7 +189,7 @@ typedef enum cudaError_enum {
 
     /**
      * This indicates that the ::CUcontext passed to the API call can
-     * only be bound to a single CPU thread at a time but is already 
+     * only be bound to a single CPU thread at a time but is already
      * bound to a CPU thread.
      */
     CUDA_ERROR_CONTEXT_ALREADY_IN_USE         = 216,
@@ -286,7 +286,7 @@ typedef enum cudaError_enum {
      * mode.
      */
     CUDA_ERROR_LAUNCH_INCOMPATIBLE_TEXTURING  = 703,
-    
+
     /**
      * This error indicates that a call to ::cuCtxEnablePeerAccess() is
      * trying to re-enable peer access to a context which has already
@@ -295,9 +295,9 @@ typedef enum cudaError_enum {
     CUDA_ERROR_PEER_ACCESS_ALREADY_ENABLED    = 704,
 
     /**
-     * This error indicates that ::cuCtxDisablePeerAccess() is 
-     * trying to disable peer access which has not been enabled yet 
-     * via ::cuCtxEnablePeerAccess(). 
+     * This error indicates that ::cuCtxDisablePeerAccess() is
+     * trying to disable peer access which has not been enabled yet
+     * via ::cuCtxEnablePeerAccess().
      */
     CUDA_ERROR_PEER_ACCESS_NOT_ENABLED        = 705,
 
@@ -316,15 +316,15 @@ typedef enum cudaError_enum {
 
     /**
      * A device-side assert triggered during kernel execution. The context
-     * cannot be used anymore, and must be destroyed. All existing device 
-     * memory allocations from this context are invalid and must be 
+     * cannot be used anymore, and must be destroyed. All existing device
+     * memory allocations from this context are invalid and must be
      * reconstructed if the program is to continue using CUDA.
      */
     CUDA_ERROR_ASSERT                         = 710,
 
     /**
      * This error indicates that the hardware resources required to enable
-     * peer access have been exhausted for one or more of the devices 
+     * peer access have been exhausted for one or more of the devices
      * passed to ::cuCtxEnablePeerAccess().
      */
     CUDA_ERROR_TOO_MANY_PEERS                 = 711,
@@ -538,7 +538,7 @@ typedef enum CUdevice_attribute_enum {
     CU_DEVICE_ATTRIBUTE_L2_CACHE_SIZE = 38,                     /**< Size of L2 cache in bytes */
     CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_MULTIPROCESSOR = 39,    /**< Maximum resident threads per multiprocessor */
     CU_DEVICE_ATTRIBUTE_ASYNC_ENGINE_COUNT = 40,                /**< Number of asynchronous engines */
-    CU_DEVICE_ATTRIBUTE_UNIFIED_ADDRESSING = 41,                /**< Device shares a unified address space with the host */    
+    CU_DEVICE_ATTRIBUTE_UNIFIED_ADDRESSING = 41,                /**< Device shares a unified address space with the host */
     CU_DEVICE_ATTRIBUTE_MAXIMUM_TEXTURE1D_LAYERED_WIDTH = 42,   /**< Maximum 1D layered texture width */
     CU_DEVICE_ATTRIBUTE_MAXIMUM_TEXTURE1D_LAYERED_LAYERS = 43,  /**< Maximum layers in a 1D layered texture */
     CU_DEVICE_ATTRIBUTE_CAN_TEX2D_GATHER = 44,                  /**< Deprecated, do not use. */
@@ -572,7 +572,7 @@ typedef enum CUdevice_attribute_enum {
     CU_DEVICE_ATTRIBUTE_MAXIMUM_TEXTURE2D_LINEAR_PITCH = 72,    /**< Maximum 2D linear texture pitch in bytes */
     CU_DEVICE_ATTRIBUTE_MAXIMUM_TEXTURE2D_MIPMAPPED_WIDTH = 73, /**< Maximum mipmapped 2D texture width */
     CU_DEVICE_ATTRIBUTE_MAXIMUM_TEXTURE2D_MIPMAPPED_HEIGHT = 74,/**< Maximum mipmapped 2D texture height */
-    CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MAJOR = 75,          /**< Major compute capability version number */     
+    CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MAJOR = 75,          /**< Major compute capability version number */
     CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MINOR = 76,          /**< Minor compute capability version number */
     CU_DEVICE_ATTRIBUTE_MAXIMUM_TEXTURE1D_MIPMAPPED_WIDTH = 77, /**< Maximum mipmapped 1D texture width */
     CU_DEVICE_ATTRIBUTE_STREAM_PRIORITIES_SUPPORTED = 78,       /**< Device supports stream priorities */
@@ -587,7 +587,7 @@ typedef enum CUctx_flags_enum {
     CU_CTX_BLOCKING_SYNC       = 0x04, /**< Set blocking synchronization as default scheduling
                                          *  \deprecated This flag was deprecated as of CUDA 4.0
                                          *  and was replaced with ::CU_CTX_SCHED_BLOCKING_SYNC. */
-    CU_CTX_SCHED_MASK          = 0x07, 
+    CU_CTX_SCHED_MASK          = 0x07,
     CU_CTX_MAP_HOST            = 0x08, /**< Support mapped pinned allocations */
     CU_CTX_LMEM_RESIZE_TO_MAX  = 0x10, /**< Keep local memory allocation after launch */
     CU_CTX_FLAGS_MASK          = 0x1f

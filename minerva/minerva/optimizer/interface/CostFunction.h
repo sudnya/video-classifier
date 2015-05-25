@@ -8,7 +8,7 @@
 
 // Forward Declarations
 namespace minerva { namespace matrix { class Matrix;            } }
-namespace minerva { namespace matrix { class BlockSparseMatrix; } }
+namespace minerva { namespace matrix { class Matrix; } }
 
 namespace minerva
 {

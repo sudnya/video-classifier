@@ -221,11 +221,6 @@ void Image::setLabel(const std::string& label)
 	_label = label;
 }
 
-float Image::range() const
-{
-   return (float)((1 << (8 * pixelSize())) - 1);
-}
-
 void Image::invalidateCache()
 {
 	if(!loaded()) return;
@@ -241,107 +236,6 @@ void Image::invalidateCache()
 Image::ByteVector& Image::getRawData()
 {
 	return _pixels;
-}
-
-matrix::Matrix Image::convertToStandardizedMatrix(size_t sampleCount, size_t xTileSize, size_t yTileSize) const
-{
-	auto samples = getSampledData(sampleCount, xTileSize, yTileSize);
-	
-	return matrix::Matrix(1, sampleCount, samples);
-}
-
-Image::FloatVector Image::getSampledData(size_t sampleCount,
-	size_t xTileSize, size_t yTileSize) const
-{
-	FloatVector samples;
-
-	size_t imageSize = totalSize();
-	double step = (imageSize + 0.0) / sampleCount;
-	
-	double samplePosition = 0.0;
-	
-	for(size_t sample = 0; sample != sampleCount;
-		++sample, samplePosition += step)
-	{
-		size_t position = (size_t) samplePosition;
-		
-		if(position >= imageSize)
-		{
-			position = imageSize - 1;
-		}
-
-		size_t zPosition = linearToZOrder(position, xTileSize, yTileSize);
-		
-		float sampleValue = standardize(getComponentAt(zPosition));
-
-		//std::cout << path() << ": sample " << sampleValue << " (" << getComponentAt(position)
-		//	<< ") = (position " << position << ")\n";
-		
-		samples.push_back(sampleValue);
-	}
-
-	return samples;
-}
-
-void Image::updateImageFromSamples(const FloatVector& samples,
-	size_t xTileSize, size_t yTileSize)
-{
-	// nearest neighbor sampling
-	for(size_t y = 0; y < this->y(); ++y)
-	{
-		for(size_t x = 0; x < this->x(); ++x)
-		{
-			for(size_t color = 0; color < this->colorComponents(); ++color)
-			{
-				size_t position  = getPosition(x, y, color);
-				size_t zPosition = zToLinearOrder(position, xTileSize, yTileSize);
-
-				size_t sampleIndex =
-					((zPosition + 0.0) / totalSize()) * samples.size();
-				
-				float sample = samples[sampleIndex];
-	
-				setStandardizedComponentAt(x, y, color, sample);
-			
-				//std::cout << path() << ": (" << x << ", " << y << ", color " << color
-				//	<< ", position " << position << ") = sample " << sample
-				//	<< " (" << getComponentAt(x, y, color) << ") \n";
-			}
-		}
-	}
-}
-
-Image Image::sample(size_t samples) const
-{
-	// Nearest neighbor sampling
-	
-	double ratio = std::sqrt(samples / (totalSize() + 0.0));
-	
-	size_t newX = x() * ratio;
-	size_t newY = y() * ratio;
-	
-	Image newImage(newX, newY, colorComponents(), pixelSize(), path());
-
-	double xStep = (x() + 0.0) / newX;
-	double yStep = (y() + 0.0) / newY;
-	
-	double yPosition = 0.0;
-	
-	for(size_t y = 0; y != newY; ++y, yPosition += yStep)
-	{
-		double xPosition = 0.0;
-
-		for(size_t x = 0; x != newX; ++x, xPosition += xStep)
-		{
-			for(size_t color = 0; color != colorComponents(); ++color)
-			{
-				newImage.setComponentAt(x, y, color,
-					getComponentAt(xPosition, yPosition, color));
-			}
-		}
-	}
-	
-	return newImage;
 }
 
 Image Image::downsample(size_t newX, size_t newY, size_t newColorComponents) const
@@ -374,11 +268,11 @@ Image Image::downsample(size_t newX, size_t newY, size_t newColorComponents) con
 	return image;
 }
 
-float Image::getComponentAt(size_t position) const
+double Image::getComponentAt(size_t position) const
 {
 	assert(loaded());
 
-	float component = 0.0f;
+	double component = 0.0;
 	
 	size_t positionInBytes = position * pixelSize();
 	assertM(positionInBytes + pixelSize() <= _pixels.size(),
@@ -395,18 +289,13 @@ float Image::getComponentAt(size_t position) const
 	return component;
 }
 
-float Image::getComponentAt(size_t x, size_t y, size_t color) const
+double Image::getComponentAt(size_t x, size_t y, size_t color) const
 {
 	return getComponentAt(getPosition(x, y, color));
 }
 
-float Image::getStandardizedComponentAt(size_t x, size_t y, size_t color) const
-{
-	return standardize(getComponentAt(x, y, color));
-}
-
 void Image::setComponentAt(size_t x, size_t y, size_t color,
-	float component)
+	double component)
 {
 	size_t positionInBytes = getPosition(x, y, color) * pixelSize();
 	assert(positionInBytes + pixelSize() <= _pixels.size());
@@ -417,11 +306,6 @@ void Image::setComponentAt(size_t x, size_t y, size_t color,
 	std::memcpy(&_pixels[positionInBytes], &value, pixelSize());
 }
 
-void Image::setStandardizedComponentAt(size_t x, size_t y, size_t color, float component)
-{
-	setComponentAt(x, y, color, destandardize(component));
-}
-
 size_t Image::getPosition(size_t x, size_t y, size_t color) const
 {
 	assert(x     < this->x());
@@ -430,117 +314,6 @@ size_t Image::getPosition(size_t x, size_t y, size_t color) const
 
 	return y * this->x() * colorComponents() +
 		x * colorComponents() + color;
-}
-
-size_t Image::linearToZOrder(size_t linearPosition, size_t _xTileSize, size_t _yTileSize) const
-{
-	assert(linearPosition < totalSize());
-	
-	size_t pixelPosition = linearPosition / colorComponents();
-	size_t color         = linearPosition % colorComponents();	
-
-	size_t tileRowSize = _yTileSize * x();
-
-	size_t yTileId        = pixelPosition / tileRowSize;
-	size_t remainingInRow = pixelPosition % tileRowSize;
-
-	size_t yTileSize = _yTileSize;
-	
-	if((yTileId + 1) * yTileSize > y())
-	{
-		yTileSize = y() - yTileId * yTileSize;
-	}
-
-	size_t tileSize = _xTileSize * yTileSize;
-
-	size_t xTileId      = remainingInRow / (tileSize);
-	size_t offsetInTile = remainingInRow % (tileSize);
-
-	size_t xTileSize = _xTileSize;
-
-	if((xTileId + 1) * xTileSize > x())
-	{
-		xTileSize = x() - xTileId * xTileSize;
-	}
-
-	size_t yOffsetInTile = offsetInTile / xTileSize;
-	size_t xOffsetInTile = offsetInTile % xTileSize;
-
-	size_t finalPosition = (yTileId * tileRowSize) + (xTileId * _xTileSize) + (yOffsetInTile * x()) + xOffsetInTile;
-
-	size_t zPosition = (finalPosition * colorComponents() + color);
-
-	assert(zPosition < totalSize());
-	
-//	std::cout << path() << ": mapping linear position "
-//		<< linearPosition << " (" << (pixelPosition % x()) << " x, "
-//		<< (pixelPosition / x()) << " y, " << color
-//		<< " color) (" << xTileId << " xTileId, " << yTileId
-//		<< " yTileId) (" << xOffsetInTile << " xOffsetInTile, "
-//		<< yOffsetInTile << " yOffsetInTile) (" << xTileSize
-//		<< " xTileSize, " << yTileSize << " yTileSize) ("
-//		<< remainingInRow << " remaining in row) to z order " << zPosition << "\n";
-
-	return zPosition;
-}
-
-size_t Image::zToLinearOrder(size_t zPosition, size_t _xTileSize, size_t _yTileSize) const
-{
-	assert(zPosition < totalSize());
-	
-	size_t pixelPosition = zPosition / colorComponents();
-	size_t color         = zPosition % colorComponents();	
-
-	size_t xPosition = pixelPosition % x();
-	size_t yPosition = pixelPosition / x();
-	
-	size_t xTileId = xPosition / _xTileSize;
-	size_t yTileId = yPosition / _yTileSize;
-
-	size_t xTileOffset = xPosition % _xTileSize;
-	size_t yTileOffset = yPosition % _yTileSize;
-	
-	size_t yTileSize = _yTileSize;
-	
-	if((yTileId + 1) * yTileSize > y())
-	{
-		yTileSize = y() - yTileId * yTileSize;
-	}
-	
-	size_t xTileSize = _xTileSize;
-	
-	if((xTileId + 1) * xTileSize > x())
-	{
-		xTileSize = x() - xTileId * xTileSize;
-	}
-	
-	size_t linearPosition = (yTileId * (_yTileSize * x())) +
-		(yTileSize * _xTileSize * xTileId) +
-		(yTileOffset * xTileSize) + xTileOffset;
-
-	size_t linearPositionWithColor = linearPosition * colorComponents() + color;
-	
-//	std::cout << path() << ": mapping z order "
-//		<< zPosition << " to linear position " << linearPositionWithColor
-//		<< " reverse mapping would be "
-//		<< linearToZOrder(linearPositionWithColor, _xTileSize, _yTileSize) << "\n";
-	
-	return linearPositionWithColor;
-}
-
-float Image::standardize(float component) const
-{
-	return (component / range()) * 2.0f - 1.0f;
-}
-
-float Image::destandardize(float component) const
-{
-	component = std::min(component,  1.0f);
-	component = std::max(component, -1.0f);
-
-	float colorValue = (component + 1.0f) * (range() / 2.0f);
-	
-	return colorValue;
 }
 
 bool Image::isPathAnImage(const std::string& path)

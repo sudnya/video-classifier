@@ -7,7 +7,9 @@
 // Minerva Includes
 #include <minerva/network/interface/RectifiedLinearActivationFunction.h>
 
-#include <minerva/matrix/interface/BlockSparseMatrix.h>
+#include <minerva/matrix/interface/Matrix.h>
+#include <minerva/matrix/interface/MatrixOperations.h>
+#include <minerva/matrix/interface/Operation.h>
 
 namespace minerva
 {
@@ -15,21 +17,21 @@ namespace minerva
 namespace network
 {
 
-typedef matrix::BlockSparseMatrix BlockSparseMatrix;
+typedef matrix::Matrix Matrix;
 
 RectifiedLinearActivationFunction::~RectifiedLinearActivationFunction()
 {
 
 }
 
-BlockSparseMatrix RectifiedLinearActivationFunction::apply(const BlockSparseMatrix& activations) const
+Matrix RectifiedLinearActivationFunction::apply(const Matrix& activations) const
 {
-	return activations.rectifiedLinear();
+	return matrix::apply(activations, matrix::RectifiedLinear());
 }
 
-BlockSparseMatrix RectifiedLinearActivationFunction::applyDerivative(const BlockSparseMatrix& activations) const
+Matrix RectifiedLinearActivationFunction::applyDerivative(const Matrix& activations) const
 {
-	return activations.rectifiedLinearDerivative();
+	return matrix::apply(activations, matrix::RectifiedLinearDerivative());
 }
 
 ActivationFunction* RectifiedLinearActivationFunction::clone() const

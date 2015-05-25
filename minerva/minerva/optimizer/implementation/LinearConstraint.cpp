@@ -25,7 +25,7 @@ bool LinearConstraint::isSatisfied(const Matrix& ) const
 	assertM(false, "Not implemented.");
 }
 
-void LinearConstraint::apply(BlockSparseMatrix& ) const
+void LinearConstraint::apply(Matrix& ) const
 {
 	assertM(false, "Not implemented.");
 }

@@ -21,7 +21,7 @@ public:
 	virtual ~GPULBFGSSolver();
 
 public:
-	virtual float solve(BlockSparseMatrixVector& inputs, 
+	virtual double solve(MatrixVector& inputs, 
 		const CostAndGradientFunction& callback);
 
 public:

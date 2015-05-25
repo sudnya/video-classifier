@@ -1,12 +1,15 @@
-/*	\file   Matrix.cpp
-	\date   Sunday August 11, 2013
-	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The source file for the Matrix class.
+/*    \file   Matrix.cpp
+    \date   Sunday August 11, 2013
+    \author Gregory Diamos <solusstultus@gmail.com>
+    \brief  The source file for the Matrix class.
 */
 
 // Minerva Includes
 #include <minerva/matrix/interface/Matrix.h>
-#include <minerva/matrix/interface/MatrixImplementation.h>
+#include <minerva/matrix/interface/Allocation.h>
+#include <minerva/matrix/interface/MatrixTransformations.h>
+#include <minerva/matrix/interface/MatrixOperations.h>
+#include <minerva/matrix/interface/Operation.h>
 
 #include <minerva/util/interface/debug.h>
 
@@ -19,525 +22,261 @@ namespace minerva
 namespace matrix
 {
 
-Matrix::Matrix(size_t r, size_t c, const FloatVector& d)
-: _matrix(MatrixImplementation::createBestImplementation(r, c, d))
+Matrix::Matrix()
+: _data_begin(nullptr), _precision(SinglePrecision())
+{
+
+}
+
+Matrix::Matrix(std::initializer_list<size_t> i)
+: Matrix(Dimension(i))
+{
+
+}
+
+Matrix::Matrix(const Dimension& size)
+: _allocation(std::make_shared<Allocation>(size.product() * SinglePrecision().size())),
+  _data_begin(_allocation->data()),
+  _size(size), _stride(linearStride(size)), _precision(SinglePrecision())
+{
+
+}
+
+Matrix::Matrix(const Dimension& size, const Precision& precision)
+: _allocation(std::make_shared<Allocation>(size.product() * precision.size())),
+  _data_begin(_allocation->data()),
+  _size(size), _stride(linearStride(size)), _precision(precision)
+{
+
+}
+
+Matrix::Matrix(const Dimension& size, const Dimension& stride)
+: _allocation(std::make_shared<Allocation>(size.product() * SinglePrecision().size())),
+  _data_begin(_allocation->data()),
+  _size(size), _stride(stride), _precision(SinglePrecision())
+{
+
+}
+
+Matrix::Matrix(const Dimension& size, const Dimension& stride, const Precision& precision)
+: _allocation(std::make_shared<Allocation>(size.product() * precision.size())),
+  _data_begin(_allocation->data()),
+  _size(size), _stride(stride), _precision(precision)
+{
+
+}
+
+Matrix::Matrix(const Dimension& size, const Dimension& stride, const Precision& precision, const std::shared_ptr<Allocation>& allocation)
+: _allocation(allocation),
+  _data_begin(_allocation->data()),
+  _size(size), _stride(stride), _precision(precision)
+{
+
+}
+
+Matrix::Matrix(const Dimension& size, const Dimension& stride, const Precision& precision,
+               const std::shared_ptr<Allocation>& allocation, void* start)
+: _allocation(allocation),
+  _data_begin(start),
+  _size(size), _stride(stride), _precision(precision)
 {
 
 }
 
 Matrix::~Matrix()
 {
-	delete _matrix;
-}
-
-Matrix::Matrix(const Matrix& m)
-: _matrix(nullptr)
-{
-	if(m._matrix != nullptr)
-	{
-		_matrix = m._matrix->clone();
-	}
-}
-
-Matrix::Matrix(Matrix&& m)
-: _matrix(nullptr)
-{
-	std::swap(_matrix, m._matrix);
-}
-	
-Matrix& Matrix::operator=(const Matrix& m)
-{
-	if(&m == this) return *this;
-	
-	delete _matrix;
-	
-	_matrix = nullptr;
-	
-	if(m._matrix != nullptr)
-	{
-		_matrix = m._matrix->clone();
-	}
-
-	return *this;
-}
-
-Matrix& Matrix::operator=(Matrix&& m)
-{
-	std::swap(_matrix, m._matrix);
-
-	return *this;
-}
-
-Matrix::iterator Matrix::begin()
-{
-	return _matrix->data().begin();
-}
-
-Matrix::const_iterator Matrix::begin() const
-{
-	return _matrix->data().begin();
-}
-
-Matrix::iterator Matrix::end()
-{
-	return _matrix->data().end();
-}
-
-Matrix::const_iterator Matrix::end() const
-{
-	return _matrix->data().end();
-}
-
-Matrix::FloatReference Matrix::operator[](size_t index)
-{
-	return _matrix->data()[index];
-}
-
-Matrix::ConstFloatReference Matrix::operator[](size_t index) const
-{
-	return _matrix->data()[index];
-}
-
-Matrix::FloatReference Matrix::operator()(size_t row, size_t column)
-{
-	size_t position = getPosition(row, column);
-
-	return (*this)[position];
-}
-
-Matrix::ConstFloatReference Matrix::operator()(size_t row, size_t column) const
-{
-	size_t position = getPosition(row, column);
-
-	return (*this)[position];
-}
-
-size_t Matrix::size() const
-{
-	if(_matrix == nullptr)
-	{
-		return 0;
-	}
-	
-	return _matrix->size();
-}
-
-bool Matrix::empty() const
-{
-    return size() == 0;
-}
-
-void Matrix::resize(size_t rows, size_t columns)
-{
-	assert(_matrix != nullptr);
-	
-	_matrix->resize(rows, columns);
-}
-
-Matrix Matrix::getColumn(size_t number) const
-{
-	return slice(0, number, rows(), 1);
-}
-
-Matrix Matrix::getRow(size_t number) const
-{
-	return slice(number, 0, 1, columns());
-}
-
-size_t Matrix::columns() const
-{
-	assert(_matrix != nullptr);
-	
-	return _matrix->columns();
-}
-
-size_t Matrix::rows() const
-{
-	assert(_matrix != nullptr);
-	
-	return _matrix->rows();
-}
-
-size_t Matrix::getPosition(size_t row, size_t column) const
-{
-	return row * columns() + column;
-}
-
-Matrix Matrix::multiply(float f) const
-{
-	assert(_matrix != nullptr);
-	
-	return Matrix(_matrix->multiply(f));
-}
-
-Matrix Matrix::multiply(const Matrix& m) const
-{
-	assert(_matrix != nullptr);
-	assert(columns() == m.rows());
-
-	return Matrix(_matrix->multiply(m._matrix));
-}
-
-Matrix Matrix::elementMultiply(const Matrix& m) const
-{
-	assert(_matrix != nullptr);
-	assert(m.rows()    == rows()   );
-	assert(m.columns() == columns());
-
-	return Matrix(_matrix->elementMultiply(m._matrix));
-}
-
-Matrix Matrix::add(const Matrix& m) const
-{
-	assert(_matrix != nullptr);
-	
-	assert(m.rows()    == rows());
-	assert(m.columns() == columns());
-
-	return Matrix(_matrix->add(m._matrix));
-}
-
-Matrix Matrix::addBroadcastRow(const Matrix& m) const
-{
-	assert(_matrix != nullptr);
-	
-	assert(m.columns() == columns());
-
-	return Matrix(_matrix->addBroadcastRow(m._matrix));
-}
-
-Matrix Matrix::add(float f) const
-{
-	assert(_matrix != nullptr);
-	
-	return Matrix(_matrix->add(f));
-}
-
-Matrix Matrix::subtract(const Matrix& m) const
-{
-	assert(_matrix != nullptr);
-	
-	assert(m.rows()    == rows());
-	assert(m.columns() == columns());
-
-	return Matrix(_matrix->subtract(m._matrix));
-}
-
-Matrix Matrix::subtract(float f) const
-{
-	assert(_matrix != nullptr);
-	
-	return Matrix(_matrix->subtract(f));
-}
-
-Matrix Matrix::slice(size_t startRow, size_t startColumn,
-	size_t rows, size_t columns) const
-{
-	assert(_matrix != nullptr);
-	
-	assert(startRow    + rows    <= this->rows()   );
-	assert(startColumn + columns <= this->columns());
-	
-	return Matrix(_matrix->slice(startRow, startColumn, rows, columns));
-}
-
-Matrix Matrix::transpose() const
-{
-	assert(_matrix != nullptr);
-	
-	return Matrix(_matrix->transpose());
-}
-
-Matrix Matrix::appendColumns(const Matrix& m) const
-{
-	assert(_matrix != nullptr);
-	
-	assert(empty() || (rows() == m.rows()));
-
-	return Matrix(_matrix->appendColumns(m._matrix));
-}
-
-Matrix Matrix::appendRows(const Matrix& m) const
-{
-	assert(_matrix != nullptr);
-	
-	assert(empty() || (columns() == m.columns()));
-
-	return Matrix(_matrix->appendRows(m._matrix));
-}
-
-Matrix Matrix::log() const
-{
-	assert(_matrix != nullptr);
-	
-	return Matrix(_matrix->log());
-}
-
-Matrix Matrix::abs() const
-{
-	assert(_matrix != nullptr);
-	
-	return Matrix(_matrix->abs());
-}
-
-Matrix Matrix::negate() const
-{
-	assert(_matrix != nullptr);
-	
-	return Matrix(_matrix->negate());
-}
-
-Matrix Matrix::sigmoid() const
-{
-	assert(_matrix != nullptr);
-	
-	return Matrix(_matrix->sigmoid());
-}
-
-Matrix Matrix::sigmoidDerivative() const
-{
-	assert(_matrix != nullptr);
-	
-	return Matrix(_matrix->sigmoidDerivative());
-}
-
-Matrix Matrix::rectifiedLinear() const
-{
-	assert(_matrix != nullptr);
-	
-	return Matrix(_matrix->rectifiedLinear());
-}
-
-Matrix Matrix::rectifiedLinearDerivative() const
-{
-	assert(_matrix != nullptr);
-	
-	return Matrix(_matrix->rectifiedLinearDerivative());
-}
-
-Matrix Matrix::klDivergence(float sparsity) const
-{
-	assert(_matrix != nullptr);
-	
-	return Matrix(_matrix->klDivergence(sparsity));
-}
-
-Matrix Matrix::klDivergenceDerivative(float sparsity) const
-{
-	assert(_matrix != nullptr);
-	
-	return Matrix(_matrix->klDivergenceDerivative(sparsity));
-}
-
-void Matrix::negateSelf()
-{
-	assert(_matrix != nullptr);
-
-	_matrix->negateSelf();
-}
-
-void Matrix::logSelf()
-{
-	assert(_matrix != nullptr);
-
-	_matrix->logSelf();
-}
-
-void Matrix::sigmoidSelf()
-{
-	assert(_matrix != nullptr);
-
-	_matrix->sigmoidSelf();
-}
-
-void Matrix::sigmoidDerivativeSelf()
-{
-	assert(_matrix != nullptr);
-
-	_matrix->sigmoidDerivativeSelf();
-}
-
-void Matrix::rectifiedLinearSelf()
-{
-	assert(_matrix != nullptr);
-
-	_matrix->rectifiedLinearSelf();
-}
-
-void Matrix::rectifiedLinearDerivativeSelf()
-{
-	assert(_matrix != nullptr);
-
-	_matrix->rectifiedLinearDerivativeSelf();
-}
-
-void Matrix::klDivergenceSelf(float sparsity)
-{
-	assert(_matrix != nullptr);
-
-	_matrix->klDivergenceSelf(sparsity);
-}
-
-void Matrix::klDivergenceDerivativeSelf(float sparsity)
-{
-	assert(_matrix != nullptr);
 
-	_matrix->klDivergenceDerivativeSelf(sparsity);
 }
 
-void Matrix::minSelf(float f)
+const Dimension& Matrix::size() const
 {
-	assert(_matrix != nullptr);
-	
-	_matrix->minSelf(f);
+    return _size;
 }
 
-void Matrix::maxSelf(float f)
+const Dimension& Matrix::stride() const
 {
-	assert(_matrix != nullptr);
-	
-	_matrix->maxSelf(f);
+    return _stride;
 }
 
-void Matrix::assignSelf(float f)
+const Precision& Matrix::precision() const
 {
-	assert(_matrix != nullptr);
-	
-	_matrix->assignSelf(f);
+    return _precision;
 }
 
-void Matrix::assignUniformRandomValues(
-	std::default_random_engine& engine, float min, float max)
+size_t Matrix::elements() const
 {
-	assert(_matrix != nullptr);
-
-	_matrix->assignUniformRandomValues(engine, min, max);
+    return size().product();
 }
 
-Matrix Matrix::greaterThanOrEqual(float f) const
+FloatIterator Matrix::begin()
 {
-	assert(_matrix != nullptr);
-
-	return Matrix(_matrix->greaterThanOrEqual(f));
+    return FloatIterator(precision(), size(), stride(), zeros(size()), _data_begin);
 }
 
-Matrix Matrix::equals(const Matrix& m) const
+FloatIterator Matrix::end()
 {
-	assert(_matrix != nullptr);
-
-	return Matrix(_matrix->equals(m._matrix));
+    return FloatIterator(precision(), size(), stride(), size(), _data_begin);
 }
 
-Matrix Matrix::lessThanOrEqual(float f) const
+ConstFloatIterator Matrix::begin() const
 {
-	assert(_matrix != nullptr);
-
-	return Matrix(_matrix->lessThanOrEqual(f));
+    return ConstFloatIterator(precision(), size(), stride(), zeros(size()), _data_begin);
 }
 
-void Matrix::transposeSelf()
+ConstFloatIterator Matrix::end() const
 {
-	assert(_matrix != nullptr);
-
-	_matrix->transposeSelf();
+    return FloatIterator(precision(), size(), stride(), zeros(size()), _data_begin);
 }
 
-float Matrix::reduceSum() const
+std::shared_ptr<Allocation> Matrix::allocation()
 {
-	assert(_matrix != nullptr);
-
-	return _matrix->reduceSum();
+    return _allocation;
 }
 
-Matrix Matrix::reduceSumAlongColumns() const
+void* Matrix::data()
 {
-	assert(_matrix != nullptr);
-
-	return Matrix(_matrix->reduceSumAlongColumns());
+    return _data_begin;
 }
 
-Matrix Matrix::reduceSumAlongRows() const
+const void* Matrix::data() const
 {
-	// TODO implement this
-	return transpose().reduceSumAlongColumns().transpose();
+    return _data_begin;
 }
 
-void Matrix::clear()
+bool Matrix::isContiguous() const
 {
-	assert(_matrix != nullptr);
-	
-	_matrix->resize(0, 0);
+    return linearStride(size()) == stride();
 }
 
-const Matrix::FloatVector& Matrix::data() const
+bool Matrix::isLeadingDimensionContiguous() const
 {
-	assert(_matrix != nullptr);
-
-	return _matrix->data();
+    return stride()[0] == 1;
 }
 
-Matrix::FloatVector& Matrix::data()
+static std::string toString2D(const Matrix& m)
 {
-	assert(_matrix != nullptr);
+    size_t rows = 1;
 
-	return _matrix->data();
-}
-
-Matrix::Matrix(MatrixImplementation* i)
-: _matrix(i)
-{
+    if(m.size().size() > 0)
+    {
+        rows = m.size()[0];
+    }
 
-}
+    size_t columns = 1;
 
-bool Matrix::operator==(const Matrix& m) const
-{
-	return data() == m.data();
-}
+    if(m.size().size() > 1)
+    {
+        columns = m.size()[1];
+    }
 
-bool Matrix::operator!=(const Matrix& m) const
-{
-	return data() != m.data();
-}
+    auto matrix = reshape(m, {rows, columns});
 
-std::string Matrix::toString(size_t maxRows, size_t maxColumns) const
-{
     std::stringstream stream;
-
-	stream << shapeString() << " ";
 
     stream << "[ ";
 
-	size_t finalRow = std::min(rows(), maxRows);
+    size_t maxRows    = 10;
+    size_t maxColumns = 10;
+
+    size_t finalRow = std::min(matrix.size()[0], maxRows);
 
     for(size_t row = 0; row != finalRow; ++row)
     {
-		size_t finalColumn = std::min(columns(), maxColumns);
+        size_t finalColumn = std::min(matrix.size()[1], maxColumns);
 
         for(size_t column = 0; column != finalColumn; ++column)
         {
-            stream << (*this)(row, column) << " ";
+            stream << matrix(row, column) << " ";
         }
-        
-		if(row + 1 != finalRow) stream << "\n ";
+
+        if(row + 1 != finalRow) stream << "\n ";
     }
 
-    stream << "]\n";
+    stream << "]";
 
     return stream.str();
+}
+
+static std::string toString(const Matrix& matrix)
+{
+    if(matrix.size().size() <= 2)
+    {
+        return toString2D(matrix);
+    }
+
+    size_t lastDimension = matrix.size().back();
+
+    std::stringstream stream;
+
+    stream << "[\n";
+
+    for(size_t i = 0; i < lastDimension; ++i)
+    {
+        auto base = matrix.size();
+
+        auto start = zeros(base);
+        auto end   = base;
+
+        start.back() = i;
+        end.back()   = i + 1;
+
+        auto newSize = base;
+
+        newSize.pop_back();
+
+        stream << toString(reshape(slice(matrix, start, end), newSize));
+
+        stream << ",\n";
+    }
+
+    stream << "]";
+
+    return stream.str();
+}
+
+std::string Matrix::toString() const
+{
+    return shapeString() + "\n" + matrix::toString(*this) + "\n";
 }
 
 std::string Matrix::debugString() const
 {
-	return toString();
+    return toString();
 }
 
 std::string Matrix::shapeString() const
 {
-    std::stringstream stream;
-	
-	stream << "(" << rows() << " rows, " << columns() << " columns)";
+    return size().toString();
+}
 
-    return stream.str();
+FloatReference Matrix::operator[](const Dimension& d)
+{
+    return FloatReference(precision(), getAddress(stride(), d, _data_begin, precision()));
+}
+
+ConstFloatReference Matrix::operator[](const Dimension& d) const
+{
+    return ConstFloatReference(precision(), getAddress(stride(), d, _data_begin, precision()));
+}
+
+bool Matrix::operator==(const Matrix& m) const
+{
+    if(size() != m.size())
+    {
+        return false;
+    }
+
+    if(precision() != m.precision())
+    {
+        return false;
+    }
+
+    return reduce(apply(*this, m, NotEqual()), {}, Add())[0] == 0;
+}
+
+bool Matrix::operator!=(const Matrix& m) const
+{
+    return !(*this == m);
 }
 
 }

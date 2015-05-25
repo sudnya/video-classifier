@@ -7,7 +7,9 @@
 // Minerva Includes
 #include <minerva/network/interface/SigmoidActivationFunction.h>
 
-#include <minerva/matrix/interface/BlockSparseMatrix.h>
+#include <minerva/matrix/interface/Matrix.h>
+#include <minerva/matrix/interface/MatrixOperations.h>
+#include <minerva/matrix/interface/Operation.h>
 
 namespace minerva
 {
@@ -15,21 +17,21 @@ namespace minerva
 namespace network
 {
 
-typedef matrix::BlockSparseMatrix BlockSparseMatrix;
+typedef matrix::Matrix Matrix;
 
 SigmoidActivationFunction::~SigmoidActivationFunction()
 {
 
 }
 
-BlockSparseMatrix SigmoidActivationFunction::apply(const BlockSparseMatrix& activations) const
+Matrix SigmoidActivationFunction::apply(const Matrix& activations) const
 {
-	return activations.sigmoid();
+	return matrix::apply(activations, matrix::Sigmoid());
 }
 
-BlockSparseMatrix SigmoidActivationFunction::applyDerivative(const BlockSparseMatrix& activations) const
+Matrix SigmoidActivationFunction::applyDerivative(const Matrix& activations) const
 {
-	return activations.sigmoidDerivative();
+	return matrix::apply(activations, matrix::SigmoidDerivative());
 }
 
 ActivationFunction* SigmoidActivationFunction::clone() const

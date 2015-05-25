@@ -7,8 +7,6 @@
 // Minerva Includes
 #include <minerva/optimizer/interface/GeneralNondifferentiableSolverFactory.h>
 
-#include <minerva/optimizer/interface/SimulatedAnnealingSolver.h>
-
 namespace minerva
 {
 
@@ -19,11 +17,6 @@ GeneralNondifferentiableSolver* GeneralNondifferentiableSolverFactory::create(
 	const std::string& name)
 {
 	GeneralNondifferentiableSolver* solver = nullptr;
-	
-	if(name == "SimulatedAnnealingSolver")
-	{
-		return new SimulatedAnnealingSolver;
-	}
 	
 	return solver;
 }

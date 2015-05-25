@@ -1,7 +1,7 @@
-/*	\file   InputDataProducer.h
-	\date   Saturday August 10, 2014
-	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The header file for the InputDataProducer class.
+/*    \file   InputDataProducer.h
+    \date   Saturday August 10, 2014
+    \author Gregory Diamos <solusstultus@gmail.com>
+    \brief  The header file for the InputDataProducer class.
 */
 
 #pragma once
@@ -10,8 +10,9 @@
 #include <minerva/util/interface/string.h>
 
 // Forward Declarations
-namespace minerva { namespace matrix { class Matrix; } }
-namespace minerva { namespace model  { class Model;  } }
+namespace minerva { namespace matrix { class Matrix;    } }
+namespace minerva { namespace matrix { class Dimension; } }
+namespace minerva { namespace model  { class Model;     } }
 
 // Standard Library Includes
 #include <utility>
@@ -26,69 +27,74 @@ namespace input
 class InputDataProducer
 {
 public:
-	typedef matrix::Matrix Matrix;
-	typedef std::pair<Matrix, Matrix> InputAndReferencePair;
+    typedef matrix::Matrix Matrix;
+    typedef matrix::Dimension Dimension;
+    typedef std::pair<Matrix, Matrix> InputAndReferencePair;
 
 public:
-	InputDataProducer();
-	virtual ~InputDataProducer();
+    InputDataProducer();
+    virtual ~InputDataProducer();
 
 public:
-	/*! \brief Initialize the state of the producer after all parameters have been set. */
-	virtual void initialize() = 0;
+    /*! \brief Initialize the state of the producer after all parameters have been set. */
+    virtual void initialize() = 0;
 
-	/*! \brief Deque a set of samples from the producer.
+    /*! \brief Deque a set of samples from the producer.
 
-		Note: the caller must ensure that the producer is not empty.
+        Note: the caller must ensure that the producer is not empty.
 
-	*/
-	virtual InputAndReferencePair pop() = 0;
-	
-	/*! \brief Return true if there are no more samples. */
-	virtual bool empty() const = 0;
+    */
+    virtual InputAndReferencePair pop() = 0;
 
-	/*! \brief Reset the producer to its original state, all previously
-		popped samples should now be available again. */
-	virtual void reset() = 0;
-	
-	/*! \brief Get the total number of unique samples that can be produced. */
-	virtual size_t getUniqueSampleCount() const = 0;
-	
-public:
-	void   setEpochs(size_t epochs);
-	size_t getEpochs() const;
+    /*! \brief Return true if there are no more samples. */
+    virtual bool empty() const = 0;
+
+    /*! \brief Reset the producer to its original state, all previously
+        popped samples should now be available again. */
+    virtual void reset() = 0;
+
+    /*! \brief Get the total number of unique samples that can be produced. */
+    virtual size_t getUniqueSampleCount() const = 0;
 
 public:
-	void   setBatchSize(size_t batchSize);
-	size_t getBatchSize() const;
+    void   setEpochs(size_t epochs);
+    size_t getEpochs() const;
 
 public:
-	void   setMaximumSamplesToRun(size_t batchSize);
-	size_t getMaximumSamplesToRun() const;
+    void   setBatchSize(size_t batchSize);
+    size_t getBatchSize() const;
 
 public:
-	void setRequiresLabeledData(bool requiresLabeledData);
-	bool getRequiresLabeledData() const; 
+    void   setMaximumSamplesToRun(size_t batchSize);
+    size_t getMaximumSamplesToRun() const;
 
 public:
-	void setModel(const model::Model* model);
-	const model::Model* getModel() const;
+    void setStandardizeInput(bool standardize);
+    bool getStandardizeInput() const;
+
+public:
+    void setRequiresLabeledData(bool requiresLabeledData);
+    bool getRequiresLabeledData() const;
+
+public:
+    void setModel(const model::Model* model);
+    const model::Model* getModel() const;
 
 protected:
-	size_t getInputCount() const;
-	size_t getInputBlockingFactor() const;
+    Dimension getInputSize() const;
 
 protected:
-	util::StringVector getOutputLabels() const;
-	
-private:
-	size_t _epochs;
-	bool   _requiresLabeledData;
-	size_t _batchSize;
-	size_t _maximumSamplesToRun;
+    util::StringVector getOutputLabels() const;
 
 private:
-	const model::Model* _model;
+    size_t _epochs;
+    bool   _requiresLabeledData;
+    size_t _batchSize;
+    size_t _maximumSamplesToRun;
+    bool   _standardizeInput;
+
+protected:
+    const model::Model* _model;
 
 };
 

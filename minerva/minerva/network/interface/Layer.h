@@ -5,18 +5,19 @@
 
 #pragma once
 
-// Forward Declarations
-namespace minerva { namespace matrix  { class BlockSparseMatrix;       } }
-namespace minerva { namespace matrix  { class BlockSparseMatrixVector; } }
-namespace minerva { namespace network { class ActivationFunction;      } }
-namespace minerva { namespace network { class ActivationCostFunction;  } }
-namespace minerva { namespace network { class WeightCostFunction;      } }
-namespace minerva { namespace matrix  { class SparseMatrixFormat;      } }
-namespace minerva { namespace util    { class TarArchive;              } }
-
 // Standard Library Includes
 #include <random>
 #include <set>
+
+// Forward Declarations
+namespace minerva { namespace matrix  { class Matrix;                 } }
+namespace minerva { namespace matrix  { class Dimension;              } }
+namespace minerva { namespace matrix  { class MatrixVector;           } }
+namespace minerva { namespace matrix  { class Precision;              } }
+namespace minerva { namespace network { class ActivationFunction;     } }
+namespace minerva { namespace network { class ActivationCostFunction; } }
+namespace minerva { namespace network { class WeightCostFunction;     } }
+namespace minerva { namespace util    { class TarArchive;             } }
 
 namespace minerva
 {
@@ -27,11 +28,9 @@ namespace network
 class Layer
 {
 public:
-    typedef matrix::BlockSparseMatrix       BlockSparseMatrix;
-    typedef matrix::BlockSparseMatrixVector BlockSparseMatrixVector;
-	typedef matrix::SparseMatrixFormat      SparseMatrixFormat;
-	typedef std::vector<SparseMatrixFormat> SparseMatrixVectorFormat;
-    typedef std::set<size_t> NeuronSet;
+    typedef matrix::Matrix       Matrix;
+    typedef matrix::MatrixVector MatrixVector;
+    typedef matrix::Dimension    Dimension;
 
 public:
 	Layer();
@@ -42,33 +41,32 @@ public:
 	Layer& operator=(const Layer&);
 
 public:
-    virtual void initializeRandomly(std::default_random_engine& engine,
-		float epsilon = 6.0f) = 0;
+    virtual void initialize() = 0;
 
 public:
-    virtual BlockSparseMatrix runForward(const BlockSparseMatrix& m) const = 0;
-    virtual BlockSparseMatrix runReverse(BlockSparseMatrixVector& gradients,
-		const BlockSparseMatrix& inputActivations,
-		const BlockSparseMatrix& outputActivations,
-		const BlockSparseMatrix& deltas) const = 0;
+    Matrix runForward(const Matrix& m) const;
+    Matrix runReverse(MatrixVector& gradients,
+		const Matrix& inputActivations,
+		const Matrix& outputActivations,
+		const Matrix& deltas) const;
 
 public:
-    virtual       BlockSparseMatrixVector& weights()       = 0;
-    virtual const BlockSparseMatrixVector& weights() const = 0;
+    virtual       MatrixVector& weights()       = 0;
+    virtual const MatrixVector& weights() const = 0;
 
 public:
-	virtual float computeWeightCost() const = 0;
+	virtual const matrix::Precision& precision() const = 0;
+
+public:
+	virtual double computeWeightCost() const = 0;
+
+public:
+    virtual Dimension getInputSize()  const = 0;
+    virtual Dimension getOutputSize() const = 0;
 
 public:
     virtual size_t getInputCount()  const = 0;
     virtual size_t getOutputCount() const = 0;
-
-    virtual size_t getBlocks()  const = 0;
-    virtual size_t getInputBlockingFactor()  const = 0;
-    virtual size_t getOutputBlockingFactor() const = 0;
-
-public:
-    virtual size_t getOutputCountForInputCount(size_t inputCount) const = 0;
 
 public:
     virtual size_t totalNeurons()	  const = 0;
@@ -78,26 +76,14 @@ public:
     virtual size_t getFloatingPointOperationCount() const = 0;
 
 public:
-    virtual Layer* sliceSubgraphConnectedToTheseOutputs(
-        const NeuronSet& outputs) const = 0;
-
-public:
 	/*! \brief Save the layer to the tar file and header. */
 	virtual void save(util::TarArchive& archive) const = 0;
 	/*! \brief Intialize the layer from the tar file and header. */
 	virtual void load(const util::TarArchive& archive, const std::string& name) = 0;
 
 public:
-	/*! \brief Move the weight matrices outside of the network. */
-	virtual void extractWeights(BlockSparseMatrixVector&  weights) = 0;
-	/*! \brief Replace the weight matrices contained in the network with the specified weights */
-	virtual void restoreWeights(BlockSparseMatrixVector&& weights) = 0;
-	/*! \brief Get the sparse matrix format used by the weight matrices */
-	virtual SparseMatrixVectorFormat getWeightFormat() const = 0;
-
-public:
-	virtual Layer* clone() const = 0;
-	virtual Layer* mirror() const = 0;
+	virtual std::unique_ptr<Layer> clone() const = 0;
+	virtual std::unique_ptr<Layer> mirror() const = 0;
 
 public:
 	virtual std::string getTypeName() const = 0;
@@ -117,7 +103,7 @@ public:
 	ActivationCostFunction* getActivationCostFunction();
 	/*! \brief Get the activation cost function component, the layer retains ownership. */
 	const ActivationCostFunction* getActivationCostFunction() const;
-	
+
 public:
 	/*! \brief Set the weight cost function component, the layer takes ownership. */
 	void setWeightCostFunction(WeightCostFunction*);
@@ -128,6 +114,13 @@ public:
 
 public:
 	std::string shapeString() const;
+
+protected:
+    virtual Matrix runForwardImplementation(const Matrix& m) const = 0;
+    virtual Matrix runReverseImplementation(MatrixVector& gradients,
+		const Matrix& inputActivations,
+		const Matrix& outputActivations,
+		const Matrix& deltas) const = 0;
 
 private:
 	std::unique_ptr<ActivationFunction>     _activationFunction;

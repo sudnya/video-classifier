@@ -7,9 +7,13 @@
 // Minerva Includes
 #include <minerva/network/interface/SoftmaxCostFunction.h>
 
-#include <minerva/matrix/interface/BlockSparseMatrix.h>
+#include <minerva/matrix/interface/Matrix.h>
+#include <minerva/matrix/interface/MatrixOperations.h>
+#include <minerva/matrix/interface/Operation.h>
 
 #include <minerva/util/interface/debug.h>
+
+#include <string>
 
 namespace minerva
 {
@@ -17,21 +21,36 @@ namespace minerva
 namespace network
 {
 
-typedef matrix::BlockSparseMatrix BlockSparseMatrix;
+typedef matrix::Matrix Matrix;
 
 SoftmaxCostFunction::~SoftmaxCostFunction()
 {
 
 }
 
-BlockSparseMatrix SoftmaxCostFunction::computeCost(const BlockSparseMatrix& output, const BlockSparseMatrix& reference) const
+static Matrix softmax(const Matrix& output)
 {
-	assertM(false, "Not implemented.");
+	auto normalizedOutput = broadcast(output, reduce(output, {0}, matrix::Maximum()), {0}, matrix::Subtract());
+
+	auto expOutput = apply(normalizedOutput, matrix::Exp());
+
+	auto sums = reduce(expOutput, {0}, matrix::Add());
+
+	return broadcast(expOutput, sums, {0}, matrix::Divide());
 }
 
-BlockSparseMatrix SoftmaxCostFunction::computeDelta(const BlockSparseMatrix& output, const BlockSparseMatrix& reference) const
+Matrix SoftmaxCostFunction::computeCost(const Matrix& output, const Matrix& reference) const
 {
-	assertM(false, "Not implemented.");
+	auto softmaxResult = softmax(output);
+
+	auto result = apply(softmaxResult, matrix::Log());
+
+	return apply(apply(reference, result, matrix::Multiply()), matrix::Negate());
+}
+
+Matrix SoftmaxCostFunction::computeDelta(const Matrix& output, const Matrix& reference) const
+{
+	return apply(softmax(output), reference, matrix::Subtract());
 }
 
 CostFunction* SoftmaxCostFunction::clone() const

@@ -24,7 +24,7 @@ class Image
 {
 public:
 	typedef std::vector<uint8_t> ByteVector;
-	typedef std::vector<float>   FloatVector;
+	typedef std::vector<double>  FloatVector;
 	typedef matrix::Matrix       Matrix;
 
 public:
@@ -53,9 +53,6 @@ public:
 	bool hasLabel() const;
 
 public:
-    float range() const;
-
-public:
     void displayOnScreen();
 	void displayOnScreen() const;
 	void addTextToDisplay(const std::string& text) const;
@@ -79,34 +76,17 @@ public:
 	ByteVector& getRawData();
 
 public:
-	Matrix convertToStandardizedMatrix(size_t samples, size_t xTileSize, size_t yTileSize) const;
-	FloatVector getSampledData(size_t samples, size_t xTileSize, size_t yTileSize) const;
-	void updateImageFromSamples(const FloatVector& samples, size_t xTileSize, size_t yTileSize);
-	
-    Image sample(size_t samples) const;
 	Image downsample(size_t x, size_t y, size_t colors) const;
-	
-	Image crop();
 	 
 public:
-	float getComponentAt(size_t position) const;
-	float getComponentAt(size_t x, size_t y, size_t color) const;
-	float getStandardizedComponentAt(size_t x, size_t y, size_t color) const;
+	double getComponentAt(size_t position) const;
+	double getComponentAt(size_t x, size_t y, size_t color) const;
 
-	void setComponentAt(size_t x, size_t y, size_t color, float component);
-	void setStandardizedComponentAt(size_t x, size_t y, size_t color, float component);
+	void setComponentAt(size_t x, size_t y, size_t color, double component);
+	void setComponentAt(size_t position, double component) const;
 
 public:
 	size_t getPosition(size_t x, size_t y, size_t color) const;
-
-public:
-	size_t linearToZOrder(size_t linearPosition, size_t xTileSize, size_t yTileSize) const;
-	size_t zToLinearOrder(size_t linearPosition, size_t xTileSize, size_t yTileSize) const;
-
-
-public:
-	float standardize(float component) const;
-	float destandardize(float component) const;
 
 public:
 	static bool isPathAnImage(const std::string& path);

@@ -37,7 +37,7 @@ public:
 	
 		\return A floating point value representing the final cost.
 	 */
-	virtual float solve(Matrix& inputs, const CostFunction& callBack) = 0;
+	virtual double solve(Matrix& inputs, const CostFunction& callBack) = 0;
 
 };
 

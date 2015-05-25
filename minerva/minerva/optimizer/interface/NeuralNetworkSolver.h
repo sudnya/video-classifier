@@ -5,8 +5,8 @@
 
 #pragma once
 
-namespace minerva { namespace network { class NeuralNetwork;     } }
-namespace minerva { namespace matrix  { class BlockSparseMatrix; } }
+namespace minerva { namespace network { class NeuralNetwork; } }
+namespace minerva { namespace matrix  { class Matrix;        } }
 
 namespace minerva
 {
@@ -19,7 +19,7 @@ class NeuralNetworkSolver
 {
 public:
 	typedef network::NeuralNetwork NeuralNetwork;
-	typedef matrix::BlockSparseMatrix BlockSparseMatrix;
+	typedef matrix::Matrix         Matrix;
 
 public:
 	NeuralNetworkSolver(NeuralNetwork* n);
@@ -33,8 +33,8 @@ public:
 	virtual NeuralNetworkSolver* clone() const = 0;
 
 public:
-	void setInput(const BlockSparseMatrix* input);
-	void setReference(const BlockSparseMatrix* reference);
+	void setInput(const Matrix* input);
+	void setReference(const Matrix* reference);
 
 public: 
 	static NeuralNetworkSolver* create(NeuralNetwork* n);
@@ -42,8 +42,8 @@ public:
 protected:
 	NeuralNetwork* _network;
 
-	const BlockSparseMatrix* _input;
-	const BlockSparseMatrix* _reference;
+	const Matrix* _input;
+	const Matrix* _reference;
 };
 
 }

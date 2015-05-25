@@ -1,6 +1,6 @@
 /* Author: Sudnya Padalikar
  * Date  : 08/17/2013
- * The interface for the Solver class 
+ * The interface for the Solver class
  */
 
 
@@ -26,23 +26,23 @@ NeuralNetworkSolver::~NeuralNetworkSolver()
 
 }
 
-void NeuralNetworkSolver::setInput(const BlockSparseMatrix* input)
+void NeuralNetworkSolver::setInput(const Matrix* input)
 {
-	_input = input;
+    _input = input;
 }
 
-void NeuralNetworkSolver::setReference(const BlockSparseMatrix* reference)
+void NeuralNetworkSolver::setReference(const Matrix* reference)
 {
-	_reference = reference;
+    _reference = reference;
 }
 
 NeuralNetworkSolver* NeuralNetworkSolver::create(NeuralNetwork* n)
 {
-	auto solverName = util::KnobDatabase::getKnobValue("Solver::Type",
-		"SimpleNeuralNetworkSolver");
-	
-	// Fall back to simple solver
-	return new SimpleNeuralNetworkSolver(n);
+    auto solverName = util::KnobDatabase::getKnobValue("Solver::Type",
+        "SimpleNeuralNetworkSolver");
+
+    // Fall back to simple solver
+    return new SimpleNeuralNetworkSolver(n);
 }
 
 }

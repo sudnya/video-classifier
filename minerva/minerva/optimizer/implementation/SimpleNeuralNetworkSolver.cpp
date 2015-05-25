@@ -1,7 +1,7 @@
-/*	\file   SimpleNeuralNetworkSolver.cpp
-	\date   Sunday December 26, 2013
-	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The source file for the SimpleNeuralNetworkSolver class.
+/*    \file   SimpleNeuralNetworkSolver.cpp
+    \date   Sunday December 26, 2013
+    \author Gregory Diamos <solusstultus@gmail.com>
+    \brief  The source file for the SimpleNeuralNetworkSolver class.
 */
 
 // Minerva Includes
@@ -11,12 +11,10 @@
 #include <minerva/optimizer/interface/CostAndGradientFunction.h>
 
 #include <minerva/network/interface/NeuralNetwork.h>
-#include <minerva/network/interface/NeuralNetworkSubgraphExtractor.h>
+#include <minerva/network/interface/Layer.h>
 
 #include <minerva/matrix/interface/Matrix.h>
-#include <minerva/matrix/interface/BlockSparseMatrix.h>
-#include <minerva/matrix/interface/BlockSparseMatrixVector.h>
-#include <minerva/matrix/interface/SparseMatrixFormat.h>
+#include <minerva/matrix/interface/MatrixVector.h>
 
 #include <minerva/util/interface/Knobs.h>
 #include <minerva/util/interface/SystemCompatibility.h>
@@ -33,11 +31,9 @@ namespace minerva
 namespace optimizer
 {
 
-typedef network::NeuralNetwork NeuralNetwork;
-typedef network::NeuralNetworkSubgraphExtractor NeuralNetworkSubgraphExtractor;
-typedef matrix::Matrix Matrix;
-typedef matrix::BlockSparseMatrix BlockSparseMatrix;
-typedef GeneralDifferentiableSolver::BlockSparseMatrixVector BlockSparseMatrixVector;
+typedef network::NeuralNetwork                    NeuralNetwork;
+typedef matrix::Matrix                            Matrix;
+typedef GeneralDifferentiableSolver::MatrixVector MatrixVector;
 
 SimpleNeuralNetworkSolver::SimpleNeuralNetworkSolver(NeuralNetwork* n)
 : NeuralNetworkSolver(n), _solver(GeneralDifferentiableSolverFactory::create())
@@ -58,95 +54,116 @@ SimpleNeuralNetworkSolver::SimpleNeuralNetworkSolver(const SimpleNeuralNetworkSo
 
 SimpleNeuralNetworkSolver& SimpleNeuralNetworkSolver::operator=(const SimpleNeuralNetworkSolver& s)
 {
-	if(&s == this)
-	{
-		return *this;
-	}
-	
-	NeuralNetworkSolver::operator=(s);
+    if(&s == this)
+    {
+        return *this;
+    }
 
-	return *this;
+    NeuralNetworkSolver::operator=(s);
+
+    return *this;
+}
+
+static void setWeights(NeuralNetwork& network, const MatrixVector& weights)
+{
+    size_t weight = 0;
+
+    for(auto& layer : network)
+    {
+        for(auto& weightMatrix : layer->weights())
+        {
+            weightMatrix = weights[weight++];
+        }
+    }
 }
 
 class NeuralNetworkCostAndGradient : public CostAndGradientFunction
 {
 public:
-	NeuralNetworkCostAndGradient(NeuralNetwork* n, const BlockSparseMatrix* i, const BlockSparseMatrix* r)
-	: CostAndGradientFunction(n->getWeightFormat()), _network(n), _input(i), _reference(r)
-	{
-	
-	}
-	
-	virtual ~NeuralNetworkCostAndGradient()
-	{
-	
-	}
-	
-public:
-	virtual float computeCostAndGradient(BlockSparseMatrixVector& gradient,
-		const BlockSparseMatrixVector& weights) const
-	{
-		_network->restoreWeights(std::move(const_cast<BlockSparseMatrixVector&>(weights)));
-		
-		float newCost = _network->getCostAndGradient(gradient, *_input, *_reference);
-		
-		_network->extractWeights(const_cast<BlockSparseMatrixVector&>(weights));
+    NeuralNetworkCostAndGradient(NeuralNetwork* n, const Matrix* i, const Matrix* r)
+    : _network(n), _input(i), _reference(r)
+    {
 
-		if(util::isLogEnabled("SimpleNeuralNetworkSolver::Detail"))
-		{	
-			util::log("SimpleNeuralNetworkSolver::Detail") << " new gradient is : " << gradient[1].toString();
-		}
-		
-		util::log("SimpleNeuralNetworkSolver::Detail") << " new cost is : " << newCost << "\n";
-		
-		return newCost;
-	}
+    }
+
+    virtual ~NeuralNetworkCostAndGradient()
+    {
+
+    }
+
+public:
+    virtual double computeCostAndGradient(MatrixVector& gradient,
+        const MatrixVector& weights) const
+    {
+        setWeights(*_network, weights);
+
+        double newCost = _network->getCostAndGradient(gradient, *_input, *_reference);
+
+        if(util::isLogEnabled("SimpleNeuralNetworkSolver::Detail"))
+        {
+            util::log("SimpleNeuralNetworkSolver::Detail") << " new gradient is : " << gradient[1].toString();
+        }
+
+        util::log("SimpleNeuralNetworkSolver::Detail") << " new cost is : " << newCost << "\n";
+
+        return newCost;
+    }
 
 private:
-	NeuralNetwork*           _network;
-	const BlockSparseMatrix* _input;
-	const BlockSparseMatrix* _reference;
+    NeuralNetwork* _network;
+    const Matrix*  _input;
+    const Matrix*  _reference;
 };
 
-static float differentiableSolver(NeuralNetwork* network, const BlockSparseMatrix* input, const BlockSparseMatrix* reference, GeneralDifferentiableSolver* solver)
+static MatrixVector getWeights(NeuralNetwork* network)
 {
-	util::log("SimpleNeuralNetworkSolver") << "  starting general solver\n";
-	float newCost = std::numeric_limits<float>::infinity();
-	
-	if(!solver)
-	{
-		util::log("SimpleNeuralNetworkSolver") << "   failed to allocate solver\n";
-		return newCost;
-	}
-	
-	NeuralNetworkCostAndGradient costAndGradient(network, input, reference);
+    MatrixVector weights;
 
-	BlockSparseMatrixVector weights;
-	
-	network->extractWeights(weights);
-	
-	newCost = solver->solve(weights, costAndGradient);
-	
-	util::log("SimpleNeuralNetworkSolver") << "   solver produced new cost: "
-		<< newCost << ".\n";
+    for(auto& layer : *network)
+    {
+        weights.push_back(layer->weights());
+    }
 
-	network->restoreWeights(std::move(weights));
+    return weights;
+}
 
-	return newCost;
+static double differentiableSolver(NeuralNetwork* network, const Matrix* input, const Matrix* reference, GeneralDifferentiableSolver* solver)
+{
+    util::log("SimpleNeuralNetworkSolver") << "  starting general solver\n";
+    double newCost = std::numeric_limits<double>::infinity();
+
+    if(!solver)
+    {
+        util::log("SimpleNeuralNetworkSolver") << "   failed to allocate solver\n";
+        return newCost;
+    }
+
+    NeuralNetworkCostAndGradient costAndGradient(network, input, reference);
+
+    auto weights = getWeights(network);
+
+    newCost = solver->solve(weights, costAndGradient);
+
+    util::log("SimpleNeuralNetworkSolver") << "   solver produced new cost: "
+        << newCost << ".\n";
+
+    setWeights(*network, weights);
+
+    return newCost;
 }
 
 
 void SimpleNeuralNetworkSolver::solve()
 {
     util::log("SimpleNeuralNetworkSolver") << "Solve\n";
-	util::log("SimpleNeuralNetworkSolver")
-		<< " no need for tiling, solving entire network at once.\n";
-	differentiableSolver(_network, _input, _reference, _solver.get());
+    util::log("SimpleNeuralNetworkSolver")
+        << " no need for tiling, solving entire network at once.\n";
+    differentiableSolver(_network, _input, _reference, _solver.get());
 }
 
 NeuralNetworkSolver* SimpleNeuralNetworkSolver::clone() const
 {
-	return new SimpleNeuralNetworkSolver(*this);
+    return new SimpleNeuralNetworkSolver(*this);
 }
 
 }

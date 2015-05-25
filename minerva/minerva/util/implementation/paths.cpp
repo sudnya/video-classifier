@@ -8,6 +8,15 @@
 #include <minerva/util/interface/paths.h>
 #include <minerva/util/interface/string.h>
 
+// Standard Library Includes
+#include <stdexcept>
+
+// System Specific Includes
+#ifdef __APPLE__
+#include <sys/stat.h>
+#include <dirent.h>
+#endif
+
 namespace minerva
 {
 
@@ -75,6 +84,94 @@ bool isAbsolutePath(const std::string& path)
 	return path.front() == separator();
 }
 
+static void listDirectoryRecursively(StringVector& files, const std::string& path)
+{
+	#ifdef __APPLE__
+	DIR* directory = opendir(path.c_str());
+	
+	if(directory == nullptr)
+	{
+		throw std::runtime_error("Could not open directory '" + path + "'");
+	}
+	
+	while(true)
+	{
+		auto entry = readdir(directory);
+		
+		if(entry == nullptr)
+		{
+			break;
+		}
+		
+		auto name = std::string(entry->d_name);
+	
+		// skip the current and previous directory
+		if(name == ".." || name == ".")
+		{
+			continue;
+		}
+
+		if(isDirectory(name))
+		{
+			listDirectoryRecursively(files, joinPaths(path, name));
+		}
+		else
+		{
+			files.push_back(name);
+		}
+	}
+	
+	closedir(directory);	
+
+	#endif
+}
+
+StringVector listDirectoryRecursively(const std::string& path)
+{
+	StringVector files;
+	
+	listDirectoryRecursively(files, path);
+
+	return files;
+}
+
+bool isFile(const std::string& path)
+{
+	#ifdef __APPLE__
+	struct stat fileStats;
+	
+	auto result = stat(path.c_str(), &fileStats);
+	
+	if(result != 0)
+	{
+		return false;
+	}
+	
+	return S_ISREG(fileStats.st_mode);
+	
+	#else
+	assertM(false, "Not implemented for this platform.");
+	#endif
+}
+
+bool isDirectory(const std::string& path)
+{
+	#ifdef __APPLE__
+	struct stat fileStats;
+	
+	auto result = stat(path.c_str(), &fileStats);
+	
+	if(result != 0)
+	{
+		return false;
+	}
+	
+	return S_ISDIR(fileStats.st_mode);
+	
+	#else
+	assertM(false, "Not implemented for this platform.");
+	#endif
+}
 
 }
 

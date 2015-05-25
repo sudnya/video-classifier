@@ -12,9 +12,7 @@
 
 // Forward Declarations
 namespace minerva { namespace matrix    { class Matrix;                  } }
-namespace minerva { namespace matrix    { class BlockSparseMatrix;       } }
-namespace minerva { namespace matrix    { class BlockSparseMatrixVector; } }
-namespace minerva { namespace matrix    { class SparseMatrixFormat;      } }
+namespace minerva { namespace matrix    { class MatrixVector;            } }
 namespace minerva { namespace optimizer { class CostAndGradientFunction; } }
 
 namespace minerva
@@ -27,32 +25,20 @@ namespace optimizer
 class CostAndGradientFunction
 {
 public:
-	typedef matrix::BlockSparseMatrix       BlockSparseMatrix;
-	typedef matrix::BlockSparseMatrixVector BlockSparseMatrixVector;
-	typedef matrix::SparseMatrixFormat      SparseMatrixFormat;
-	typedef std::vector<SparseMatrixFormat> SparseMatrixVectorFormat;
-	typedef matrix::Matrix                  Matrix;
+	typedef matrix::Matrix       Matrix;
+	typedef matrix::MatrixVector MatrixVector;
 
 public:
-	CostAndGradientFunction(const SparseMatrixVectorFormat& format = SparseMatrixVectorFormat());
-	CostAndGradientFunction(const BlockSparseMatrixVector& matrix);
-	CostAndGradientFunction(const Matrix& format);
+	CostAndGradientFunction();
 	virtual ~CostAndGradientFunction();
 
 public:
-	virtual float computeCostAndGradient(BlockSparseMatrixVector& gradient,
-		const BlockSparseMatrixVector& inputs) const = 0;
-
-public:
-	BlockSparseMatrixVector getUninitializedDataStructure() const;
+	virtual double computeCostAndGradient(MatrixVector& gradient,
+		const MatrixVector& inputs) const = 0;
 
 public:
 	/*! \brief The initial cost at the time the routine is called, can be ignored (set to 0.0f) */
-	float initialCost;
-
-public:
-	/*! \brief Structural parameters of the data structure */
-	SparseMatrixVectorFormat format;
+	double initialCost;
 
 };
 
