@@ -1,7 +1,7 @@
-/*	\file   FeatureExtractorEngine.cpp
-	\date   Saturday January 18, 2014
-	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The source file for the FeatureExtractorEngine class.
+/*    \file   FeatureExtractorEngine.cpp
+    \date   Saturday January 18, 2014
+    \author Gregory Diamos <solusstultus@gmail.com>
+    \brief  The source file for the FeatureExtractorEngine class.
 */
 
 // Minerva Includes
@@ -30,28 +30,28 @@ namespace engine
 
 FeatureExtractorEngine::FeatureExtractorEngine()
 {
-	setResultProcessor(new results::FeatureResultProcessor);
+    setResultProcessor(new results::FeatureResultProcessor);
 }
 
 FeatureExtractorEngine::ResultVector FeatureExtractorEngine::runOnBatch(Matrix&& input, Matrix&& reference)
 {
-	auto& featureSelector = _model->getNeuralNetwork("FeatureSelector");
-	
-	auto features = featureSelector.runInputs(input);
-	
-	// convert to results
-	size_t samples = features.size()[1];
-	
-	ResultVector result;
-	
-	for(size_t sample = 0; sample < samples; ++sample)
-	{
-		result.push_back(new results::FeatureResult(slice(features, {0, sample}, {features.size()[0], sample + 1})));
-	}
-	
-	return result;
+    auto& featureSelector = _model->getNeuralNetwork("FeatureSelector");
+
+    auto features = featureSelector.runInputs(input);
+
+    // convert to results
+    size_t samples = features.size()[1];
+
+    ResultVector result;
+
+    for(size_t sample = 0; sample < samples; ++sample)
+    {
+        result.push_back(new results::FeatureResult(slice(features, {0, sample}, {features.size()[0], sample + 1})));
+    }
+
+    return result;
 }
-	
+
 }
 
 }

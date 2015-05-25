@@ -1,7 +1,7 @@
-/*	\file   SampleStatisticsEngine.h
-	\date   Saturday August 10, 2014
-	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The header file for the SampleStatisticsEngine class.
+/*    \file   SampleStatisticsEngine.h
+    \date   Saturday August 10, 2014
+    \author Gregory Diamos <solusstultus@gmail.com>
+    \brief  The header file for the SampleStatisticsEngine class.
 */
 
 #pragma once
@@ -19,21 +19,21 @@ namespace engine
 class SampleStatisticsEngine : public Engine
 {
 public:
-	SampleStatisticsEngine();
-	~SampleStatisticsEngine();
-	
-private:
-	virtual void registerModel();
-	virtual void closeModel();
+    SampleStatisticsEngine();
+    ~SampleStatisticsEngine();
 
 private:
-	virtual ResultVector runOnBatch(Matrix&& input, Matrix&& reference);
+    virtual void registerModel();
+    virtual void closeModel();
 
 private:
-	double _samples;
-	double _mean;
-	double _standardDeviation;
-	double _sumOfSquaresOfDifferences;
+    virtual ResultVector runOnBatch(Matrix&& input, Matrix&& reference);
+
+private:
+    double _samples;
+    double _mean;
+    double _standardDeviation;
+    double _sumOfSquaresOfDifferences;
 
 };
 
