@@ -287,7 +287,7 @@ Matrix RecurrentLayer::runReverseImplementation(MatrixVector& gradients,
         util::log("RecurrentLayer::Detail") << "  output: " << previousLayerDeltas.debugString();
     }
 
-    return previousLayerDeltas;
+    return reshape(previousLayerDeltas, {getInputCount(), miniBatch, timesteps});
 }
 
 MatrixVector& RecurrentLayer::weights()
