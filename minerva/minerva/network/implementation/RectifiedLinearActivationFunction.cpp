@@ -1,7 +1,7 @@
-/*	\file   RectifiedLinearActivationFunction.cpp
-	\date   Saturday August 10, 2013
-	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The header file for the RectifiedLinearActivationFunction class.
+/*    \file   RectifiedLinearActivationFunction.cpp
+    \date   Saturday August 10, 2013
+    \author Gregory Diamos <solusstultus@gmail.com>
+    \brief  The header file for the RectifiedLinearActivationFunction class.
 */
 
 // Minerva Includes
@@ -18,6 +18,7 @@ namespace network
 {
 
 typedef matrix::Matrix Matrix;
+typedef matrix::Operation Operation;
 
 RectifiedLinearActivationFunction::~RectifiedLinearActivationFunction()
 {
@@ -26,17 +27,27 @@ RectifiedLinearActivationFunction::~RectifiedLinearActivationFunction()
 
 Matrix RectifiedLinearActivationFunction::apply(const Matrix& activations) const
 {
-	return matrix::apply(activations, matrix::RectifiedLinear());
+    return matrix::apply(activations, matrix::RectifiedLinear());
 }
 
 Matrix RectifiedLinearActivationFunction::applyDerivative(const Matrix& activations) const
 {
-	return matrix::apply(activations, matrix::RectifiedLinearDerivative());
+    return matrix::apply(activations, matrix::RectifiedLinearDerivative());
+}
+
+Operation RectifiedLinearActivationFunction::getOperation() const
+{
+    return matrix::RectifiedLinear();
+}
+
+Operation RectifiedLinearActivationFunction::getDerivativeOperation() const
+{
+    return matrix::RectifiedLinearDerivative();
 }
 
 ActivationFunction* RectifiedLinearActivationFunction::clone() const
 {
-	return new RectifiedLinearActivationFunction(*this);
+    return new RectifiedLinearActivationFunction(*this);
 }
 
 }

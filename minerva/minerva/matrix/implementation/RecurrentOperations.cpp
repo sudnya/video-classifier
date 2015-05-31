@@ -61,7 +61,7 @@ Matrix forwardRecurrentActivations(const Matrix& input, const Matrix& weights, c
     return result;
 }
 
-void reverseRecurrentDeltas(Matrix& resultAndInputDeltas, const Matrix& weights,
+void reverseRecurrentDeltas(Matrix& resultAndInputDeltas, const Matrix& weights, const Matrix& activations,
     const RecurrentTimeDirection& direction, const Operation& activationDerivativeFunction)
 {
     bool reversed = (direction == RECURRENT_REVERSE_TIME);
@@ -73,13 +73,14 @@ void reverseRecurrentDeltas(Matrix& resultAndInputDeltas, const Matrix& weights,
     auto currentTimestep = reversed ? 0 : maxTimesteps - 1;
     // Start value
     auto currentDeltas = slice(resultAndInputDeltas, {0, 0, currentTimestep}, {layerSize, miniBatchSize, currentTimestep + 1});
+    auto currentActivations = slice(activations, {0, 0, currentTimestep}, {layerSize, miniBatchSize, currentTimestep + 1});
 
-    apply(currentDeltas, currentDeltas, activationDerivativeFunction);
+    apply(currentDeltas, currentDeltas, apply(currentActivations, activationDerivativeFunction), matrix::Multiply());
 
     //go over all timesteps in reverse
     for(size_t t = 1; t < maxTimesteps; ++t)
     {
-        size_t timestep = reversed ? t : maxTimesteps - t;
+        size_t timestep = reversed ? t : maxTimesteps - t - 1;
 
         auto previousDeltas = slice(resultAndInputDeltas, {0, 0, timestep}, {layerSize, miniBatchSize, timestep + 1});
 
@@ -94,17 +95,18 @@ void reverseRecurrentDeltas(Matrix& resultAndInputDeltas, const Matrix& weights,
 
         currentDeltas = previousDeltas;
 
-        apply(currentDeltas, currentDeltas, activationDerivativeFunction);
+        currentActivations = slice(activations, {0, 0, timestep}, {layerSize, miniBatchSize, timestep + 1});
+
+        apply(currentDeltas, currentDeltas, apply(currentActivations, activationDerivativeFunction), matrix::Multiply());
     }
 
 }
 
-Matrix reverseRecurrentDeltas(const Matrix& weights, const Matrix& deltas, const RecurrentTimeDirection& d,
+Matrix reverseRecurrentDeltas(const Matrix& deltas, const Matrix& weights, const Matrix& activations, const RecurrentTimeDirection& d,
     const Operation& activationDerivativeFunction)
 {
-
     Matrix result = copy(deltas);
-    reverseRecurrentDeltas(result, weights, d, activationDerivativeFunction);
+    reverseRecurrentDeltas(result, weights, activations, d, activationDerivativeFunction);
     return result;
 }
 
@@ -127,14 +129,14 @@ void reverseRecurrentGradients(Matrix& gradients, const Matrix& activations, con
 
     gemm(
         gradients, 0.0,
-        reshape(currentDeltas,      {layerSize, miniBatchSize*(maxTimesteps - 1)} ), false, (1.0/miniBatchSize),
-        reshape(currentActivations, {layerSize, miniBatchSize*(maxTimesteps - 1)} ), true
+        reshape(currentDeltas,      {layerSize, miniBatchSize * (maxTimesteps - 1)} ), false, (1.0 / miniBatchSize),
+        reshape(currentActivations, {layerSize, miniBatchSize * (maxTimesteps - 1)} ), true
     );
 }
 
 Matrix reverseRecurrentGradients(const Matrix& inputs, const Matrix& deltas, const RecurrentTimeDirection& d)
 {
-    Matrix result({inputs.size()[0], inputs.size()[0]}, inputs.precision());
+    Matrix result({deltas.size()[0], inputs.size()[0]}, inputs.precision());
 
     reverseRecurrentGradients(result, inputs, deltas, d);
 

@@ -1,7 +1,7 @@
-/*	\file   ActivationCostFunction.h
-	\date   Saturday August 10, 2013
-	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The header file for the ActivationCostFunction class.
+/*  \file   ActivationCostFunction.h
+    \date   Saturday August 10, 2013
+    \author Gregory Diamos <solusstultus@gmail.com>
+    \brief  The header file for the ActivationCostFunction class.
 */
 
 #pragma once
@@ -19,20 +19,20 @@ namespace network
 class ActivationCostFunction
 {
 public:
-	typedef matrix::Matrix Matrix;
+    typedef matrix::Matrix Matrix;
 
 public:
-	virtual ~ActivationCostFunction();
+    virtual ~ActivationCostFunction();
 
 public:
-	/*! \brief Run the activation cost function on the specified activations. */
-	virtual float getCost(const Matrix&) const = 0;
+    /*! \brief Run the activation cost function on the specified activations. */
+    virtual float getCost(const Matrix&) const = 0;
 
-	/*! \brief Get the gradient for the given activations. */
-	virtual Matrix getGradient(const Matrix&) const = 0;
+    /*! \brief Get the gradient for the given activations. */
+    virtual Matrix getGradient(const Matrix&) const = 0;
 
 public:
-	virtual ActivationCostFunction* clone() const = 0;
+    virtual ActivationCostFunction* clone() const = 0;
 
 };
 

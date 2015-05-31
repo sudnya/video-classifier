@@ -1,7 +1,7 @@
-/*	\file   SoftmaxCostFunction.cpp
-	\date   November 19, 2014
-	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The source file for the SoftmaxCostFunction class.
+/*    \file   SoftmaxCostFunction.cpp
+    \date   November 19, 2014
+    \author Gregory Diamos <solusstultus@gmail.com>
+    \brief  The source file for the SoftmaxCostFunction class.
 */
 
 // Minerva Includes
@@ -30,32 +30,32 @@ SoftmaxCostFunction::~SoftmaxCostFunction()
 
 static Matrix softmax(const Matrix& output)
 {
-	auto normalizedOutput = broadcast(output, reduce(output, {0}, matrix::Maximum()), {0}, matrix::Subtract());
+    auto normalizedOutput = broadcast(output, reduce(output, {0}, matrix::Maximum()), {0}, matrix::Subtract());
 
-	auto expOutput = apply(normalizedOutput, matrix::Exp());
+    auto expOutput = apply(normalizedOutput, matrix::Exp());
 
-	auto sums = reduce(expOutput, {0}, matrix::Add());
+    auto sums = reduce(expOutput, {0}, matrix::Add());
 
-	return broadcast(expOutput, sums, {0}, matrix::Divide());
+    return broadcast(expOutput, sums, {0}, matrix::Divide());
 }
 
 Matrix SoftmaxCostFunction::computeCost(const Matrix& output, const Matrix& reference) const
 {
-	auto softmaxResult = softmax(output);
+    auto softmaxResult = softmax(output);
 
-	auto result = apply(softmaxResult, matrix::Log());
+    auto result = apply(softmaxResult, matrix::Log());
 
-	return apply(apply(reference, result, matrix::Multiply()), matrix::Negate());
+    return apply(apply(reference, result, matrix::Multiply()), matrix::Negate());
 }
 
 Matrix SoftmaxCostFunction::computeDelta(const Matrix& output, const Matrix& reference) const
 {
-	return apply(softmax(output), reference, matrix::Subtract());
+    return apply(softmax(output), reference, matrix::Subtract());
 }
 
 CostFunction* SoftmaxCostFunction::clone() const
 {
-	return new SoftmaxCostFunction;
+    return new SoftmaxCostFunction;
 }
 
 }

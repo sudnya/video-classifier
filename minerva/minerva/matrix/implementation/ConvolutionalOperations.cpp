@@ -31,23 +31,22 @@ size_t computeOutputSize(size_t inputSize, size_t filterSize, size_t stride, siz
 
 Dimension forwardConvolutionOutputSize(const Dimension& inputSize, const Dimension& filterSize, const Dimension& filterStride, const Dimension& padding)
 {
-    return {computeOutputSize(inputSize[0], filterSize[0], filterStride[0], padding[0]),
+    Dimension outputSize(
+            computeOutputSize(inputSize[0], filterSize[0], filterStride[0], padding[0]),
             computeOutputSize(inputSize[1], filterSize[1], filterStride[1], padding[1]),
             filterSize[3],
-            inputSize[3]};
+            inputSize[3]);
+
+    if(inputSize.size() > 4)
+    {
+        outputSize.push_back(inputSize[4]);
+    }
+
+    return outputSize;
 }
 
 namespace
 {
-
-Dimension getForwardConvolutionOutputSize(const Dimension& inputSize, const Dimension& filterSize, const Dimension& filterStride, const Dimension& padding)
-{
-    size_t width   = computeOutputSize(inputSize[0], filterSize[0], filterStride[0], padding[0]);
-    size_t height  = computeOutputSize(inputSize[1], filterSize[1], filterStride[1], padding[1]);
-    size_t outputs = filterSize[3];
-
-    return Dimension({width, height, outputs, inputSize[3]});
-}
 
 CudnnLibrary::cudnnDataType_t getCudnnDataType(const Precision& precision)
 {
@@ -461,14 +460,36 @@ void scatterForwardConvolutionResult(Matrix& result, const Matrix& reshapedResul
     scatterForwardConvolutionResultOverPrecisions(result, reshapedResult, AllPrecisions());
 }
 
+Matrix foldTime(const Matrix& input)
+{
+    assert(input.size().size() < 6);
+
+    if(input.size().size() == 5)
+    {
+        auto size = input.size();
+        size_t timesteps = size.back();
+
+        size.pop_back();
+
+        size.back() *= timesteps;
+
+        return reshape(input, size);
+    }
+
+    return input;
+}
+
 void genericForwardConvolution(Matrix& result, const Matrix& input, const Matrix& filter, const Dimension& stride, const Dimension& padding)
 {
-    auto reshapedInput  = gatherForwardConvolutionInput(input, filter, stride, padding);
+    auto inputFoldedTime  = foldTime(input);
+    auto resultFoldedTime = foldTime(result);
+
+    auto reshapedInput  = gatherForwardConvolutionInput(inputFoldedTime, filter, stride, padding);
     auto reshapedFilter = gatherForwardConvolutionFilter(filter);
 
     auto reshapedResult = gemm(reshapedFilter, reshapedInput);
 
-    scatterForwardConvolutionResult(result, reshapedResult);
+    scatterForwardConvolutionResult(resultFoldedTime, reshapedResult);
 }
 
 }
@@ -524,7 +545,9 @@ void forwardConvolution(Matrix& result, const Matrix& input, const Matrix& filte
 
 Matrix forwardConvolution(const Matrix& input, const Matrix& filter, const Dimension& stride, const Dimension& padding)
 {
-    Matrix result(getForwardConvolutionOutputSize(input.size(), filter.size(), stride, padding), input.precision());
+    auto resultSize = forwardConvolutionOutputSize(input.size(), filter.size(), stride, padding);
+
+    Matrix result(resultSize, input.precision());
 
     forwardConvolution(result, input, filter, stride, padding);
 
@@ -693,14 +716,17 @@ void genericReverseConvolutionDeltasOverPrecisions(Matrix& resultDeltas, const M
     assert(deltas.precision()       == PrecisionType());
     assert(resultDeltas.precision() == PrecisionType());
 
+    auto deltasFoldedTime = foldTime(deltas);
+    auto resultDeltasFoldedTime = foldTime(resultDeltas);
+
     // flip the filter
-    auto reshapedInputDeltas = gatherReverseConvolutionDeltasInput(deltas, filter, stride, padding, PrecisionType());
+    auto reshapedInputDeltas = gatherReverseConvolutionDeltasInput(deltasFoldedTime, filter, stride, padding, PrecisionType());
     auto reshapedFilter      = gatherReverseConvolutionDeltasFilter(filter, PrecisionType());
 
     auto reshapedResultDeltas = gemm(reshapedFilter, reshapedInputDeltas);
 
     // then multiply like forward convolution
-    scatterReverseConvolutionDeltasResult(resultDeltas, reshapedResultDeltas, PrecisionType());
+    scatterReverseConvolutionDeltasResult(resultDeltasFoldedTime, reshapedResultDeltas, PrecisionType());
 }
 
 template<typename PossiblePrecisions>
@@ -781,7 +807,14 @@ Dimension getReverseConvolutionDeltasSize(const Dimension& filterSize, const Dim
     size_t height  = computeOutputSize(deltaSize[1], filterSize[1], filterStride[1], padding[1]);
     size_t outputs = filterSize[3];
 
-    return Dimension({width, height, outputs, deltaSize[3]});
+    Dimension outputDeltasSize({width, height, outputs, deltaSize[3]});
+
+    if(deltaSize.size() > 4)
+    {
+        outputDeltasSize.push_back(deltaSize[4]);
+    }
+
+    return outputDeltasSize;
 }
 
 }
@@ -965,9 +998,12 @@ void genericReverseConvolutionGradientsOverPrecisions(Matrix& gradients, const M
     assert(deltas.precision()    == PrecisionType());
     assert(input.precision()     == PrecisionType());
 
+    auto inputFoldedTime  = foldTime(input);
+    auto deltasFoldedTime = foldTime(deltas);
+
     // gather the inputs and deltas
-    auto reshapedInput  = gatherReverseConvolutionGradientsInput (input,  deltas, stride, padding, PrecisionType());
-    auto reshapedDeltas = gatherReverseConvolutionGradientsDeltas(deltas, PrecisionType());
+    auto reshapedInput  = gatherReverseConvolutionGradientsInput (inputFoldedTime,  deltasFoldedTime, stride, padding, PrecisionType());
+    auto reshapedDeltas = gatherReverseConvolutionGradientsDeltas(deltasFoldedTime, PrecisionType());
 
     // then multiply like forward convolution
     auto reshapedGradients = gemm(Matrix(reshapedDeltas), false, alpha, reshapedInput, false);

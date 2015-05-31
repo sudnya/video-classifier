@@ -73,6 +73,7 @@ double NesterovAcceleratedGradientSolver::solve(MatrixVector& inputs,
 
         double gradNorm = std::sqrt(matrix::dotProduct(futurePointDerivative, futurePointDerivative));
 
+        // possibly clip the gradient
         double scale = gradNorm > _maxGradNorm ? -(_learningRate * _maxGradNorm) / gradNorm : -_learningRate;
 
         // Update parameters

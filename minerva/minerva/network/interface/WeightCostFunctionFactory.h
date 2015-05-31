@@ -1,7 +1,7 @@
-/*	\file   WeihtCostFunctionFactory.h
-	\date   December 25, 2014
-	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The header file for the WeightCostFunctionFactory class.
+/*    \file   WeihtCostFunctionFactory.h
+    \date   December 25, 2014
+    \author Gregory Diamos <solusstultus@gmail.com>
+    \brief  The header file for the WeightCostFunctionFactory class.
 */
 
 #pragma once
@@ -22,8 +22,8 @@ namespace network
 class WeightCostFunctionFactory
 {
 public:
-	static WeightCostFunction* create(const std::string& costFunctionName);
-	static WeightCostFunction* create();
+    static WeightCostFunction* create(const std::string& costFunctionName);
+    static WeightCostFunction* create();
 
 };
 

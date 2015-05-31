@@ -1,7 +1,7 @@
-/*	\file   WeightRegularizationCostFunction.cpp
-	\date   November 19, 2014
-	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The source file for the WeightRegularizationCostFunction class.
+/*    \file   WeightRegularizationCostFunction.cpp
+    \date   November 19, 2014
+    \author Gregory Diamos <solusstultus@gmail.com>
+    \brief  The source file for the WeightRegularizationCostFunction class.
 */
 
 // Minerva Includes
@@ -26,21 +26,21 @@ WeightRegularizationCostFunction::~WeightRegularizationCostFunction()
 
 double WeightRegularizationCostFunction::getCost(const Matrix& weights) const
 {
-	double lambda = util::KnobDatabase::getKnobValue("NeuralNetwork::Lambda", 0.001);
+    double lambda = util::KnobDatabase::getKnobValue("NeuralNetwork::Lambda", 0.001);
 
-	return reduce(apply(weights, matrix::Square()), {}, matrix::Add())[0] * (lambda / 2.0);
+    return reduce(apply(weights, matrix::Square()), {}, matrix::Add())[0] * (lambda / 2.0);
 }
 
 WeightRegularizationCostFunction::Matrix WeightRegularizationCostFunction::getGradient(const Matrix& weights) const
 {
-	double lambda = util::KnobDatabase::getKnobValue("NeuralNetwork::Lambda", 0.001);
-	
-	return apply(weights, matrix::Multiply(lambda));
+    double lambda = util::KnobDatabase::getKnobValue("NeuralNetwork::Lambda", 0.001);
+
+    return apply(weights, matrix::Multiply(lambda));
 }
 
 WeightCostFunction* WeightRegularizationCostFunction::clone() const
 {
-	return new WeightRegularizationCostFunction;
+    return new WeightRegularizationCostFunction;
 }
 
 }

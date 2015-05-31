@@ -15,46 +15,41 @@
 
 #include <minerva/network/interface/NeuralNetwork.h>
 #include <minerva/network/interface/LayerFactory.h>
+#include <minerva/network/interface/Layer.h>
 #include <minerva/network/interface/CostFunctionFactory.h>
 
-#include <minerva/network/interface/ActivationFunctionFactory.h>
-
-#include <minerva/video/interface/Image.h>
-#include <minerva/video/interface/ImageVector.h>
+#include <minerva/input/interface/InputDataProducer.h>
 
 #include <minerva/matrix/interface/RandomOperations.h>
 #include <minerva/matrix/interface/Matrix.h>
+#include <minerva/matrix/interface/MatrixOperations.h>
 
-#include <minerva/util/interface/debug.h>
-#include <minerva/util/interface/paths.h>
-#include <minerva/util/interface/memory.h>
 #include <minerva/util/interface/ArgumentParser.h>
 #include <minerva/util/interface/Knobs.h>
 
 // Type definitions
-typedef minerva::video::Image Image;
 typedef minerva::network::NeuralNetwork NeuralNetwork;
-typedef minerva::network::FeedForwardLayer FeedForwardLayer;
-typedef minerva::network::ConvolutionalLayer ConvolutionalLayer;
-typedef minerva::video::ImageVector ImageVector;
+typedef minerva::network::LayerFactory LayerFactory;
 typedef minerva::matrix::Matrix Matrix;
 typedef minerva::matrix::Dimension Dimension;
-typedef minerva::visualization::NeuronVisualizer NeuronVisualizer;
+typedef minerva::matrix::SinglePrecision SinglePrecision;
 typedef minerva::model::Model Model;
 typedef minerva::engine::Engine Engine;
 typedef minerva::results::LabelMatchResultProcessor LabelMatchResultProcessor;
+typedef minerva::input::InputDataProducer InputDataProducer;
 
 class Parameters
 {
 public:
     size_t layerSize;
-    size_t fowardLayers;
+    size_t forwardLayers;
     size_t recurrentLayers;
 
     size_t epochs;
     size_t batchSize;
 
-    size_t trainingSamples;
+    size_t maximumSamples;
+    size_t timesteps;
 
     bool seed;
 
@@ -66,49 +61,160 @@ public:
 
 };
 
+class BracketProducer : public InputDataProducer
+{
+public:
+    BracketProducer(size_t sequenceLength) : _sequenceLength(sequenceLength) {}
+
+public:
+    virtual void initialize()
+    {
+        reset();
+    }
+
+    virtual InputAndReferencePair pop()
+    {
+        Matrix sample    = zeros({5, _sequenceLength}, SinglePrecision());
+        Matrix reference = zeros({5, _sequenceLength}, SinglePrecision());
+
+        size_t partition = _sequenceLength / 3;
+
+        // fill in the sample
+        size_t opens    = 0;
+        size_t closes   = 0;
+        size_t anys     = 0;
+
+        std::discrete_distribution<size_t> distribution({1, 1, 1, 0, 0});
+
+        assert(_sequenceLength > 3);
+
+        for(size_t timestep = 0; timestep < partition; )
+        {
+            switch(distribution(engine))
+            {
+            case 0:
+            {
+                sample   (0, timestep) = 1.0f;
+                reference(0, timestep) = 1.0f;
+
+                opens += 1;
+
+                ++timestep;
+                break;
+            }
+            case 1:
+            {
+                if(closes >= opens)
+                {
+                    break;
+                }
+
+                sample   (1, timestep) = 1.0f;
+                reference(1, timestep) = 1.0f;
+
+                closes += 1;
+
+                ++timestep;
+                break;
+            }
+            case 2:
+            {
+                sample   (2, timestep) = 1.0f;
+                reference(2, timestep) = 1.0f;
+
+                anys += 1;
+
+                ++timestep;
+                break;
+            }
+            default:
+            {
+                assert(false);
+                break;
+            }
+            }
+        }
+
+        for(size_t timestep = partition; timestep < _sequenceLength; ++timestep)
+        {
+            sample(3, timestep) = 1.0f;
+        }
+
+        // fill in the reference
+        size_t hanging = opens - closes;
+
+        for(size_t timestep = partition; timestep < (partition + hanging); ++timestep)
+        {
+            reference(1, timestep) = 1.0f;
+        }
+
+        for(size_t timestep = partition + hanging; timestep < _sequenceLength; ++timestep)
+        {
+            reference(4, timestep) = 1.0f;
+        }
+
+        return {sample, reference};
+    }
+
+    virtual bool empty() const
+    {
+        return false;
+    }
+
+    virtual void reset()
+    {
+        engine.seed(377);
+    }
+
+    virtual size_t getUniqueSampleCount() const
+    {
+        return (1 << 30);
+    }
+
+private:
+    size_t _sequenceLength;
+
+private:
+    std::default_random_engine engine;
+
+};
+
 static void addClassifier(Model& model, const Parameters& parameters)
 {
     NeuralNetwork classifier;
 
     // connect the network
-    classifier.addLayer(std::make_unique<FeedForwardLayer>(parameters.layerSize, parameters.layerSize));
-    classifier.addLayer(std::make_unique<FeedForwardLayer>(parameters.layerSize, parameters.layerSize));
-    classifier.addLayer(std::make_unique<FeedForwardLayer>(parameters.layerSize, 10                  ));
+    for(size_t layer = 0; layer != parameters.forwardLayers; ++layer)
+    {
+        classifier.addLayer(LayerFactory::create("FeedForwardLayer", std::make_tuple("Size", parameters.layerSize)));
+    }
+
+    for(size_t layer = 0; layer != parameters.recurrentLayers; ++layer)
+    {
+        classifier.addLayer(LayerFactory::create("RecurrentLayer", std::make_tuple("Size", parameters.layerSize)));
+    }
 
     classifier.setCostFunction(minerva::network::CostFunctionFactory::create("SoftMaxCostFunction"));
 
     classifier.initialize();
 
-    for(size_t i = 0; i < 10; ++i)
-    {
-        std::stringstream stream;
-
-        stream << i;
-
-        model.setOutputLabel(i, stream.str());
-    }
+    model.setOutputLabel(0, "{");
+    model.setOutputLabel(1, "}");
+    model.setOutputLabel(2, " ");
+    model.setOutputLabel(3, "END");
 
     model.setNeuralNetwork("Classifier", classifier);
 
-    minerva::util::log("TestMNIST")
-        << "Feature Selector Architecture "
-        << featureSelector.shapeString() << "\n";
-
-    minerva::util::log("TestMNIST")
-        << "Classifier Architecture "
+    minerva::util::log("TestBracketMatching") << "Classifier Architecture "
         << classifier.shapeString() << "\n";
 }
 
 static void createModel(Model& model, const Parameters& parameters)
 {
-    model.setAttribute("ResolutionX",     parameters.xPixels);
-    model.setAttribute("ResolutionY",     parameters.yPixels);
-    model.setAttribute("ColorComponents", parameters.colors );
-
     addClassifier(model, parameters);
 }
 
-static void setSampleStatistics(Model& model, const Parameters& parameters)
+static void setSampleStatistics(Model& model, const Parameters& parameters, InputDataProducer& producer)
 {
     // Setup sample stats
     std::unique_ptr<Engine> engine(minerva::engine::EngineFactory::create("SampleStatisticsEngine"));
@@ -117,11 +223,11 @@ static void setSampleStatistics(Model& model, const Parameters& parameters)
     engine->setBatchSize(128);
     engine->setMaximumSamplesToRun(1024);
 
-    // read from database and use model to train
-    engine->runOnDatabaseFile(parameters.inputPath);
+    // read from producer and use model to train
+    engine->runOnDataProducer(producer);
 }
 
-static void trainNetwork(Model& model, const Parameters& parameters)
+static void trainNetwork(Model& model, const Parameters& parameters, InputDataProducer& producer)
 {
     // Train the network
     std::unique_ptr<Engine> engine(minerva::engine::EngineFactory::create("LearnerEngine"));
@@ -132,11 +238,11 @@ static void trainNetwork(Model& model, const Parameters& parameters)
     engine->setStandardizeInput(true);
     engine->setMaximumSamplesToRun(parameters.maximumSamples);
 
-    // read from database and use model to train
-    engine->runOnDatabaseFile(parameters.inputPath);
+    // read from producer and use model to train
+    engine->runOnDataProducer(producer);
 }
 
-static double testNetwork(Model& model, const Parameters& parameters)
+static double testNetwork(Model& model, const Parameters& parameters, InputDataProducer& producer)
 {
     std::unique_ptr<Engine> engine(minerva::engine::EngineFactory::create("ClassifierEngine"));
 
@@ -144,34 +250,15 @@ static double testNetwork(Model& model, const Parameters& parameters)
     engine->setModel(&model);
     engine->setMaximumSamplesToRun(parameters.maximumSamples);
 
-    // read from database and use model to test
-    engine->runOnDatabaseFile(parameters.testPath);
+    // read from producer and use model to test
+    engine->runOnDataProducer(producer);
 
     // get the result processor
     auto resultProcessor = static_cast<LabelMatchResultProcessor*>(engine->getResultProcessor());
 
-    minerva::util::log("TestMNIST") << resultProcessor->toString();
+    minerva::util::log("TestBracketMatching") << resultProcessor->toString();
 
     return resultProcessor->getAccuracy();
-}
-
-static void createCollage(Model& model, const Parameters& parameters)
-{
-    if(!parameters.visualize)
-    {
-        return;
-    }
-
-    // Visualize the network
-    auto network = &model.getNeuralNetwork("FeatureSelector");
-
-    minerva::visualization::NeuronVisualizer visualizer(network);
-
-    auto image = visualizer.visualizeInputTilesForAllNeurons();
-
-    image.setPath(parameters.outputPath);
-
-    image.save();
 }
 
 static void runTest(const Parameters& parameters)
@@ -185,20 +272,22 @@ static void runTest(const Parameters& parameters)
         minerva::matrix::srand(377);
     }
 
-    // Create a deep model for first layer classification
+    BracketProducer producer(parameters.timesteps);
+
+    // Create a deep recurrent model for sequence prediction
     Model model;
 
     createModel(model, parameters);
 
-    setSampleStatistics(model, parameters);
+    setSampleStatistics(model, parameters, producer);
 
-    trainNetwork(model, parameters);
+    trainNetwork(model, parameters, producer);
 
-    double accuracy = testNetwork(model, parameters);
+    double accuracy = testNetwork(model, parameters, producer);
 
     std::cout << "Accuracy is " << (accuracy) << "%\n";
 
-    if(accuracy < 85.0)
+    if(accuracy < 90.0)
     {
         std::cout << " Test Failed\n";
     }
@@ -206,8 +295,6 @@ static void runTest(const Parameters& parameters)
     {
         std::cout << " Test Passed\n";
     }
-
-    createCollage(model, parameters);
 }
 
 static void setupSolverParameters()
@@ -231,16 +318,6 @@ int main(int argc, char** argv)
 
     parser.description("A test for minerva recurrent network performance.");
 
-    parser.parse("-i", "--input-path", parameters.inputPath,
-        "examples/mnist-explicit-training.txt",
-        "The path of the database of training image files.");
-    parser.parse("-t", "--test-path", parameters.testPath,
-        "examples/mnist-explicit-test.txt",
-        "The path of the database of test image files.");
-    parser.parse("-o", "--output-path", parameters.outputPath,
-        "visualization/mnist-neurons.jpg",
-        "The output path to generate visualization results.");
-
     parser.parse("-e", "--epochs", parameters.epochs, 1,
         "The number of epochs (passes over all inputs) to train the network for.");
     parser.parse("-b", "--batch-size", parameters.batchSize, 16,
@@ -253,18 +330,12 @@ int main(int argc, char** argv)
     parser.parse("-s", "--seed", parameters.seed, false, "Seed with time.");
     parser.parse("-S", "--maximum-samples", parameters.maximumSamples, 8000, "The maximum number of samples to train/test on.");
 
-    parser.parse("-x", "--x-pixels", parameters.xPixels, 28,
-        "The number of X pixels to consider from the input image.");
-    parser.parse("-y", "--y-pixels", parameters.yPixels, 28,
-        "The number of Y pixels to consider from the input image.");
-    parser.parse("-c", "--colors", parameters.colors, 1,
-        "The number of colors to consider from the input image.");
-
     parser.parse("-l", "--layer-size", parameters.layerSize, 32,
-        "The size of each fully connected layer.");
+        "The size of each fully connected feed forward and recurrent layer.");
 
-    parser.parse("-V", "--visualize", parameters.visualize, false,
-        "Visualize neurons.");
+    parser.parse("-t", "--timesteps", parameters.timesteps, 32,
+        "The number of timesteps.");
+
     parser.parse("-v", "--verbose", verbose, false,
         "Print out log messages during execution");
 
@@ -281,7 +352,7 @@ int main(int argc, char** argv)
         minerva::util::enableSpecificLogs(loggingEnabledModules);
     }
 
-    minerva::util::log("TestBracketMatchin") << "Test begins\n";
+    minerva::util::log("TestBracketMatching") << "Test begins\n";
 
     try
     {

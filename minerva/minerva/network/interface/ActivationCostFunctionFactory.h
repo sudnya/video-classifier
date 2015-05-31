@@ -1,7 +1,7 @@
-/*	\file   ActivationCostFunctionFactory.h
-	\date   December 25, 2014
-	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The header file for the ActivationCostFunctionFactory class.
+/*  \file   ActivationCostFunctionFactory.h
+    \date   December 25, 2014
+    \author Gregory Diamos <solusstultus@gmail.com>
+    \brief  The header file for the ActivationCostFunctionFactory class.
 */
 
 #pragma once
@@ -22,8 +22,8 @@ namespace network
 class ActivationCostFunctionFactory
 {
 public:
-	static ActivationCostFunction* create(const std::string& costFunctionName);
-	static ActivationCostFunction* create();
+    static ActivationCostFunction* create(const std::string& costFunctionName);
+    static ActivationCostFunction* create();
 
 };
 

@@ -1,7 +1,7 @@
-/*	\file   WeightRegularizationCostFunction.h
-	\date   November 19, 2014
-	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The header file for the WeightCostFunction class.
+/*    \file   WeightRegularizationCostFunction.h
+    \date   November 19, 2014
+    \author Gregory Diamos <solusstultus@gmail.com>
+    \brief  The header file for the WeightCostFunction class.
 */
 
 #pragma once
@@ -18,17 +18,17 @@ namespace network
 class WeightRegularizationCostFunction : public WeightCostFunction
 {
 public:
-	virtual ~WeightRegularizationCostFunction();
+    virtual ~WeightRegularizationCostFunction();
 
 public:
-	/*! \brief Run the cost function on the specified weights. */
-	virtual double getCost(const Matrix& weights) const;
+    /*! \brief Run the cost function on the specified weights. */
+    virtual double getCost(const Matrix& weights) const;
 
-	/*! \brief Compute the gradient with respect to the weights. */
-	virtual Matrix getGradient(const Matrix& weights) const;
+    /*! \brief Compute the gradient with respect to the weights. */
+    virtual Matrix getGradient(const Matrix& weights) const;
 
 public:
-	virtual WeightCostFunction* clone() const;
+    virtual WeightCostFunction* clone() const;
 
 };
 

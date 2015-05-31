@@ -70,6 +70,8 @@ public:
     void reserve(size_t size);
     void resize(size_t size);
 
+    void clear();
+
 public:
     iterator       begin();
     const_iterator begin() const;

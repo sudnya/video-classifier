@@ -60,12 +60,13 @@ void Engine::setResultProcessor(ResultProcessor* processor)
     _resultProcessor.reset(processor);
 }
 
+void Engine::setOutputFilename(const std::string& filename)
+{
+    _resultProcessor->setOutputFilename(filename);
+}
+
 void Engine::runOnDatabaseFile(const std::string& path)
 {
-    _model->load();
-
-    registerModel();
-
     if(path.empty())
     {
         throw std::runtime_error("No input path provided.");
@@ -73,14 +74,23 @@ void Engine::runOnDatabaseFile(const std::string& path)
 
     _setupProducer(path);
 
-    _dataProducer->initialize();
+    runOnDataProducer(*_dataProducer);
+}
 
-    util::log("Engine") << "Running for " << _dataProducer->getEpochs() <<  " epochs.\n";
-    for(size_t epoch = 0; epoch != _dataProducer->getEpochs(); ++epoch)
+void Engine::runOnDataProducer(InputDataProducer& producer) {
+
+    _model->load();
+
+    registerModel();
+
+    producer.initialize();
+
+    util::log("Engine") << "Running for " << producer.getEpochs() <<  " epochs.\n";
+    for(size_t epoch = 0; epoch != producer.getEpochs(); ++epoch)
     {
-        while(!_dataProducer->empty())
+        while(!producer.empty())
         {
-            auto dataAndReference = std::move(_dataProducer->pop());
+            auto dataAndReference = std::move(producer.pop());
 
             auto results = runOnBatch(std::move(dataAndReference.first),
                 std::move(dataAndReference.second));
@@ -90,16 +100,11 @@ void Engine::runOnDatabaseFile(const std::string& path)
 
         util::log("Engine") << " Finished epoch " << epoch <<  ".\n";
 
-        _dataProducer->reset();
+        producer.reset();
     }
 
     // close
     closeModel();
-}
-
-void Engine::setOutputFilename(const std::string& filename)
-{
-    _resultProcessor->setOutputFilename(filename);
 }
 
 Engine::ResultProcessor* Engine::extractResultProcessor()

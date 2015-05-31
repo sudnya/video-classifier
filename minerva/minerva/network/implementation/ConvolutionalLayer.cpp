@@ -58,7 +58,10 @@ static Dimension computeBiasSize(const matrix::Dimension& inputSize,
 {
     auto outputSize = forwardConvolutionOutputSize(inputSize, size, stride, padding);
 
-    outputSize.pop_back(1);
+    while(outputSize.size() > 3)
+    {
+        outputSize.pop_back();
+    }
 
     return outputSize;
 }
@@ -122,8 +125,10 @@ void ConvolutionalLayer::initialize()
     apply(_bias, _bias, matrix::Fill(0.0));
 }
 
-Matrix ConvolutionalLayer::runForwardImplementation(const Matrix& m) const
+void ConvolutionalLayer::runForwardImplementation(MatrixVector& activations) const
 {
+    auto m = activations.back();
+
     if(util::isLogEnabled("ConvolutionalLayer"))
     {
         util::log("ConvolutionalLayer") << " Running forward propagation through layer: (size " << _weights.shapeString()
@@ -161,14 +166,18 @@ Matrix ConvolutionalLayer::runForwardImplementation(const Matrix& m) const
         util::log("ConvolutionalLayer") << "  activation: " << activation.shapeString() << "\n";
     }
 
-    return activation;
+    activations.push_back(std::move(activation));
 }
 
 Matrix ConvolutionalLayer::runReverseImplementation(MatrixVector& gradients,
-    const Matrix& inputActivations,
-    const Matrix& outputActivations,
+    MatrixVector& activations,
     const Matrix& difference) const
 {
+    auto outputActivations = activations.back();
+    activations.pop_back();
+
+    auto inputActivations = activations.back();
+
     if(util::isLogEnabled("ConvolutionalLayer"))
     {
         util::log("ConvolutionalLayer") << " Running reverse propagation on matrix (" << difference.size()[0]
@@ -210,7 +219,7 @@ Matrix ConvolutionalLayer::runReverseImplementation(MatrixVector& gradients,
     }
 
     // compute gradient for the weights
-    auto weightGradient = reverseConvolutionGradients(inputActivations, deltas, *_filterStride, *_inputPadding, 1.0 / samples);
+    auto weightGradient = reverseConvolutionGradients(Matrix(inputActivations), deltas, *_filterStride, *_inputPadding, 1.0 / samples);
 
     // add in the weight cost function term
     if(getWeightCostFunction() != nullptr)
@@ -231,7 +240,7 @@ Matrix ConvolutionalLayer::runReverseImplementation(MatrixVector& gradients,
     }
 
     // compute gradient for the bias
-    auto biasGradient = reduce(apply(deltas, matrix::Divide(samples)), {3}, matrix::Add());
+    auto biasGradient = reduce(apply(deltas, matrix::Divide(samples)), {3, 4}, matrix::Add());
 
     if(util::isLogEnabled("ConvolutionalLayer"))
     {

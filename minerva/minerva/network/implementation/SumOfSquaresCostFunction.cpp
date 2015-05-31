@@ -1,4 +1,4 @@
-/*    \file   SumOfSquaresCostFunction.cpp
+/*  \file   SumOfSquaresCostFunction.cpp
     \date   November 19, 2014
     \author Gregory Diamos <solusstultus@gmail.com>
     \brief  The source file for the SumOfSquaresCostFunction class.
@@ -26,7 +26,7 @@ matrix::Matrix SumOfSquaresCostFunction::computeCost(const Matrix& output, const
 {
     auto difference = apply(output, reference, matrix::Subtract());
 
-    size_t samples = output.size().back();
+    size_t samples = output.size()[output.size().size() - 2];
 
     return apply(difference, matrix::SquareAndScale(0.5/samples));
 }
