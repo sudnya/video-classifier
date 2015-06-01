@@ -54,7 +54,7 @@ UnsupervisedLearnerEngine::ResultVector UnsupervisedLearnerEngine::runOnBatch(Ma
     util::log("UnsupervisedLearnerEngine") << "Performing unsupervised "
         "learning on " << input.size()[1] <<  " samples...\n";
 
-    auto totalLayers = getTotalLayers(*_model);
+    auto totalLayers = getTotalLayers(*getModel());
 
     auto inputReference = matrix::apply(matrix::apply(matrix::apply(input, matrix::Add(1.0)), matrix::Multiply(0.4)), matrix::Add(0.1));
 
@@ -89,7 +89,7 @@ UnsupervisedLearnerEngine::ResultVector UnsupervisedLearnerEngine::runOnBatch(Ma
 network::NeuralNetwork UnsupervisedLearnerEngine::_formAugmentedNetwork(size_t layerBegin, size_t layerEnd)
 {
     // Move the network into the temporary
-    auto& featureSelector = _model->getNeuralNetwork("FeatureSelector");
+    auto& featureSelector = getModel()->getNeuralNetwork("FeatureSelector");
 
     network::NeuralNetwork network;
 
@@ -112,7 +112,7 @@ network::NeuralNetwork UnsupervisedLearnerEngine::_formAugmentedNetwork(size_t l
 
 void UnsupervisedLearnerEngine::_restoreAugmentedNetwork(network::NeuralNetwork& network, size_t layerBegin)
 {
-    auto& featureSelector = _model->getNeuralNetwork("FeatureSelector");
+    auto& featureSelector = getModel()->getNeuralNetwork("FeatureSelector");
     auto& augmentor = _getAugmentor("FeatureSelector", layerBegin);
 
     size_t layerEnd = layerBegin + network.size() - augmentor.size();

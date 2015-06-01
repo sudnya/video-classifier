@@ -42,16 +42,16 @@ void SampleStatisticsEngine::registerModel()
     _samples = 0.0;
     _sumOfSquaresOfDifferences = 0.0;
 
-    _model->setAttribute("InputSampleMean",              0.0);
-    _model->setAttribute("InputSampleStandardDeviation", 1.0);
+    getModel()->setAttribute("InputSampleMean",              0.0);
+    getModel()->setAttribute("InputSampleStandardDeviation", 1.0);
 }
 
 void SampleStatisticsEngine::closeModel()
 {
     _standardDeviation = std::sqrt(_sumOfSquaresOfDifferences / (_samples - 1.0));
 
-    _model->setAttribute("InputSampleMean",              _mean);
-    _model->setAttribute("InputSampleStandardDeviation", _standardDeviation);
+    getModel()->setAttribute("InputSampleMean",              _mean);
+    getModel()->setAttribute("InputSampleStandardDeviation", _standardDeviation);
 
     // TODO
     // saveModel();
@@ -59,7 +59,7 @@ void SampleStatisticsEngine::closeModel()
 
 SampleStatisticsEngine::ResultVector SampleStatisticsEngine::runOnBatch(Matrix&& input, Matrix&& reference)
 {
-    util::log("SimpleStatisticsEngine") << "Computing sample statistics over " << input.size()[1] <<  " images...\n";
+    util::log("SimpleStatisticsEngine") << "Computing sample statistics over " << input.size().product() <<  " elements...\n";
 
     for(auto element : input)
     {

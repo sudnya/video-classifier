@@ -35,7 +35,7 @@ FeatureExtractorEngine::FeatureExtractorEngine()
 
 FeatureExtractorEngine::ResultVector FeatureExtractorEngine::runOnBatch(Matrix&& input, Matrix&& reference)
 {
-    auto& featureSelector = _model->getNeuralNetwork("FeatureSelector");
+    auto& featureSelector = getModel()->getNeuralNetwork("FeatureSelector");
 
     auto features = featureSelector.runInputs(input);
 

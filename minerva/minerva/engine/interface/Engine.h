@@ -114,7 +114,6 @@ private:
     void _setupProducer(const std::string& databasePath);
 
 protected:
-    Model*                              _model;
     std::unique_ptr<InputDataProducer>  _dataProducer;
     std::unique_ptr<ResultProcessor>    _resultProcessor;
 

@@ -64,7 +64,10 @@ public:
 class BracketProducer : public InputDataProducer
 {
 public:
-    BracketProducer(size_t sequenceLength) : _sequenceLength(sequenceLength) {}
+    BracketProducer(size_t sequenceLength)
+    : _sequenceLength(sequenceLength), _sampleIndex(0)
+    {
+    }
 
 public:
     virtual void initialize()
@@ -74,83 +77,88 @@ public:
 
     virtual InputAndReferencePair pop()
     {
-        Matrix sample    = zeros({5, _sequenceLength}, SinglePrecision());
-        Matrix reference = zeros({5, _sequenceLength}, SinglePrecision());
+        Matrix sample    = zeros({5, getBatchSize(), _sequenceLength}, SinglePrecision());
+        Matrix reference = zeros({5, getBatchSize(), _sequenceLength}, SinglePrecision());
 
-        size_t partition = _sequenceLength / 3;
-
-        // fill in the sample
-        size_t opens    = 0;
-        size_t closes   = 0;
-        size_t anys     = 0;
-
-        std::discrete_distribution<size_t> distribution({1, 1, 1, 0, 0});
-
-        assert(_sequenceLength > 3);
-
-        for(size_t timestep = 0; timestep < partition; )
+        for(size_t batchSample = 0; batchSample < getBatchSize(); ++batchSample)
         {
-            switch(distribution(engine))
-            {
-            case 0:
-            {
-                sample   (0, timestep) = 1.0f;
-                reference(0, timestep) = 1.0f;
+            size_t partition = _sequenceLength / 3;
 
-                opens += 1;
+            // fill in the sample
+            size_t opens    = 0;
+            size_t closes   = 0;
+            size_t anys     = 0;
 
-                ++timestep;
-                break;
-            }
-            case 1:
+            std::discrete_distribution<size_t> distribution({1, 1, 1, 0, 0});
+
+            assert(_sequenceLength > 3);
+
+            for(size_t timestep = 0; timestep < partition; )
             {
-                if(closes >= opens)
+                switch(distribution(engine))
                 {
+                case 0:
+                {
+                    sample   (0, batchSample, timestep) = 1.0f;
+                    reference(0, batchSample, timestep) = 1.0f;
+
+                    opens += 1;
+
+                    ++timestep;
                     break;
                 }
+                case 1:
+                {
+                    if(closes >= opens)
+                    {
+                        break;
+                    }
 
-                sample   (1, timestep) = 1.0f;
-                reference(1, timestep) = 1.0f;
+                    sample   (1, batchSample, timestep) = 1.0f;
+                    reference(1, batchSample, timestep) = 1.0f;
 
-                closes += 1;
+                    closes += 1;
 
-                ++timestep;
-                break;
+                    ++timestep;
+                    break;
+                }
+                case 2:
+                {
+                    sample   (2, batchSample, timestep) = 1.0f;
+                    reference(2, batchSample, timestep) = 1.0f;
+
+                    anys += 1;
+
+                    ++timestep;
+                    break;
+                }
+                default:
+                {
+                    assert(false);
+                    break;
+                }
+                }
             }
-            case 2:
+
+            for(size_t timestep = partition; timestep < _sequenceLength; ++timestep)
             {
-                sample   (2, timestep) = 1.0f;
-                reference(2, timestep) = 1.0f;
-
-                anys += 1;
-
-                ++timestep;
-                break;
+                sample(3, batchSample, timestep) = 1.0f;
             }
-            default:
+
+            // fill in the reference
+            size_t hanging = opens - closes;
+
+            for(size_t timestep = partition; timestep < (partition + hanging); ++timestep)
             {
-                assert(false);
-                break;
+                reference(1, batchSample, timestep) = 1.0f;
             }
+
+            for(size_t timestep = partition + hanging; timestep < _sequenceLength; ++timestep)
+            {
+                reference(4, batchSample, timestep) = 1.0f;
             }
-        }
 
-        for(size_t timestep = partition; timestep < _sequenceLength; ++timestep)
-        {
-            sample(3, timestep) = 1.0f;
-        }
-
-        // fill in the reference
-        size_t hanging = opens - closes;
-
-        for(size_t timestep = partition; timestep < (partition + hanging); ++timestep)
-        {
-            reference(1, timestep) = 1.0f;
-        }
-
-        for(size_t timestep = partition + hanging; timestep < _sequenceLength; ++timestep)
-        {
-            reference(4, timestep) = 1.0f;
+            ++_sampleIndex;
         }
 
         return {sample, reference};
@@ -158,12 +166,13 @@ public:
 
     virtual bool empty() const
     {
-        return false;
+        return _sampleIndex >= getMaximumSamplesToRun();
     }
 
     virtual void reset()
     {
         engine.seed(377);
+        _sampleIndex = 0;
     }
 
     virtual size_t getUniqueSampleCount() const
@@ -173,6 +182,7 @@ public:
 
 private:
     size_t _sequenceLength;
+    size_t _sampleIndex;
 
 private:
     std::default_random_engine engine;
@@ -183,16 +193,27 @@ static void addClassifier(Model& model, const Parameters& parameters)
 {
     NeuralNetwork classifier;
 
+    classifier.addLayer(LayerFactory::create("FeedForwardLayer",
+        std::make_tuple("InputSize" , 5),
+        std::make_tuple("OutputSize", parameters.layerSize)));
+
     // connect the network
-    for(size_t layer = 0; layer != parameters.forwardLayers; ++layer)
+    for(size_t layer = 2; layer < parameters.forwardLayers; ++layer)
     {
-        classifier.addLayer(LayerFactory::create("FeedForwardLayer", std::make_tuple("Size", parameters.layerSize)));
+        classifier.addLayer(LayerFactory::create("FeedForwardLayer",
+            std::make_tuple("InputSize", parameters.layerSize)));
     }
 
     for(size_t layer = 0; layer != parameters.recurrentLayers; ++layer)
     {
-        classifier.addLayer(LayerFactory::create("RecurrentLayer", std::make_tuple("Size", parameters.layerSize)));
+        classifier.addLayer(LayerFactory::create("RecurrentLayer",
+            std::make_tuple("Size",      parameters.layerSize),
+            std::make_tuple("BatchSize", parameters.batchSize)));
     }
+
+    classifier.addLayer(LayerFactory::create("FeedForwardLayer",
+        std::make_tuple("InputSize",  parameters.layerSize),
+        std::make_tuple("OutputSize", 5)));
 
     classifier.setCostFunction(minerva::network::CostFunctionFactory::create("SoftMaxCostFunction"));
 
@@ -201,7 +222,8 @@ static void addClassifier(Model& model, const Parameters& parameters)
     model.setOutputLabel(0, "{");
     model.setOutputLabel(1, "}");
     model.setOutputLabel(2, " ");
-    model.setOutputLabel(3, "END");
+    model.setOutputLabel(3, "UNKOWN");
+    model.setOutputLabel(4, "END");
 
     model.setNeuralNetwork("Classifier", classifier);
 
@@ -248,7 +270,7 @@ static double testNetwork(Model& model, const Parameters& parameters, InputDataP
 
     engine->setBatchSize(parameters.batchSize);
     engine->setModel(&model);
-    engine->setMaximumSamplesToRun(parameters.maximumSamples);
+    engine->setMaximumSamplesToRun(1024);
 
     // read from producer and use model to test
     engine->runOnDataProducer(producer);
@@ -332,6 +354,11 @@ int main(int argc, char** argv)
 
     parser.parse("-l", "--layer-size", parameters.layerSize, 32,
         "The size of each fully connected feed forward and recurrent layer.");
+
+    parser.parse("-f", "--forward-layers", parameters.forwardLayers, 2,
+        "The number of feed forward layers.");
+    parser.parse("-r", "--recurrent-layers", parameters.recurrentLayers, 2,
+        "The number of recurrent layers.");
 
     parser.parse("-t", "--timesteps", parameters.timesteps, 32,
         "The number of timesteps.");

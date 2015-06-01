@@ -36,14 +36,20 @@ typedef matrix::MatrixVector MatrixVector;
 typedef matrix::Dimension Dimension;
 
 RecurrentLayer::RecurrentLayer()
-: RecurrentLayer(0, matrix::SinglePrecision())
+: RecurrentLayer(1, 1)
 {
 
 }
 
-RecurrentLayer::RecurrentLayer(size_t size, const matrix::Precision& precision)
+RecurrentLayer::RecurrentLayer(size_t size, size_t batchSize)
+: RecurrentLayer(size, batchSize, matrix::SinglePrecision())
+{
+
+}
+
+RecurrentLayer::RecurrentLayer(size_t size, size_t batchSize, const matrix::Precision& precision)
 : _parameters(new MatrixVector({Matrix({size, size}, precision), Matrix({size}, precision), Matrix({size, size}, precision)})),
-  _forwardWeights((*_parameters)[0]), _bias((*_parameters)[1]), _recurrentWeights((*_parameters)[2])
+  _forwardWeights((*_parameters)[0]), _bias((*_parameters)[1]), _recurrentWeights((*_parameters)[2]), _expectedBatchSize(batchSize)
 {
 
 }
@@ -55,7 +61,10 @@ RecurrentLayer::~RecurrentLayer()
 
 RecurrentLayer::RecurrentLayer(const RecurrentLayer& l)
 : _parameters(std::make_unique<MatrixVector>(*l._parameters)),
- _forwardWeights((*_parameters)[0]), _bias((*_parameters)[1]), _recurrentWeights((*_parameters)[2])
+ _forwardWeights((*_parameters)[0]),
+ _bias((*_parameters)[1]),
+ _recurrentWeights((*_parameters)[2]),
+ _expectedBatchSize(l._expectedBatchSize)
 {
 
 }
@@ -68,6 +77,7 @@ RecurrentLayer& RecurrentLayer::operator=(const RecurrentLayer& l)
     }
 
     _parameters = std::move(std::make_unique<MatrixVector>(*l._parameters));
+    _expectedBatchSize = l._expectedBatchSize;
 
     return *this;
 }
@@ -94,9 +104,29 @@ void RecurrentLayer::initialize()
     apply(_bias, _bias, matrix::Fill(0.0f));
 }
 
+static matrix::Matrix unfoldTimeAndBatch(const Matrix& input, size_t batchSize)
+{
+    size_t activationCount = input.size()[0];
+    size_t miniBatch       = 1;
+    size_t timesteps       = 1;
+
+    if(input.size().size() == 2)
+    {
+        miniBatch = batchSize;
+        timesteps = input.size()[1] / miniBatch;
+    }
+    else
+    {
+        miniBatch = input.size()[1];
+        timesteps = input.size()[2];
+    }
+
+    return reshape(input, {activationCount, miniBatch, timesteps});
+}
+
 void RecurrentLayer::runForwardImplementation(MatrixVector& activations) const
 {
-    auto inputActivations = activations.back();
+    auto inputActivations = unfoldTimeAndBatch(activations.back(), _expectedBatchSize);
 
     if(util::isLogEnabled("RecurrentLayer"))
     {
@@ -148,8 +178,10 @@ void RecurrentLayer::runForwardImplementation(MatrixVector& activations) const
 
 Matrix RecurrentLayer::runReverseImplementation(MatrixVector& gradients,
     MatrixVector& activations,
-    const Matrix& deltas) const
+    const Matrix& foldedDeltas) const
 {
+    auto deltas = unfoldTimeAndBatch(foldedDeltas, _expectedBatchSize);
+
     if(util::isLogEnabled("RecurrentLayer"))
     {
         util::log("RecurrentLayer") << " Running reverse propagation on matrix (" << deltas.shapeString()
@@ -169,10 +201,10 @@ Matrix RecurrentLayer::runReverseImplementation(MatrixVector& gradients,
     }
 
     // Compute deltas for intermediate time steps and the feed forward activations
-    auto outputActivations = activations.back();
+    auto outputActivations = unfoldTimeAndBatch(activations.back(), _expectedBatchSize);
     activations.pop_back();
 
-    auto forwardDeltas = reverseRecurrentDeltas(deltas, _recurrentWeights, outputActivations, matrix::RECURRENT_FORWARD_TIME,
+    auto forwardDeltas = reverseRecurrentDeltas(Matrix(deltas), _recurrentWeights, outputActivations, matrix::RECURRENT_FORWARD_TIME,
         getActivationFunction()->getDerivativeOperation());
 
     // Compute recurrent weight gradients

@@ -52,7 +52,7 @@ Engine::~Engine()
 
 void Engine::setModel(Model* model)
 {
-    _model = model;
+    _dataProducer->setModel(model);
 }
 
 void Engine::setResultProcessor(ResultProcessor* processor)
@@ -77,9 +77,26 @@ void Engine::runOnDatabaseFile(const std::string& path)
     runOnDataProducer(*_dataProducer);
 }
 
-void Engine::runOnDataProducer(InputDataProducer& producer) {
+static void copyProducerParameters(input::InputDataProducer& newProducer, input::InputDataProducer& dataProducer)
+{
+    if(&newProducer == &dataProducer)
+    {
+        return;
+    }
 
-    _model->load();
+    newProducer.setRequiresLabeledData(dataProducer.getRequiresLabeledData());
+    newProducer.setEpochs(dataProducer.getEpochs());
+    newProducer.setMaximumSamplesToRun(dataProducer.getMaximumSamplesToRun());
+    newProducer.setBatchSize(dataProducer.getBatchSize());
+    newProducer.setStandardizeInput(dataProducer.getStandardizeInput());
+    newProducer.setModel(dataProducer.getModel());
+}
+
+void Engine::runOnDataProducer(InputDataProducer& producer)
+{
+    copyProducerParameters(producer, *_dataProducer);
+
+    getModel()->load();
 
     registerModel();
 
@@ -114,7 +131,7 @@ Engine::ResultProcessor* Engine::extractResultProcessor()
 
 Engine::Model* Engine::getModel()
 {
-    return _model;
+    return _dataProducer->getModel();
 }
 
 Engine::ResultProcessor* Engine::getResultProcessor()
@@ -159,18 +176,23 @@ bool Engine::requiresLabeledData() const
 
 void Engine::saveModel()
 {
-    if(_model) _model->save();
+    if(getModel()) getModel()->save();
 }
 
 network::NeuralNetwork* Engine::getAggregateNetwork()
 {
+    if(!getModel()->containsNeuralNetwork("FeatureSelector"))
+    {
+        return &getModel()->getNeuralNetwork("Classifier");
+    }
+
     if(!_aggregateNetwork)
     {
         _aggregateNetwork.reset(new NeuralNetwork);
     }
 
-    auto& featureSelector = _model->getNeuralNetwork("FeatureSelector");
-    auto& classifier      = _model->getNeuralNetwork("Classifier");
+    auto& featureSelector = getModel()->getNeuralNetwork("FeatureSelector");
+    auto& classifier      = getModel()->getNeuralNetwork("Classifier");
 
     for(auto& layer : featureSelector)
     {
@@ -187,10 +209,15 @@ network::NeuralNetwork* Engine::getAggregateNetwork()
 
 void Engine::restoreAggregateNetwork()
 {
+    if(!getModel()->containsNeuralNetwork("FeatureSelector"))
+    {
+        return;
+    }
+
     assert(_aggregateNetwork);
 
-    auto& featureSelector = _model->getNeuralNetwork("FeatureSelector");
-    auto& classifier      = _model->getNeuralNetwork("Classifier");
+    auto& featureSelector = getModel()->getNeuralNetwork("FeatureSelector");
+    auto& classifier      = getModel()->getNeuralNetwork("Classifier");
 
     size_t layerId = 0;
 
@@ -213,12 +240,7 @@ void Engine::_setupProducer(const std::string& path)
 {
     std::unique_ptr<InputDataProducer> newProducer(input::InputDataProducerFactory::createForDatabase(path));
 
-    newProducer->setRequiresLabeledData(requiresLabeledData());
-    newProducer->setEpochs(_dataProducer->getEpochs());
-    newProducer->setMaximumSamplesToRun(_dataProducer->getMaximumSamplesToRun());
-    newProducer->setBatchSize(_dataProducer->getBatchSize());
-    newProducer->setStandardizeInput(_dataProducer->getStandardizeInput());
-    newProducer->setModel(_model);
+    copyProducerParameters(*newProducer, *_dataProducer);
 
     _dataProducer = std::move(newProducer);
 

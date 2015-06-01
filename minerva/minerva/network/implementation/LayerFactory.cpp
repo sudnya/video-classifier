@@ -35,7 +35,10 @@ std::unique_ptr<Layer> LayerFactory::create(const std::string& name, const Param
     }
     else if("RecurrentLayer" == name)
     {
-        return std::make_unique<RecurrentLayer>();
+        size_t size      = parameters.get("Size",      1);
+        size_t batchSize = parameters.get("BatchSize", 1);
+
+        return std::make_unique<RecurrentLayer>(size, batchSize);
     }
     else if("ConvolutionalLayer" == name)
     {

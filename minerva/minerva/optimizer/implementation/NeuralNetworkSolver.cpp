@@ -36,6 +36,11 @@ void NeuralNetworkSolver::setReference(const Matrix* reference)
     _reference = reference;
 }
 
+void NeuralNetworkSolver::setNetwork(NeuralNetwork* network)
+{
+    _network = network;
+}
+
 NeuralNetworkSolver* NeuralNetworkSolver::create(NeuralNetwork* n)
 {
     auto solverName = util::KnobDatabase::getKnobValue("Solver::Type",

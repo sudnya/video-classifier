@@ -319,6 +319,7 @@ void NeuralNetwork::train(const Matrix& input, const Matrix& reference)
 {
     getSolver()->setInput(&input);
     getSolver()->setReference(&reference);
+    getSolver()->setNetwork(this);
 
     getSolver()->solve();
 }
