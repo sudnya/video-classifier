@@ -1,4 +1,4 @@
-/*    \file   ClassifierEngine.cpp
+/*  \file   ClassifierEngine.cpp
     \date   Sunday August 11, 2013
     \author Gregory Diamos <solusstultus@gmail.com>
     \brief  The source file for the ClassifierEngine class.
