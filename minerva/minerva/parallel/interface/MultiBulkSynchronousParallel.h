@@ -12,28 +12,36 @@ namespace detail
 
 #ifdef __NVCC__
 
+void checkCudaErrors(cudaError_t status)
+{
+    if(status != cudaSuccess)
+    {
+        throw std::runtime_error(cudaGetErrorString(status));
+    }
+}
+
 template<typename FunctionType>
 __global__ void kernelLauncher(FunctionType function)
 {
-	function(threadGroup, ThreadGroup(blockDim.x * gridDim.x, threadIdx.x + blockIdx.x * blockDim.x));
+	function(ThreadGroup(blockDim.x * gridDim.x, threadIdx.x + blockIdx.x * blockDim.x));
 }
 
 template<typename FunctionType>
 void launchCudaKernel(FunctionType function)
 {
-	size_t ctasPerSM = 0;
-	size_t threads   = 128;
+	int ctasPerSM = 0;
+	int threads   = 128;
 
 	checkCudaErrors(cudaOccupancyMaxActiveBlocksPerMultiprocessor(
-		static_cast<int*>(&ctasPerSM), kernelLauncher<FunctionType>, threads, 0));
+		&ctasPerSM, kernelLauncher<FunctionType>, threads, 0));
 
-	size_t multiprocessorCount = 0;
-	
-	checkCudaErrors(cudaDeviceGetAttribute(static_cast<int*>(&multiprocessorCount), cudaDevAttrMultiProcessorCount, 0));
+	int multiprocessorCount = 0;
+
+	checkCudaErrors(cudaDeviceGetAttribute(&multiprocessorCount, cudaDevAttrMultiProcessorCount, 0));
 
 	size_t ctas = multiprocessorCount * ctasPerSM;
 
-	kernelLauncher<<<ctas, threads>>>(f);
+	kernelLauncher<<<ctas, threads>>>(function);
 }
 #endif
 

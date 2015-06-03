@@ -20,24 +20,24 @@ public:
     }
 
 public:
-    const Dimension& size() const
+    CUDA_DECORATOR const Dimension& size() const
     {
         return _size;
     }
 
-    const Dimension& stride() const
+    CUDA_DECORATOR const Dimension& stride() const
     {
         return _stride;
     }
 
 public:
-    size_t linearAddress(const Dimension& d) const
+    CUDA_DECORATOR size_t linearAddress(const Dimension& d) const
     {
         return dotProduct(d, _stride);
     }
 
 public:
-    T& operator()(const Dimension& d) const
+    CUDA_DECORATOR T& operator()(const Dimension& d) const
     {
         return _data[linearAddress(d)];
     }
@@ -59,37 +59,37 @@ public:
 
     }
 
-    ConstMatrixView(const T* data, const Dimension& size, const Dimension& stride)
+    CUDA_DECORATOR ConstMatrixView(const T* data, const Dimension& size, const Dimension& stride)
     : _data(data), _size(size), _stride(stride)
     {
 
     }
 
 public:
-    const Dimension& size() const
+    CUDA_DECORATOR const Dimension& size() const
     {
         return _size;
     }
 
-    const Dimension& stride() const
+    CUDA_DECORATOR const Dimension& stride() const
     {
         return _stride;
     }
 
 public:
-    size_t elements() const
+    CUDA_DECORATOR size_t elements() const
     {
         return _size.product();
     }
 
 public:
-    size_t linearAddress(const Dimension& d) const
+    CUDA_DECORATOR size_t linearAddress(const Dimension& d) const
     {
         return dotProduct(d, _stride);
     }
 
 public:
-    const T& operator()(const Dimension& d) const
+    CUDA_DECORATOR const T& operator()(const Dimension& d) const
     {
         return _data[linearAddress(d)];
     }

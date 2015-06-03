@@ -23,7 +23,7 @@ namespace detail
 {
 
 template<typename OperationType, typename T>
-void applyOverPrecisions(Matrix& result, const Matrix& left, const Matrix& right,
+CUDA_DECORATOR void applyOverPrecisions(Matrix& result, const Matrix& left, const Matrix& right,
     const Operation& op, const Precision& precision, std::tuple<T> precisions)
 {
     typedef T PrecisionPrimitive;
