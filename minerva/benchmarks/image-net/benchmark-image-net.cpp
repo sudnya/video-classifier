@@ -81,12 +81,10 @@ static void addClassifier(Model& model, const Parameters& parameters)
     NeuralNetwork classifier;
 
     // conv 3-64 layer
-    /*classifier.addLayer(std::make_unique<ConvolutionalLayer>(
+    classifier.addLayer(std::make_unique<ConvolutionalLayer>(
         Dimension(parameters.xPixels, parameters.yPixels, parameters.colors, 1),
         Dimension(parameters.blockX, parameters.blockY, parameters.colors, 64),
         Dimension(1, 1), Dimension(0, 0)));
-    */
-    classifier.addLayer(std::make_unique<FeedForwardLayer>(parameters.xPixels * parameters.yPixels * parameters.colors, parameters.layerSize));
 
     // mean pooling layer
 /*
@@ -282,7 +280,7 @@ static void setupSolverParameters()
     minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::LearningRate", "1.0e-2");
     minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::Momentum", "0.9");
     minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::AnnealingRate", "1.00000");
-    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::MaxGradNorm", "1.0");
+    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::MaxGradNorm", "10.0");
     minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::IterationsPerBatch", "1");
     minerva::util::KnobDatabase::setKnob("GeneralDifferentiableSolver::Type", "NesterovAcceleratedGradientSolver");
 }
