@@ -134,12 +134,13 @@ static Matrix unfoldTime(const Matrix& result, const Dimension& inputSize)
 
 void FeedForwardLayer::runForwardImplementation(MatrixVector& activations) const
 {
+    auto m = foldTime(activations.back());
+
     if(util::isLogEnabled("FeedForwardLayer"))
     {
-        util::log("FeedForwardLayer") << " Running forward propagation through layer: " << _weights.shapeString() << "\n";
+        util::log("FeedForwardLayer") << " Running forward propagation of matrix " << m.shapeString()
+            << " through layer: " << _weights.shapeString() << "\n";
     }
-
-    auto m = foldTime(activations.back());
 
     if(util::isLogEnabled("FeedForwardLayer::Detail"))
     {

@@ -557,27 +557,33 @@ Matrix forwardConvolution(const Matrix& input, const Matrix& filter, const Dimen
 namespace
 {
 
+size_t invertPadding(size_t inputPadding, size_t filterSize)
+{
+    assert(inputPadding < filterSize);
+    return filterSize - inputPadding - 1;
+}
+
 template<typename PrecisionType>
 Matrix gatherReverseConvolutionDeltasInput(const Matrix& deltas, const Matrix& filter, const Dimension& filterStride,
-    const Dimension& padding, const PrecisionType& )
+    const Dimension& padding, const Dimension& inputSize, const PrecisionType& )
 {
     typedef typename PrecisionType::type NativeType;
 
     // zero fill the deltas to full convolution
-    size_t padWidth  = padding[0];
-    size_t padHeight = padding[1];
+    size_t padWidth  = invertPadding(padding[0], filter.size()[0]);
+    size_t padHeight = invertPadding(padding[1], filter.size()[1]);
 
     size_t w = deltas.size()[0];
     size_t h = deltas.size()[1];
 
-    size_t q = computeOutputSize(deltas.size()[0], filter.size()[0], filterStride[0], padWidth);
-    size_t p = computeOutputSize(deltas.size()[1], filter.size()[1], filterStride[1], padHeight);
+    size_t q = inputSize[0];
+    size_t p = inputSize[1];
 
     size_t r = filter.size()[1];
     size_t s = filter.size()[0];
 
-    size_t v = filterStride[0];
-    size_t u = filterStride[1];
+    size_t v = 1;
+    size_t u = 1;
 
     size_t rows    = deltas.size()[2] * filter.size()[0] * filter.size()[1];
     size_t columns = deltas.size()[3] * p * q;
@@ -716,11 +722,11 @@ void genericReverseConvolutionDeltasOverPrecisions(Matrix& resultDeltas, const M
     assert(deltas.precision()       == PrecisionType());
     assert(resultDeltas.precision() == PrecisionType());
 
-    auto deltasFoldedTime = foldTime(deltas);
+    auto deltasFoldedTime       = foldTime(deltas);
     auto resultDeltasFoldedTime = foldTime(resultDeltas);
 
     // flip the filter
-    auto reshapedInputDeltas = gatherReverseConvolutionDeltasInput(deltasFoldedTime, filter, stride, padding, PrecisionType());
+    auto reshapedInputDeltas = gatherReverseConvolutionDeltasInput(deltasFoldedTime, filter, stride, padding, resultDeltas.size(), PrecisionType());
     auto reshapedFilter      = gatherReverseConvolutionDeltasFilter(filter, PrecisionType());
 
     auto reshapedResultDeltas = gemm(reshapedFilter, reshapedInputDeltas);
@@ -801,36 +807,6 @@ void reverseConvolutionDeltas(Matrix& resultDeltas, const Matrix& filter, const 
 namespace
 {
 
-Dimension getReverseConvolutionDeltasSize(const Dimension& filterSize, const Dimension& filterStride, const Dimension& deltaSize, const Dimension& padding)
-{
-    size_t width   = computeOutputSize(deltaSize[0], filterSize[0], filterStride[0], padding[0]);
-    size_t height  = computeOutputSize(deltaSize[1], filterSize[1], filterStride[1], padding[1]);
-    size_t outputs = filterSize[3];
-
-    Dimension outputDeltasSize({width, height, outputs, deltaSize[3]});
-
-    if(deltaSize.size() > 4)
-    {
-        outputDeltasSize.push_back(deltaSize[4]);
-    }
-
-    return outputDeltasSize;
-}
-
-}
-
-Matrix reverseConvolutionDeltas(const Matrix& filter, const Dimension& stride, const Matrix& deltas, const Dimension& padding)
-{
-    Matrix result(getReverseConvolutionDeltasSize(filter.size(), stride, deltas.size(), padding), deltas.precision());
-
-    reverseConvolutionDeltas(result, filter, stride, deltas, padding);
-
-    return result;
-}
-
-namespace
-{
-
 template<typename PrecisionType>
 Matrix gatherReverseConvolutionGradientsInput(const Matrix& input, const Matrix& deltas, const Dimension& filterStride,
     const Dimension& padding, const PrecisionType& precisionType)
@@ -842,14 +818,14 @@ Matrix gatherReverseConvolutionGradientsInput(const Matrix& input, const Matrix&
     size_t featureMaps = input.size()[2];
     size_t miniBatches = input.size()[3];
 
-    size_t v = filterStride[0];
-    size_t u = filterStride[1];
+    size_t strideX = filterStride[0];
+    size_t strideY = filterStride[1];
 
     size_t padWidth  = padding[0];
     size_t padHeight = padding[1];
 
-    size_t q = computeOutputSize(input.size()[0], deltas.size()[0], filterStride[0], padding[0]);
-    size_t p = computeOutputSize(input.size()[1], deltas.size()[1], filterStride[1], padding[1]);
+    size_t q = computeOutputSize(input.size()[0], deltas.size()[0], strideX, padding[0]);
+    size_t p = computeOutputSize(input.size()[1], deltas.size()[1], strideY, padding[1]);
 
     size_t s = deltas.size()[0];
     size_t r = deltas.size()[1];
@@ -877,8 +853,8 @@ Matrix gatherReverseConvolutionGradientsInput(const Matrix& input, const Matrix&
             size_t featureMap  = (column / (p * q));
 
             size_t tileOffset  = row % (s * r);
-            size_t tileRow     = (tileOffset % s) * v;
-            size_t tileColumn  = (tileOffset / s) * u;
+            size_t tileRow     = (tileOffset % s) * strideX;
+            size_t tileColumn  = (tileOffset / s) * strideY;
 
             size_t inputTile   = column % (p * q);
 
@@ -1079,33 +1055,6 @@ void reverseConvolutionGradients(Matrix& gradients, const Matrix& inputs, const 
     {
         genericReverseConvolutionGradients(gradients, inputs, deltas, stride, padding, a);
     }
-}
-
-namespace
-{
-
-Dimension getReverseConvolutionGradientsSize(const Dimension& inputSize, const Dimension& deltaSize, const Dimension& filterStride, const Dimension& padding)
-{
-    size_t width   = computeOutputSize(inputSize[0], deltaSize[0], filterStride[0], padding[0]);
-    size_t height  = computeOutputSize(inputSize[1], deltaSize[1], filterStride[1], padding[1]);
-
-    return Dimension({width, height, inputSize[2], deltaSize[2]});
-}
-
-}
-
-Matrix reverseConvolutionGradients(const Matrix& inputs, const Matrix& deltas, const Dimension& stride, const Dimension& padding)
-{
-    return reverseConvolutionGradients(inputs, deltas, stride, padding, 1.0);
-}
-
-Matrix reverseConvolutionGradients(const Matrix& inputs, const Matrix& deltas, const Dimension& stride, const Dimension& padding, double alpha)
-{
-    Matrix result(getReverseConvolutionGradientsSize(inputs.size(), deltas.size(), stride, padding), inputs.precision());
-
-    reverseConvolutionGradients(result, inputs, deltas, stride, padding, alpha);
-
-    return result;
 }
 
 void reverseConvolutionGradients(Matrix& gradients, const Matrix& inputs, const Matrix& deltas, const Dimension& stride, const Dimension& padding)

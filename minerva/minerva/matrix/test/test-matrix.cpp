@@ -1043,7 +1043,9 @@ bool test1dBackwardConvolution()
     reference(4, 0, 0, 0) = 3;
     reference(5, 0, 0, 0) = 0;
 
-    auto computed = reverseConvolutionDeltas(filter, {1, 1}, deltas, {2, 0});
+    Matrix computed(reference.size(), reference.precision());
+    
+    reverseConvolutionDeltas(computed, filter, {1, 1}, deltas, {2, 0});
 
     if(reference != computed)
     {
@@ -1120,7 +1122,9 @@ bool test2dBackwardConvolution()
     reference(2, 3, 0, 0) = 5;
     reference(3, 3, 0, 0) = 0;
 
-    auto computed = reverseConvolutionDeltas(filter, {1, 1}, deltas, {1, 2});
+    Matrix computed(reference.size(), reference.precision());
+    
+    reverseConvolutionDeltas(computed, filter, {1, 1}, deltas, {1, 2});
 
     if(reference != computed)
     {
@@ -1181,7 +1185,9 @@ bool test2dStridedBackwardConvolution()
     reference(0, 1, 0, 0) = 9;
     reference(1, 1, 0, 0) = 25;
 
-    auto computed = reverseConvolutionDeltas(filter, {2, 2}, deltas, {1, 2});
+    Matrix computed(reference.size(), reference.precision());
+    
+    reverseConvolutionDeltas(computed, filter, {2, 2}, deltas, {1, 2});
 
     if(reference != computed)
     {
@@ -1236,7 +1242,9 @@ bool test1dConvolutionGradient()
     reference(0, 0, 0, 0) = 8;
     reference(1, 0, 0, 0) = 5;
 
-    auto computed = reverseConvolutionGradients(input, deltas, {1, 1}, {0, 0});
+    Matrix computed(reference.size(), reference.precision());
+    
+    reverseConvolutionGradients(computed, input, deltas, {1, 1}, {0, 0});
 
     if(reference != computed)
     {
@@ -1297,7 +1305,9 @@ bool test2dConvolutionGradient()
     reference(0, 1, 0, 0) = 25;
     reference(1, 1, 0, 0) = 19;
 
-    auto computed = reverseConvolutionGradients(input, deltas, {1, 1}, {0, 0});
+    Matrix computed(reference.size(), reference.precision());
+    
+    reverseConvolutionGradients(computed, input, deltas, {1, 1}, {0, 0});
 
     if(reference != computed)
     {
