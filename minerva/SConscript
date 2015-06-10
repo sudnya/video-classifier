@@ -73,6 +73,9 @@ tools.append(env.Program('test-minerva-display', \
 #tools.append(env.Program('test-minerva-performance', \
 #    ['minerva/network/test/test-neuralnetwork-performance.cpp'], LIBS=minerva_libs))
 
+tools.append(env.Program('test-convolutional-gradient', \
+    ['minerva/network/test/test-convolutional-gradient-check.cpp'], LIBS=minerva_libs))
+
 tools.append(env.Program('test-gradient', \
     ['minerva/network/test/test-gradient-check.cpp'], LIBS=minerva_libs))
 

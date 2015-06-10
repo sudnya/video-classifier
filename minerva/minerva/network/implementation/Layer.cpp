@@ -97,6 +97,7 @@ static matrix::Matrix reshapeActivations(const matrix::Matrix& m, matrix::Dimens
 {
     auto newShape = expectedSize;
 
+    // remove time and batch dimensions
     while(newShape.back() == 1 && newShape.size() > 1)
     {
         newShape.pop_back();
@@ -114,6 +115,11 @@ static matrix::Matrix reshapeActivations(const matrix::Matrix& m, matrix::Dimens
     for(size_t i = index; i < m.size().size(); ++i)
     {
         newShape.push_back(m.size()[i]);
+    }
+    
+    while(newShape.size() < expectedSize.size())
+    {
+        newShape.push_back(1);
     }
 
     return reshape(m, newShape);

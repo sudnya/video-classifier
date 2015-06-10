@@ -824,8 +824,8 @@ Matrix gatherReverseConvolutionGradientsInput(const Matrix& input, const Matrix&
     size_t padWidth  = padding[0];
     size_t padHeight = padding[1];
 
-    size_t q = computeOutputSize(input.size()[0], deltas.size()[0], strideX, padding[0]);
-    size_t p = computeOutputSize(input.size()[1], deltas.size()[1], strideY, padding[1]);
+    size_t q = computeOutputSize(input.size()[0], deltas.size()[0], 1, 0);
+    size_t p = computeOutputSize(input.size()[1], deltas.size()[1], 1, 0);
 
     size_t s = deltas.size()[0];
     size_t r = deltas.size()[1];

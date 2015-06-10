@@ -131,7 +131,8 @@ void ConvolutionalLayer::runForwardImplementation(MatrixVector& activations) con
 
     if(util::isLogEnabled("ConvolutionalLayer"))
     {
-        util::log("ConvolutionalLayer") << " Running forward propagation of matrix " << m.shapeString() << " through layer: (size " << _weights.shapeString()
+        util::log("ConvolutionalLayer") << " Running forward propagation of matrix " << m.shapeString()
+            << " through layer: (size " << _weights.shapeString()
             << ") (stride " << _filterStride->toString() << ") (padding " << _inputPadding->toString() << ")\n";
     }
 
@@ -180,11 +181,11 @@ Matrix ConvolutionalLayer::runReverseImplementation(MatrixVector& gradients,
 
     if(util::isLogEnabled("ConvolutionalLayer"))
     {
-        util::log("ConvolutionalLayer") << " Running reverse propagation on matrix (" << difference.size()[0]
-            << " rows, " << difference.size()[1] << " columns) through layer with dimensions ("
+        util::log("ConvolutionalLayer") << " Running reverse propagation on matrix ("
+            << difference.shapeString() << " columns) through layer with dimensions ("
             << getInputCount() << " inputs, " << getOutputCount() << " outputs).\n";
         util::log("ConvolutionalLayer") << "  layer: " << _weights.shapeString() << "\n";
-      }
+    }
 
     if(util::isLogEnabled("ConvolutionalLayer"))
     {
