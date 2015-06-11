@@ -52,17 +52,17 @@ static NeuralNetwork createConvolutionalNetwork(size_t layerSize)
     // conv 3-64 layer
     network.addLayer(std::make_unique<ConvolutionalLayer>(
         Dimension(layerSize, layerSize, 3, 1, 1),
-        Dimension(3, 3, 3, 2),
-        Dimension(2, 2), Dimension(0, 0), DoublePrecision()));
+        Dimension(3, 3, 3, 1),
+        Dimension(1, 1), Dimension(0, 0), DoublePrecision()));
 
     // mean pooling layer
-/*
     network.addLayer(std::make_unique<ConvolutionalLayer>(
         network.back()->getOutputSize(), //input
         Dimension(2, 2, network.back()->getOutputSize()[2], 2), // filter
         Dimension(2, 2), // stride
         Dimension(0, 0), // padding
         DoublePrecision()));
+    /*
 
     // conv 3-128 layer
     network.addLayer(std::make_unique<ConvolutionalLayer>(
@@ -72,8 +72,8 @@ static NeuralNetwork createConvolutionalNetwork(size_t layerSize)
     network.addLayer(std::make_unique<FeedForwardLayer>(
         network.back()->getOutputCount(),
         layerSize, DoublePrecision()));
-    */
 
+*/
     network.initialize();
 
     return network;
