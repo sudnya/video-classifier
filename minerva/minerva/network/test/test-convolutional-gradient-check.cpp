@@ -52,28 +52,21 @@ static NeuralNetwork createConvolutionalNetwork(size_t layerSize)
     // conv 3-64 layer
     network.addLayer(std::make_unique<ConvolutionalLayer>(
         Dimension(layerSize, layerSize, 3, 1, 1),
-        Dimension(3, 3, 3, 1),
+        Dimension(3, 3, 3, layerSize),
         Dimension(1, 1), Dimension(0, 0), DoublePrecision()));
 
     // mean pooling layer
     network.addLayer(std::make_unique<ConvolutionalLayer>(
         network.back()->getOutputSize(), //input
-        Dimension(2, 2, network.back()->getOutputSize()[2], 2), // filter
+        Dimension(2, 2, network.back()->getOutputSize()[2], network.back()->getOutputSize()[2]), // filter
         Dimension(2, 2), // stride
         Dimension(0, 0), // padding
         DoublePrecision()));
-    /*
 
-    // conv 3-128 layer
-    network.addLayer(std::make_unique<ConvolutionalLayer>(
-        network.back()->getOutputSize(),
-        Dimension(3, 3, network.back()->getOutputSize()[2], 128),
-        Dimension(1, 1), Dimension(0, 0), DoublePrecision()));
     network.addLayer(std::make_unique<FeedForwardLayer>(
         network.back()->getOutputCount(),
         layerSize, DoublePrecision()));
 
-*/
     network.initialize();
 
     return network;
@@ -184,7 +177,7 @@ static bool runTestConvolutional(size_t layerSize, bool seed)
     }
     else
     {
-        matrix::srand(7);
+        matrix::srand(10);
     }
 
     auto network = createConvolutionalNetwork(layerSize);
@@ -225,7 +218,7 @@ int main(int argc, char** argv)
 
     parser.description("The minerva neural network gradient check.");
 
-    parser.parse("-S", "--layer-size", layerSize, 16, "The number of neurons per layer.");
+    parser.parse("-S", "--layer-size", layerSize, 10, "The number of neurons per layer.");
 
     parser.parse("-L", "--log-module", loggingEnabledModules, "", "Print out log messages during execution for specified modules "
         "(comma-separated list of modules, e.g. NeuralNetwork, Layer, ...).");

@@ -570,23 +570,26 @@ Matrix gatherReverseConvolutionDeltasInput(const Matrix& deltas, const Matrix& f
     typedef typename PrecisionType::type NativeType;
 
     // zero fill the deltas to full convolution
-    size_t padWidth  = invertPadding(padding[0], filter.size()[0]);
-    size_t padHeight = invertPadding(padding[1], filter.size()[1]);
+    size_t deltaW = deltas.size()[0];
+    size_t deltaH = deltas.size()[1];
 
-    size_t w = deltas.size()[0];
-    size_t h = deltas.size()[1];
+    size_t outputFeatureMaps = deltas.size()[2];
+    size_t miniBatches       = deltas.size()[3];
 
-    size_t q = inputSize[0];
-    size_t p = inputSize[1];
+    size_t strideW = filterStride[0];
+    size_t strideH = filterStride[1];
 
-    size_t r = filter.size()[1];
-    size_t s = filter.size()[0];
+    size_t inputW = inputSize[0];
+    size_t inputH = inputSize[1];
 
-    size_t v = 1;
-    size_t u = 1;
+    size_t filterW = filter.size()[1];
+    size_t filterH = filter.size()[0];
 
-    size_t rows    = deltas.size()[2] * filter.size()[0] * filter.size()[1];
-    size_t columns = deltas.size()[3] * p * q;
+    size_t padWidth  = invertPadding(padding[0], filterW);
+    size_t padHeight = invertPadding(padding[1], filterH);
+
+    size_t rows    = outputFeatureMaps * filterW * filterH;
+    size_t columns = miniBatches * inputW * inputH;
 
     Matrix result({rows, columns}, deltas.precision());
 
@@ -604,33 +607,64 @@ Matrix gatherReverseConvolutionDeltasInput(const Matrix& deltas, const Matrix& f
             size_t row    = element % rows;
             size_t column = element / rows;
 
-            size_t miniBatch   = (column / (p * q));
-            size_t featureMap  = (row    / (r * s));
-            size_t tileOffset  = (row    % (r * s));
-            size_t tileRow     = tileOffset % s;
-            size_t tileColumn  = tileOffset / s;
+            size_t miniBatch   = (column / (inputW * inputH));
+            size_t featureMap  = (row    / (filterW * filterH));
+            size_t tileOffset  = (row    % (filterW * filterH));
+            size_t tileRow     = tileOffset % filterW;
+            size_t tileColumn  = tileOffset / filterW;
 
-            size_t inputTileOffset = column % (p * q);
-            size_t inputRow        = ((inputTileOffset % q) * v + tileRow);
-            size_t inputColumn     = ((inputTileOffset / q) * u + tileColumn);
+            size_t inputTileOffset = column % (inputW * inputH);
+            size_t inputTileRow    = (inputTileOffset % inputW);
+            size_t inputTileColumn = (inputTileOffset / inputW);
 
-            if(inputRow < padWidth || (inputRow >= (padWidth + w)))
+            size_t deltaRow        = (inputTileRow + tileRow);
+            size_t deltaColumn     = (inputTileColumn + tileColumn);
+
+            if(deltaRow < padWidth)
             {
                 resultView({row, column}) = 0.0;
                 continue;
             }
 
-            inputRow -= padWidth;
+            deltaRow -= padWidth;
 
-            if(inputColumn < padHeight || (inputColumn >= (padHeight + h)))
+            if(deltaRow % strideW != 0)
             {
                 resultView({row, column}) = 0.0;
                 continue;
             }
 
-            inputColumn -= padHeight;
+            deltaRow /= strideW;
 
-            resultView({row, column}) = deltasView({inputRow, inputColumn, featureMap, miniBatch});
+            if(deltaRow >= deltaW)
+            {
+                resultView({row, column}) = 0.0;
+                continue;
+            }
+
+            if(deltaColumn < padHeight)
+            {
+                resultView({row, column}) = 0.0;
+                continue;
+            }
+
+            deltaColumn -= padHeight;
+            
+            if(deltaColumn % strideH != 0)
+            {
+                resultView({row, column}) = 0.0;
+                continue;
+            }
+
+            deltaColumn /= strideH;
+
+            if(deltaColumn >= deltaH)
+            {
+                resultView({row, column}) = 0.0;
+                continue;
+            }
+
+            resultView({row, column}) = deltasView({deltaRow, deltaColumn, featureMap, miniBatch});
         }
     });
 
