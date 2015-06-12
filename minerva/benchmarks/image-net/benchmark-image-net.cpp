@@ -86,13 +86,16 @@ static void addClassifier(Model& model, const Parameters& parameters)
         Dimension(parameters.blockX, parameters.blockY, parameters.colors, 64),
         Dimension(1, 1), Dimension(0, 0)));
 
+    Dimension poolingSize(classifier.back()->getOutputSize()[0],
+        classifier.back()->getOutputSize()[1] * classifier.back()->getOutputSize()[2], 1, 1);
+
     // mean pooling layer
-/*
     classifier.addLayer(std::make_unique<ConvolutionalLayer>(
-        classifier.back()->getOutputSize(),
-        Dimension(2, 2, classifier.back()->getOutputSize()[2], 1),
+        poolingSize,
+        Dimension(2, 2, 1, 1),
         Dimension(2, 2), Dimension(0, 0)));
 
+/*
     // conv 3-128 layer
     classifier.addLayer(std::make_unique<ConvolutionalLayer>(
         classifier.back()->getOutputSize(),
@@ -162,7 +165,7 @@ static void addClassifier(Model& model, const Parameters& parameters)
     classifier.addLayer(std::make_unique<FeedForwardLayer>(classifier.back()->getOutputCount(), parameters.layerSize));
     classifier.addLayer(std::make_unique<FeedForwardLayer>(classifier.back()->getOutputCount(), parameters.layerSize));
     
-    classifier.addLayer(std::make_unique<FeedForwardLayer>(parameters.layerSize, 10                  ));
+    classifier.addLayer(std::make_unique<FeedForwardLayer>(parameters.layerSize, 10));
 
     classifier.setCostFunction(minerva::network::CostFunctionFactory::create("SoftMaxCostFunction"));
 
@@ -200,7 +203,7 @@ static void setSampleStatistics(Model& model, const Parameters& parameters)
 
     engine->setModel(&model);
     engine->setBatchSize(128);
-    engine->setMaximumSamplesToRun(1024);
+    engine->setMaximumSamplesToRun(std::min(1024UL, parameters.maximumSamples));
 
     // read from database and use model to train
     engine->runOnDatabaseFile(parameters.inputPath);

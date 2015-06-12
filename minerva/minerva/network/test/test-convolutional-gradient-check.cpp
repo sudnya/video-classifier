@@ -37,13 +37,10 @@ namespace minerva
 namespace network
 {
 
-typedef network::FeedForwardLayer FeedForwardLayer;
 typedef matrix::Matrix Matrix;
 typedef matrix::Dimension Dimension;
 typedef matrix::MatrixVector MatrixVector;
 typedef matrix::DoublePrecision DoublePrecision;
-typedef network::NeuralNetwork NeuralNetwork;
-
 
 static NeuralNetwork createConvolutionalNetwork(size_t layerSize)
 {
@@ -52,16 +49,21 @@ static NeuralNetwork createConvolutionalNetwork(size_t layerSize)
     // conv 3-64 layer
     network.addLayer(std::make_unique<ConvolutionalLayer>(
         Dimension(layerSize, layerSize, 3, 1, 1),
-        Dimension(3, 3, 3, layerSize),
+        Dimension(3, 3, 3, 4),
         Dimension(1, 1), Dimension(0, 0), DoublePrecision()));
 
     // mean pooling layer
+    Dimension poolingSize(network.back()->getOutputSize()[0],
+        network.back()->getOutputSize()[1] * network.back()->getOutputSize()[2], 1, 1, 1);
+
     network.addLayer(std::make_unique<ConvolutionalLayer>(
-        network.back()->getOutputSize(), //input
-        Dimension(2, 2, network.back()->getOutputSize()[2], network.back()->getOutputSize()[2]), // filter
+        poolingSize, //input
+        Dimension(2, 2, 1, 1), // filter
         Dimension(2, 2), // stride
         Dimension(0, 0), // padding
         DoublePrecision()));
+
+    network.back()->setActivationFunction(ActivationFunctionFactory::create("SigmoidActivationFunction"));
 
     network.addLayer(std::make_unique<FeedForwardLayer>(
         network.back()->getOutputCount(),

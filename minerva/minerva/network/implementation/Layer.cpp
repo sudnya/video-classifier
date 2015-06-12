@@ -93,33 +93,63 @@ static bool compareCount(matrix::Dimension inputSize, matrix::Dimension expected
     return false;
 }
 
+static void removeTimeAndBatch(matrix::Dimension& dimension)
+{
+    // remove time and batch dimensions
+    for(size_t i = 0; i < 2; ++i)
+    {
+        if(dimension.back() != 1 || dimension.size() <= 1)
+        {
+            break;
+        }
+        
+        dimension.pop_back();
+    }
+
+}
+
 static matrix::Matrix reshapeActivations(const matrix::Matrix& m, matrix::Dimension expectedSize)
 {
     auto newShape = expectedSize;
 
-    // remove time and batch dimensions
-    while(newShape.back() == 1 && newShape.size() > 1)
-    {
-        newShape.pop_back();
-    }
+    removeTimeAndBatch(newShape);
 
-    size_t index   = 0;
-    size_t product = 1;
+    size_t product       = 1;
+    size_t endOfContents = 0;
 
     while(product < newShape.product())
     {
-        product *= m.size()[index];
-        ++index;
-    }
+        product *= m.size()[endOfContents];
 
-    for(size_t i = index; i < m.size().size(); ++i)
-    {
-        newShape.push_back(m.size()[i]);
+        ++endOfContents;
     }
     
-    while(newShape.size() < expectedSize.size())
+    // add back batch
+    if(newShape.size() < expectedSize.size())
     {
-        newShape.push_back(1);
+        if(endOfContents < m.size().size())
+        {
+            newShape.push_back(m.size()[endOfContents]);
+            ++endOfContents;
+        }
+        else
+        {
+            newShape.push_back(1);
+        }
+    }
+    
+    // add back time
+    if(newShape.size() < expectedSize.size())
+    {
+        if(endOfContents < m.size().size())
+        {
+            newShape.push_back(m.size()[endOfContents]);
+            ++endOfContents;
+        }
+        else
+        {
+            newShape.push_back(1);
+        }
     }
 
     return reshape(m, newShape);
