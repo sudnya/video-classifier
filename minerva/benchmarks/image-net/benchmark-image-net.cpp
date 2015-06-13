@@ -169,9 +169,10 @@ static void addClassifier(Model& model, const Parameters& parameters)
     classifier.addLayer(std::make_unique<FeedForwardLayer>(classifier.back()->getOutputCount(), parameters.layerSize));
     classifier.addLayer(std::make_unique<FeedForwardLayer>(classifier.back()->getOutputCount(), parameters.layerSize));
     
-    classifier.addLayer(std::make_unique<FeedForwardLayer>(parameters.layerSize, 10));
+    classifier.addLayer(std::make_unique<FeedForwardLayer>(classifier.back()->getOutputCount(), 10));
 
     classifier.setCostFunction(minerva::network::CostFunctionFactory::create("SoftMaxCostFunction"));
+    //classifier.setCostFunction(minerva::network::CostFunctionFactory::create("SumOfSquaresCostFunction"));
 
     classifier.initialize();
 
@@ -284,10 +285,10 @@ static void runBenchmark(const Parameters& parameters)
 
 static void setupSolverParameters()
 {
-    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::LearningRate", "1.0e-2");
+    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::LearningRate", "1.0e-04");
     minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::Momentum", "0.9");
     minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::AnnealingRate", "1.00000");
-    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::MaxGradNorm", "10.0");
+    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::MaxGradNorm", "1000.0");
     minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::IterationsPerBatch", "1");
     minerva::util::KnobDatabase::setKnob("GeneralDifferentiableSolver::Type", "NesterovAcceleratedGradientSolver");
 }
