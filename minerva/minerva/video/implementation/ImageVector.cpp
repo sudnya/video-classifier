@@ -91,7 +91,7 @@ ImageVector::Matrix ImageVector::getFeatureMatrix(size_t xTileSize, size_t yTile
 {
     size_t images = _images.size();
 
-    Matrix matrix({xTileSize, yTileSize, colors, images});
+    Matrix matrix({xTileSize, yTileSize, colors, images, 1});
 
     size_t offset = 0;
     for(auto& image : _images)
@@ -104,7 +104,7 @@ ImageVector::Matrix ImageVector::getFeatureMatrix(size_t xTileSize, size_t yTile
             {
                 for(size_t x = 0; x < xTileSize; ++x)
                 {
-                    matrix(x, y, c, offset) = sample.getComponentAt(x, y, c);
+                    matrix(x, y, c, offset, 0) = sample.getComponentAt(x, y, c);
                 }
             }
         }
@@ -119,7 +119,7 @@ ImageVector::Matrix ImageVector::getFeatureMatrix(size_t xTileSize, size_t yTile
 
 ImageVector::Matrix ImageVector::getReference(const util::StringVector& labels) const
 {
-    Matrix reference(matrix::Dimension({labels.size(), size()}));
+    Matrix reference(matrix::Dimension({labels.size(), size(), 1}));
 
     util::log("ImageVector") << "Generating reference image:\n";
 
@@ -137,11 +137,11 @@ ImageVector::Matrix ImageVector::getReference(const util::StringVector& labels) 
 
             if((*this)[imageId].label() == labels[outputNeuron])
             {
-                reference(outputNeuron, imageId) = 1.0;
+                reference(outputNeuron, imageId, 0) = 1.0;
             }
             else
             {
-                reference(outputNeuron, imageId) = 0.0;
+                reference(outputNeuron, imageId, 0) = 0.0;
             }
         }
     }

@@ -82,12 +82,16 @@ static void addClassifier(Model& model, const Parameters& parameters)
 
     // conv 3-64 layer
     classifier.addLayer(std::make_unique<ConvolutionalLayer>(
-        Dimension(parameters.xPixels, parameters.yPixels, parameters.colors, 1),
+        Dimension(parameters.xPixels, parameters.yPixels, parameters.colors, 1, 1),
         Dimension(parameters.blockX, parameters.blockY, parameters.colors, 64),
         Dimension(1, 1), Dimension(0, 0)));
 
     Dimension poolingSize(classifier.back()->getOutputSize()[0],
-        classifier.back()->getOutputSize()[1] * classifier.back()->getOutputSize()[2], 1, 1);
+        classifier.back()->getOutputSize()[1] * classifier.back()->getOutputSize()[2],
+        1, // color channels
+        1, // mini batch
+        1 // time
+        );
 
     // mean pooling layer
     classifier.addLayer(std::make_unique<ConvolutionalLayer>(

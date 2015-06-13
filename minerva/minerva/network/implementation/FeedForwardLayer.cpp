@@ -292,7 +292,7 @@ matrix::Matrix FeedForwardLayer::runReverseImplementation(MatrixVector& gradient
         util::log("FeedForwardLayer::Detail") << "  output: " << previousLayerDeltas.debugString();
     }
 
-    return previousLayerDeltas;
+    return unfoldTime(previousLayerDeltas, differenceWithTime.size());
 }
 
 MatrixVector& FeedForwardLayer::weights()
