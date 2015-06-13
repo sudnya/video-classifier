@@ -8,13 +8,13 @@ import platform
 import re
 import subprocess
 from SCons import SConf
-	
+
 def getTools():
 	result = []
 	if os.name == 'nt':
-		result = ['default', 'msvc']
+		result = ['default', 'nvcc', 'msvc']
 	elif os.name == 'posix':
-		result = ['default', 'c++', 'g++']
+		result = ['default', 'nvcc', 'c++', 'g++']
 	else:
 		result = ['default']
 
@@ -28,15 +28,15 @@ OldEnvironment = Environment;
 gCompilerOptions = {
 		'gcc' : {'warn_all' : '-Wall',
 			'warn_errors' : '-Werror',
-			'optimization' : '-O3', 'debug' : '-g', 
+			'optimization' : '-O3', 'debug' : '-g',
 			'exception_handling' : '', 'standard': ''},
 		'clang' : {'warn_all' : '-Wall',
 			'warn_errors' : '-Werror',
-			'optimization' : '-O3', 'debug' : '-g', 
+			'optimization' : '-O3', 'debug' : '-g',
 			'exception_handling' : '', 'standard': ''},
 		'g++' : {'warn_all' : '-Wall',
 			'warn_errors' : '-Werror',
-			'optimization' : '-O3', 'debug' : '-g', 
+			'optimization' : '-O3', 'debug' : '-g',
 			'exception_handling' : '', 'standard': '-std=c++0x'},
 		'c++' : {'warn_all' : '-Wall',
 			'warn_errors' : '-Werror',
@@ -49,10 +49,10 @@ gCompilerOptions = {
 			'exception_handling' : '',
 			'standard': ['-stdlib=libc++', '-std=c++0x', '-pthread']},
 		'cl'  : {'warn_all' : '/Wall',
-				 'warn_errors' : '/WX', 
-		         'optimization' : ['/Ox', '/MD', '/Zi', '/DNDEBUG'], 
-				 'debug' : ['/Zi', '/Od', '/D_DEBUG', '/RTC1', '/MDd'], 
-				 'exception_handling': '/EHsc', 
+				 'warn_errors' : '/WX',
+		         'optimization' : ['/Ox', '/MD', '/Zi', '/DNDEBUG'],
+				 'debug' : ['/Zi', '/Od', '/D_DEBUG', '/RTC1', '/MDd'],
+				 'exception_handling': '/EHsc',
 				 'standard': ['/GS', '/GR', '/Gd', '/fp:precise',
 				 	'/Zc:wchar_t','/Zc:forScope', '/DYY_NO_UNISTD_H']}
 	}
@@ -151,82 +151,21 @@ def getExtraLibs():
 	else:
 		return []
 
-def getVersion(base):
-	try:
-		svn_path = which('svn')
-	except:
-		print 'Failed to get subversion revision'
-		return base + '.unknown'
-
-	process = subprocess.Popen('svn info ..', shell=True,
-		stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-	(svn_info, std_err_data) = process.communicate()
-	
-	match = re.search('Revision: ', svn_info)
-	revision = 'unknown'
-	if match:
-		end = re.search('\n', svn_info[match.end():])
-		if end:
-			revision = svn_info[match.end():match.end()+end.start()]
-	else:
-		print 'Failed to get repository version!'
-
-	return base + '.' + revision
-
-def fixPath(path):
-	if (os.name == 'nt'):
-		return path.replace('\\', '\\\\')
-	else:
-		return path
-
-import collections
-
-def flatten(l):
-	for el in l:
-		if isinstance(el, collections.Iterable) and not isinstance(
-			el, basestring):
-			for sub in flatten(el):
-				yield sub
-		else:
-			yield el
-			
-def defineConfigFlags(env):
-	
-	include_path = os.path.join(env['INSTALL_PATH'], "include")
-	library_path = os.path.join(env['INSTALL_PATH'], "lib")
-	bin_path     = os.path.join(env['INSTALL_PATH'], "bin")
-
-	configFlags = env['CXXFLAGS'] + " ".join( 
-		["%s\"\\\"%s\\\"\"" % x for x in (
-			('-DMINERVA_CXXFLAGS=', " ".join(flatten(env['CXXFLAGS']))),
-			('-DPACKAGE=', 'minerva'),
-			('-DVERSION=', env['VERSION']),
-			('-DMINERVA_PREFIX_PATH=', fixPath(env['INSTALL_PATH'])),
-			('-DMINERVA_LDFLAGS=', fixPath(env['MINERVA_LDFLAGS'])),
-			('-L', fixPath(library_path)),
-			('-DMINERVA_INCLUDE_PATH=', fixPath(include_path)),
-			('-DMINERVA_LIB_PATH=', fixPath(library_path)),
-			('-DMINERVA_BIN_PATH=', fixPath(bin_path))	)])
-
-	env.Replace(MINERVA_CONFIG_FLAGS = configFlags)
-
-
 def importEnvironment():
 	env = {  }
-	
+
 	if 'PATH' in os.environ:
 		env['PATH'] = os.environ['PATH']
-	
+
 	if 'CXX' in os.environ:
 		env['CXX'] = os.environ['CXX']
 
 	if 'CC' in os.environ:
 		env['CC'] = os.environ['CC']
-	
+
 	if 'TMP' in os.environ:
 		env['TMP'] = os.environ['TMP']
-	
+
 	if 'LD_LIBRARY_PATH' in os.environ:
 		env['LD_LIBRARY_PATH'] = os.environ['LD_LIBRARY_PATH']
 
@@ -238,8 +177,7 @@ def updateEnvironment(env):
 	for key, value in originalEnvironment.iteritems():
 		env[key] = value
 
-
-def Environment():
+def BuildEnvironment():
 	vars = Variables()
 
 	# add a variable to handle RELEASE/DEBUG mode
@@ -248,22 +186,22 @@ def Environment():
 
 	# add a variable to handle warnings
 	vars.Add(BoolVariable('Wall', 'Enable all compilation warnings', 1))
-	
+
 	# shared or static libraries
 	libraryDefault = 'shared'
-	
+
 	vars.Add(EnumVariable('library', 'Build shared or static library',
 		libraryDefault, allowed_values = ('shared', 'static')))
-	
+
 	# add a variable to treat warnings as errors
 	vars.Add(BoolVariable('Werror', 'Treat warnings as errors', 1))
 
 	# add a variable to determine the install path
 	default_install_path = '/usr/local'
-	
+
 	if 'MINERVA_INSTALL_PATH' in os.environ:
 		default_install_path = os.environ['MINERVA_INSTALL_PATH']
-		
+
 	vars.Add(PathVariable('install_path', 'The minerva install path',
 		default_install_path, PathVariable.PathIsDirCreate))
 
@@ -271,20 +209,20 @@ def Environment():
 		'targets that will be built and configure to install in the '
 		'install_path (defaults to false unless one of the targets is '
 		'"install")', 0))
-	
+
 	# create an Environment
 	env = OldEnvironment(ENV = importEnvironment(), \
 		tools = getTools(), variables = vars)
-   
+
 	updateEnvironment(env)
 
 	# set the version
-	env.Replace(VERSION = getVersion("0.1"))
-	
+	env.Replace(VERSION = "0.1")
+
 	# always link with the c++ compiler
 	if os.name != 'nt':
 		env['LINK'] = env['CXX']
-	
+
 	# get C compiler switches
 	env.AppendUnique(CFLAGS = getCFLAGS(env['mode'], env['Wall'], \
 		env['Werror'], env.subst('$CC')))
@@ -305,8 +243,8 @@ def Environment():
 	# get libc++
 	if env['CXX'] == 'c++':
 		env.AppendUnique(CPPPATH = getLibCXXPaths()[0])
-	
-	# set extra libs 
+
+	# set extra libs
 	env.Replace(EXTRA_LIBS=getExtraLibs())
 
 	# set the build path
@@ -318,14 +256,14 @@ def Environment():
 		env.AppendUnique(LIBPATH = os.path.abspath(os.path.join(env['install_path'], 'lib')))
 	else:
 		env.AppendUnique(LIBPATH = os.path.abspath('.'))
-	
+
 	# we need librt on linux
 	if sys.platform == 'linux2':
-		env.AppendUnique(EXTRA_LIBS = ['-lrt']) 
+		env.AppendUnique(EXTRA_LIBS = ['-lrt'])
 
 	# we need libdl on max and linux
 	if os.name != 'nt':
-		env.AppendUnique(EXTRA_LIBS = ['-ldl']) 
+		env.AppendUnique(EXTRA_LIBS = ['-ldl'])
 
 	# generate help text
 	Help(vars.GenerateHelpText(env))

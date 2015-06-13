@@ -3,7 +3,7 @@
 ################################################################################
 #    \file   SConscript
 #    \author Gregory Diamos <solusstultus@gmail.com>
-#   \date   Saturday August 10, 2013
+#    \date   Saturday August 10, 2013
 #    \brief  The SCons master build script for the image classifier
 ################################################################################
 
@@ -14,8 +14,7 @@ minerva_path_to_root_dir = ".."
 
 # try to import an environment
 exec open(minerva_path_to_root_dir + "/scripts/which.py")
-exec open(minerva_path_to_root_dir + "/scripts/buildEnvironment.py")
-env = Environment()
+env = BuildEnvironment()
 env['MINERVA_PATH'] = Dir('.').abspath
 
 env['path_to_root_dir'] = os.path.abspath(minerva_path_to_root_dir)
@@ -43,47 +42,15 @@ if env['install']:
     libminerva = env.Install(os.path.join(env['install_path'], "lib"),
         libminerva)
 
-# create the tools
-tools = []
+env['MINERVA_LIBS'] = minerva_libs
 
-tools.append(env.Program('minerva-classifier', \
-    ['minerva/tools/minerva-classifier.cpp'], LIBS=minerva_libs))
+# create the programs
+programs = []
 
-tools.append(env.Program('test-classifier', \
-    ['minerva/engine/test/test-classifier.cpp'], LIBS=minerva_libs))
+programs.append(SConscript('minerva/SConscript', exports='env'))
 
-tools.append(env.Program('test-mnist', \
-    ['minerva/engine/test/test-mnist.cpp'], LIBS=minerva_libs))
-
-tools.append(env.Program('test-bracket-matching', \
-    ['minerva/engine/test/test-bracket-matching.cpp'], LIBS=minerva_libs))
-
-tools.append(env.Program('test-matrix', \
-    ['minerva/matrix/test/test-matrix.cpp'], LIBS=minerva_libs))
-
-tools.append(env.Program('test-matrix-vector', \
-    ['minerva/matrix/test/test-matrix-vector.cpp'], LIBS=minerva_libs))
-
-#tools.append(env.Program('test-minerva-visualization', \
-#    ['minerva/visualization/test/test-minerva-visualization.cpp'], LIBS=minerva_libs))
-
-tools.append(env.Program('test-minerva-display', \
-    ['minerva/video/test/test-display.cpp'], LIBS=minerva_libs))
-
-#tools.append(env.Program('test-minerva-performance', \
-#    ['minerva/network/test/test-neuralnetwork-performance.cpp'], LIBS=minerva_libs))
-
-tools.append(env.Program('test-gradient', \
-    ['minerva/network/test/test-gradient-check.cpp'], LIBS=minerva_libs))
-
-tools.append(env.Program('test-linear-regression', \
-    ['minerva/network/test/test-linear-regression.cpp'], LIBS=minerva_libs))
-
-tools.append(env.Program('test-optimizer', \
-    ['minerva/optimizer/test/test-optimizer.cpp'], LIBS=minerva_libs))
-
-for tool in tools:
-    env.Depends(tool, libminerva)
+for program in programs:
+    env.Depends(program, libminerva)
 
 # install it all
 if env['install']:
@@ -92,12 +59,9 @@ if env['install']:
 
     print 'Installing Minerva'
 
-    installed.append(env.Install(os.path.join(env['install_path'], "bin"),
-        'scripts/which.py'))
-
-    for tool in tools:
+    for program in programs:
         executables.append(env.Install(
-            os.path.join(env['install_path'], "bin"), tool))
+            os.path.join(env['install_path'], "bin"), program))
 
     # install headers
     header_directories = [os.path.join(i, 'interface') for i in directories]

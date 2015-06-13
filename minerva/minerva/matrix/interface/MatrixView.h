@@ -4,6 +4,8 @@
 #include <minerva/matrix/interface/Dimension.h>
 #include <minerva/matrix/interface/MatrixTransformations.h>
 
+#include <minerva/parallel/interface/cuda.h>
+
 namespace minerva
 {
 namespace matrix

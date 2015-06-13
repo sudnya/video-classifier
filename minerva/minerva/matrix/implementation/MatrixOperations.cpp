@@ -22,8 +22,60 @@ namespace matrix
 namespace detail
 {
 
+template<typename NativeType, typename OperationType>
+class BinaryApplyLambda
+{
+public:
+    CUDA_DECORATOR void operator()(parallel::ThreadGroup threadGroup) const
+    {
+        for(size_t i = threadGroup.id(), step = threadGroup.size(); i < elements; i += step)
+        {
+            resultBase[i] = nativeOperation(leftBase[i], rightBase[i]);
+        }
+    }
+
+public:
+          NativeType* resultBase;
+    const NativeType* leftBase;
+    const NativeType* rightBase;
+
+public:
+    OperationType nativeOperation;
+
+public:
+    size_t elements;
+
+};
+
+template<typename NativeType, typename OperationType>
+class BinaryNoncontiguousApplyLambda
+{
+public:
+    CUDA_DECORATOR void operator()(parallel::ThreadGroup threadGroup) const
+    {
+        for(size_t i = threadGroup.id(), step = threadGroup.size(); i < elements; i += step)
+        {
+            auto fullDimension = linearToDimension(i, resultView.size());
+
+            resultView(fullDimension) = nativeOperation(leftView(fullDimension), rightView(fullDimension));
+        }
+    }
+
+public:
+    MatrixView<NativeType>      resultView;
+    ConstMatrixView<NativeType> leftView;
+    ConstMatrixView<NativeType> rightView;
+
+public:
+    OperationType nativeOperation;
+
+public:
+    size_t elements;
+
+};
+
 template<typename OperationType, typename T>
-CUDA_DECORATOR void applyOverPrecisions(Matrix& result, const Matrix& left, const Matrix& right,
+void applyOverPrecisions(Matrix& result, const Matrix& left, const Matrix& right,
     const Operation& op, const Precision& precision, std::tuple<T> precisions)
 {
     typedef T PrecisionPrimitive;
@@ -41,14 +93,9 @@ CUDA_DECORATOR void applyOverPrecisions(Matrix& result, const Matrix& left, cons
         auto leftBase   = static_cast<const NativeType*>(left.data());
         auto rightBase  = static_cast<const NativeType*>(right.data());
 
-        parallel::multiBulkSynchronousParallel([=](parallel::ThreadGroup threadGroup)
-        {
-            for(size_t i = threadGroup.id(), step = threadGroup.size(); i < elements; i += step)
-            {
-                resultBase[i] = nativeOperation(leftBase[i], rightBase[i]);
-            }
-        });
+        auto lambda = BinaryApplyLambda<NativeType, OperationType>{resultBase, leftBase, rightBase, nativeOperation, elements};
 
+        parallel::multiBulkSynchronousParallel(lambda);
     }
     else
     {
@@ -56,15 +103,9 @@ CUDA_DECORATOR void applyOverPrecisions(Matrix& result, const Matrix& left, cons
         ConstMatrixView<NativeType> leftView(left);
         ConstMatrixView<NativeType> rightView(right);
 
-        parallel::multiBulkSynchronousParallel([=](parallel::ThreadGroup threadGroup)
-        {
-            for(size_t i = threadGroup.id(), step = threadGroup.size(); i < elements; i += step)
-            {
-                auto fullDimension = linearToDimension(i, resultView.size());
+        auto lambda = BinaryNoncontiguousApplyLambda<NativeType, OperationType>{resultView, leftView, rightView, nativeOperation, elements};
 
-                resultView(fullDimension) = nativeOperation(leftView(fullDimension), rightView(fullDimension));
-            }
-        });
+        parallel::multiBulkSynchronousParallel(lambda);
     }
 }
 
@@ -152,6 +193,29 @@ Matrix apply(const Matrix& left, const Matrix& right, const Operation& op)
 namespace detail
 {
 
+template<typename NativeType, typename OperationType>
+class UnaryApplyLambda
+{
+public:
+    CUDA_DECORATOR void operator()(parallel::ThreadGroup threadGroup)
+    {
+        for(size_t i = threadGroup.id(), step = threadGroup.size(); i < elements; i += step)
+        {
+            resultBase[i] = nativeOperation(inputBase[i]);
+        }
+    }
+
+public:
+          NativeType* resultBase;
+    const NativeType* inputBase;
+
+public:
+    size_t elements;
+
+public:
+    OperationType nativeOperation;
+};
+
 template<typename OperationType, typename T>
 void applyOverPrecisions(Matrix& result, const Matrix& input,
     const Operation& op, const Precision& precision, std::tuple<T> precisions)
@@ -170,13 +234,9 @@ void applyOverPrecisions(Matrix& result, const Matrix& input,
         auto resultBase = static_cast<NativeType*>(result.data());
         auto inputBase  = static_cast<const NativeType*>(input.data());
 
-        parallel::multiBulkSynchronousParallel([=](parallel::ThreadGroup threadGroup)
-        {
-            for(size_t i = threadGroup.id(), step = threadGroup.size(); i < elements; i += step)
-            {
-                resultBase[i] = nativeOperation(inputBase[i]);
-            }
-        });
+        auto lambda = UnaryApplyLambda<NativeType, OperationType>{resultBase, inputBase, elements, nativeOperation};
+
+        parallel::multiBulkSynchronousParallel(lambda);
     }
     else
     {
