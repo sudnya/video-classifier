@@ -1,0 +1,10 @@
+./bird, bird
+./covering, covering
+./device, device
+./food, food
+./herb, herb
+./mammal, mammal
+./plant, plant
+./structure, structure
+./tree, tree
+./person, person
