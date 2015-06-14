@@ -83,10 +83,36 @@ static void addClassifier(Model& model, const Parameters& parameters)
     // conv 3-64 layer
     classifier.addLayer(std::make_unique<ConvolutionalLayer>(
         Dimension(parameters.xPixels, parameters.yPixels, parameters.colors, 1, 1),
-        Dimension(parameters.blockX, parameters.blockY, parameters.colors, 64),
+        Dimension(parameters.blockX, parameters.blockY, parameters.colors, 16),
         Dimension(1, 1), Dimension(0, 0)));
 
     Dimension poolingSize(classifier.back()->getOutputSize()[0],
+        classifier.back()->getOutputSize()[1] * classifier.back()->getOutputSize()[2],
+        1, // color channels
+        1, // mini batch
+        1 // time
+        );
+    // mean pooling layer
+    classifier.addLayer(std::make_unique<ConvolutionalLayer>(
+        poolingSize,
+        Dimension(2, 2, 1, 1),
+        Dimension(2, 2), Dimension(0, 0)));
+
+/*
+    Dimension convolutionSize(classifier.back()->getOutputSize()[0],
+        classifier.back()->getOutputSize()[1] / 64,
+        64, // color channels
+        1, // mini batch
+        1 // time
+        );
+
+    // conv 3-64 layer
+    classifier.addLayer(std::make_unique<ConvolutionalLayer>(
+        convolutionSize,
+        Dimension(parameters.blockX, parameters.blockY, convolutionSize[2], 16),
+        Dimension(1, 1), Dimension(0, 0)));
+
+    poolingSize = Dimension(classifier.back()->getOutputSize()[0],
         classifier.back()->getOutputSize()[1] * classifier.back()->getOutputSize()[2],
         1, // color channels
         1, // mini batch
@@ -98,7 +124,7 @@ static void addClassifier(Model& model, const Parameters& parameters)
         poolingSize,
         Dimension(2, 2, 1, 1),
         Dimension(2, 2), Dimension(0, 0)));
-
+*/
 /*
     // conv 3-128 layer
     classifier.addLayer(std::make_unique<ConvolutionalLayer>(
@@ -122,7 +148,7 @@ static void addClassifier(Model& model, const Parameters& parameters)
         classifier.back()->getOutputSize(),
         Dimension(parameters.blockX, parameters.blockY, classifier.back()->getOutputSize()[2], 256),
         Dimension(1, 1), Dimension(0, 0)));
-    
+
     // mean pooling layer
     classifier.addLayer(std::make_unique<ConvolutionalLayer>(
         classifier.back()->getOutputSize(),
@@ -166,13 +192,12 @@ static void addClassifier(Model& model, const Parameters& parameters)
         Dimension(2, 2), Dimension(0, 0)));
 */
     // connect the network
+   // classifier.addLayer(std::make_unique<FeedForwardLayer>(classifier.back()->getOutputCount(), parameters.layerSize));
     classifier.addLayer(std::make_unique<FeedForwardLayer>(classifier.back()->getOutputCount(), parameters.layerSize));
-    classifier.addLayer(std::make_unique<FeedForwardLayer>(classifier.back()->getOutputCount(), parameters.layerSize));
-    
+
     classifier.addLayer(std::make_unique<FeedForwardLayer>(classifier.back()->getOutputCount(), 10));
 
     classifier.setCostFunction(minerva::network::CostFunctionFactory::create("SoftMaxCostFunction"));
-    //classifier.setCostFunction(minerva::network::CostFunctionFactory::create("SumOfSquaresCostFunction"));
 
     classifier.initialize();
 
@@ -208,7 +233,7 @@ static void setSampleStatistics(Model& model, const Parameters& parameters)
 
     engine->setModel(&model);
     engine->setBatchSize(128);
-    engine->setMaximumSamplesToRun(std::min(1024UL, parameters.maximumSamples));
+    engine->setMaximumSamplesToRun(std::min(1024UL, parameters.maximumSamples/10));
 
     // read from database and use model to train
     engine->runOnDatabaseFile(parameters.inputPath);
@@ -285,12 +310,13 @@ static void runBenchmark(const Parameters& parameters)
 
 static void setupSolverParameters()
 {
-    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::LearningRate", "1.0e-04");
+    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::LearningRate", "1.0e-3");
     minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::Momentum", "0.9");
-    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::AnnealingRate", "1.00000");
-    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::MaxGradNorm", "1000.0");
+    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::AnnealingRate", "1.000001");
+    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::MaxGradNorm", "10.0");
     minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::IterationsPerBatch", "1");
     minerva::util::KnobDatabase::setKnob("GeneralDifferentiableSolver::Type", "NesterovAcceleratedGradientSolver");
+    //minerva::util::KnobDatabase::setKnob("GeneralDifferentiableSolver::Type", "LBFGSSolver");
 }
 
 int main(int argc, char** argv)
@@ -313,7 +339,7 @@ int main(int argc, char** argv)
 
     parser.parse("-e", "--epochs", parameters.epochs, 1,
         "The number of epochs (passes over all inputs) to train the network for.");
-    parser.parse("-b", "--batch-size", parameters.batchSize, 16,
+    parser.parse("-b", "--batch-size", parameters.batchSize, 32,
         "The number of images to use for each iteration.");
 
     parser.parse("-L", "--log-module", loggingEnabledModules, "",
@@ -328,7 +354,7 @@ int main(int argc, char** argv)
     parser.parse("-c", "--colors", parameters.colors, 3, "The number of colors to consider from the input image.");
 
     parser.parse("-l", "--layer-size", parameters.layerSize, 4096, "The size of each fully connected layer.");
-    
+
     parser.parse("-v", "--verbose", verbose, false, "Print out log messages during execution");
 
     parser.parse();
