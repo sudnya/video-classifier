@@ -88,7 +88,7 @@ static void addFeatureSelector(Model& model, const Parameters& parameters)
     NeuralNetwork featureSelector;
 
     // convolutional layer 1
-    featureSelector.addLayer(std::make_unique<ConvolutionalLayer>(Dimension(parameters.xPixels, parameters.yPixels, parameters.colors, 1),
+    featureSelector.addLayer(std::make_unique<ConvolutionalLayer>(Dimension(parameters.xPixels, parameters.yPixels, parameters.colors, 1, 1),
         Dimension(parameters.blockX, parameters.blockY, parameters.colors, parameters.blockOutputs),
         Dimension(parameters.blockStrideX, parameters.blockStrideY), Dimension(0, 0)));
 
@@ -185,6 +185,7 @@ static double testNetwork(Model& model, const Parameters& parameters)
 
     engine->setBatchSize(parameters.batchSize);
     engine->setModel(&model);
+    engine->setStandardizeInput(true);
     engine->setMaximumSamplesToRun(parameters.maximumSamples);
 
     // read from database and use model to test

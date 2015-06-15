@@ -93,28 +93,24 @@ static bool compareCount(matrix::Dimension inputSize, matrix::Dimension expected
     return false;
 }
 
+static void removeTimeAndBatch(matrix::Dimension& dimension)
+{
+    // remove time and batch dimensions
+    dimension.pop_back(2);
+
+}
+
 static matrix::Matrix reshapeActivations(const matrix::Matrix& m, matrix::Dimension expectedSize)
 {
     auto newShape = expectedSize;
 
-    while(newShape.back() == 1 && newShape.size() > 1)
-    {
-        newShape.pop_back();
-    }
+    removeTimeAndBatch(newShape);
 
-    size_t index   = 0;
-    size_t product = 1;
-
-    while(product < newShape.product())
-    {
-        product *= m.size()[index];
-        ++index;
-    }
-
-    for(size_t i = index; i < m.size().size(); ++i)
-    {
-        newShape.push_back(m.size()[i]);
-    }
+    // add back batch
+    newShape.push_back(m.size()[m.size().size() - 2]);
+    
+    // add back time
+    newShape.push_back(m.size()[m.size().size() - 1]);
 
     return reshape(m, newShape);
 }

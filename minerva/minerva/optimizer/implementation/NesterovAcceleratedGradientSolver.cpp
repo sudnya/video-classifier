@@ -43,9 +43,10 @@ NesterovAcceleratedGradientSolver::~NesterovAcceleratedGradientSolver()
 
 }
 
-static void reportProgress(double cost, double gradientNorm, double step)
+static void reportProgress(double cost, double expcost, double gradientNorm, double step)
 {
-    util::log("NesterovAcceleratedGradientSolver") << "Update (cost " << cost << ", gradient-norm " << gradientNorm << ", " << step << " step)\n";
+    util::log("NesterovAcceleratedGradientSolver") << "Update (cost " << cost << ", running cost sum " << expcost
+        << ", gradient-norm " << gradientNorm << ", " << step << " step)\n";
 }
 
 double NesterovAcceleratedGradientSolver::solve(MatrixVector& inputs,
@@ -94,7 +95,7 @@ double NesterovAcceleratedGradientSolver::solve(MatrixVector& inputs,
             _runningExponentialCostSum = 0.99 * _runningExponentialCostSum + 0.01 * futurePointCost;
         }
 
-        reportProgress(_runningExponentialCostSum, gradNorm, scale);
+        reportProgress(futurePointCost, _runningExponentialCostSum, gradNorm, scale);
 
         _learningRate = _learningRate / _annealingRate;
     }

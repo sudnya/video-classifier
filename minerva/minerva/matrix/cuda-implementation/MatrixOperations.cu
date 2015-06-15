@@ -93,7 +93,8 @@ void applyOverPrecisions(Matrix& result, const Matrix& left, const Matrix& right
         auto leftBase   = static_cast<const NativeType*>(left.data());
         auto rightBase  = static_cast<const NativeType*>(right.data());
 
-        auto lambda = BinaryApplyLambda<NativeType, OperationType>{resultBase, leftBase, rightBase, nativeOperation, elements};
+        auto lambda = BinaryApplyLambda<NativeType, OperationType>
+            {resultBase, leftBase, rightBase, nativeOperation, elements};
 
         parallel::multiBulkSynchronousParallel(lambda);
     }
@@ -103,7 +104,8 @@ void applyOverPrecisions(Matrix& result, const Matrix& left, const Matrix& right
         ConstMatrixView<NativeType> leftView(left);
         ConstMatrixView<NativeType> rightView(right);
 
-        auto lambda = BinaryNoncontiguousApplyLambda<NativeType, OperationType>{resultView, leftView, rightView, nativeOperation, elements};
+        auto lambda = BinaryNoncontiguousApplyLambda<NativeType, OperationType>
+            {resultView, leftView, rightView, nativeOperation, elements};
 
         parallel::multiBulkSynchronousParallel(lambda);
     }
@@ -234,7 +236,8 @@ void applyOverPrecisions(Matrix& result, const Matrix& input,
         auto resultBase = static_cast<NativeType*>(result.data());
         auto inputBase  = static_cast<const NativeType*>(input.data());
 
-        auto lambda = UnaryApplyLambda<NativeType, OperationType>{resultBase, inputBase, elements, nativeOperation};
+        auto lambda = UnaryApplyLambda<NativeType, OperationType>
+            {resultBase, inputBase, elements, nativeOperation};
 
         parallel::multiBulkSynchronousParallel(lambda);
     }

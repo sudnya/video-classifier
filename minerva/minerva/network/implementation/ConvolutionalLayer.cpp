@@ -131,7 +131,8 @@ void ConvolutionalLayer::runForwardImplementation(MatrixVector& activations) con
 
     if(util::isLogEnabled("ConvolutionalLayer"))
     {
-        util::log("ConvolutionalLayer") << " Running forward propagation through layer: (size " << _weights.shapeString()
+        util::log("ConvolutionalLayer") << " Running forward propagation of matrix " << m.shapeString()
+            << " through layer: (size " << _weights.shapeString()
             << ") (stride " << _filterStride->toString() << ") (padding " << _inputPadding->toString() << ")\n";
     }
 
@@ -180,11 +181,11 @@ Matrix ConvolutionalLayer::runReverseImplementation(MatrixVector& gradients,
 
     if(util::isLogEnabled("ConvolutionalLayer"))
     {
-        util::log("ConvolutionalLayer") << " Running reverse propagation on matrix (" << difference.size()[0]
-            << " rows, " << difference.size()[1] << " columns) through layer with dimensions ("
+        util::log("ConvolutionalLayer") << " Running reverse propagation on matrix ("
+            << difference.shapeString() << " columns) through layer with dimensions ("
             << getInputCount() << " inputs, " << getOutputCount() << " outputs).\n";
         util::log("ConvolutionalLayer") << "  layer: " << _weights.shapeString() << "\n";
-      }
+    }
 
     if(util::isLogEnabled("ConvolutionalLayer"))
     {
@@ -198,12 +199,22 @@ Matrix ConvolutionalLayer::runReverseImplementation(MatrixVector& gradients,
 
     if(util::isLogEnabled("ConvolutionalLayer"))
     {
-        util::log("ConvolutionalLayer") << "  output size: " << outputActivations.shapeString() << "\n";
+        util::log("ConvolutionalLayer") << "  output activations size: " << outputActivations.shapeString() << "\n";
     }
 
     if(util::isLogEnabled("ConvolutionalLayer::Detail"))
     {
-        util::log("ConvolutionalLayer::Detail") << "  output: " << outputActivations.debugString();
+        util::log("ConvolutionalLayer::Detail") << "  output activations: " << outputActivations.debugString();
+    }
+
+    if(util::isLogEnabled("ConvolutionalLayer"))
+    {
+        util::log("ConvolutionalLayer") << "  input activations size: " << inputActivations.shapeString() << "\n";
+    }
+
+    if(util::isLogEnabled("ConvolutionalLayer::Detail"))
+    {
+        util::log("ConvolutionalLayer::Detail") << "  input activations: " << inputActivations.debugString();
     }
 
     // finish computing the deltas
@@ -219,7 +230,9 @@ Matrix ConvolutionalLayer::runReverseImplementation(MatrixVector& gradients,
     }
 
     // compute gradient for the weights
-    auto weightGradient = reverseConvolutionGradients(Matrix(inputActivations), deltas, *_filterStride, *_inputPadding, 1.0 / samples);
+    Matrix weightGradient(_weights.size(), _weights.precision());
+   
+    reverseConvolutionGradients(weightGradient, inputActivations, deltas, *_filterStride, *_inputPadding, 1.0 / samples);
 
     // add in the weight cost function term
     if(getWeightCostFunction() != nullptr)
@@ -257,7 +270,9 @@ Matrix ConvolutionalLayer::runReverseImplementation(MatrixVector& gradients,
     gradients.push_back(std::move(biasGradient));
 
     // compute deltas for previous layer
-    auto deltasPropagatedReverse = reverseConvolutionDeltas(_weights, *_filterStride, deltas, *_inputPadding);
+    Matrix deltasPropagatedReverse(inputActivations.size(), inputActivations.precision());
+    
+    reverseConvolutionDeltas(deltasPropagatedReverse, _weights, *_filterStride, deltas, *_inputPadding);
 
     Matrix previousLayerDeltas;
 
@@ -274,12 +289,12 @@ Matrix ConvolutionalLayer::runReverseImplementation(MatrixVector& gradients,
 
     if(util::isLogEnabled("ConvolutionalLayer"))
     {
-        util::log("ConvolutionalLayer") << "  output shape: " << previousLayerDeltas.shapeString() << "\n";
+        util::log("ConvolutionalLayer") << "  previous layer deltas shape: " << previousLayerDeltas.shapeString() << "\n";
     }
 
     if(util::isLogEnabled("ConvolutionalLayer::Detail"))
     {
-        util::log("ConvolutionalLayer::Detail") << "  output: " << previousLayerDeltas.debugString();
+        util::log("ConvolutionalLayer::Detail") << "  previous layer deltas: " << previousLayerDeltas.debugString();
     }
 
     return previousLayerDeltas;

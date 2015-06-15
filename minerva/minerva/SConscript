@@ -12,41 +12,44 @@ Import('env')
 
 minerva_libs = env['MINERVA_LIBS']
 
+programs = []
+
 programs.append(env.Program('minerva-classifier', \
-    ['minerva/programs/minerva-classifier.cpp'], LIBS=minerva_libs))
+    ['programs/minerva-classifier.cpp'], LIBS=minerva_libs))
 
 programs.append(env.Program('test-classifier', \
-    ['minerva/engine/test/test-classifier.cpp'], LIBS=minerva_libs))
+    ['engine/test/test-classifier.cpp'], LIBS=minerva_libs))
 
 programs.append(env.Program('test-mnist', \
-    ['minerva/engine/test/test-mnist.cpp'], LIBS=minerva_libs))
+    ['ngine/test/test-mnist.cpp'], LIBS=minerva_libs))
 
 programs.append(env.Program('test-bracket-matching', \
-    ['minerva/engine/test/test-bracket-matching.cpp'], LIBS=minerva_libs))
+    ['engine/test/test-bracket-matching.cpp'], LIBS=minerva_libs))
 
 programs.append(env.Program('test-matrix', \
-    ['minerva/matrix/test/test-matrix.cpp'], LIBS=minerva_libs))
+    ['matrix/test/test-matrix.cpp'], LIBS=minerva_libs))
 
 programs.append(env.Program('test-matrix-vector', \
-    ['minerva/matrix/test/test-matrix-vector.cpp'], LIBS=minerva_libs))
+    ['matrix/test/test-matrix-vector.cpp'], LIBS=minerva_libs))
 
 #programs.append(env.Program('test-minerva-visualization', \
-#    ['minerva/visualization/test/test-minerva-visualization.cpp'], LIBS=minerva_libs))
+#    ['visualization/test/test-minerva-visualization.cpp'], LIBS=minerva_libs))
 
 programs.append(env.Program('test-minerva-display', \
-    ['minerva/video/test/test-display.cpp'], LIBS=minerva_libs))
+    ['video/test/test-display.cpp'], LIBS=minerva_libs))
 
 #programs.append(env.Program('test-minerva-performance', \
-#    ['minerva/network/test/test-neuralnetwork-performance.cpp'], LIBS=minerva_libs))
+#    ['network/test/test-neuralnetwork-performance.cpp'], LIBS=minerva_libs))
 
 programs.append(env.Program('test-gradient', \
-    ['minerva/network/test/test-gradient-check.cpp'], LIBS=minerva_libs))
+    ['network/test/test-gradient-check.cpp'], LIBS=minerva_libs))
 
 programs.append(env.Program('test-linear-regression', \
-    ['minerva/network/test/test-linear-regression.cpp'], LIBS=minerva_libs))
+    ['network/test/test-linear-regression.cpp'], LIBS=minerva_libs))
 
 programs.append(env.Program('test-optimizer', \
-    ['minerva/optimizer/test/test-optimizer.cpp'], LIBS=minerva_libs))
+    ['optimizer/test/test-optimizer.cpp'], LIBS=minerva_libs))
 
+Return('programs')
 
 

@@ -9,6 +9,7 @@
 
 #include <minerva/network/interface/NeuralNetwork.h>
 #include <minerva/network/interface/Layer.h>
+#include <minerva/network/interface/CostFunction.h>
 
 #include <minerva/results/interface/ResultProcessorFactory.h>
 #include <minerva/results/interface/ResultVector.h>
@@ -203,6 +204,8 @@ network::NeuralNetwork* Engine::getAggregateNetwork()
     {
         _aggregateNetwork->addLayer(std::move(layer));
     }
+
+    _aggregateNetwork->setCostFunction(classifier.getCostFunction()->clone());
 
     return _aggregateNetwork.get();
 }
