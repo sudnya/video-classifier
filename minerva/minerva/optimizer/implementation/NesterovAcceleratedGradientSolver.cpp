@@ -45,8 +45,15 @@ NesterovAcceleratedGradientSolver::~NesterovAcceleratedGradientSolver()
 
 static void reportProgress(double cost, double expcost, double gradientNorm, double step)
 {
-    util::log("NesterovAcceleratedGradientSolver") << "Update (cost " << cost << ", running cost sum " << expcost
+    std::stringstream message;
+
+    message.precision(5);
+    message << std::fixed;
+
+    message << "Update (cost " << std::fixed << cost << ", running cost sum " << expcost
         << ", gradient-norm " << gradientNorm << ", " << step << " step)\n";
+    
+    util::log("NesterovAcceleratedGradientSolver") << message.str();
 }
 
 double NesterovAcceleratedGradientSolver::solve(MatrixVector& inputs,
