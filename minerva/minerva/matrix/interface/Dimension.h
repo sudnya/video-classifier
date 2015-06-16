@@ -1,5 +1,8 @@
 #pragma once
 
+// Minerva Includes
+#include <minerva/parallel/interface/cuda.h>
+
 // Standard Library Includes
 #include <array>
 #include <cassert>

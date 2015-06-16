@@ -2,7 +2,7 @@
 
 #include <minerva/matrix/interface/Matrix.h>
 #include <minerva/matrix/interface/Dimension.h>
-#include <minerva/matrix/interface/MatrixTransformations.h>
+#include <minerva/matrix/interface/DimensionTransformations.h>
 
 #include <minerva/parallel/interface/cuda.h>
 

@@ -56,10 +56,10 @@ public:
     };
 
 public:
-    Operation(Type t);
+    CUDA_DECORATOR Operation(Type t) : _type(t) {}
 
 public:
-    bool operator==(const Operation&) const;
+    CUDA_DECORATOR bool operator==(const Operation&) const;
 
 private:
     Type _type;
@@ -408,13 +408,13 @@ public:
     template<typename T>
     CUDA_DECORATOR T operator()(const T& l, const T& r) const
     {
-        return std::max(l, r);
+        return max(l, r);
     }
 
     template<typename T>
     CUDA_DECORATOR T operator()(const T& r) const
     {
-        return std::max(T(_value), r);
+        return max(T(_value), r);
     }
 
 private:
@@ -439,13 +439,13 @@ public:
     template<typename T>
     CUDA_DECORATOR T operator()(const T& l, const T& r) const
     {
-        return std::min(l, r);
+        return min(l, r);
     }
 
     template<typename T>
     CUDA_DECORATOR T operator()(const T& r) const
     {
-        return std::min(T(_value), r);
+        return min(T(_value), r);
     }
 
 private:

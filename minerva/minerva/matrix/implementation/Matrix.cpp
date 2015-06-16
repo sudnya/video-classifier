@@ -7,6 +7,7 @@
 // Minerva Includes
 #include <minerva/matrix/interface/Matrix.h>
 #include <minerva/matrix/interface/Allocation.h>
+#include <minerva/matrix/interface/DimensionTransformations.h>
 #include <minerva/matrix/interface/MatrixTransformations.h>
 #include <minerva/matrix/interface/MatrixOperations.h>
 #include <minerva/matrix/interface/Operation.h>

@@ -51,8 +51,15 @@ template<typename FunctionType>
 void multiBulkSynchronousParallel(FunctionType function)
 {
 	#ifdef __NVCC__
-	detail::launchCudaKernel(function);
-	#else
+    if(isCudaEnabled())
+    {
+	    detail::launchCudaKernel(function);
+	}
+    else
+    {
+        function(ThreadGroup(1, 0));
+    }
+    #else
 	function(ThreadGroup(1, 0));
 	#endif
 }

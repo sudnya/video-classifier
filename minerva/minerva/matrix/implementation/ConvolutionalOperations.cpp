@@ -6,6 +6,7 @@
 #include <minerva/matrix/interface/BlasOperations.h>
 #include <minerva/matrix/interface/MatrixView.h>
 #include <minerva/matrix/interface/Matrix.h>
+#include <minerva/matrix/interface/MatrixTransformations.h>
 
 #include <minerva/parallel/interface/MultiBulkSynchronousParallel.h>
 
@@ -649,7 +650,7 @@ Matrix gatherReverseConvolutionDeltasInput(const Matrix& deltas, const Matrix& f
             }
 
             deltaColumn -= padHeight;
-            
+
             if(deltaColumn % strideH != 0)
             {
                 resultView({row, column}) = 0.0;
@@ -866,7 +867,7 @@ Matrix gatherReverseConvolutionGradientsInput(const Matrix& input, const Matrix&
 
     size_t s = deltas.size()[0];
     size_t r = deltas.size()[1];
-    
+
     assert(s == outputW);
     assert(r == outputH);
 
