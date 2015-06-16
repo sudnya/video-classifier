@@ -4,6 +4,8 @@
 // Minerva Includes
 #include <minerva/matrix/interface/DimensionTransformations.h>
 
+#include <minerva/parallel/interface/ScalarOperations.h>
+
 namespace minerva
 {
 namespace matrix
@@ -90,13 +92,13 @@ CUDA_DECORATOR Dimension removeDimensions(const Dimension& base, const Dimension
 
 CUDA_DECORATOR Dimension intersection(const Dimension& left, const Dimension& right)
 {
-    size_t totalDimensions = min(left.size(), right.size());
+    size_t totalDimensions = parallel::min(left.size(), right.size());
 
     Dimension result;
 
     for(size_t i = 0; i < totalDimensions; ++i)
     {
-        result.push_back(min(left[i], right[i]));
+        result.push_back(parallel::min(left[i], right[i]));
     }
 
     return result;
@@ -162,7 +164,7 @@ CUDA_DECORATOR Dimension selectNamedDimensions(const Dimension& selectedDimensio
 CUDA_DECORATOR static size_t getOffset(const Dimension& stride, const Dimension& position)
 {
     size_t offset = 0;
-    size_t arity = std::min(stride.size(), position.size());
+    size_t arity = parallel::min(stride.size(), position.size());
 
     for(auto i = 0; i < arity; ++i)
     {
@@ -172,22 +174,22 @@ CUDA_DECORATOR static size_t getOffset(const Dimension& stride, const Dimension&
     return offset;
 }
 
-CUDA_DECORATOR void* getAddress(const Dimension& stride, const Dimension& position, void* data, const Precision& precision)
+CUDA_DECORATOR void* getAddress(const Dimension& stride, const Dimension& position, void* data, size_t elementSize)
 {
     size_t offset = getOffset(stride, position);
 
     uint8_t* address = static_cast<uint8_t*>(data);
 
-    return address + precision.size() * offset;
+    return address + elementSize * offset;
 }
 
-CUDA_DECORATOR const void* getAddress(const Dimension& stride, const Dimension& position, const void* data, const Precision& precision)
+CUDA_DECORATOR const void* getAddress(const Dimension& stride, const Dimension& position, const void* data, size_t elementSize)
 {
     size_t offset = getOffset(stride, position);
 
     const uint8_t* address = static_cast<const uint8_t*>(data);
 
-    return address + precision.size() * offset;
+    return address + elementSize * offset;
 }
 
 }

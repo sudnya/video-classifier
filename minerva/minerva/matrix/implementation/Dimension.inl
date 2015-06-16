@@ -1,4 +1,6 @@
 
+#pragma once
+
 // Minerva Includes
 #include <minerva/matrix/interface/Dimension.h>
 
@@ -10,12 +12,12 @@ namespace minerva
 namespace matrix
 {
 
-Dimension::Dimension()
+CUDA_DECORATOR Dimension::Dimension()
 : _arity(0)
 {
 }
 
-Dimension::Dimension(std::initializer_list<size_t> sizes)
+CUDA_DECORATOR Dimension::Dimension(std::initializer_list<size_t> sizes)
 : _arity(sizes.size())
 {
     auto element = sizes.begin();
@@ -25,35 +27,35 @@ Dimension::Dimension(std::initializer_list<size_t> sizes)
     }
 }
 
-void Dimension::push_back(size_t size)
+CUDA_DECORATOR void Dimension::push_back(size_t size)
 {
     assert(_arity < capacity);
     _storage[_arity++] = size;
 }
 
-void Dimension::pop_back()
+CUDA_DECORATOR void Dimension::pop_back()
 {
     pop_back(1);
 }
 
-void Dimension::pop_back(size_t size)
+CUDA_DECORATOR void Dimension::pop_back(size_t size)
 {
     assert(_arity >= size);
 
     _arity -= size;
 }
 
-size_t Dimension::size() const
+CUDA_DECORATOR size_t Dimension::size() const
 {
     return _arity;
 }
 
-bool Dimension::empty() const
+CUDA_DECORATOR bool Dimension::empty() const
 {
     return size() == 0;
 }
 
-size_t Dimension::product() const
+CUDA_DECORATOR size_t Dimension::product() const
 {
     size_t size = 1;
 
@@ -65,58 +67,58 @@ size_t Dimension::product() const
     return size;
 }
 
-size_t& Dimension::back()
+CUDA_DECORATOR size_t& Dimension::back()
 {
     assert(!empty());
 
     return _storage[size() - 1];
 }
 
-size_t Dimension::back() const
+CUDA_DECORATOR size_t Dimension::back() const
 {
     assert(!empty());
 
     return _storage[size() - 1];
 }
 
-size_t& Dimension::front()
+CUDA_DECORATOR size_t& Dimension::front()
 {
     return *begin();
 }
 
-size_t Dimension::front() const
+CUDA_DECORATOR size_t Dimension::front() const
 {
     return *begin();
 }
 
-Dimension::iterator Dimension::begin()
+CUDA_DECORATOR Dimension::iterator Dimension::begin()
 {
-    return _storage.begin();
+    return _storage;
 }
 
-Dimension::const_iterator Dimension::begin() const
+CUDA_DECORATOR Dimension::const_iterator Dimension::begin() const
 {
-    return _storage.begin();
+    return _storage;
 }
 
-Dimension::iterator Dimension::end()
-{
-    return begin() + size();
-}
-
-Dimension::const_iterator Dimension::end() const
+CUDA_DECORATOR Dimension::iterator Dimension::end()
 {
     return begin() + size();
 }
 
-size_t Dimension::operator[](size_t position) const
+CUDA_DECORATOR Dimension::const_iterator Dimension::end() const
+{
+    return begin() + size();
+}
+
+CUDA_DECORATOR size_t Dimension::operator[](size_t position) const
 {
     assert(position < size());
 
     return _storage[position];
 }
 
-size_t& Dimension::operator[](size_t position)
+CUDA_DECORATOR size_t& Dimension::operator[](size_t position)
 {
     assert(position < size());
 
@@ -140,7 +142,7 @@ std::string Dimension::toString() const
     return stream.str();
 }
 
-Dimension Dimension::operator+(const Dimension& d) const
+CUDA_DECORATOR Dimension Dimension::operator+(const Dimension& d) const
 {
     assert(size() == d.size());
 
@@ -154,7 +156,7 @@ Dimension Dimension::operator+(const Dimension& d) const
     return result;
 }
 
-Dimension Dimension::operator-(const Dimension& d) const
+CUDA_DECORATOR Dimension Dimension::operator-(const Dimension& d) const
 {
     assert(size() == d.size());
 
@@ -168,7 +170,7 @@ Dimension Dimension::operator-(const Dimension& d) const
     return result;
 }
 
-Dimension Dimension::operator/(const Dimension& d) const
+CUDA_DECORATOR Dimension Dimension::operator/(const Dimension& d) const
 {
     assert(size() == d.size());
 
@@ -182,7 +184,7 @@ Dimension Dimension::operator/(const Dimension& d) const
     return result;
 }
 
-Dimension Dimension::operator*(const Dimension& d) const
+CUDA_DECORATOR Dimension Dimension::operator*(const Dimension& d) const
 {
     assert(size() == d.size());
 
@@ -196,7 +198,7 @@ Dimension Dimension::operator*(const Dimension& d) const
     return result;
 }
 
-bool Dimension::operator==(const Dimension& d) const
+CUDA_DECORATOR bool Dimension::operator==(const Dimension& d) const
 {
     if(d.size() != size())
     {
@@ -214,7 +216,7 @@ bool Dimension::operator==(const Dimension& d) const
     return true;
 }
 
-bool Dimension::operator!=(const Dimension& d) const
+CUDA_DECORATOR bool Dimension::operator!=(const Dimension& d) const
 {
     return !(d == *this);
 }

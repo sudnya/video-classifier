@@ -5,7 +5,7 @@
 */
 
 // Minerva Includes
-#include <minerva/matrix/interface/CudaDriver.h>
+#include <minerva/parallel/interface/CudaDriver.h>
 
 #include <minerva/parallel/interface/cuda.h>
 
@@ -16,10 +16,10 @@
 #include <dlfcn.h>
 #include <stdexcept>
 
-namespace minerva 
+namespace minerva
 {
 
-namespace matrix
+namespace parallel
 {
 
 void CudaDriver::load()
@@ -37,185 +37,185 @@ bool CudaDriver::loaded()
 void CudaDriver::cuInit(unsigned int f)
 {
     _check();
-    
+
     _checkResult((*_interface.cuInit)(f));
 }
 
 void CudaDriver::cuDriverGetVersion(int* v)
 {
     _check();
-    
+
     _checkResult((*_interface.cuDriverGetVersion)(v));
 }
 
 void CudaDriver::cuDeviceGet(CUdevice* d, int o)
 {
     _check();
-    
+
     _checkResult((*_interface.cuDeviceGet)(d, o));
 }
 
 void CudaDriver::cuDeviceGetCount(int* c)
 {
     _check();
-    
+
     _checkResult((*_interface.cuDeviceGetCount)(c));
 }
 
 void CudaDriver::cuDeviceGetName(char* n, int l, CUdevice d)
 {
     _check();
-    
+
     _checkResult((*_interface.cuDeviceGetName)(n, l, d));
 }
 
 void CudaDriver::cuDeviceComputeCapability(int* m, int* minor, CUdevice d)
 {
     _check();
-    
+
     _checkResult((*_interface.cuDeviceComputeCapability)(m, minor, d));
 }
 
 void CudaDriver::cuDeviceTotalMem(size_t* b, CUdevice d)
 {
     _check();
-    
+
     _checkResult((*_interface.cuDeviceTotalMem_v2)(b, d));
 }
 
 void CudaDriver::cuDeviceGetProperties(CUdevprop* p, CUdevice d)
 {
     _check();
-    
+
     _checkResult((*_interface.cuDeviceGetProperties)(p, d));
 }
 
 void CudaDriver::cuDeviceGetAttribute(int* p, CUdevice_attribute a, CUdevice d)
 {
     _check();
-    
+
     _checkResult((*_interface.cuDeviceGetAttribute)(p, a, d));
 }
 
 void CudaDriver::cuCtxPushCurrent(CUcontext c)
 {
     _check();
-    
+
     _checkResult((*_interface.cuCtxPushCurrent_v2)(c));
 }
 
 void CudaDriver::cuCtxGetCurrent(CUcontext* c)
 {
     _check();
-    
+
     _checkResult((*_interface.cuCtxGetCurrent)(c));
 }
 
 void CudaDriver::cuCtxCreate(CUcontext* c, unsigned int f, CUdevice d)
 {
     _check();
-    
+
     _checkResult((*_interface.cuCtxCreate_v2)(c, f, d));
 }
 
 void CudaDriver::cuCtxGetApiVersion(CUcontext c, unsigned int* v)
 {
     _check();
-    
+
     _checkResult((*_interface.cuCtxGetApiVersion)(c, v));
 }
 
 void CudaDriver::cuCtxDestroy(CUcontext c)
 {
     _check();
-    
+
     _checkResult((*_interface.cuCtxDestroy_v2)(c));
 }
 
 void CudaDriver::cuCtxSynchronize(void)
 {
     _check();
-    
+
     _checkResult((*_interface.cuCtxSynchronize)());
 }
 
-void CudaDriver::cuModuleLoadDataEx(CUmodule* m, 
-    const void* i, unsigned int n, 
+void CudaDriver::cuModuleLoadDataEx(CUmodule* m,
+    const void* i, unsigned int n,
     CUjit_option* o, void** v)
 {
     _check();
-    
+
     _checkResult((*_interface.cuModuleLoadDataEx)(m, i, n, o, v));
 }
 
 void CudaDriver::cuModuleUnload(CUmodule h)
 {
     _check();
-    
+
     _checkResult((*_interface.cuModuleUnload)(h));
 }
 
 void CudaDriver::cuModuleGetFunction(CUfunction* f, CUmodule m, const char* n)
 {
     _check();
-    
+
     _checkResult((*_interface.cuModuleGetFunction)(f, m, n));
 }
 
-void CudaDriver::cuModuleGetGlobal(CUdeviceptr* p, 
+void CudaDriver::cuModuleGetGlobal(CUdeviceptr* p,
         size_t* b, CUmodule m, const char* n)
 {
     _check();
-    
+
     _checkResult((*_interface.cuModuleGetGlobal_v2)(p, b, m, n));
 }
 
 void CudaDriver::cuMemGetInfo(size_t* free, size_t* total)
 {
     _check();
-    
+
     _checkResult((*_interface.cuMemGetInfo_v2)(free, total));
 }
 
 void CudaDriver::cuMemAlloc(CUdeviceptr* p, unsigned int b)
 {
     _check();
-    
+
     _checkResult((*_interface.cuMemAlloc_v2)(p, b));
 }
 
 void CudaDriver::cuMemFree(CUdeviceptr p)
 {
     _check();
-    
+
     _checkResult((*_interface.cuMemFree_v2)(p));
 }
 
 void CudaDriver::cuMemGetAddressRange(CUdeviceptr* p, size_t* d, CUdeviceptr dp)
 {
     _check();
-    
+
     _checkResult((*_interface.cuMemGetAddressRange_v2)(p, d, dp));
 }
 
 void CudaDriver::cuMemAllocHost(void** p, unsigned int b)
 {
     _check();
-    
+
     _checkResult((*_interface.cuMemAllocHost_v2)(p, b));
 }
 
 void CudaDriver::cuMemFreeHost(void* p)
 {
     _check();
-    
+
     _checkResult((*_interface.cuMemFreeHost)(p));
 }
 
 void CudaDriver::cuMemHostAlloc(void** p, unsigned long long b, unsigned int f)
 {
     _check();
-    
+
     _checkResult((*_interface.cuMemHostAlloc)(p, b, f));
 }
 
@@ -249,7 +249,7 @@ void CudaDriver::cuMemHostGetFlags(unsigned int* f, void* p)
 }
 
 
-void CudaDriver::cuMemcpyHtoD(CUdeviceptr d, 
+void CudaDriver::cuMemcpyHtoD(CUdeviceptr d,
     const void* s, unsigned int b)
 {
     _check();
@@ -265,18 +265,18 @@ void CudaDriver::cuMemcpyDtoH(void* d, CUdeviceptr s,
     _checkResult((*_interface.cuMemcpyDtoH_v2)(d, s, b));
 }
 
-void CudaDriver::cuFuncSetBlockShape(CUfunction h, int x, 
+void CudaDriver::cuFuncSetBlockShape(CUfunction h, int x,
     int y, int z)
 {
     _check();
-    
+
     _checkResult((*_interface.cuFuncSetBlockShape)(h, x, y, z));
 }
 
 void CudaDriver::cuFuncSetSharedSize(CUfunction h, unsigned int b)
 {
     _check();
-    
+
     _checkResult((*_interface.cuFuncSetSharedSize)(h, b));
 }
 
@@ -290,62 +290,62 @@ void CudaDriver::cuParamSetSize(CUfunction h, unsigned int n)
 void CudaDriver::cuParamSetv(CUfunction f, int o, void* p, unsigned int b)
 {
     _check();
-    
+
     _checkResult((*_interface.cuParamSetv)(f, o, p, b));
 }
 
 void CudaDriver::cuLaunchGrid (CUfunction f, int w, int h)
 {
     _check();
-    
+
     _checkResult((*_interface.cuLaunchGrid)(f, w, h));
 }
 
 void CudaDriver::cuEventCreate(CUevent* e, unsigned int f)
 {
     _check();
-    
+
     _checkResult((*_interface.cuEventCreate)(e, f));
 }
 
 void CudaDriver::cuEventRecord(CUevent e, CUstream s)
 {
     _check();
-    
+
     _checkResult((*_interface.cuEventRecord)(e, s));
 }
 
 void CudaDriver::cuEventQuery(CUevent e)
 {
     _check();
-    
+
     _checkResult((*_interface.cuEventQuery)(e));
 }
 
 void CudaDriver::cuEventSynchronize(CUevent e)
 {
     _check();
-    
+
     _checkResult((*_interface.cuEventSynchronize)(e));
 }
 
 void CudaDriver::cuEventDestroy(CUevent e)
 {
     _check();
-    
+
     _checkResult((*_interface.cuEventDestroy_v2)(e));
 }
 
-void CudaDriver::cuEventElapsedTime(float* t, 
+void CudaDriver::cuEventElapsedTime(float* t,
         CUevent s, CUevent e)
 {
     _check();
-    
+
     _checkResult((*_interface.cuEventElapsedTime)(t, s, e));
 }
 
 std::string CudaDriver::toString(CUresult result)
-{               
+{
     switch(result)
     {
         case CUDA_SUCCESS: return "CUDA DRIVER - no errors";
@@ -384,7 +384,7 @@ std::string CudaDriver::toString(CUresult result)
 bool CudaDriver::doesFunctionExist(CUmodule m, const char* n)
 {
     _check();
-    
+
     CUfunction f;
 
     CUresult result = (*_interface.cuModuleGetFunction)(&f, m, n);
@@ -393,7 +393,7 @@ bool CudaDriver::doesFunctionExist(CUmodule m, const char* n)
     {
         return false;
     }
-    
+
     _checkResult(result);
 
     return true;
@@ -402,7 +402,7 @@ bool CudaDriver::doesFunctionExist(CUmodule m, const char* n)
 void CudaDriver::_check()
 {
     load();
-    
+
     if(!loaded())
     {
         throw std::runtime_error("Tried to call libcuda function when "
@@ -414,11 +414,11 @@ void CudaDriver::_check()
 static std::string errorCodeToString(CUresult r)
 {
     std::stringstream stream;
-    
+
     stream << "(" << r << ") : " << CudaDriver::toString(r);
-    
+
     // TODO: add more info
-    
+
     return stream.str();
 }
 
@@ -436,7 +436,7 @@ CudaDriver::Interface CudaDriver::_interface;
 CudaDriver::Interface::Interface()
 : _library(nullptr)
 {
-    
+
 }
 
 CudaDriver::Interface::~Interface()
@@ -457,7 +457,7 @@ void CudaDriver::Interface::load()
 {
     if(loaded()) return;
 	if(!parallel::isCudaEnabled()) return;
-    
+
     #ifdef __APPLE__
     const char* libraryName = "libcuda.dylib";
     #else
@@ -473,9 +473,9 @@ void CudaDriver::Interface::load()
         util::log("CudaDriver") << " loading library '" << libraryName << "' failed\n";
         return;
     }
-    
+
     #define DynLink( function ) util::bit_cast(function, dlsym(_library, #function)); checkFunction((void*)function, #function)
-    
+
     DynLink(cuInit);
     DynLink(cuDriverGetVersion);
     DynLink(cuDeviceGet);
@@ -511,7 +511,7 @@ void CudaDriver::Interface::load()
     DynLink(cuMemHostUnregister);
     DynLink(cuMemHostGetDevicePointer_v2);
     DynLink(cuMemHostGetFlags);
-    
+
     DynLink(cuMemcpyHtoD_v2);
     DynLink(cuMemcpyDtoH_v2);
 
@@ -525,11 +525,11 @@ void CudaDriver::Interface::load()
     DynLink(cuEventSynchronize);
     DynLink(cuEventDestroy_v2);
     DynLink(cuEventElapsedTime);
-    
-    #undef DynLink    
+
+    #undef DynLink
 
     util::log("CudaDriver") << " success\n";
-    
+
     _createContext();
 }
 
@@ -551,12 +551,12 @@ void CudaDriver::Interface::_createContext()
     try
     {
         cuInit(0);
-        
+
         cuCtxGetCurrent(&context);
-        
+
         if(context == nullptr)
         {
-            cuCtxCreate(&context, CU_CTX_MAP_HOST, 0);    
+            cuCtxCreate(&context, CU_CTX_MAP_HOST, 0);
             util::log("CudaDriver") << " created new context\n";
         }
         else
@@ -570,7 +570,7 @@ void CudaDriver::Interface::_createContext()
     catch(...)
     {
         unload();
-        
+
         throw;
     }
 }

@@ -104,7 +104,7 @@ private:
 };
 
 template<typename T>
-ConstMatrixView<T> slice(const ConstMatrixView<T>& input, const Dimension& begin, const Dimension& end)
+CUDA_DECORATOR ConstMatrixView<T> slice(const ConstMatrixView<T>& input, const Dimension& begin, const Dimension& end)
 {
     return ConstMatrixView<T>(&input(begin), end-begin, input.stride());
 }

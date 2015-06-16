@@ -7,7 +7,7 @@
 #pragma once
 
 // Minerva Includes
-#include <minerva/matrix/interface/CudaDriverTypes.h>
+#include <minerva/parallel/interface/CudaDriverTypes.h>
 
 // Standard Library Includes
 #include <cstring>
@@ -16,7 +16,7 @@
 namespace minerva
 {
 
-namespace matrix
+namespace parallel
 {
 
 class CudaDriver

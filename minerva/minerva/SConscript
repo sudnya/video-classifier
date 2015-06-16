@@ -15,13 +15,13 @@ minerva_libs = env['MINERVA_LIBS']
 programs = []
 
 programs.append(env.Program('minerva-classifier', \
-    ['programs/minerva-classifier.cpp'], LIBS=minerva_libs))
+    ['tools/minerva-classifier.cpp'], LIBS=minerva_libs))
 
 programs.append(env.Program('test-classifier', \
     ['engine/test/test-classifier.cpp'], LIBS=minerva_libs))
 
 programs.append(env.Program('test-mnist', \
-    ['ngine/test/test-mnist.cpp'], LIBS=minerva_libs))
+    ['engine/test/test-mnist.cpp'], LIBS=minerva_libs))
 
 programs.append(env.Program('test-bracket-matching', \
     ['engine/test/test-bracket-matching.cpp'], LIBS=minerva_libs))

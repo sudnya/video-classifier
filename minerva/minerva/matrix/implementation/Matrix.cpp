@@ -12,6 +12,8 @@
 #include <minerva/matrix/interface/MatrixOperations.h>
 #include <minerva/matrix/interface/Operation.h>
 
+#include <minerva/parallel/interface/Synchronization.h>
+
 #include <minerva/util/interface/debug.h>
 
 // Standard Library Includes
@@ -136,11 +138,13 @@ std::shared_ptr<Allocation> Matrix::allocation()
 
 void* Matrix::data()
 {
+    parallel::synchronize();
     return _data_begin;
 }
 
 const void* Matrix::data() const
 {
+    parallel::synchronize();
     return _data_begin;
 }
 
@@ -252,12 +256,12 @@ std::string Matrix::shapeString() const
 
 FloatReference Matrix::operator[](const Dimension& d)
 {
-    return FloatReference(precision(), getAddress(stride(), d, _data_begin, precision()));
+    return FloatReference(precision(), getAddress(stride(), d, data(), precision().size()));
 }
 
 ConstFloatReference Matrix::operator[](const Dimension& d) const
 {
-    return ConstFloatReference(precision(), getAddress(stride(), d, _data_begin, precision()));
+    return ConstFloatReference(precision(), getAddress(stride(), d, data(), precision().size()));
 }
 
 bool Matrix::operator==(const Matrix& m) const

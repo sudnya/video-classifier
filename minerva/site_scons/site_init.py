@@ -149,7 +149,7 @@ def getExtraLibs():
     if os.name == 'nt':
         return []
     else:
-        return []
+        return ['cudart']
 
 def importEnvironment():
     env = {  }

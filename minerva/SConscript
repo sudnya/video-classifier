@@ -59,8 +59,8 @@ env['MINERVA_LIBS'] = minerva_libs
 # create the programs
 programs = []
 
-programs.append(SConscript('minerva/SConscript',    exports='env'))
-programs.append(SConscript('benchmarks/SConscript', exports='env'))
+programs.extend(SConscript('minerva/SConscript',    exports='env'))
+programs.extend(SConscript('benchmarks/SConscript', exports='env'))
 
 for program in programs:
     env.Depends(program, libminerva)

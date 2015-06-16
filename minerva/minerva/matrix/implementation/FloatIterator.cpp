@@ -62,7 +62,7 @@ FloatIterator& FloatIterator::operator=(const FloatIterator&) = default;
 
 FloatReference FloatIterator::operator*()
 {
-    return FloatReference(_precision, getAddress(_stride, _offset, _data, _precision));
+    return FloatReference(_precision, getAddress(_stride, _offset, _data, _precision.size()));
 }
 
 FloatIterator& FloatIterator::operator++()
@@ -132,7 +132,7 @@ ConstFloatIterator& ConstFloatIterator::operator=(const ConstFloatIterator&) = d
 
 ConstFloatReference ConstFloatIterator::operator*()
 {
-    return ConstFloatReference(_precision, getAddress(_stride, _offset, _data, _precision));
+    return ConstFloatReference(_precision, getAddress(_stride, _offset, _data, _precision.size()));
 }
 
 ConstFloatIterator& ConstFloatIterator::operator++()

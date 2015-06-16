@@ -2,6 +2,7 @@
 #pragma once
 
 #include <minerva/parallel/interface/ConcurrentCollectives.h>
+#include <minerva/parallel/interface/Synchronization.h>
 
 namespace minerva
 {
@@ -29,15 +30,15 @@ __global__ void kernelLauncher(FunctionType function)
 template<typename FunctionType>
 void launchCudaKernel(FunctionType function)
 {
-	int ctasPerSM = 0;
+	int ctasPerSM = 4;
 	int threads   = 128;
-
-	checkCudaErrors(cudaOccupancyMaxActiveBlocksPerMultiprocessor(
-		&ctasPerSM, kernelLauncher<FunctionType>, threads, 0));
 
 	int multiprocessorCount = 0;
 
 	checkCudaErrors(cudaDeviceGetAttribute(&multiprocessorCount, cudaDevAttrMultiProcessorCount, 0));
+
+	checkCudaErrors(cudaOccupancyMaxActiveBlocksPerMultiprocessor(
+		&ctasPerSM, kernelLauncher<FunctionType>, threads, 0));
 
 	size_t ctas = multiprocessorCount * ctasPerSM;
 
@@ -50,18 +51,20 @@ void launchCudaKernel(FunctionType function)
 template<typename FunctionType>
 void multiBulkSynchronousParallel(FunctionType function)
 {
-	#ifdef __NVCC__
     if(isCudaEnabled())
     {
-	    detail::launchCudaKernel(function);
-	}
+	    #ifdef __NVCC__
+        setNotSynchronized();
+
+        detail::launchCudaKernel(function);
+        #else
+        function(ThreadGroup(1, 0));
+        #endif
+    }
     else
     {
         function(ThreadGroup(1, 0));
     }
-    #else
-	function(ThreadGroup(1, 0));
-	#endif
 }
 
 }
