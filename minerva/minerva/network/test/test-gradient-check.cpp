@@ -7,6 +7,7 @@
 // Minerva Includes
 #include <minerva/network/interface/NeuralNetwork.h>
 #include <minerva/network/interface/FeedForwardLayer.h>
+#include <minerva/network/interface/RecurrentLayer.h>
 #include <minerva/network/interface/ConvolutionalLayer.h>
 #include <minerva/network/interface/CostFunctionFactory.h>
 #include <minerva/network/interface/ActivationFunctionFactory.h>
@@ -100,7 +101,7 @@ static NeuralNetwork createConvolutionalNetwork(size_t layerSize, size_t layerCo
 
     layerSize = 2 * ((layerSize + 1) / 2);
 
-    Dimension inputSize( layerSize,     layerSize,     3, 2);
+    Dimension inputSize( layerSize,     layerSize,     3, 2, 1);
     Dimension filterSize(layerSize + 1, layerSize + 1, 3, 3);
 
     Dimension filterStride(1, 1);
@@ -116,27 +117,57 @@ static NeuralNetwork createConvolutionalNetwork(size_t layerSize, size_t layerCo
     return network;
 }
 
+static NeuralNetwork createRecurrentNetwork(size_t layerSize, size_t layerCount)
+{
+    NeuralNetwork network;
+
+    for(size_t layer = 0; layer < layerCount; ++layer)
+    {
+        network.addLayer(std::make_unique<RecurrentLayer>(layerSize, 1, DoublePrecision()));
+    }
+
+    network.initialize();
+
+    return network;
+}
+
 static Matrix generateInput(NeuralNetwork& network)
 {
     return matrix::rand(network.getInputSize(), DoublePrecision());
 }
 
-static Matrix generateReference(NeuralNetwork& network, bool useOneHot)
+static Matrix generateInputWithTimeSeries(NeuralNetwork& network, size_t timesteps)
 {
-    if(useOneHot)
-    {
-        Matrix result = zeros(network.getOutputSize(), DoublePrecision());
+    auto size = network.getInputSize();
 
-        Matrix position = apply(rand({1}, DoublePrecision()), minerva::matrix::Multiply(network.getOutputCount()));
+    size.back() = timesteps;
 
-        result[position[0]] = 1.0;
+    return matrix::rand(size, DoublePrecision());
+}
 
-        return result;
-    }
-    else
-    {
-        return matrix::rand(network.getOutputSize(), DoublePrecision());
-    }
+static Matrix generateOneHotReference(NeuralNetwork& network)
+{
+    Matrix result = zeros(network.getOutputSize(), DoublePrecision());
+
+    Matrix position = apply(rand({1}, DoublePrecision()), minerva::matrix::Multiply(network.getOutputCount()));
+
+    result[position[0]] = 1.0;
+
+    return result;
+}
+
+static Matrix generateReference(NeuralNetwork& network)
+{
+    return matrix::rand(network.getOutputSize(), DoublePrecision());
+}
+
+static Matrix generateReferenceWithTimeSeries(NeuralNetwork& network, size_t timesteps)
+{
+    auto size = network.getOutputSize();
+
+    size.back() = timesteps;
+
+    return matrix::rand(size, DoublePrecision());
 }
 
 static bool isInRange(float value, float epsilon)
@@ -154,7 +185,7 @@ static double getDifference(double difference, double total)
     return difference / total;
 }
 
-static bool gradientCheck(NeuralNetwork& network, bool useOneHot)
+static bool gradientCheck(NeuralNetwork& network, const Matrix& input, const Matrix& reference)
 {
     const double epsilon = 1.0e-6;
 
@@ -163,9 +194,6 @@ static bool gradientCheck(NeuralNetwork& network, bool useOneHot)
 
     size_t layerId  = 0;
     size_t matrixId = 0;
-
-    auto input     = generateInput(network);
-    auto reference = generateReference(network, useOneHot);
 
     MatrixVector gradient;
 
@@ -217,6 +245,30 @@ static bool gradientCheck(NeuralNetwork& network, bool useOneHot)
     return isInRange(getDifference(difference, total), epsilon);
 }
 
+static bool gradientCheck(NeuralNetwork& network)
+{
+    auto input     = generateInput(network);
+    auto reference = generateReference(network);
+
+    return gradientCheck(network, input, reference);
+}
+
+static bool gradientCheckOneHot(NeuralNetwork& network)
+{
+    auto input     = generateInput(network);
+    auto reference = generateOneHotReference(network);
+
+    return gradientCheck(network, input, reference);
+}
+
+static bool gradientCheckTimeSeries(NeuralNetwork& network, size_t timesteps)
+{
+    auto input     = generateInputWithTimeSeries(network, timesteps);
+    auto reference = generateReferenceWithTimeSeries(network, timesteps);
+
+    return gradientCheck(network, input, reference);
+}
+
 static bool runTestFeedForwardFullyConnected(size_t layerSize, size_t layerCount, bool seed)
 {
     if(seed)
@@ -230,7 +282,7 @@ static bool runTestFeedForwardFullyConnected(size_t layerSize, size_t layerCount
 
     auto network = createFeedForwardFullyConnectedNetwork(layerSize, layerCount);
 
-    if(gradientCheck(network, false))
+    if(gradientCheck(network))
     {
         std::cout << "Feed Forward Fully Connected Network Test Passed\n";
 
@@ -257,7 +309,7 @@ static bool runTestFeedForwardFullyConnectedSigmoid(size_t layerSize, size_t lay
 
     auto network = createFeedForwardFullyConnectedSigmoidNetwork(layerSize, layerCount);
 
-    if(gradientCheck(network, false))
+    if(gradientCheck(network))
     {
         std::cout << "Feed Forward Fully Connected Sigmoid Network Test Passed\n";
 
@@ -284,7 +336,7 @@ static bool runTestFeedForwardFullyConnectedSoftmax(size_t layerSize, size_t lay
 
     auto network = createFeedForwardFullyConnectedSoftmaxNetwork(layerSize, layerCount);
 
-    if(gradientCheck(network, true))
+    if(gradientCheckOneHot(network))
     {
         std::cout << "Feed Forward Fully Connected Network Softmax Test Passed\n";
 
@@ -306,12 +358,12 @@ static bool runTestConvolutional(size_t layerSize, size_t layerCount, bool seed)
     }
     else
     {
-        matrix::srand(477);
+        matrix::srand(377);
     }
 
     auto network = createConvolutionalNetwork(layerSize, layerCount);
 
-    if(gradientCheck(network, false))
+    if(gradientCheck(network))
     {
         std::cout << "Convolutional Network Test Passed\n";
 
@@ -325,16 +377,36 @@ static bool runTestConvolutional(size_t layerSize, size_t layerCount, bool seed)
     }
 }
 
-static void runTest(size_t layerSize, size_t layerCount, bool seed)
+static bool runTestRecurrent(size_t layerSize, size_t layerCount, size_t timesteps, bool seed)
+{
+    if(seed)
+    {
+        matrix::srand(std::time(0));
+    }
+    else
+    {
+        matrix::srand(377);
+    }
+
+    auto network = createRecurrentNetwork(layerSize, layerCount);
+
+    if(gradientCheckTimeSeries(network, timesteps))
+    {
+        std::cout << "Recurrent Network Test Passed\n";
+
+        return true;
+    }
+    else
+    {
+        std::cout << "Recurrent Network Test Failed\n";
+
+        return false;
+    }
+}
+
+static void runTest(size_t layerSize, size_t layerCount, size_t timesteps, bool seed)
 {
     bool result = true;
-
-    result &= runTestConvolutional(layerSize, layerCount, seed);
-
-    if(!result)
-    {
-        return;
-    }
 
     result &= runTestFeedForwardFullyConnected(layerSize, layerCount, seed);
 
@@ -351,6 +423,20 @@ static void runTest(size_t layerSize, size_t layerCount, bool seed)
     }
 
     result &= runTestFeedForwardFullyConnectedSoftmax(layerSize, layerCount, seed);
+
+    if(!result)
+    {
+        return;
+    }
+
+    result &= runTestConvolutional(layerSize, layerCount, seed);
+
+    if(!result)
+    {
+        return;
+    }
+
+    result &= runTestRecurrent(layerSize, layerCount, timesteps, seed);
 }
 
 }
@@ -367,6 +453,7 @@ int main(int argc, char** argv)
 
     size_t layerSize  = 0;
     size_t layerCount = 0;
+    size_t timesteps  = 0;
 
     parser.description("The minerva neural network gradient check.");
 
@@ -374,6 +461,8 @@ int main(int argc, char** argv)
         "The number of neurons per layer.");
     parser.parse("-l", "--layer-count", layerCount, 5,
         "The number of layers.");
+    parser.parse("-t", "--timesteps", timesteps, 10,
+        "The number of timesteps for recurrent layers.");
 
     parser.parse("-L", "--log-module", loggingEnabledModules, "",
         "Print out log messages during execution for specified modules "
@@ -398,7 +487,7 @@ int main(int argc, char** argv)
 
     try
     {
-        minerva::network::runTest(layerSize, layerCount, seed);
+        minerva::network::runTest(layerSize, layerCount, timesteps, seed);
     }
     catch(const std::exception& e)
     {

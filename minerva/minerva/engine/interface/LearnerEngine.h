@@ -1,7 +1,7 @@
-/*	\file   LearnerEngine.h
-	\date   Sunday August 11, 2013
-	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The header file for the LearnerEngine class.
+/*    \file   LearnerEngine.h
+    \date   Sunday August 11, 2013
+    \author Gregory Diamos <solusstultus@gmail.com>
+    \brief  The header file for the LearnerEngine class.
 */
 
 #pragma once
@@ -21,20 +21,20 @@ namespace engine
 class LearnerEngine : public Engine
 {
 public:
-	LearnerEngine();
-	virtual ~LearnerEngine();
+    LearnerEngine();
+    virtual ~LearnerEngine();
 
 public:
-	LearnerEngine(const LearnerEngine&) = delete;
-	LearnerEngine& operator=(const LearnerEngine&) = delete;
-	
-private:
-	virtual void closeModel();
+    LearnerEngine(const LearnerEngine&) = delete;
+    LearnerEngine& operator=(const LearnerEngine&) = delete;
 
 private:
-	virtual ResultVector runOnBatch(Matrix&& input, Matrix&& reference);
-	
-	virtual bool requiresLabeledData() const;
+    virtual void closeModel();
+
+private:
+    virtual ResultVector runOnBatch(Matrix&& input, Matrix&& reference);
+
+    virtual bool requiresLabeledData() const;
 
 
 };

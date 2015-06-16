@@ -51,11 +51,15 @@ public:
     /*! \brief Set the result handler, the engine takes ownership. */
     void setResultProcessor(ResultProcessor* processor);
 
+    /*! \brief Set the output file name */
+    void setOutputFilename(const std::string& filename);
+
+public:
     /*! \brief Run on a single image/video database file */
     void runOnDatabaseFile(const std::string& pathToDatabase);
 
-    /*! \brief Set the output file name */
-    void setOutputFilename(const std::string& filename);
+    /*! \brief Run on a single data producer*/
+    void runOnDataProducer(InputDataProducer& producer);
 
 public:
     /*! \brief Get the result handler, the caller takes ownership */
@@ -110,7 +114,6 @@ private:
     void _setupProducer(const std::string& databasePath);
 
 protected:
-    Model*                              _model;
     std::unique_ptr<InputDataProducer>  _dataProducer;
     std::unique_ptr<ResultProcessor>    _resultProcessor;
 

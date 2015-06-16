@@ -84,7 +84,7 @@ bool InputDataProducer::getRequiresLabeledData() const
     return _requiresLabeledData;
 }
 
-void InputDataProducer::setModel(const model::Model* model)
+void InputDataProducer::setModel(model::Model* model)
 {
     _model = model;
 }
@@ -94,21 +94,26 @@ const model::Model* InputDataProducer::getModel() const
     return _model;
 }
 
+model::Model* InputDataProducer::getModel()
+{
+    return _model;
+}
+
 matrix::Dimension InputDataProducer::getInputSize() const
 {
     // TODO: specialize this for different data types
-    return {_model->getAttribute<size_t>("ResolutionX"),
-           _model->getAttribute<size_t>("ResolutionY"),
-           _model->getAttribute<size_t>("ColorComponents")};
+    return {getModel()->getAttribute<size_t>("ResolutionX"),
+           getModel()->getAttribute<size_t>("ResolutionY"),
+           getModel()->getAttribute<size_t>("ColorComponents")};
 }
 
 util::StringVector InputDataProducer::getOutputLabels() const
 {
     util::StringVector labels;
 
-    for(size_t output = 0; output != _model->getOutputCount(); ++output)
+    for(size_t output = 0; output != getModel()->getOutputCount(); ++output)
     {
-        labels.push_back(_model->getOutputLabel(output));
+        labels.push_back(getModel()->getOutputLabel(output));
     }
 
     return labels;

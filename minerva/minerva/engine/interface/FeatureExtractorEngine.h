@@ -1,7 +1,7 @@
-/*	\file   FeatureExtractorEngine.h
-	\date   Saturday January 18, 2014
-	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The header file for the FeatureExtractorEngine class.
+/*    \file   FeatureExtractorEngine.h
+    \date   Saturday January 18, 2014
+    \author Gregory Diamos <solusstultus@gmail.com>
+    \brief  The header file for the FeatureExtractorEngine class.
 */
 
 #pragma once
@@ -22,14 +22,14 @@ namespace engine
 class FeatureExtractorEngine: public Engine
 {
 public:
-	FeatureExtractorEngine();
+    FeatureExtractorEngine();
 
 public:
-	FeatureExtractorEngine(const FeatureExtractorEngine&) = delete;
-	FeatureExtractorEngine& operator=(const FeatureExtractorEngine&) = delete;
-	
+    FeatureExtractorEngine(const FeatureExtractorEngine&) = delete;
+    FeatureExtractorEngine& operator=(const FeatureExtractorEngine&) = delete;
+
 private:
-	virtual ResultVector runOnBatch(Matrix&& matrix, Matrix&& reference);
+    virtual ResultVector runOnBatch(Matrix&& matrix, Matrix&& reference);
 
 };
 

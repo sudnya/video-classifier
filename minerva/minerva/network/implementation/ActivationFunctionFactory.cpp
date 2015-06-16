@@ -1,7 +1,7 @@
-/*	\file   ActivationFunctionFactory.cpp
-	\date   December 25, 2014
-	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The source file for the ActivationFunctionFactory class.
+/*    \file   ActivationFunctionFactory.cpp
+    \date   December 25, 2014
+    \author Gregory Diamos <solusstultus@gmail.com>
+    \brief  The source file for the ActivationFunctionFactory class.
 */
 
 // Minerva Includes
@@ -19,25 +19,25 @@ namespace network
 
 ActivationFunction* ActivationFunctionFactory::create(const std::string& name)
 {
-	if(name == "RectifiedLinearActivationFunction")
-	{
-		return new RectifiedLinearActivationFunction;
-	}
-	else if (name == "SigmoidActivationFunction")
-	{
-		return new SigmoidActivationFunction;
-	}
-	else if (name == "NullActivationFunction")
-	{
-		return new NullActivationFunction;
-	}
+    if(name == "RectifiedLinearActivationFunction")
+    {
+        return new RectifiedLinearActivationFunction;
+    }
+    else if (name == "SigmoidActivationFunction")
+    {
+        return new SigmoidActivationFunction;
+    }
+    else if (name == "NullActivationFunction")
+    {
+        return new NullActivationFunction;
+    }
 
-	return nullptr;
+    return nullptr;
 }
 
 ActivationFunction* ActivationFunctionFactory::create()
 {
-	return create("RectifiedLinearActivationFunction");
+    return create("RectifiedLinearActivationFunction");
 }
 
 }

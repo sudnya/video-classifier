@@ -13,6 +13,7 @@
 
 #include <minerva/matrix/interface/Matrix.h>
 #include <minerva/matrix/interface/MatrixOperations.h>
+#include <minerva/matrix/interface/MatrixTransformations.h>
 #include <minerva/matrix/interface/BlasOperations.h>
 #include <minerva/matrix/interface/RandomOperations.h>
 #include <minerva/matrix/interface/Operation.h>
@@ -96,11 +97,49 @@ void FeedForwardLayer::initialize()
     apply(_bias, _bias, matrix::Fill(0.0));
 }
 
-Matrix FeedForwardLayer::runForwardImplementation(const Matrix& m) const
+static Matrix foldTime(const Matrix& input)
 {
+    assert(input.size().size() < 4);
+
+    if(input.size().size() == 3)
+    {
+        auto size = input.size();
+        size_t timesteps = size.back();
+
+        size.pop_back();
+
+        size.back() *= timesteps;
+
+        return reshape(input, size);
+    }
+
+    return input;
+}
+
+static Matrix unfoldTime(const Matrix& result, const Dimension& inputSize)
+{
+    if(inputSize.size() <= 2)
+    {
+        return result;
+    }
+
+    assert(inputSize.size() == 3);
+
+    size_t layerSize = result.size()[0];
+    size_t miniBatch = inputSize[1];
+    size_t timesteps = inputSize[2];
+
+    return reshape(result, {layerSize, miniBatch, timesteps});
+}
+
+void FeedForwardLayer::runForwardImplementation(MatrixVector& activations) const
+{
+    auto m = foldTime(activations.back());
+
     if(util::isLogEnabled("FeedForwardLayer"))
     {
-        util::log("FeedForwardLayer") << " Running forward propagation through layer: " << _weights.shapeString() << "\n";
+        util::log("FeedForwardLayer") << " Running forward propagation of matrix " << m.shapeString()
+            << " through layer: " << _weights.shapeString() << "\n";
     }
 
     if(util::isLogEnabled("FeedForwardLayer::Detail"))
@@ -108,6 +147,10 @@ Matrix FeedForwardLayer::runForwardImplementation(const Matrix& m) const
         util::log("FeedForwardLayer::Detail") << "  input: " << m.debugString();
         util::log("FeedForwardLayer::Detail") << "  layer: " << _weights.debugString();
         util::log("FeedForwardLayer::Detail") << "  bias:  " << _bias.debugString();
+    }
+    else
+    {
+        util::log("FeedForwardLayer") << "  input shape: " << activations.back().shapeString() << "\n";
     }
 
     auto unbiasedOutput = gemm(Matrix(_weights), false, 1.0, m, false);
@@ -120,10 +163,10 @@ Matrix FeedForwardLayer::runForwardImplementation(const Matrix& m) const
     }
     else
     {
-        util::log("FeedForwardLayer") << "  output: " << output.shapeString() << "\n";
+        util::log("FeedForwardLayer") << "  output shape: " << output.shapeString() << "\n";
     }
 
-    auto activation = getActivationFunction()->apply(output);
+    auto activation = unfoldTime(getActivationFunction()->apply(output), activations.back().size());
 
     if(util::isLogEnabled("FeedForwardLayer::Detail"))
     {
@@ -134,21 +177,26 @@ Matrix FeedForwardLayer::runForwardImplementation(const Matrix& m) const
         util::log("FeedForwardLayer") << "  activation: " << activation.shapeString() << "\n";
     }
 
-    return activation;
+    activations.push_back(std::move(activation));
 }
 
-Matrix FeedForwardLayer::runReverseImplementation(MatrixVector& gradients,
-    const Matrix& inputActivations,
-    const Matrix& outputActivations,
-    const Matrix& difference) const
+matrix::Matrix FeedForwardLayer::runReverseImplementation(MatrixVector& gradients,
+    MatrixVector& activations,
+    const Matrix& differenceWithTime) const
 {
+    auto outputActivations = foldTime(activations.back());
+    activations.pop_back();
+
+    auto inputActivations = foldTime(activations.back());
+    auto difference = foldTime(differenceWithTime);
+
     if(util::isLogEnabled("FeedForwardLayer"))
     {
         util::log("FeedForwardLayer") << " Running reverse propagation on matrix (" << difference.size()[0]
             << " rows, " << difference.size()[1] << " columns) through layer with dimensions ("
             << getInputCount() << " inputs, " << getOutputCount() << " outputs).\n";
         util::log("FeedForwardLayer") << "  layer: " << _weights.shapeString() << "\n";
-      }
+    }
 
     if(util::isLogEnabled("FeedForwardLayer"))
     {
@@ -244,7 +292,7 @@ Matrix FeedForwardLayer::runReverseImplementation(MatrixVector& gradients,
         util::log("FeedForwardLayer::Detail") << "  output: " << previousLayerDeltas.debugString();
     }
 
-    return previousLayerDeltas;
+    return unfoldTime(previousLayerDeltas, differenceWithTime.size());
 }
 
 MatrixVector& FeedForwardLayer::weights()
@@ -269,12 +317,12 @@ double FeedForwardLayer::computeWeightCost() const
 
 Dimension FeedForwardLayer::getInputSize() const
 {
-    return {getInputCount(), 1};
+    return {getInputCount(), 1, 1};
 }
 
 Dimension FeedForwardLayer::getOutputSize() const
 {
-    return {getOutputCount(), 1};
+    return {getOutputCount(), 1, 1};
 }
 
 size_t FeedForwardLayer::getInputCount() const

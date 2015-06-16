@@ -9,6 +9,7 @@
 
 #include <minerva/network/interface/NeuralNetwork.h>
 #include <minerva/network/interface/Layer.h>
+#include <minerva/network/interface/CostFunction.h>
 
 #include <minerva/results/interface/ResultProcessorFactory.h>
 #include <minerva/results/interface/ResultVector.h>
@@ -52,7 +53,7 @@ Engine::~Engine()
 
 void Engine::setModel(Model* model)
 {
-    _model = model;
+    _dataProducer->setModel(model);
 }
 
 void Engine::setResultProcessor(ResultProcessor* processor)
@@ -60,12 +61,13 @@ void Engine::setResultProcessor(ResultProcessor* processor)
     _resultProcessor.reset(processor);
 }
 
+void Engine::setOutputFilename(const std::string& filename)
+{
+    _resultProcessor->setOutputFilename(filename);
+}
+
 void Engine::runOnDatabaseFile(const std::string& path)
 {
-    _model->load();
-
-    registerModel();
-
     if(path.empty())
     {
         throw std::runtime_error("No input path provided.");
@@ -73,14 +75,40 @@ void Engine::runOnDatabaseFile(const std::string& path)
 
     _setupProducer(path);
 
-    _dataProducer->initialize();
+    runOnDataProducer(*_dataProducer);
+}
 
-    util::log("Engine") << "Running for " << _dataProducer->getEpochs() <<  " epochs.\n";
-    for(size_t epoch = 0; epoch != _dataProducer->getEpochs(); ++epoch)
+static void copyProducerParameters(input::InputDataProducer& newProducer, input::InputDataProducer& dataProducer)
+{
+    if(&newProducer == &dataProducer)
     {
-        while(!_dataProducer->empty())
+        return;
+    }
+
+    newProducer.setRequiresLabeledData(dataProducer.getRequiresLabeledData());
+    newProducer.setEpochs(dataProducer.getEpochs());
+    newProducer.setMaximumSamplesToRun(dataProducer.getMaximumSamplesToRun());
+    newProducer.setBatchSize(dataProducer.getBatchSize());
+    newProducer.setStandardizeInput(dataProducer.getStandardizeInput());
+    newProducer.setModel(dataProducer.getModel());
+}
+
+void Engine::runOnDataProducer(InputDataProducer& producer)
+{
+    copyProducerParameters(producer, *_dataProducer);
+
+    getModel()->load();
+
+    registerModel();
+
+    producer.initialize();
+
+    util::log("Engine") << "Running for " << producer.getEpochs() <<  " epochs.\n";
+    for(size_t epoch = 0; epoch != producer.getEpochs(); ++epoch)
+    {
+        while(!producer.empty())
         {
-            auto dataAndReference = std::move(_dataProducer->pop());
+            auto dataAndReference = std::move(producer.pop());
 
             auto results = runOnBatch(std::move(dataAndReference.first),
                 std::move(dataAndReference.second));
@@ -90,16 +118,11 @@ void Engine::runOnDatabaseFile(const std::string& path)
 
         util::log("Engine") << " Finished epoch " << epoch <<  ".\n";
 
-        _dataProducer->reset();
+        producer.reset();
     }
 
     // close
     closeModel();
-}
-
-void Engine::setOutputFilename(const std::string& filename)
-{
-    _resultProcessor->setOutputFilename(filename);
 }
 
 Engine::ResultProcessor* Engine::extractResultProcessor()
@@ -109,7 +132,7 @@ Engine::ResultProcessor* Engine::extractResultProcessor()
 
 Engine::Model* Engine::getModel()
 {
-    return _model;
+    return _dataProducer->getModel();
 }
 
 Engine::ResultProcessor* Engine::getResultProcessor()
@@ -154,18 +177,23 @@ bool Engine::requiresLabeledData() const
 
 void Engine::saveModel()
 {
-    if(_model) _model->save();
+    if(getModel()) getModel()->save();
 }
 
 network::NeuralNetwork* Engine::getAggregateNetwork()
 {
+    if(!getModel()->containsNeuralNetwork("FeatureSelector"))
+    {
+        return &getModel()->getNeuralNetwork("Classifier");
+    }
+
     if(!_aggregateNetwork)
     {
         _aggregateNetwork.reset(new NeuralNetwork);
     }
 
-    auto& featureSelector = _model->getNeuralNetwork("FeatureSelector");
-    auto& classifier      = _model->getNeuralNetwork("Classifier");
+    auto& featureSelector = getModel()->getNeuralNetwork("FeatureSelector");
+    auto& classifier      = getModel()->getNeuralNetwork("Classifier");
 
     for(auto& layer : featureSelector)
     {
@@ -177,15 +205,22 @@ network::NeuralNetwork* Engine::getAggregateNetwork()
         _aggregateNetwork->addLayer(std::move(layer));
     }
 
+    _aggregateNetwork->setCostFunction(classifier.getCostFunction()->clone());
+
     return _aggregateNetwork.get();
 }
 
 void Engine::restoreAggregateNetwork()
 {
+    if(!getModel()->containsNeuralNetwork("FeatureSelector"))
+    {
+        return;
+    }
+
     assert(_aggregateNetwork);
 
-    auto& featureSelector = _model->getNeuralNetwork("FeatureSelector");
-    auto& classifier      = _model->getNeuralNetwork("Classifier");
+    auto& featureSelector = getModel()->getNeuralNetwork("FeatureSelector");
+    auto& classifier      = getModel()->getNeuralNetwork("Classifier");
 
     size_t layerId = 0;
 
@@ -208,12 +243,7 @@ void Engine::_setupProducer(const std::string& path)
 {
     std::unique_ptr<InputDataProducer> newProducer(input::InputDataProducerFactory::createForDatabase(path));
 
-    newProducer->setRequiresLabeledData(requiresLabeledData());
-    newProducer->setEpochs(_dataProducer->getEpochs());
-    newProducer->setMaximumSamplesToRun(_dataProducer->getMaximumSamplesToRun());
-    newProducer->setBatchSize(_dataProducer->getBatchSize());
-    newProducer->setStandardizeInput(_dataProducer->getStandardizeInput());
-    newProducer->setModel(_model);
+    copyProducerParameters(*newProducer, *_dataProducer);
 
     _dataProducer = std::move(newProducer);
 

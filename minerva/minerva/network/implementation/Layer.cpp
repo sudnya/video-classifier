@@ -15,6 +15,7 @@
 #include <minerva/network/interface/WeightCostFunctionFactory.h>
 
 #include <minerva/matrix/interface/Matrix.h>
+#include <minerva/matrix/interface/MatrixVector.h>
 #include <minerva/matrix/interface/MatrixTransformations.h>
 
 // Standard Library Includes
@@ -49,121 +50,157 @@ Layer::Layer(const Layer& l)
 
 Layer& Layer::operator=(const Layer& l)
 {
-	if(&l == this)
-	{
-		return *this;
-	}
+    if(&l == this)
+    {
+        return *this;
+    }
 
-	setActivationFunction(l.getActivationFunction()->clone());
-	setActivationCostFunction(l.getActivationCostFunction() == nullptr ? nullptr : l.getActivationCostFunction()->clone());
-	setWeightCostFunction(l.getWeightCostFunction() == nullptr ? nullptr : l.getWeightCostFunction()->clone());
+    setActivationFunction(l.getActivationFunction()->clone());
+    setActivationCostFunction(l.getActivationCostFunction() == nullptr ? nullptr : l.getActivationCostFunction()->clone());
+    setWeightCostFunction(l.getWeightCostFunction() == nullptr ? nullptr : l.getWeightCostFunction()->clone());
 
-	return *this;
+    return *this;
 }
 
 static bool compareSize(matrix::Dimension inputSize, matrix::Dimension expectedSize)
 {
-    inputSize.pop_back();
-    expectedSize.pop_back();
+    size_t minimumSize = expectedSize.size() - 2;
+
+    expectedSize.pop_back(2);
+
+    while(inputSize.size() > minimumSize)
+    {
+        inputSize.pop_back();
+    }
 
     return inputSize == expectedSize;
 }
 
-static bool compareCount(matrix::Dimension inputSize, size_t inputCount)
+static bool compareCount(matrix::Dimension inputSize, matrix::Dimension expectedSize, size_t inputCount)
 {
-    inputSize.pop_back();
+    size_t product = 1;
 
-    return inputSize.product() == inputCount;
-}
-
-static matrix::Matrix reshapeExceptMinibatch(const matrix::Matrix& m, matrix::Dimension size, size_t minibatch)
-{
-    size.pop_back();
-    size.push_back(minibatch);
-
-    return reshape(m, size);
-}
-
-matrix::Matrix Layer::runForward(const Matrix& m) const
-{
-    if(compareSize(m.size(), getInputSize()))
+    for(size_t dimension = 0; dimension < inputSize.size(); ++dimension)
     {
-        return runForwardImplementation(m);
+        product *= inputSize[dimension];
+
+        if(product == inputCount)
+        {
+            return true;
+        }
     }
 
-    if(compareCount(m.size(), getInputCount()))
+    return false;
+}
+
+static void removeTimeAndBatch(matrix::Dimension& dimension)
+{
+    // remove time and batch dimensions
+    dimension.pop_back(2);
+
+}
+
+static matrix::Matrix reshapeActivations(const matrix::Matrix& m, matrix::Dimension expectedSize)
+{
+    auto newShape = expectedSize;
+
+    removeTimeAndBatch(newShape);
+
+    // add back batch
+    newShape.push_back(m.size()[m.size().size() - 2]);
+    
+    // add back time
+    newShape.push_back(m.size()[m.size().size() - 1]);
+
+    return reshape(m, newShape);
+}
+
+void Layer::runForward(MatrixVector& activations) const
+{
+    if(compareSize(activations.back().size(), getInputSize()))
     {
-        return runForwardImplementation(reshapeExceptMinibatch(m, getInputSize(), m.size().back()));
+        return runForwardImplementation(activations);
     }
 
-    throw std::runtime_error("Input activation matrix size " + m.size().toString() + " is not compatible with layer, expecting " + getInputSize().toString());
+    if(compareCount(activations.back().size(), getInputSize(), getInputCount()))
+    {
+        activations.back() = reshapeActivations(activations.back(), getInputSize());
+
+        return runForwardImplementation(activations);
+    }
+
+    throw std::runtime_error("Input activation matrix size " + activations.back().size().toString() +
+        " is not compatible with layer, expecting " + getInputSize().toString());
 }
 
 matrix::Matrix Layer::runReverse(MatrixVector& gradients,
-    const Matrix& inputActivations,
-    const Matrix& outputActivations,
+    MatrixVector& activations,
     const Matrix& deltas) const
 {
+    if(compareCount(activations.back().size(), getOutputSize(), getOutputCount()))
+    {
+        activations.back() = reshapeActivations(activations.back(), getOutputSize());
+    }
+
     return runReverseImplementation(gradients,
-        reshapeExceptMinibatch(inputActivations, getInputSize(), inputActivations.size().back()),
-        outputActivations,
-        reshapeExceptMinibatch(deltas, getOutputSize(), deltas.size().back()));
+        activations,
+        reshapeActivations(deltas, getOutputSize()));
 }
 
 void Layer::setActivationFunction(ActivationFunction* f)
 {
-	_activationFunction.reset(f);
+    _activationFunction.reset(f);
 }
 
 ActivationFunction* Layer::getActivationFunction()
 {
-	return _activationFunction.get();
+    return _activationFunction.get();
 }
 
 const ActivationFunction* Layer::getActivationFunction() const
 {
-	return _activationFunction.get();
+    return _activationFunction.get();
 }
 
 void Layer::setActivationCostFunction(ActivationCostFunction* f)
 {
-	_activationCostFunction.reset(f);
+    _activationCostFunction.reset(f);
 }
 
 ActivationCostFunction* Layer::getActivationCostFunction()
 {
-	return _activationCostFunction.get();
+    return _activationCostFunction.get();
 }
 
 const ActivationCostFunction* Layer::getActivationCostFunction() const
 {
-	return _activationCostFunction.get();
+    return _activationCostFunction.get();
 }
 
 void Layer::setWeightCostFunction(WeightCostFunction* f)
 {
-	_weightCostFunction.reset(f);
+    _weightCostFunction.reset(f);
 }
 
 WeightCostFunction* Layer::getWeightCostFunction()
 {
-	return _weightCostFunction.get();
+    return _weightCostFunction.get();
 }
 
 const WeightCostFunction* Layer::getWeightCostFunction() const
 {
-	return _weightCostFunction.get();
+    return _weightCostFunction.get();
 }
 
 std::string Layer::shapeString() const
 {
-	std::stringstream stream;
+    std::stringstream stream;
 
-	stream << "(" << getTypeName() << " type, "
-		<< getInputCount()
-		<< " inputs, " << getOutputCount() << " outputs)";
+    stream << "(" << getTypeName() << " type, "
+        << getInputCount()
+        << " inputs, " << getOutputCount() << " outputs)";
 
-	return stream.str();
+    return stream.str();
 }
 
 }

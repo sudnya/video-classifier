@@ -77,8 +77,9 @@ public:
     bool getRequiresLabeledData() const;
 
 public:
-    void setModel(const model::Model* model);
+    void setModel(model::Model* model);
     const model::Model* getModel() const;
+    model::Model* getModel();
 
 protected:
     Dimension getInputSize() const;
@@ -94,7 +95,7 @@ private:
     bool   _standardizeInput;
 
 protected:
-    const model::Model* _model;
+    model::Model* _model;
 
 };
 

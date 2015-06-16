@@ -90,6 +90,11 @@ void MatrixVector::resize(size_t size)
     _matrix.resize(size);
 }
 
+void MatrixVector::clear()
+{
+    _matrix.clear();
+}
+
 MatrixVector::iterator MatrixVector::begin()
 {
     return _matrix.begin();

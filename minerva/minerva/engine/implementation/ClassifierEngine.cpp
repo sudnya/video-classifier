@@ -1,4 +1,4 @@
-/*    \file   ClassifierEngine.cpp
+/*  \file   ClassifierEngine.cpp
     \date   Sunday August 11, 2013
     \author Gregory Diamos <solusstultus@gmail.com>
     \brief  The source file for the ClassifierEngine class.
@@ -17,6 +17,7 @@
 #include <minerva/results/interface/ResultVector.h>
 
 #include <minerva/matrix/interface/Matrix.h>
+#include <minerva/matrix/interface/MatrixTransformations.h>
 
 #include <minerva/util/interface/debug.h>
 
@@ -46,6 +47,13 @@ void ClassifierEngine::setUseLabeledData(bool shouldUse)
 util::StringVector convertActivationsToLabels(matrix::Matrix&& activations,
     const model::Model& model)
 {
+    if(activations.size().size() > 2)
+    {
+        activations = reshape(activations,
+            {activations.size().front(),
+             activations.size().product() / activations.size().front()});
+    }
+
     size_t samples = activations.size()[1];
     size_t columns = activations.size()[0];
 
@@ -102,13 +110,13 @@ ClassifierEngine::ResultVector ClassifierEngine::runOnBatch(Matrix&& input, Matr
 
     auto result = network->runInputs(std::move(input));
 
-    auto labels = convertActivationsToLabels(std::move(result), *_model);
+    auto labels = convertActivationsToLabels(std::move(result), *getModel());
 
     restoreAggregateNetwork();
 
     if(_shouldUseLabeledData)
     {
-        return compareWithReference(labels, convertActivationsToLabels(std::move(reference), *_model));
+        return compareWithReference(labels, convertActivationsToLabels(std::move(reference), *getModel()));
     }
 
     return recordLabels(labels);

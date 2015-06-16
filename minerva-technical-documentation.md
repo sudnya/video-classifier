@@ -10,34 +10,18 @@ software interfaces that builds on multiple platforms with minimal dependencies.
 This project implements a general purpose classification system.  The focus of
 the project is on achieving robust performance (classification accuracy) with
 minimal human interaction. Unlike most classification systems, which rely on
-domain specific heuristics to perform feature selection, Minerva uses an
-unsupervised learning technique called 'sparse autoencoding' that learns
-important features automatically over time without any human interaction.
+domain specific heuristics to perform feature selection, Minerva uses Deep Neural
+networks to automatically learn important features automatically over time without
+any human interaction.
 
-The sparse autoencoder is implemented with a convolutional neural network that takes raw
-data as input and produces a set of features that attempt to capture the
-essential information in that data.  It is trained by streaming through massive
-unlabeled input data sets. Once the sparse autoencoder has learned useful
-features, it is connected to a more traditional classification system that
-is trained using supervised learning.  This system is also implemented with
-a neural network, and it attempts to discover complex relationships between
-generated features and output classes.  
+## 1. Deep Learning
 
-Although Minerva is designed to handle arbitrary input data such as unformatted
-text or audio, this project includes additional supporting modules for performing
-classification on video data. 
+'Deep Learning' is used to describe the process of
+automatically discovering hierarchical features in large data sets without human interaction.
+Without deep learning, it is necessary to manually design features that are
+robust to variations in color, alignment, and noise.
 
-## 1. Unsupervised Learning
-
-Unsupervised learning (or 'deep learning') is used to describe the process of
-automatically discovering patterns in large data sets without human interaction.
-Without unsupervised learning, it is necessary to manually label thousands
-or millions of video frames to perform classification (identify what an image
-contains) that is robust to variations in color, alignment, and noise.  This
-is not feasible for most projects since developers do not have the resources
-to gather such a large number of videos.  
-
-As a response, many projects rely
+Many projects rely
 on building domain-specific feature selection systems that preprocess the
 data and produce a set of features or metrics that attempt to capture the
 essential information in the input data set using a significantly smaller
@@ -45,43 +29,38 @@ representation.  Feature selection is effective at reducing the dependence on
 labeled data because it simplifies the problem being presented to the supervised
 learning system (i.e. determine the class of a dataset using only the most
 relevant information rather than all information), and Sift is an example
-of a widely used feature selection system.  Despite their usefulness, 
+of a widely used feature selection system.  Despite their usefulness,
 manually-crafted feature selection systems have a fatal flaw; they are designed
 by developers and tailored to specific problems.  As a consequence, they
 are often brittle (because they are designed using developer intuition),
 and require a complete redesign when moving from one type of input data to
 another (e.g. from video to text).
 
-A sparse autoencoder is an unsupervised learning technique that attempts to
+Deep learning attempts to
 address the shortcomings of feature selection systems by providing a framework
 that generates them automatically.  At a high level, it works using an
-artificial neural network that is trained with unlabaled data and configured
-with a very specific topology that guides the inner layers of the network
-to respond to patterns in the input data that capture the majority of
-information in that data. After training on unlabeled data, the inner layers
+artificial neural network with multiple levels of hierarchy. After training, the inner layers
 of this network can be used directly as features; in other words, the network
-itself becomes a feature selection system. 
+itself becomes a feature selection system.
 
 The following image includes a visualization of some of the low level features
 (inputs that a pooling layer neuron maximally responds to) that were learned by Minerva after
-being presented 10,000 random images.  
+being presented 10,000 random images.
 
 ![Layer One Features](/documentation/tech-report/images/first-layer-neurons-8x8-tiles.jpg "Layer One Feature Responses")
 
 These compare favorably to Gabor Filter function responses in the top-right of the following figure, which have been found
-in the first layers of the visual cortex in mammalians, and perform well at visual classification tasks: 
+in the first layers of the visual cortex in mammalians, and perform well at visual classification tasks:
 
 ![Layer One Features](/documentation/tech-report/images/SoftFeatures.png "Gabor Function Responses and Spatial Domain Representation")
 
 From this paper:
->    Stanton R. Price ; Derek T. Anderson ; Robert H. Luke ; Kevin Stone ; James M. Keller; 
+>    Stanton R. Price ; Derek T. Anderson ; Robert H. Luke ; Kevin Stone ; James M. Keller;
 >    Automatic detection system for buried explosive hazards in FL-LWIR based on soft feature
 >    extraction using a bank of Gabor energy filters. Proc. SPIE 8709, Detection and Sensing of
 >    Mines, Explosive Objects, and Obscured Targets XVIII, 87091B (June 7, 2013);
 
 The accompanying figure on the top-right shows the corresponding spatial domain representation (impulse response) of each of the Gabor Filters.
-
-The details of sparse autoencoders are described here http://stanford.edu/class/cs294a/sparseAutoencoder.pdf .  
 
 Minerva is influenced by the following research groups in deep learning:
 
@@ -92,12 +71,7 @@ Minerva is influenced by the following research groups in deep learning:
 ## 2. Supervised Learning
 
 Minerva uses a well known design involving an artificial neural network for supervised learning.  The input
-data is preprocessed using the feature selection network.  
-
-The following image shows the neural network input that produces the maximum response for a neuron trained
-using Minerva to recognize images of cats.
-
-![Cat Neuron](/documentation/tech-report/images/cat-response-convolutional.jpg "Cat Neuron Response")
+data is preprocessed using the feature selection network.
 
 ## 3. Classification
 
@@ -108,7 +82,7 @@ neural networks to obtain a predicted class.
 ## 4. High Performance Architecture
 
 Minerva is designed with high performance in mind to be able to scale to large
-data sets. It uses three principles to achieve high performance.  
+data sets. It uses three principles to achieve high performance.
 
 * Use high performance accelerator architectures (e.g. GPUs) in single nodes.
 * Use a scalable design that can leverge distributed systems.
@@ -147,19 +121,17 @@ The details of the libraries and modules are described next.
 
 ### The Neural Network Library
 
- Each neural network contains multiple layers. Each layer is represented as a collection of sparse matrices.  The neural network library starts by initializing the network randomly. The inputs to the neural network are pixels of a down-sampled image in the form of a matrix. With pixel values as input to the neural network, we use the optimization library to train the neural network. The neural network is trained until the cost function for the neural network is minimized. The cost function captures the difference between the expected output and the predictions made by the neural network. 
+ Each neural network contains multiple layers. Each layer is represented as a collection of sparse matrices.  The neural network library starts by initializing the network randomly. The inputs to the neural network are pixels of a down-sampled image in the form of a matrix. With pixel values as input to the neural network, we use the optimization library to train the neural network. The neural network is trained until the cost function for the neural network is minimized. The cost function captures the difference between the expected output and the predictions made by the neural network.
 
 ### The optimization library
 
- The optimization library aims to reduce the difference between the actual output (from the labeled data) and the output predicted by the neural network by modifying individual neuron weights. This library contains multiple implementations. 
-a.) Gradient descent with linear simulated annealing.
-b.) The Multilevel optimizer uses a greedy heurisitc with simulated annealing and local search (with tabu search).
-c.) The Broyden–Fletcher–Goldfarb–Shanno algorithm (an approximation of the Simplex method for unconstrained linear optimization).
-d.) Multi-level coordinate search (TBD) (an approximation of the branch and bound method for uncontrained linear optimization).
+ The optimization library aims to reduce the difference between the actual output (from the labeled data) and the output predicted by the neural network by modifying individual neuron weights. This library contains multiple implementations.
+a.) The nesterov stochastic gradient descent with momentum algorithm.
+b.) The Broyden–Fletcher–Goldfarb–Shanno algorithm (an approximation of Newtons method for unconstrained linear optimization).
 
 ### The linear algebra library
 
- The linear algebra library leverages the optimized Matrix operations from pre-existing implementations (ATLAS or CUBLAS). The smallest unit for calculations in the neural network & optimizer is the Matrix. The linear algebra library translates these into calls to the Matrix library.  There is a SparseMatrix wrapper class that is used to implement sparse (convolutional/pooling) neural network layers.  
+ The linear algebra library leverages the optimized Matrix operations from pre-existing implementations (ATLAS or CUBLAS). The smallest unit for calculations in the neural network & optimizer is the Matrix. The linear algebra library translates these into calls to the Matrix library.
 
 ### The video library
 
@@ -180,5 +152,5 @@ The idea behind a sparse autoencoder is that features in some data can be attrib
 
 ### The classification module
 
- This module uses both the neural network (the feature selector from the unsupervised learning step) and the classifier neural network (from the supervised learning step) to perform classification in test images.  It is really a convenience interface that abstracts some of the low level operations involved in setting up the input data and training the networks contained in a model.  It presents a clean interface for feeding input labeled or unlabeled data to the model.  Operations like random sampling and input caching are automated using the classification module framework.  
+ This module uses both the neural network (the feature selector from the unsupervised learning step) and the classifier neural network (from the supervised learning step) to perform classification in test images.  It is really a convenience interface that abstracts some of the low level operations involved in setting up the input data and training the networks contained in a model.  It presents a clean interface for feeding input labeled or unlabeled data to the model.  Operations like random sampling and input caching are automated using the classification module framework.
 

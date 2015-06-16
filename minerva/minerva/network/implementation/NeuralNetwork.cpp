@@ -67,12 +67,14 @@ double NeuralNetwork::getCostAndGradient(MatrixVector& gradient, const Matrix& i
         util::log("NeuralNetwork") << " Running forward propagation through layer "
             << std::distance(begin(), layer) << "\n";
 
-        activations.push_back(std::move((*layer)->runForward(activations.back())));
+        (*layer)->runForward(activations);
 
         weightMatrices += (*layer)->weights().size();
     }
 
     gradient.resize(weightMatrices);
+
+    auto costFunctionResult = getCostFunction()->computeCost(activations.back(), reference);
 
     auto activation = activations.rbegin();
     auto delta      = getCostFunction()->computeDelta(*activation, reference);
@@ -83,12 +85,10 @@ double NeuralNetwork::getCostAndGradient(MatrixVector& gradient, const Matrix& i
     {
         MatrixVector grad;
 
-        auto previousActivation = activation; ++previousActivation;
-
         util::log("NeuralNetwork") << " Running reverse propagation through layer "
             << std::distance(begin(), std::next(layer).base()) << "\n";
 
-        delta = (*layer)->runReverse(grad, *previousActivation, *activation, delta);
+        delta = (*layer)->runReverse(grad, activations, delta);
 
         for(auto gradMatrix = grad.rbegin(); gradMatrix != grad.rend(); ++gradMatrix, ++gradientMatrix)
         {
@@ -102,8 +102,6 @@ double NeuralNetwork::getCostAndGradient(MatrixVector& gradient, const Matrix& i
     {
         weightCost += layer->computeWeightCost();
     }
-
-    auto costFunctionResult = getCostFunction()->computeCost(activations.back(), reference);
 
     if(util::isLogEnabled("NeuralNetwork::Detail"))
     {
@@ -128,8 +126,10 @@ double NeuralNetwork::getInputCostAndGradient(Matrix& gradient, const Matrix& in
         util::log("NeuralNetwork") << " Running forward propagation through layer "
             << std::distance(begin(), layer) << "\n";
 
-        activations.push_back(std::move((*layer)->runForward(activations.back())));
+        (*layer)->runForward(activations);
     }
+
+    auto costFunctionResult = getCostFunction()->computeCost(activations.back(), reference);
 
     auto activation = activations.rbegin();
     auto delta      = getCostFunction()->computeDelta(*activation, reference);
@@ -138,12 +138,10 @@ double NeuralNetwork::getInputCostAndGradient(Matrix& gradient, const Matrix& in
     {
         MatrixVector grad;
 
-        auto nextActivation = activation; ++nextActivation;
-
-        delta = (*layer)->runReverse(grad, *nextActivation, *activation, delta);
+        delta = (*layer)->runReverse(grad, activations, delta);
     }
 
-    auto samples = activation->size()[2];
+    auto samples = input.size().back();
 
     gradient = apply(delta, matrix::Multiply(1.0 / samples));
 
@@ -154,7 +152,7 @@ double NeuralNetwork::getInputCostAndGradient(Matrix& gradient, const Matrix& in
         weightCost += layer->computeWeightCost();
     }
 
-    return weightCost + reduce(getCostFunction()->computeCost(activations.back(), reference), {}, matrix::Add())[0];
+    return weightCost + reduce(costFunctionResult, {}, matrix::Add())[0];
 }
 
 double NeuralNetwork::getCost(const Matrix& input, const Matrix& reference) const
@@ -173,17 +171,25 @@ double NeuralNetwork::getCost(const Matrix& input, const Matrix& reference) cons
 
 NeuralNetwork::Matrix NeuralNetwork::runInputs(const Matrix& m) const
 {
-    auto temp = m;
+    MatrixVector activations;
+
+    activations.push_back(m);
 
     for (auto i = begin(); i != end(); ++i)
     {
         util::log("NeuralNetwork") << " Running forward propagation through layer "
             << std::distance(_layers.begin(), i) << "\n";
 
-        temp = (*i)->runForward(temp);
+        (*i)->runForward(activations);
+
+        auto output = activations.back();
+
+        activations.clear();
+
+        activations.push_back(output);
     }
 
-    return temp;
+    return activations.back();
 }
 
 void NeuralNetwork::addLayer(std::unique_ptr<Layer>&& l)
@@ -313,6 +319,7 @@ void NeuralNetwork::train(const Matrix& input, const Matrix& reference)
 {
     getSolver()->setInput(&input);
     getSolver()->setReference(&reference);
+    getSolver()->setNetwork(this);
 
     getSolver()->solve();
 }

@@ -1,6 +1,6 @@
 /* Author: Sudnya Padalikar
  * Date  : 08/17/2013
- * The interface for the NeuralNetworkSolver class 
+ * The interface for the NeuralNetworkSolver class
  */
 
 #pragma once
@@ -23,7 +23,7 @@ public:
 
 public:
 	NeuralNetworkSolver(NeuralNetwork* n);
-	
+
 	virtual ~NeuralNetworkSolver();
 
 public:
@@ -35,8 +35,9 @@ public:
 public:
 	void setInput(const Matrix* input);
 	void setReference(const Matrix* reference);
+	void setNetwork(NeuralNetwork* network);
 
-public: 
+public:
 	static NeuralNetworkSolver* create(NeuralNetwork* n);
 
 protected:

@@ -6,6 +6,9 @@
 
 #pragma once
 
+// Minerva Includes
+#include <minerva/util/interface/ParameterPack.h>
+
 // Standard Library
 #include <string>
 #include <memory>
@@ -23,7 +26,20 @@ namespace network
 class LayerFactory
 {
 public:
+    using ParameterPack = util::ParameterPack;
+
+public:
     static std::unique_ptr<Layer> create(const std::string& name);
+
+public:
+    static std::unique_ptr<Layer> create(const std::string& name, const ParameterPack& );
+
+public:
+    template<typename... Args>
+    static std::unique_ptr<Layer> create(const std::string& name, Args... args)
+    {
+        return create(name, ParameterPack(args...));
+    }
 };
 
 }
