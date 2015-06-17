@@ -192,7 +192,7 @@ static void addClassifier(Model& model, const Parameters& parameters)
         Dimension(2, 2), Dimension(0, 0)));
 */
     // connect the network
-   // classifier.addLayer(std::make_unique<FeedForwardLayer>(classifier.back()->getOutputCount(), parameters.layerSize));
+//    classifier.addLayer(std::make_unique<FeedForwardLayer>(classifier.back()->getOutputCount(), parameters.layerSize));
     classifier.addLayer(std::make_unique<FeedForwardLayer>(classifier.back()->getOutputCount(), parameters.layerSize));
 
     classifier.addLayer(std::make_unique<FeedForwardLayer>(classifier.back()->getOutputCount(), 10));
@@ -282,7 +282,7 @@ static void runBenchmark(const Parameters& parameters)
     }
     else
     {
-        minerva::matrix::srand(377);
+        minerva::matrix::srand(477);
     }
 
     // Create a deep model for first layer classification
@@ -313,7 +313,7 @@ static void setupSolverParameters()
 {
     minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::LearningRate", "1.0e-3");
     minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::Momentum", "0.9");
-    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::AnnealingRate", "1.000001");
+    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::AnnealingRate", "1.00001");
     minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::MaxGradNorm", "10.0");
     minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::IterationsPerBatch", "1");
     minerva::util::KnobDatabase::setKnob("GeneralDifferentiableSolver::Type", "NesterovAcceleratedGradientSolver");
@@ -332,10 +332,10 @@ int main(int argc, char** argv)
     parser.description("A test for minerva difficult classication performance.");
 
     parser.parse("-i", "--input-path", parameters.inputPath,
-        "examples/image-net/training-set.txt",
+        "examples/image-net/training/training-set.txt",
         "The path of the database of training image files.");
     parser.parse("-t", "--test-path", parameters.testPath,
-        "examples/image-net/training-set.txt",
+        "examples/image-net/validation/validation-set.txt",
         "The path of the database of test image files.");
 
     parser.parse("-e", "--epochs", parameters.epochs, 1,
