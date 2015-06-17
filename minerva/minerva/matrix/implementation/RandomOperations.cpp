@@ -26,7 +26,7 @@ public:
     {
         if(_cudaEngine)
         {
-            CurandLibrary::curandDestroyGenerator(*_cudaEngine);
+            //CurandLibrary::curandDestroyGenerator(*_cudaEngine);
         }
     }
 
