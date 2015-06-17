@@ -32,7 +32,11 @@ void free(void* address)
 {
     if(CudaRuntimeLibrary::loaded())
     {
-	    CudaRuntimeLibrary::cudaFree(address);
+        #ifdef __APPLE__
+        return CudaRuntimeLibrary::cudaFreeHost(address);
+        #else
+        return CudaRuntimeLibrary::cudaFree(address);
+        #endif
 	}
     else
     {

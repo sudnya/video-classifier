@@ -50,6 +50,7 @@ public:
     static void* cudaMallocManaged(size_t bytes);
     static void* cudaHostAlloc(size_t bytes);
     static void cudaFree(void* ptr);
+    static void cudaFreeHost(void* ptr);
 
     static void cudaMemcpy(void* dest, const void* src,
         size_t bytes, cudaMemcpyKind kind = cudaMemcpyDefault);
@@ -71,6 +72,7 @@ private:
         int (*cudaMallocManaged)(void** ptr, size_t bytes, unsigned int flags);
         int (*cudaHostAlloc)(void** ptr, size_t bytes, unsigned int flags);
         int (*cudaFree)  (void*  ptr);
+        int (*cudaFreeHost)  (void*  ptr);
         int (*cudaMemcpy)(void*  dest, const void* src, size_t bytes,
             cudaMemcpyKind kind);
 

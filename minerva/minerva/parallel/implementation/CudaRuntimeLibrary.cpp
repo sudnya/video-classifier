@@ -126,7 +126,29 @@ void CudaRuntimeLibrary::cudaFree(void* ptr)
 {
     _check();
 
-    (*_interface.cudaFree)(ptr);
+    int status = (*_interface.cudaFree)(ptr);
+
+    if(status != cudaSuccess)
+    {
+        throw std::runtime_error("Cuda free failed: " +
+            cudaGetErrorString(status));
+    }
+
+    //util::log("CudaRuntimeLibrary") << " CUDA freed memory (address: "
+    //    << ptr << ")\n";
+}
+
+void CudaRuntimeLibrary::cudaFreeHost(void* ptr)
+{
+    _check();
+
+    int status = (*_interface.cudaFreeHost)(ptr);
+
+    if(status != cudaSuccess)
+    {
+        throw std::runtime_error("Cuda free host failed: " +
+            cudaGetErrorString(status));
+    }
 
     //util::log("CudaRuntimeLibrary") << " CUDA freed memory (address: "
     //    << ptr << ")\n";
@@ -225,6 +247,7 @@ void CudaRuntimeLibrary::Interface::load()
         DynLink(cudaMallocManaged);
         DynLink(cudaHostAlloc);
         DynLink(cudaFree);
+        DynLink(cudaFreeHost);
         DynLink(cudaMemcpy);
         DynLink(cudaGetErrorString);
 
