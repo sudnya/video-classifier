@@ -13,7 +13,7 @@ namespace detail
 
 #ifdef __NVCC__
 
-void checkCudaErrors(cudaError_t status)
+inline void checkCudaErrors(cudaError_t status)
 {
     if(status != cudaSuccess)
     {

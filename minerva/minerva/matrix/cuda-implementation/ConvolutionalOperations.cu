@@ -238,6 +238,80 @@ private:
 
 };
 
+template<typename NativeType>
+class ForwardReshapeInputLambda
+{
+public:
+    CUDA_DECORATOR void operator()(parallel::ThreadGroup threadGroup) const
+    {
+        for(size_t element = threadGroup.id(); element < elements; element += threadGroup.size())
+        {
+            size_t row    = element % rows;
+            size_t column = element / rows;
+
+            size_t miniBatch   = (column / (p * q));
+            size_t featureMap  = (row    / (r * s));
+            size_t tileOffset  = (row    % (r * s));
+            size_t tileRow     = tileOffset % s;
+            size_t tileColumn  = tileOffset / s;
+
+            size_t inputTileOffset = column % (p * q);
+            size_t inputRow        = ((inputTileOffset % q) * v + tileRow);
+            size_t inputColumn     = ((inputTileOffset / q) * u + tileColumn);
+
+            auto inputDimension = Dimension(inputRow, inputColumn, featureMap, miniBatch);
+
+            if(inputRow < padWidth || (inputRow >= (padWidth + w)))
+            {
+                resultView({row, column}) = 0.0;
+                continue;
+            }
+
+            inputRow -= padWidth;
+
+            if(inputColumn < padHeight || (inputColumn >= (padHeight + h)))
+            {
+                resultView({row, column}) = 0.0;
+                continue;
+            }
+
+            inputColumn -= padHeight;
+
+            resultView({row, column}) = inputView(inputDimension);
+        }
+    }
+
+public:
+    MatrixView<NativeType>      resultView;
+    ConstMatrixView<NativeType> inputView;
+
+public:
+    size_t elements;
+
+public:
+    size_t rows;
+
+public:
+    size_t w;
+    size_t h;
+
+public:
+    size_t q;
+    size_t p;
+
+public:
+    size_t s;
+    size_t r;
+
+public:
+    size_t v;
+    size_t u;
+
+public:
+    size_t padWidth;
+    size_t padHeight;
+
+};
 
 template<typename PrecisionType>
 Matrix gatherForwardConvolutionInputOverPrecisions(const Matrix& input, const Matrix& filter, const Dimension& filterStride, const Dimension& padding,
@@ -273,42 +347,9 @@ Matrix gatherForwardConvolutionInputOverPrecisions(const Matrix& input, const Ma
 
     size_t elements = rows * columns;
 
-    parallel::multiBulkSynchronousParallel([=](parallel::ThreadGroup threadGroup)
-    {
-        for(size_t element = threadGroup.id(); element < elements; element += threadGroup.size())
-        {
-            size_t row    = element % rows;
-            size_t column = element / rows;
+    auto lambda = ForwardReshapeInputLambda<NativeType>{resultView, inputView, elements, rows, w, h, q, p, s, r, v, u, padWidth, padHeight};
 
-            size_t miniBatch   = (column / (p * q));
-            size_t featureMap  = (row    / (r * s));
-            size_t tileOffset  = (row    % (r * s));
-            size_t tileRow     = tileOffset % s;
-            size_t tileColumn  = tileOffset / s;
-
-            size_t inputTileOffset = column % (p * q);
-            size_t inputRow        = ((inputTileOffset % q) * v + tileRow);
-            size_t inputColumn     = ((inputTileOffset / q) * u + tileColumn);
-
-            if(inputRow < padWidth || (inputRow >= (padWidth + w)))
-            {
-                resultView({row, column}) = 0.0;
-                continue;
-            }
-
-            inputRow -= padWidth;
-
-            if(inputColumn < padHeight || (inputColumn >= (padHeight + h)))
-            {
-                resultView({row, column}) = 0.0;
-                continue;
-            }
-
-            inputColumn -= padHeight;
-
-            resultView({row, column}) = inputView({inputRow, inputColumn, featureMap, miniBatch});
-        }
-    });
+    parallel::multiBulkSynchronousParallel(lambda);
 
     return result;
 }
@@ -337,6 +378,45 @@ Matrix gatherForwardConvolutionInput(const Matrix& input, const Matrix& filter, 
     return gatherForwardConvolutionInputOverPrecisions(input, filter, stride, padding, AllPrecisions());
 }
 
+template<typename NativeType>
+class ForwardReshapeFilterLambda
+{
+public:
+    CUDA_DECORATOR void operator()(parallel::ThreadGroup threadGroup) const
+    {
+        for(size_t element = threadGroup.id(); element < elements; element += threadGroup.size())
+        {
+            size_t row    = element % rows;
+            size_t column = element / rows;
+
+            size_t k = row;
+
+            size_t c = column / (filterR * filterS);
+            size_t filterTile = column % (filterR * filterS);
+
+            size_t s = filterTile / filterR;
+            size_t r = filterTile % filterR;
+
+            resultView({row, column}) = filterView({filterR - r - 1, filterS - s - 1, c, k});
+        }
+    }
+
+public:
+    MatrixView<NativeType>      resultView;
+    ConstMatrixView<NativeType> filterView;
+
+public:
+    size_t elements;
+
+public:
+    size_t rows;
+
+public:
+    size_t filterR;
+    size_t filterS;
+
+};
+
 template<typename PrecisionType>
 Matrix gatherForwardConvolutionFilterOverPrecisions(const Matrix& filter,
     const std::tuple<PrecisionType>& )
@@ -358,24 +438,9 @@ Matrix gatherForwardConvolutionFilterOverPrecisions(const Matrix& filter,
 
     size_t elements = rows * columns;
 
-    parallel::multiBulkSynchronousParallel([=](parallel::ThreadGroup threadGroup)
-    {
-        for(size_t element = threadGroup.id(); element < elements; element += threadGroup.size())
-        {
-            size_t row    = element % rows;
-            size_t column = element / rows;
+    auto lambda = ForwardReshapeFilterLambda<NativeType>{resultView, filterView, elements, rows, filterR, filterS};
 
-            size_t k = row;
-
-            size_t c = column / (filterR * filterS);
-            size_t filterTile = column % (filterR * filterS);
-
-            size_t s = filterTile / filterR;
-            size_t r = filterTile % filterR;
-
-            resultView({row, column}) = filterView({filterR - r - 1, filterS - s - 1, c, k});
-        }
-    });
+    parallel::multiBulkSynchronousParallel(lambda);
 
     return result;
 }
@@ -403,6 +468,41 @@ Matrix gatherForwardConvolutionFilter(const Matrix& filter)
     return gatherForwardConvolutionFilterOverPrecisions(filter, AllPrecisions());
 }
 
+template<typename NativeType>
+class ForwardReshapeResultLambda
+{
+public:
+    CUDA_DECORATOR void operator()(parallel::ThreadGroup threadGroup) const
+    {
+        for(size_t element = threadGroup.id(); element < elements; element += threadGroup.size())
+        {
+            size_t w = element % width;
+            size_t h = (element / width) % height;
+            size_t featureMap = (element / (width * height)) % featureMaps;
+            size_t miniBatch  = (element / (width * height * featureMaps));
+
+            size_t row    = featureMap;
+            size_t column = w + h * width + miniBatch * width * height;
+
+            resultView({w, h, featureMap, miniBatch}) = inputView({row, column});
+        }
+    }
+
+public:
+    MatrixView<NativeType>      resultView;
+    ConstMatrixView<NativeType> inputView;
+
+public:
+    size_t elements;
+
+public:
+    size_t width;
+    size_t height;
+    size_t featureMaps;
+
+
+};
+
 template<typename PrecisionType>
 void scatterForwardConvolutionResultOverPrecisions(Matrix& result, const Matrix& input,
     const std::tuple<PrecisionType>& )
@@ -421,21 +521,9 @@ void scatterForwardConvolutionResultOverPrecisions(Matrix& result, const Matrix&
 
     size_t elements = miniBatches * featureMaps * height * width;
 
-    parallel::multiBulkSynchronousParallel([=](parallel::ThreadGroup threadGroup)
-    {
-        for(size_t element = threadGroup.id(); element < elements; element += threadGroup.size())
-        {
-            size_t w = element % width;
-            size_t h = (element / width) % height;
-            size_t featureMap = (element / (width * height)) % featureMaps;
-            size_t miniBatch  = (element / (width * height * featureMaps));
+    auto lambda = ForwardReshapeResultLambda<NativeType>{resultView, inputView, elements, width, height, featureMaps};
 
-            size_t row    = featureMap;
-            size_t column = w + h * width + miniBatch * width * height;
-
-            resultView({w, h, featureMap, miniBatch}) = inputView({row, column});
-        }
-    });
+    parallel::multiBulkSynchronousParallel(lambda);
 }
 
 template<typename PossiblePrecisions>
@@ -564,44 +652,11 @@ size_t invertPadding(size_t inputPadding, size_t filterSize)
     return filterSize - inputPadding - 1;
 }
 
-template<typename PrecisionType>
-Matrix gatherReverseConvolutionDeltasInput(const Matrix& deltas, const Matrix& filter, const Dimension& filterStride,
-    const Dimension& padding, const Dimension& inputSize, const PrecisionType& )
+template<typename NativeType>
+class ReverseReshapeDeltasInputLambda
 {
-    typedef typename PrecisionType::type NativeType;
-
-    // zero fill the deltas to full convolution
-    size_t deltaW = deltas.size()[0];
-    size_t deltaH = deltas.size()[1];
-
-    size_t outputFeatureMaps = deltas.size()[2];
-    size_t miniBatches       = deltas.size()[3];
-
-    size_t strideW = filterStride[0];
-    size_t strideH = filterStride[1];
-
-    size_t inputW = inputSize[0];
-    size_t inputH = inputSize[1];
-
-    size_t filterW = filter.size()[1];
-    size_t filterH = filter.size()[0];
-
-    size_t padWidth  = invertPadding(padding[0], filterW);
-    size_t padHeight = invertPadding(padding[1], filterH);
-
-    size_t rows    = outputFeatureMaps * filterW * filterH;
-    size_t columns = miniBatches * inputW * inputH;
-
-    Matrix result({rows, columns}, deltas.precision());
-
-    typedef typename PrecisionType::type NativeType;
-
-    MatrixView<NativeType>      resultView(result);
-    ConstMatrixView<NativeType> deltasView(deltas);
-
-    size_t elements = rows * columns;
-
-    parallel::multiBulkSynchronousParallel([=](parallel::ThreadGroup threadGroup)
+public:
+    CUDA_DECORATOR void operator()(parallel::ThreadGroup threadGroup) const
     {
         for(size_t element = threadGroup.id(); element < elements; element += threadGroup.size())
         {
@@ -667,10 +722,123 @@ Matrix gatherReverseConvolutionDeltasInput(const Matrix& deltas, const Matrix& f
 
             resultView({row, column}) = deltasView({deltaRow, deltaColumn, featureMap, miniBatch});
         }
-    });
+    }
+
+public:
+    MatrixView<NativeType>      resultView;
+    ConstMatrixView<NativeType> deltasView;
+
+public:
+    size_t elements;
+
+public:
+    size_t rows;
+
+public:
+    size_t deltaW;
+    size_t deltaH;
+
+public:
+    size_t strideW;
+    size_t strideH;
+
+public:
+    size_t inputW;
+    size_t inputH;
+
+public:
+    size_t filterW;
+    size_t filterH;
+
+public:
+    size_t padWidth;
+    size_t padHeight;
+
+};
+
+template<typename PrecisionType>
+Matrix gatherReverseConvolutionDeltasInput(const Matrix& deltas, const Matrix& filter, const Dimension& filterStride,
+    const Dimension& padding, const Dimension& inputSize, const PrecisionType& )
+{
+    typedef typename PrecisionType::type NativeType;
+
+    // zero fill the deltas to full convolution
+    size_t deltaW = deltas.size()[0];
+    size_t deltaH = deltas.size()[1];
+
+    size_t outputFeatureMaps = deltas.size()[2];
+    size_t miniBatches       = deltas.size()[3];
+
+    size_t strideW = filterStride[0];
+    size_t strideH = filterStride[1];
+
+    size_t inputW = inputSize[0];
+    size_t inputH = inputSize[1];
+
+    size_t filterW = filter.size()[1];
+    size_t filterH = filter.size()[0];
+
+    size_t padWidth  = invertPadding(padding[0], filterW);
+    size_t padHeight = invertPadding(padding[1], filterH);
+
+    size_t rows    = outputFeatureMaps * filterW * filterH;
+    size_t columns = miniBatches * inputW * inputH;
+
+    Matrix result({rows, columns}, deltas.precision());
+
+    typedef typename PrecisionType::type NativeType;
+
+    MatrixView<NativeType>      resultView(result);
+    ConstMatrixView<NativeType> deltasView(deltas);
+
+    size_t elements = rows * columns;
+
+    auto lambda = ReverseReshapeDeltasInputLambda<NativeType>{resultView, deltasView,
+        elements, rows, deltaW, deltaH, strideW, strideH, inputW, inputH, filterW, filterH, padWidth, padHeight};
+
+    parallel::multiBulkSynchronousParallel(lambda);
 
     return result;
 }
+
+template<typename NativeType>
+class ReverseDeltasFilterLambda
+{
+public:
+    CUDA_DECORATOR void operator()(parallel::ThreadGroup threadGroup) const
+    {
+        for(size_t element = threadGroup.id(); element < elements; element += threadGroup.size())
+        {
+            size_t row    = element % rows;
+            size_t column = element / rows;
+
+            size_t k = row;
+
+            size_t c = column / (filterR * filterS);
+            size_t filterTile = column % (filterR * filterS);
+
+            size_t s = filterTile / filterR;
+            size_t r = filterTile % filterR;
+
+            resultView({row, column}) = filterView({r, s, k, c});
+        }
+    }
+
+public:
+    MatrixView<NativeType>      resultView;
+    ConstMatrixView<NativeType> filterView;
+
+public:
+    size_t elements;
+
+public:
+    size_t rows;
+
+public:
+    size_t filterR;
+    size_t filterS;
+
+};
 
 template<typename PrecisionType>
 Matrix gatherReverseConvolutionDeltasFilter(const Matrix& filter, const PrecisionType& )
@@ -692,27 +860,46 @@ Matrix gatherReverseConvolutionDeltasFilter(const Matrix& filter, const Precisio
 
     size_t elements = rows * columns;
 
-    parallel::multiBulkSynchronousParallel([=](parallel::ThreadGroup threadGroup)
-    {
-        for(size_t element = threadGroup.id(); element < elements; element += threadGroup.size())
-        {
-            size_t row    = element % rows;
-            size_t column = element / rows;
+    auto lambda = ReverseDeltasFilterLambda<NativeType>{resultView, filterView, elements, rows, filterR, filterS};
 
-            size_t k = row;
-
-            size_t c = column / (filterR * filterS);
-            size_t filterTile = column % (filterR * filterS);
-
-            size_t s = filterTile / filterR;
-            size_t r = filterTile % filterR;
-
-            resultView({row, column}) = filterView({r, s, k, c});
-        }
-    });
+    parallel::multiBulkSynchronousParallel(lambda);
 
     return result;
 }
+
+template<typename NativeType>
+class ReverseDeltasReshapeResult
+{
+public:
+    CUDA_DECORATOR void operator()(parallel::ThreadGroup threadGroup) const
+    {
+        for(size_t element = threadGroup.id(); element < elements; element += threadGroup.size())
+        {
+            size_t w = element % width;
+            size_t h = (element / width) % height;
+            size_t featureMap = (element / (width * height)) % featureMaps;
+            size_t miniBatch  = (element / (width * height * featureMaps));
+
+            size_t row    = featureMap;
+            size_t column = w + h * width + miniBatch * width * height;
+
+            resultView({w, h, featureMap, miniBatch}) = inputView({row, column});
+        }
+    }
+
+public:
+    MatrixView<NativeType>      resultView;
+    ConstMatrixView<NativeType> inputView;
+
+public:
+    size_t elements;
+
+public:
+    size_t width;
+    size_t height;
+    size_t featureMaps;
+
+};
 
 template<typename PrecisionType>
 void scatterReverseConvolutionDeltasResult(Matrix& result, const Matrix& input, const PrecisionType& )
@@ -731,21 +918,9 @@ void scatterReverseConvolutionDeltasResult(Matrix& result, const Matrix& input, 
 
     size_t elements = miniBatches * featureMaps * height * width;
 
-    parallel::multiBulkSynchronousParallel([=](parallel::ThreadGroup threadGroup)
-    {
-        for(size_t element = threadGroup.id(); element < elements; element += threadGroup.size())
-        {
-            size_t w = element % width;
-            size_t h = (element / width) % height;
-            size_t featureMap = (element / (width * height)) % featureMaps;
-            size_t miniBatch  = (element / (width * height * featureMaps));
+    auto lambda = ReverseDeltasReshapeResult<NativeType>{resultView, inputView, elements, width, height, featureMaps};
 
-            size_t row    = featureMap;
-            size_t column = w + h * width + miniBatch * width * height;
-
-            resultView({w, h, featureMap, miniBatch}) = inputView({row, column});
-        }
-    });
+    parallel::multiBulkSynchronousParallel(lambda);
 
 }
 
@@ -842,8 +1017,87 @@ void reverseConvolutionDeltas(Matrix& resultDeltas, const Matrix& filter, const 
 namespace
 {
 
+template<typename NativeType>
+class ReverseGradientsReshapeInput
+{
+public:
+    CUDA_DECORATOR void operator()(parallel::ThreadGroup threadGroup)
+    {
+        for(size_t element = threadGroup.id(); element < elements; element += threadGroup.size())
+        {
+            size_t row    = element % rows;
+            size_t column = element / rows;
+
+            size_t miniBatch       = (row    / (outputH * outputW));
+            size_t inputFeatureMap = (column / (filterW * filterH));
+
+            size_t tileOffset        = column % (filterW * filterH);
+            size_t tileRowOffset     = (tileOffset % filterW);
+            size_t tileColumnOffset  = (tileOffset / filterW);
+
+            size_t inputTile       = row % (outputW * outputH);
+            size_t inputTileRow    = (inputTile % outputW) * strideW;
+            size_t inputTileColumn = (inputTile / outputW) * strideH;
+
+            size_t inputRow    = (inputTileRow + tileRowOffset);
+            size_t inputColumn = (inputTileColumn + tileColumnOffset);
+
+            if(inputRow < padWidth || (inputRow >= (padWidth + w)))
+            {
+                resultView({row, column}) = 0.0;
+                continue;
+            }
+
+            inputRow -= padWidth;
+
+            if(inputColumn < padHeight || (inputColumn >= (padHeight + h)))
+            {
+                resultView({row, column}) = 0.0;
+                continue;
+            }
+
+            inputColumn -= padHeight;
+
+            resultView({row, column}) = inputView({inputRow, inputColumn, inputFeatureMap, miniBatch});
+        }
+    }
+
+public:
+    MatrixView<NativeType>      resultView;
+    ConstMatrixView<NativeType> inputView;
+
+public:
+    size_t elements;
+
+public:
+    size_t rows;
+
+public:
+    size_t w;
+    size_t h;
+
+public:
+    size_t outputW;
+    size_t outputH;
+
+public:
+    size_t filterW;
+    size_t filterH;
+
+public:
+    size_t strideW;
+    size_t strideH;
+
+public:
+    size_t padWidth;
+    size_t padHeight;
+
+
+};
+
 template<typename PrecisionType>
-Matrix gatherReverseConvolutionGradientsInput(const Matrix& input, const Matrix& deltas, const Dimension& filterSize, const Dimension& filterStride,
+Matrix gatherReverseConvolutionGradientsInput(const Matrix& input,
+    const Matrix& deltas, const Dimension& filterSize, const Dimension& filterStride,
     const Dimension& padding, const PrecisionType& precisionType)
 {
     assert(input.precision() == PrecisionType());
@@ -883,49 +1137,54 @@ Matrix gatherReverseConvolutionGradientsInput(const Matrix& input, const Matrix&
 
     size_t elements = rows * columns;
 
-    parallel::multiBulkSynchronousParallel([=](parallel::ThreadGroup threadGroup)
+    auto lambda = ReverseGradientsReshapeInput<NativeType>{resultView, inputView, elements,
+        rows, w, h, outputW, outputH, filterW, filterH, strideW, strideH, padWidth, padHeight};
+
+    parallel::multiBulkSynchronousParallel(lambda);
+
+    return result;
+}
+
+template<typename NativeType>
+class ReverseGradientsReshapeDeltas
+{
+public:
+    CUDA_DECORATOR void operator()(parallel::ThreadGroup threadGroup) const
     {
         for(size_t element = threadGroup.id(); element < elements; element += threadGroup.size())
         {
             size_t row    = element % rows;
             size_t column = element / rows;
 
-            size_t miniBatch       = (row    / (outputH * outputW));
-            size_t inputFeatureMap = (column / (filterW * filterH));
+            size_t k = row;
 
-            size_t tileOffset        = column % (filterW * filterH);
-            size_t tileRowOffset     = (tileOffset % filterW);
-            size_t tileColumnOffset  = (tileOffset / filterW);
+            size_t n = column / (outputW * outputH);
 
-            size_t inputTile       = row % (outputW * outputH);
-            size_t inputTileRow    = (inputTile % outputW) * strideW;
-            size_t inputTileColumn = (inputTile / outputW) * strideH;
+            size_t filterTile = column % (outputW * outputH);
 
-            size_t inputRow    = (inputTileRow + tileRowOffset);
-            size_t inputColumn = (inputTileColumn + tileColumnOffset);
+            size_t w = filterTile % outputW;
+            size_t h = filterTile / outputW;
 
-            if(inputRow < padWidth || (inputRow >= (padWidth + w)))
-            {
-                resultView({row, column}) = 0.0;
-                continue;
-            }
+            resultView({row, column}) = deltasView({w, h, k, n});
 
-            inputRow -= padWidth;
-
-            if(inputColumn < padHeight || (inputColumn >= (padHeight + h)))
-            {
-                resultView({row, column}) = 0.0;
-                continue;
-            }
-
-            inputColumn -= padHeight;
-
-            resultView({row, column}) = inputView({inputRow, inputColumn, inputFeatureMap, miniBatch});
         }
-    });
+    }
 
-    return result;
-}
+public:
+    MatrixView<NativeType>      resultView;
+    ConstMatrixView<NativeType> deltasView;
+
+public:
+    size_t elements;
+
+public:
+    size_t rows;
+
+public:
+    size_t outputW;
+    size_t outputH;
+
+};
 
 template<typename PrecisionType>
 Matrix gatherReverseConvolutionGradientsDeltas(const Matrix& deltas, const PrecisionType& precisionType)
@@ -949,29 +1208,50 @@ Matrix gatherReverseConvolutionGradientsDeltas(const Matrix& deltas, const Preci
 
     size_t elements = rows * columns;
 
-    parallel::multiBulkSynchronousParallel([=](parallel::ThreadGroup threadGroup)
+    auto lambda = ReverseGradientsReshapeDeltas<NativeType>{resultView, deltasView, elements, rows, outputW, outputH};
+
+    parallel::multiBulkSynchronousParallel(lambda);
+
+    return result;
+}
+
+template<typename NativeType>
+class ReverseGradientsReshapeResult
+{
+public:
+    CUDA_DECORATOR void operator()(parallel::ThreadGroup threadGroup) const
     {
         for(size_t element = threadGroup.id(); element < elements; element += threadGroup.size())
         {
             size_t row    = element % rows;
             size_t column = element / rows;
 
-            size_t k = row;
+            size_t w =  column % filterW;
+            size_t h = (column / filterW) % filterH;
 
-            size_t n = column / (outputW * outputH);
+            size_t inputMap  = (column / (filterW * filterH));
+            size_t outputMap = row;
 
-            size_t filterTile = column % (outputW * outputH);
-
-            size_t w = filterTile % outputW;
-            size_t h = filterTile / outputW;
-
-            resultView({row, column}) = deltasView({w, h, k, n});
-
+            gradientsView({filterW - w - 1, filterH - h - 1, inputMap, outputMap}) = reshapedGradientsView({row, column});
         }
-    });
+    }
 
-    return result;
-}
+public:
+    MatrixView<NativeType>      gradientsView;
+    ConstMatrixView<NativeType> reshapedGradientsView;
+
+public:
+    size_t elements;
+
+public:
+    size_t rows;
+
+public:
+    size_t filterW;
+    size_t filterH;
+
+
+};
 
 template<typename PrecisionType>
 void scatterReverseConvolutionGradientsResult(Matrix& gradients, const Matrix& reshapedGradients, const PrecisionType& precisionType)
@@ -997,22 +1277,9 @@ void scatterReverseConvolutionGradientsResult(Matrix& gradients, const Matrix& r
 
     size_t elements = filterW * filterH * inputMaps * outputMaps;
 
-    parallel::multiBulkSynchronousParallel([=](parallel::ThreadGroup threadGroup)
-    {
-        for(size_t element = threadGroup.id(); element < elements; element += threadGroup.size())
-        {
-            size_t row    = element % rows;
-            size_t column = element / rows;
+    auto lambda = ReverseGradientsReshapeResult<NativeType>{gradientsView, reshapedGradientsView, elements, rows, filterW, filterH};
 
-            size_t w =  column % filterW;
-            size_t h = (column / filterW) % filterH;
-
-            size_t inputMap  = (column / (filterW * filterH));
-            size_t outputMap = row;
-
-            gradientsView({filterW - w - 1, filterH - h - 1, inputMap, outputMap}) = reshapedGradientsView({row, column});
-        }
-    });
+    parallel::multiBulkSynchronousParallel(lambda);
 }
 
 template<typename PrecisionType>

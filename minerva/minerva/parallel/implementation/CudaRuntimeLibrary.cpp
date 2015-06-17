@@ -76,8 +76,8 @@ void* CudaRuntimeLibrary::cudaMalloc(size_t bytes)
             cudaGetErrorString(status));
     }
 
-    util::log("CudaRuntimeLibrary") << " CUDA allocated memory (address: "
-        << address << ", " << bytes << " bytes)\n";
+    //util::log("CudaRuntimeLibrary") << " CUDA allocated memory (address: "
+    //    << address << ", " << bytes << " bytes)\n";
 
     return address;
 }
@@ -96,8 +96,8 @@ void* CudaRuntimeLibrary::cudaMallocManaged(size_t bytes)
             cudaGetErrorString(status));
     }
 
-    util::log("CudaRuntimeLibrary") << " CUDA allocated memory (address: "
-        << address << ", " << bytes << " bytes)\n";
+    //util::log("CudaRuntimeLibrary") << " CUDA allocated memory (address: "
+    //    << address << ", " << bytes << " bytes)\n";
 
     return address;
 }
@@ -116,8 +116,8 @@ void* CudaRuntimeLibrary::cudaHostAlloc(size_t bytes)
             cudaGetErrorString(status));
     }
 
-    util::log("CudaRuntimeLibrary") << " CUDA allocated memory (address: "
-        << address << ", " << bytes << " bytes)\n";
+    //util::log("CudaRuntimeLibrary") << " CUDA allocated memory (address: "
+    //    << address << ", " << bytes << " bytes)\n";
 
     return address;
 }
@@ -128,8 +128,8 @@ void CudaRuntimeLibrary::cudaFree(void* ptr)
 
     (*_interface.cudaFree)(ptr);
 
-    util::log("CudaRuntimeLibrary") << " CUDA freed memory (address: "
-        << ptr << ")\n";
+    //util::log("CudaRuntimeLibrary") << " CUDA freed memory (address: "
+    //    << ptr << ")\n";
 }
 
 void CudaRuntimeLibrary::cudaMemcpy(void* dest, const void* src, size_t bytes,
@@ -137,9 +137,9 @@ void CudaRuntimeLibrary::cudaMemcpy(void* dest, const void* src, size_t bytes,
 {
     _check();
 
-    util::log("CudaRuntimeLibrary") << " CUDA memcpy (destination address: "
-        << dest << ", source address: " << src << ", " << bytes
-        << " bytes)\n";
+    //util::log("CudaRuntimeLibrary") << " CUDA memcpy (destination address: "
+    //    << dest << ", source address: " << src << ", " << bytes
+    //    << " bytes)\n";
 
     int status = (*_interface.cudaMemcpy)(dest, src, bytes, kind);
 
