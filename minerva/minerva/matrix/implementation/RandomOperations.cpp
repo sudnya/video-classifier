@@ -24,10 +24,12 @@ class RandomGeneratorState
 public:
     ~RandomGeneratorState()
     {
+        /*
         if(_cudaEngine)
         {
-            //CurandLibrary::curandDestroyGenerator(*_cudaEngine);
+            CurandLibrary::curandDestroyGenerator(*_cudaEngine);
         }
+        */
     }
 
 

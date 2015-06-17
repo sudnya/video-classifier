@@ -48,7 +48,7 @@ Matrix generateRandomMatrix(unsigned rows, unsigned columns, std::default_random
 {
     std::bernoulli_distribution distribution(0.5f);
 
-    Matrix matrix({rows, columns}, SinglePrecision());
+    Matrix matrix({rows, columns, 1}, SinglePrecision());
 
     for(auto value = matrix.begin(); value != matrix.end(); ++value)
     {
@@ -74,13 +74,13 @@ Matrix matrixXor(const Matrix& inputs)
 {
     assertM(inputs.size()[0] % 2 == 0, "Incompatible size of input bit vectors");
 
-    Matrix output(inputs.size()[0] / 2, inputs.size()[1]);
+    Matrix output(inputs.size()[0] / 2, inputs.size()[1], 1);
 
     for (unsigned i = 0; i < inputs.size()[1]; ++i)
     {
         for (unsigned j = 0; j < inputs.size()[0]/2; ++j)
         {
-            output(j, i) = floatXor(inputs(j * 2, i), inputs(j * 2 + 1, i));
+            output(j, i) = floatXor(inputs(j * 2, i, 0), inputs(j * 2 + 1, i, 0));
         }
     }
     return output;
@@ -142,8 +142,8 @@ unsigned compare(const Matrix& output, const Matrix& reference)
     {
         for (unsigned j = 0; j < output.size()[1]; ++j)
         {
-            bool outputIsTrue    = output(i,j)    > 0.5f;
-            bool referenceIsTrue = reference(i,j) > 0.5f;
+            bool outputIsTrue    = output(i,j,0)    > 0.5f;
+            bool referenceIsTrue = reference(i,j,0) > 0.5f;
 
             if (outputIsTrue == referenceIsTrue)
                 ++bitsThatMatch;

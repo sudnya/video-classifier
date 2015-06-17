@@ -353,8 +353,70 @@ Matrix apply(const Matrix& input, const Operation& op)
 namespace detail
 {
 
+static const size_t tileSize = 8;
+
 template<typename NativeType, typename ActualOperation>
-class ReduceLambda
+class ReduceAllDimensionsStepLambda
+{
+public:
+    CUDA_DECORATOR void operator()(parallel::ThreadGroup threadGroup) const
+    {
+        for(size_t i = threadGroup.id(); i < elements; i += threadGroup.size())
+        {
+            NativeType value = rawInput[i];
+
+            for(size_t inputElement = i + elements; inputElement < inputElements; inputElement += elements)
+            {
+                value = nativeOperation(value, rawInput[inputElement]);
+            }
+
+            rawResult[i] = value;
+        }
+    }
+
+public:
+          NativeType* rawResult;
+    const NativeType* rawInput;
+
+public:
+    size_t elements;
+    size_t inputElements;
+
+public:
+    ActualOperation nativeOperation;
+
+};
+
+template <typename ActualOperation, typename ActualPrecision>
+void reduceAllDimensionsStep(Matrix& result, const Matrix& input, const ActualOperation& nativeOperation, const ActualPrecision& p)
+{
+    typedef typename ActualPrecision::type NativeType;
+
+    NativeType*       rawResult = static_cast<NativeType*>(result.data());
+    const NativeType* rawInput  = static_cast<const NativeType*>(input.data());
+
+    auto lambda = ReduceAllDimensionsStepLambda<NativeType, ActualOperation>{rawResult, rawInput, result.elements(), input.elements(), nativeOperation};
+
+    parallel::multiBulkSynchronousParallel(lambda);
+}
+
+template <typename ActualOperation, typename ActualPrecision>
+void reduceAllDimensions(Matrix& result, const Matrix& input, const ActualOperation& nativeOperation, const ActualPrecision& p)
+{
+    if(input.elements() < tileSize)
+    {
+        return reduceAllDimensionsStep(result, input, nativeOperation, p);
+    }
+
+    Matrix temporary({(input.elements() + tileSize - 1) / tileSize}, p);
+
+    reduceAllDimensionsStep(temporary, input, nativeOperation, p);
+
+    reduceAllDimensions(result, temporary, nativeOperation, p);
+}
+
+template<typename NativeType, typename ActualOperation>
+class GenericReduceLambda
 {
 public:
     CUDA_DECORATOR void operator()(parallel::ThreadGroup threadGroup) const
@@ -424,12 +486,20 @@ void reduce(Matrix& result, const Matrix& input, const Dimension& unsortedDimens
 
     auto nativeOperation = static_cast<const ActualOperation&>(op);
 
-    MatrixView<NativeType>      resultView(result);
-    ConstMatrixView<NativeType> inputView(input);
+    // Reduce down to a single element
+    if(elements == 1)
+    {
+        reduceAllDimensions(result, input, nativeOperation, ActualPrecision());
+    }
+    else
+    {
+        MatrixView<NativeType>      resultView(result);
+        ConstMatrixView<NativeType> inputView(input);
 
-    auto lambda = ReduceLambda<NativeType, ActualOperation>{resultView, inputView, elements, nativeOperation, dimensions};
+        auto lambda = GenericReduceLambda<NativeType, ActualOperation>{resultView, inputView, elements, nativeOperation, dimensions};
 
-    parallel::multiBulkSynchronousParallel(lambda);
+        parallel::multiBulkSynchronousParallel(lambda);
+    }
 
 }
 

@@ -44,6 +44,9 @@ programs.append(env.Program('test-minerva-display', \
 programs.append(env.Program('test-gradient', \
     ['network/test/test-gradient-check.cpp'], LIBS=minerva_libs))
 
+programs.append(env.Program('test-convolutional-gradient', \
+    ['network/test/test-convolutional-gradient-check.cpp'], LIBS=minerva_libs))
+
 programs.append(env.Program('test-linear-regression', \
     ['network/test/test-linear-regression.cpp'], LIBS=minerva_libs))
 

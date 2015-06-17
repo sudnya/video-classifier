@@ -259,8 +259,6 @@ public:
             size_t inputRow        = ((inputTileOffset % q) * v + tileRow);
             size_t inputColumn     = ((inputTileOffset / q) * u + tileColumn);
 
-            auto inputDimension = Dimension(inputRow, inputColumn, featureMap, miniBatch);
-
             if(inputRow < padWidth || (inputRow >= (padWidth + w)))
             {
                 resultView({row, column}) = 0.0;
@@ -277,7 +275,7 @@ public:
 
             inputColumn -= padHeight;
 
-            resultView({row, column}) = inputView(inputDimension);
+            resultView({row, column}) = inputView({inputRow, inputColumn, featureMap, miniBatch});
         }
     }
 
@@ -1021,7 +1019,7 @@ template<typename NativeType>
 class ReverseGradientsReshapeInput
 {
 public:
-    CUDA_DECORATOR void operator()(parallel::ThreadGroup threadGroup)
+    CUDA_DECORATOR void operator()(parallel::ThreadGroup threadGroup) const
     {
         for(size_t element = threadGroup.id(); element < elements; element += threadGroup.size())
         {
