@@ -9,6 +9,7 @@
 #include <minerva/matrix/interface/CopyOperations.h>
 #include <minerva/matrix/interface/MatrixOperations.h>
 #include <minerva/matrix/interface/RandomOperations.h>
+#include <minerva/matrix/interface/FileOperations.h>
 #include <minerva/matrix/interface/ConvolutionalOperations.h>
 #include <minerva/matrix/interface/MatrixTransformations.h>
 #include <minerva/matrix/interface/Operation.h>
@@ -21,6 +22,16 @@
 
 // Global Typedefs
 typedef minerva::matrix::Matrix Matrix;
+
+/* A simple test to load from a numpy array */
+bool testLoad()
+{
+    Matrix matrix = minerva::matrix::load("matrix.npy");
+
+    std::cout << matrix.toString();
+
+    return true;
+}
 
 /*
     A simple matrix multiply test
@@ -1332,6 +1343,8 @@ int main(int argc, char** argv)
     std::cout << "Running matrix test unit tests\n";
 
     bool passed = true;
+
+    passed &= testLoad();
 
     passed &= testMultiplySlice();
     passed &= testMultiply();
