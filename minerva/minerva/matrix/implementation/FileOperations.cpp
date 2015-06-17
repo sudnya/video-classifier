@@ -2,6 +2,7 @@
 #include <minerva/matrix/interface/FileOperations.h>
 
 #include <minerva/matrix/interface/TransposeOperations.h>
+#include <minerva/matrix/interface/CopyOperations.h>
 
 #include <minerva/matrix/interface/Matrix.h>
 #include <minerva/matrix/interface/Dimension.h>
@@ -18,7 +19,64 @@ namespace minerva
 namespace matrix
 {
 
-void save(const std::string& path, const Matrix& input);
+static void addMagic(std::ostream& file)
+{
+    std::string magicString("\x93NUMPY");
+    file.write(const_cast<const char*>(magicString.data()), 6);
+}
+
+
+static void addVersion(std::ostream& file)
+{
+    uint8_t majorVersion = 0x01;
+    uint8_t minorVersion = 0x00;
+
+    file.write(reinterpret_cast<const char*>(&majorVersion), 1);
+    file.write(reinterpret_cast<const char*>(&minorVersion), 1);
+}
+
+static size_t getAlignment(size_t currentSize, size_t alignment)
+{
+    size_t remainder = currentSize % alignment;
+    
+    return remainder == 0 ? 0 : alignment - remainder;
+}
+
+
+static std::string getEncodedPrecision(const Precision& precision)
+{
+    if(precision == SinglePrecision())
+    {
+        return "<f4";
+    }
+    else if(precision == DoublePrecision())
+    {
+        return "<f8";
+    }
+    else if(precision == HalfPrecision())
+    {
+        return "<f2";
+    }
+    
+    return "<f4";
+}
+
+
+static void addHeader(std::ostream& file, const std::string& matrixShapeString, const Precision& matrixPrecision)
+{
+    std::string headerPrefix("{'descr': '" + getEncodedPrecision(matrixPrecision) + "', 'fortran_order': True, 'shape': ");
+    size_t boundaryAlignment = 16;
+    size_t magicAndVersionLength = 10;
+    std::string shapeDim      = "(" + matrixShapeString + "), }";
+    uint8_t remainingBytes    = getAlignment(headerPrefix.size() + shapeDim.size() + 1 + magicAndVersionLength, boundaryAlignment);
+    std::string headerPostfix = std::string(remainingBytes, ' ') + "\n";
+
+    std::string headerString  = headerPrefix + shapeDim + headerPostfix;     
+    uint16_t headerLength     = headerString.size();
+    file.write(reinterpret_cast<const char*>(&headerLength), 2);
+    file.write(reinterpret_cast<const char*>(headerString.data()), headerString.size());
+}
+
 
 static void checkMagic(std::istream& file)
 {
@@ -61,7 +119,7 @@ public:
 
         util::log("FileOperations") << " header length: " << headerLength << std::endl;
     
-        std::string header(' ', headerLength);
+        std::string header(headerLength, ' ');
 
         file.read(const_cast<char*>(header.data()), headerLength);
         
@@ -128,11 +186,11 @@ private:
             
             if(searching)
             {
-                compound += entry;
+                compound += "," + entry;
 
                 if(entry.find(")") != std::string::npos)
                 {
-                    util::log("FileOperations") << "entry: " << compound << "\n";
+                    util::log("FileOperations") << "compound entry: '" << compound << "'\n";
                     entries.push_back(compound);
                     compound.clear();
                     searching = false;
@@ -141,8 +199,11 @@ private:
                 continue;
             }
             
-            util::log("FileOperations") << "entry: " << entry << "\n";
-            entries.push_back(entry);
+            util::log("FileOperations") << "entry: '" << entry << "'\n";
+            if(entry.find(":") != std::string::npos)
+            {
+                entries.push_back(entry);
+            }
         }
 
         for(auto entry : entries)
@@ -216,6 +277,11 @@ Matrix load(const std::string& path)
         throw std::runtime_error("Could not open file containing numpy matrix from " + path);
     }
 
+    return load(file);
+}
+
+Matrix load(std::istream& file)
+{
     checkMagic(file);
     checkVersion(file);
 
@@ -227,13 +293,33 @@ Matrix load(const std::string& path)
 
     if(!header.isFortranOrder())
     {
-        transpose(m, m);
+        transpose(m, copy(m));
     }
 
     return m;
     
 }
 
+void save(const std::string& path, const Matrix& input)
+{
+    std::ofstream file(path, std::ios::binary);
+
+    if(!file.is_open())
+    {
+        throw std::runtime_error("Could not create numpy file to write matrix to, at " + path);
+    }
+    
+    save(file, input);
+}
+
+void save(std::ostream& file, const Matrix& input)
+{
+    addMagic(file);
+    addVersion(file);
+    addHeader(file, input.shapeString(), input.precision());
+
+    file.write(reinterpret_cast<const char*>(input.data()), input.elements() * input.precision().size());
+}
 
 }
 }

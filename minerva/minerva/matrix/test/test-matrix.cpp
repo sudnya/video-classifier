@@ -23,14 +23,40 @@
 // Global Typedefs
 typedef minerva::matrix::Matrix Matrix;
 
-/* A simple test to load from a numpy array */
-bool testLoad()
+/* A simple test to save and load from a numpy array */
+bool testSaveLoad()
 {
-    Matrix matrix = minerva::matrix::load("matrix.npy");
+    //create a matrix
+    Matrix reference (3, 2);
+    reference(0, 0) = 1;
+    reference(0, 1) = 2;
+    reference(1, 0) = 3;
+    reference(1, 1) = 4;
+    reference(2, 0) = 5;
+    reference(2, 1) = 6;
+    
+    //read it into a stream and call save
+    std::stringstream stream;
 
-    std::cout << matrix.toString();
+    //use load to load it from a stream
+    minerva::matrix::save(stream, reference);
+    std::cout << stream.str();
+    
+    //compare reference Matrix to loaded Matrix
+    auto result = minerva::matrix::load(stream);
 
-    return true;
+    if(reference != result)
+    {
+        std::cout << " Matrix save load Test Failed:\n";
+        std::cout << "  result matrix " << result.toString();
+        std::cout << "  does not match reference matrix " << reference.toString();
+    }
+    else
+    {
+        std::cout << " Matrix save load Test Passed\n";
+    }
+
+    return reference == result;
 }
 
 /*
@@ -1344,7 +1370,7 @@ int main(int argc, char** argv)
 
     bool passed = true;
 
-    passed &= testLoad();
+    passed &= testSaveLoad();
 
     passed &= testMultiplySlice();
     passed &= testMultiply();
