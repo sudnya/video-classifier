@@ -15,6 +15,7 @@
 
 // Standard Library Includes
 #include <vector>
+#include <random>
 
 // Forward Declarations
 namespace minerva { namespace neuralnetwork { class NeuralNetwork; } }
@@ -66,7 +67,8 @@ public:
 	void push_back(const Image& image);
 
 public:
-	Matrix getFeatureMatrix(size_t xTileSize, size_t yTileSize, size_t colors) const;
+	Matrix getDownsampledFeatureMatrix(size_t xTileSize, size_t yTileSize, size_t colors) const;
+	Matrix getRandomCropFeatureMatrix(size_t xTileSize, size_t yTileSize, size_t colors, std::default_random_engine& engine) const;
     Matrix getReference(const util::StringVector& labels) const;
 
 private:

@@ -106,7 +106,7 @@ InputVisualDataProducer::InputAndReferencePair InputVisualDataProducer::pop()
     auto imageDimension = getInputSize();
 
     // TODO: specialize this logic
-    auto input = batch.getFeatureMatrix(imageDimension[0], imageDimension[1], imageDimension[2]);
+    auto input = batch.getRandomCropFeatureMatrix(imageDimension[0], imageDimension[1], imageDimension[2], _generator);
     auto reference = batch.getReference(getOutputLabels());
 
     if(getStandardizeInput())
@@ -147,6 +147,8 @@ static void parseImageDatabase(ImageVector& images, VideoVector& videos,
         << path << "'\n";
 
     database::SampleDatabase sampleDatabase(path);
+
+    sampleDatabase.load();
 
     for(auto& sample : sampleDatabase)
     {
@@ -354,8 +356,8 @@ static void getImageBatch(ImageVector& batch, ImageVector& images,
 
     for(size_t i = 0; i < batchSize; ++i)
     {
-        images[randomImageOrder[i]].load();
         batch.push_back(images[randomImageOrder[i]]);
+        batch.back().load();
     }
 
     remainingSamples -= batchSize;

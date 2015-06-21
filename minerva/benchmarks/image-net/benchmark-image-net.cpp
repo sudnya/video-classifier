@@ -10,6 +10,8 @@
 
 #include <minerva/model/interface/Model.h>
 
+#include <minerva/database/interface/SampleDatabase.h>
+
 #include <minerva/results/interface/ResultProcessor.h>
 #include <minerva/results/interface/LabelMatchResultProcessor.h>
 
@@ -42,6 +44,7 @@ typedef minerva::matrix::Matrix Matrix;
 typedef minerva::matrix::Dimension Dimension;
 typedef minerva::model::Model Model;
 typedef minerva::engine::Engine Engine;
+typedef minerva::database::SampleDatabase SampleDatabase;
 typedef minerva::results::LabelMatchResultProcessor LabelMatchResultProcessor;
 
 class Parameters
@@ -50,9 +53,6 @@ public:
     size_t xPixels;
     size_t yPixels;
     size_t colors;
-
-    size_t blockX;
-    size_t blockY;
 
     size_t layerSize;
 
@@ -66,25 +66,22 @@ public:
     size_t maximumSamples;
     bool seed;
 
-public:
-    Parameters()
-    : blockX(3), blockY(3)
-    {
-
-    }
-
 };
 
-
-static void addClassifier(Model& model, const Parameters& parameters)
+static Dimension addConvolutionalLayer(NeuralNetwork& classifier, const Dimension& inputSize, size_t filters)
 {
-    NeuralNetwork classifier;
-
     // conv 3-64 layer
     classifier.addLayer(std::make_unique<ConvolutionalLayer>(
-        Dimension(parameters.xPixels, parameters.yPixels, parameters.colors, 1, 1),
-        Dimension(parameters.blockX, parameters.blockY, parameters.colors, 8),
-        Dimension(1, 1), Dimension(0, 0)));
+        inputSize,
+        Dimension(3, 3, inputSize[2], filters),
+        Dimension(1, 1), Dimension(1, 1)));
+
+    return classifier.back()->getOutputSize();
+}
+
+static Dimension addPoolingLayer(NeuralNetwork& classifier, const Dimension& stride)
+{
+    size_t filters = classifier.back()->getOutputSize()[2];
 
     Dimension poolingSize(classifier.back()->getOutputSize()[0],
         classifier.back()->getOutputSize()[1] * classifier.back()->getOutputSize()[2],
@@ -92,129 +89,86 @@ static void addClassifier(Model& model, const Parameters& parameters)
         1, // mini batch
         1 // time
         );
-    // mean pooling layer
-    classifier.addLayer(std::make_unique<ConvolutionalLayer>(
-        poolingSize,
-        Dimension(2, 2, 1, 1),
-        Dimension(2, 2), Dimension(0, 0)));
-
-/*
-    Dimension convolutionSize(classifier.back()->getOutputSize()[0],
-        classifier.back()->getOutputSize()[1] / 64,
-        64, // color channels
-        1, // mini batch
-        1 // time
-        );
-
-    // conv 3-64 layer
-    classifier.addLayer(std::make_unique<ConvolutionalLayer>(
-        convolutionSize,
-        Dimension(parameters.blockX, parameters.blockY, convolutionSize[2], 16),
-        Dimension(1, 1), Dimension(0, 0)));
-
-    poolingSize = Dimension(classifier.back()->getOutputSize()[0],
-        classifier.back()->getOutputSize()[1] * classifier.back()->getOutputSize()[2],
-        1, // color channels
-        1, // mini batch
-        1 // time
-        );
 
     // mean pooling layer
     classifier.addLayer(std::make_unique<ConvolutionalLayer>(
         poolingSize,
-        Dimension(2, 2, 1, 1),
-        Dimension(2, 2), Dimension(0, 0)));
-*/
-/*
-    // conv 3-128 layer
-    classifier.addLayer(std::make_unique<ConvolutionalLayer>(
-        classifier.back()->getOutputSize(),
-        Dimension(parameters.blockX, parameters.blockY, classifier.back()->getOutputSize()[2], 128),
-        Dimension(1, 1), Dimension(0, 0)));
-    // mean pooling layer
-    classifier.addLayer(std::make_unique<ConvolutionalLayer>(
-        classifier.back()->getOutputSize(),
-        Dimension(2, 2, classifier.back()->getOutputSize()[2], 1),
-        Dimension(2, 2), Dimension(0, 0)));
+        Dimension(stride[0], stride[1], 1, 1),
+        stride, Dimension(0, 0)));
 
-    // conv 3-256 layer
-    classifier.addLayer(std::make_unique<ConvolutionalLayer>(
-        classifier.back()->getOutputSize(),
-        Dimension(parameters.blockX, parameters.blockY, classifier.back()->getOutputSize()[2], 256),
-        Dimension(1, 1), Dimension(0, 0)));
+    return Dimension(classifier.back()->getOutputSize()[0],
+        classifier.back()->getOutputSize()[1] / filters,
+        filters, // color channels
+        1, // mini batch
+        1 // time
+        );
+}
 
-    // conv 3-256 layer
-    classifier.addLayer(std::make_unique<ConvolutionalLayer>(
-        classifier.back()->getOutputSize(),
-        Dimension(parameters.blockX, parameters.blockY, classifier.back()->getOutputSize()[2], 256),
-        Dimension(1, 1), Dimension(0, 0)));
+static void addClassifier(Model& model, const Parameters& parameters)
+{
+    NeuralNetwork classifier;
 
-    // mean pooling layer
-    classifier.addLayer(std::make_unique<ConvolutionalLayer>(
-        classifier.back()->getOutputSize(),
-        Dimension(2, 2, classifier.back()->getOutputSize()[2], 1),
-        Dimension(2, 2), Dimension(0, 0)));
+    addConvolutionalLayer(classifier,
+        {parameters.xPixels, parameters.yPixels, parameters.colors, 1, 1}, std::max(16UL, parameters.layerSize/64));
 
-    // conv 3-512 layer
-    classifier.addLayer(std::make_unique<ConvolutionalLayer>(
-        classifier.back()->getOutputSize(),
-        Dimension(parameters.blockX, parameters.blockY, classifier.back()->getOutputSize()[2], 512),
-        Dimension(1, 1), Dimension(0, 0)));
+    auto inputSize = addPoolingLayer(classifier, {2, 2});
 
-    // conv 3-512 layer
-    classifier.addLayer(std::make_unique<ConvolutionalLayer>(
-        classifier.back()->getOutputSize(),
-        Dimension(parameters.blockX, parameters.blockY, classifier.back()->getOutputSize()[2], 512),
-        Dimension(1, 1), Dimension(0, 0)));
 
-    // mean pooling layer
-    classifier.addLayer(std::make_unique<ConvolutionalLayer>(
-        classifier.back()->getOutputSize(),
-        Dimension(2, 2, classifier.back()->getOutputSize()[2], 1),
-        Dimension(2, 2), Dimension(0, 0)));
+    if(parameters.layerSize > 256)
+    {
+        inputSize = addConvolutionalLayer(classifier, inputSize, parameters.layerSize/32);
+        inputSize = addPoolingLayer(classifier, {2, 2});
 
-    // conv 3-512 layer
-    classifier.addLayer(std::make_unique<ConvolutionalLayer>(
-        classifier.back()->getOutputSize(),
-        Dimension(parameters.blockX, parameters.blockY, classifier.back()->getOutputSize()[2], 512),
-        Dimension(1, 1), Dimension(0, 0)));
+        inputSize = addConvolutionalLayer(classifier, inputSize, parameters.layerSize/16);
+        inputSize = addConvolutionalLayer(classifier, inputSize, parameters.layerSize/16);
+        inputSize = addPoolingLayer(classifier, {2, 2});
+    }
 
-    // conv 3-512 layer
-    classifier.addLayer(std::make_unique<ConvolutionalLayer>(
-        classifier.back()->getOutputSize(),
-        Dimension(parameters.blockX, parameters.blockY, classifier.back()->getOutputSize()[2], 512),
-        Dimension(1, 1), Dimension(0, 0)));
+    if(parameters.layerSize > 256)
+    {
+        inputSize = addConvolutionalLayer(classifier, inputSize, parameters.layerSize/8);
+        inputSize = addConvolutionalLayer(classifier, inputSize, parameters.layerSize/8);
+        inputSize = addPoolingLayer(classifier, {2, 2});
+    }
 
-    // mean pooling layer
-    classifier.addLayer(std::make_unique<ConvolutionalLayer>(
-        classifier.back()->getOutputSize(),
-        Dimension(2, 2, classifier.back()->getOutputSize()[2], 1),
-        Dimension(2, 2), Dimension(0, 0)));
-*/
+
+    if(parameters.layerSize > 1024)
+    {
+        inputSize = addConvolutionalLayer(classifier, inputSize, parameters.layerSize/8);
+        inputSize = addConvolutionalLayer(classifier, inputSize, parameters.layerSize/8);
+        inputSize = addPoolingLayer(classifier, {2, 2});
+    }
+
     // connect the network
-//    classifier.addLayer(std::make_unique<FeedForwardLayer>(classifier.back()->getOutputCount(), parameters.layerSize));
+    if(parameters.layerSize > 256)
+    {
+        classifier.addLayer(std::make_unique<FeedForwardLayer>(classifier.back()->getOutputCount(), parameters.layerSize));
+    }
+
     classifier.addLayer(std::make_unique<FeedForwardLayer>(classifier.back()->getOutputCount(), parameters.layerSize));
 
-    classifier.addLayer(std::make_unique<FeedForwardLayer>(classifier.back()->getOutputCount(), 10));
+    SampleDatabase inputDatabase(parameters.inputPath);
+    inputDatabase.load();
+
+    auto labels = inputDatabase.getAllPossibleLabels();
+
+    classifier.addLayer(std::make_unique<FeedForwardLayer>(classifier.back()->getOutputCount(), labels.size()));
+
+    size_t index = 0;
+
+    for(auto& label : labels)
+    {
+        model.setOutputLabel(index++, label);
+    }
 
     classifier.setCostFunction(minerva::network::CostFunctionFactory::create("SoftMaxCostFunction"));
+    //classifier.setCostFunction(minerva::network::CostFunctionFactory::create("SumOfSquaresCostFunction"));
 
     classifier.initialize();
 
-    model.setOutputLabel(0, "bird");
-    model.setOutputLabel(1, "covering");
-    model.setOutputLabel(2, "device");
-    model.setOutputLabel(3, "food");
-    model.setOutputLabel(4, "herb");
-    model.setOutputLabel(5, "mammal");
-    model.setOutputLabel(6, "plant");
-    model.setOutputLabel(7, "structure");
-    model.setOutputLabel(8, "tree");
-    model.setOutputLabel(9, "person");
-
     model.setNeuralNetwork("Classifier", classifier);
 
-    minerva::util::log("Benchmark-IMAGE-NET") << "Classifier Architecture " << classifier.shapeString() << "\n";
+    minerva::util::log("BenchmarkImageNet") << "Classifier Architecture " << classifier.shapeString() << "\n";
 }
 
 static void createModel(Model& model, const Parameters& parameters)
@@ -269,7 +223,7 @@ static double testNetwork(Model& model, const Parameters& parameters)
     // get the result processor
     auto resultProcessor = static_cast<LabelMatchResultProcessor*>(engine->getResultProcessor());
 
-    minerva::util::log("Benchmark-IMAGE-NET") << resultProcessor->toString();
+    minerva::util::log("BenchmarkImageNet") << resultProcessor->toString();
 
     return resultProcessor->getAccuracy();
 }
@@ -282,7 +236,7 @@ static void runBenchmark(const Parameters& parameters)
     }
     else
     {
-        minerva::matrix::srand(477);
+        minerva::matrix::srand(377);
     }
 
     // Create a deep model for first layer classification
@@ -371,7 +325,7 @@ int main(int argc, char** argv)
         minerva::util::enableSpecificLogs(loggingEnabledModules);
     }
 
-    minerva::util::log("Benchmark-image-net") << "Benchmark begins\n";
+    minerva::util::log("BenchmarkImageNet") << "Benchmark begins\n";
 
     try
     {

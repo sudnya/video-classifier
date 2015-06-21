@@ -41,7 +41,7 @@ public:
 public:
 	size_t x() const;
 	size_t y() const;
-	
+
 	size_t colorComponents() const;
 	size_t pixelSize() const;
 	size_t totalSize() const;
@@ -58,9 +58,10 @@ public:
 	void addTextToDisplay(const std::string& text) const;
 	void waitForKeyPress() const;
 	void deleteWindow() const;
-	
+
 public:
     bool loaded() const;
+    bool headerLoaded() const;
 	void load();
 	void loadHeader();
 	void save();
@@ -71,13 +72,13 @@ public:
 
 public:
 	void invalidateCache();
-	
+
 public:
 	ByteVector& getRawData();
 
 public:
 	Image downsample(size_t x, size_t y, size_t colors) const;
-	 
+
 public:
 	double getComponentAt(size_t position) const;
 	double getComponentAt(size_t x, size_t y, size_t color) const;
@@ -90,10 +91,10 @@ public:
 
 public:
 	static bool isPathAnImage(const std::string& path);
-	
+
 private:
 	void _loadImageHeader();
-	
+
 private:
 	std::string _path;
 	std::string _label;
@@ -106,7 +107,7 @@ private:
 	size_t _y;
 	size_t _colorComponents;
 	size_t _pixelSize;
-	
+
 	ByteVector _pixels;
 
 };

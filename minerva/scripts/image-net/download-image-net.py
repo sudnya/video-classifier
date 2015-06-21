@@ -9,6 +9,8 @@ import os
 from optparse import OptionParser
 import socket
 import imghdr
+import Queue
+from threading import Thread
 
 import urlparse
 
@@ -66,6 +68,21 @@ def getImageUrlsForTerm(term):
 
     return urls
 
+def getImageUrlsForTermAndSubclassesRecurse(urls, term, classes, remainingImages):
+    urls.extend(getImageUrlsForTerm(term))
+
+    for child in classes[term][1]:
+        if len(urls) >= remainingImages:
+            break
+        getImageUrlsForTermAndSubclassesRecurse(urls, child, classes, remainingImages)
+
+def getImageUrlsForTermAndSubclasses(term, classes, remainingImages):
+    urls = []
+
+    getImageUrlsForTermAndSubclassesRecurse(urls, term, classes, remainingImages)
+
+    return urls
+
 def isValidTerm(term):
     return len(getImageUrlsForTerm(term)) > 0
 
@@ -108,6 +125,14 @@ def isValidImage(path):
 
     return True
 
+class IgnorePasswordURLOpener(urllib.FancyURLopener):
+    def __init__():
+        super(IgnorePasswordURLOpener, self).__init__()
+
+    def prompt_user_passwd(self, host, realm):
+        return ("username", "password")
+
+
 def downloadImage(path, url):
 
     createDirectories(path)
@@ -121,7 +146,9 @@ def downloadImage(path, url):
             return False
 
     try:
-        urllib.urlretrieve(url, path)
+        IgnorePasswordURLOpener urlopener;
+
+        urlopener.retrieve(url, path)
 
         if not isValidImage(path):
             print " Download succeeded, but file is not an image"
@@ -135,20 +162,44 @@ def downloadImage(path, url):
         cleanDestination(path)
         return False
 
-def downloadImagesForTerms(selectedTermIds, options):
+class Downloader(Thread):
+    def __init__(self, file_url, save_path):
+        super(Downloader, self).__init__()
+
+        self.file_url = file_url
+        self.save_path = save_path
+        self.result = False
+
+    def run(self):
+        self.result = downloadImage(self.save_path, self.file_url)
+
+def updateSampleDatabase(destinationDirectory, term):
+    path = os.path.join(destinationDirectory, "database.txt")
+
+    createDirectories(path)
+
+    databaseFile = open(path, 'a')
+
+    databaseFile.write(getDirectoryForTerm(term) + ", " + getDirectoryForTerm(term) + "\n")
+
+
+def downloadImagesForTerms(selectedTermIds, classes, options):
 
     destinationDirectory = options.output_path
     imageCount = 0
 
     for term in selectedTermIds:
+
+        updateSampleDatabase(desintationDirectory, term)
+
         print 'For term: \'' + term + "\'"
         termName = getNameForTerm(term)
 
         print ' Downloading all images that match the term: \'' + getDirectoryForTerm(termName) + "\'"
 
-        imageUrls = getImageUrlsForTerm(term)
-
         remainingImages = int(options.maximum_images) - imageCount
+
+        imageUrls = getImageUrlsForTermAndSubclasses(term, classes, remainingImages)
 
         if len(imageUrls) > remainingImages:
             imageUrls = imageUrls[:remainingImages]
@@ -156,18 +207,43 @@ def downloadImagesForTerms(selectedTermIds, options):
         print '  found ' + str(len(imageUrls)) + " images"
 
         imageId = 0
+        threadCount = 100
+        timeout = 3.0
 
-        for imageUrl in imageUrls:
-            target = formDirectoryName(destinationDirectory, getDirectoryForTerm(termName), imageId)
+        for index in range(0, len(imageUrls), threadCount):
 
-            if downloadImage(target, imageUrl):
+            threads = []
+
+            for threadId in range(threadCount):
+                i = index + threadId
+
+                if i >= len(imageUrls):
+                    continue
+
+                imageUrl = imageUrls[i]
+
+                target = formDirectoryName(destinationDirectory, getDirectoryForTerm(termName), i) + '.tmp'
+
+                threads.append(Downloader(imageUrl, target))
+                threads[-1].start()
+
+            for thread in threads:
+                thread.join(timeout)
+
+                if not thread.result:
+                    continue
+
+                target = formDirectoryName(destinationDirectory, getDirectoryForTerm(termName), imageId)
+
+                os.rename(thread.save_path, target)
+
                 updateMetadata(destinationDirectory, termName, imageUrl, imageId)
 
                 imageId += 1
                 imageCount += 1
 
-                if imageId >= int(options.maximum_images_per_term):
-                    break
+            if imageId >= int(options.maximum_images_per_term):
+                break
 
         if imageCount >= int(options.maximum_images):
             break
@@ -190,8 +266,13 @@ def fillInChildCounts(term, classes):
     return count
 
 def selectTerms(selectedCount):
+    print 'Downloading all terms'
     allTerms = getAllTerms()
+    print ' got ' + str(len(allTerms))
+
+    print 'Downloading all relationships'
     isARelationships = getIsARelationships()
+    print ' got ' + str(len(isARelationships))
 
     classes = {}
 
@@ -237,7 +318,7 @@ def selectTerms(selectedCount):
         for parent in classes[rootTerm][0]:
             selected.discard(parent)
 
-    return selected
+    return selected, classes
 
 def main():
     socket.setdefaulttimeout(10.0)
@@ -257,11 +338,11 @@ def main():
     if options.clean:
         cleanDestination(destinationDirectory)
 
-    selectedTermIds = selectTerms(int(options.terms))
+    selectedTermIds, classes = selectTerms(int(options.terms))
 
     print 'Selected', str(len(selectedTermIds)), 'terms, each with', options.maximum_images_per_term, 'images'
 
-    downloadImagesForTerms(selectedTermIds, options)
+    downloadImagesForTerms(selectedTermIds, classes, options)
 
 
 main()

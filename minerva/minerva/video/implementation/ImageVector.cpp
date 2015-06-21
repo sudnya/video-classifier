@@ -87,7 +87,7 @@ void ImageVector::clear()
     _images.clear();
 }
 
-ImageVector::Matrix ImageVector::getFeatureMatrix(size_t xTileSize, size_t yTileSize, size_t colors) const
+ImageVector::Matrix ImageVector::getDownsampledFeatureMatrix(size_t xTileSize, size_t yTileSize, size_t colors) const
 {
     size_t images = _images.size();
 
@@ -113,6 +113,50 @@ ImageVector::Matrix ImageVector::getFeatureMatrix(size_t xTileSize, size_t yTile
     }
 
     util::log("ImageVector") << "Input image:" << matrix.toString();
+
+    return matrix;
+}
+
+ImageVector::Matrix ImageVector::getRandomCropFeatureMatrix(size_t xTileSize, size_t yTileSize,
+    size_t colors, std::default_random_engine& randomEngine) const
+{
+    size_t images = _images.size();
+
+    Matrix matrix({xTileSize, yTileSize, colors, images, 1});
+
+    size_t offset = 0;
+    for(auto& image : _images)
+    {
+        size_t sampleXTileSize = std::min(xTileSize, image.x());
+        size_t sampleYTileSize = std::min(yTileSize, image.y());
+        size_t sampleColors    = std::min(colors,    image.colorComponents());
+
+        size_t xRemainder = image.x() - sampleXTileSize;
+        size_t yRemainder = image.y() - sampleYTileSize;
+
+        size_t xOffset = std::uniform_int_distribution<size_t>(0, xRemainder)(randomEngine);
+        size_t yOffset = std::uniform_int_distribution<size_t>(0, yRemainder)(randomEngine);
+
+        auto sample = image.getTile(xOffset, yOffset, sampleXTileSize, sampleYTileSize, sampleColors);
+
+        for(size_t c = 0; c < sampleColors; ++c)
+        {
+            for(size_t y = 0; y < sampleYTileSize; ++y)
+            {
+                for(size_t x = 0; x < sampleXTileSize; ++x)
+                {
+                    matrix(x, y, c, offset, 0) = sample.getComponentAt(x, y, c);
+                }
+            }
+        }
+
+        ++offset;
+    }
+
+    if(util::isLogEnabled("ImageVector::Detail"))
+    {
+        util::log("ImageVector::Detail") << "Input image:" << matrix.toString();
+    }
 
     return matrix;
 }
