@@ -9,16 +9,24 @@
 #include <minerva/database/interface/SampleDatabaseParser.h>
 #include <minerva/database/interface/Sample.h>
 
+// Standard Library Includes
+#include <fstream>
+#include <stdexcept>
+
 namespace minerva
 {
 
 namespace database
 {
 
+SampleDatabase::SampleDatabase()
+{
+}
+
 SampleDatabase::SampleDatabase(const std::string& path)
 : _path(path)
 {
-	_parse();
+
 }
 
 SampleDatabase::~SampleDatabase()
@@ -34,13 +42,6 @@ SampleDatabase::StringVector SampleDatabase::getAllPossibleLabels() const
 size_t SampleDatabase::getTotalLabelCount() const
 {
 	return _labels.size();
-}
-
-void SampleDatabase::_parse()
-{
-	SampleDatabaseParser parser(this);
-
-	parser.parse();
 }
 
 SampleDatabase::iterator SampleDatabase::begin()
@@ -77,7 +78,7 @@ const std::string& SampleDatabase::path() const
 {
 	return _path;
 }
-	
+
 bool SampleDatabase::containsVideoSamples() const
 {
 	for(auto& sample : _samples)
@@ -87,7 +88,7 @@ bool SampleDatabase::containsVideoSamples() const
 			return true;
 		}
 	}
-	
+
 	return false;
 }
 
@@ -100,7 +101,7 @@ bool SampleDatabase::containsImageSamples() const
 			return true;
 		}
 	}
-	
+
 	return false;
 }
 
@@ -127,6 +128,36 @@ void SampleDatabase::addSample(const Sample& sample)
 void SampleDatabase::addLabel(const std::string& label)
 {
 	_labels.insert(label);
+}
+
+void SampleDatabase::save() const
+{
+    std::ofstream output(path());
+
+    if(!output.is_open())
+    {
+        throw std::runtime_error("Failed to open database file '" + path() + "' for writing.");
+    }
+
+    for(auto& sample : *this)
+    {
+        auto entry = sample.path() + ", " + sample.label() + "\n";
+
+        output.write(entry.c_str(), entry.size());
+
+        if(!output.good())
+        {
+            throw std::runtime_error("Failed to save sample '" + sample.path() +
+                "' to database file '" + path() + "'");
+        }
+    }
+}
+
+void SampleDatabase::load()
+{
+	SampleDatabaseParser parser(this);
+
+	parser.parse();
 }
 
 }

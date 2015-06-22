@@ -46,6 +46,8 @@ InputDataProducer* InputDataProducerFactory::createForDatabase(const std::string
 {
     database::SampleDatabase database(databaseName);
 
+    database.load();
+
     if(database.containsAudioSamples())
     {
         return create("InputAudioDataProducer", databaseName);

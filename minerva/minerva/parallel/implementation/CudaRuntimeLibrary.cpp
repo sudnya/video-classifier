@@ -10,6 +10,7 @@
 #include <minerva/parallel/interface/cuda.h>
 
 #include <minerva/util/interface/Casts.h>
+#include <minerva/util/interface/Knobs.h>
 
 // Standard Library Includes
 #include <stdexcept>
@@ -215,6 +216,7 @@ void CudaRuntimeLibrary::Interface::load()
 {
     if(_failed)  return;
     if(loaded()) return;
+    if(!util::KnobDatabase::getKnobValue("Cuda::Enable", 1)) return;
 
     #ifdef __APPLE__
     const char* libraryName = "libcudart.dylib";

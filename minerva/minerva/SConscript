@@ -17,6 +17,9 @@ programs = []
 programs.append(env.Program('minerva-classifier', \
     ['tools/minerva-classifier.cpp'], LIBS=minerva_libs))
 
+programs.append(env.Program('minerva-make-dataset', \
+    ['tools/minerva-make-dataset.cpp'], LIBS=minerva_libs))
+
 programs.append(env.Program('test-classifier', \
     ['engine/test/test-classifier.cpp'], LIBS=minerva_libs))
 
