@@ -131,11 +131,11 @@ ImageVector::Matrix ImageVector::getRandomCropFeatureMatrix(size_t xTileSize, si
         size_t sampleYTileSize = std::min(yTileSize, image.y());
         size_t sampleColors    = std::min(colors,    image.colorComponents());
 
-        size_t xRemainder = image.x() - sampleXTileSize;
-        size_t yRemainder = image.y() - sampleYTileSize;
+        //size_t xRemainder = image.x() - sampleXTileSize;
+        //size_t yRemainder = image.y() - sampleYTileSize;
 
-        size_t xOffset = std::uniform_int_distribution<size_t>(0, xRemainder)(randomEngine);
-        size_t yOffset = std::uniform_int_distribution<size_t>(0, yRemainder)(randomEngine);
+        size_t xOffset = 0;//std::uniform_int_distribution<size_t>(0, xRemainder)(randomEngine);
+        size_t yOffset = 0;//std::uniform_int_distribution<size_t>(0, yRemainder)(randomEngine);
 
         auto sample = image.getTile(xOffset, yOffset, sampleXTileSize, sampleYTileSize, sampleColors);
 

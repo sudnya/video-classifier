@@ -106,7 +106,20 @@ InputVisualDataProducer::InputAndReferencePair InputVisualDataProducer::pop()
     auto imageDimension = getInputSize();
 
     // TODO: specialize this logic
-    auto input = batch.getRandomCropFeatureMatrix(imageDimension[0], imageDimension[1], imageDimension[2], _generator);
+    Matrix input;
+
+    bool shouldCropImages = util::KnobDatabase::getKnobValue(
+        "InputVisualDataProducer::CropImages", false);
+
+    if(shouldCropImages)
+    {
+        input = batch.getRandomCropFeatureMatrix(imageDimension[0], imageDimension[1], imageDimension[2], _generator);
+    }
+    else
+    {
+        input = batch.getDownsampledFeatureMatrix(imageDimension[0], imageDimension[1], imageDimension[2]);
+    }
+
     auto reference = batch.getReference(getOutputLabels());
 
     if(getStandardizeInput())

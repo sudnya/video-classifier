@@ -108,16 +108,17 @@ static void addClassifier(Model& model, const Parameters& parameters)
 {
     NeuralNetwork classifier;
 
-    addConvolutionalLayer(classifier,
-        {parameters.xPixels, parameters.yPixels, parameters.colors, 1, 1}, std::max(16UL, parameters.layerSize/64));
+    Dimension inputSize(parameters.xPixels, parameters.yPixels, parameters.colors, 1, 1);
 
-    auto inputSize = addPoolingLayer(classifier, {2, 2});
+    inputSize = addConvolutionalLayer(classifier, inputSize, std::max(16UL, parameters.layerSize/64));
 
+    inputSize = addPoolingLayer(classifier, {2, 2});
+
+    inputSize = addConvolutionalLayer(classifier, inputSize, std::max(32UL, parameters.layerSize/32));
+    inputSize = addPoolingLayer(classifier, {2, 2});
 
     if(parameters.layerSize > 256)
     {
-        inputSize = addConvolutionalLayer(classifier, inputSize, parameters.layerSize/32);
-        inputSize = addPoolingLayer(classifier, {2, 2});
 
         inputSize = addConvolutionalLayer(classifier, inputSize, parameters.layerSize/16);
         inputSize = addConvolutionalLayer(classifier, inputSize, parameters.layerSize/16);
@@ -140,11 +141,7 @@ static void addClassifier(Model& model, const Parameters& parameters)
     }
 
     // connect the network
-    if(parameters.layerSize > 256)
-    {
-        classifier.addLayer(std::make_unique<FeedForwardLayer>(classifier.back()->getOutputCount(), parameters.layerSize));
-    }
-
+    classifier.addLayer(std::make_unique<FeedForwardLayer>(classifier.back()->getOutputCount(), parameters.layerSize));
     classifier.addLayer(std::make_unique<FeedForwardLayer>(classifier.back()->getOutputCount(), parameters.layerSize));
 
     SampleDatabase inputDatabase(parameters.inputPath);
@@ -187,7 +184,7 @@ static void setSampleStatistics(Model& model, const Parameters& parameters)
 
     engine->setModel(&model);
     engine->setBatchSize(128);
-    engine->setMaximumSamplesToRun(std::min(1024UL, parameters.maximumSamples/10));
+    engine->setMaximumSamplesToRun(256UL);
 
     // read from database and use model to train
     engine->runOnDatabaseFile(parameters.inputPath);
@@ -215,7 +212,7 @@ static double testNetwork(Model& model, const Parameters& parameters)
     engine->setBatchSize(128);
     engine->setModel(&model);
     engine->setStandardizeInput(true);
-    engine->setMaximumSamplesToRun(parameters.maximumSamples/10);
+    engine->setMaximumSamplesToRun(std::max(1024UL, parameters.maximumSamples/10));
 
     // read from database and use model to test
     engine->runOnDatabaseFile(parameters.testPath);
@@ -265,11 +262,11 @@ static void runBenchmark(const Parameters& parameters)
 
 static void setupSolverParameters()
 {
-    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::LearningRate", "1.0e-3");
+    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::LearningRate", "1.0e-2");
     minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::Momentum", "0.9");
     minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::AnnealingRate", "1.00001");
     minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::MaxGradNorm", "10.0");
-    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::IterationsPerBatch", "1");
+    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::IterationsPerBatch", "500");
     minerva::util::KnobDatabase::setKnob("GeneralDifferentiableSolver::Type", "NesterovAcceleratedGradientSolver");
     //minerva::util::KnobDatabase::setKnob("GeneralDifferentiableSolver::Type", "LBFGSSolver");
 }
@@ -302,7 +299,7 @@ int main(int argc, char** argv)
         "(comma-separated list of modules, e.g. NeuralNetwork, Layer, ...).");
 
     parser.parse("-s", "--seed", parameters.seed, false, "Seed with time.");
-    parser.parse("-S", "--maximum-samples", parameters.maximumSamples, 8000, "The maximum number of samples to train/test on.");
+    parser.parse("-S", "--maximum-samples", parameters.maximumSamples, 100000, "The maximum number of samples to train/test on.");
 
     parser.parse("-x", "--x-pixels", parameters.xPixels, 224, "The number of X pixels to consider from the input image.");
     parser.parse("-y", "--y-pixels", parameters.yPixels, 224, "The number of Y pixels to consider from the input image.");
