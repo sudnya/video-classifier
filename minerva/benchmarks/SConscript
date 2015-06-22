@@ -1,0 +1,22 @@
+#! /usr/bin/python
+
+################################################################################
+#    \file   SConscript
+#    \author Gregory Diamos <solusstultus@gmail.com>
+#    \date   June 13, 2015
+#    \brief  The SCons program build script for minerva benchmarks
+################################################################################
+
+
+Import('env')
+
+minerva_libs = env['MINERVA_LIBS']
+
+programs = []
+
+programs.append(env.Program('benchmark-imagenet', \
+    ['image-net/benchmark-image-net.cpp'], LIBS=minerva_libs))
+
+Return('programs')
+
+

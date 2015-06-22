@@ -5,7 +5,7 @@
 */
 
 // Minerva Includes
-#include <minerva/matrix/interface/CudaRuntimeLibrary.h>
+#include <minerva/parallel/interface/CudaRuntimeLibrary.h>
 
 #include <minerva/parallel/interface/cuda.h>
 
@@ -20,7 +20,7 @@
 namespace minerva
 {
 
-namespace matrix
+namespace parallel
 {
 
 void CudaRuntimeLibrary::load()
@@ -33,6 +33,7 @@ bool CudaRuntimeLibrary::loaded()
 	load();
 
     return _interface.loaded();
+
 }
 
 void CudaRuntimeLibrary::cudaSetDevice(int device)
@@ -40,14 +41,26 @@ void CudaRuntimeLibrary::cudaSetDevice(int device)
     _check();
 
     int status = (*_interface.cudaSetDevice)(device);
-    
+
     if(status != cudaSuccess)
     {
-        throw std::runtime_error("Cuda malloc failed: " +
+        throw std::runtime_error("Cuda set device failed: " +
             cudaGetErrorString(status));
     }
 }
 
+void CudaRuntimeLibrary::cudaDeviceSynchronize()
+{
+    _check();
+
+    int status = (*_interface.cudaDeviceSynchronize)();
+
+    if(status != cudaSuccess)
+    {
+        throw std::runtime_error("Cuda device synchronize failed: " +
+            cudaGetErrorString(status));
+    }
+}
 
 void* CudaRuntimeLibrary::cudaMalloc(size_t bytes)
 {
@@ -56,16 +69,56 @@ void* CudaRuntimeLibrary::cudaMalloc(size_t bytes)
     void* address = nullptr;
 
     int status = (*_interface.cudaMalloc)(&address, bytes);
-    
+
     if(status != cudaSuccess)
     {
         throw std::runtime_error("Cuda malloc failed: " +
             cudaGetErrorString(status));
     }
-    
-    util::log("CudaRuntimeLibrary") << " CUDA allocated memory (address: "
-        << address << ", " << bytes << " bytes)\n";
-        
+
+    //util::log("CudaRuntimeLibrary") << " CUDA allocated memory (address: "
+    //    << address << ", " << bytes << " bytes)\n";
+
+    return address;
+}
+
+void* CudaRuntimeLibrary::cudaMallocManaged(size_t bytes)
+{
+    _check();
+
+    void* address = nullptr;
+
+    int status = (*_interface.cudaMallocManaged)(&address, bytes, 1);
+
+    if(status != cudaSuccess)
+    {
+        throw std::runtime_error("Cuda malloc managed failed: " +
+            cudaGetErrorString(status));
+    }
+
+    //util::log("CudaRuntimeLibrary") << " CUDA allocated memory (address: "
+    //    << address << ", " << bytes << " bytes)\n";
+
+    return address;
+}
+
+void* CudaRuntimeLibrary::cudaHostAlloc(size_t bytes)
+{
+    _check();
+
+    void* address = nullptr;
+
+    int status = (*_interface.cudaHostAlloc)(&address, bytes, cudaHostAllocMapped);
+
+    if(status != cudaSuccess)
+    {
+        throw std::runtime_error("Cuda host alloc failed: " +
+            cudaGetErrorString(status));
+    }
+
+    //util::log("CudaRuntimeLibrary") << " CUDA allocated memory (address: "
+    //    << address << ", " << bytes << " bytes)\n";
+
     return address;
 }
 
@@ -73,20 +126,42 @@ void CudaRuntimeLibrary::cudaFree(void* ptr)
 {
     _check();
 
-    (*_interface.cudaFree)(ptr);
+    int status = (*_interface.cudaFree)(ptr);
 
-    util::log("CudaRuntimeLibrary") << " CUDA freed memory (address: "
-        << ptr << ")\n";
+    if(status != cudaSuccess)
+    {
+        throw std::runtime_error("Cuda free failed: " +
+            cudaGetErrorString(status));
+    }
+
+    //util::log("CudaRuntimeLibrary") << " CUDA freed memory (address: "
+    //    << ptr << ")\n";
 }
 
-void CudaRuntimeLibrary::cudaMemcpy(void* dest, const void* src, size_t bytes, 
+void CudaRuntimeLibrary::cudaFreeHost(void* ptr)
+{
+    _check();
+
+    int status = (*_interface.cudaFreeHost)(ptr);
+
+    if(status != cudaSuccess)
+    {
+        throw std::runtime_error("Cuda free host failed: " +
+            cudaGetErrorString(status));
+    }
+
+    //util::log("CudaRuntimeLibrary") << " CUDA freed memory (address: "
+    //    << ptr << ")\n";
+}
+
+void CudaRuntimeLibrary::cudaMemcpy(void* dest, const void* src, size_t bytes,
     cudaMemcpyKind kind)
 {
     _check();
 
-    util::log("CudaRuntimeLibrary") << " CUDA memcpy (destination address: "
-        << dest << ", source address: " << src << ", " << bytes
-        << " bytes)\n";
+    //util::log("CudaRuntimeLibrary") << " CUDA memcpy (destination address: "
+    //    << dest << ", source address: " << src << ", " << bytes
+    //    << " bytes)\n";
 
     int status = (*_interface.cudaMemcpy)(dest, src, bytes, kind);
 
@@ -100,14 +175,14 @@ void CudaRuntimeLibrary::cudaMemcpy(void* dest, const void* src, size_t bytes,
 std::string CudaRuntimeLibrary::cudaGetErrorString(int error)
 {
     _check();
-    
+
     return (*_interface.cudaGetErrorString)(error);
 }
 
 void CudaRuntimeLibrary::_check()
 {
     load();
-    
+
     if(!loaded())
     {
         throw std::runtime_error("Tried to call CUDA runtime function when "
@@ -140,8 +215,7 @@ void CudaRuntimeLibrary::Interface::load()
 {
     if(_failed)  return;
     if(loaded()) return;
-	if(!parallel::isCudaEnabled()) return;
-    
+
     #ifdef __APPLE__
     const char* libraryName = "libcudart.dylib";
     #else
@@ -162,18 +236,22 @@ void CudaRuntimeLibrary::Interface::load()
 
     try
     {
-    
+
         #define DynLink( function ) \
             util::bit_cast(function, dlsym(_library, #function)); \
             checkFunction((void*)function, #function)
-            
+
         DynLink(cudaSetDevice);
+        DynLink(cudaDeviceSynchronize);
         DynLink(cudaMalloc);
+        DynLink(cudaMallocManaged);
+        DynLink(cudaHostAlloc);
         DynLink(cudaFree);
+        DynLink(cudaFreeHost);
         DynLink(cudaMemcpy);
         DynLink(cudaGetErrorString);
-        
-        #undef DynLink    
+
+        #undef DynLink
 
         CudaRuntimeLibrary::cudaSetDevice(0);
 

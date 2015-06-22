@@ -2,6 +2,7 @@
 
 // Minerva Includes
 #include <minerva/parallel/interface/Memory.h>
+#include <minerva/parallel/interface/CudaRuntimeLibrary.h>
 
 // Standard Library Includes
 #include <cstdlib>
@@ -13,23 +14,34 @@ namespace parallel
 
 void* malloc(size_t size)
 {
-	#ifdef __NVCC__
-	void* address = nullptr;
-	CudaRuntime::cudaMallocManaged(&address, size);
-	
-	return address;
-	#else
-	return std::malloc(size);
-	#endif
+    if(CudaRuntimeLibrary::loaded())
+    {
+        #ifdef __APPLE__
+        return CudaRuntimeLibrary::cudaHostAlloc(size);
+        #else
+        return CudaRuntimeLibrary::cudaMallocManaged(size);
+        #endif
+    }
+    else
+    {
+	    return std::malloc(size);
+    }
 }
 
 void free(void* address)
 {
-	#ifdef __NVCC__
-	CudaRuntime::cudaFree(address);
-	#else
-	std::free(address);
-	#endif
+    if(CudaRuntimeLibrary::loaded())
+    {
+        #ifdef __APPLE__
+        return CudaRuntimeLibrary::cudaFreeHost(address);
+        #else
+        return CudaRuntimeLibrary::cudaFree(address);
+        #endif
+	}
+    else
+    {
+        std::free(address);
+    }
 }
 
 }

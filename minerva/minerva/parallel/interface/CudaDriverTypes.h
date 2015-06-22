@@ -9,7 +9,7 @@
 namespace minerva
 {
 
-namespace matrix
+namespace parallel
 {
 
 // Primitive types

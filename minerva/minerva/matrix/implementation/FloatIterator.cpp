@@ -1,7 +1,7 @@
 
 // Minerva Includes
 #include <minerva/matrix/interface/FloatIterator.h>
-#include <minerva/matrix/interface/MatrixTransformations.h>
+#include <minerva/matrix/interface/DimensionTransformations.h>
 
 namespace minerva
 {
@@ -14,9 +14,9 @@ namespace detail
 static Dimension advance(const Dimension& offset, const Dimension& size)
 {
     Dimension result;
-    
+
     bool carry = true;
-    
+
     for(size_t i = 0, end = offset.size(); i < end; ++i)
     {
         if(carry)
@@ -36,12 +36,12 @@ static Dimension advance(const Dimension& offset, const Dimension& size)
             result.push_back(offset[i]);
         }
     }
-	
+
 	if(carry)
 	{
 		return size;
 	}
-    
+
     return result;
 }
 
@@ -62,7 +62,7 @@ FloatIterator& FloatIterator::operator=(const FloatIterator&) = default;
 
 FloatReference FloatIterator::operator*()
 {
-    return FloatReference(_precision, getAddress(_stride, _offset, _data, _precision));
+    return FloatReference(_precision, getAddress(_stride, _offset, _data, _precision.size()));
 }
 
 FloatIterator& FloatIterator::operator++()
@@ -132,13 +132,13 @@ ConstFloatIterator& ConstFloatIterator::operator=(const ConstFloatIterator&) = d
 
 ConstFloatReference ConstFloatIterator::operator*()
 {
-    return ConstFloatReference(_precision, getAddress(_stride, _offset, _data, _precision));
+    return ConstFloatReference(_precision, getAddress(_stride, _offset, _data, _precision.size()));
 }
 
 ConstFloatIterator& ConstFloatIterator::operator++()
 {
 	_offset = detail::advance(_offset, _size);
-	
+
 	return *this;
 }
 

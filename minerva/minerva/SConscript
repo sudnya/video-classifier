@@ -1,0 +1,58 @@
+#! /usr/bin/python
+
+################################################################################
+#    \file   SConscript
+#    \author Gregory Diamos <solusstultus@gmail.com>
+#    \date   June 13, 2015
+#    \brief  The SCons program build script for minerva
+################################################################################
+
+
+Import('env')
+
+minerva_libs = env['MINERVA_LIBS']
+
+programs = []
+
+programs.append(env.Program('minerva-classifier', \
+    ['tools/minerva-classifier.cpp'], LIBS=minerva_libs))
+
+programs.append(env.Program('test-classifier', \
+    ['engine/test/test-classifier.cpp'], LIBS=minerva_libs))
+
+programs.append(env.Program('test-mnist', \
+    ['engine/test/test-mnist.cpp'], LIBS=minerva_libs))
+
+programs.append(env.Program('test-bracket-matching', \
+    ['engine/test/test-bracket-matching.cpp'], LIBS=minerva_libs))
+
+programs.append(env.Program('test-matrix', \
+    ['matrix/test/test-matrix.cpp'], LIBS=minerva_libs))
+
+programs.append(env.Program('test-matrix-vector', \
+    ['matrix/test/test-matrix-vector.cpp'], LIBS=minerva_libs))
+
+#programs.append(env.Program('test-minerva-visualization', \
+#    ['visualization/test/test-minerva-visualization.cpp'], LIBS=minerva_libs))
+
+programs.append(env.Program('test-minerva-display', \
+    ['video/test/test-display.cpp'], LIBS=minerva_libs))
+
+#programs.append(env.Program('test-minerva-performance', \
+#    ['network/test/test-neuralnetwork-performance.cpp'], LIBS=minerva_libs))
+
+programs.append(env.Program('test-gradient', \
+    ['network/test/test-gradient-check.cpp'], LIBS=minerva_libs))
+
+programs.append(env.Program('test-convolutional-gradient', \
+    ['network/test/test-convolutional-gradient-check.cpp'], LIBS=minerva_libs))
+
+programs.append(env.Program('test-linear-regression', \
+    ['network/test/test-linear-regression.cpp'], LIBS=minerva_libs))
+
+programs.append(env.Program('test-optimizer', \
+    ['optimizer/test/test-optimizer.cpp'], LIBS=minerva_libs))
+
+Return('programs')
+
+

@@ -1,8 +1,10 @@
 #pragma once
 
+// Minerva Includes
+#include <minerva/parallel/interface/cuda.h>
+#include <minerva/parallel/interface/assert.h>
+
 // Standard Library Includes
-#include <array>
-#include <cassert>
 #include <string>
 
 namespace minerva
@@ -16,77 +18,77 @@ private:
     static constexpr size_t capacity = 9;
 
 private:
-    typedef std::array<size_t, capacity> Storage;
+    typedef size_t Storage[capacity];
 
 public:
-    typedef Storage::iterator       iterator;
-    typedef Storage::const_iterator const_iterator;
+    typedef size_t*       iterator;
+    typedef const size_t* const_iterator;
 
 public:
     template<typename... Args>
-    Dimension(Args... args)
+    CUDA_DECORATOR inline Dimension(Args... args)
     : _arity(0)
     {
         fill(_storage, _arity, args...);
     }
 
-    Dimension();
-    Dimension(std::initializer_list<size_t>);
+    CUDA_DECORATOR inline Dimension();
+    CUDA_DECORATOR inline Dimension(std::initializer_list<size_t>);
 
 public:
-    void push_back(size_t );
+    CUDA_DECORATOR inline void push_back(size_t );
 
-    void pop_back();
-    void pop_back(size_t );
-
-public:
-    size_t size() const;
-    bool empty() const;
+    CUDA_DECORATOR inline void pop_back();
+    CUDA_DECORATOR inline void pop_back(size_t );
 
 public:
-    size_t& back();
-    size_t  back() const;
-
-    size_t& front();
-    size_t  front() const;
+    CUDA_DECORATOR inline size_t size() const;
+    CUDA_DECORATOR inline bool empty() const;
 
 public:
-    size_t product() const;
+    CUDA_DECORATOR inline size_t& back();
+    CUDA_DECORATOR inline size_t  back() const;
+
+    CUDA_DECORATOR inline size_t& front();
+    CUDA_DECORATOR inline size_t  front() const;
 
 public:
-    iterator begin();
-    const_iterator begin() const;
-
-    iterator end();
-    const_iterator end() const;
+    CUDA_DECORATOR inline size_t product() const;
 
 public:
-    size_t  operator[](size_t position) const;
-    size_t& operator[](size_t position);
+    CUDA_DECORATOR inline iterator begin();
+    CUDA_DECORATOR inline const_iterator begin() const;
+
+    CUDA_DECORATOR inline iterator end();
+    CUDA_DECORATOR inline const_iterator end() const;
 
 public:
-    std::string toString() const;
+    CUDA_DECORATOR inline size_t  operator[](size_t position) const;
+    CUDA_DECORATOR inline size_t& operator[](size_t position);
 
 public:
-    Dimension operator-(const Dimension& ) const;
-    Dimension operator+(const Dimension& ) const;
-    Dimension operator/(const Dimension& ) const;
-    Dimension operator*(const Dimension& ) const;
+    inline std::string toString() const;
 
 public:
-    bool operator==(const Dimension& ) const;
-    bool operator!=(const Dimension& ) const;
+    CUDA_DECORATOR inline Dimension operator-(const Dimension& ) const;
+    CUDA_DECORATOR inline Dimension operator+(const Dimension& ) const;
+    CUDA_DECORATOR inline Dimension operator/(const Dimension& ) const;
+    CUDA_DECORATOR inline Dimension operator*(const Dimension& ) const;
+
+public:
+    CUDA_DECORATOR inline bool operator==(const Dimension& ) const;
+    CUDA_DECORATOR inline bool operator!=(const Dimension& ) const;
 
 private:
     template<typename T>
-    void fill(Storage& storage, size_t& arity, T argument)
+    CUDA_DECORATOR inline void fill(Storage& storage, size_t& arity, T argument)
     {
         assert(arity < capacity);
         storage[arity++] = argument;
     }
 
     template<typename T, typename... Args>
-    void fill(Storage& storage, size_t& arity, T argument, Args... args)
+    CUDA_DECORATOR inline void fill(Storage& storage, size_t& arity, T argument, Args... args)
     {
         fill(storage, arity, argument);
         fill(storage, arity, args...);
@@ -100,4 +102,6 @@ private:
 
 }
 }
+
+#include <minerva/matrix/implementation/Dimension.inl>
 
