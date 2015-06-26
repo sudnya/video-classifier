@@ -68,6 +68,21 @@ def getImageUrlsForTerm(term):
 
     return urls
 
+def getApproximateSize(term):
+    getImageUrl = 'http://www.image-net.org/api/text/imagenet.synset.geturls?wnid='
+
+    try:
+        page = urllib2.urlopen(getImageUrl + term)
+
+        if 'Content-Length' in page.info():
+            return int(page.info()['Content-Length'])
+    except:
+        pass
+
+    return 0
+
+
+
 def getImageUrlsForTermAndSubclassesRecurse(urls, term, classes, remainingImages):
     urls.extend(getImageUrlsForTerm(term))
 
@@ -82,9 +97,6 @@ def getImageUrlsForTermAndSubclasses(term, classes, remainingImages):
     getImageUrlsForTermAndSubclassesRecurse(urls, term, classes, remainingImages)
 
     return urls
-
-def isValidTerm(term):
-    return len(getImageUrlsForTerm(term)) > 0
 
 def getDirectoryForTerm(termName):
     return re.sub('[^\w\-_\. ]', '-', termName.split(',')[0].strip()).replace(' ', '-')
@@ -120,14 +132,11 @@ def isValidImage(path):
     if imghdr.what(path) == None:
         return False
 
-    if os.path.getsize(path) < 3000:
-        return False
-
     return True
 
 class IgnorePasswordURLOpener(urllib.FancyURLopener):
-    def __init__():
-        super(IgnorePasswordURLOpener, self).__init__()
+    def __init__(self):
+        urllib.FancyURLopener.__init__(self)
 
     def prompt_user_passwd(self, host, realm):
         return ("username", "password")
@@ -146,7 +155,7 @@ def downloadImage(path, url):
             return False
 
     try:
-        IgnorePasswordURLOpener urlopener;
+        urlopener = IgnorePasswordURLOpener()
 
         urlopener.retrieve(url, path)
 
@@ -162,16 +171,33 @@ def downloadImage(path, url):
         cleanDestination(path)
         return False
 
-class Downloader(Thread):
-    def __init__(self, file_url, save_path):
-        super(Downloader, self).__init__()
-
-        self.file_url = file_url
-        self.save_path = save_path
+class UrlRequest:
+    def __init__(self, destinationDirectory, term, url, i):
+        self.index = i
+        self.save_path = formDirectoryName(destinationDirectory, getDirectoryForTerm(term), i)
+        self.file_url = url
         self.result = False
 
+class Downloader(Thread):
+    def __init__(self, queue):
+        super(Downloader, self).__init__()
+
+        self.queue = queue
+
     def run(self):
-        self.result = downloadImage(self.save_path, self.file_url)
+        while True:
+            try:
+                request = self.queue.get_nowait()
+
+            except Queue.Empty:
+                break
+
+            try:
+                request.result = downloadImage(request.save_path, request.file_url)
+            except:
+                pass
+
+            self.queue.task_done()
 
 def updateSampleDatabase(destinationDirectory, term):
     path = os.path.join(destinationDirectory, "database.txt")
@@ -190,7 +216,7 @@ def downloadImagesForTerms(selectedTermIds, classes, options):
 
     for term in selectedTermIds:
 
-        updateSampleDatabase(desintationDirectory, term)
+        updateSampleDatabase(destinationDirectory, term)
 
         print 'For term: \'' + term + "\'"
         termName = getNameForTerm(term)
@@ -199,51 +225,46 @@ def downloadImagesForTerms(selectedTermIds, classes, options):
 
         remainingImages = int(options.maximum_images) - imageCount
 
-        imageUrls = getImageUrlsForTermAndSubclasses(term, classes, remainingImages)
+        imageUrls = [UrlRequest(destinationDirectory, termName, url, i) for
+            (i, url) in enumerate(getImageUrlsForTermAndSubclasses(term, classes, remainingImages))]
 
         if len(imageUrls) > remainingImages:
             imageUrls = imageUrls[:remainingImages]
 
         print '  found ' + str(len(imageUrls)) + " images"
 
-        imageId = 0
-        threadCount = 100
-        timeout = 3.0
+        threadCount = 10
 
-        for index in range(0, len(imageUrls), threadCount):
+        queue = Queue.Queue()
 
-            threads = []
+        for request in imageUrls:
+            queue.put(request)
 
-            for threadId in range(threadCount):
-                i = index + threadId
+        for threadId in range(threadCount):
+            thread = Downloader(queue)
 
-                if i >= len(imageUrls):
-                    continue
+            thread.setDaemon(True)
+            thread.start()
 
-                imageUrl = imageUrls[i]
+        queue.join()
 
-                target = formDirectoryName(destinationDirectory, getDirectoryForTerm(termName), i) + '.tmp'
+        urllib.urlcleanup()
 
-                threads.append(Downloader(imageUrl, target))
-                threads[-1].start()
+        successes = 0
 
-            for thread in threads:
-                thread.join(timeout)
+        for request in imageUrls:
+            if not request.result:
+                continue
 
-                if not thread.result:
-                    continue
+            successes += 1
 
-                target = formDirectoryName(destinationDirectory, getDirectoryForTerm(termName), imageId)
+            if successes >= int(options.maximum_images_per_term):
+                cleanDestination(request.save_path)
+                continue
 
-                os.rename(thread.save_path, target)
+            updateMetadata(destinationDirectory, termName, request.file_url, request.index)
 
-                updateMetadata(destinationDirectory, termName, imageUrl, imageId)
-
-                imageId += 1
-                imageCount += 1
-
-            if imageId >= int(options.maximum_images_per_term):
-                break
+            imageCount += 1
 
         if imageCount >= int(options.maximum_images):
             break
@@ -254,7 +275,7 @@ def fillInChildCounts(term, classes):
 
     if len(classes[term][1]) == 0:
         classes[term] = (classes[term][0], classes[term][1], 1)
-        return 1
+        return getApproximateSize(term)
 
     count = 0
 
@@ -265,7 +286,7 @@ def fillInChildCounts(term, classes):
 
     return count
 
-def selectTerms(selectedCount):
+def selectAllTerms():
     print 'Downloading all terms'
     allTerms = getAllTerms()
     print ' got ' + str(len(allTerms))
@@ -291,8 +312,13 @@ def selectTerms(selectedCount):
         classes[child][0].add(parent)
         classes[parent][1].add(child)
 
+    return allTerms, classes
+
+def selectTerms(selectedCount):
+    allTerms, classes = selectAllTerms()
+
     for parent in classes.keys():
-        fillInChildCounts(parent, classes)
+        fillInChildImageCounts(parent, classes)
 
     childCountsAndTerms = []
 
@@ -310,13 +336,13 @@ def selectTerms(selectedCount):
         if len(selected) >= selectedCount:
             break
 
-        if not isValidTerm(rootTerm):
-            continue
-
+        print 'Selected ', rootTerm, ' with ', classes[rootTerm][2], ' total images'
         selected.add(rootTerm)
 
         for parent in classes[rootTerm][0]:
-            selected.discard(parent)
+            if parent in selected:
+                print ' discarded ', parent
+                selected.discard(parent)
 
     return selected, classes
 
@@ -327,9 +353,10 @@ def main():
 
     parser.add_option("-o", "--output_path", default="image-net-data/")
     parser.add_option("-I", "--maximum_images", default=1000000000)
-    parser.add_option("-t", "--terms", default=10)
+    parser.add_option("-t", "--terms", default=1000000)
     parser.add_option("-c", "--clean", default=False, action="store_true")
-    parser.add_option("-i", "--maximum_images_per_term", default=100)
+    parser.add_option("-a", "--all_terms", default=False, action="store_true")
+    parser.add_option("-i", "--maximum_images_per_term", default=10000000)
 
     (options, arguments) = parser.parse_args()
 
@@ -338,7 +365,10 @@ def main():
     if options.clean:
         cleanDestination(destinationDirectory)
 
-    selectedTermIds, classes = selectTerms(int(options.terms))
+    if options.all_terms:
+        selectedTermIds, classes = selectAllTerms()
+    else:
+        selectedTermIds, classes = selectTerms(int(options.terms))
 
     print 'Selected', str(len(selectedTermIds)), 'terms, each with', options.maximum_images_per_term, 'images'
 
