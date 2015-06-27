@@ -8,6 +8,7 @@
 
 // Standard Library Includes
 #include <vector>
+#include <cstddef>
 
 // Forward Declarations
 namespace minerva { namespace results { class Result; } }
@@ -41,10 +42,10 @@ public:
 
 public:
 	iterator       begin();
-	const_iterator begin() const; 
-	
+	const_iterator begin() const;
+
 	iterator       end();
-	const_iterator end() const; 
+	const_iterator end() const;
 
 public:
 	size_t size()  const;

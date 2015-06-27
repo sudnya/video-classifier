@@ -10,6 +10,7 @@
 #include <vector>
 #include <map>
 #include <random>
+#include <memory>
 
 // Forward Declaration
 namespace minerva { namespace network   { class Layer;               } }

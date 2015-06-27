@@ -19,6 +19,7 @@
 #include <stdexcept>
 #include <fstream>
 #include <memory>
+#include <algorithm>
 
 namespace minerva
 {

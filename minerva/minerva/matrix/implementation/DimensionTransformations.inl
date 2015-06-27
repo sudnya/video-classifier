@@ -166,7 +166,7 @@ CUDA_DECORATOR static size_t getOffset(const Dimension& stride, const Dimension&
     size_t offset = 0;
     size_t arity = parallel::min(stride.size(), position.size());
 
-    for(auto i = 0; i < arity; ++i)
+    for(size_t i = 0; i < arity; ++i)
     {
         offset += stride[i] * position[i];
     }

@@ -10,6 +10,9 @@
 // Minerva Includes
 #include <minerva/optimizer/interface/GeneralDifferentiableSolver.h>
 
+// Standard Library Includes
+#include <memory>
+
 namespace minerva
 {
 
@@ -32,14 +35,14 @@ public:
 private:
 	std::unique_ptr<MatrixVector> _velocity;
 	double _runningExponentialCostSum;
-	
+
 private:
 	double  _learningRate;
 	double  _momentum;
 	double  _annealingRate;
 	double  _maxGradNorm;
 	size_t  _iterations;
-	
+
 
 };
 

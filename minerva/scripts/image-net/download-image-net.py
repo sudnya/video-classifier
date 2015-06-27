@@ -233,7 +233,7 @@ def downloadImagesForTerms(selectedTermIds, classes, options):
 
         print '  found ' + str(len(imageUrls)) + " images"
 
-        threadCount = 10
+        threadCount = 3
 
         queue = Queue.Queue()
 

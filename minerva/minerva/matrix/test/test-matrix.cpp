@@ -879,7 +879,7 @@ bool test2dForwardConvolution()
 
     Matrix input(w, h, c, n);
 
-    for(int i = 0; i < input.elements(); ++i)
+    for(size_t i = 0; i < input.elements(); ++i)
     {
         input(i) = i;
     }
@@ -890,7 +890,7 @@ bool test2dForwardConvolution()
 
     Matrix filter(s, r, c, k);
 
-    for(int i = 0; i < filter.elements(); ++i)
+    for(size_t i = 0; i < filter.elements(); ++i)
     {
         filter(i) = i;
     }
@@ -946,7 +946,7 @@ bool test2dStridedForwardConvolution()
 
     Matrix input(w, h, c, n);
 
-    for(int i = 0; i < input.elements(); ++i)
+    for(size_t i = 0; i < input.elements(); ++i)
     {
         input(i) = i;
     }
@@ -957,7 +957,7 @@ bool test2dStridedForwardConvolution()
 
     Matrix filter(s, r, c, k);
 
-    for(int i = 0; i < filter.elements(); ++i)
+    for(size_t i = 0; i < filter.elements(); ++i)
     {
         filter(i) = i;
     }
