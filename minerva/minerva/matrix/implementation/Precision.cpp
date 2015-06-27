@@ -3,7 +3,7 @@
 #include <minerva/matrix/interface/Precision.h>
 
 #include <minerva/util/interface/debug.h>
-#include <minerva/util/interface/knobs.h>
+#include <minerva/util/interface/Knobs.h>
 
 namespace minerva
 {

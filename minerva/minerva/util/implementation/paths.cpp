@@ -7,13 +7,14 @@
 // Minerva Includes
 #include <minerva/util/interface/paths.h>
 #include <minerva/util/interface/string.h>
+#include <minerva/util/interface/debug.h>
 
 // Standard Library Includes
 #include <stdexcept>
 #include <fstream>
 
 // System Specific Includes
-#ifdef __APPLE__
+#ifndef _WIN32
 #include <sys/stat.h>
 #include <dirent.h>
 #endif
@@ -113,7 +114,7 @@ bool isAbsolutePath(const std::string& path)
 
 static void listDirectoryRecursively(StringVector& files, const std::string& path)
 {
-	#ifdef __APPLE__
+	#ifndef _WIN32
 	DIR* directory = opendir(path.c_str());
 
 	if(directory == nullptr)
@@ -164,7 +165,7 @@ StringVector listDirectoryRecursively(const std::string& path)
 
 bool isFile(const std::string& path)
 {
-	#ifdef __APPLE__
+	#ifdef _WIN32
 	struct stat fileStats;
 
 	auto result = stat(path.c_str(), &fileStats);
@@ -183,7 +184,7 @@ bool isFile(const std::string& path)
 
 bool isDirectory(const std::string& path)
 {
-	#ifdef __APPLE__
+	#ifndef _WIN32
 	struct stat fileStats;
 
 	auto result = stat(path.c_str(), &fileStats);
@@ -212,12 +213,16 @@ void makeDirectory(const std::string& path)
         makeDirectory(getDirectory(path));
     }
 
+    #ifndef _WIN32
     int status = mkdir(path.c_str(), 0755);
 
     if(status != 0)
     {
         throw std::runtime_error("Failed to make directory '" + path + "'.");
     }
+    #else
+    assertM(false, "Not implemented for this platform.");
+    #endif
 }
 
 size_t getFileSize(std::istream& stream)

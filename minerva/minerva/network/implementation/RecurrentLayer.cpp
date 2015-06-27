@@ -22,7 +22,7 @@
 #include <minerva/matrix/interface/Matrix.h>
 
 #include <minerva/util/interface/debug.h>
-#include <minerva/util/interface/knobs.h>
+#include <minerva/util/interface/Knobs.h>
 #include <minerva/util/interface/memory.h>
 
 namespace minerva
