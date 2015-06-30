@@ -83,7 +83,7 @@ bool testAllocatedMemoryCopy()
         minerva::parallel::free(address);
     }
 
-    std::cout << " Test Malloc Free Passed\n";
+    std::cout << " Test Allocated Memory Copy Passed\n";
 
     return true;
 }
