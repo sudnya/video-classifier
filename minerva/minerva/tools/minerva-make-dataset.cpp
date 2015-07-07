@@ -154,7 +154,7 @@ int main(int argc, char** argv)
 		"", "The input database path.");
 	parser.parse("-o", "--output",  outputPath,
 		"", "The output path to store generated files "
-			"(for visualization or feature extraction).");
+			"(the training/validation datasets).");
 	parser.parse("-S", "--validation-samples",  validationSamples,
 		1000, "The number of samples to withold for validation.");
 

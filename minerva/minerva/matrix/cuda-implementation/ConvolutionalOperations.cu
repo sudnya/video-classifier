@@ -7,7 +7,7 @@
 #include <minerva/matrix/interface/MatrixView.h>
 #include <minerva/matrix/interface/Matrix.h>
 #include <minerva/matrix/interface/MatrixTransformations.h>
-
+ 
 #include <minerva/parallel/interface/MultiBulkSynchronousParallel.h>
 
 #include <minerva/util/interface/Metaprogramming.h>

@@ -165,7 +165,7 @@ StringVector listDirectoryRecursively(const std::string& path)
 
 bool isFile(const std::string& path)
 {
-	#ifdef _WIN32
+	#ifndef _WIN32
 	struct stat fileStats;
 
 	auto result = stat(path.c_str(), &fileStats);

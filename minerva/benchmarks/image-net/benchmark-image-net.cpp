@@ -55,6 +55,7 @@ public:
     size_t colors;
 
     size_t layerSize;
+    size_t layers;
 
     size_t epochs;
     size_t batchSize;
@@ -110,33 +111,33 @@ static void addClassifier(Model& model, const Parameters& parameters)
 
     Dimension inputSize(parameters.xPixels, parameters.yPixels, parameters.colors, 1, 1);
 
-    inputSize = addConvolutionalLayer(classifier, inputSize, std::max(16UL, parameters.layerSize/64));
+    inputSize = addConvolutionalLayer(classifier, inputSize, 64);
 
     inputSize = addPoolingLayer(classifier, {2, 2});
 
-    inputSize = addConvolutionalLayer(classifier, inputSize, std::max(32UL, parameters.layerSize/32));
+    inputSize = addConvolutionalLayer(classifier, inputSize, 128);
     inputSize = addPoolingLayer(classifier, {2, 2});
 
-    if(parameters.layerSize > 256)
+    if(parameters.layers > 7)
     {
 
-        inputSize = addConvolutionalLayer(classifier, inputSize, parameters.layerSize/16);
-        inputSize = addConvolutionalLayer(classifier, inputSize, parameters.layerSize/16);
+        inputSize = addConvolutionalLayer(classifier, inputSize, 256);
+        inputSize = addConvolutionalLayer(classifier, inputSize, 256);
         inputSize = addPoolingLayer(classifier, {2, 2});
     }
 
-    if(parameters.layerSize > 256)
+    if(parameters.layers > 10)
     {
-        inputSize = addConvolutionalLayer(classifier, inputSize, parameters.layerSize/8);
-        inputSize = addConvolutionalLayer(classifier, inputSize, parameters.layerSize/8);
+        inputSize = addConvolutionalLayer(classifier, inputSize, 512);
+        inputSize = addConvolutionalLayer(classifier, inputSize, 512);
         inputSize = addPoolingLayer(classifier, {2, 2});
     }
 
 
-    if(parameters.layerSize > 1024)
+    if(parameters.layers > 13)
     {
-        inputSize = addConvolutionalLayer(classifier, inputSize, parameters.layerSize/8);
-        inputSize = addConvolutionalLayer(classifier, inputSize, parameters.layerSize/8);
+        inputSize = addConvolutionalLayer(classifier, inputSize, 512);
+        inputSize = addConvolutionalLayer(classifier, inputSize, 512);
         inputSize = addPoolingLayer(classifier, {2, 2});
     }
 
@@ -233,7 +234,7 @@ static void runBenchmark(const Parameters& parameters)
     }
     else
     {
-        minerva::matrix::srand(377);
+        minerva::matrix::srand(82912);
     }
 
     // Create a deep model for first layer classification
@@ -264,10 +265,11 @@ static void setupSolverParameters()
 {
     minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::LearningRate", "1.0e-2");
     minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::Momentum", "0.9");
-    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::AnnealingRate", "1.00001");
+    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::AnnealingRate", "1.00000");
     minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::MaxGradNorm", "10.0");
-    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::IterationsPerBatch", "500");
+    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::IterationsPerBatch", "1");
     minerva::util::KnobDatabase::setKnob("GeneralDifferentiableSolver::Type", "NesterovAcceleratedGradientSolver");
+    minerva::util::KnobDatabase::setKnob("InputVisualDataProducer::CropImages", "0");
     //minerva::util::KnobDatabase::setKnob("GeneralDifferentiableSolver::Type", "LBFGSSolver");
 }
 
@@ -291,7 +293,7 @@ int main(int argc, char** argv)
 
     parser.parse("-e", "--epochs", parameters.epochs, 1,
         "The number of epochs (passes over all inputs) to train the network for.");
-    parser.parse("-b", "--batch-size", parameters.batchSize, 32,
+    parser.parse("-b", "--batch-size", parameters.batchSize, 64,
         "The number of images to use for each iteration.");
 
     parser.parse("-L", "--log-module", loggingEnabledModules, "",
@@ -299,13 +301,14 @@ int main(int argc, char** argv)
         "(comma-separated list of modules, e.g. NeuralNetwork, Layer, ...).");
 
     parser.parse("-s", "--seed", parameters.seed, false, "Seed with time.");
-    parser.parse("-S", "--maximum-samples", parameters.maximumSamples, 100000, "The maximum number of samples to train/test on.");
+    parser.parse("-S", "--maximum-samples", parameters.maximumSamples, 10000000, "The maximum number of samples to train/test on.");
 
     parser.parse("-x", "--x-pixels", parameters.xPixels, 224, "The number of X pixels to consider from the input image.");
     parser.parse("-y", "--y-pixels", parameters.yPixels, 224, "The number of Y pixels to consider from the input image.");
     parser.parse("-c", "--colors", parameters.colors, 3, "The number of colors to consider from the input image.");
 
     parser.parse("-l", "--layer-size", parameters.layerSize, 4096, "The size of each fully connected layer.");
+    parser.parse("", "--layers", parameters.layers, 7, "The total number of layers.");
 
     parser.parse("-v", "--verbose", verbose, false, "Print out log messages during execution");
 
@@ -330,7 +333,7 @@ int main(int argc, char** argv)
     }
     catch(const std::exception& e)
     {
-        std::cout << "Minerva MNIST Test Failed:\n";
+        std::cout << "Minerva Image-Net Benchmark Failed:\n";
         std::cout << "Message: " << e.what() << "\n\n";
     }
 
