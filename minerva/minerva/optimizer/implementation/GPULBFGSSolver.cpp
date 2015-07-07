@@ -16,7 +16,7 @@
 #include <minerva/matrix/interface/Operation.h>
 
 #include <minerva/util/interface/debug.h>
-#include <minerva/util/interface/knobs.h>
+#include <minerva/util/interface/Knobs.h>
 
 // Standard Library Includes
 #include <deque>

@@ -31,6 +31,7 @@ public:
 	typedef SampleVector::const_iterator const_iterator;
 
 public:
+	SampleDatabase();
 	SampleDatabase(const std::string& path);
 	~SampleDatabase();
 
@@ -62,8 +63,11 @@ public:
 	void addSample(const Sample& sample);
 	void addLabel(const std::string& label);
 
-private:
-	void _parse();
+public:
+    void save() const;
+
+public:
+	void load();
 
 private:
 	typedef std::set<std::string> StringSet;

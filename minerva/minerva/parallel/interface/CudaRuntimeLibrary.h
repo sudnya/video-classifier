@@ -13,7 +13,7 @@
 namespace minerva
 {
 
-namespace matrix
+namespace parallel
 {
 
 class CudaRuntimeLibrary
@@ -33,15 +33,24 @@ public:
         cudaSuccess = 0
     };
 
+    enum cudaHostAllocFlag
+    {
+        cudaHostAllocMapped = 0x2
+    };
+
 public:
     static void load();
     static bool loaded();
 
 public:
     static void cudaSetDevice(int device);
+    static void cudaDeviceSynchronize();
 
     static void* cudaMalloc(size_t bytes);
+    static void* cudaMallocManaged(size_t bytes);
+    static void* cudaHostAlloc(size_t bytes);
     static void cudaFree(void* ptr);
+    static void cudaFreeHost(void* ptr);
 
     static void cudaMemcpy(void* dest, const void* src,
         size_t bytes, cudaMemcpyKind kind = cudaMemcpyDefault);
@@ -57,9 +66,13 @@ private:
     {
     public:
         int (*cudaSetDevice)(int ptr);
+        int (*cudaDeviceSynchronize)();
 
         int (*cudaMalloc)(void** ptr, size_t bytes);
+        int (*cudaMallocManaged)(void** ptr, size_t bytes, unsigned int flags);
+        int (*cudaHostAlloc)(void** ptr, size_t bytes, unsigned int flags);
         int (*cudaFree)  (void*  ptr);
+        int (*cudaFreeHost)  (void*  ptr);
         int (*cudaMemcpy)(void*  dest, const void* src, size_t bytes,
             cudaMemcpyKind kind);
 

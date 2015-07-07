@@ -46,7 +46,7 @@ static std::string removeWhitespace(const std::string& line);
 void SampleDatabaseParser::parse()
 {
 	std::ifstream file(_database->path().c_str());
-	
+
 	if(!file.is_open())
 	{
 		throw std::runtime_error("Could not open '" +
@@ -54,17 +54,17 @@ void SampleDatabaseParser::parse()
 	}
 
 	auto databaseDirectory = util::getDirectory(_database->path());
-	
+
 	while(file.good())
 	{
 		std::string line;
-		
+
 		std::getline(file, line);
-		
+
 		line = removeWhitespace(line);
-		
+
 		if(line.empty()) continue;
-		
+
 		if(isComment(line)) continue;
 
 		if(isLabelDeclaration(line))
@@ -91,19 +91,19 @@ static void parseLabeledPath(SampleDatabase* database, const std::string& line,
 	const std::string& databaseDirectory)
 {
 	auto components = util::split(line, ",");
-	
+
 	if(components.size() < 2)
 	{
 		throw std::runtime_error("Malformed labeled image/video statement '" +
 			line + "', should be (path, label) or "
 			"(path, label, startFrame, endFrame).");
 	}
-	
+
 	auto filePath = util::getRelativePath(databaseDirectory,
 		removeWhitespace(components[0]));
-	
+
 	auto label = removeWhitespace(components[1]);
-	
+
 	if(video::Image::isPathAnImage(filePath))
 	{
 		if(components.size() != 2)
@@ -121,16 +121,16 @@ static void parseLabeledPath(SampleDatabase* database, const std::string& line,
 			throw std::runtime_error("Malformed labeled video statement '" +
 				line + "', should be (path, label, startFrame, endFrame).");
 		}
-		
+
 		unsigned int startFrame = parseInteger(components[2]);
 		unsigned int endFrame   = parseInteger(components[3]);
-	
+
 		database->addSample(Sample(filePath, label, startFrame, endFrame));
 	}
 	else if(util::isDirectory(filePath))
 	{
 		auto contents = util::listDirectoryRecursively(filePath);
-		
+
 		for(auto& suffix : contents)
 		{
 			auto path = util::getRelativePath(filePath, suffix);
@@ -152,13 +152,13 @@ static void parseLabeledPath(SampleDatabase* database, const std::string& line,
 static unsigned int parseInteger(const std::string s)
 {
 	std::stringstream stream;
-	
+
 	stream << s;
-	
+
 	unsigned int value = 0;
-	
+
 	stream >> value;
-	
+
 	return value;
 }
 
@@ -166,15 +166,15 @@ static void parseUnlabeledPath(SampleDatabase* database,
 	const std::string& line, const std::string& databaseDirectory)
 {
 	auto filePath = util::getRelativePath(databaseDirectory, line);
-	
-	database->addSample(Sample(filePath));	
+
+	database->addSample(Sample(filePath));
 }
 
 static void parseLabelDeclaration(SampleDatabase* database,
 	const std::string& line)
 {
 	auto position = line.find(":");
-	
+
 	auto components = util::split(line.substr(position + 1), ",");
 
 	for(auto& component : components)
@@ -186,12 +186,12 @@ static void parseLabelDeclaration(SampleDatabase* database,
 static bool isComment(const std::string& line)
 {
 	auto comment = removeWhitespace(line);
-	
+
 	if(comment.empty())
 	{
 		return false;
 	}
-	
+
 	return comment.front() == '#';
 }
 
@@ -210,19 +210,19 @@ static bool isWhitespace(char c);
 static std::string removeWhitespace(const std::string& line)
 {
 	unsigned int begin = 0;
-	
+
 	for(; begin != line.size(); ++begin)
 	{
 		if(!isWhitespace(line[begin])) break;
 	}
-	
+
 	unsigned int end = line.size();
-	
+
 	for(; end != 0; --end)
 	{
 		if(!isWhitespace(line[end - 1])) break;
-	}	
-	
+	}
+
 	return line.substr(begin, end - begin);
 }
 

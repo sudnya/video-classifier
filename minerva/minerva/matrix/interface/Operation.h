@@ -56,10 +56,10 @@ public:
     };
 
 public:
-    Operation(Type t);
+    CUDA_DECORATOR Operation(Type t) : _type(t) {}
 
 public:
-    bool operator==(const Operation&) const;
+    CUDA_DECORATOR bool operator==(const Operation&) const;
 
 private:
     Type _type;
@@ -140,12 +140,12 @@ public:
     template<typename T>
     CUDA_DECORATOR T operator()(const T& l) const
     {
-        return std::log(l);
+        return log(l);
     }
 
     CUDA_DECORATOR float operator()(const float& l) const
     {
-        return std::logf(l);
+        return logf(l);
     }
 };
 
@@ -161,12 +161,12 @@ public:
     template<typename T>
     CUDA_DECORATOR T operator()(const T& l) const
     {
-        return std::exp(l);
+        return exp(l);
     }
 
     CUDA_DECORATOR float operator()(const float& l) const
     {
-        return std::expf(l);
+        return expf(l);
     }
 };
 
@@ -187,12 +187,12 @@ public:
     template<typename T>
     CUDA_DECORATOR T operator()(const T& l) const
     {
-        return std::pow(l, _value);
+        return pow(l, _value);
     }
 
     CUDA_DECORATOR float operator()(const float& l) const
     {
-        return std::powf(l, _value);
+        return powf(l, _value);
     }
 
 public:
@@ -211,12 +211,12 @@ public:
     template<typename T>
     CUDA_DECORATOR T operator()(const T& l) const
     {
-        return std::abs(l);
+        return abs(l);
     }
 
     CUDA_DECORATOR float operator()(const float& l) const
     {
-        return std::fabs(l);
+        return fabs(l);
     }
 };
 
@@ -232,12 +232,12 @@ public:
     template<typename T>
     CUDA_DECORATOR T operator()(const T& l) const
     {
-        return std::sqrt(l);
+        return sqrt(l);
     }
 
     CUDA_DECORATOR float operator()(const float& l) const
     {
-        return std::sqrtf(l);
+        return sqrtf(l);
     }
 };
 
@@ -318,7 +318,7 @@ public:
         if(l < -50.0) return -50.0;
         if(l >  50.0) return  50.0;
 
-        return T(1.0) / (T(1.0) + T(std::exp(-l)));
+        return T(1.0) / (T(1.0) + T(exp(-l)));
     }
 
 };
@@ -408,13 +408,13 @@ public:
     template<typename T>
     CUDA_DECORATOR T operator()(const T& l, const T& r) const
     {
-        return std::max(l, r);
+        return max(l, r);
     }
 
     template<typename T>
     CUDA_DECORATOR T operator()(const T& r) const
     {
-        return std::max(T(_value), r);
+        return max(T(_value), r);
     }
 
 private:
@@ -439,13 +439,13 @@ public:
     template<typename T>
     CUDA_DECORATOR T operator()(const T& l, const T& r) const
     {
-        return std::min(l, r);
+        return min(l, r);
     }
 
     template<typename T>
     CUDA_DECORATOR T operator()(const T& r) const
     {
-        return std::min(T(_value), r);
+        return min(T(_value), r);
     }
 
 private:

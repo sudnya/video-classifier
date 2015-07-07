@@ -12,12 +12,6 @@ namespace minerva
 namespace matrix
 {
 
-Operation::Operation(Type t)
-: _type(t)
-{
-
-}
-
 bool Operation::operator==(const Operation& o) const
 {
     return o._type == _type;

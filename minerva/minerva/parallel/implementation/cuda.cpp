@@ -1,6 +1,7 @@
 
 
 #include <minerva/parallel/interface/cuda.h>
+#include <minerva/parallel/interface/CudaRuntimeLibrary.h>
 
 namespace minerva
 {
@@ -10,11 +11,7 @@ namespace parallel
 
 bool isCudaEnabled()
 {
-	#ifdef __NVCC__
-	return true;
-	#else
-	return false;
-	#endif
+    return CudaRuntimeLibrary::loaded();
 }
 
 }

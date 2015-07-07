@@ -185,6 +185,7 @@ static double testNetwork(Model& model, const Parameters& parameters)
 
     engine->setBatchSize(parameters.batchSize);
     engine->setModel(&model);
+    engine->setStandardizeInput(true);
     engine->setMaximumSamplesToRun(parameters.maximumSamples);
 
     // read from database and use model to test

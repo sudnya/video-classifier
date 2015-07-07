@@ -45,11 +45,11 @@ void Image::setTile(size_t xStart, size_t yStart, const Image& image)
 	size_t xSize     = image.x();
 	size_t ySize     = image.y();
 	size_t colorSize = image.colorComponents();
-	
+
 	assert(xStart + xSize <= x());
 	assert(yStart + ySize <= y());
 	assert(colorSize <= colorComponents());
-	
+
 	for(size_t y = 0; y < ySize; ++y)
 	{
 		for(size_t x = 0; x < xSize; ++x)
@@ -65,7 +65,7 @@ void Image::setTile(size_t xStart, size_t yStart, const Image& image)
 Image Image::getTile(size_t xStart, size_t yStart, size_t xPixels, size_t yPixels, size_t colors) const
 {
 	Image result(xPixels, yPixels, colors, pixelSize(), path(), label());
-	
+
 	// TODO faster
 
 	for(size_t y = 0; y < yPixels; ++y)
@@ -75,12 +75,12 @@ Image Image::getTile(size_t xStart, size_t yStart, size_t xPixels, size_t yPixel
 			for(size_t c = 0; c < colors; ++c)
 			{
 				size_t color = c % colorComponents();
-				
+
 				result.setComponentAt(x, y, c, getComponentAt(x + xStart, y + yStart, color));
 			}
 		}
 	}
-	
+
 	return result;
 }
 
@@ -94,21 +94,21 @@ size_t Image::x() const
 size_t Image::y() const
 {
 	assert(_headerLoaded);
-	
+
 	return _y;
 }
-	
+
 size_t Image::colorComponents() const
 {
 	assert(_headerLoaded);
-	
+
 	return _colorComponents;
 }
 
 size_t Image::pixelSize() const
 {
 	assert(_headerLoaded);
-	
+
 	return _pixelSize;
 }
 
@@ -154,7 +154,7 @@ void Image::waitForKeyPress() const
 
 void Image::addTextToDisplay(const std::string& text) const
 {
-	ImageLibraryInterface::addTextToStatusBar(text);	
+	ImageLibraryInterface::addTextToStatusBar(text);
 }
 
 void Image::deleteWindow() const
@@ -167,18 +167,23 @@ bool Image::loaded() const
 	return _loaded;
 }
 
+bool Image::headerLoaded() const
+{
+	return _headerLoaded;
+}
+
 void Image::load()
 {
 	if(loaded()) return;
-	
+
 	loadHeader();
-	
+
 	util::log("Image") << "Loading data from image path '" << _path << "'\n";
-	
+
 	_pixels = ImageLibraryInterface::loadData(_path);
 
 	util::log("Image") << " " << _pixels.size() << " bytes...\n";
-	
+
 	_loaded = true;
 }
 
@@ -194,15 +199,15 @@ void Image::loadHeader()
 void Image::save()
 {
 	if(!loaded()) return;
-	
+
 	util::log("Image") << "Saving data to image path '" << _path << "'\n";
-	
+
 	ImageLibraryInterface::saveImage(_path,
 		ImageLibraryInterface::Header(x(), y(), colorComponents(), pixelSize()),
 		_pixels);
 
 	util::log("Image") << " " << _pixels.size() << " bytes...\n";
-	
+
 	_loaded = true;
 }
 
@@ -212,7 +217,7 @@ void Image::setPath(const std::string& path)
 	{
 		invalidateCache();
 	}
-	
+
 	_path = path;
 }
 
@@ -226,10 +231,10 @@ void Image::invalidateCache()
 	if(!loaded()) return;
 
 	assert(!_invalidToLoad);
-	
+
 	// free the storage
 	ByteVector().swap(_pixels);
-	
+
 	_loaded = false;
 }
 
@@ -247,7 +252,7 @@ Image Image::downsample(size_t newX, size_t newY, size_t newColorComponents) con
 	double colorStep = (colorComponents() + 0.0) / newColorComponents;
 
 	double yPosition = 0.0;
-	
+
 	for(size_t y = 0; y != newY; ++y, yPosition += yStep)
 	{
 		double xPosition = 0.0;
@@ -264,7 +269,7 @@ Image Image::downsample(size_t newX, size_t newY, size_t newColorComponents) con
 			}
 		}
 	}
-	
+
 	return image;
 }
 
@@ -273,19 +278,19 @@ double Image::getComponentAt(size_t position) const
 	assert(loaded());
 
 	double component = 0.0;
-	
+
 	size_t positionInBytes = position * pixelSize();
 	assertM(positionInBytes + pixelSize() <= _pixels.size(),
 		"Position in bytes is " << positionInBytes
 		<< " out of max size " << _pixels.size());
-	
+
 	unsigned int value = 0;
 	assert(pixelSize() < sizeof(unsigned int));
-	
+
 	std::memcpy(&value, &_pixels[positionInBytes], pixelSize());
-	
+
 	component = value;
-	
+
 	return component;
 }
 
@@ -299,7 +304,7 @@ void Image::setComponentAt(size_t x, size_t y, size_t color,
 {
 	size_t positionInBytes = getPosition(x, y, color) * pixelSize();
 	assert(positionInBytes + pixelSize() <= _pixels.size());
-	
+
 	unsigned int value = component;
 	assert(pixelSize() < sizeof(unsigned int));
 
@@ -319,7 +324,7 @@ size_t Image::getPosition(size_t x, size_t y, size_t color) const
 bool Image::isPathAnImage(const std::string& path)
 {
 	auto extension = util::getExtension(path);
-	
+
 	return ImageLibraryInterface::isImageTypeSupported(extension);
 }
 
@@ -333,14 +338,14 @@ void Image::_loadImageHeader()
 	_y = header.y;
 
 	_colorComponents = header.colorComponents;
-	
+
 	_pixelSize = header.pixelSize;
 
 	util::log("Image") << " (" << _x <<  " x pixels, " << _y <<  " y pixels, "
 		<< _colorComponents <<  " components per pixel, " << _pixelSize
 		<<  " bytes per pixel)\n";
 
-	
+
 }
 
 }

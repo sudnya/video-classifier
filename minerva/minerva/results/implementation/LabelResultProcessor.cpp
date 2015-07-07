@@ -25,8 +25,6 @@ LabelResultProcessor::~LabelResultProcessor()
 
 void LabelResultProcessor::process(const ResultVector& v)
 {
-	typedef std::unordered_map<std::string, size_t> LabelMap;
-	
 	// TODO
 }
 

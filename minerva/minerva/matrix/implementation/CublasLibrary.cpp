@@ -30,6 +30,8 @@ void CublasLibrary::load()
 
 bool CublasLibrary::loaded()
 {
+    load();
+
     return _interface.loaded();
 }
 

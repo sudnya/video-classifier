@@ -20,7 +20,7 @@
 #include <minerva/matrix/interface/MatrixVector.h>
 
 #include <minerva/util/interface/debug.h>
-#include <minerva/util/interface/knobs.h>
+#include <minerva/util/interface/Knobs.h>
 #include <minerva/util/interface/memory.h>
 
 // Standard Library Includes
@@ -110,7 +110,7 @@ void ConvolutionalLayer::initialize()
 {
     double e = util::KnobDatabase::getKnobValue("Layer::RandomInitializationEpsilon", 6);
 
-    double epsilon = std::sqrt((e) / (getInputCount() + getOutputCount() + 1));
+    double epsilon = std::sqrt((e) / ((_weights.size()[0])*(_weights.size()[1])*(_weights.size()[2]) + getOutputSize()[2] + 1));
 
     // generate uniform random values between [0, 1]
     matrix::rand(_weights);
@@ -231,7 +231,7 @@ Matrix ConvolutionalLayer::runReverseImplementation(MatrixVector& gradients,
 
     // compute gradient for the weights
     Matrix weightGradient(_weights.size(), _weights.precision());
-   
+
     reverseConvolutionGradients(weightGradient, inputActivations, deltas, *_filterStride, *_inputPadding, 1.0 / samples);
 
     // add in the weight cost function term
@@ -271,7 +271,7 @@ Matrix ConvolutionalLayer::runReverseImplementation(MatrixVector& gradients,
 
     // compute deltas for previous layer
     Matrix deltasPropagatedReverse(inputActivations.size(), inputActivations.precision());
-    
+
     reverseConvolutionDeltas(deltasPropagatedReverse, _weights, *_filterStride, deltas, *_inputPadding);
 
     Matrix previousLayerDeltas;

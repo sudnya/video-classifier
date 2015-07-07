@@ -2,6 +2,7 @@
 // Minerva Includes
 #include <minerva/parallel/interface/ParallelFor.h>
 #include <minerva/parallel/interface/ConcurrentCollectives.h>
+#include <minerva/parallel/interface/Synchronization.h>
 
 // Standard Library Includes
 #include <thread>
@@ -15,11 +16,11 @@ namespace parallel
 void parallelFor(const std::function<void(parallel::ThreadGroup g)>& function)
 {
 	typedef std::list<std::thread> ThreadList;
-	
+
 	size_t threadCount = std::thread::hardware_concurrency();
-	
+
 	ThreadList threads;
-	
+
 	for(size_t i = 0; i < threadCount; ++i)
 	{
 		threads.emplace_back(std::thread(function, ThreadGroup(threadCount, i)));
@@ -30,9 +31,8 @@ void parallelFor(const std::function<void(parallel::ThreadGroup g)>& function)
 	{
 		thread.join();
 	}
-	
-	// synchronize cuda
-	//CudaRuntime::cudaSynchronizeDevice(CudaRuntime::cudaGetCurrentDevice());
+
+    synchronize();
 }
 
 }

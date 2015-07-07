@@ -6,6 +6,8 @@
 #include <minerva/matrix/interface/AtlasLibrary.h>
 #include <minerva/matrix/interface/CublasLibrary.h>
 
+#include <minerva/parallel/interface/Synchronization.h>
+
 #include <minerva/util/interface/debug.h>
 
 namespace minerva
@@ -60,6 +62,8 @@ void gemm(Matrix& result, double beta,
 
     if(CublasLibrary::loaded())
     {
+        parallel::setNotSynchronized();
+
         if(left.precision() == SinglePrecision())
         {
             float alphaCopy = alpha;

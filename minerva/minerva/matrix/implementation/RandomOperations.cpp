@@ -5,6 +5,8 @@
 #include <minerva/matrix/interface/CurandLibrary.h>
 #include <minerva/matrix/interface/Matrix.h>
 
+#include <minerva/parallel/interface/Synchronization.h>
+
 #include <minerva/util/interface/debug.h>
 
 // Standard Library Includes
@@ -22,10 +24,12 @@ class RandomGeneratorState
 public:
     ~RandomGeneratorState()
     {
+        /*
         if(_cudaEngine)
         {
             CurandLibrary::curandDestroyGenerator(*_cudaEngine);
         }
+        */
     }
 
 
@@ -89,6 +93,8 @@ void rand(Matrix& result)
 {
     if(result.isContiguous() && CurandLibrary::loaded())
     {
+        parallel::setNotSynchronized();
+
         if(result.precision() == SinglePrecision())
         {
             CurandLibrary::curandGenerateUniform(detail::randomGeneratorState.getCudaEngine(),
@@ -136,6 +142,8 @@ void randn(Matrix& result)
 {
     if(result.isContiguous() && CurandLibrary::loaded())
     {
+        parallel::setNotSynchronized();
+
         if(result.precision() == SinglePrecision())
         {
             CurandLibrary::curandGenerateNormal(detail::randomGeneratorState.getCudaEngine(),

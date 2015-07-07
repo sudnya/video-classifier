@@ -22,6 +22,58 @@ namespace matrix
 namespace detail
 {
 
+template<typename NativeType, typename OperationType>
+class BinaryApplyLambda
+{
+public:
+    CUDA_DECORATOR void operator()(parallel::ThreadGroup threadGroup) const
+    {
+        for(size_t i = threadGroup.id(), step = threadGroup.size(); i < elements; i += step)
+        {
+            resultBase[i] = nativeOperation(leftBase[i], rightBase[i]);
+        }
+    }
+
+public:
+          NativeType* resultBase;
+    const NativeType* leftBase;
+    const NativeType* rightBase;
+
+public:
+    OperationType nativeOperation;
+
+public:
+    size_t elements;
+
+};
+
+template<typename NativeType, typename OperationType>
+class BinaryNoncontiguousApplyLambda
+{
+public:
+    CUDA_DECORATOR void operator()(parallel::ThreadGroup threadGroup) const
+    {
+        for(size_t i = threadGroup.id(), step = threadGroup.size(); i < elements; i += step)
+        {
+            auto fullDimension = linearToDimension(i, resultView.size());
+
+            resultView(fullDimension) = nativeOperation(leftView(fullDimension), rightView(fullDimension));
+        }
+    }
+
+public:
+    MatrixView<NativeType>      resultView;
+    ConstMatrixView<NativeType> leftView;
+    ConstMatrixView<NativeType> rightView;
+
+public:
+    OperationType nativeOperation;
+
+public:
+    size_t elements;
+
+};
+
 template<typename OperationType, typename T>
 void applyOverPrecisions(Matrix& result, const Matrix& left, const Matrix& right,
     const Operation& op, const Precision& precision, std::tuple<T> precisions)
@@ -41,14 +93,10 @@ void applyOverPrecisions(Matrix& result, const Matrix& left, const Matrix& right
         auto leftBase   = static_cast<const NativeType*>(left.data());
         auto rightBase  = static_cast<const NativeType*>(right.data());
 
-        parallel::multiBulkSynchronousParallel([=](parallel::ThreadGroup threadGroup)
-        {
-            for(size_t i = threadGroup.id(), step = threadGroup.size(); i < elements; i += step)
-            {
-                resultBase[i] = nativeOperation(leftBase[i], rightBase[i]);
-            }
-        });
+        auto lambda = BinaryApplyLambda<NativeType, OperationType>
+            {resultBase, leftBase, rightBase, nativeOperation, elements};
 
+        parallel::multiBulkSynchronousParallel(lambda);
     }
     else
     {
@@ -56,15 +104,10 @@ void applyOverPrecisions(Matrix& result, const Matrix& left, const Matrix& right
         ConstMatrixView<NativeType> leftView(left);
         ConstMatrixView<NativeType> rightView(right);
 
-        parallel::multiBulkSynchronousParallel([=](parallel::ThreadGroup threadGroup)
-        {
-            for(size_t i = threadGroup.id(), step = threadGroup.size(); i < elements; i += step)
-            {
-                auto fullDimension = linearToDimension(i, resultView.size());
+        auto lambda = BinaryNoncontiguousApplyLambda<NativeType, OperationType>
+            {resultView, leftView, rightView, nativeOperation, elements};
 
-                resultView(fullDimension) = nativeOperation(leftView(fullDimension), rightView(fullDimension));
-            }
-        });
+        parallel::multiBulkSynchronousParallel(lambda);
     }
 }
 
@@ -152,6 +195,54 @@ Matrix apply(const Matrix& left, const Matrix& right, const Operation& op)
 namespace detail
 {
 
+template<typename NativeType, typename OperationType>
+class UnaryApplyLambda
+{
+public:
+    CUDA_DECORATOR void operator()(parallel::ThreadGroup threadGroup)
+    {
+        for(size_t i = threadGroup.id(), step = threadGroup.size(); i < elements; i += step)
+        {
+            resultBase[i] = nativeOperation(inputBase[i]);
+        }
+    }
+
+public:
+          NativeType* resultBase;
+    const NativeType* inputBase;
+
+public:
+    size_t elements;
+
+public:
+    OperationType nativeOperation;
+};
+
+template<typename NativeType, typename OperationType>
+class UnaryNoncontiguousApplyLambda
+{
+public:
+    CUDA_DECORATOR void operator()(parallel::ThreadGroup threadGroup)
+    {
+        for(size_t i = threadGroup.id(), step = threadGroup.size(); i < elements; i += step)
+        {
+            auto dimension = linearToDimension(i, resultView.size());
+
+            resultView(dimension) = nativeOperation(inputView(dimension));
+        }
+    }
+
+public:
+    MatrixView<NativeType>      resultView;
+    ConstMatrixView<NativeType> inputView;
+
+public:
+    size_t elements;
+
+public:
+    OperationType nativeOperation;
+};
+
 template<typename OperationType, typename T>
 void applyOverPrecisions(Matrix& result, const Matrix& input,
     const Operation& op, const Precision& precision, std::tuple<T> precisions)
@@ -170,13 +261,10 @@ void applyOverPrecisions(Matrix& result, const Matrix& input,
         auto resultBase = static_cast<NativeType*>(result.data());
         auto inputBase  = static_cast<const NativeType*>(input.data());
 
-        parallel::multiBulkSynchronousParallel([=](parallel::ThreadGroup threadGroup)
-        {
-            for(size_t i = threadGroup.id(), step = threadGroup.size(); i < elements; i += step)
-            {
-                resultBase[i] = nativeOperation(inputBase[i]);
-            }
-        });
+        auto lambda = UnaryApplyLambda<NativeType, OperationType>
+            {resultBase, inputBase, elements, nativeOperation};
+
+        parallel::multiBulkSynchronousParallel(lambda);
     }
     else
     {
@@ -184,15 +272,10 @@ void applyOverPrecisions(Matrix& result, const Matrix& input,
         MatrixView<NativeType>      resultView(result);
         ConstMatrixView<NativeType> inputView(input);
 
-        parallel::multiBulkSynchronousParallel([=](parallel::ThreadGroup threadGroup)
-        {
-            for(size_t i = threadGroup.id(), step = threadGroup.size(); i < elements; i += step)
-            {
-                auto dimension = linearToDimension(i, resultView.size());
+        auto lambda = UnaryNoncontiguousApplyLambda<NativeType, OperationType>
+            {resultView, inputView, elements, nativeOperation};
 
-                resultView(dimension) = nativeOperation(inputView(dimension));
-            }
-        });
+        parallel::multiBulkSynchronousParallel(lambda);
     }
 }
 
@@ -270,27 +353,73 @@ Matrix apply(const Matrix& input, const Operation& op)
 namespace detail
 {
 
+static const size_t tileSize = 8;
+
+template<typename NativeType, typename ActualOperation>
+class ReduceAllDimensionsStepLambda
+{
+public:
+    CUDA_DECORATOR void operator()(parallel::ThreadGroup threadGroup) const
+    {
+        for(size_t i = threadGroup.id(); i < elements; i += threadGroup.size())
+        {
+            NativeType value = rawInput[i];
+
+            for(size_t inputElement = i + elements; inputElement < inputElements; inputElement += elements)
+            {
+                value = nativeOperation(value, rawInput[inputElement]);
+            }
+
+            rawResult[i] = value;
+        }
+    }
+
+public:
+          NativeType* rawResult;
+    const NativeType* rawInput;
+
+public:
+    size_t elements;
+    size_t inputElements;
+
+public:
+    ActualOperation nativeOperation;
+
+};
+
 template <typename ActualOperation, typename ActualPrecision>
-void reduce(Matrix& result, const Matrix& input, const Dimension& unsortedDimensions, const Operation& op, const std::tuple<ActualPrecision>& p)
+void reduceAllDimensionsStep(Matrix& result, const Matrix& input, const ActualOperation& nativeOperation, const ActualPrecision& p)
 {
     typedef typename ActualPrecision::type NativeType;
 
-    Dimension dimensions = unsortedDimensions;
+    NativeType*       rawResult = static_cast<NativeType*>(result.data());
+    const NativeType* rawInput  = static_cast<const NativeType*>(input.data());
 
-    std::sort(dimensions.begin(), dimensions.end());
+    auto lambda = ReduceAllDimensionsStepLambda<NativeType, ActualOperation>{rawResult, rawInput, result.elements(), input.elements(), nativeOperation};
 
-    assert(ActualPrecision()  == result.precision());
-    assert(result.precision() == input.precision());
-    assert(result.size()      == removeDimensions(input.size(), dimensions));
+    parallel::multiBulkSynchronousParallel(lambda);
+}
 
-    size_t elements = result.elements();
+template <typename ActualOperation, typename ActualPrecision>
+void reduceAllDimensions(Matrix& result, const Matrix& input, const ActualOperation& nativeOperation, const ActualPrecision& p)
+{
+    if(input.elements() < tileSize)
+    {
+        return reduceAllDimensionsStep(result, input, nativeOperation, p);
+    }
 
-    auto nativeOperation = static_cast<const ActualOperation&>(op);
+    Matrix temporary({(input.elements() + tileSize - 1) / tileSize}, p);
 
-    MatrixView<NativeType>      resultView(result);
-    ConstMatrixView<NativeType> inputView(input);
+    reduceAllDimensionsStep(temporary, input, nativeOperation, p);
 
-    parallel::multiBulkSynchronousParallel([=](parallel::ThreadGroup threadGroup)
+    reduceAllDimensions(result, temporary, nativeOperation, p);
+}
+
+template<typename NativeType, typename ActualOperation>
+class GenericReduceLambda
+{
+public:
+    CUDA_DECORATOR void operator()(parallel::ThreadGroup threadGroup) const
     {
         for(size_t i = threadGroup.id(); i < elements; i += threadGroup.size())
         {
@@ -322,7 +451,55 @@ void reduce(Matrix& result, const Matrix& input, const Dimension& unsortedDimens
             // save the result
             resultView(resultIndex) = resultValue;
         }
-    });
+
+    }
+
+public:
+    MatrixView<NativeType>      resultView;
+    ConstMatrixView<NativeType> inputView;
+
+public:
+    size_t elements;
+
+public:
+    ActualOperation nativeOperation;
+
+public:
+    Dimension dimensions;
+
+};
+
+template <typename ActualOperation, typename ActualPrecision>
+void reduce(Matrix& result, const Matrix& input, const Dimension& unsortedDimensions, const Operation& op, const std::tuple<ActualPrecision>& p)
+{
+    typedef typename ActualPrecision::type NativeType;
+
+    Dimension dimensions = unsortedDimensions;
+
+    std::sort(dimensions.begin(), dimensions.end());
+
+    assert(ActualPrecision()  == result.precision());
+    assert(result.precision() == input.precision());
+    assert(result.size()      == removeDimensions(input.size(), dimensions));
+
+    size_t elements = result.elements();
+
+    auto nativeOperation = static_cast<const ActualOperation&>(op);
+
+    // Reduce down to a single element
+    if(elements == 1)
+    {
+        reduceAllDimensions(result, input, nativeOperation, ActualPrecision());
+    }
+    else
+    {
+        MatrixView<NativeType>      resultView(result);
+        ConstMatrixView<NativeType> inputView(input);
+
+        auto lambda = GenericReduceLambda<NativeType, ActualOperation>{resultView, inputView, elements, nativeOperation, dimensions};
+
+        parallel::multiBulkSynchronousParallel(lambda);
+    }
 
 }
 
@@ -330,6 +507,7 @@ template <typename ActualOperation, typename PossiblePrecisions>
 void reduce(Matrix& result, const Matrix& input, const Dimension& dimensions, const Operation& op, const PossiblePrecisions& possiblePrecisions)
 {
     typedef typename std::tuple_element<0, PossiblePrecisions>::type PossiblePrecisionType;
+
     if(result.precision() == PossiblePrecisionType())
     {
         reduce<ActualOperation>(result, input, dimensions, op, std::tuple<PossiblePrecisionType>());
@@ -405,6 +583,37 @@ static Dimension fillOutDimension(const Dimension& d, const Dimension& leftSize,
     return retVal;
 }
 
+template <typename NativeType, typename ActualOperation>
+class BroadcastLambda
+{
+public:
+    CUDA_DECORATOR void operator()(parallel::ThreadGroup threadGroup) const
+    {
+        for(size_t i = threadGroup.id(); i < elements; i += threadGroup.size())
+        {
+            auto fullDimension    = linearToDimension(i, resultView.size());
+            auto reducedDimension = removeDimensions(fullDimension, dimension);
+
+            resultView(fullDimension) = nativeOperation(leftView(fullDimension), rightView(reducedDimension));
+        }
+    }
+
+public:
+    MatrixView<NativeType>      resultView;
+    ConstMatrixView<NativeType> leftView;
+    ConstMatrixView<NativeType> rightView;
+
+public:
+    size_t elements;
+
+public:
+    ActualOperation nativeOperation;
+
+public:
+    Dimension dimension;
+
+};
+
 template <typename ActualOperation, typename ActualPrecision>
 void broadcast(Matrix& result, const Matrix& left, const Matrix& right, const Dimension& d, const Operation& op,
     const std::tuple<ActualPrecision>& p)
@@ -425,16 +634,9 @@ void broadcast(Matrix& result, const Matrix& left, const Matrix& right, const Di
     ConstMatrixView<NativeType> leftView(left);
     ConstMatrixView<NativeType> rightView(right);
 
-    parallel::multiBulkSynchronousParallel([=](parallel::ThreadGroup threadGroup)
-    {
-        for(size_t i = threadGroup.id(); i < elements; i += threadGroup.size())
-        {
-            auto fullDimension    = linearToDimension(i, resultView.size());
-            auto reducedDimension = removeDimensions(fullDimension, dimension);
+    auto lambda = BroadcastLambda<NativeType, ActualOperation>{resultView, leftView, rightView, elements, nativeOperation, dimension};
 
-            resultView(fullDimension) = nativeOperation(leftView(fullDimension), rightView(reducedDimension));
-        }
-    });
+    parallel::multiBulkSynchronousParallel(lambda);
 }
 
 template <typename ActualOperation, typename PossiblePrecisions>

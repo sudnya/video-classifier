@@ -31,6 +31,8 @@ void CudnnLibrary::CudnnLibrary::load()
 
 bool CudnnLibrary::loaded()
 {
+    load();
+
     return _interface.loaded();
 }
 

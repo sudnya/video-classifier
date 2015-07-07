@@ -8,6 +8,7 @@
 // Standard Library Includes
 #include <random>
 #include <set>
+#include <memory>
 
 // Forward Declarations
 namespace minerva { namespace matrix  { class Matrix;                 } }

@@ -30,7 +30,7 @@ namespace input
 {
 
 InputVisualDataProducer::InputVisualDataProducer(const std::string& imageDatabaseFilename)
-: _sampleDatabasePath(imageDatabaseFilename), _remainingSamples(0), _initialized(false)
+: _sampleDatabasePath(imageDatabaseFilename), _remainingSamples(0), _nextImage(0), _initialized(false)
 {
 
 }
@@ -72,13 +72,24 @@ void InputVisualDataProducer::initialize()
 
     parseImageDatabase(_images, _videos, _sampleDatabasePath, getRequiresLabeledData());
 
+    // Determine how many images to cache
+    size_t imagesToCache = util::KnobDatabase::getKnobValue(
+        "InputVisualDataProducer::ImageCacheSize", 128);
+
+    imagesToCache = std::min(imagesToCache, _images.size());
+
+    for(size_t i = 0; i < imagesToCache; ++i)
+    {
+        _images[i].load();
+    }
+
     reset();
 
     _initialized = true;
 }
 
 static ImageVector getBatch(ImageVector& images, VideoVector& video,
-    size_t& remainingSamples, size_t batchSize, std::default_random_engine& generator,
+    size_t& remainingSamples, size_t& nextImage, size_t batchSize, std::default_random_engine& generator,
     bool requiresLabeledData);
 
 static void standardizeInput(matrix::Matrix& input, double mean, double standardDeviation)
@@ -93,7 +104,10 @@ static void standardizeInput(matrix::Matrix& input, double mean, double standard
     // divide by standard deviation
     apply(input, input, matrix::Divide(standardDeviation));
 
-    util::log("InputVisualDataProducer") << "Standardized input " << input.toString();
+    if(util::isLogEnabled("InputVisualDataProducer::Detail"))
+    {
+        util::log("InputVisualDataProducer::Detail") << "Standardized input " << input.toString();
+    }
 }
 
 InputVisualDataProducer::InputAndReferencePair InputVisualDataProducer::pop()
@@ -101,12 +115,29 @@ InputVisualDataProducer::InputAndReferencePair InputVisualDataProducer::pop()
     assert(_initialized);
 
     ImageVector batch = getBatch(_images, _videos, _remainingSamples,
-        getBatchSize(), _generator, getRequiresLabeledData());
+        _nextImage, getBatchSize(), _generator, getRequiresLabeledData());
 
     auto imageDimension = getInputSize();
 
     // TODO: specialize this logic
-    auto input = batch.getFeatureMatrix(imageDimension[0], imageDimension[1], imageDimension[2]);
+    Matrix input;
+
+    bool shouldCropImages = util::KnobDatabase::getKnobValue(
+        "InputVisualDataProducer::CropImagesRandomly", false);
+
+    if(shouldCropImages)
+    {
+        double cropWindowRatio = util::KnobDatabase::getKnobValue(
+            "InputVisualDataProducer::CropWindowRatio", 0.15);
+        input = batch.getRandomCropFeatureMatrix(imageDimension[0], imageDimension[1],
+            imageDimension[2], _generator, cropWindowRatio);
+    }
+    else
+    {
+        input = batch.getDownsampledFeatureMatrix(imageDimension[0], imageDimension[1],
+            imageDimension[2]);
+    }
+
     auto reference = batch.getReference(getOutputLabels());
 
     if(getStandardizeInput())
@@ -131,6 +162,9 @@ bool InputVisualDataProducer::empty() const
 void InputVisualDataProducer::reset()
 {
     _remainingSamples = getUniqueSampleCount();
+    _nextImage = 0;
+    std::shuffle(_images.begin(), _images.end(), _generator);
+    std::shuffle(_videos.begin(), _videos.end(), _generator);
 }
 
 size_t InputVisualDataProducer::getUniqueSampleCount() const
@@ -148,11 +182,13 @@ static void parseImageDatabase(ImageVector& images, VideoVector& videos,
 
     database::SampleDatabase sampleDatabase(path);
 
+    sampleDatabase.load();
+
     for(auto& sample : sampleDatabase)
     {
         if(!sample.hasLabel() && requiresLabeledData)
         {
-            util::log("InputVisualDataProducer") << "  skipped unlabeled data '"
+            util::log("InputVisualDataProducer::Detail") << "  skipped unlabeled data '"
                 << sample.path() << "'\n";
             continue;
         }
@@ -162,12 +198,12 @@ static void parseImageDatabase(ImageVector& images, VideoVector& videos,
 
             if(sample.hasLabel())
             {
-                util::log("InputVisualDataProducer") << "  found labeled image '" << sample.path()
+                util::log("InputVisualDataProducer::Detail") << "  found labeled image '" << sample.path()
                     << "' with label '" << sample.label() << "'\n";
             }
             else
             {
-                util::log("InputVisualDataProducer") << "  found unlabeled image '" << sample.path()
+                util::log("InputVisualDataProducer::Detail") << "  found unlabeled image '" << sample.path()
                     << "'\n";
             }
 
@@ -177,12 +213,12 @@ static void parseImageDatabase(ImageVector& images, VideoVector& videos,
         {
             if(sample.hasLabel())
             {
-                util::log("InputVisualDataProducer") << "  found labeled video '" << sample.path()
+                util::log("InputVisualDataProducer::Detail") << "  found labeled video '" << sample.path()
                     << "' with label '" << sample.label() << "'\n";
             }
             else
             {
-                util::log("InputVisualDataProducer") << "  found unlabeled video '" << sample.path()
+                util::log("InputVisualDataProducer::Detail") << "  found unlabeled video '" << sample.path()
                     << "'n";
             }
 
@@ -197,10 +233,10 @@ static void parseImageDatabase(ImageVector& images, VideoVector& videos,
 static void getVideoBatch(ImageVector& batch, VideoVector& videos,
     size_t& remainingSamples, size_t batchSize, std::default_random_engine& generator, bool requiresLabeledData);
 static void getImageBatch(ImageVector& batch, ImageVector& images,
-    size_t& remainingSamples, size_t batchSize, std::default_random_engine& generator);
+    size_t& remainingSamples, size_t& nextImage, size_t batchSize, std::default_random_engine& generator);
 
 static ImageVector getBatch(ImageVector& images, VideoVector& videos,
-    size_t& remainingSamples, size_t batchSize, std::default_random_engine& generator,
+    size_t& remainingSamples, size_t& nextImage, size_t batchSize, std::default_random_engine& generator,
     bool requiresLabeledData)
 {
     std::uniform_int_distribution<size_t> distribution(0, batchSize);
@@ -221,7 +257,7 @@ static ImageVector getBatch(ImageVector& images, VideoVector& videos,
     ImageVector batch;
 
     getVideoBatch(batch, videos, remainingSamples, videoBatchSize, generator, requiresLabeledData);
-    getImageBatch(batch, images, remainingSamples, imageBatchSize, generator);
+    getImageBatch(batch, images, remainingSamples, nextImage, imageBatchSize, generator);
 
     return batch;
 }
@@ -289,7 +325,7 @@ static VideoAndFrameVector pickRandomFrames(VideoVector& videos,
     unsigned int maxVideoFrames, bool requiresLabeledData,
     std::default_random_engine& generator)
 {
-    util::log("InputVisualDataProducer") << " Picking random " << maxVideoFrames
+    util::log("InputVisualDataProducer::Detail") << " Picking random " << maxVideoFrames
         << " frames from videos\n";
 
     if(videos.size() == 0)
@@ -316,7 +352,7 @@ static VideoAndFrameVector pickRandomFrames(VideoVector& videos,
             frame = mapFrameIndexToLabeledFrameIndex(frame, videos[video]);
         }
 
-        util::log("InputVisualDataProducer") << "  Video " << videos[video].path()
+        util::log("InputVisualDataProducer::Detail") << "  Video " << videos[video].path()
             << " has " << frames << " frames\n";
 
         positions.push_back(std::make_pair(video, frame));
@@ -325,40 +361,39 @@ static VideoAndFrameVector pickRandomFrames(VideoVector& videos,
     return positions;
 }
 
-typedef std::vector<unsigned int> IntVector;
-
-IntVector getRandomOrder(unsigned int size, std::default_random_engine& generator)
-{
-    IntVector order(size);
-
-    for(unsigned int i = 0; i < size; ++i)
-    {
-        order[i] = i;
-    }
-
-    std::shuffle(order.begin(), order.end(), generator);
-
-    return order;
-}
-
 static void getImageBatch(ImageVector& batch, ImageVector& images,
-    size_t& remainingSamples, size_t maxBatchSize, std::default_random_engine& generator)
+    size_t& remainingSamples, size_t& nextImage, size_t maxBatchSize, std::default_random_engine& generator)
 {
-    util::log("InputVisualDataProducer") << "Collecting image batches\n";
-
-    // shuffle the inputs
-    auto randomImageOrder = getRandomOrder(images.size(), generator);
-
     auto batchSize = std::min(images.size(),
         std::min(remainingSamples, (size_t)maxBatchSize));
 
     for(size_t i = 0; i < batchSize; ++i)
     {
-        images[randomImageOrder[i]].load();
-        batch.push_back(images[randomImageOrder[i]]);
-    }
+        while(remainingSamples > 0)
+        {
+            try
+            {
+                size_t imageId = nextImage % images.size();
+                ++nextImage;
 
-    remainingSamples -= batchSize;
+                bool isCached = images[imageId].loaded();
+
+                images[imageId].load();
+                batch.push_back(images[imageId]);
+                if(!isCached)
+                {
+                    images[imageId].invalidateCache();
+                }
+
+                --remainingSamples;
+                break;
+            }
+            catch (const std::runtime_error& e)
+            {
+                continue;
+            }
+        }
+    }
 }
 
 static void consolidateLabels(ImageVector& images, VideoVector& videos)

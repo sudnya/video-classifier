@@ -916,7 +916,7 @@ bool test2dForwardConvolution()
 
     Matrix input(w, h, c, n);
 
-    for(int i = 0; i < input.elements(); ++i)
+    for(size_t i = 0; i < input.elements(); ++i)
     {
         input(i) = i;
     }
@@ -927,7 +927,7 @@ bool test2dForwardConvolution()
 
     Matrix filter(s, r, c, k);
 
-    for(int i = 0; i < filter.elements(); ++i)
+    for(size_t i = 0; i < filter.elements(); ++i)
     {
         filter(i) = i;
     }
@@ -983,7 +983,7 @@ bool test2dStridedForwardConvolution()
 
     Matrix input(w, h, c, n);
 
-    for(int i = 0; i < input.elements(); ++i)
+    for(size_t i = 0; i < input.elements(); ++i)
     {
         input(i) = i;
     }
@@ -994,7 +994,7 @@ bool test2dStridedForwardConvolution()
 
     Matrix filter(s, r, c, k);
 
-    for(int i = 0; i < filter.elements(); ++i)
+    for(size_t i = 0; i < filter.elements(); ++i)
     {
         filter(i) = i;
     }
@@ -1075,14 +1075,14 @@ bool test1dBackwardConvolution()
 
     reference(0, 0, 0, 0) = 0;
     reference(1, 0, 0, 0) = 2;
-    reference(2, 0, 0, 0) = 5;
-    reference(3, 0, 0, 0) = 8;
-    reference(4, 0, 0, 0) = 3;
+    reference(2, 0, 0, 0) = 4;
+    reference(3, 0, 0, 0) = 6;
+    reference(4, 0, 0, 0) = 0;
     reference(5, 0, 0, 0) = 0;
 
     Matrix computed(reference.size(), reference.precision());
-    
-    reverseConvolutionDeltas(computed, filter, {1, 1}, deltas, {2, 0});
+
+    reverseConvolutionDeltas(computed, filter, {1, 1}, deltas, {0, 0});
 
     if(reference != computed)
     {
@@ -1142,26 +1142,26 @@ bool test2dBackwardConvolution()
     reference(0, 0, 0, 0) = 0;
     reference(1, 0, 0, 0) = 5;
     reference(2, 0, 0, 0) = 14;
-    reference(3, 0, 0, 0) = 8;
+    reference(3, 0, 0, 0) = 11;
 
     reference(0, 1, 0, 0) = 15;
-    reference(1, 1, 0, 0) = 35;
-    reference(2, 1, 0, 0) = 49;
-    reference(3, 1, 0, 0) = 24;
+    reference(1, 1, 0, 0) = 34;
+    reference(2, 1, 0, 0) = 55;
+    reference(3, 1, 0, 0) = 34;
 
-    reference(0, 2, 0, 0) = 9;
-    reference(1, 2, 0, 0) = 19;
-    reference(2, 2, 0, 0) = 25;
-    reference(3, 2, 0, 0) = 10;
+    reference(0, 2, 0, 0) = 6;
+    reference(1, 2, 0, 0) = 11;
+    reference(2, 2, 0, 0) = 14;
+    reference(3, 2, 0, 0) = 5;
 
-    reference(0, 3, 0, 0) = 3;
-    reference(1, 3, 0, 0) = 4;
-    reference(2, 3, 0, 0) = 5;
+    reference(0, 3, 0, 0) = 0;
+    reference(1, 3, 0, 0) = 0;
+    reference(2, 3, 0, 0) = 0;
     reference(3, 3, 0, 0) = 0;
 
     Matrix computed(reference.size(), reference.precision());
-    
-    reverseConvolutionDeltas(computed, filter, {1, 1}, deltas, {1, 2});
+
+    reverseConvolutionDeltas(computed, filter, {1, 1}, deltas, {0, 0});
 
     if(reference != computed)
     {
@@ -1217,14 +1217,14 @@ bool test2dStridedBackwardConvolution()
     Matrix reference(2, 2, 1, 1);
 
     reference(0, 0, 0, 0) = 0;
-    reference(1, 0, 0, 0) = 14;
+    reference(1, 0, 0, 0) = 0;
 
-    reference(0, 1, 0, 0) = 9;
-    reference(1, 1, 0, 0) = 25;
+    reference(0, 1, 0, 0) = 0;
+    reference(1, 1, 0, 0) = 0;
 
     Matrix computed(reference.size(), reference.precision());
-    
-    reverseConvolutionDeltas(computed, filter, {2, 2}, deltas, {1, 2});
+
+    reverseConvolutionDeltas(computed, filter, {2, 2}, deltas, {0, 0});
 
     if(reference != computed)
     {
@@ -1280,7 +1280,7 @@ bool test1dConvolutionGradient()
     reference(1, 0, 0, 0) = 5;
 
     Matrix computed(reference.size(), reference.precision());
-    
+
     reverseConvolutionGradients(computed, input, deltas, {1, 1}, {0, 0});
 
     if(reference != computed)
@@ -1343,7 +1343,7 @@ bool test2dConvolutionGradient()
     reference(1, 1, 0, 0) = 19;
 
     Matrix computed(reference.size(), reference.precision());
-    
+
     reverseConvolutionGradients(computed, input, deltas, {1, 1}, {0, 0});
 
     if(reference != computed)
@@ -1364,7 +1364,7 @@ bool test2dConvolutionGradient()
 
 int main(int argc, char** argv)
 {
-    minerva::util::enableAllLogs();
+    //minerva::util::enableAllLogs();
 
     std::cout << "Running matrix test unit tests\n";
 

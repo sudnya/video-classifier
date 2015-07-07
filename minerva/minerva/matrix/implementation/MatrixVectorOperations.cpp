@@ -5,6 +5,7 @@
 #include <minerva/matrix/interface/MatrixOperations.h>
 #include <minerva/matrix/interface/Operation.h>
 #include <minerva/matrix/interface/MatrixTransformations.h>
+#include <minerva/matrix/interface/DimensionTransformations.h>
 
 #include <minerva/parallel/interface/ParallelFor.h>
 #include <minerva/parallel/interface/ConcurrentCollectives.h>

@@ -73,7 +73,7 @@ static double findCubicMinimizer(double leftStep, double leftCost,
 
     // gamma = s * sqrt(a * a - ((du) / s) * ((dv) / s));
     double gamma = s *
-        std::sqrtf(a * a - (leftGradientDirection / s) * (rightGradientDirection / s));
+        sqrtf(a * a - (leftGradientDirection / s) * (rightGradientDirection / s));
 
     //if ((v) < (u)) gamma = -gamma;
     if ((rightStep) < (leftStep)) gamma = -gamma;
@@ -119,7 +119,7 @@ static double findCubicMinimizer(double leftStep, double leftCost,
     double a = theta / s;
 
     // gamma = s * sqrt(a * a - ((du) / s) * ((dv) / s));
-    double gamma = s * std::sqrtf(std::max(0.0, a * a - (leftGradientDirection / s) *
+    double gamma = s * std::sqrt(std::max(0.0, a * a - (leftGradientDirection / s) *
         (rightGradientDirection / s)));
 
     //if ((v) < (u)) gamma = -gamma;

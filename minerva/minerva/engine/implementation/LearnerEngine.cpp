@@ -42,7 +42,7 @@ void LearnerEngine::closeModel()
 LearnerEngine::ResultVector LearnerEngine::runOnBatch(Matrix&& input, Matrix&& reference)
 {
     util::log("LearnerEngine") << "Performing supervised "
-        "learning on batch of " << input.size()[1] <<  " images...\n";
+        "learning on batch of " << input.size()[input.size().size()-2] <<  " images...\n";
 
     auto network = getAggregateNetwork();
 

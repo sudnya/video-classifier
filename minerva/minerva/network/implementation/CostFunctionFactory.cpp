@@ -8,7 +8,7 @@
 #include <minerva/network/interface/CostFunctionFactory.h>
 
 #include <minerva/network/interface/SumOfSquaresCostFunction.h>
-#include <minerva/network/interface/SoftMaxCostFunction.h>
+#include <minerva/network/interface/SoftmaxCostFunction.h>
 
 namespace minerva
 {
