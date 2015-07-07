@@ -123,15 +123,19 @@ InputVisualDataProducer::InputAndReferencePair InputVisualDataProducer::pop()
     Matrix input;
 
     bool shouldCropImages = util::KnobDatabase::getKnobValue(
-        "InputVisualDataProducer::CropImages", false);
+        "InputVisualDataProducer::CropImagesRandomly", false);
 
     if(shouldCropImages)
     {
-        input = batch.getRandomCropFeatureMatrix(imageDimension[0], imageDimension[1], imageDimension[2], _generator);
+        double cropWindowRatio = util::KnobDatabase::getKnobValue(
+            "InputVisualDataProducer::CropWindowRatio", 0.15);
+        input = batch.getRandomCropFeatureMatrix(imageDimension[0], imageDimension[1],
+            imageDimension[2], _generator, cropWindowRatio);
     }
     else
     {
-        input = batch.getDownsampledFeatureMatrix(imageDimension[0], imageDimension[1], imageDimension[2]);
+        input = batch.getDownsampledFeatureMatrix(imageDimension[0], imageDimension[1],
+            imageDimension[2]);
     }
 
     auto reference = batch.getReference(getOutputLabels());

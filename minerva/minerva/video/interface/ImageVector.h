@@ -68,7 +68,7 @@ public:
 
 public:
 	Matrix getDownsampledFeatureMatrix(size_t xTileSize, size_t yTileSize, size_t colors) const;
-	Matrix getRandomCropFeatureMatrix(size_t xTileSize, size_t yTileSize, size_t colors, std::default_random_engine& engine) const;
+	Matrix getRandomCropFeatureMatrix(size_t xTileSize, size_t yTileSize, size_t colors, std::default_random_engine& engine, double cropWindowRatio) const;
     Matrix getReference(const util::StringVector& labels) const;
 
 private:
