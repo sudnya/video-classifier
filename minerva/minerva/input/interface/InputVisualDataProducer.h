@@ -58,6 +58,7 @@ private:
 
 private:
     size_t _remainingSamples;
+    size_t _nextImage;
 
 private:
     bool _initialized;

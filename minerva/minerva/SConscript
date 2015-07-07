@@ -38,6 +38,9 @@ programs.append(env.Program('test-matrix-vector', \
 #programs.append(env.Program('test-minerva-visualization', \
 #    ['visualization/test/test-minerva-visualization.cpp'], LIBS=minerva_libs))
 
+programs.append(env.Program('test-memory', \
+    ['parallel/test/test-memory.cpp'], LIBS=minerva_libs))
+
 programs.append(env.Program('test-minerva-display', \
     ['video/test/test-display.cpp'], LIBS=minerva_libs))
 

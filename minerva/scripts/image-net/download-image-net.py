@@ -21,7 +21,8 @@ def downloadTextFromUrl(url):
 
     try:
         text = urllib2.urlopen(url).read()
-    except:
+    except Exception as exception:
+	print exception
         return ""
 
     return text
@@ -347,8 +348,6 @@ def selectTerms(selectedCount):
     return selected, classes
 
 def main():
-    socket.setdefaulttimeout(10.0)
-
     parser = OptionParser()
 
     parser.add_option("-o", "--output_path", default="image-net-data/")
@@ -371,6 +370,8 @@ def main():
         selectedTermIds, classes = selectTerms(int(options.terms))
 
     print 'Selected', str(len(selectedTermIds)), 'terms, each with', options.maximum_images_per_term, 'images'
+    
+    socket.setdefaulttimeout(10.0)
 
     downloadImagesForTerms(selectedTermIds, classes, options)
 

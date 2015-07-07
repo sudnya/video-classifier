@@ -215,7 +215,7 @@ def BuildEnvironment():
 
     # add a variable to handle cuda architecture
     vars.Add(EnumVariable('cuda_arch', 'Cuda architecture', 'sm_30',
-        allowed_values = ('sm_30', 'sm_35', 'sm_50')))
+        allowed_values = ('sm_30', 'sm_35', 'sm_50', 'sm_52')))
 
     # create an Environment
     env = OldEnvironment(ENV = importEnvironment(), \
