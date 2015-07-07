@@ -112,13 +112,16 @@ ImageVector::Matrix ImageVector::getDownsampledFeatureMatrix(size_t xTileSize, s
         ++offset;
     }
 
-    util::log("ImageVector") << "Input image:" << matrix.toString();
+    if(util::isLogEnabled("ImageVector::Detail"))
+    {
+        util::log("ImageVector::Detail") << "Input image:" << matrix.toString();
+    }
 
     return matrix;
 }
 
 ImageVector::Matrix ImageVector::getRandomCropFeatureMatrix(size_t xTileSize, size_t yTileSize,
-    size_t colors, std::default_random_engine& randomEngine) const
+    size_t colors, std::default_random_engine& randomEngine, double cropWindowRatio) const
 {
     size_t images = _images.size();
 
@@ -127,17 +130,22 @@ ImageVector::Matrix ImageVector::getRandomCropFeatureMatrix(size_t xTileSize, si
     size_t offset = 0;
     for(auto& image : _images)
     {
-        size_t sampleXTileSize = std::min(xTileSize, image.x());
-        size_t sampleYTileSize = std::min(yTileSize, image.y());
-        size_t sampleColors    = std::min(colors,    image.colorComponents());
+        size_t downsampledX = xTileSize * (1.0 + cropWindowRatio);
+        size_t downsampledY = yTileSize * (1.0 + cropWindowRatio);
 
-        //size_t xRemainder = image.x() - sampleXTileSize;
-        //size_t yRemainder = image.y() - sampleYTileSize;
+        auto downsampledImage = image.downsample(downsampledX, downsampledY, colors);
 
-        size_t xOffset = 0;//std::uniform_int_distribution<size_t>(0, xRemainder)(randomEngine);
-        size_t yOffset = 0;//std::uniform_int_distribution<size_t>(0, yRemainder)(randomEngine);
+        size_t sampleXTileSize = std::min(xTileSize, downsampledImage.x());
+        size_t sampleYTileSize = std::min(yTileSize, downsampledImage.y());
+        size_t sampleColors    = std::min(colors,    downsampledImage.colorComponents());
 
-        auto sample = image.getTile(xOffset, yOffset, sampleXTileSize, sampleYTileSize, sampleColors);
+        size_t xRemainder = image.x() - sampleXTileSize;
+        size_t yRemainder = image.y() - sampleYTileSize;
+
+        size_t xOffset = std::uniform_int_distribution<size_t>(0, xRemainder)(randomEngine);
+        size_t yOffset = std::uniform_int_distribution<size_t>(0, yRemainder)(randomEngine);
+
+        auto sample = downsampledImage.getTile(xOffset, yOffset, sampleXTileSize, sampleYTileSize, sampleColors);
 
         for(size_t c = 0; c < sampleColors; ++c)
         {

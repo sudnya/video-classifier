@@ -185,7 +185,7 @@ static void setSampleStatistics(Model& model, const Parameters& parameters)
 
     engine->setModel(&model);
     engine->setBatchSize(128);
-    engine->setMaximumSamplesToRun(256UL);
+    engine->setMaximumSamplesToRun(1024UL);
 
     // read from database and use model to train
     engine->runOnDatabaseFile(parameters.inputPath);
