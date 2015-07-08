@@ -4,7 +4,7 @@
     \brief  The source file for the matrix unit test class.
 */
 
-// Minerva Includes
+// Lucious Includes
 #include <minerva/matrix/interface/BlasOperations.h>
 #include <minerva/matrix/interface/CopyOperations.h>
 #include <minerva/matrix/interface/MatrixOperations.h>
@@ -34,26 +34,25 @@ bool testSaveLoad()
     reference(1, 1) = 4;
     reference(2, 0) = 5;
     reference(2, 1) = 6;
-    
+
     //read it into a stream and call save
     std::stringstream stream;
 
     //use load to load it from a stream
     minerva::matrix::save(stream, reference);
-    std::cout << stream.str();
-    
+
     //compare reference Matrix to loaded Matrix
     auto result = minerva::matrix::load(stream);
 
     if(reference != result)
     {
-        std::cout << " Matrix save load Test Failed:\n";
+        std::cout << " Matrix Save Load Test Failed:\n";
         std::cout << "  result matrix " << result.toString();
         std::cout << "  does not match reference matrix " << reference.toString();
     }
     else
     {
-        std::cout << " Matrix save load Test Passed\n";
+        std::cout << " Matrix Save Load Test Passed\n";
     }
 
     return reference == result;
