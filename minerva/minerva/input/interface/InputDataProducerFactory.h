@@ -10,9 +10,9 @@
 #include <string>
 
 // Forward Declarations
-namespace minerva { namespace input{ class InputDataProducer; } }
+namespace lucious { namespace input{ class InputDataProducer; } }
 
-namespace minerva
+namespace lucious
 {
 
 namespace input

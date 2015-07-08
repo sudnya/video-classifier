@@ -4,29 +4,29 @@
      \brief  The implementation of the FeedForwardLayer class.
 */
 
-// Minerva Includes
-#include <minerva/network/interface/FeedForwardLayer.h>
+// Lucious Includes
+#include <lucious/network/interface/FeedForwardLayer.h>
 
-#include <minerva/network/interface/ActivationFunction.h>
-#include <minerva/network/interface/ActivationCostFunction.h>
-#include <minerva/network/interface/WeightCostFunction.h>
+#include <lucious/network/interface/ActivationFunction.h>
+#include <lucious/network/interface/ActivationCostFunction.h>
+#include <lucious/network/interface/WeightCostFunction.h>
 
-#include <minerva/matrix/interface/Matrix.h>
-#include <minerva/matrix/interface/MatrixOperations.h>
-#include <minerva/matrix/interface/MatrixTransformations.h>
-#include <minerva/matrix/interface/BlasOperations.h>
-#include <minerva/matrix/interface/RandomOperations.h>
-#include <minerva/matrix/interface/Operation.h>
-#include <minerva/matrix/interface/MatrixVector.h>
+#include <lucious/matrix/interface/Matrix.h>
+#include <lucious/matrix/interface/MatrixOperations.h>
+#include <lucious/matrix/interface/MatrixTransformations.h>
+#include <lucious/matrix/interface/BlasOperations.h>
+#include <lucious/matrix/interface/RandomOperations.h>
+#include <lucious/matrix/interface/Operation.h>
+#include <lucious/matrix/interface/MatrixVector.h>
 
-#include <minerva/util/interface/debug.h>
-#include <minerva/util/interface/Knobs.h>
-#include <minerva/util/interface/memory.h>
+#include <lucious/util/interface/debug.h>
+#include <lucious/util/interface/Knobs.h>
+#include <lucious/util/interface/memory.h>
 
 // Standard Library Includes
 #include <memory>
 
-namespace minerva
+namespace lucious
 {
 
 namespace network

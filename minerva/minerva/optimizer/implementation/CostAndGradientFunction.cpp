@@ -4,13 +4,13 @@
 	\brief   The source file for the CostAndGradientFunction class.
 */
 
-// Minerva Includes
-#include <minerva/optimizer/interface/CostAndGradientFunction.h>
+// Lucious Includes
+#include <lucious/optimizer/interface/CostAndGradientFunction.h>
 
-#include <minerva/matrix/interface/Matrix.h>
-#include <minerva/matrix/interface/MatrixVector.h>
+#include <lucious/matrix/interface/Matrix.h>
+#include <lucious/matrix/interface/MatrixVector.h>
 
-namespace minerva
+namespace lucious
 {
 
 namespace optimizer

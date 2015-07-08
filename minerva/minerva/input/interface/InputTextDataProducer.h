@@ -6,9 +6,9 @@
 
 #pragma once
 
-#include <minerva/input/interface/InputDataProducer.h>
+#include <lucious/input/interface/InputDataProducer.h>
 
-namespace minerva
+namespace lucious
 {
 
 namespace input

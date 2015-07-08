@@ -4,10 +4,10 @@
     \brief  The source file for the ConvexSolver class.
 */
 
-// Minerva Includes
-#include <minerva/optimizer/interface/ConvexSolver.h>
+// Lucious Includes
+#include <lucious/optimizer/interface/ConvexSolver.h>
 
-namespace minerva
+namespace lucious
 {
 
 namespace optimizer

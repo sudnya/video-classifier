@@ -4,9 +4,9 @@
     \brief  The source file for the AtlasLibrary class.
 */
 
-// Minerva Includes
-#include <minerva/matrix/interface/AtlasLibrary.h>
-#include <minerva/util/interface/Casts.h>
+// Lucious Includes
+#include <lucious/matrix/interface/AtlasLibrary.h>
+#include <lucious/util/interface/Casts.h>
 
 // Standard Library Includes
 #include <stdexcept>
@@ -14,7 +14,7 @@
 // System-Specific Includes
 #include <dlfcn.h>
 
-namespace minerva
+namespace lucious
 {
 
 namespace matrix

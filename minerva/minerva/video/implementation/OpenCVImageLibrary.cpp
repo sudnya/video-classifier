@@ -4,16 +4,16 @@
 	\brief  The source file for the OpenCVImageLibrary class.
 */
 
-// Minerva Includes
-#include <minerva/video/interface/OpenCVImageLibrary.h>
-#include <minerva/video/interface/OpenCVLibrary.h>
+// Lucious Includes
+#include <lucious/video/interface/OpenCVImageLibrary.h>
+#include <lucious/video/interface/OpenCVLibrary.h>
 
-#include <minerva/util/interface/string.h>
+#include <lucious/util/interface/string.h>
 
 // Standard Library Interface
 #include <stdexcept>
 
-namespace minerva
+namespace lucious
 {
 
 namespace video

@@ -6,16 +6,16 @@
 
 #pragma once
 
-// Minerva Includes
-#include <minerva/optimizer/interface/NeuralNetworkSolver.h>
+// Lucious Includes
+#include <lucious/optimizer/interface/NeuralNetworkSolver.h>
 
 // Standard Library Includes
 #include <memory>
 
 // Forward Declarations
-namespace minerva { namespace optimizer { class GeneralDifferentiableSolver; } }
+namespace lucious { namespace optimizer { class GeneralDifferentiableSolver; } }
 
-namespace minerva
+namespace lucious
 {
 
 namespace optimizer

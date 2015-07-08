@@ -4,16 +4,16 @@
     \brief  The source file for the ConstantConstraint class.
 */
 
-// Minerva Includes
-#include <minerva/optimizer/interface/ConstantConstraint.h>
+// Lucious Includes
+#include <lucious/optimizer/interface/ConstantConstraint.h>
 
-#include <minerva/matrix/interface/Matrix.h>
-#include <minerva/matrix/interface/MatrixOperations.h>
-#include <minerva/matrix/interface/Operation.h>
+#include <lucious/matrix/interface/Matrix.h>
+#include <lucious/matrix/interface/MatrixOperations.h>
+#include <lucious/matrix/interface/Operation.h>
 
-#include <minerva/util/interface/debug.h>
+#include <lucious/util/interface/debug.h>
 
-namespace minerva
+namespace lucious
 {
 
 namespace optimizer

@@ -1,18 +1,18 @@
 
 
-// Minerva Includes
-#include <minerva/matrix/interface/RandomOperations.h>
-#include <minerva/matrix/interface/CurandLibrary.h>
-#include <minerva/matrix/interface/Matrix.h>
+// Lucious Includes
+#include <lucious/matrix/interface/RandomOperations.h>
+#include <lucious/matrix/interface/CurandLibrary.h>
+#include <lucious/matrix/interface/Matrix.h>
 
-#include <minerva/parallel/interface/Synchronization.h>
+#include <lucious/parallel/interface/Synchronization.h>
 
-#include <minerva/util/interface/debug.h>
+#include <lucious/util/interface/debug.h>
 
 // Standard Library Includes
 #include <random>
 
-namespace minerva
+namespace lucious
 {
 namespace matrix
 {

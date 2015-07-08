@@ -4,11 +4,11 @@
 	\brief  The source file for the ImageLibraryFactory class.
 */
 
-// Minerva Includes
-#include <minerva/video/interface/ImageLibraryFactory.h>
-#include <minerva/video/interface/OpenCVImageLibrary.h>
+// Lucious Includes
+#include <lucious/video/interface/ImageLibraryFactory.h>
+#include <lucious/video/interface/OpenCVImageLibrary.h>
 
-namespace minerva
+namespace lucious
 {
 
 namespace video

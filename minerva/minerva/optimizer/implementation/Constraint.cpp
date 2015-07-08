@@ -4,10 +4,10 @@
     \brief  The source file for the Constraint class.
 */
 
-// Minerva Includes
-#include <minerva/optimizer/interface/Constraint.h>
+// Lucious Includes
+#include <lucious/optimizer/interface/Constraint.h>
 
-namespace minerva
+namespace lucious
 {
 
 namespace optimizer

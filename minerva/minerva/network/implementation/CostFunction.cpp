@@ -4,10 +4,10 @@
     \brief  The source file for the CostFunction class.
 */
 
-// Minerva Includes
-#include <minerva/network/interface/CostFunction.h>
+// Lucious Includes
+#include <lucious/network/interface/CostFunction.h>
 
-namespace minerva
+namespace lucious
 {
 
 namespace network

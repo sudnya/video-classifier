@@ -3,28 +3,28 @@
  * The implementation of the Neural Network class
  */
 
-// Minerva Includes
-#include <minerva/network/interface/NeuralNetwork.h>
-#include <minerva/network/interface/CostFunction.h>
-#include <minerva/network/interface/CostFunctionFactory.h>
-#include <minerva/network/interface/Layer.h>
+// Lucious Includes
+#include <lucious/network/interface/NeuralNetwork.h>
+#include <lucious/network/interface/CostFunction.h>
+#include <lucious/network/interface/CostFunctionFactory.h>
+#include <lucious/network/interface/Layer.h>
 
-#include <minerva/optimizer/interface/NeuralNetworkSolver.h>
+#include <lucious/optimizer/interface/NeuralNetworkSolver.h>
 
-#include <minerva/matrix/interface/Matrix.h>
-#include <minerva/matrix/interface/MatrixVector.h>
-#include <minerva/matrix/interface/Operation.h>
-#include <minerva/matrix/interface/MatrixOperations.h>
+#include <lucious/matrix/interface/Matrix.h>
+#include <lucious/matrix/interface/MatrixVector.h>
+#include <lucious/matrix/interface/Operation.h>
+#include <lucious/matrix/interface/MatrixOperations.h>
 
-#include <minerva/util/interface/Knobs.h>
-#include <minerva/util/interface/debug.h>
+#include <lucious/util/interface/Knobs.h>
+#include <lucious/util/interface/debug.h>
 
 // Standard Library Includes
 #include <cassert>
 #include <vector>
 #include <ctime>
 
-namespace minerva
+namespace lucious
 {
 
 namespace network

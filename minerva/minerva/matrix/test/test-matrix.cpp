@@ -5,23 +5,23 @@
 */
 
 // Lucious Includes
-#include <minerva/matrix/interface/BlasOperations.h>
-#include <minerva/matrix/interface/CopyOperations.h>
-#include <minerva/matrix/interface/MatrixOperations.h>
-#include <minerva/matrix/interface/RandomOperations.h>
-#include <minerva/matrix/interface/FileOperations.h>
-#include <minerva/matrix/interface/ConvolutionalOperations.h>
-#include <minerva/matrix/interface/MatrixTransformations.h>
-#include <minerva/matrix/interface/Operation.h>
-#include <minerva/matrix/interface/Matrix.h>
+#include <lucious/matrix/interface/BlasOperations.h>
+#include <lucious/matrix/interface/CopyOperations.h>
+#include <lucious/matrix/interface/MatrixOperations.h>
+#include <lucious/matrix/interface/RandomOperations.h>
+#include <lucious/matrix/interface/FileOperations.h>
+#include <lucious/matrix/interface/ConvolutionalOperations.h>
+#include <lucious/matrix/interface/MatrixTransformations.h>
+#include <lucious/matrix/interface/Operation.h>
+#include <lucious/matrix/interface/Matrix.h>
 
-#include <minerva/util/interface/debug.h>
+#include <lucious/util/interface/debug.h>
 
 // Standard Library Includes
 #include <iostream>
 
 // Global Typedefs
-typedef minerva::matrix::Matrix Matrix;
+typedef lucious::matrix::Matrix Matrix;
 
 /* A simple test to save and load from a numpy array */
 bool testSaveLoad()
@@ -39,10 +39,10 @@ bool testSaveLoad()
     std::stringstream stream;
 
     //use load to load it from a stream
-    minerva::matrix::save(stream, reference);
+    lucious::matrix::save(stream, reference);
 
     //compare reference Matrix to loaded Matrix
-    auto result = minerva::matrix::load(stream);
+    auto result = lucious::matrix::load(stream);
 
     if(reference != result)
     {
@@ -210,7 +210,7 @@ bool testAddition()
     c(2, 0) = 10;
     c(2, 1) = 12;
 
-    Matrix computed = apply(Matrix(a), b, minerva::matrix::Add());
+    Matrix computed = apply(Matrix(a), b, lucious::matrix::Add());
 
     if(computed != c)
     {
@@ -253,7 +253,7 @@ bool testScalarAddition()
     c(2, 0) = 12;
     c(2, 1) = 13;
 
-    Matrix computed = apply(Matrix(a), minerva::matrix::Add(7));
+    Matrix computed = apply(Matrix(a), lucious::matrix::Add(7));
 
     if(computed != c)
     {
@@ -288,7 +288,7 @@ bool testReduce()
     a(2, 0) = 5;
     a(2, 1) = 6;
 
-    Matrix computed = reduce(a, {}, minerva::matrix::Add());
+    Matrix computed = reduce(a, {}, lucious::matrix::Add());
 
     if(computed[0] != 21.0)
     {
@@ -329,7 +329,7 @@ bool test2dReduce()
     c(1) = 7;
     c(2) = 11;
 
-    Matrix computed = reduce(a, {1}, minerva::matrix::Add());
+    Matrix computed = reduce(a, {1}, lucious::matrix::Add());
 
     if(computed != c)
     {
@@ -369,7 +369,7 @@ bool test2dReduce2()
     c(0) = 9;
     c(1) = 12;
 
-    Matrix computed = reduce(a, {0}, minerva::matrix::Add());
+    Matrix computed = reduce(a, {0}, lucious::matrix::Add());
 
     if(computed != c)
     {
@@ -428,7 +428,7 @@ bool testBroadcast()
     ref(2, 2) = 17;
     ref(2, 3) = 11;
 
-    Matrix computed = broadcast(a, b, {}, minerva::matrix::Add());
+    Matrix computed = broadcast(a, b, {}, lucious::matrix::Add());
 
     if(computed != ref)
     {
@@ -486,7 +486,7 @@ bool test4dReduce()
     c(2, 0, 0, 0) = 14;
     c(2, 1, 0, 0) = 18;
 
-    Matrix computed = reduce(a, {3}, minerva::matrix::Add());
+    Matrix computed = reduce(a, {3}, lucious::matrix::Add());
 
     if(computed != c)
     {
@@ -547,7 +547,7 @@ bool test2dBroadcast()
     ref(2, 2) = 12;
     ref(2, 3) = 5;
 
-    Matrix computed = broadcast(a, b, {0}, minerva::matrix::Add());
+    Matrix computed = broadcast(a, b, {0}, lucious::matrix::Add());
 
     if(computed != ref)
     {
@@ -742,7 +742,7 @@ bool testCopy()
 */
 bool testCopyBetweenPrecisions()
 {
-    Matrix a({3, 2}, minerva::matrix::SinglePrecision());
+    Matrix a({3, 2}, lucious::matrix::SinglePrecision());
 
     a(0, 0) = 1;
     a(0, 1) = 2;
@@ -751,7 +751,7 @@ bool testCopyBetweenPrecisions()
     a(2, 0) = 5;
     a(2, 1) = 6;
 
-    Matrix c({3, 2}, minerva::matrix::DoublePrecision());
+    Matrix c({3, 2}, lucious::matrix::DoublePrecision());
 
     c(0, 0) = 1;
     c(0, 1) = 2;
@@ -760,7 +760,7 @@ bool testCopyBetweenPrecisions()
     c(2, 0) = 5;
     c(2, 1) = 6;
 
-    Matrix computed = copy(Matrix(a), minerva::matrix::DoublePrecision());
+    Matrix computed = copy(Matrix(a), lucious::matrix::DoublePrecision());
 
     if(computed != c)
     {
@@ -781,13 +781,13 @@ bool testCopyBetweenPrecisions()
 */
 bool testUniformRandom()
 {
-    minerva::matrix::srand(377);
+    lucious::matrix::srand(377);
 
     size_t size = 100;
 
-    auto a = minerva::matrix::rand({size, size}, minerva::matrix::SinglePrecision());
+    auto a = lucious::matrix::rand({size, size}, lucious::matrix::SinglePrecision());
 
-    double mean = reduce(apply(a, minerva::matrix::Divide((size * size))), {}, minerva::matrix::Add())[0];
+    double mean = reduce(apply(a, lucious::matrix::Divide((size * size))), {}, lucious::matrix::Add())[0];
 
     bool passed = (mean < 0.6 && mean > 0.4);
 
@@ -809,13 +809,13 @@ bool testUniformRandom()
 */
 bool testNormalRandom()
 {
-    minerva::matrix::srand(377);
+    lucious::matrix::srand(377);
 
     size_t size = 100;
 
-    auto a = minerva::matrix::randn({size, size}, minerva::matrix::SinglePrecision());
+    auto a = lucious::matrix::randn({size, size}, lucious::matrix::SinglePrecision());
 
-    double mean = reduce(apply(a, minerva::matrix::Divide((size * size))), {}, minerva::matrix::Add())[0];
+    double mean = reduce(apply(a, lucious::matrix::Divide((size * size))), {}, lucious::matrix::Add())[0];
 
     bool passed = (mean < 0.1 && mean > -0.1);
 
@@ -1363,7 +1363,7 @@ bool test2dConvolutionGradient()
 
 int main(int argc, char** argv)
 {
-    //minerva::util::enableAllLogs();
+    //lucious::util::enableAllLogs();
 
     std::cout << "Running matrix test unit tests\n";
 

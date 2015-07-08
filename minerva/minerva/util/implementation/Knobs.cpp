@@ -4,17 +4,17 @@
 	\brief  The source file for the Knob class.
 */
 
-// Minerva Includes
-#include <minerva/util/interface/Knobs.h>
-#include <minerva/util/interface/KnobFile.h>
+// Lucious Includes
+#include <lucious/util/interface/Knobs.h>
+#include <lucious/util/interface/KnobFile.h>
 
-#include <minerva/util/interface/SystemCompatibility.h>
+#include <lucious/util/interface/SystemCompatibility.h>
 
 // Standard Library Includes
 #include <stdexcept>
 #include <map>
 
-namespace minerva
+namespace lucious
 {
 
 namespace util

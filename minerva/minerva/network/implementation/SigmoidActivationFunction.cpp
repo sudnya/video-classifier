@@ -4,14 +4,14 @@
     \brief  The header file for the SigmoidActivationFunction class.
 */
 
-// Minerva Includes
-#include <minerva/network/interface/SigmoidActivationFunction.h>
+// Lucious Includes
+#include <lucious/network/interface/SigmoidActivationFunction.h>
 
-#include <minerva/matrix/interface/Matrix.h>
-#include <minerva/matrix/interface/MatrixOperations.h>
-#include <minerva/matrix/interface/Operation.h>
+#include <lucious/matrix/interface/Matrix.h>
+#include <lucious/matrix/interface/MatrixOperations.h>
+#include <lucious/matrix/interface/Operation.h>
 
-namespace minerva
+namespace lucious
 {
 
 namespace network

@@ -1,14 +1,14 @@
 
-// Minerva Includes
-#include <minerva/parallel/interface/ParallelFor.h>
-#include <minerva/parallel/interface/ConcurrentCollectives.h>
-#include <minerva/parallel/interface/Synchronization.h>
+// Lucious Includes
+#include <lucious/parallel/interface/ParallelFor.h>
+#include <lucious/parallel/interface/ConcurrentCollectives.h>
+#include <lucious/parallel/interface/Synchronization.h>
 
 // Standard Library Includes
 #include <thread>
 #include <list>
 
-namespace minerva
+namespace lucious
 {
 namespace parallel
 {

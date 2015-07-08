@@ -4,38 +4,38 @@
     \brief  A unit test for classifying cats vs dogs.
 */
 
-// Minerva Includes
-#include <minerva/engine/interface/Engine.h>
-#include <minerva/engine/interface/EngineFactory.h>
+// Lucious Includes
+#include <lucious/engine/interface/Engine.h>
+#include <lucious/engine/interface/EngineFactory.h>
 
-#include <minerva/visualization/interface/NeuronVisualizer.h>
+#include <lucious/visualization/interface/NeuronVisualizer.h>
 
-#include <minerva/model/interface/Model.h>
+#include <lucious/model/interface/Model.h>
 
-#include <minerva/results/interface/ResultProcessor.h>
-#include <minerva/results/interface/LabelMatchResultProcessor.h>
+#include <lucious/results/interface/ResultProcessor.h>
+#include <lucious/results/interface/LabelMatchResultProcessor.h>
 
-#include <minerva/network/interface/FeedForwardLayer.h>
-#include <minerva/network/interface/NeuralNetwork.h>
-#include <minerva/network/interface/ActivationFunctionFactory.h>
+#include <lucious/network/interface/FeedForwardLayer.h>
+#include <lucious/network/interface/NeuralNetwork.h>
+#include <lucious/network/interface/ActivationFunctionFactory.h>
 
-#include <minerva/video/interface/Image.h>
-#include <minerva/video/interface/ImageVector.h>
+#include <lucious/video/interface/Image.h>
+#include <lucious/video/interface/ImageVector.h>
 
-#include <minerva/util/interface/debug.h>
-#include <minerva/util/interface/paths.h>
-#include <minerva/util/interface/ArgumentParser.h>
+#include <lucious/util/interface/debug.h>
+#include <lucious/util/interface/paths.h>
+#include <lucious/util/interface/ArgumentParser.h>
 
 // Type definitions
-typedef minerva::video::Image Image;
-typedef minerva::network::NeuralNetwork NeuralNetwork;
-typedef minerva::network::FeedForwardLayer FeedForwardLayer;
-typedef minerva::video::ImageVector ImageVector;
-typedef minerva::matrix::Matrix Matrix;
-typedef minerva::visualization::NeuronVisualizer NeuronVisualizer;
-typedef minerva::model::Model Model;
-typedef minerva::engine::Engine Engine;
-typedef minerva::results::LabelMatchResultProcessor LabelMatchResultProcessor;
+typedef lucious::video::Image Image;
+typedef lucious::network::NeuralNetwork NeuralNetwork;
+typedef lucious::network::FeedForwardLayer FeedForwardLayer;
+typedef lucious::video::ImageVector ImageVector;
+typedef lucious::matrix::Matrix Matrix;
+typedef lucious::visualization::NeuronVisualizer NeuronVisualizer;
+typedef lucious::model::Model Model;
+typedef lucious::engine::Engine Engine;
+typedef lucious::results::LabelMatchResultProcessor LabelMatchResultProcessor;
 
 class Parameters
 {
@@ -109,7 +109,7 @@ static void addFeatureSelector(Model& model, const Parameters& parameters,
             featureSelector.back()->getOutputBlockingFactor()));
 
     featureSelector.initializeRandomly(engine);
-    minerva::util::log("TestCatsVsDogs")
+    lucious::util::log("TestCatsVsDogs")
         << "Building feature selector network with "
         << featureSelector.getOutputCountForInputCount(
         parameters.xPixels * parameters.yPixels * parameters.colors) << " output neurons\n";
@@ -132,7 +132,7 @@ static void addClassifier(Model& model, const Parameters& parameters,
     classifier.addLayer(new FeedForwardLayer(1, fullyConnectedInputs, fullyConnectedSize));
     classifier.addLayer(new FeedForwardLayer(1, fullyConnectedSize,   fullyConnectedSize));
     classifier.addLayer(new FeedForwardLayer(1, fullyConnectedSize,   2                 ));
-    //classifier.back()->setActivationFunction(minerva::network::ActivationFunctionFactory::create("SigmoidActivationFunction"));
+    //classifier.back()->setActivationFunction(lucious::network::ActivationFunctionFactory::create("SigmoidActivationFunction"));
 
     classifier.initializeRandomly(engine);
 
@@ -141,11 +141,11 @@ static void addClassifier(Model& model, const Parameters& parameters,
 
     model.setNeuralNetwork("Classifier", classifier);
 
-    minerva::util::log("TestCatsVsDogs")
+    lucious::util::log("TestCatsVsDogs")
         << "Feature Selector Architecture "
         << featureSelector.shapeString() << "\n";
 
-    minerva::util::log("TestCatsVsDogs")
+    lucious::util::log("TestCatsVsDogs")
         << "Classifier Architecture "
         << classifier.shapeString() << "\n";
 }
@@ -162,7 +162,7 @@ static void createModel(Model& model, const Parameters& parameters,
 static void trainNetwork(Model& model, const Parameters& parameters)
 {
     // Train the network
-    std::unique_ptr<Engine> engine(minerva::engine::EngineFactory::create("LearnerEngine"));
+    std::unique_ptr<Engine> engine(lucious::engine::EngineFactory::create("LearnerEngine"));
 
     engine->setModel(&model);
     engine->setEpochs(parameters.epochs);
@@ -174,7 +174,7 @@ static void trainNetwork(Model& model, const Parameters& parameters)
 
 static float testNetwork(Model& model, const Parameters& parameters)
 {
-    std::unique_ptr<Engine> engine(minerva::engine::EngineFactory::create("ClassifierEngine"));
+    std::unique_ptr<Engine> engine(lucious::engine::EngineFactory::create("ClassifierEngine"));
 
     engine->setBatchSize(parameters.batchSize);
     engine->setModel(&model);
@@ -185,7 +185,7 @@ static float testNetwork(Model& model, const Parameters& parameters)
     // get the result processor
     auto resultProcessor = static_cast<LabelMatchResultProcessor*>(engine->getResultProcessor());
 
-    minerva::util::log("TestCatsVsDogs") << resultProcessor->toString();
+    lucious::util::log("TestCatsVsDogs") << resultProcessor->toString();
 
     return resultProcessor->getAccuracy();
 }
@@ -195,7 +195,7 @@ static void createCollage(Model& model, const Parameters& parameters)
     // Visualize the network
     auto network = &model.getNeuralNetwork("FeatureSelector");
 
-    minerva::visualization::NeuronVisualizer visualizer(network);
+    lucious::visualization::NeuronVisualizer visualizer(network);
 
     auto image = visualizer.visualizeInputTilesForAllNeurons();
 
@@ -238,14 +238,14 @@ static void runTest(const Parameters& parameters)
 
 int main(int argc, char** argv)
 {
-    minerva::util::ArgumentParser parser(argc, argv);
+    lucious::util::ArgumentParser parser(argc, argv);
 
     Parameters parameters;
 
     std::string loggingEnabledModules;
     bool verbose = false;
 
-    parser.description("A test for minerva difficult classication performance.");
+    parser.description("A test for lucious difficult classication performance.");
 
     parser.parse("-i", "--input-path", parameters.inputPath,
         "examples/cats-dogs-explicit-training-small.txt",
@@ -282,14 +282,14 @@ int main(int argc, char** argv)
 
     if(verbose)
     {
-        minerva::util::enableAllLogs();
+        lucious::util::enableAllLogs();
     }
     else
     {
-        minerva::util::enableSpecificLogs(loggingEnabledModules);
+        lucious::util::enableSpecificLogs(loggingEnabledModules);
     }
 
-    minerva::util::log("TestCatsVsDogs") << "Test begins\n";
+    lucious::util::log("TestCatsVsDogs") << "Test begins\n";
 
     try
     {
@@ -297,7 +297,7 @@ int main(int argc, char** argv)
     }
     catch(const std::exception& e)
     {
-        std::cout << "Minerva Cats vs Dogs Test Failed:\n";
+        std::cout << "Lucious Cats vs Dogs Test Failed:\n";
         std::cout << "Message: " << e.what() << "\n\n";
     }
 

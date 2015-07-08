@@ -8,7 +8,7 @@
 
 // Forward Declarations
 
-namespace minerva
+namespace lucious
 {
 
 namespace matrix

@@ -4,11 +4,11 @@
     \brief  The source file for the ActivationCostFunctionFactory class.
 */
 
-// Minerva Includes
-#include <minerva/network/interface/ActivationCostFunctionFactory.h>
-#include <minerva/network/interface/NullActivationCostFunction.h>
+// Lucious Includes
+#include <lucious/network/interface/ActivationCostFunctionFactory.h>
+#include <lucious/network/interface/NullActivationCostFunction.h>
 
-namespace minerva
+namespace lucious
 {
 
 namespace network

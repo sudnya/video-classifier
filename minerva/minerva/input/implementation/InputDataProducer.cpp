@@ -4,18 +4,18 @@
     \brief  The source file for the InputDataProducer class.
 */
 
-// Minerva Includes
-#include <minerva/input/interface/InputDataProducer.h>
+// Lucious Includes
+#include <lucious/input/interface/InputDataProducer.h>
 
-#include <minerva/model/interface/Model.h>
+#include <lucious/model/interface/Model.h>
 
-#include <minerva/network/interface/NeuralNetwork.h>
+#include <lucious/network/interface/NeuralNetwork.h>
 
-#include <minerva/matrix/interface/Dimension.h>
+#include <lucious/matrix/interface/Dimension.h>
 
-#include <minerva/util/interface/Knobs.h>
+#include <lucious/util/interface/Knobs.h>
 
-namespace minerva
+namespace lucious
 {
 
 namespace input

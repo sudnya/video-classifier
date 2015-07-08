@@ -1,12 +1,12 @@
 
 #pragma once
 
-// Minerva Includes
-#include <minerva/matrix/interface/Matrix.h>
+// Lucious Includes
+#include <lucious/matrix/interface/Matrix.h>
 
-#include <minerva/parallel/interface/cuda.h>
+#include <lucious/parallel/interface/cuda.h>
 
-namespace minerva
+namespace lucious
 {
 namespace matrix
 {
@@ -26,5 +26,5 @@ CUDA_DECORATOR inline const void* getAddress(const Dimension& stride, const Dime
 }
 }
 
-#include <minerva/matrix/implementation/DimensionTransformations.inl>
+#include <lucious/matrix/implementation/DimensionTransformations.inl>
 

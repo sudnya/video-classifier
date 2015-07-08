@@ -6,13 +6,13 @@
 
 #pragma once
 
-// Minerva Includes
-#include <minerva/optimizer/interface/Solver.h>
+// Lucious Includes
+#include <lucious/optimizer/interface/Solver.h>
 
 // Forward Declarations
-namespace minerva { namespace optimizer { class CostFunction; } }
+namespace lucious { namespace optimizer { class CostFunction; } }
 
-namespace minerva
+namespace lucious
 {
 
 namespace optimizer

@@ -6,13 +6,13 @@
 
 #pragma once
 
-// Minerva Includes
-#include <minerva/results/interface/Result.h>
+// Lucious Includes
+#include <lucious/results/interface/Result.h>
 
 // Standard Library Includes
 #include <string>
 
-namespace minerva
+namespace lucious
 {
 
 namespace results

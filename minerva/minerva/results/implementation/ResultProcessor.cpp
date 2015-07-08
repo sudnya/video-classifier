@@ -4,10 +4,10 @@
 	\brief  The source file for the ResultProcessor class.
 */
 
-// Minerva Includes
-#include <minerva/results/interface/ResultProcessor.h>
+// Lucious Includes
+#include <lucious/results/interface/ResultProcessor.h>
 
-namespace minerva
+namespace lucious
 {
 
 namespace results

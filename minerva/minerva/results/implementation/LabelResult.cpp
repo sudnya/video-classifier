@@ -4,9 +4,9 @@
 	\brief  The source file for the LabelResult class.
 */
 
-#include <minerva/results/interface/LabelResult.h>
+#include <lucious/results/interface/LabelResult.h>
 
-namespace minerva
+namespace lucious
 {
 
 namespace results

@@ -1,21 +1,21 @@
 
-// Minerva Includes
-#include <minerva/matrix/interface/ConvolutionalOperations.h>
-#include <minerva/matrix/interface/CudnnLibrary.h>
+// Lucious Includes
+#include <lucious/matrix/interface/ConvolutionalOperations.h>
+#include <lucious/matrix/interface/CudnnLibrary.h>
 
-#include <minerva/matrix/interface/BlasOperations.h>
-#include <minerva/matrix/interface/MatrixView.h>
-#include <minerva/matrix/interface/Matrix.h>
-#include <minerva/matrix/interface/MatrixTransformations.h>
+#include <lucious/matrix/interface/BlasOperations.h>
+#include <lucious/matrix/interface/MatrixView.h>
+#include <lucious/matrix/interface/Matrix.h>
+#include <lucious/matrix/interface/MatrixTransformations.h>
  
-#include <minerva/parallel/interface/MultiBulkSynchronousParallel.h>
+#include <lucious/parallel/interface/MultiBulkSynchronousParallel.h>
 
-#include <minerva/util/interface/Metaprogramming.h>
+#include <lucious/util/interface/Metaprogramming.h>
 
 // Standard Library Includes
 #include <vector>
 
-namespace minerva
+namespace lucious
 {
 namespace matrix
 {

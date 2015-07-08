@@ -1,13 +1,13 @@
 #pragma once
 
-// Minerva Includes
-#include <minerva/parallel/interface/cuda.h>
-#include <minerva/parallel/interface/assert.h>
+// Lucious Includes
+#include <lucious/parallel/interface/cuda.h>
+#include <lucious/parallel/interface/assert.h>
 
 // Standard Library Includes
 #include <string>
 
-namespace minerva
+namespace lucious
 {
 namespace matrix
 {
@@ -103,5 +103,5 @@ private:
 }
 }
 
-#include <minerva/matrix/implementation/Dimension.inl>
+#include <lucious/matrix/implementation/Dimension.inl>
 

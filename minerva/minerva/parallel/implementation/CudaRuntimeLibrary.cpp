@@ -4,13 +4,13 @@
     \brief  The source file for the CudaRuntimeLibrary class.
 */
 
-// Minerva Includes
-#include <minerva/parallel/interface/CudaRuntimeLibrary.h>
+// Lucious Includes
+#include <lucious/parallel/interface/CudaRuntimeLibrary.h>
 
-#include <minerva/parallel/interface/cuda.h>
+#include <lucious/parallel/interface/cuda.h>
 
-#include <minerva/util/interface/Casts.h>
-#include <minerva/util/interface/Knobs.h>
+#include <lucious/util/interface/Casts.h>
+#include <lucious/util/interface/Knobs.h>
 
 // Standard Library Includes
 #include <stdexcept>
@@ -18,7 +18,7 @@
 // System-Specific Includes
 #include <dlfcn.h>
 
-namespace minerva
+namespace lucious
 {
 
 namespace parallel

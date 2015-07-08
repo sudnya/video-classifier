@@ -6,10 +6,10 @@
 
 #pragma once
 
-// Minerva Includes
-#include <minerva/video/interface/ImageLibrary.h>
+// Lucious Includes
+#include <lucious/video/interface/ImageLibrary.h>
 
-namespace minerva
+namespace lucious
 {
 
 namespace video

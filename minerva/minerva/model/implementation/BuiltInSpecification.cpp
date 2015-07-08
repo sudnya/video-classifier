@@ -4,13 +4,13 @@
 	\brief  The source file for the BuiltInSpecifications class.
 */
 
-// Minerva Includes 
-#include <minerva/model/interface/BuiltInSpecifications.h>
+// Lucious Includes 
+#include <lucious/model/interface/BuiltInSpecifications.h>
 
 // Standard Library Includes
 #include <sstream>
 
-namespace minerva
+namespace lucious
 {
 
 namespace model

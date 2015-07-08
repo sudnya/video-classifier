@@ -11,9 +11,9 @@
 #include <vector>
 
 // Forward Declarations
-namespace minerva { namespace database { class SampleDatabase; } }
+namespace lucious { namespace database { class SampleDatabase; } }
 
-namespace minerva
+namespace lucious
 {
 
 namespace database

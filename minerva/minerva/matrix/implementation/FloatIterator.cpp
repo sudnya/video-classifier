@@ -1,9 +1,9 @@
 
-// Minerva Includes
-#include <minerva/matrix/interface/FloatIterator.h>
-#include <minerva/matrix/interface/DimensionTransformations.h>
+// Lucious Includes
+#include <lucious/matrix/interface/FloatIterator.h>
+#include <lucious/matrix/interface/DimensionTransformations.h>
 
-namespace minerva
+namespace lucious
 {
 namespace matrix
 {

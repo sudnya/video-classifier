@@ -12,7 +12,7 @@
 #include <unordered_map>
 #include <unordered_set>
 
-namespace minerva
+namespace lucious
 {
 
 namespace util

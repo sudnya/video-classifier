@@ -4,16 +4,16 @@
     \brief  The source file for the LayerFactory class
 */
 
-// Minerva Includes
-#include <minerva/network/interface/LayerFactory.h>
+// Lucious Includes
+#include <lucious/network/interface/LayerFactory.h>
 
-#include <minerva/network/interface/FeedForwardLayer.h>
-#include <minerva/network/interface/RecurrentLayer.h>
-#include <minerva/network/interface/ConvolutionalLayer.h>
+#include <lucious/network/interface/FeedForwardLayer.h>
+#include <lucious/network/interface/RecurrentLayer.h>
+#include <lucious/network/interface/ConvolutionalLayer.h>
 
-#include <minerva/util/interface/memory.h>
+#include <lucious/util/interface/memory.h>
 
-namespace minerva
+namespace lucious
 {
 
 namespace network

@@ -6,7 +6,7 @@
 
 #pragma once
 
-namespace minerva
+namespace lucious
 {
 
 namespace results

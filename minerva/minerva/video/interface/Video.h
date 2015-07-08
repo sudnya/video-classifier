@@ -6,14 +6,14 @@
 
 #pragma once
 
-// Minerva Includes
-#include <minerva/video/interface/ImageVector.h>
+// Lucious Includes
+#include <lucious/video/interface/ImageVector.h>
 
 // Standard Library Includes
 #include <string>
 #include <vector>
 
-namespace minerva
+namespace lucious
 {
 
 namespace video

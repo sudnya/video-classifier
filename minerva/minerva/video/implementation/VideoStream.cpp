@@ -4,10 +4,10 @@
 	\brief  The source file for the VideoStream class.
 */
 
-// Minerva Includes
-#include <minerva/video/interface/VideoStream.h>
+// Lucious Includes
+#include <lucious/video/interface/VideoStream.h>
 
-namespace minerva
+namespace lucious
 {
 
 namespace video

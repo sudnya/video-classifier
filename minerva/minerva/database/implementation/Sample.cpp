@@ -4,11 +4,11 @@
 	\brief  The source file for the Sample class.
 */
 
-#include <minerva/database/interface/Sample.h>
+#include <lucious/database/interface/Sample.h>
 
-#include <minerva/video/interface/Video.h>
+#include <lucious/video/interface/Video.h>
 
-namespace minerva
+namespace lucious
 {
 
 namespace database

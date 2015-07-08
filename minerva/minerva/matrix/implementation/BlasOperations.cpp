@@ -1,16 +1,16 @@
 
-// Minerva Includes
-#include <minerva/matrix/interface/BlasOperations.h>
-#include <minerva/matrix/interface/Matrix.h>
+// Lucious Includes
+#include <lucious/matrix/interface/BlasOperations.h>
+#include <lucious/matrix/interface/Matrix.h>
 
-#include <minerva/matrix/interface/AtlasLibrary.h>
-#include <minerva/matrix/interface/CublasLibrary.h>
+#include <lucious/matrix/interface/AtlasLibrary.h>
+#include <lucious/matrix/interface/CublasLibrary.h>
 
-#include <minerva/parallel/interface/Synchronization.h>
+#include <lucious/parallel/interface/Synchronization.h>
 
-#include <minerva/util/interface/debug.h>
+#include <lucious/util/interface/debug.h>
 
-namespace minerva
+namespace lucious
 {
 namespace matrix
 {

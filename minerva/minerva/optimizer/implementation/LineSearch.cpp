@@ -4,9 +4,9 @@
 	\brief  The source file for the LineSearch class.
 */
 
-#include <minerva/optimizer/interface/LineSearch.h>
+#include <lucious/optimizer/interface/LineSearch.h>
 
-namespace minerva
+namespace lucious
 {
 
 namespace optimizer

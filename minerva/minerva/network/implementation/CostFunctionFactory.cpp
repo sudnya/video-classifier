@@ -4,13 +4,13 @@
     \brief  The header file for the CostFunctionFactory class.
 */
 
-// Minerva Includes
-#include <minerva/network/interface/CostFunctionFactory.h>
+// Lucious Includes
+#include <lucious/network/interface/CostFunctionFactory.h>
 
-#include <minerva/network/interface/SumOfSquaresCostFunction.h>
-#include <minerva/network/interface/SoftmaxCostFunction.h>
+#include <lucious/network/interface/SumOfSquaresCostFunction.h>
+#include <lucious/network/interface/SoftmaxCostFunction.h>
 
-namespace minerva
+namespace lucious
 {
 
 namespace network

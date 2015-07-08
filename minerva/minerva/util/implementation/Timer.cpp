@@ -10,10 +10,10 @@
 #ifndef TIMER_CPP_INCLUDED
 #define TIMER_CPP_INCLUDED
 
-#include <minerva/util/interface/Timer.h>
+#include <lucious/util/interface/Timer.h>
 #include <sstream>
 
-namespace minerva
+namespace lucious
 {
 
 namespace util

@@ -3,22 +3,22 @@
  * A unit test that implements a neural network to perform XOR
 */
 
-#include <minerva/network/interface/NeuralNetwork.h>
-#include <minerva/network/interface/FeedForwardLayer.h>
-#include <minerva/network/interface/ActivationFunctionFactory.h>
+#include <lucious/network/interface/NeuralNetwork.h>
+#include <lucious/network/interface/FeedForwardLayer.h>
+#include <lucious/network/interface/ActivationFunctionFactory.h>
 
-#include <minerva/matrix/interface/Matrix.h>
-#include <minerva/matrix/interface/Precision.h>
+#include <lucious/matrix/interface/Matrix.h>
+#include <lucious/matrix/interface/Precision.h>
 
-#include <minerva/util/interface/Knobs.h>
-#include <minerva/util/interface/debug.h>
-#include <minerva/util/interface/memory.h>
-#include <minerva/util/interface/ArgumentParser.h>
+#include <lucious/util/interface/Knobs.h>
+#include <lucious/util/interface/debug.h>
+#include <lucious/util/interface/memory.h>
+#include <lucious/util/interface/ArgumentParser.h>
 
 #include <random>
 #include <cstdlib>
 
-namespace minerva
+namespace lucious
 {
 namespace engine
 {
@@ -227,18 +227,18 @@ static void enableSpecificLogs(const std::string& modules)
 
 static void setupSolverParameters()
 {
-    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::LearningRate", "4.0e-2");
-    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::Momentum", "0.95");
-    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::AnnealingRate", "1.000");
-    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::MaxGradNorm", "2000.0");
-    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::IterationsPerBatch", "10");
-    minerva::util::KnobDatabase::setKnob("GeneralDifferentiableSolver::Type", "NesterovAcceleratedGradientSolver");
+    lucious::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::LearningRate", "4.0e-2");
+    lucious::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::Momentum", "0.95");
+    lucious::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::AnnealingRate", "1.000");
+    lucious::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::MaxGradNorm", "2000.0");
+    lucious::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::IterationsPerBatch", "10");
+    lucious::util::KnobDatabase::setKnob("GeneralDifferentiableSolver::Type", "NesterovAcceleratedGradientSolver");
 
 }
 
 int main(int argc, char** argv)
 {
-    minerva::util::ArgumentParser parser(argc, argv);
+    lucious::util::ArgumentParser parser(argc, argv);
 
     bool verbose = false;
     bool seed = false;
@@ -247,7 +247,7 @@ int main(int argc, char** argv)
     unsigned iterations = 0;
     unsigned networkSize = 0;
 
-    parser.description("A minerva nerual network sanity test.");
+    parser.description("A lucious nerual network sanity test.");
 
     parser.parse("-i", "--iterations", iterations, 30,
         "The number of iterations to train for");
@@ -267,22 +267,22 @@ int main(int argc, char** argv)
 
     if(verbose)
     {
-        minerva::util::enableAllLogs();
+        lucious::util::enableAllLogs();
     }
     else
     {
-        minerva::engine::enableSpecificLogs(loggingEnabledModules);
+        lucious::engine::enableSpecificLogs(loggingEnabledModules);
     }
 
-    minerva::util::log("TestClassifier") << "Test begings\n";
+    lucious::util::log("TestClassifier") << "Test begings\n";
 
     try
     {
-        minerva::engine::runTest(iterations, seed, networkSize);
+        lucious::engine::runTest(iterations, seed, networkSize);
     }
     catch(const std::exception& e)
     {
-        std::cout << "Minerva Classifier Test Failed:\n";
+        std::cout << "Lucious Classifier Test Failed:\n";
         std::cout << "Message: " << e.what() << "\n\n";
     }
 

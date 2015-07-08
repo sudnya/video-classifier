@@ -1,20 +1,20 @@
-// Minerva Includes
-#include <minerva/matrix/interface/FileOperations.h>
+// Lucious Includes
+#include <lucious/matrix/interface/FileOperations.h>
 
-#include <minerva/matrix/interface/TransposeOperations.h>
-#include <minerva/matrix/interface/CopyOperations.h>
+#include <lucious/matrix/interface/TransposeOperations.h>
+#include <lucious/matrix/interface/CopyOperations.h>
 
-#include <minerva/matrix/interface/Matrix.h>
-#include <minerva/matrix/interface/Dimension.h>
-#include <minerva/matrix/interface/Precision.h>
+#include <lucious/matrix/interface/Matrix.h>
+#include <lucious/matrix/interface/Dimension.h>
+#include <lucious/matrix/interface/Precision.h>
 
-#include <minerva/util/interface/debug.h>
-#include <minerva/util/interface/string.h>
+#include <lucious/util/interface/debug.h>
+#include <lucious/util/interface/string.h>
 
 #include <fstream>
 #include <map>
 
-namespace minerva
+namespace lucious
 {
 namespace matrix
 {

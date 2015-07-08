@@ -4,11 +4,11 @@
 	\brief  The header file for the VideoLibraryFactory class.
 */
 
-// Minerva Includes
-#include <minerva/video/interface/VideoLibraryFactory.h>
-#include <minerva/video/interface/OpenCVVideoLibrary.h>
+// Lucious Includes
+#include <lucious/video/interface/VideoLibraryFactory.h>
+#include <lucious/video/interface/OpenCVVideoLibrary.h>
 
-namespace minerva
+namespace lucious
 {
 
 namespace video

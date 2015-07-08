@@ -6,17 +6,17 @@
 
 #pragma once
 
-// Minerva Includes
-#include <minerva/util/interface/ParameterPack.h>
+// Lucious Includes
+#include <lucious/util/interface/ParameterPack.h>
 
 // Standard Library
 #include <string>
 #include <memory>
 
 // Forward Declarations
-namespace minerva { namespace network { class Layer; } }
+namespace lucious { namespace network { class Layer; } }
 
-namespace minerva
+namespace lucious
 {
 
 namespace network

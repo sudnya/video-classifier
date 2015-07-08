@@ -5,18 +5,18 @@
 */
 
 // Minvera Includes
-#include <minerva/optimizer/interface/GPULBFGSSolver.h>
+#include <lucious/optimizer/interface/GPULBFGSSolver.h>
 
-#include <minerva/optimizer/interface/CostAndGradientFunction.h>
-#include <minerva/optimizer/interface/LineSearchFactory.h>
-#include <minerva/optimizer/interface/LineSearch.h>
+#include <lucious/optimizer/interface/CostAndGradientFunction.h>
+#include <lucious/optimizer/interface/LineSearchFactory.h>
+#include <lucious/optimizer/interface/LineSearch.h>
 
-#include <minerva/matrix/interface/MatrixVector.h>
-#include <minerva/matrix/interface/MatrixVectorOperations.h>
-#include <minerva/matrix/interface/Operation.h>
+#include <lucious/matrix/interface/MatrixVector.h>
+#include <lucious/matrix/interface/MatrixVectorOperations.h>
+#include <lucious/matrix/interface/Operation.h>
 
-#include <minerva/util/interface/debug.h>
-#include <minerva/util/interface/Knobs.h>
+#include <lucious/util/interface/debug.h>
+#include <lucious/util/interface/Knobs.h>
 
 // Standard Library Includes
 #include <deque>
@@ -24,7 +24,7 @@
 #include <stdexcept>
 #include <cmath>
 
-namespace minerva
+namespace lucious
 {
 
 namespace optimizer

@@ -5,17 +5,17 @@
 	
 */
 
-// Minerva Includes
-#include <minerva/util/interface/TarArchive.h>
-#include <minerva/util/interface/TarLibrary.h>
+// Lucious Includes
+#include <lucious/util/interface/TarArchive.h>
+#include <lucious/util/interface/TarLibrary.h>
 
-#include <minerva/util/interface/debug.h>
+#include <lucious/util/interface/debug.h>
 
 // Standard Library Includes
 #include <stdexcept>
 #include <map>
 
-namespace minerva
+namespace lucious
 {
 
 namespace util

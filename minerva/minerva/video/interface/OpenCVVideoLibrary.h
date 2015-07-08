@@ -6,14 +6,14 @@
 
 #pragma once
 
-// Minerva Includes
-#include <minerva/video/interface/VideoLibrary.h>
-#include <minerva/video/interface/VideoStream.h>
+// Lucious Includes
+#include <lucious/video/interface/VideoLibrary.h>
+#include <lucious/video/interface/VideoStream.h>
 
 // Forward Declarations
-namespace minerva { namespace video { class CvCapture; } }
+namespace lucious { namespace video { class CvCapture; } }
 
-namespace minerva
+namespace lucious
 {
 
 namespace video

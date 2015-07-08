@@ -3,13 +3,13 @@
  * The implementation for the GeneralDifferentiableSolver class 
  */
 
-// Minerva Includes
-#include <minerva/optimizer/interface/GeneralDifferentiableSolver.h>
+// Lucious Includes
+#include <lucious/optimizer/interface/GeneralDifferentiableSolver.h>
 
-#include <minerva/matrix/interface/MatrixVector.h>
-#include <minerva/matrix/interface/Matrix.h>
+#include <lucious/matrix/interface/MatrixVector.h>
+#include <lucious/matrix/interface/Matrix.h>
 
-namespace minerva
+namespace lucious
 {
 
 namespace optimizer

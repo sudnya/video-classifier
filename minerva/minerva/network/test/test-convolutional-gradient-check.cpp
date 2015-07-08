@@ -4,26 +4,26 @@
     \brief  A unit test for a convolutiona neural network gradient calculation.
 */
 
-// Minerva Includes
-#include <minerva/network/interface/NeuralNetwork.h>
-#include <minerva/network/interface/ConvolutionalLayer.h>
-#include <minerva/network/interface/FeedForwardLayer.h>
-#include <minerva/network/interface/CostFunctionFactory.h>
-#include <minerva/network/interface/ActivationFunctionFactory.h>
+// Lucious Includes
+#include <lucious/network/interface/NeuralNetwork.h>
+#include <lucious/network/interface/ConvolutionalLayer.h>
+#include <lucious/network/interface/FeedForwardLayer.h>
+#include <lucious/network/interface/CostFunctionFactory.h>
+#include <lucious/network/interface/ActivationFunctionFactory.h>
 
-#include <minerva/matrix/interface/Matrix.h>
-#include <minerva/matrix/interface/MatrixVector.h>
-#include <minerva/matrix/interface/MatrixOperations.h>
-#include <minerva/matrix/interface/Operation.h>
+#include <lucious/matrix/interface/Matrix.h>
+#include <lucious/matrix/interface/MatrixVector.h>
+#include <lucious/matrix/interface/MatrixOperations.h>
+#include <lucious/matrix/interface/Operation.h>
 
-#include <minerva/matrix/interface/RandomOperations.h>
+#include <lucious/matrix/interface/RandomOperations.h>
 
-#include <minerva/util/interface/debug.h>
-#include <minerva/util/interface/memory.h>
-#include <minerva/util/interface/ArgumentParser.h>
-#include <minerva/util/interface/Knobs.h>
-#include <minerva/util/interface/Timer.h>
-#include <minerva/util/interface/SystemCompatibility.h>
+#include <lucious/util/interface/debug.h>
+#include <lucious/util/interface/memory.h>
+#include <lucious/util/interface/ArgumentParser.h>
+#include <lucious/util/interface/Knobs.h>
+#include <lucious/util/interface/Timer.h>
+#include <lucious/util/interface/SystemCompatibility.h>
 
 // Standard Library Includes
 #include <random>
@@ -31,7 +31,7 @@
 #include <memory>
 #include <cassert>
 
-namespace minerva
+namespace lucious
 {
 
 namespace network
@@ -138,7 +138,7 @@ static bool gradientCheck(NeuralNetwork& network, const Matrix& input, const Mat
                 difference += thisDifference;
                 total += std::pow(computedGradient, 2.0);
 
-                minerva::util::log("TestConvolutionalGradientCheck") << " (layer " << layerId << ", matrix " << matrixId
+                lucious::util::log("TestConvolutionalGradientCheck") << " (layer " << layerId << ", matrix " << matrixId
                     << ", weight " << weightId << ") value is " << computedGradient << " estimate is "
                     << estimatedGradient << " (newCost " << newCost << ", oldCost " << cost << ")"
                     << " difference is " << thisDifference << " \n";
@@ -210,7 +210,7 @@ static void runTest(size_t layerSize, bool seed)
 
 int main(int argc, char** argv)
 {
-    minerva::util::ArgumentParser parser(argc, argv);
+    lucious::util::ArgumentParser parser(argc, argv);
 
     bool verbose = false;
     bool seed = false;
@@ -218,7 +218,7 @@ int main(int argc, char** argv)
 
     size_t layerSize  = 0;
 
-    parser.description("The minerva neural network gradient check.");
+    parser.description("The lucious neural network gradient check.");
 
     parser.parse("-S", "--layer-size", layerSize, 10, "The number of neurons per layer.");
 
@@ -231,22 +231,22 @@ int main(int argc, char** argv)
 
     if(verbose)
     {
-        minerva::util::enableAllLogs();
+        lucious::util::enableAllLogs();
     }
     else
     {
-        minerva::util::enableSpecificLogs(loggingEnabledModules);
+        lucious::util::enableSpecificLogs(loggingEnabledModules);
     }
 
-    minerva::util::log("TestConvolutionalGradientCheck") << "Test begins\n";
+    lucious::util::log("TestConvolutionalGradientCheck") << "Test begins\n";
 
     try
     {
-        minerva::network::runTest(layerSize, seed);
+        lucious::network::runTest(layerSize, seed);
     }
     catch(const std::exception& e)
     {
-        std::cout << "Minerva Neural Network Performance Test Failed:\n";
+        std::cout << "Lucious Neural Network Performance Test Failed:\n";
         std::cout << "Message: " << e.what() << "\n\n";
     }
 

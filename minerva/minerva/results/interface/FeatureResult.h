@@ -6,16 +6,16 @@
 
 #pragma once
 
-// Minerva Includes
-#include <minerva/results/interface/Result.h>
+// Lucious Includes
+#include <lucious/results/interface/Result.h>
 
 // Standard Library Includes
 #include <memory>
 
 // Forward Declarations
-namespace minerva { namespace matrix { class Matrix; } }
+namespace lucious { namespace matrix { class Matrix; } }
 
-namespace minerva
+namespace lucious
 {
 
 namespace results

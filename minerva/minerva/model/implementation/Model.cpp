@@ -4,23 +4,23 @@
 	\brief  The source file for the Model class.
 */
 
-// Minerva Includes
-#include <minerva/model/interface/Model.h>
+// Lucious Includes
+#include <lucious/model/interface/Model.h>
 
-#include <minerva/network/interface/NeuralNetwork.h>
+#include <lucious/network/interface/NeuralNetwork.h>
 
-#include <minerva/matrix/interface/Matrix.h>
+#include <lucious/matrix/interface/Matrix.h>
 
-#include <minerva/util/interface/TarArchive.h>
+#include <lucious/util/interface/TarArchive.h>
 
-#include <minerva/util/interface/debug.h>
-#include <minerva/util/interface/json.h>
+#include <lucious/util/interface/debug.h>
+#include <lucious/util/interface/json.h>
 
 // Standard Library Includes
 #include <sstream>
 #include <map>
 
-namespace minerva
+namespace lucious
 {
 
 namespace model

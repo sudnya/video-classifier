@@ -4,23 +4,23 @@
 	\brief  The source file for the SampleDatabaseParser class.
 */
 
-// Minerva Includes
-#include <minerva/database/interface/SampleDatabaseParser.h>
-#include <minerva/database/interface/SampleDatabase.h>
-#include <minerva/database/interface/Sample.h>
+// Lucious Includes
+#include <lucious/database/interface/SampleDatabaseParser.h>
+#include <lucious/database/interface/SampleDatabase.h>
+#include <lucious/database/interface/Sample.h>
 
-#include <minerva/video/interface/Video.h>
-#include <minerva/video/interface/Image.h>
+#include <lucious/video/interface/Video.h>
+#include <lucious/video/interface/Image.h>
 
-#include <minerva/util/interface/paths.h>
-#include <minerva/util/interface/string.h>
+#include <lucious/util/interface/paths.h>
+#include <lucious/util/interface/string.h>
 
 // Standard Library Includes
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
 
-namespace minerva
+namespace lucious
 {
 
 namespace database

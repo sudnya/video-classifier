@@ -4,24 +4,24 @@
     \brief  The source file for the ClassifierEngine class.
 */
 
-// Minerva Includes
-#include <minerva/engine/interface/ClassifierEngine.h>
+// Lucious Includes
+#include <lucious/engine/interface/ClassifierEngine.h>
 
-#include <minerva/network/interface/NeuralNetwork.h>
+#include <lucious/network/interface/NeuralNetwork.h>
 
-#include <minerva/model/interface/Model.h>
+#include <lucious/model/interface/Model.h>
 
-#include <minerva/results/interface/ResultProcessorFactory.h>
-#include <minerva/results/interface/LabelMatchResult.h>
-#include <minerva/results/interface/LabelResult.h>
-#include <minerva/results/interface/ResultVector.h>
+#include <lucious/results/interface/ResultProcessorFactory.h>
+#include <lucious/results/interface/LabelMatchResult.h>
+#include <lucious/results/interface/LabelResult.h>
+#include <lucious/results/interface/ResultVector.h>
 
-#include <minerva/matrix/interface/Matrix.h>
-#include <minerva/matrix/interface/MatrixTransformations.h>
+#include <lucious/matrix/interface/Matrix.h>
+#include <lucious/matrix/interface/MatrixTransformations.h>
 
-#include <minerva/util/interface/debug.h>
+#include <lucious/util/interface/debug.h>
 
-namespace minerva
+namespace lucious
 {
 
 namespace engine

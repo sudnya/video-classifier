@@ -11,7 +11,7 @@
 #include <string>
 #include <cstdint>
 
-namespace minerva
+namespace lucious
 {
 
 namespace video

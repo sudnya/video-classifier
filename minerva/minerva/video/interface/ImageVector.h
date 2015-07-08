@@ -6,21 +6,21 @@
 
 #pragma once
 
-// Minerva Includes
-#include <minerva/video/interface/Image.h>
+// Lucious Includes
+#include <lucious/video/interface/Image.h>
 
-#include <minerva/matrix/interface/Matrix.h>
+#include <lucious/matrix/interface/Matrix.h>
 
-#include <minerva/util/interface/string.h>
+#include <lucious/util/interface/string.h>
 
 // Standard Library Includes
 #include <vector>
 #include <random>
 
 // Forward Declarations
-namespace minerva { namespace neuralnetwork { class NeuralNetwork; } }
+namespace lucious { namespace neuralnetwork { class NeuralNetwork; } }
 
-namespace minerva
+namespace lucious
 {
 
 namespace video

@@ -4,19 +4,19 @@
     \brief  The source file for the BacktrackingLineSearch class.
 */
 
-// Minerva Includes
-#include <minerva/optimizer/interface/BacktrackingLineSearch.h>
+// Lucious Includes
+#include <lucious/optimizer/interface/BacktrackingLineSearch.h>
 
-#include <minerva/optimizer/interface/CostAndGradientFunction.h>
+#include <lucious/optimizer/interface/CostAndGradientFunction.h>
 
-#include <minerva/matrix/interface/MatrixVector.h>
-#include <minerva/matrix/interface/MatrixVectorOperations.h>
-#include <minerva/matrix/interface/Operation.h>
+#include <lucious/matrix/interface/MatrixVector.h>
+#include <lucious/matrix/interface/MatrixVectorOperations.h>
+#include <lucious/matrix/interface/Operation.h>
 
-#include <minerva/util/interface/Knobs.h>
-#include <minerva/util/interface/debug.h>
+#include <lucious/util/interface/Knobs.h>
+#include <lucious/util/interface/debug.h>
 
-namespace minerva
+namespace lucious
 {
 
 namespace optimizer

@@ -4,22 +4,22 @@
     \brief  The source file for the Matrix class.
 */
 
-// Minerva Includes
-#include <minerva/matrix/interface/Matrix.h>
-#include <minerva/matrix/interface/Allocation.h>
-#include <minerva/matrix/interface/DimensionTransformations.h>
-#include <minerva/matrix/interface/MatrixTransformations.h>
-#include <minerva/matrix/interface/MatrixOperations.h>
-#include <minerva/matrix/interface/Operation.h>
+// Lucious Includes
+#include <lucious/matrix/interface/Matrix.h>
+#include <lucious/matrix/interface/Allocation.h>
+#include <lucious/matrix/interface/DimensionTransformations.h>
+#include <lucious/matrix/interface/MatrixTransformations.h>
+#include <lucious/matrix/interface/MatrixOperations.h>
+#include <lucious/matrix/interface/Operation.h>
 
-#include <minerva/parallel/interface/Synchronization.h>
+#include <lucious/parallel/interface/Synchronization.h>
 
-#include <minerva/util/interface/debug.h>
+#include <lucious/util/interface/debug.h>
 
 // Standard Library Includes
 #include <cmath>
 
-namespace minerva
+namespace lucious
 {
 
 namespace matrix

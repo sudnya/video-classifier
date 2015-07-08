@@ -4,23 +4,23 @@
 	\brief  The source file for the ModelSpecification class.
 */
 
-// Minerva Includes
-#include <minerva/model/interface/ModelSpecification.h>
-#include <minerva/model/interface/Model.h>
+// Lucious Includes
+#include <lucious/model/interface/ModelSpecification.h>
+#include <lucious/model/interface/Model.h>
 
-#include <minerva/network/interface/NeuralNetwork.h>
-#include <minerva/network/interface/Layer.h>
-#include <minerva/network/interface/LayerFactory.h>
+#include <lucious/network/interface/NeuralNetwork.h>
+#include <lucious/network/interface/Layer.h>
+#include <lucious/network/interface/LayerFactory.h>
 
-#include <minerva/matrix/interface/Dimension.h>
+#include <lucious/matrix/interface/Dimension.h>
 
-#include <minerva/util/interface/json.h>
+#include <lucious/util/interface/json.h>
 
 // Standard Library Includes
 #include <sstream>
 #include <random>
 
-namespace minerva
+namespace lucious
 {
 
 namespace model

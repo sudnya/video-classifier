@@ -6,13 +6,13 @@
 
 #pragma once
 
-// Minerva Includes
-#include <minerva/engine/interface/Engine.h>
+// Lucious Includes
+#include <lucious/engine/interface/Engine.h>
 
 // Standard Library Includes
 #include <map>
 
-namespace minerva
+namespace lucious
 {
 
 namespace engine

@@ -11,11 +11,11 @@
 #include <cstdlib>
 
 // Forward Declarations
-namespace minerva { namespace matrix    { class Matrix;                  } }
-namespace minerva { namespace matrix    { class MatrixVector;            } }
-namespace minerva { namespace optimizer { class CostAndGradientFunction; } }
+namespace lucious { namespace matrix    { class Matrix;                  } }
+namespace lucious { namespace matrix    { class MatrixVector;            } }
+namespace lucious { namespace optimizer { class CostAndGradientFunction; } }
 
-namespace minerva
+namespace lucious
 {
 
 namespace optimizer

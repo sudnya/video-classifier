@@ -4,24 +4,24 @@
     \brief  The source file for the UnsupervisedLearnerEngine class.
 */
 
-// Minerva Includes
-#include <minerva/engine/interface/UnsupervisedLearnerEngine.h>
+// Lucious Includes
+#include <lucious/engine/interface/UnsupervisedLearnerEngine.h>
 
-#include <minerva/model/interface/Model.h>
+#include <lucious/model/interface/Model.h>
 
-#include <minerva/network/interface/NeuralNetwork.h>
-#include <minerva/network/interface/Layer.h>
+#include <lucious/network/interface/NeuralNetwork.h>
+#include <lucious/network/interface/Layer.h>
 
-#include <minerva/results/interface/ResultVector.h>
+#include <lucious/results/interface/ResultVector.h>
 
-#include <minerva/matrix/interface/Matrix.h>
-#include <minerva/matrix/interface/MatrixOperations.h>
-#include <minerva/matrix/interface/Operation.h>
+#include <lucious/matrix/interface/Matrix.h>
+#include <lucious/matrix/interface/MatrixOperations.h>
+#include <lucious/matrix/interface/Operation.h>
 
-#include <minerva/util/interface/debug.h>
-#include <minerva/util/interface/Knobs.h>
+#include <lucious/util/interface/debug.h>
+#include <lucious/util/interface/Knobs.h>
 
-namespace minerva
+namespace lucious
 {
 
 namespace engine

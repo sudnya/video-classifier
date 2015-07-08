@@ -1,9 +1,9 @@
 
 
-#include <minerva/parallel/interface/cuda.h>
-#include <minerva/parallel/interface/CudaRuntimeLibrary.h>
+#include <lucious/parallel/interface/cuda.h>
+#include <lucious/parallel/interface/CudaRuntimeLibrary.h>
 
-namespace minerva
+namespace lucious
 {
 
 namespace parallel

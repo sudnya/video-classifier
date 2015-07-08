@@ -4,26 +4,26 @@
 	\brief  The source file for the ModelBuilder class.
 */
 
-// Minerva Includes
-#include <minerva/model/interface/ModelBuilder.h>
-#include <minerva/model/interface/Model.h>
-#include <minerva/model/interface/ModelSpecification.h>
-#include <minerva/model/interface/BuiltInSpecifications.h>
+// Lucious Includes
+#include <lucious/model/interface/ModelBuilder.h>
+#include <lucious/model/interface/Model.h>
+#include <lucious/model/interface/ModelSpecification.h>
+#include <lucious/model/interface/BuiltInSpecifications.h>
 
-#include <minerva/network/interface/NeuralNetwork.h>
+#include <lucious/network/interface/NeuralNetwork.h>
 
-#include <minerva/util/interface/Knobs.h>
-#include <minerva/util/interface/debug.h>
+#include <lucious/util/interface/Knobs.h>
+#include <lucious/util/interface/debug.h>
 
-namespace minerva
+namespace lucious
 {
 
 namespace model
 {
 
-typedef minerva::network::NeuralNetwork NeuralNetwork;
-typedef minerva::network::Layer Layer;
-typedef minerva::matrix::Matrix Matrix;
+typedef lucious::network::NeuralNetwork NeuralNetwork;
+typedef lucious::network::Layer Layer;
+typedef lucious::matrix::Matrix Matrix;
 
 static void initializeModelFromSpecification(Model* model, const std::string& specification)
 {

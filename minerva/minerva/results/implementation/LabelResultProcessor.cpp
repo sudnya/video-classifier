@@ -4,15 +4,15 @@
 	\brief  The source file for the LabelResultProcessor class.
 */
 
-// Minerva Includes
-#include <minerva/results/interface/LabelResultProcessor.h>
+// Lucious Includes
+#include <lucious/results/interface/LabelResultProcessor.h>
 
-#include <minerva/util/interface/debug.h>
+#include <lucious/util/interface/debug.h>
 
 // Standard Library Includes
 #include <unordered_map>
 
-namespace minerva
+namespace lucious
 {
 
 namespace results

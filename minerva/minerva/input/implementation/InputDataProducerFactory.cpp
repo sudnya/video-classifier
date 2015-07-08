@@ -4,16 +4,16 @@
     \brief  The source file for the InputDataProducer class.
 */
 
-// Minerva Includes
-#include <minerva/input/interface/InputDataProducerFactory.h>
+// Lucious Includes
+#include <lucious/input/interface/InputDataProducerFactory.h>
 
-#include <minerva/input/interface/InputAudioDataProducer.h>
-#include <minerva/input/interface/InputTextDataProducer.h>
-#include <minerva/input/interface/InputVisualDataProducer.h>
+#include <lucious/input/interface/InputAudioDataProducer.h>
+#include <lucious/input/interface/InputTextDataProducer.h>
+#include <lucious/input/interface/InputVisualDataProducer.h>
 
-#include <minerva/database/interface/SampleDatabase.h>
+#include <lucious/database/interface/SampleDatabase.h>
 
-namespace minerva
+namespace lucious
 {
 
 namespace input

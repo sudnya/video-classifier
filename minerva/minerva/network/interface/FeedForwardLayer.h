@@ -6,16 +6,16 @@
 
 #pragma once
 
-// Minerva Includes
-#include <minerva/network/interface/Layer.h>
+// Lucious Includes
+#include <lucious/network/interface/Layer.h>
 
 // Standard Library Includes
 #include <memory>
 
 // Fordward Declarations
-namespace minerva { namespace matrix { class Precision; } }
+namespace lucious { namespace matrix { class Precision; } }
 
-namespace minerva
+namespace lucious
 {
 namespace network
 {

@@ -7,13 +7,13 @@
 
 #pragma once
 
-// Minerva Includes
-#include <minerva/matrix/interface/Matrix.h>
+// Lucious Includes
+#include <lucious/matrix/interface/Matrix.h>
 
 // Standard Library Includes
 #include <vector>
 
-namespace minerva
+namespace lucious
 {
 
 namespace matrix

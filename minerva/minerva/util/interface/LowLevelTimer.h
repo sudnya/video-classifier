@@ -32,7 +32,7 @@
 
 #include <ctime>
 
-namespace minerva
+namespace lucious
 {
 
 namespace util

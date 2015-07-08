@@ -6,10 +6,10 @@
 
 #pragma once
 
-// Minerva Includes
-#include <minerva/engine/interface/Engine.h>
+// Lucious Includes
+#include <lucious/engine/interface/Engine.h>
 
-namespace minerva
+namespace lucious
 {
 
 namespace engine

@@ -4,18 +4,18 @@
     \brief  The source file for the CurandLibrary class.
 */
 
-// Minerva Includes
-#include <minerva/matrix/interface/CurandLibrary.h>
+// Lucious Includes
+#include <lucious/matrix/interface/CurandLibrary.h>
 
-#include <minerva/parallel/interface/cuda.h>
+#include <lucious/parallel/interface/cuda.h>
 
-#include <minerva/util/interface/Casts.h>
+#include <lucious/util/interface/Casts.h>
 
 // System-Specific Includes
 #include <dlfcn.h>
 #include <stdexcept>
 
-namespace minerva
+namespace lucious
 {
 
 namespace matrix

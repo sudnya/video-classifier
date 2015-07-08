@@ -4,12 +4,12 @@
     \brief  The source file for the CublasLibrary class.
 */
 
-// Minerva Includes
-#include <minerva/matrix/interface/CublasLibrary.h>
+// Lucious Includes
+#include <lucious/matrix/interface/CublasLibrary.h>
 
-#include <minerva/parallel/interface/cuda.h>
+#include <lucious/parallel/interface/cuda.h>
 
-#include <minerva/util/interface/Casts.h>
+#include <lucious/util/interface/Casts.h>
 
 // Standard Library Includes
 #include <stdexcept>
@@ -17,7 +17,7 @@
 // System-Specific Includes
 #include <dlfcn.h>
 
-namespace minerva
+namespace lucious
 {
 
 namespace matrix

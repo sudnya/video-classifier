@@ -4,12 +4,12 @@
 	\brief  A unit test for images.
 */
 
-// Minerva Includes
-#include <minerva/video/interface/Image.h>
+// Lucious Includes
+#include <lucious/video/interface/Image.h>
 
-#include <minerva/util/interface/debug.h>
-#include <minerva/util/interface/paths.h>
-#include <minerva/util/interface/ArgumentParser.h>
+#include <lucious/util/interface/debug.h>
+#include <lucious/util/interface/paths.h>
+#include <lucious/util/interface/ArgumentParser.h>
 
 
 int main(int argc, char** argv)

@@ -1,10 +1,10 @@
 
 #pragma once
 
-// Minerva Includes
-#include <minerva/matrix/interface/Matrix.h>
+// Lucious Includes
+#include <lucious/matrix/interface/Matrix.h>
 
-namespace minerva
+namespace lucious
 {
 namespace matrix
 {

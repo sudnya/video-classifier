@@ -13,10 +13,10 @@
 #include <vector>
 
 // Forward Declarations
-namespace minerva { namespace network { class NeuralNetwork; } }
-namespace minerva { namespace util    { class TarArchive;    } }
+namespace lucious { namespace network { class NeuralNetwork; } }
+namespace lucious { namespace util    { class TarArchive;    } }
 
-namespace minerva
+namespace lucious
 {
 
 namespace model
@@ -114,5 +114,5 @@ private:
 
 }
 
-#include <minerva/model/implementation/Model-inl.h>
+#include <lucious/model/implementation/Model-inl.h>
 

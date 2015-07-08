@@ -1,29 +1,29 @@
-/*! \file   test-minerva-visualization.cpp
+/*! \file   test-lucious-visualization.cpp
 	\author Gregory Diamos <solusstultus@gmail.com>
 	\date   Tuesday November 19, 2013
 	\brief  A unit test for neural network visualization.
 */
 
-// Minerva Includes
-#include <minerva/video/interface/Image.h>
-#include <minerva/video/interface/ImageVector.h>
-#include <minerva/neuralnetwork/interface/NeuralNetwork.h>
+// Lucious Includes
+#include <lucious/video/interface/Image.h>
+#include <lucious/video/interface/ImageVector.h>
+#include <lucious/neuralnetwork/interface/NeuralNetwork.h>
 
-#include <minerva/matrix/interface/Matrix.h>
+#include <lucious/matrix/interface/Matrix.h>
 
-#include <minerva/visualization/interface/NeuronVisualizer.h>
+#include <lucious/visualization/interface/NeuronVisualizer.h>
 
-#include <minerva/util/interface/debug.h>
-#include <minerva/util/interface/paths.h>
-#include <minerva/util/interface/ArgumentParser.h>
+#include <lucious/util/interface/debug.h>
+#include <lucious/util/interface/paths.h>
+#include <lucious/util/interface/ArgumentParser.h>
 
 // Type definitions
-typedef minerva::video::Image Image;
-typedef minerva::neuralnetwork::NeuralNetwork NeuralNetwork;
-typedef minerva::neuralnetwork::Layer Layer;
-typedef minerva::video::ImageVector ImageVector;
-typedef minerva::matrix::Matrix Matrix;
-typedef minerva::visualization::NeuronVisualizer NeuronVisualizer;
+typedef lucious::video::Image Image;
+typedef lucious::neuralnetwork::NeuralNetwork NeuralNetwork;
+typedef lucious::neuralnetwork::Layer Layer;
+typedef lucious::video::ImageVector ImageVector;
+typedef lucious::matrix::Matrix Matrix;
+typedef lucious::visualization::NeuronVisualizer NeuronVisualizer;
 
 static NeuralNetwork createNeuralNetwork(size_t xPixels, size_t yPixels,
 	size_t colors, std::default_random_engine& engine)
@@ -148,10 +148,10 @@ static void trainNetwork(NeuralNetwork& neuralNetwork, const Image& image,
 	float noiseMagnitude, size_t iterations, size_t batchSize,
 	std::default_random_engine& engine)
 {
-	minerva::util::log("TestVisualization") << "Training the network.\n";
+	lucious::util::log("TestVisualization") << "Training the network.\n";
 	for(size_t i = 0; i != iterations; ++i)
 	{
-		minerva::util::log("TestVisualization") << " Iteration " << i << " out of "
+		lucious::util::log("TestVisualization") << " Iteration " << i << " out of "
 			<< iterations << "\n";
 		ImageVector batch = generateBatch(image, noiseMagnitude,
 			batchSize, engine);
@@ -162,8 +162,8 @@ static void trainNetwork(NeuralNetwork& neuralNetwork, const Image& image,
 		
 		Matrix reference = generateReference(batch);
 		
-		minerva::util::log("TestVisualization") << "  Input:     " << input.toString();
-		minerva::util::log("TestVisualization") << "  Reference: " << reference.toString();
+		lucious::util::log("TestVisualization") << "  Input:     " << input.toString();
+		lucious::util::log("TestVisualization") << "  Reference: " << reference.toString();
 		
 		neuralNetwork.train(input, reference);
 	}
@@ -177,11 +177,11 @@ static float testNetwork(NeuralNetwork& neuralNetwork, const Image& image,
 
 	iterations = std::max(iterations, 1UL);
 
-	minerva::util::log("TestVisualization") << "Testing the accuracy of the trained network.\n";
+	lucious::util::log("TestVisualization") << "Testing the accuracy of the trained network.\n";
 
 	for(size_t i = 0; i != iterations; ++i)
 	{
-		minerva::util::log("TestVisualization") << " Iteration " << i << " out of "
+		lucious::util::log("TestVisualization") << " Iteration " << i << " out of "
 			<< iterations << "\n";
 		
 		ImageVector batch = generateBatch(image, noiseMagnitude,
@@ -193,8 +193,8 @@ static float testNetwork(NeuralNetwork& neuralNetwork, const Image& image,
 		
 		Matrix reference = generateReference(batch);
 		
-		minerva::util::log("TestVisualization") << "  Input:     " << input.toString();
-		minerva::util::log("TestVisualization") << "  Reference: " << reference.toString();
+		lucious::util::log("TestVisualization") << "  Input:     " << input.toString();
+		lucious::util::log("TestVisualization") << "  Reference: " << reference.toString();
 		
 		accuracy += neuralNetwork.computeAccuracy(input, reference);
 	}
@@ -204,8 +204,8 @@ static float testNetwork(NeuralNetwork& neuralNetwork, const Image& image,
 
 static std::string rename(const std::string& name)
 {
-	return minerva::util::stripExtension(name) + "-reference" +
-		minerva::util::getExtension(name);
+	return lucious::util::stripExtension(name) + "-reference" +
+		lucious::util::getExtension(name);
 }
 
 static float visualizeNetwork(NeuralNetwork& neuralNetwork, const Image& referenceImage,
@@ -225,11 +225,11 @@ static float visualizeNetwork(NeuralNetwork& neuralNetwork, const Image& referen
 	
 	visualizer.visualizeNeuron(image, 0);
 
-	minerva::util::log("TestVisualization") << "Reference response: "
+	lucious::util::log("TestVisualization") << "Reference response: "
 		<< neuralNetwork.runInputs(referenceImage.convertToStandardizedMatrix(
 			neuralNetwork.getInputCount(),
 			neuralNetwork.getInputBlockingFactor(), image.colorComponents())).toString();
-	minerva::util::log("TestVisualization") << "Visualized response: "
+	lucious::util::log("TestVisualization") << "Visualized response: "
 		<< neuralNetwork.runInputs(image.convertToStandardizedMatrix(
 			neuralNetwork.getInputCount(),
 			neuralNetwork.getInputBlockingFactor(), image.colorComponents())).toString();
@@ -292,17 +292,17 @@ static void runTest(const std::string& imagePath, float noiseMagnitude,
 
 static void enableSpecificLogs(const std::string& modules)
 {
-	auto individualModules = minerva::util::split(modules, ",");
+	auto individualModules = lucious::util::split(modules, ",");
 	
 	for(auto& module : individualModules)
 	{
-		minerva::util::enableLog(module);
+		lucious::util::enableLog(module);
 	}
 }
 
 int main(int argc, char** argv)
 {
-    minerva::util::ArgumentParser parser(argc, argv);
+    lucious::util::ArgumentParser parser(argc, argv);
     
     bool verbose = false;
     bool seed = false;
@@ -317,7 +317,7 @@ int main(int argc, char** argv)
 	std::string image;
 	std::string outputPath;
 
-    parser.description("A test for minerva neural network visualization.");
+    parser.description("A test for lucious neural network visualization.");
 
     parser.parse("-i", "--image", image, "images/cat.jpg",
         "The input image to train on, and perform visualization on.");
@@ -346,14 +346,14 @@ int main(int argc, char** argv)
 
     if(verbose)
 	{
-		minerva::util::enableAllLogs();
+		lucious::util::enableAllLogs();
 	}
 	else
 	{
 		enableSpecificLogs(loggingEnabledModules);
 	}
     
-    minerva::util::log("TestVisualization") << "Test begins\n";
+    lucious::util::log("TestVisualization") << "Test begins\n";
     
     try
     {
@@ -362,7 +362,7 @@ int main(int argc, char** argv)
     }
     catch(const std::exception& e)
     {
-        std::cout << "Minerva Visualization Test Failed:\n";
+        std::cout << "Lucious Visualization Test Failed:\n";
         std::cout << "Message: " << e.what() << "\n\n";
     }
 

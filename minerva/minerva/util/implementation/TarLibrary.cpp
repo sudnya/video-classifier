@@ -5,9 +5,9 @@
 	
 */
 
-// Minerva Includes
-#include <minerva/util/interface/TarLibrary.h>
-#include <minerva/util/interface/Casts.h>
+// Lucious Includes
+#include <lucious/util/interface/TarLibrary.h>
+#include <lucious/util/interface/Casts.h>
 
 // Standard Library Includes
 #include <stdexcept>
@@ -15,7 +15,7 @@
 // System-Specific Includes
 #include <dlfcn.h>
 
-namespace minerva
+namespace lucious
 {
 
 namespace util

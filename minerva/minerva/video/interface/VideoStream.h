@@ -10,9 +10,9 @@
 #include <cstring>
 
 // Forward Declarations
-namespace minerva { namespace video { class Image; } }
+namespace lucious { namespace video { class Image; } }
 
-namespace minerva
+namespace lucious
 {
 
 namespace video

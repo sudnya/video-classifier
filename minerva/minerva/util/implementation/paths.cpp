@@ -4,10 +4,10 @@
 	\brief  Function implementations of common path manipulations
 */
 
-// Minerva Includes
-#include <minerva/util/interface/paths.h>
-#include <minerva/util/interface/string.h>
-#include <minerva/util/interface/debug.h>
+// Lucious Includes
+#include <lucious/util/interface/paths.h>
+#include <lucious/util/interface/string.h>
+#include <lucious/util/interface/debug.h>
 
 // Standard Library Includes
 #include <stdexcept>
@@ -19,7 +19,7 @@
 #include <dirent.h>
 #endif
 
-namespace minerva
+namespace lucious
 {
 
 namespace util

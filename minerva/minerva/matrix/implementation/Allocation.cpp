@@ -1,9 +1,9 @@
 
-// Minerva Includes
-#include <minerva/matrix/interface/Allocation.h>
-#include <minerva/parallel/interface/Memory.h>
+// Lucious Includes
+#include <lucious/matrix/interface/Allocation.h>
+#include <lucious/parallel/interface/Memory.h>
 
-namespace minerva
+namespace lucious
 {
 namespace matrix
 {

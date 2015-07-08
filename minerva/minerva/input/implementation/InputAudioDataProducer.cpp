@@ -4,13 +4,13 @@
     \brief  The source file for the InputAudioDataProducer class.
 */
 
-#include <minerva/input/interface/InputAudioDataProducer.h>
+#include <lucious/input/interface/InputAudioDataProducer.h>
 
-#include <minerva/matrix/interface/Matrix.h>
+#include <lucious/matrix/interface/Matrix.h>
 
-#include <minerva/util/interface/debug.h>
+#include <lucious/util/interface/debug.h>
 
-namespace minerva
+namespace lucious
 {
 
 namespace input

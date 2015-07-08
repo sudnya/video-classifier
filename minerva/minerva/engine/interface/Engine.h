@@ -6,22 +6,22 @@
 
 #pragma once
 
-// Minerva Includes
-#include <minerva/util/interface/string.h>
+// Lucious Includes
+#include <lucious/util/interface/string.h>
 
 // Standard Library Includes
 #include <ostream>
 #include <memory>
 
 // Forward Declarations
-namespace minerva { namespace model   { class Model;             } }
-namespace minerva { namespace input   { class InputDataProducer; } }
-namespace minerva { namespace results { class ResultProcessor;   } }
-namespace minerva { namespace network { class NeuralNetwork;     } }
-namespace minerva { namespace results { class ResultVector;      } }
-namespace minerva { namespace matrix  { class Matrix;            } }
+namespace lucious { namespace model   { class Model;             } }
+namespace lucious { namespace input   { class InputDataProducer; } }
+namespace lucious { namespace results { class ResultProcessor;   } }
+namespace lucious { namespace network { class NeuralNetwork;     } }
+namespace lucious { namespace results { class ResultVector;      } }
+namespace lucious { namespace matrix  { class Matrix;            } }
 
-namespace minerva
+namespace lucious
 {
 
 namespace engine

@@ -9,7 +9,7 @@
 // Standard Library Includes
 #include <cstring>
 
-namespace minerva
+namespace lucious
 {
 
 namespace util

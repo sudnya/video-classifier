@@ -4,9 +4,9 @@
 	\brief  The source file for the OpenCVLibrary class.
 */
 
-// Minerva Includes
-#include <minerva/video/interface/OpenCVLibrary.h>
-#include <minerva/util/interface/Casts.h>
+// Lucious Includes
+#include <lucious/video/interface/OpenCVLibrary.h>
+#include <lucious/util/interface/Casts.h>
 
 // Standard Library Includes
 #include <stdexcept>
@@ -14,7 +14,7 @@
 // System-Specific Includes
 #include <dlfcn.h>
 
-namespace minerva
+namespace lucious
 {
 
 namespace video

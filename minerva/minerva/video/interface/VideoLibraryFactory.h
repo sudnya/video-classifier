@@ -11,9 +11,9 @@
 #include <string>
 
 // Forward Declarations
-namespace minerva { namespace video { class VideoLibrary; } }
+namespace lucious { namespace video { class VideoLibrary; } }
 
-namespace minerva
+namespace lucious
 {
 
 namespace video

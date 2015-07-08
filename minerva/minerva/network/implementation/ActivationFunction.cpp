@@ -4,10 +4,10 @@
     \brief  The source file for the ActivationFunction class.
 */
 
-// Minerva Includes
-#include <minerva/network/interface/ActivationFunction.h>
+// Lucious Includes
+#include <lucious/network/interface/ActivationFunction.h>
 
-namespace minerva
+namespace lucious
 {
 
 namespace network

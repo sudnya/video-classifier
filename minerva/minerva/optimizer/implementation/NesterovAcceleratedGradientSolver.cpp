@@ -5,18 +5,18 @@
 */
 
 
-// Minerva Includes
-#include <minerva/optimizer/interface/NesterovAcceleratedGradientSolver.h>
-#include <minerva/optimizer/interface/CostAndGradientFunction.h>
+// Lucious Includes
+#include <lucious/optimizer/interface/NesterovAcceleratedGradientSolver.h>
+#include <lucious/optimizer/interface/CostAndGradientFunction.h>
 
-#include <minerva/matrix/interface/MatrixVector.h>
-#include <minerva/matrix/interface/MatrixVectorOperations.h>
-#include <minerva/matrix/interface/Operation.h>
+#include <lucious/matrix/interface/MatrixVector.h>
+#include <lucious/matrix/interface/MatrixVectorOperations.h>
+#include <lucious/matrix/interface/Operation.h>
 
-#include <minerva/util/interface/debug.h>
-#include <minerva/util/interface/Knobs.h>
+#include <lucious/util/interface/debug.h>
+#include <lucious/util/interface/Knobs.h>
 
-namespace minerva
+namespace lucious
 {
 
 namespace optimizer

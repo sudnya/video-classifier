@@ -4,19 +4,19 @@
     \brief  The source file for the CudaDriver class.
 */
 
-// Minerva Includes
-#include <minerva/parallel/interface/CudaDriver.h>
+// Lucious Includes
+#include <lucious/parallel/interface/CudaDriver.h>
 
-#include <minerva/parallel/interface/cuda.h>
+#include <lucious/parallel/interface/cuda.h>
 
-#include <minerva/util/interface/Casts.h>
-#include <minerva/util/interface/debug.h>
+#include <lucious/util/interface/Casts.h>
+#include <lucious/util/interface/debug.h>
 
 // System Specific Includes
 #include <dlfcn.h>
 #include <stdexcept>
 
-namespace minerva
+namespace lucious
 {
 
 namespace parallel

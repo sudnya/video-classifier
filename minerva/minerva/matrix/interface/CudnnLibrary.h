@@ -10,7 +10,7 @@
 #include <cstddef>
 #include <string>
 
-namespace minerva
+namespace lucious
 {
 
 namespace matrix

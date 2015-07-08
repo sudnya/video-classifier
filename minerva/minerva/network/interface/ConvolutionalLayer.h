@@ -6,10 +6,10 @@
 
 #pragma once
 
-// Minerva Includes
-#include <minerva/network/interface/Layer.h>
+// Lucious Includes
+#include <lucious/network/interface/Layer.h>
 
-namespace minerva
+namespace lucious
 {
 namespace network
 {

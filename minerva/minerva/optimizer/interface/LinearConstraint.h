@@ -6,10 +6,10 @@
 
 #pragma once
 
-// Minerva Includes
-#include <minerva/optimizer/interface/Constraint.h>
+// Lucious Includes
+#include <lucious/optimizer/interface/Constraint.h>
 
-namespace minerva
+namespace lucious
 {
 
 namespace optimizer

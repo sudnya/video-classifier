@@ -4,20 +4,20 @@
 	\brief  The source file for the Video class.
 */
 
-// Minerva Includes
-#include <minerva/video/interface/Video.h>
-#include <minerva/video/interface/VideoLibraryInterface.h>
-#include <minerva/video/interface/VideoLibrary.h>
-#include <minerva/video/interface/VideoStream.h>
+// Lucious Includes
+#include <lucious/video/interface/Video.h>
+#include <lucious/video/interface/VideoLibraryInterface.h>
+#include <lucious/video/interface/VideoLibrary.h>
+#include <lucious/video/interface/VideoStream.h>
 
-#include <minerva/util/interface/paths.h>
-#include <minerva/util/interface/debug.h>
+#include <lucious/util/interface/paths.h>
+#include <lucious/util/interface/debug.h>
 
 // Standard Library Includes
 #include <stdexcept>
 #include <sstream>
 
-namespace minerva
+namespace lucious
 {
 
 namespace video

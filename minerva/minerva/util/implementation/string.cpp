@@ -5,10 +5,10 @@
 */
 
 
-#include <minerva/util/interface/string.h>
-#include <minerva/util/interface/debug.h>
+#include <lucious/util/interface/string.h>
+#include <lucious/util/interface/debug.h>
 
-namespace minerva
+namespace lucious
 {
 
 namespace util

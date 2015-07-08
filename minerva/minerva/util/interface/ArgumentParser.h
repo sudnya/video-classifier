@@ -11,10 +11,10 @@
 #define SCREEN_WIDTH 80
 
 #include <sstream>
-#include <minerva/util/interface/macros.h>
+#include <lucious/util/interface/macros.h>
 #include <cassert>
 #include "debug.h"
-#include <minerva/util/interface/string.h>
+#include <lucious/util/interface/string.h>
 
 #ifdef REPORT_BASE
 #undef REPORT_BASE 
@@ -22,7 +22,7 @@
 
 #define REPORT_BASE 0
 
-namespace minerva
+namespace lucious
 {
 
 namespace util

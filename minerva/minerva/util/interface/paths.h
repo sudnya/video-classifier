@@ -10,7 +10,7 @@
 #include <string>
 #include <vector>
 
-namespace minerva
+namespace lucious
 {
 
 namespace util

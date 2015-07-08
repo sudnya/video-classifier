@@ -5,10 +5,10 @@
 
 #pragma once
 
-namespace minerva { namespace network { class NeuralNetwork; } }
-namespace minerva { namespace matrix  { class Matrix;        } }
+namespace lucious { namespace network { class NeuralNetwork; } }
+namespace lucious { namespace matrix  { class Matrix;        } }
 
-namespace minerva
+namespace lucious
 {
 
 namespace optimizer

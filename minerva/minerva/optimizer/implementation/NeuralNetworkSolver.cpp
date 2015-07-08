@@ -4,13 +4,13 @@
  */
 
 
-#include <minerva/optimizer/interface/NeuralNetworkSolver.h>
-#include <minerva/optimizer/interface/SimpleNeuralNetworkSolver.h>
+#include <lucious/optimizer/interface/NeuralNetworkSolver.h>
+#include <lucious/optimizer/interface/SimpleNeuralNetworkSolver.h>
 
-#include <minerva/util/interface/debug.h>
-#include <minerva/util/interface/Knobs.h>
+#include <lucious/util/interface/debug.h>
+#include <lucious/util/interface/Knobs.h>
 
-namespace minerva
+namespace lucious
 {
 namespace optimizer
 {

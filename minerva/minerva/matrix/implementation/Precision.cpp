@@ -1,11 +1,11 @@
 
-// Minerva Includes
-#include <minerva/matrix/interface/Precision.h>
+// Lucious Includes
+#include <lucious/matrix/interface/Precision.h>
 
-#include <minerva/util/interface/debug.h>
-#include <minerva/util/interface/Knobs.h>
+#include <lucious/util/interface/debug.h>
+#include <lucious/util/interface/Knobs.h>
 
-namespace minerva
+namespace lucious
 {
 namespace matrix
 {

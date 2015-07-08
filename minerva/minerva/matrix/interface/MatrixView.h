@@ -1,12 +1,12 @@
 #pragma once
 
-#include <minerva/matrix/interface/Matrix.h>
-#include <minerva/matrix/interface/Dimension.h>
-#include <minerva/matrix/interface/DimensionTransformations.h>
+#include <lucious/matrix/interface/Matrix.h>
+#include <lucious/matrix/interface/Dimension.h>
+#include <lucious/matrix/interface/DimensionTransformations.h>
 
-#include <minerva/parallel/interface/cuda.h>
+#include <lucious/parallel/interface/cuda.h>
 
-namespace minerva
+namespace lucious
 {
 namespace matrix
 {

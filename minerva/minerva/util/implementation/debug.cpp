@@ -13,8 +13,8 @@
 #ifndef DEBUG_CPP_INCLUDED
 #define DEBUG_CPP_INCLUDED
 
-#include <minerva/util/interface/debug.h>
-#include <minerva/util/interface/string.h>
+#include <lucious/util/interface/debug.h>
+#include <lucious/util/interface/string.h>
 
 // Standard Library Includes
 #include <memory>
@@ -28,7 +28,7 @@
 	#endif
 #endif
 
-namespace minerva
+namespace lucious
 {
 
 namespace util

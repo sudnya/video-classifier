@@ -4,12 +4,12 @@
     \brief  The source file for the WeightCostFunctionFactory class.
 */
 
-// Minerva Includes
-#include <minerva/network/interface/WeightCostFunctionFactory.h>
+// Lucious Includes
+#include <lucious/network/interface/WeightCostFunctionFactory.h>
 
-#include <minerva/network/interface/WeightRegularizationCostFunction.h>
+#include <lucious/network/interface/WeightRegularizationCostFunction.h>
 
-namespace minerva
+namespace lucious
 {
 
 namespace network

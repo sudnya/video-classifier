@@ -13,7 +13,7 @@
 #include <cstdint>
 #include <string>
 
-namespace minerva
+namespace lucious
 {
 
 namespace util

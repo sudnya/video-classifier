@@ -3,7 +3,7 @@
 // Standard Library Includes
 #include <tuple>
 
-namespace minerva
+namespace lucious
 {
 namespace matrix
 {

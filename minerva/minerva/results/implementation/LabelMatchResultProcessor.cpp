@@ -4,18 +4,18 @@
     \brief  The source file for the LabelMatchResultProcessor class.
 */
 
-// Minerva Includes
-#include <minerva/results/interface/LabelMatchResultProcessor.h>
-#include <minerva/results/interface/LabelMatchResult.h>
-#include <minerva/results/interface/ResultVector.h>
+// Lucious Includes
+#include <lucious/results/interface/LabelMatchResultProcessor.h>
+#include <lucious/results/interface/LabelMatchResult.h>
+#include <lucious/results/interface/ResultVector.h>
 
-#include <minerva/util/interface/debug.h>
+#include <lucious/util/interface/debug.h>
 
 // Standard Library Includes
 #include <sstream>
 #include <cassert>
 
-namespace minerva
+namespace lucious
 {
 
 namespace results

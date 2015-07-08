@@ -4,15 +4,15 @@
 	\brief  The source file for the ResultProcessorfactor class.
 */
 
-// Minerva Includes
-#include <minerva/results/interface/ResultProcessorFactory.h>
+// Lucious Includes
+#include <lucious/results/interface/ResultProcessorFactory.h>
 
-#include <minerva/results/interface/NullResultProcessor.h>
-#include <minerva/results/interface/LabelResultProcessor.h>
-#include <minerva/results/interface/LabelMatchResultProcessor.h>
-#include <minerva/results/interface/FeatureResultProcessor.h>
+#include <lucious/results/interface/NullResultProcessor.h>
+#include <lucious/results/interface/LabelResultProcessor.h>
+#include <lucious/results/interface/LabelMatchResultProcessor.h>
+#include <lucious/results/interface/FeatureResultProcessor.h>
 
-namespace minerva
+namespace lucious
 {
 
 namespace results

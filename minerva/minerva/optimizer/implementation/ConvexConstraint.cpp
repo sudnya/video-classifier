@@ -4,12 +4,12 @@
     \brief  The source file for the ConvexConstraint class.
 */
 
-// Minerva Includes
-#include <minerva/optimizer/interface/ConvexConstraint.h>
+// Lucious Includes
+#include <lucious/optimizer/interface/ConvexConstraint.h>
 
-#include <minerva/util/interface/debug.h>
+#include <lucious/util/interface/debug.h>
 
-namespace minerva
+namespace lucious
 {
 
 namespace optimizer

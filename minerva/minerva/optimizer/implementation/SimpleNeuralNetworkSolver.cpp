@@ -4,28 +4,28 @@
     \brief  The source file for the SimpleNeuralNetworkSolver class.
 */
 
-// Minerva Includes
-#include <minerva/optimizer/interface/SimpleNeuralNetworkSolver.h>
-#include <minerva/optimizer/interface/GeneralDifferentiableSolver.h>
-#include <minerva/optimizer/interface/GeneralDifferentiableSolverFactory.h>
-#include <minerva/optimizer/interface/CostAndGradientFunction.h>
+// Lucious Includes
+#include <lucious/optimizer/interface/SimpleNeuralNetworkSolver.h>
+#include <lucious/optimizer/interface/GeneralDifferentiableSolver.h>
+#include <lucious/optimizer/interface/GeneralDifferentiableSolverFactory.h>
+#include <lucious/optimizer/interface/CostAndGradientFunction.h>
 
-#include <minerva/network/interface/NeuralNetwork.h>
-#include <minerva/network/interface/Layer.h>
+#include <lucious/network/interface/NeuralNetwork.h>
+#include <lucious/network/interface/Layer.h>
 
-#include <minerva/matrix/interface/Matrix.h>
-#include <minerva/matrix/interface/MatrixVector.h>
+#include <lucious/matrix/interface/Matrix.h>
+#include <lucious/matrix/interface/MatrixVector.h>
 
-#include <minerva/util/interface/Knobs.h>
-#include <minerva/util/interface/SystemCompatibility.h>
-#include <minerva/util/interface/debug.h>
+#include <lucious/util/interface/Knobs.h>
+#include <lucious/util/interface/SystemCompatibility.h>
+#include <lucious/util/interface/debug.h>
 
 // Standard Libary Includes
 #include <list>
 #include <set>
 #include <stack>
 
-namespace minerva
+namespace lucious
 {
 
 namespace optimizer

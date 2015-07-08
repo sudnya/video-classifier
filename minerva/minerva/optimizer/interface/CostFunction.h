@@ -7,10 +7,10 @@
 #pragma once
 
 // Forward Declarations
-namespace minerva { namespace matrix { class Matrix;            } }
-namespace minerva { namespace matrix { class Matrix; } }
+namespace lucious { namespace matrix { class Matrix;            } }
+namespace lucious { namespace matrix { class Matrix; } }
 
-namespace minerva
+namespace lucious
 {
 
 namespace optimizer

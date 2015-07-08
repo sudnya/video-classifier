@@ -1,17 +1,17 @@
 
-// Minerva Includes
-#include <minerva/matrix/interface/RecurrentOperations.h>
+// Lucious Includes
+#include <lucious/matrix/interface/RecurrentOperations.h>
 
-#include <minerva/matrix/interface/BlasOperations.h>
-#include <minerva/matrix/interface/Matrix.h>
-#include <minerva/matrix/interface/MatrixTransformations.h>
-#include <minerva/matrix/interface/MatrixOperations.h>
-#include <minerva/matrix/interface/CopyOperations.h>
-#include <minerva/matrix/interface/Operation.h>
+#include <lucious/matrix/interface/BlasOperations.h>
+#include <lucious/matrix/interface/Matrix.h>
+#include <lucious/matrix/interface/MatrixTransformations.h>
+#include <lucious/matrix/interface/MatrixOperations.h>
+#include <lucious/matrix/interface/CopyOperations.h>
+#include <lucious/matrix/interface/Operation.h>
 
-#include <minerva/parallel/interface/MultiBulkSynchronousParallel.h>
+#include <lucious/parallel/interface/MultiBulkSynchronousParallel.h>
 
-namespace minerva
+namespace lucious
 {
 namespace matrix
 {

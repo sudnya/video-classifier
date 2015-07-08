@@ -6,9 +6,9 @@
 
 #pragma once
 
-#include <minerva/results/interface/ResultProcessor.h>
+#include <lucious/results/interface/ResultProcessor.h>
 
-namespace minerva
+namespace lucious
 {
 
 namespace results

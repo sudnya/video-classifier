@@ -10,9 +10,9 @@
 #include <string>
 
 // Forward Declarations
-namespace minerva { namespace network { class ActivationCostFunction; } }
+namespace lucious { namespace network { class ActivationCostFunction; } }
 
-namespace minerva
+namespace lucious
 {
 
 namespace network

@@ -10,9 +10,9 @@
 #include <string>
 
 // Forward Declarations
-namespace minerva { namespace results { class ResultProcessor; } }
+namespace lucious { namespace results { class ResultProcessor; } }
 
-namespace minerva
+namespace lucious
 {
 
 namespace results

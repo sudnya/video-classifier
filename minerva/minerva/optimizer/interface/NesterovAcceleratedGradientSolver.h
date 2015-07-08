@@ -7,13 +7,13 @@
 
 #pragma once
 
-// Minerva Includes
-#include <minerva/optimizer/interface/GeneralDifferentiableSolver.h>
+// Lucious Includes
+#include <lucious/optimizer/interface/GeneralDifferentiableSolver.h>
 
 // Standard Library Includes
 #include <memory>
 
-namespace minerva
+namespace lucious
 {
 
 namespace optimizer

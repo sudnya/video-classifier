@@ -4,48 +4,48 @@
     \brief  A unit test for classifying mnist digits.
 */
 
-// Minerva Includes
-#include <minerva/engine/interface/Engine.h>
-#include <minerva/engine/interface/EngineFactory.h>
+// Lucious Includes
+#include <lucious/engine/interface/Engine.h>
+#include <lucious/engine/interface/EngineFactory.h>
 
-#include <minerva/visualization/interface/NeuronVisualizer.h>
+#include <lucious/visualization/interface/NeuronVisualizer.h>
 
-#include <minerva/model/interface/Model.h>
+#include <lucious/model/interface/Model.h>
 
-#include <minerva/results/interface/ResultProcessor.h>
-#include <minerva/results/interface/LabelMatchResultProcessor.h>
+#include <lucious/results/interface/ResultProcessor.h>
+#include <lucious/results/interface/LabelMatchResultProcessor.h>
 
-#include <minerva/network/interface/NeuralNetwork.h>
-#include <minerva/network/interface/FeedForwardLayer.h>
-#include <minerva/network/interface/ConvolutionalLayer.h>
-#include <minerva/network/interface/CostFunctionFactory.h>
+#include <lucious/network/interface/NeuralNetwork.h>
+#include <lucious/network/interface/FeedForwardLayer.h>
+#include <lucious/network/interface/ConvolutionalLayer.h>
+#include <lucious/network/interface/CostFunctionFactory.h>
 
-#include <minerva/network/interface/ActivationFunctionFactory.h>
+#include <lucious/network/interface/ActivationFunctionFactory.h>
 
-#include <minerva/video/interface/Image.h>
-#include <minerva/video/interface/ImageVector.h>
+#include <lucious/video/interface/Image.h>
+#include <lucious/video/interface/ImageVector.h>
 
-#include <minerva/matrix/interface/RandomOperations.h>
-#include <minerva/matrix/interface/Matrix.h>
+#include <lucious/matrix/interface/RandomOperations.h>
+#include <lucious/matrix/interface/Matrix.h>
 
-#include <minerva/util/interface/debug.h>
-#include <minerva/util/interface/paths.h>
-#include <minerva/util/interface/memory.h>
-#include <minerva/util/interface/ArgumentParser.h>
-#include <minerva/util/interface/Knobs.h>
+#include <lucious/util/interface/debug.h>
+#include <lucious/util/interface/paths.h>
+#include <lucious/util/interface/memory.h>
+#include <lucious/util/interface/ArgumentParser.h>
+#include <lucious/util/interface/Knobs.h>
 
 // Type definitions
-typedef minerva::video::Image Image;
-typedef minerva::network::NeuralNetwork NeuralNetwork;
-typedef minerva::network::FeedForwardLayer FeedForwardLayer;
-typedef minerva::network::ConvolutionalLayer ConvolutionalLayer;
-typedef minerva::video::ImageVector ImageVector;
-typedef minerva::matrix::Matrix Matrix;
-typedef minerva::matrix::Dimension Dimension;
-typedef minerva::visualization::NeuronVisualizer NeuronVisualizer;
-typedef minerva::model::Model Model;
-typedef minerva::engine::Engine Engine;
-typedef minerva::results::LabelMatchResultProcessor LabelMatchResultProcessor;
+typedef lucious::video::Image Image;
+typedef lucious::network::NeuralNetwork NeuralNetwork;
+typedef lucious::network::FeedForwardLayer FeedForwardLayer;
+typedef lucious::network::ConvolutionalLayer ConvolutionalLayer;
+typedef lucious::video::ImageVector ImageVector;
+typedef lucious::matrix::Matrix Matrix;
+typedef lucious::matrix::Dimension Dimension;
+typedef lucious::visualization::NeuronVisualizer NeuronVisualizer;
+typedef lucious::model::Model Model;
+typedef lucious::engine::Engine Engine;
+typedef lucious::results::LabelMatchResultProcessor LabelMatchResultProcessor;
 
 class Parameters
 {
@@ -99,7 +99,7 @@ static void addFeatureSelector(Model& model, const Parameters& parameters)
     //featureSelector.addLayer(std::make_unique<FeedForwardLayer>(parameters.layerSize, parameters.layerSize));
 
     featureSelector.initialize();
-    minerva::util::log("TestMNIST")
+    lucious::util::log("TestMNIST")
         << "Building feature selector network with "
         << featureSelector.getOutputCount() << " output neurons\n";
 
@@ -117,7 +117,7 @@ static void addClassifier(Model& model, const Parameters& parameters)
     //classifier.addLayer(std::make_unique<FeedForwardLayer>(parameters.layerSize, parameters.layerSize));
     classifier.addLayer(std::make_unique<FeedForwardLayer>(parameters.layerSize, 10                  ));
 
-    classifier.setCostFunction(minerva::network::CostFunctionFactory::create("SoftMaxCostFunction"));
+    classifier.setCostFunction(lucious::network::CostFunctionFactory::create("SoftMaxCostFunction"));
 
     classifier.initialize();
 
@@ -132,11 +132,11 @@ static void addClassifier(Model& model, const Parameters& parameters)
 
     model.setNeuralNetwork("Classifier", classifier);
 
-    minerva::util::log("TestMNIST")
+    lucious::util::log("TestMNIST")
         << "Feature Selector Architecture "
         << featureSelector.shapeString() << "\n";
 
-    minerva::util::log("TestMNIST")
+    lucious::util::log("TestMNIST")
         << "Classifier Architecture "
         << classifier.shapeString() << "\n";
 }
@@ -154,7 +154,7 @@ static void createModel(Model& model, const Parameters& parameters)
 static void setSampleStatistics(Model& model, const Parameters& parameters)
 {
     // Setup sample stats
-    std::unique_ptr<Engine> engine(minerva::engine::EngineFactory::create("SampleStatisticsEngine"));
+    std::unique_ptr<Engine> engine(lucious::engine::EngineFactory::create("SampleStatisticsEngine"));
 
     engine->setModel(&model);
     engine->setBatchSize(128);
@@ -167,7 +167,7 @@ static void setSampleStatistics(Model& model, const Parameters& parameters)
 static void trainNetwork(Model& model, const Parameters& parameters)
 {
     // Train the network
-    std::unique_ptr<Engine> engine(minerva::engine::EngineFactory::create("LearnerEngine"));
+    std::unique_ptr<Engine> engine(lucious::engine::EngineFactory::create("LearnerEngine"));
 
     engine->setModel(&model);
     engine->setEpochs(parameters.epochs);
@@ -181,7 +181,7 @@ static void trainNetwork(Model& model, const Parameters& parameters)
 
 static double testNetwork(Model& model, const Parameters& parameters)
 {
-    std::unique_ptr<Engine> engine(minerva::engine::EngineFactory::create("ClassifierEngine"));
+    std::unique_ptr<Engine> engine(lucious::engine::EngineFactory::create("ClassifierEngine"));
 
     engine->setBatchSize(parameters.batchSize);
     engine->setModel(&model);
@@ -194,7 +194,7 @@ static double testNetwork(Model& model, const Parameters& parameters)
     // get the result processor
     auto resultProcessor = static_cast<LabelMatchResultProcessor*>(engine->getResultProcessor());
 
-    minerva::util::log("TestMNIST") << resultProcessor->toString();
+    lucious::util::log("TestMNIST") << resultProcessor->toString();
 
     return resultProcessor->getAccuracy();
 }
@@ -209,7 +209,7 @@ static void createCollage(Model& model, const Parameters& parameters)
     // Visualize the network
     auto network = &model.getNeuralNetwork("FeatureSelector");
 
-    minerva::visualization::NeuronVisualizer visualizer(network);
+    lucious::visualization::NeuronVisualizer visualizer(network);
 
     auto image = visualizer.visualizeInputTilesForAllNeurons();
 
@@ -222,11 +222,11 @@ static void runTest(const Parameters& parameters)
 {
     if(parameters.seed)
     {
-        minerva::matrix::srand(std::time(0));
+        lucious::matrix::srand(std::time(0));
     }
     else
     {
-        minerva::matrix::srand(377);
+        lucious::matrix::srand(377);
     }
 
     // Create a deep model for first layer classification
@@ -256,24 +256,24 @@ static void runTest(const Parameters& parameters)
 
 static void setupSolverParameters()
 {
-    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::LearningRate", "1.0e-2");
-    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::Momentum", "0.9");
-    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::AnnealingRate", "1.00001");
-    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::MaxGradNorm", "10.0");
-    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::IterationsPerBatch", "1");
-    minerva::util::KnobDatabase::setKnob("GeneralDifferentiableSolver::Type", "NesterovAcceleratedGradientSolver");
+    lucious::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::LearningRate", "1.0e-2");
+    lucious::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::Momentum", "0.9");
+    lucious::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::AnnealingRate", "1.00001");
+    lucious::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::MaxGradNorm", "10.0");
+    lucious::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::IterationsPerBatch", "1");
+    lucious::util::KnobDatabase::setKnob("GeneralDifferentiableSolver::Type", "NesterovAcceleratedGradientSolver");
 }
 
 int main(int argc, char** argv)
 {
-    minerva::util::ArgumentParser parser(argc, argv);
+    lucious::util::ArgumentParser parser(argc, argv);
 
     Parameters parameters;
 
     std::string loggingEnabledModules;
     bool verbose = false;
 
-    parser.description("A test for minerva difficult classication performance.");
+    parser.description("A test for lucious difficult classication performance.");
 
     parser.parse("-i", "--input-path", parameters.inputPath,
         "examples/mnist-explicit-training.txt",
@@ -318,14 +318,14 @@ int main(int argc, char** argv)
 
     if(verbose)
     {
-        minerva::util::enableAllLogs();
+        lucious::util::enableAllLogs();
     }
     else
     {
-        minerva::util::enableSpecificLogs(loggingEnabledModules);
+        lucious::util::enableSpecificLogs(loggingEnabledModules);
     }
 
-    minerva::util::log("TestMNIST") << "Test begins\n";
+    lucious::util::log("TestMNIST") << "Test begins\n";
 
     try
     {
@@ -333,7 +333,7 @@ int main(int argc, char** argv)
     }
     catch(const std::exception& e)
     {
-        std::cout << "Minerva MNIST Test Failed:\n";
+        std::cout << "Lucious MNIST Test Failed:\n";
         std::cout << "Message: " << e.what() << "\n\n";
     }
 

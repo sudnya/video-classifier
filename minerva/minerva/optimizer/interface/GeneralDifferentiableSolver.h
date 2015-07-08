@@ -5,18 +5,18 @@
 
 #pragma once
 
-// Minerva Includes
-#include <minerva/optimizer/interface/Solver.h>
+// Lucious Includes
+#include <lucious/optimizer/interface/Solver.h>
 
 // Standard Library Includes
 #include <cstdlib>
 
 // Forward Declarations
-namespace minerva { namespace matrix    { class Matrix;                  } }
-namespace minerva { namespace matrix    { class MatrixVector;            } }
-namespace minerva { namespace optimizer { class CostAndGradientFunction; } }
+namespace lucious { namespace matrix    { class Matrix;                  } }
+namespace lucious { namespace matrix    { class MatrixVector;            } }
+namespace lucious { namespace optimizer { class CostAndGradientFunction; } }
 
-namespace minerva
+namespace lucious
 {
 
 namespace optimizer

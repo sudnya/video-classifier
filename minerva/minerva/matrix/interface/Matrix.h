@@ -6,11 +6,11 @@
 
 #pragma once
 
-// Minerva Includes
-#include <minerva/matrix/interface/FloatReference.h>
-#include <minerva/matrix/interface/FloatIterator.h>
-#include <minerva/matrix/interface/Dimension.h>
-#include <minerva/matrix/interface/Precision.h>
+// Lucious Includes
+#include <lucious/matrix/interface/FloatReference.h>
+#include <lucious/matrix/interface/FloatIterator.h>
+#include <lucious/matrix/interface/Dimension.h>
+#include <lucious/matrix/interface/Precision.h>
 
 // Standard Library Includes
 #include <string>
@@ -18,9 +18,9 @@
 #include <memory>
 
 // Forward Declarations
-namespace minerva { namespace matrix { class Allocation; } }
+namespace lucious { namespace matrix { class Allocation; } }
 
-namespace minerva
+namespace lucious
 {
 
 namespace matrix

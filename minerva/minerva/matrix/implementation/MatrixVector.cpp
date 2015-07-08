@@ -4,13 +4,13 @@
     \brief  The source file for the MatrixVector class.
 */
 
-// Minerva Includes
-#include <minerva/matrix/interface/MatrixVector.h>
+// Lucious Includes
+#include <lucious/matrix/interface/MatrixVector.h>
 
 // Standard Library Includes
 #include <cassert>
 
-namespace minerva
+namespace lucious
 {
 
 namespace matrix

@@ -4,13 +4,13 @@
     \brief  The source file for the Vector class.
 */
 
-// Minerva Includes
-#include <minerva/video/interface/ImageVector.h>
+// Lucious Includes
+#include <lucious/video/interface/ImageVector.h>
 
-#include <minerva/util/interface/debug.h>
-#include <minerva/util/interface/math.h>
+#include <lucious/util/interface/debug.h>
+#include <lucious/util/interface/math.h>
 
-namespace minerva
+namespace lucious
 {
 
 namespace video

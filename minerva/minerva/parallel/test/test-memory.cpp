@@ -4,10 +4,10 @@
     \brief  The source file for the memory unit tests.
 */
 
-// Minerva Includes
-#include <minerva/parallel/interface/Memory.h>
+// Lucious Includes
+#include <lucious/parallel/interface/Memory.h>
 
-#include <minerva/util/interface/debug.h>
+#include <lucious/util/interface/debug.h>
 
 // Standard Library Includes
 #include <iostream>
@@ -23,7 +23,7 @@ bool testMallocFree()
 
     for(auto size : sizes)
     {
-        auto* address = minerva::parallel::malloc(size);
+        auto* address = lucious::parallel::malloc(size);
 
         if(address == nullptr)
         {
@@ -32,7 +32,7 @@ bool testMallocFree()
             return false;
         }
 
-        minerva::parallel::free(address);
+        lucious::parallel::free(address);
     }
 
     std::cout << " Test Malloc Free Passed\n";
@@ -53,7 +53,7 @@ bool testAllocatedMemoryCopy()
 
     for(auto size : sizes)
     {
-        auto* address = minerva::parallel::malloc(size);
+        auto* address = lucious::parallel::malloc(size);
 
         std::vector<uint8_t> inputData(size);
 
@@ -80,7 +80,7 @@ bool testAllocatedMemoryCopy()
             }
         }
 
-        minerva::parallel::free(address);
+        lucious::parallel::free(address);
     }
 
     std::cout << " Test Allocated Memory Copy Passed\n";
@@ -90,7 +90,7 @@ bool testAllocatedMemoryCopy()
 
 int main(int argc, char** argv)
 {
-    //minerva::util::enableAllLogs();
+    //lucious::util::enableAllLogs();
 
     std::cout << "Running memory unit tests\n";
 

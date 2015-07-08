@@ -4,13 +4,13 @@
 	\brief  The source file for the library of math utility functions.
 */
 
-// Minerva Includes
-#include <minerva/util/interface/math.h>
+// Lucious Includes
+#include <lucious/util/interface/math.h>
 
 // Standard Library Includes
 #include <utility>
 
-namespace minerva
+namespace lucious
 {
 
 namespace util

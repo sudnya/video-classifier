@@ -4,14 +4,14 @@
     \brief  The source file for the ActivationFunctionFactory class.
 */
 
-// Minerva Includes
-#include <minerva/network/interface/ActivationFunctionFactory.h>
+// Lucious Includes
+#include <lucious/network/interface/ActivationFunctionFactory.h>
 
-#include <minerva/network/interface/SigmoidActivationFunction.h>
-#include <minerva/network/interface/RectifiedLinearActivationFunction.h>
-#include <minerva/network/interface/NullActivationFunction.h>
+#include <lucious/network/interface/SigmoidActivationFunction.h>
+#include <lucious/network/interface/RectifiedLinearActivationFunction.h>
+#include <lucious/network/interface/NullActivationFunction.h>
 
-namespace minerva
+namespace lucious
 {
 
 namespace network

@@ -6,13 +6,13 @@
 
 #pragma once
 
-// Minerva Includes
-#include <minerva/engine/interface/Engine.h>
+// Lucious Includes
+#include <lucious/engine/interface/Engine.h>
 
 // Forward Declarations
-namespace minerva { namespace engine { class Learner; } }
+namespace lucious { namespace engine { class Learner; } }
 
-namespace minerva
+namespace lucious
 {
 
 namespace engine

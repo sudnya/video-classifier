@@ -1,19 +1,19 @@
-/*	\file   minerva-make-dataset.cpp
+/*	\file   lucious-make-dataset.cpp
 	\date   Saturday August 10, 2015
 	\author Gregory Diamos <solusstultus@gmail.com>
 	\brief  A tool for splitting a dataset into training/validation sets.
 */
 
-// Minerva Includes
-#include <minerva/database/interface/SampleDatabase.h>
-#include <minerva/database/interface/Sample.h>
+// Lucious Includes
+#include <lucious/database/interface/SampleDatabase.h>
+#include <lucious/database/interface/Sample.h>
 
-#include <minerva/video/interface/Image.h>
+#include <lucious/video/interface/Image.h>
 
-#include <minerva/util/interface/ArgumentParser.h>
-#include <minerva/util/interface/paths.h>
-#include <minerva/util/interface/debug.h>
-#include <minerva/util/interface/Knobs.h>
+#include <lucious/util/interface/ArgumentParser.h>
+#include <lucious/util/interface/paths.h>
+#include <lucious/util/interface/debug.h>
+#include <lucious/util/interface/Knobs.h>
 
 // Standard Library Includes
 #include <stdexcept>
@@ -21,7 +21,7 @@
 #include <memory>
 #include <algorithm>
 
-namespace minerva
+namespace lucious
 {
 
 static void createDirectories(const std::string& outputPath, const std::string& setName, const util::StringVector& labels)
@@ -38,7 +38,7 @@ static void copySampleToDatabase(database::SampleDatabase& outputDatabase, const
 
     auto path = util::joinPaths(directory, util::joinPaths(sample.label(), util::getFile(sample.path())));
 
-    util::log("MinervaMakeDataset") << "Copying sample '" + sample.path() + "' to '" + path + "'\n";
+    util::log("LuciousMakeDataset") << "Copying sample '" + sample.path() + "' to '" + path + "'\n";
 
     util::copyFile(path, sample.path());
 
@@ -138,7 +138,7 @@ static void enableSpecificLogs(const std::string& modules)
 
 int main(int argc, char** argv)
 {
-	minerva::util::ArgumentParser parser(argc, argv);
+	lucious::util::ArgumentParser parser(argc, argv);
 
 	std::string inputFileName;
 	std::string outputPath;
@@ -167,20 +167,20 @@ int main(int argc, char** argv)
 
 	if(verbose)
 	{
-		minerva::util::enableAllLogs();
+		lucious::util::enableAllLogs();
 	}
 	else
 	{
-		minerva::enableSpecificLogs(loggingEnabledModules);
+		lucious::enableSpecificLogs(loggingEnabledModules);
 	}
 
 	try
 	{
-        minerva::splitDatabase(outputPath, inputFileName, validationSamples);
+        lucious::splitDatabase(outputPath, inputFileName, validationSamples);
 	}
 	catch(const std::exception& e)
 	{
-		std::cout << "Minerva Data Set Creation Failed:\n";
+		std::cout << "Lucious Data Set Creation Failed:\n";
 		std::cout << "Message: " << e.what() << "\n\n";
 	}
 

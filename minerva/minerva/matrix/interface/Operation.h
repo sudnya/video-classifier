@@ -6,14 +6,14 @@
 
 #pragma once
 
-// Minerva Includes
-#include <minerva/parallel/interface/cuda.h>
+// Lucious Includes
+#include <lucious/parallel/interface/cuda.h>
 
 // Standard Library Includes
 #include <cmath>
 #include <algorithm>
 
-namespace minerva
+namespace lucious
 {
 namespace matrix
 {

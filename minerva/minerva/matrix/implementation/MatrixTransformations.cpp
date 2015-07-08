@@ -1,13 +1,13 @@
 
-// Minerva Includes
-#include <minerva/matrix/interface/MatrixTransformations.h>
-#include <minerva/matrix/interface/DimensionTransformations.h>
-#include <minerva/matrix/interface/CopyOperations.h>
+// Lucious Includes
+#include <lucious/matrix/interface/MatrixTransformations.h>
+#include <lucious/matrix/interface/DimensionTransformations.h>
+#include <lucious/matrix/interface/CopyOperations.h>
 
 // Standard Library Includes
 #include <set>
 
-namespace minerva
+namespace lucious
 {
 namespace matrix
 {

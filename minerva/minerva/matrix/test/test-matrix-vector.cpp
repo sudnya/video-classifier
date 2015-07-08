@@ -4,20 +4,20 @@
     \brief  The source file for the matrix vector unit test class.
 */
 
-// Minerva Includes
-#include <minerva/matrix/interface/Matrix.h>
-#include <minerva/matrix/interface/MatrixVector.h>
-#include <minerva/matrix/interface/MatrixVectorOperations.h>
-#include <minerva/matrix/interface/Operation.h>
+// Lucious Includes
+#include <lucious/matrix/interface/Matrix.h>
+#include <lucious/matrix/interface/MatrixVector.h>
+#include <lucious/matrix/interface/MatrixVectorOperations.h>
+#include <lucious/matrix/interface/Operation.h>
 
-#include <minerva/util/interface/debug.h>
+#include <lucious/util/interface/debug.h>
 
 // Standard Library Includes
 #include <iostream>
 
 // Global Typedefs
-typedef minerva::matrix::Matrix Matrix;
-typedef minerva::matrix::MatrixVector MatrixVector;
+typedef lucious::matrix::Matrix Matrix;
+typedef lucious::matrix::MatrixVector MatrixVector;
 
 /*
     Test matrix addition
@@ -64,7 +64,7 @@ bool testAddition()
     c[1](1, 0) = 8;
     c[1](1, 1) = 12;
 
-    auto computed = apply(MatrixVector(a), b, minerva::matrix::Add());
+    auto computed = apply(MatrixVector(a), b, lucious::matrix::Add());
 
     if(computed != c)
     {
@@ -140,7 +140,7 @@ bool testReduction()
     a[1](1, 0) = 2;
     a[1](1, 1) = 4;
 
-    double computed = reduce(a, {}, minerva::matrix::Add())[0][0];
+    double computed = reduce(a, {}, lucious::matrix::Add())[0][0];
 
     auto c = 20.0;
 
@@ -211,7 +211,7 @@ bool testDotProduct()
 
 int main(int argc, char** argv)
 {
-    minerva::util::enableAllLogs();
+    lucious::util::enableAllLogs();
 
     std::cout << "Running matrix vector unit tests\n";
 

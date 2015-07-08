@@ -6,16 +6,16 @@
 
 #pragma once
 
-// Minerva Includes
-#include <minerva/input/interface/InputDataProducer.h>
+// Lucious Includes
+#include <lucious/input/interface/InputDataProducer.h>
 
-#include <minerva/video/interface/ImageVector.h>
-#include <minerva/video/interface/Video.h>
+#include <lucious/video/interface/ImageVector.h>
+#include <lucious/video/interface/Video.h>
 
 // Stanard Library Includes
 #include <random>
 
-namespace minerva
+namespace lucious
 {
 
 namespace input

@@ -16,7 +16,7 @@
 #include <string>
 #include <fstream>
 
-namespace minerva {
+namespace lucious {
 namespace util {
 namespace json {
 

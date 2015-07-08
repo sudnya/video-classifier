@@ -3,25 +3,25 @@
  * The implementation of the layer class
  */
 
-// Minerva Includes
-#include <minerva/network/interface/Layer.h>
+// Lucious Includes
+#include <lucious/network/interface/Layer.h>
 
-#include <minerva/network/interface/ActivationCostFunction.h>
-#include <minerva/network/interface/ActivationFunction.h>
-#include <minerva/network/interface/WeightCostFunction.h>
+#include <lucious/network/interface/ActivationCostFunction.h>
+#include <lucious/network/interface/ActivationFunction.h>
+#include <lucious/network/interface/WeightCostFunction.h>
 
-#include <minerva/network/interface/ActivationCostFunctionFactory.h>
-#include <minerva/network/interface/ActivationFunctionFactory.h>
-#include <minerva/network/interface/WeightCostFunctionFactory.h>
+#include <lucious/network/interface/ActivationCostFunctionFactory.h>
+#include <lucious/network/interface/ActivationFunctionFactory.h>
+#include <lucious/network/interface/WeightCostFunctionFactory.h>
 
-#include <minerva/matrix/interface/Matrix.h>
-#include <minerva/matrix/interface/MatrixVector.h>
-#include <minerva/matrix/interface/MatrixTransformations.h>
+#include <lucious/matrix/interface/Matrix.h>
+#include <lucious/matrix/interface/MatrixVector.h>
+#include <lucious/matrix/interface/MatrixTransformations.h>
 
 // Standard Library Includes
 #include <sstream>
 
-namespace minerva
+namespace lucious
 {
 
 namespace network

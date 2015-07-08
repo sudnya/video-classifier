@@ -6,18 +6,18 @@
 
 #pragma once
 
-// Minerva Includes
-#include <minerva/util/interface/string.h>
+// Lucious Includes
+#include <lucious/util/interface/string.h>
 
 // Forward Declarations
-namespace minerva { namespace matrix { class Matrix;    } }
-namespace minerva { namespace matrix { class Dimension; } }
-namespace minerva { namespace model  { class Model;     } }
+namespace lucious { namespace matrix { class Matrix;    } }
+namespace lucious { namespace matrix { class Dimension; } }
+namespace lucious { namespace model  { class Model;     } }
 
 // Standard Library Includes
 #include <utility>
 
-namespace minerva
+namespace lucious
 {
 
 namespace input

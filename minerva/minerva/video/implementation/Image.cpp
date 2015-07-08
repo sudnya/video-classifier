@@ -4,21 +4,21 @@
 	\brief  The source file for the Image class.
 */
 
-// Minerva Includes
-#include <minerva/video/interface/Image.h>
-#include <minerva/video/interface/ImageLibraryInterface.h>
+// Lucious Includes
+#include <lucious/video/interface/Image.h>
+#include <lucious/video/interface/ImageLibraryInterface.h>
 
-#include <minerva/matrix/interface/Matrix.h>
+#include <lucious/matrix/interface/Matrix.h>
 
-#include <minerva/util/interface/paths.h>
-#include <minerva/util/interface/debug.h>
+#include <lucious/util/interface/paths.h>
+#include <lucious/util/interface/debug.h>
 
 // Standard Library Includes
 #include <cstring>
 #include <cassert>
 #include <cmath>
 
-namespace minerva
+namespace lucious
 {
 
 namespace video

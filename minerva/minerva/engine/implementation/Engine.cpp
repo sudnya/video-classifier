@@ -4,28 +4,28 @@
     \brief  The source file for the Engine class.
 */
 
-// Minerva Includes
-#include <minerva/engine/interface/Engine.h>
+// Lucious Includes
+#include <lucious/engine/interface/Engine.h>
 
-#include <minerva/network/interface/NeuralNetwork.h>
-#include <minerva/network/interface/Layer.h>
-#include <minerva/network/interface/CostFunction.h>
+#include <lucious/network/interface/NeuralNetwork.h>
+#include <lucious/network/interface/Layer.h>
+#include <lucious/network/interface/CostFunction.h>
 
-#include <minerva/results/interface/ResultProcessorFactory.h>
-#include <minerva/results/interface/ResultVector.h>
-#include <minerva/results/interface/ResultProcessor.h>
+#include <lucious/results/interface/ResultProcessorFactory.h>
+#include <lucious/results/interface/ResultVector.h>
+#include <lucious/results/interface/ResultProcessor.h>
 
-#include <minerva/input/interface/InputDataProducerFactory.h>
-#include <minerva/input/interface/InputDataProducer.h>
+#include <lucious/input/interface/InputDataProducerFactory.h>
+#include <lucious/input/interface/InputDataProducer.h>
 
-#include <minerva/model/interface/Model.h>
+#include <lucious/model/interface/Model.h>
 
-#include <minerva/matrix/interface/Matrix.h>
+#include <lucious/matrix/interface/Matrix.h>
 
-#include <minerva/util/interface/debug.h>
-#include <minerva/util/interface/paths.h>
-#include <minerva/util/interface/math.h>
-#include <minerva/util/interface/Knobs.h>
+#include <lucious/util/interface/debug.h>
+#include <lucious/util/interface/paths.h>
+#include <lucious/util/interface/math.h>
+#include <lucious/util/interface/Knobs.h>
 
 // Standard Library Includes
 #include <stdexcept>
@@ -34,7 +34,7 @@
 #include <cstdlib>
 #include <algorithm>
 
-namespace minerva
+namespace lucious
 {
 
 namespace engine

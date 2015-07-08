@@ -10,7 +10,7 @@
 #include <cstring>
 #include <string>
 
-namespace minerva
+namespace lucious
 {
 
 namespace parallel

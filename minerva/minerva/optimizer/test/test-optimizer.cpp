@@ -4,35 +4,35 @@
     \brief  The source file for the TestOptimizer tool.
 */
 
-// Minerva Includes
-#include <minerva/optimizer/interface/GeneralDifferentiableSolverFactory.h>
-#include <minerva/optimizer/interface/GeneralDifferentiableSolver.h>
-#include <minerva/optimizer/interface/CostAndGradientFunction.h>
+// Lucious Includes
+#include <lucious/optimizer/interface/GeneralDifferentiableSolverFactory.h>
+#include <lucious/optimizer/interface/GeneralDifferentiableSolver.h>
+#include <lucious/optimizer/interface/CostAndGradientFunction.h>
 
-#include <minerva/matrix/interface/Matrix.h>
-#include <minerva/matrix/interface/MatrixVector.h>
-#include <minerva/matrix/interface/MatrixVectorOperations.h>
-#include <minerva/matrix/interface/Operation.h>
+#include <lucious/matrix/interface/Matrix.h>
+#include <lucious/matrix/interface/MatrixVector.h>
+#include <lucious/matrix/interface/MatrixVectorOperations.h>
+#include <lucious/matrix/interface/Operation.h>
 
-#include <minerva/util/interface/ArgumentParser.h>
-#include <minerva/util/interface/Knobs.h>
-#include <minerva/util/interface/string.h>
-#include <minerva/util/interface/debug.h>
+#include <lucious/util/interface/ArgumentParser.h>
+#include <lucious/util/interface/Knobs.h>
+#include <lucious/util/interface/string.h>
+#include <lucious/util/interface/debug.h>
 
 // Standard Library Includes
 #include <iostream>
 #include <cassert>
 #include <cmath>
 
-class SimpleQuadraticCostAndGradientFunction : public minerva::optimizer::CostAndGradientFunction
+class SimpleQuadraticCostAndGradientFunction : public lucious::optimizer::CostAndGradientFunction
 {
 public:
     virtual double computeCostAndGradient(MatrixVector& gradient,
         const MatrixVector& inputs) const
     {
-        double cost = minerva::matrix::dotProduct(inputs, inputs);
+        double cost = lucious::matrix::dotProduct(inputs, inputs);
 
-        gradient = apply(inputs, minerva::matrix::Multiply(2.0));
+        gradient = apply(inputs, lucious::matrix::Multiply(2.0));
 
         return cost;
     }
@@ -43,11 +43,11 @@ static bool testSimpleQuadratic(const std::string& name)
 {
     // Solves a quadratic (convex) in 16 dimensions
 
-    auto solver = minerva::optimizer::GeneralDifferentiableSolverFactory::create(name);
+    auto solver = lucious::optimizer::GeneralDifferentiableSolverFactory::create(name);
 
     assert(solver != nullptr);
 
-    minerva::matrix::Matrix input(4, 4);
+    lucious::matrix::Matrix input(4, 4);
 
     input(0, 0) = 0.5;
     input(0, 1) = 0.5;
@@ -85,19 +85,19 @@ static bool testSimpleQuadratic(const std::string& name)
     return success;
 }
 
-class SimpleQuarticCostAndGradientFunction : public minerva::optimizer::CostAndGradientFunction
+class SimpleQuarticCostAndGradientFunction : public lucious::optimizer::CostAndGradientFunction
 {
 public:
     virtual double computeCostAndGradient(MatrixVector& gradient,
         const MatrixVector& inputs) const
     {
-        auto shiftedInputs = apply(inputs, minerva::matrix::Add(-3.0));
+        auto shiftedInputs = apply(inputs, lucious::matrix::Add(-3.0));
 
-        auto shiftedInputsCubed = apply(shiftedInputs, minerva::matrix::Pow(3.0));
+        auto shiftedInputsCubed = apply(shiftedInputs, lucious::matrix::Pow(3.0));
 
-        double cost = reduce(apply(MatrixVector(shiftedInputsCubed), shiftedInputs, minerva::matrix::Multiply()), {}, minerva::matrix::Add())[0][0];
+        double cost = reduce(apply(MatrixVector(shiftedInputsCubed), shiftedInputs, lucious::matrix::Multiply()), {}, lucious::matrix::Add())[0][0];
 
-        gradient = apply(shiftedInputsCubed, minerva::matrix::Multiply(4.0));
+        gradient = apply(shiftedInputsCubed, lucious::matrix::Multiply(4.0));
 
         return cost;
     }
@@ -107,11 +107,11 @@ public:
 static bool testSimpleQuartic(const std::string& name)
 {
     // Solves a quartic (convex) in 16 dimensions
-    auto solver = minerva::optimizer::GeneralDifferentiableSolverFactory::create(name);
+    auto solver = lucious::optimizer::GeneralDifferentiableSolverFactory::create(name);
 
     assert(solver != nullptr);
 
-    minerva::matrix::Matrix input(4, 4);
+    lucious::matrix::Matrix input(4, 4);
 
     input(0, 0) = 0.5;
     input(0, 1) = 0.5;
@@ -173,16 +173,16 @@ static bool test(const std::string& name)
 
 static void setupSolverParameters()
 {
-    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::LearningRate", "3.0e-2");
-    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::Momentum", "0.9999");
-    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::AnnealingRate", "1.000");
-    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::MaxGradNorm", "2000.0");
-    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::IterationsPerBatch", "1000");
+    lucious::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::LearningRate", "3.0e-2");
+    lucious::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::Momentum", "0.9999");
+    lucious::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::AnnealingRate", "1.000");
+    lucious::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::MaxGradNorm", "2000.0");
+    lucious::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::IterationsPerBatch", "1000");
 }
 
 int main(int argc, char** argv)
 {
-    minerva::util::ArgumentParser parser(argc, argv);
+    lucious::util::ArgumentParser parser(argc, argv);
 
     bool enableAllLogs = false;
     std::string logs = "";
@@ -194,14 +194,14 @@ int main(int argc, char** argv)
 
     if(enableAllLogs)
     {
-        minerva::util::enableAllLogs();
+        lucious::util::enableAllLogs();
     }
 
-    minerva::util::enableSpecificLogs(logs);
+    lucious::util::enableSpecificLogs(logs);
 
     setupSolverParameters();
 
-    auto solvers = minerva::optimizer::GeneralDifferentiableSolverFactory::enumerate();
+    auto solvers = lucious::optimizer::GeneralDifferentiableSolverFactory::enumerate();
 
     bool success = true;
 

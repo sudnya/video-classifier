@@ -6,12 +6,12 @@
 
 #pragma once
 
-// Minerva Includes
-#include <minerva/optimizer/interface/LineSearch.h>
+// Lucious Includes
+#include <lucious/optimizer/interface/LineSearch.h>
 
 #include <cstring>
 
-namespace minerva
+namespace lucious
 {
 
 namespace optimizer

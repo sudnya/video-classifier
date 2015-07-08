@@ -11,9 +11,9 @@
 #include <vector>
 
 // Forward Declarations
-namespace minerva { namespace optimizer { class GeneralDifferentiableSolver; } }
+namespace lucious { namespace optimizer { class GeneralDifferentiableSolver; } }
 
-namespace minerva
+namespace lucious
 {
 
 namespace optimizer

@@ -10,10 +10,10 @@
 #include <cstddef>
 
 // Forward Declaration
-namespace minerva { namespace network { class NeuralNetwork; } }
-namespace minerva { namespace video   { class Image;         } }
+namespace lucious { namespace network { class NeuralNetwork; } }
+namespace lucious { namespace video   { class Image;         } }
 
-namespace minerva
+namespace lucious
 {
 
 namespace visualization

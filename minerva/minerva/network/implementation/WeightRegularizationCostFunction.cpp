@@ -4,16 +4,16 @@
     \brief  The source file for the WeightRegularizationCostFunction class.
 */
 
-// Minerva Includes
-#include <minerva/network/interface/WeightRegularizationCostFunction.h>
+// Lucious Includes
+#include <lucious/network/interface/WeightRegularizationCostFunction.h>
 
-#include <minerva/matrix/interface/Matrix.h>
-#include <minerva/matrix/interface/MatrixOperations.h>
-#include <minerva/matrix/interface/Operation.h>
+#include <lucious/matrix/interface/Matrix.h>
+#include <lucious/matrix/interface/MatrixOperations.h>
+#include <lucious/matrix/interface/Operation.h>
 
-#include <minerva/util/interface/Knobs.h>
+#include <lucious/util/interface/Knobs.h>
 
-namespace minerva
+namespace lucious
 {
 
 namespace network

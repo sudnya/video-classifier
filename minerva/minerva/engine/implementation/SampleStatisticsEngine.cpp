@@ -4,21 +4,21 @@
     \brief  The source file for the SampleStatisticsEngine class.
 */
 
-// Minerva Includes
-#include <minerva/engine/interface/SampleStatisticsEngine.h>
+// Lucious Includes
+#include <lucious/engine/interface/SampleStatisticsEngine.h>
 
-#include <minerva/model/interface/Model.h>
+#include <lucious/model/interface/Model.h>
 
-#include <minerva/results/interface/ResultVector.h>
+#include <lucious/results/interface/ResultVector.h>
 
-#include <minerva/matrix/interface/Matrix.h>
+#include <lucious/matrix/interface/Matrix.h>
 
-#include <minerva/util/interface/debug.h>
+#include <lucious/util/interface/debug.h>
 
 // Standard Library Includes
 #include <cmath>
 
-namespace minerva
+namespace lucious
 {
 
 namespace engine

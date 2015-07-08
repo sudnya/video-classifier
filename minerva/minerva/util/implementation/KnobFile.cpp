@@ -4,10 +4,10 @@
 	\brief  The source file for the KnobFile class.
 */
 
-// Minerva Includes
-#include <minerva/util/interface/KnobFile.h>
-#include <minerva/util/interface/string.h>
-#include <minerva/util/interface/Knobs.h>
+// Lucious Includes
+#include <lucious/util/interface/KnobFile.h>
+#include <lucious/util/interface/string.h>
+#include <lucious/util/interface/Knobs.h>
 
 
 // Standard Library Includes
@@ -16,7 +16,7 @@
 #include <stdexcept>
 #include <iostream>
 
-namespace minerva
+namespace lucious
 {
 
 namespace util

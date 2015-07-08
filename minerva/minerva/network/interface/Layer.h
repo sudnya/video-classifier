@@ -11,16 +11,16 @@
 #include <memory>
 
 // Forward Declarations
-namespace minerva { namespace matrix  { class Matrix;                 } }
-namespace minerva { namespace matrix  { class Dimension;              } }
-namespace minerva { namespace matrix  { class MatrixVector;           } }
-namespace minerva { namespace matrix  { class Precision;              } }
-namespace minerva { namespace network { class ActivationFunction;     } }
-namespace minerva { namespace network { class ActivationCostFunction; } }
-namespace minerva { namespace network { class WeightCostFunction;     } }
-namespace minerva { namespace util    { class TarArchive;             } }
+namespace lucious { namespace matrix  { class Matrix;                 } }
+namespace lucious { namespace matrix  { class Dimension;              } }
+namespace lucious { namespace matrix  { class MatrixVector;           } }
+namespace lucious { namespace matrix  { class Precision;              } }
+namespace lucious { namespace network { class ActivationFunction;     } }
+namespace lucious { namespace network { class ActivationCostFunction; } }
+namespace lucious { namespace network { class WeightCostFunction;     } }
+namespace lucious { namespace util    { class TarArchive;             } }
 
-namespace minerva
+namespace lucious
 {
 namespace network
 {

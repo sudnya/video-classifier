@@ -4,10 +4,10 @@
     \brief  The source file for the Operation classes.
 */
 
-// Minerva Includes
-#include <minerva/matrix/interface/Operation.h>
+// Lucious Includes
+#include <lucious/matrix/interface/Operation.h>
 
-namespace minerva
+namespace lucious
 {
 namespace matrix
 {

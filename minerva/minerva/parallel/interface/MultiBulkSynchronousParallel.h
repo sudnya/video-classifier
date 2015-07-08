@@ -1,10 +1,10 @@
 
 #pragma once
 
-#include <minerva/parallel/interface/ConcurrentCollectives.h>
-#include <minerva/parallel/interface/Synchronization.h>
+#include <lucious/parallel/interface/ConcurrentCollectives.h>
+#include <lucious/parallel/interface/Synchronization.h>
 
-namespace minerva
+namespace lucious
 {
 namespace parallel
 {

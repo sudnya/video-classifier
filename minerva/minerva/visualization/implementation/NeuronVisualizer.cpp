@@ -5,36 +5,36 @@
 */
 
 // Minvera Includes
-#include <minerva/visualization/interface/NeuronVisualizer.h>
+#include <lucious/visualization/interface/NeuronVisualizer.h>
 
-#include <minerva/network/interface/NeuralNetwork.h>
-#include <minerva/network/interface/Layer.h>
+#include <lucious/network/interface/NeuralNetwork.h>
+#include <lucious/network/interface/Layer.h>
 
-#include <minerva/video/interface/Image.h>
+#include <lucious/video/interface/Image.h>
 
-#include <minerva/optimizer/interface/GeneralDifferentiableSolver.h>
-#include <minerva/optimizer/interface/GeneralDifferentiableSolverFactory.h>
+#include <lucious/optimizer/interface/GeneralDifferentiableSolver.h>
+#include <lucious/optimizer/interface/GeneralDifferentiableSolverFactory.h>
 
-#include <minerva/optimizer/interface/CostAndGradientFunction.h>
-#include <minerva/optimizer/interface/CostFunction.h>
-#include <minerva/optimizer/interface/ConstantConstraint.h>
+#include <lucious/optimizer/interface/CostAndGradientFunction.h>
+#include <lucious/optimizer/interface/CostFunction.h>
+#include <lucious/optimizer/interface/ConstantConstraint.h>
 
-#include <minerva/matrix/interface/Matrix.h>
-#include <minerva/matrix/interface/MatrixVector.h>
-#include <minerva/matrix/interface/RandomOperations.h>
-#include <minerva/matrix/interface/MatrixOperations.h>
-#include <minerva/matrix/interface/Operation.h>
+#include <lucious/matrix/interface/Matrix.h>
+#include <lucious/matrix/interface/MatrixVector.h>
+#include <lucious/matrix/interface/RandomOperations.h>
+#include <lucious/matrix/interface/MatrixOperations.h>
+#include <lucious/matrix/interface/Operation.h>
 
-#include <minerva/util/interface/Knobs.h>
-#include <minerva/util/interface/math.h>
-#include <minerva/util/interface/debug.h>
+#include <lucious/util/interface/Knobs.h>
+#include <lucious/util/interface/math.h>
+#include <lucious/util/interface/debug.h>
 
 // Standard Library Includes
 #include <cassert>
 #include <random>
 #include <cstdlib>
 
-namespace minerva
+namespace lucious
 {
 
 namespace visualization

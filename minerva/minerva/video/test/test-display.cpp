@@ -4,18 +4,18 @@
 	\brief  A unit test for image and video display.
 */
 
-// Minerva Includes
-#include <minerva/video/interface/Image.h>
-#include <minerva/video/interface/Video.h>
-#include <minerva/video/interface/ImageLibraryInterface.h>
+// Lucious Includes
+#include <lucious/video/interface/Image.h>
+#include <lucious/video/interface/Video.h>
+#include <lucious/video/interface/ImageLibraryInterface.h>
 
-#include <minerva/util/interface/debug.h>
-#include <minerva/util/interface/ArgumentParser.h>
+#include <lucious/util/interface/debug.h>
+#include <lucious/util/interface/ArgumentParser.h>
 
 // Standard Library Includes
 #include <stdexcept>
 
-namespace minerva
+namespace lucious
 {
 
 namespace video
@@ -70,7 +70,7 @@ static void runTest(const std::string& inputPath, size_t xPixels,
 
 int main(int argc, char** argv)
 {
-    minerva::util::ArgumentParser parser(argc, argv);
+    lucious::util::ArgumentParser parser(argc, argv);
     
     bool verbose = false;
     std::string loggingEnabledModules;
@@ -82,7 +82,7 @@ int main(int argc, char** argv)
 	size_t yPixels = 0;
 	size_t colors  = 0;
 
-    parser.description("The minerva video and image display test.");
+    parser.description("The lucious video and image display test.");
 
     parser.parse("-i", "--input-path", imagePath, "images/cat.jpg",
         "The input video or image path to display..");
@@ -104,22 +104,22 @@ int main(int argc, char** argv)
 
     if(verbose)
 	{
-		minerva::util::enableAllLogs();
+		lucious::util::enableAllLogs();
 	}
 	else
 	{
-		minerva::util::enableSpecificLogs(loggingEnabledModules);
+		lucious::util::enableSpecificLogs(loggingEnabledModules);
 	}
     
-    minerva::util::log("TestDisplay") << "Test begins\n";
+    lucious::util::log("TestDisplay") << "Test begins\n";
     
     try
     {
-        minerva::video::runTest(imagePath, xPixels, yPixels, colors, displayText);
+        lucious::video::runTest(imagePath, xPixels, yPixels, colors, displayText);
     }
     catch(const std::exception& e)
     {
-        std::cout << "Minerva Display Test Failed:\n";
+        std::cout << "Lucious Display Test Failed:\n";
         std::cout << "Message: " << e.what() << "\n\n";
     }
 

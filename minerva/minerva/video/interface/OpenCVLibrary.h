@@ -7,9 +7,9 @@
 #pragma once
 
 // Forward Declarations
-namespace minerva { namespace video { class CvCapture; } }
+namespace lucious { namespace video { class CvCapture; } }
 
-namespace minerva
+namespace lucious
 {
 
 namespace video

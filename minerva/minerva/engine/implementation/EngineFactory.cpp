@@ -4,16 +4,16 @@
     \brief  The source file for the EngineFactory class.
 */
 
-// Minerva Includes
-#include <minerva/engine/interface/EngineFactory.h>
+// Lucious Includes
+#include <lucious/engine/interface/EngineFactory.h>
 
-#include <minerva/engine/interface/ClassifierEngine.h>
-#include <minerva/engine/interface/FeatureExtractorEngine.h>
-#include <minerva/engine/interface/LearnerEngine.h>
-#include <minerva/engine/interface/UnsupervisedLearnerEngine.h>
-#include <minerva/engine/interface/SampleStatisticsEngine.h>
+#include <lucious/engine/interface/ClassifierEngine.h>
+#include <lucious/engine/interface/FeatureExtractorEngine.h>
+#include <lucious/engine/interface/LearnerEngine.h>
+#include <lucious/engine/interface/UnsupervisedLearnerEngine.h>
+#include <lucious/engine/interface/SampleStatisticsEngine.h>
 
-namespace minerva
+namespace lucious
 {
 
 namespace engine

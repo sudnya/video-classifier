@@ -4,11 +4,11 @@
 	\brief  The source file for the FeatureResult class.
 */
 
-// Minerva Includes
-#include <minerva/results/interface/FeatureResult.h>
-#include <minerva/matrix/interface/Matrix.h>
+// Lucious Includes
+#include <lucious/results/interface/FeatureResult.h>
+#include <lucious/matrix/interface/Matrix.h>
 
-namespace minerva
+namespace lucious
 {
 
 namespace results

@@ -4,10 +4,10 @@
 	\brief  The source file for the LinearSolver class.
 */
 
-// Minerva Includes
-#include <minerva/optimizer/interface/LinearSolver.h>
+// Lucious Includes
+#include <lucious/optimizer/interface/LinearSolver.h>
 
-namespace minerva
+namespace lucious
 {
 
 namespace optimizer

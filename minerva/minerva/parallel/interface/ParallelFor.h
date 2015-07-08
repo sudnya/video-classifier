@@ -5,9 +5,9 @@
 #include <functional>
 
 // Forward Declarations
-namespace minerva { namespace parallel { class ThreadGroup; } }
+namespace lucious { namespace parallel { class ThreadGroup; } }
 
-namespace minerva
+namespace lucious
 {
 namespace parallel
 {

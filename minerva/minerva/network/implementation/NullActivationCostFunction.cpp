@@ -4,13 +4,13 @@
     \brief  The header file for the NullActivationCostFunction class.
 */
 
-// Minerva Includes
-#include <minerva/network/interface/NullActivationCostFunction.h>
+// Lucious Includes
+#include <lucious/network/interface/NullActivationCostFunction.h>
 
-#include <minerva/matrix/interface/Matrix.h>
-#include <minerva/util/interface/debug.h>
+#include <lucious/matrix/interface/Matrix.h>
+#include <lucious/util/interface/debug.h>
 
-namespace minerva
+namespace lucious
 {
 
 namespace network

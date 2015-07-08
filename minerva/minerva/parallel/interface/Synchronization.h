@@ -1,7 +1,7 @@
 
 #pragma once
 
-namespace minerva
+namespace lucious
 {
 
 namespace parallel

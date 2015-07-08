@@ -4,12 +4,12 @@
 	\brief  The source file for the NullResultProcessor class.
 */
 
-// Minerva Includes
-#include <minerva/results/interface/NullResultProcessor.h>
+// Lucious Includes
+#include <lucious/results/interface/NullResultProcessor.h>
 
-#include <minerva/util/interface/debug.h>
+#include <lucious/util/interface/debug.h>
 
-namespace minerva
+namespace lucious
 {
 
 namespace results

@@ -4,9 +4,9 @@
 	\brief  The source file for the LabelMatchResult class.
 */
 
-#include <minerva/results/interface/LabelMatchResult.h>
+#include <lucious/results/interface/LabelMatchResult.h>
 
-namespace minerva
+namespace lucious
 {
 
 namespace results

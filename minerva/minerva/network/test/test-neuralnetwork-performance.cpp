@@ -4,19 +4,19 @@
 	\brief  A unit test for the performance of the neural network.
 */
 
-// Minerva Includes
-#include <minerva/network/interface/NeuralNetwork.h>
-#include <minerva/network/interface/FeedForwardLayer.h>
+// Lucious Includes
+#include <lucious/network/interface/NeuralNetwork.h>
+#include <lucious/network/interface/FeedForwardLayer.h>
 
-#include <minerva/model/interface/Model.h>
+#include <lucious/model/interface/Model.h>
 
-#include <minerva/matrix/interface/Matrix.h>
+#include <lucious/matrix/interface/Matrix.h>
 
-#include <minerva/util/interface/debug.h>
-#include <minerva/util/interface/ArgumentParser.h>
-#include <minerva/util/interface/Knobs.h>
-#include <minerva/util/interface/Timer.h>
-#include <minerva/util/interface/SystemCompatibility.h>
+#include <lucious/util/interface/debug.h>
+#include <lucious/util/interface/ArgumentParser.h>
+#include <lucious/util/interface/Knobs.h>
+#include <lucious/util/interface/Timer.h>
+#include <lucious/util/interface/SystemCompatibility.h>
 
 // Standard Library Includes
 #include <random>
@@ -24,7 +24,7 @@
 #include <memory>
 #include <cassert>
 
-namespace minerva
+namespace lucious
 {
 
 namespace network
@@ -178,7 +178,7 @@ static void reportUnsupervisedTrainingPerformance(NeuralNetwork& network,
 	std::cout << " Memory required:     " << megabytes                           << " MB\n";
 	std::cout << " Machine FLOPS:       " << toGiga(machineFlops)                << " GFLOPS\n";
 	std::cout << " Speed of light:      " << speedOfLight                        << " seconds\n";
-	std::cout << " Minerva time:        " << timer.seconds()                     << " seconds\n";
+	std::cout << " Lucious time:        " << timer.seconds()                     << " seconds\n";
 	std::cout << "\n";
 	std::cout << " CPU-SLOWDOWN:        " << slowdown                            << "x\n";
 
@@ -261,7 +261,7 @@ static void runTest(size_t iterations, size_t trainingIterations,
 
 int main(int argc, char** argv)
 {
-    minerva::util::ArgumentParser parser(argc, argv);
+    lucious::util::ArgumentParser parser(argc, argv);
     
     bool verbose = false;
     bool seed = false;
@@ -275,7 +275,7 @@ int main(int argc, char** argv)
 	size_t batchSize = 0;
 	size_t classificationIterations = 0;
 
-    parser.description("The minerva neural network benchmark.");
+    parser.description("The lucious neural network benchmark.");
 
     parser.parse("-i", "--iterations", iterations, 2,
         "The number of iterations to run unsupervised learning for.");
@@ -302,18 +302,18 @@ int main(int argc, char** argv)
 
     if(verbose)
 	{
-		minerva::util::enableAllLogs();
+		lucious::util::enableAllLogs();
 	}
 	else
 	{
-		minerva::util::enableSpecificLogs(loggingEnabledModules);
+		lucious::util::enableSpecificLogs(loggingEnabledModules);
 	}
     
-    minerva::util::log("TestNeuralNetworkPerformance") << "Test begins\n";
+    lucious::util::log("TestNeuralNetworkPerformance") << "Test begins\n";
     
     try
     {
-        minerva::network::runTest(
+        lucious::network::runTest(
 			iterations, trainingIterations, batchSize, classificationIterations,
 			xPixels, yPixels, colors, seed);
 		
@@ -321,7 +321,7 @@ int main(int argc, char** argv)
     }
     catch(const std::exception& e)
     {
-        std::cout << "Minerva Neural Network Performance Test Failed:\n";
+        std::cout << "Lucious Neural Network Performance Test Failed:\n";
         std::cout << "Message: " << e.what() << "\n\n";
     }
 

@@ -11,9 +11,9 @@
 #include <cstddef>
 
 // Forward Declarations
-namespace minerva { namespace results { class Result; } }
+namespace lucious { namespace results { class Result; } }
 
-namespace minerva
+namespace lucious
 {
 
 namespace results

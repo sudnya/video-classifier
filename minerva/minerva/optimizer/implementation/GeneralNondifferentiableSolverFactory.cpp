@@ -4,10 +4,10 @@
 	\brief  The source file for the GeneralNondifferentiableSolverFactory class.
 */
 
-// Minerva Includes
-#include <minerva/optimizer/interface/GeneralNondifferentiableSolverFactory.h>
+// Lucious Includes
+#include <lucious/optimizer/interface/GeneralNondifferentiableSolverFactory.h>
 
-namespace minerva
+namespace lucious
 {
 
 namespace optimizer

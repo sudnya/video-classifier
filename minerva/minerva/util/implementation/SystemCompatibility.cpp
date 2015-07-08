@@ -5,8 +5,8 @@
 		compilaiton
 */
 
-// Minerva includes
-#include <minerva/util/interface/SystemCompatibility.h>
+// Lucious includes
+#include <lucious/util/interface/SystemCompatibility.h>
 
 // System Includes
 #ifdef HAVE_CONFIG_H
@@ -33,7 +33,7 @@
 #include <algorithm>
 #include <cstdlib>
 
-namespace minerva
+namespace lucious
 {
 
 namespace util

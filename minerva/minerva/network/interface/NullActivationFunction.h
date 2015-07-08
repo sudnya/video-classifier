@@ -6,13 +6,13 @@
 
 #pragma once
 
-// Minerva Includes
-#include <minerva/network/interface/ActivationFunction.h>
+// Lucious Includes
+#include <lucious/network/interface/ActivationFunction.h>
 
 // Forward Declarations
-namespace minerva { namespace matrix { class Matrix; } }
+namespace lucious { namespace matrix { class Matrix; } }
 
-namespace minerva
+namespace lucious
 {
 
 namespace network

@@ -1,11 +1,11 @@
 
 #pragma once
 
-// Minerva Includes
-#include <minerva/matrix/interface/FloatReference.h>
-#include <minerva/matrix/interface/Dimension.h>
+// Lucious Includes
+#include <lucious/matrix/interface/FloatReference.h>
+#include <lucious/matrix/interface/Dimension.h>
 
-namespace minerva
+namespace lucious
 {
 namespace matrix
 {

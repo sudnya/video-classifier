@@ -6,11 +6,11 @@
 
 
 // Standard Library Includes
-#include <minerva/matrix/interface/CudnnLibrary.h>
+#include <lucious/matrix/interface/CudnnLibrary.h>
 
-#include <minerva/parallel/interface/cuda.h>
+#include <lucious/parallel/interface/cuda.h>
 
-#include <minerva/util/interface/Casts.h>
+#include <lucious/util/interface/Casts.h>
 
 // Standard Library Includes
 #include <stdexcept>
@@ -18,7 +18,7 @@
 // System-Specific Includes
 #include <dlfcn.h>
 
-namespace minerva
+namespace lucious
 {
 
 namespace matrix

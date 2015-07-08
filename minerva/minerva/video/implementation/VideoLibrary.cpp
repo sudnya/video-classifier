@@ -4,10 +4,10 @@
 	\brief  The source file for the VideoLibrary class.
 */
 
-// Minerva Includes
-#include <minerva/video/interface/VideoLibrary.h>
+// Lucious Includes
+#include <lucious/video/interface/VideoLibrary.h>
 
-namespace minerva
+namespace lucious
 {
 
 namespace video

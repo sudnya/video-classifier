@@ -4,16 +4,16 @@
 	\brief  The source file for the SampleDatabase class.
 */
 
-// Minerva Includes
-#include <minerva/database/interface/SampleDatabase.h>
-#include <minerva/database/interface/SampleDatabaseParser.h>
-#include <minerva/database/interface/Sample.h>
+// Lucious Includes
+#include <lucious/database/interface/SampleDatabase.h>
+#include <lucious/database/interface/SampleDatabaseParser.h>
+#include <lucious/database/interface/Sample.h>
 
 // Standard Library Includes
 #include <fstream>
 #include <stdexcept>
 
-namespace minerva
+namespace lucious
 {
 
 namespace database

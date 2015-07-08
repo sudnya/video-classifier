@@ -4,21 +4,21 @@
     \brief  The source file for the LearnerEngine class.
 */
 
-// Minerva Includes
-#include <minerva/engine/interface/LearnerEngine.h>
+// Lucious Includes
+#include <lucious/engine/interface/LearnerEngine.h>
 
-#include <minerva/network/interface/NeuralNetwork.h>
+#include <lucious/network/interface/NeuralNetwork.h>
 
-#include <minerva/results/interface/ResultVector.h>
+#include <lucious/results/interface/ResultVector.h>
 
-#include <minerva/matrix/interface/Matrix.h>
+#include <lucious/matrix/interface/Matrix.h>
 
-#include <minerva/util/interface/debug.h>
+#include <lucious/util/interface/debug.h>
 
 // Standard Library Includes
 #include <cassert>
 
-namespace minerva
+namespace lucious
 {
 
 namespace engine

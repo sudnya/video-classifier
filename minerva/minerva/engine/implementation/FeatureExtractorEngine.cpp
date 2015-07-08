@@ -4,25 +4,25 @@
     \brief  The source file for the FeatureExtractorEngine class.
 */
 
-// Minerva Includes
-#include <minerva/engine/interface/FeatureExtractorEngine.h>
+// Lucious Includes
+#include <lucious/engine/interface/FeatureExtractorEngine.h>
 
-#include <minerva/network/interface/NeuralNetwork.h>
+#include <lucious/network/interface/NeuralNetwork.h>
 
-#include <minerva/results/interface/FeatureResultProcessor.h>
-#include <minerva/results/interface/FeatureResult.h>
+#include <lucious/results/interface/FeatureResultProcessor.h>
+#include <lucious/results/interface/FeatureResult.h>
 
-#include <minerva/results/interface/ResultVector.h>
+#include <lucious/results/interface/ResultVector.h>
 
-#include <minerva/model/interface/Model.h>
+#include <lucious/model/interface/Model.h>
 
-#include <minerva/matrix/interface/Matrix.h>
-#include <minerva/matrix/interface/MatrixTransformations.h>
+#include <lucious/matrix/interface/Matrix.h>
+#include <lucious/matrix/interface/MatrixTransformations.h>
 
 // Standard Library Includes
 #include <cassert>
 
-namespace minerva
+namespace lucious
 {
 
 namespace engine

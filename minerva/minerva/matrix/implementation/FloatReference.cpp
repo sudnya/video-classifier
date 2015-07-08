@@ -1,15 +1,15 @@
 
-// Minerva Includes
-#include <minerva/matrix/interface/FloatReference.h>
+// Lucious Includes
+#include <lucious/matrix/interface/FloatReference.h>
 
-#include <minerva/util/interface/Metaprogramming.h>
+#include <lucious/util/interface/Metaprogramming.h>
 
-#include <minerva/parallel/interface/Synchronization.h>
+#include <lucious/parallel/interface/Synchronization.h>
 
 // Standard Library Includes
 #include <cassert>
 
-namespace minerva
+namespace lucious
 {
 namespace matrix
 {

@@ -4,9 +4,9 @@
 	\brief  The source file for the Result class.
 */
 
-#include <minerva/results/interface/Result.h>
+#include <lucious/results/interface/Result.h>
 
-namespace minerva
+namespace lucious
 {
 
 namespace results

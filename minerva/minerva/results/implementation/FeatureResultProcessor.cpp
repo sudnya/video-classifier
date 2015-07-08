@@ -4,11 +4,11 @@
 	\brief  The source file for the FeatureResultProcessor class.
 */
 
-#include <minerva/results/interface/FeatureResultProcessor.h>
+#include <lucious/results/interface/FeatureResultProcessor.h>
 
-#include <minerva/util/interface/debug.h>
+#include <lucious/util/interface/debug.h>
 
-namespace minerva
+namespace lucious
 {
 
 namespace results

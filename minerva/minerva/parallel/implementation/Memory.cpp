@@ -1,13 +1,13 @@
 
 
-// Minerva Includes
-#include <minerva/parallel/interface/Memory.h>
-#include <minerva/parallel/interface/CudaRuntimeLibrary.h>
+// Lucious Includes
+#include <lucious/parallel/interface/Memory.h>
+#include <lucious/parallel/interface/CudaRuntimeLibrary.h>
 
 // Standard Library Includes
 #include <cstdlib>
 
-namespace minerva
+namespace lucious
 {
 namespace parallel
 {

@@ -6,14 +6,14 @@
 
 #pragma once
 
-// Minerva Includes
-#include <minerva/parallel/interface/CudaDriverTypes.h>
+// Lucious Includes
+#include <lucious/parallel/interface/CudaDriverTypes.h>
 
 // Standard Library Includes
 #include <cstring>
 #include <string>
 
-namespace minerva
+namespace lucious
 {
 
 namespace parallel

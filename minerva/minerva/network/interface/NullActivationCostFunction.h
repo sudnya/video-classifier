@@ -6,10 +6,10 @@
 
 #pragma once
 
-// Minerva Includes
-#include <minerva/network/interface/ActivationCostFunction.h>
+// Lucious Includes
+#include <lucious/network/interface/ActivationCostFunction.h>
 
-namespace minerva
+namespace lucious
 {
 
 namespace network

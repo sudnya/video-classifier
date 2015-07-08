@@ -4,18 +4,18 @@
     \brief  The source file for the SoftmaxCostFunction class.
 */
 
-// Minerva Includes
-#include <minerva/network/interface/SoftmaxCostFunction.h>
+// Lucious Includes
+#include <lucious/network/interface/SoftmaxCostFunction.h>
 
-#include <minerva/matrix/interface/Matrix.h>
-#include <minerva/matrix/interface/MatrixOperations.h>
-#include <minerva/matrix/interface/Operation.h>
+#include <lucious/matrix/interface/Matrix.h>
+#include <lucious/matrix/interface/MatrixOperations.h>
+#include <lucious/matrix/interface/Operation.h>
 
-#include <minerva/util/interface/debug.h>
+#include <lucious/util/interface/debug.h>
 
 #include <string>
 
-namespace minerva
+namespace lucious
 {
 
 namespace network

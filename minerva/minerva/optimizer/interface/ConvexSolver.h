@@ -6,10 +6,10 @@
 
 #pragma once
 
-// Minerva Includes
-#include <minerva/optimizer/interface/GeneralNondifferentiableSolver.h>
+// Lucious Includes
+#include <lucious/optimizer/interface/GeneralNondifferentiableSolver.h>
 
-namespace minerva
+namespace lucious
 {
 
 namespace optimizer

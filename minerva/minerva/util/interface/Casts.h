@@ -8,9 +8,9 @@
 #ifndef CASTS_H_INCLUDED
 #define CASTS_H_INCLUDED
 
-#include <minerva/util/interface/debug.h>
+#include <lucious/util/interface/debug.h>
 
-namespace minerva
+namespace lucious
 {
 
 namespace util

@@ -1,36 +1,36 @@
-/*	\file   minerva-classifier.cpp
+/*	\file   lucious-classifier.cpp
 	\date   Saturday August 10, 2013
 	\author Gregory Diamos <solusstultus@gmail.com>
 	\brief  The interface to the video classifier tool.
 */
 
-// Minerva Includes
-#include <minerva/engine/interface/EngineFactory.h>
-#include <minerva/engine/interface/Engine.h>
+// Lucious Includes
+#include <lucious/engine/interface/EngineFactory.h>
+#include <lucious/engine/interface/Engine.h>
 
-#include <minerva/visualization/interface/NeuronVisualizer.h>
+#include <lucious/visualization/interface/NeuronVisualizer.h>
 
-#include <minerva/model/interface/ModelBuilder.h>
-#include <minerva/model/interface/Model.h>
+#include <lucious/model/interface/ModelBuilder.h>
+#include <lucious/model/interface/Model.h>
 
-#include <minerva/video/interface/Image.h>
+#include <lucious/video/interface/Image.h>
 
-#include <minerva/network/interface/NeuralNetwork.h>
+#include <lucious/network/interface/NeuralNetwork.h>
 
-#include <minerva/util/interface/ArgumentParser.h>
-#include <minerva/util/interface/paths.h>
-#include <minerva/util/interface/debug.h>
-#include <minerva/util/interface/Knobs.h>
+#include <lucious/util/interface/ArgumentParser.h>
+#include <lucious/util/interface/paths.h>
+#include <lucious/util/interface/debug.h>
+#include <lucious/util/interface/Knobs.h>
 
 // Standard Library Includes
 #include <stdexcept>
 #include <fstream>
 #include <memory>
 
-namespace minerva
+namespace lucious
 {
 
-typedef minerva::util::StringVector StringVector;
+typedef lucious::util::StringVector StringVector;
 
 static void setOptions(const std::string& options);
 
@@ -92,7 +92,7 @@ static void runClassifier(const std::string& outputFilename,
 	const std::string& inputFileNames, const std::string& modelFileName,
 	bool shouldClassify, bool shouldTrain, bool shouldLearnFeatures, bool shouldExtractFeatures)
 {
-	util::log("minerva-classifier") << "Loading classifier.\n";
+	util::log("lucious-classifier") << "Loading classifier.\n";
 
 	try
 	{
@@ -115,7 +115,7 @@ static void runClassifier(const std::string& outputFilename,
 	}
 	catch(const std::exception& e)
 	{
-		std::cout << "Minerva Classifier Failed:\n";
+		std::cout << "Lucious Classifier Failed:\n";
 		std::cout << "Message: " << e.what() << "\n\n";
 	}
 	
@@ -252,7 +252,7 @@ static void setupKnobs(size_t maximumSamples, size_t batchSize)
 
 int main(int argc, char** argv)
 {
-	minerva::util::ArgumentParser parser(argc, argv);
+	lucious::util::ArgumentParser parser(argc, argv);
 	
 	std::string inputFileNames;
 	std::string modelFileName;
@@ -274,7 +274,7 @@ int main(int argc, char** argv)
 	
 	bool verbose = false;
 
-	parser.description("The Minerva image and video classifier.");
+	parser.description("The Lucious image and video classifier.");
 
 	parser.parse("-i", "--input",  inputFileNames,
 		"", "The input image or video database path.");
@@ -314,39 +314,39 @@ int main(int argc, char** argv)
 		"(comma-separated list of modules, e.g. NeuralNetwork, Layer, ...).");
 	parser.parse();
 
-	minerva::setupKnobs(maximumSamples, batchSize);
+	lucious::setupKnobs(maximumSamples, batchSize);
 
 	if(verbose)
 	{
-		minerva::util::enableAllLogs();
+		lucious::util::enableAllLogs();
 	}
 	else
 	{
-		minerva::enableSpecificLogs(loggingEnabledModules);
+		lucious::enableSpecificLogs(loggingEnabledModules);
 	}
 
 	try
 	{
-		minerva::setOptions(options);
+		lucious::setOptions(options);
 		
 		if(createNewModel)
 		{
-			minerva::createNewModel(modelFileName, modelSpecificationPath);
+			lucious::createNewModel(modelFileName, modelSpecificationPath);
 		}
 		else if(visualizeNetwork)
 		{
-			minerva::visualizeNeurons(modelFileName, outputPath);
+			lucious::visualizeNeurons(modelFileName, outputPath);
 		}
 		else
 		{
-			minerva::runClassifier(outputPath, inputFileNames, modelFileName, 
+			lucious::runClassifier(outputPath, inputFileNames, modelFileName, 
 				shouldClassify, shouldTrain, shouldLearnFeatures,
 				shouldExtractFeatures);
 		}
 	}
 	catch(const std::exception& e)
 	{
-		std::cout << "Minerva Classifier Failed:\n";
+		std::cout << "Lucious Classifier Failed:\n";
 		std::cout << "Message: " << e.what() << "\n\n";
 	}
 

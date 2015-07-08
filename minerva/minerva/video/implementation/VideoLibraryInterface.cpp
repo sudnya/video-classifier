@@ -4,17 +4,17 @@
 	\brief  The source file for the VideoLibraryInterface class.
 */
 
-// Minerva Includes
-#include <minerva/video/interface/VideoLibraryInterface.h>
-#include <minerva/video/interface/VideoLibraryFactory.h>
-#include <minerva/video/interface/VideoLibrary.h>
+// Lucious Includes
+#include <lucious/video/interface/VideoLibraryInterface.h>
+#include <lucious/video/interface/VideoLibraryFactory.h>
+#include <lucious/video/interface/VideoLibrary.h>
 
-#include <minerva/util/interface/paths.h>
+#include <lucious/util/interface/paths.h>
 
 // Standard Library Includes
 #include <map>
 
-namespace minerva
+namespace lucious
 {
 
 namespace video

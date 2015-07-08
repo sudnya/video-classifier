@@ -7,9 +7,9 @@
 #pragma once
 
 // Minvera Includes
-#include <minerva/optimizer/interface/GeneralDifferentiableSolver.h>
+#include <lucious/optimizer/interface/GeneralDifferentiableSolver.h>
 
-namespace minerva
+namespace lucious
 {
 
 namespace optimizer

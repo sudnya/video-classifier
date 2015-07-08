@@ -4,14 +4,14 @@
     \brief  The source file for the GeneralDifferentiableSolverFactory class.
 */
 
-// Minerva Includes
-#include <minerva/optimizer/interface/GeneralDifferentiableSolverFactory.h>
-#include <minerva/optimizer/interface/GPULBFGSSolver.h>
-#include <minerva/optimizer/interface/NesterovAcceleratedGradientSolver.h>
+// Lucious Includes
+#include <lucious/optimizer/interface/GeneralDifferentiableSolverFactory.h>
+#include <lucious/optimizer/interface/GPULBFGSSolver.h>
+#include <lucious/optimizer/interface/NesterovAcceleratedGradientSolver.h>
 
-#include <minerva/util/interface/Knobs.h>
+#include <lucious/util/interface/Knobs.h>
 
-namespace minerva
+namespace lucious
 {
 
 namespace optimizer

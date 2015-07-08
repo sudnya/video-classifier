@@ -4,16 +4,16 @@
     \brief  The source file for the LineSearch class.
 */
 
-// Minerva Includes
-#include <minerva/optimizer/interface/LineSearchFactory.h>
-#include <minerva/optimizer/interface/LineSearch.h>
+// Lucious Includes
+#include <lucious/optimizer/interface/LineSearchFactory.h>
+#include <lucious/optimizer/interface/LineSearch.h>
 
-#include <minerva/optimizer/interface/MoreThuenteLineSearch.h>
-#include <minerva/optimizer/interface/BacktrackingLineSearch.h>
+#include <lucious/optimizer/interface/MoreThuenteLineSearch.h>
+#include <lucious/optimizer/interface/BacktrackingLineSearch.h>
 
-#include <minerva/util/interface/Knobs.h>
+#include <lucious/util/interface/Knobs.h>
 
-namespace minerva
+namespace lucious
 {
 
 namespace optimizer

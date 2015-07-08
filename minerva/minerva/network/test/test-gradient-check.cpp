@@ -4,27 +4,27 @@
     \brief  A unit test for a neural network gradient calculation.
 */
 
-// Minerva Includes
-#include <minerva/network/interface/NeuralNetwork.h>
-#include <minerva/network/interface/FeedForwardLayer.h>
-#include <minerva/network/interface/RecurrentLayer.h>
-#include <minerva/network/interface/ConvolutionalLayer.h>
-#include <minerva/network/interface/CostFunctionFactory.h>
-#include <minerva/network/interface/ActivationFunctionFactory.h>
+// Lucious Includes
+#include <lucious/network/interface/NeuralNetwork.h>
+#include <lucious/network/interface/FeedForwardLayer.h>
+#include <lucious/network/interface/RecurrentLayer.h>
+#include <lucious/network/interface/ConvolutionalLayer.h>
+#include <lucious/network/interface/CostFunctionFactory.h>
+#include <lucious/network/interface/ActivationFunctionFactory.h>
 
-#include <minerva/matrix/interface/Matrix.h>
-#include <minerva/matrix/interface/MatrixVector.h>
-#include <minerva/matrix/interface/MatrixOperations.h>
-#include <minerva/matrix/interface/Operation.h>
+#include <lucious/matrix/interface/Matrix.h>
+#include <lucious/matrix/interface/MatrixVector.h>
+#include <lucious/matrix/interface/MatrixOperations.h>
+#include <lucious/matrix/interface/Operation.h>
 
-#include <minerva/matrix/interface/RandomOperations.h>
+#include <lucious/matrix/interface/RandomOperations.h>
 
-#include <minerva/util/interface/debug.h>
-#include <minerva/util/interface/memory.h>
-#include <minerva/util/interface/ArgumentParser.h>
-#include <minerva/util/interface/Knobs.h>
-#include <minerva/util/interface/Timer.h>
-#include <minerva/util/interface/SystemCompatibility.h>
+#include <lucious/util/interface/debug.h>
+#include <lucious/util/interface/memory.h>
+#include <lucious/util/interface/ArgumentParser.h>
+#include <lucious/util/interface/Knobs.h>
+#include <lucious/util/interface/Timer.h>
+#include <lucious/util/interface/SystemCompatibility.h>
 
 // Standard Library Includes
 #include <random>
@@ -32,7 +32,7 @@
 #include <memory>
 #include <cassert>
 
-namespace minerva
+namespace lucious
 {
 
 namespace network
@@ -149,7 +149,7 @@ static Matrix generateOneHotReference(NeuralNetwork& network)
 {
     Matrix result = zeros(network.getOutputSize(), DoublePrecision());
 
-    Matrix position = apply(rand({1}, DoublePrecision()), minerva::matrix::Multiply(network.getOutputCount()));
+    Matrix position = apply(rand({1}, DoublePrecision()), lucious::matrix::Multiply(network.getOutputCount()));
 
     result[position[0]] = 1.0;
 
@@ -221,7 +221,7 @@ static bool gradientCheck(NeuralNetwork& network, const Matrix& input, const Mat
                 difference += thisDifference;
                 total += std::pow(computedGradient, 2.0);
 
-                minerva::util::log("TestGradientCheck") << " (layer " << layerId << ", matrix " << matrixId
+                lucious::util::log("TestGradientCheck") << " (layer " << layerId << ", matrix " << matrixId
                     << ", weight " << weightId << ") value is " << computedGradient << " estimate is "
                     << estimatedGradient << " (newCost " << newCost << ", oldCost " << cost << ")"
                     << " difference is " << thisDifference << " \n";
@@ -445,7 +445,7 @@ static void runTest(size_t layerSize, size_t layerCount, size_t timesteps, bool 
 
 int main(int argc, char** argv)
 {
-    minerva::util::ArgumentParser parser(argc, argv);
+    lucious::util::ArgumentParser parser(argc, argv);
 
     bool verbose = false;
     bool seed = false;
@@ -455,7 +455,7 @@ int main(int argc, char** argv)
     size_t layerCount = 0;
     size_t timesteps  = 0;
 
-    parser.description("The minerva neural network gradient check.");
+    parser.description("The lucious neural network gradient check.");
 
     parser.parse("-S", "--layer-size", layerSize, 16,
         "The number of neurons per layer.");
@@ -476,22 +476,22 @@ int main(int argc, char** argv)
 
     if(verbose)
     {
-        minerva::util::enableAllLogs();
+        lucious::util::enableAllLogs();
     }
     else
     {
-        minerva::util::enableSpecificLogs(loggingEnabledModules);
+        lucious::util::enableSpecificLogs(loggingEnabledModules);
     }
 
-    minerva::util::log("TestGradientCheck") << "Test begins\n";
+    lucious::util::log("TestGradientCheck") << "Test begins\n";
 
     try
     {
-        minerva::network::runTest(layerSize, layerCount, timesteps, seed);
+        lucious::network::runTest(layerSize, layerCount, timesteps, seed);
     }
     catch(const std::exception& e)
     {
-        std::cout << "Minerva Neural Network Performance Test Failed:\n";
+        std::cout << "Lucious Neural Network Performance Test Failed:\n";
         std::cout << "Message: " << e.what() << "\n\n";
     }
 
