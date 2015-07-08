@@ -1,12 +1,12 @@
 
 #pragma once
 
-// Minerva Includes
-#include <minerva/matrix/interface/DimensionTransformations.h>
+// Lucious Includes
+#include <lucious/matrix/interface/DimensionTransformations.h>
 
-#include <minerva/parallel/interface/ScalarOperations.h>
+#include <lucious/parallel/interface/ScalarOperations.h>
 
-namespace minerva
+namespace lucious
 {
 namespace matrix
 {

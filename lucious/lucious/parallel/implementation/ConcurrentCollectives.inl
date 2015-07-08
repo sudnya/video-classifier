@@ -1,10 +1,10 @@
 
 #pragma once
 
-// Minerva Includes
-#include <minerva/parallel/interface/ConcurrentCollectives.h>
+// Lucious Includes
+#include <lucious/parallel/interface/ConcurrentCollectives.h>
 
-namespace minerva
+namespace lucious
 {
 namespace parallel
 {

@@ -1,13 +1,13 @@
 
 #pragma once
 
-// Minerva Includes
-#include <minerva/matrix/interface/Dimension.h>
+// Lucious Includes
+#include <lucious/matrix/interface/Dimension.h>
 
 // Standard Library Includes
 #include <sstream>
 
-namespace minerva
+namespace lucious
 {
 namespace matrix
 {
@@ -93,12 +93,12 @@ CUDA_DECORATOR size_t Dimension::front() const
 
 CUDA_DECORATOR Dimension::iterator Dimension::begin()
 {
-    return _storage;
+    return &_storage[0];
 }
 
 CUDA_DECORATOR Dimension::const_iterator Dimension::begin() const
 {
-    return _storage;
+    return &_storage[0];
 }
 
 CUDA_DECORATOR Dimension::iterator Dimension::end()

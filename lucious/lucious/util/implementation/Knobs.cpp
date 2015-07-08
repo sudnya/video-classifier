@@ -27,9 +27,9 @@ public:
 
 public:
 	KnobDatabaseImplementation();
-	
+
 private:
-	void loadKnobFiles(); 
+	void loadKnobFiles();
 
 public:
 	StringMap knobs;
@@ -45,10 +45,10 @@ KnobDatabaseImplementation::KnobDatabaseImplementation()
 void KnobDatabaseImplementation::loadKnobFiles()
 {
 	// Check for an environment variable
-	if(isEnvironmentVariableDefined("MINERVA_KNOB_FILE"))
+	if(isEnvironmentVariableDefined("LUCIOUS_KNOB_FILE"))
 	{
-		KnobFile knobFile(getEnvironmentVariable("MINERVA_KNOB_FILE"));
-		
+		KnobFile knobFile(getEnvironmentVariable("LUCIOUS_KNOB_FILE"));
+
 		knobFile.loadKnobs();
 	}
 }
@@ -71,13 +71,13 @@ bool KnobDatabase::knobExists(const std::string& knobname)
 std::string KnobDatabase::getKnobValueAsString(const std::string& knobname)
 {
 	auto knob = database.knobs.find(knobname);
-	
+
 	if(knob == database.knobs.end())
 	{
 		throw std::runtime_error("Attempted to use uniniatilized knob '" +
 			knobname + "'");
 	}
-	
+
 	return knob->second;
 }
 

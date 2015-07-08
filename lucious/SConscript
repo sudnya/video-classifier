@@ -12,22 +12,22 @@ def toSharedObject(filename):
     return root + '.os'
 
 # set environment variables
-minerva_args = ARGUMENTS
-minerva_cmd_line_targets = COMMAND_LINE_TARGETS
-minerva_path_to_root_dir = ".."
+lucious_args = ARGUMENTS
+lucious_cmd_line_targets = COMMAND_LINE_TARGETS
+lucious_path_to_root_dir = ".."
 
 # try to import an environment
-exec open(minerva_path_to_root_dir + "/scripts/which.py")
+exec open(lucious_path_to_root_dir + "/scripts/which.py")
 env = BuildEnvironment()
-env['MINERVA_PATH'] = Dir('.').abspath
+env['LUCIOUS_PATH'] = Dir('.').abspath
 
-env['path_to_root_dir'] = os.path.abspath(minerva_path_to_root_dir)
+env['path_to_root_dir'] = os.path.abspath(lucious_path_to_root_dir)
 
 # find all source files in the source tree
-directories = ['minerva/driver', 'minerva/util', 'minerva/engine',
-    'minerva/matrix', 'minerva/model', 'minerva/network',
-    'minerva/optimizer', 'minerva/parallel', 'minerva/video', 'minerva/visualization',
-    'minerva/database', 'minerva/input', 'minerva/results']
+directories = ['lucious/driver', 'lucious/util', 'lucious/engine',
+    'lucious/matrix', 'lucious/model', 'lucious/network',
+    'lucious/optimizer', 'lucious/parallel', 'lucious/video', 'lucious/visualization',
+    'lucious/database', 'lucious/input', 'lucious/results']
 
 source_directories = [os.path.join(i, 'implementation') for i in directories]
 cuda_source_directories = [os.path.join(i, 'cuda-implementation') for i in directories]
@@ -47,30 +47,30 @@ for dir in cuda_source_directories:
             sources.append(env.CUDASharedObject(cuda_source))
 
 # create the library
-libminerva = env.SharedLibrary('minerva', sources, LIBS=env['EXTRA_LIBS'])
-minerva_libs = ['minerva'] + env['EXTRA_LIBS']
+liblucious = env.SharedLibrary('lucious', sources, LIBS=env['EXTRA_LIBS'])
+lucious_libs = ['lucious'] + env['EXTRA_LIBS']
 
 if env['install']:
-    libminerva = env.Install(os.path.join(env['install_path'], "lib"),
-        libminerva)
+    liblucious = env.Install(os.path.join(env['install_path'], "lib"),
+        liblucious)
 
-env['MINERVA_LIBS'] = minerva_libs
+env['LUCIOUS_LIBS'] = lucious_libs
 
 # create the programs
 programs = []
 
-programs.extend(SConscript('minerva/SConscript',    exports='env'))
+programs.extend(SConscript('lucious/SConscript',    exports='env'))
 programs.extend(SConscript('benchmarks/SConscript', exports='env'))
 
 for program in programs:
-    env.Depends(program, libminerva)
+    env.Depends(program, liblucious)
 
 # install it all
 if env['install']:
     installed   = []
     executables = []
 
-    print 'Installing Minerva'
+    print 'Installing Lucious'
 
     for program in programs:
         executables.append(env.Install(
