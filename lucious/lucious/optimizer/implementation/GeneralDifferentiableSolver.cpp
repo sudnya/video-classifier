@@ -1,0 +1,36 @@
+/* Author: Sudnya Padalikar
+ * Date  : 08/17/2013
+ * The implementation for the GeneralDifferentiableSolver class 
+ */
+
+// Lucious Includes
+#include <lucious/optimizer/interface/GeneralDifferentiableSolver.h>
+
+#include <lucious/matrix/interface/MatrixVector.h>
+#include <lucious/matrix/interface/Matrix.h>
+
+namespace lucious
+{
+
+namespace optimizer
+{
+
+typedef GeneralDifferentiableSolver::MatrixVector MatrixVector;
+typedef GeneralDifferentiableSolver::Matrix       Matrix;
+
+GeneralDifferentiableSolver::~GeneralDifferentiableSolver()
+{
+
+}
+	
+double GeneralDifferentiableSolver::solve(Matrix& inputs, const CostAndGradientFunction& callBack)
+{
+	MatrixVector inputSet({inputs});
+	
+	return solve(inputSet, callBack);
+}
+
+}
+
+}
+
