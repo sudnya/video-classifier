@@ -61,8 +61,8 @@ public:
     virtual size_t getFloatingPointOperationCount() const;
 
 public:
-    virtual void save(util::TarArchive& archive) const;
-    virtual void load(const util::TarArchive& archive, const std::string& name);
+    virtual void save(util::OutputTarArchive& archive, util::PropertyTree& properties) const;
+    virtual void load(util::InputTarArchive& archive, const util::PropertyTree& properties);
 
 public:
     virtual std::unique_ptr<Layer> clone() const;

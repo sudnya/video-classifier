@@ -6,6 +6,9 @@
 
 #pragma once
 
+// Standard Library Includes
+#include <string>
+
 // Forward Declarations
 namespace lucious { namespace matrix { class Matrix;    } }
 namespace lucious { namespace matrix { class Operation; } }
@@ -38,6 +41,9 @@ public:
 
     /*! \brief Get the derivative operation associated with the activation function. */
     virtual Operation getDerivativeOperation() const = 0;
+
+public:
+    virtual std::string typeName() const = 0;
 
 public:
     virtual ActivationFunction* clone() const = 0;

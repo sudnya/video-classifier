@@ -70,6 +70,9 @@ public:
     inline std::string toString() const;
 
 public:
+    static Dimension fromString(const std::string& );
+
+public:
     CUDA_DECORATOR inline Dimension operator-(const Dimension& ) const;
     CUDA_DECORATOR inline Dimension operator+(const Dimension& ) const;
     CUDA_DECORATOR inline Dimension operator/(const Dimension& ) const;

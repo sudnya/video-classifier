@@ -20,10 +20,13 @@
 #include <lucious/matrix/interface/Operation.h>
 #include <lucious/matrix/interface/MatrixVector.h>
 #include <lucious/matrix/interface/Matrix.h>
+#include <lucious/matrix/interface/FileOperations.h>
 
 #include <lucious/util/interface/debug.h>
 #include <lucious/util/interface/Knobs.h>
 #include <lucious/util/interface/memory.h>
+#include <lucious/util/interface/TarArchive.h>
+#include <lucious/util/interface/PropertyTree.h>
 
 namespace lucious
 {
@@ -377,14 +380,30 @@ size_t RecurrentLayer::getFloatingPointOperationCount() const
     return 2 * totalConnections();
 }
 
-void RecurrentLayer::save(util::TarArchive& archive) const
+void RecurrentLayer::save(util::OutputTarArchive& archive, util::PropertyTree& properties) const
 {
-    assertM(false, "Not implemented.");
+    properties["forward-weights"]   = properties.path() + ".forward-weights.npy";
+    properties["recurrent-weights"] = properties.path() + ".recurrent-weights.npy";
+    properties["bias"]              = properties.path() + ".bias.npy";
+
+    properties["batch-size"] = std::to_string(_expectedBatchSize);
+
+    saveToArchive(archive, properties["forward-weights"],   _forwardWeights);
+    saveToArchive(archive, properties["recurrent-weights"], _recurrentWeights);
+    saveToArchive(archive, properties["bias"],    _bias);
+
+    saveLayer(archive, properties);
 }
 
-void RecurrentLayer::load(const util::TarArchive& archive, const std::string& name)
+void RecurrentLayer::load(util::InputTarArchive& archive, const util::PropertyTree& properties)
 {
-    assertM(false, "Not implemented.");
+    _forwardWeights   = matrix::loadFromArchive(archive, properties["forward-weights"]);
+    _recurrentWeights = matrix::loadFromArchive(archive, properties["recurrent-weights"]);
+    _bias             = matrix::loadFromArchive(archive, properties["bias"]);
+
+    _expectedBatchSize = properties.get<size_t>("batch-size");
+
+    loadLayer(archive, properties);
 }
 
 std::unique_ptr<Layer> RecurrentLayer::clone() const
@@ -405,7 +424,5 @@ std::string RecurrentLayer::getTypeName() const
 }
 
 }
-
-
 
 

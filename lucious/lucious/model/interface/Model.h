@@ -14,7 +14,6 @@
 
 // Forward Declarations
 namespace lucious { namespace network { class NeuralNetwork; } }
-namespace lucious { namespace util    { class TarArchive;    } }
 
 namespace lucious
 {
@@ -53,12 +52,16 @@ public:
 public:
 	template<typename T>
 	void setAttribute(const std::string& name, const T& value);
-	
+
 	template<typename T>
 	T getAttribute(const std::string& name) const;
 
 public:
 	size_t getOutputCount() const;
+
+public:
+    void save(std::ostream& stream) const;
+    void load(std::istream& stream);
 
 public:
 	void save() const;
@@ -70,14 +73,14 @@ public:
 public:
 	iterator       begin();
 	const_iterator begin() const;
-	
+
 	iterator       end();
 	const_iterator end() const;
 
 public:
 	reverse_iterator       rbegin();
 	const_reverse_iterator rbegin() const;
-	
+
 	reverse_iterator       rend();
 	const_reverse_iterator rend() const;
 
@@ -90,24 +93,13 @@ private:
 	typedef std::map<size_t, std::string> LabelMap;
 	typedef std::map<std::string, std::string> AttributeMap;
 	typedef std::vector<std::string> StringVector;
-	
-private:
-	void _saveInputDescription(util::TarArchive& tar) const;
-	void _saveOutputDescription(util::TarArchive& tar) const;
-
-private:
-	void _loadInputDescription(util::TarArchive& tar);
-	void _loadOutputDescription(util::TarArchive& tar);
-
-private:
-	StringVector _getNetworkList(util::TarArchive& tar);
 
 private:
 	NeuralNetworkList _neuralNetworks;
 	NeuralNetworkMap  _neuralNetworkMap;
 	LabelMap          _outputLabels;
 	AttributeMap      _attributes;
-	
+
 };
 
 }

@@ -29,6 +29,9 @@ public:
     virtual Matrix computeDelta(const Matrix& output, const Matrix& reference) const;
 
 public:
+    virtual std::string typeName() const;
+
+public:
     virtual CostFunction* clone() const;
 
 };

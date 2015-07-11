@@ -19,7 +19,9 @@ namespace lucious { namespace matrix    { class Matrix;              } }
 namespace lucious { namespace matrix    { class MatrixVector;        } }
 namespace lucious { namespace matrix    { class Precision;           } }
 namespace lucious { namespace matrix    { class Dimension;           } }
-namespace lucious { namespace util      { class TarArchive;          } }
+namespace lucious { namespace util      { class InputTarArchive;     } }
+namespace lucious { namespace util      { class OutputTarArchive;    } }
+namespace lucious { namespace util      { class PropertyTree;        } }
 namespace lucious { namespace optimizer { class NeuralNetworkSolver; } }
 
 namespace lucious
@@ -149,9 +151,9 @@ public:
 
 public:
     /*! \brief Save the network to the tar file and header. */
-    void save(util::TarArchive& archive, const std::string& name) const;
+    void save(util::OutputTarArchive& archive, util::PropertyTree& properties) const;
     /*! \brief Intialize the network from the tar file and header. */
-    void load(const util::TarArchive& archive, const std::string& name);
+    void load(util::InputTarArchive& archive, const util::PropertyTree& properties);
 
 public:
     std::string shapeString() const;

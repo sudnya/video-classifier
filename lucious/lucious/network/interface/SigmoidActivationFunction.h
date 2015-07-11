@@ -41,6 +41,9 @@ public:
     virtual Operation getDerivativeOperation() const;
 
 public:
+    virtual std::string typeName() const;
+
+public:
     virtual ActivationFunction* clone() const;
 
 };

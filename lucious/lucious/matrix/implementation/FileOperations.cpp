@@ -10,6 +10,7 @@
 
 #include <lucious/util/interface/debug.h>
 #include <lucious/util/interface/string.h>
+#include <lucious/util/interface/TarArchive.h>
 
 #include <fstream>
 #include <map>
@@ -38,7 +39,7 @@ static void addVersion(std::ostream& file)
 static size_t getAlignment(size_t currentSize, size_t alignment)
 {
     size_t remainder = currentSize % alignment;
-    
+
     return remainder == 0 ? 0 : alignment - remainder;
 }
 
@@ -57,7 +58,7 @@ static std::string getEncodedPrecision(const Precision& precision)
     {
         return "<f2";
     }
-    
+
     return "<f4";
 }
 
@@ -71,7 +72,7 @@ static void addHeader(std::ostream& file, const std::string& matrixShapeString, 
     uint8_t remainingBytes    = getAlignment(headerPrefix.size() + shapeDim.size() + 1 + magicAndVersionLength, boundaryAlignment);
     std::string headerPostfix = std::string(remainingBytes, ' ') + "\n";
 
-    std::string headerString  = headerPrefix + shapeDim + headerPostfix;     
+    std::string headerString  = headerPrefix + shapeDim + headerPostfix;
     uint16_t headerLength     = headerString.size();
     file.write(reinterpret_cast<const char*>(&headerLength), 2);
     file.write(reinterpret_cast<const char*>(headerString.data()), headerString.size());
@@ -118,11 +119,11 @@ public:
         file.read(reinterpret_cast<char*>(&headerLength), 2);
 
         util::log("FileOperations") << " header length: " << headerLength << std::endl;
-    
+
         std::string header(headerLength, ' ');
 
         file.read(const_cast<char*>(header.data()), headerLength);
-        
+
         auto dictionary = _parseDictionary(header);
 
         if(dictionary.count("'descr'") == 0)
@@ -169,7 +170,7 @@ private:
         Dictionary result;
 
         auto separate_entries = util::split(dictionary, ",");
-        
+
         util::StringVector entries;
 
         bool searching = false;
@@ -183,7 +184,7 @@ private:
                 searching = true;
                 continue;
             }
-            
+
             if(searching)
             {
                 compound += "," + entry;
@@ -195,10 +196,10 @@ private:
                     compound.clear();
                     searching = false;
                 }
-                
+
                 continue;
             }
-            
+
             util::log("FileOperations") << "entry: '" << entry << "'\n";
             if(entry.find(":") != std::string::npos)
             {
@@ -271,8 +272,8 @@ private:
 Matrix load(const std::string& path)
 {
     std::ifstream file(path, std::ios::binary);
-    
-    if(!file.is_open()) 
+
+    if(!file.is_open())
     {
         throw std::runtime_error("Could not open file containing numpy matrix from " + path);
     }
@@ -297,7 +298,7 @@ Matrix load(std::istream& file)
     }
 
     return m;
-    
+
 }
 
 void save(const std::string& path, const Matrix& input)
@@ -308,7 +309,7 @@ void save(const std::string& path, const Matrix& input)
     {
         throw std::runtime_error("Could not create numpy file to write matrix to, at " + path);
     }
-    
+
     save(file, input);
 }
 
@@ -319,6 +320,25 @@ void save(std::ostream& file, const Matrix& input)
     addHeader(file, input.shapeString(), input.precision());
 
     file.write(reinterpret_cast<const char*>(input.data()), input.elements() * input.precision().size());
+}
+
+void saveToArchive(util::OutputTarArchive& archive, const std::string& path, const Matrix& input)
+{
+    std::stringstream stream;
+
+    save(stream, input);
+
+    archive.addFile(path, stream);
+}
+
+
+Matrix loadFromArchive(util::InputTarArchive& archive, const std::string& path)
+{
+    std::stringstream stream;
+
+    archive.extractFile(path, stream);
+
+    return load(stream);
 }
 
 }

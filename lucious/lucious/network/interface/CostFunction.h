@@ -6,6 +6,9 @@
 
 #pragma once
 
+// Standard Library Includes
+#include <string>
+
 // Forward Declarations
 namespace lucious { namespace matrix { class Matrix; } }
 
@@ -29,6 +32,9 @@ public:
 
     /*! \brief Determine the change in the output needed to minimize the cost function. */
     virtual Matrix computeDelta(const Matrix& output, const Matrix& reference) const = 0;
+
+public:
+    virtual std::string typeName() const = 0;
 
 public:
     /*! \brief Clone */

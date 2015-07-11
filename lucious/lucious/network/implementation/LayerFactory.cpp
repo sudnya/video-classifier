@@ -11,6 +11,8 @@
 #include <lucious/network/interface/RecurrentLayer.h>
 #include <lucious/network/interface/ConvolutionalLayer.h>
 
+#include <lucious/matrix/interface/Dimension.h>
+
 #include <lucious/util/interface/memory.h>
 
 namespace lucious
@@ -42,7 +44,28 @@ std::unique_ptr<Layer> LayerFactory::create(const std::string& name, const Param
     }
     else if("ConvolutionalLayer" == name)
     {
-        return std::make_unique<ConvolutionalLayer>();
+        size_t inputWidth  = parameters.get("InputWidth",  1);
+        size_t inputHeight = parameters.get("InputHeight", 1);
+        size_t inputColors = parameters.get("InputColors", 1);
+        size_t inputBatch  = parameters.get("BatchSize",   1);
+
+        size_t filterWidth   = parameters.get("FilterWidth",   1);
+        size_t filterHeight  = parameters.get("FilterHeight",  1);
+        size_t filterInputs  = parameters.get("FilterInputs",  1);
+        size_t filterOutputs = parameters.get("FilterOutputs", 1);
+
+        size_t strideWidth  = parameters.get("StrideWidth",  1);
+        size_t strideHeight = parameters.get("StrideHeight", 1);
+
+        size_t paddingWidth  = parameters.get("PaddingWidth",  0);
+        size_t paddingHeight = parameters.get("PaddingHeight", 0);
+
+        return std::make_unique<ConvolutionalLayer>(
+            matrix::Dimension(inputWidth,  inputHeight,  inputColors,  inputBatch),
+            matrix::Dimension({filterWidth, filterHeight, filterInputs, filterOutputs}),
+            matrix::Dimension({strideWidth, strideHeight}),
+            matrix::Dimension({paddingWidth, paddingHeight})
+        );
     }
 
     return nullptr;

@@ -1359,13 +1359,11 @@ bool test2dConvolutionGradient()
     return reference == computed;
 }
 
-
-
 int main(int argc, char** argv)
 {
     //lucious::util::enableAllLogs();
 
-    std::cout << "Running matrix test unit tests\n";
+    std::cout << "Running matrix unit tests\n";
 
     bool passed = true;
 

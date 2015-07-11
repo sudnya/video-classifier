@@ -18,10 +18,12 @@
 #include <lucious/matrix/interface/RandomOperations.h>
 #include <lucious/matrix/interface/Operation.h>
 #include <lucious/matrix/interface/MatrixVector.h>
+#include <lucious/matrix/interface/FileOperations.h>
 
 #include <lucious/util/interface/debug.h>
 #include <lucious/util/interface/Knobs.h>
 #include <lucious/util/interface/memory.h>
+#include <lucious/util/interface/PropertyTree.h>
 
 // Standard Library Includes
 #include <memory>
@@ -350,14 +352,23 @@ size_t FeedForwardLayer::getFloatingPointOperationCount() const
     return 2 * totalConnections();
 }
 
-void FeedForwardLayer::save(util::TarArchive& archive) const
+void FeedForwardLayer::save(util::OutputTarArchive& archive, util::PropertyTree& properties) const
 {
-    assertM(false, "Not implemented");
+    properties["weights"] = properties.path() + ".weights.npy";
+    properties["bias"]    = properties.path() + ".bias.npy";
+
+    saveToArchive(archive, properties["weights"], _weights);
+    saveToArchive(archive, properties["bias"],    _bias);
+
+    saveLayer(archive, properties);
 }
 
-void FeedForwardLayer::load(const util::TarArchive& archive, const std::string& name)
+void FeedForwardLayer::load(util::InputTarArchive& archive, const util::PropertyTree& properties)
 {
-    assertM(false, "Not implemented");
+    _weights = matrix::loadFromArchive(archive, properties["weights"]);
+    _bias    = matrix::loadFromArchive(archive, properties["bias"]);
+
+    loadLayer(archive, properties);
 }
 
 std::unique_ptr<Layer> FeedForwardLayer::clone() const

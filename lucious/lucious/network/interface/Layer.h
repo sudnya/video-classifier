@@ -18,7 +18,9 @@ namespace lucious { namespace matrix  { class Precision;              } }
 namespace lucious { namespace network { class ActivationFunction;     } }
 namespace lucious { namespace network { class ActivationCostFunction; } }
 namespace lucious { namespace network { class WeightCostFunction;     } }
-namespace lucious { namespace util    { class TarArchive;             } }
+namespace lucious { namespace util    { class InputTarArchive;        } }
+namespace lucious { namespace util    { class OutputTarArchive;       } }
+namespace lucious { namespace util    { class PropertyTree;           } }
 
 namespace lucious
 {
@@ -77,9 +79,9 @@ public:
 
 public:
     /*! \brief Save the layer to the tar file and header. */
-    virtual void save(util::TarArchive& archive) const = 0;
+    virtual void save(util::OutputTarArchive& archive, util::PropertyTree& properties) const = 0;
     /*! \brief Intialize the layer from the tar file and header. */
-    virtual void load(const util::TarArchive& archive, const std::string& name) = 0;
+    virtual void load(util::InputTarArchive& archive, const util::PropertyTree& properties) = 0;
 
 public:
     virtual std::unique_ptr<Layer> clone() const = 0;
@@ -119,6 +121,12 @@ protected:
     virtual void runForwardImplementation(MatrixVector& m) const = 0;
     virtual Matrix runReverseImplementation(MatrixVector& gradients,
         MatrixVector& activations, const Matrix& deltas) const = 0;
+
+protected:
+    /*! \brief Save the layer to the tar file and header. */
+    virtual void saveLayer(util::OutputTarArchive& archive, util::PropertyTree& properties) const;
+    /*! \brief Intialize the layer from the tar file and header. */
+    virtual void loadLayer(util::InputTarArchive& archive, const util::PropertyTree& properties);
 
 private:
     std::unique_ptr<ActivationFunction>     _activationFunction;

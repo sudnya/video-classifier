@@ -18,10 +18,13 @@
 #include <lucious/matrix/interface/RandomOperations.h>
 #include <lucious/matrix/interface/Operation.h>
 #include <lucious/matrix/interface/MatrixVector.h>
+#include <lucious/matrix/interface/FileOperations.h>
 
 #include <lucious/util/interface/debug.h>
 #include <lucious/util/interface/Knobs.h>
 #include <lucious/util/interface/memory.h>
+#include <lucious/util/interface/TarArchive.h>
+#include <lucious/util/interface/PropertyTree.h>
 
 // Standard Library Includes
 #include <memory>
@@ -359,14 +362,31 @@ size_t ConvolutionalLayer::getFloatingPointOperationCount() const
     return 2 * totalConnections();
 }
 
-void ConvolutionalLayer::save(util::TarArchive& archive) const
+void ConvolutionalLayer::save(util::OutputTarArchive& archive, util::PropertyTree& properties) const
 {
-    assertM(false, "Not implemented.");
+    properties["weights"] = properties.path() + ".weights.npy";
+    properties["bias"]    = properties.path() + ".bias.npy";
+
+    properties["input-size"]    = _inputSize->toString();
+    properties["filter-stride"] = _filterStride->toString();
+    properties["input-padding"] = _inputPadding->toString();
+
+    saveToArchive(archive, properties["weights"], _weights);
+    saveToArchive(archive, properties["bias"],    _bias);
+
+    saveLayer(archive, properties);
 }
 
-void ConvolutionalLayer::load(const util::TarArchive& archive, const std::string& name)
+void ConvolutionalLayer::load(util::InputTarArchive& archive, const util::PropertyTree& properties)
 {
-    assertM(false, "Not implemented.");
+    _weights = matrix::loadFromArchive(archive, properties["weights"]);
+    _bias    = matrix::loadFromArchive(archive, properties["bias"]);
+
+    *_inputSize    = Dimension::fromString(properties["input-size"]);
+    *_filterStride = Dimension::fromString(properties["filter-stride"]);
+    *_inputPadding = Dimension::fromString(properties["input-padding"]);
+
+    loadLayer(archive, properties);
 }
 
 std::unique_ptr<Layer> ConvolutionalLayer::clone() const

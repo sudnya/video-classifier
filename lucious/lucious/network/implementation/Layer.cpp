@@ -18,6 +18,8 @@
 #include <lucious/matrix/interface/MatrixVector.h>
 #include <lucious/matrix/interface/MatrixTransformations.h>
 
+#include <lucious/util/interface/PropertyTree.h>
+
 // Standard Library Includes
 #include <sstream>
 
@@ -108,7 +110,7 @@ static matrix::Matrix reshapeActivations(const matrix::Matrix& m, matrix::Dimens
 
     // add back batch
     newShape.push_back(m.size()[m.size().size() - 2]);
-    
+
     // add back time
     newShape.push_back(m.size()[m.size().size() - 1]);
 
@@ -201,6 +203,20 @@ std::string Layer::shapeString() const
         << " inputs, " << getOutputCount() << " outputs)";
 
     return stream.str();
+}
+
+void Layer::saveLayer(util::OutputTarArchive& archive, util::PropertyTree& properties) const
+{
+    properties["activation-function"]      = getActivationFunction()->typeName();
+    properties["activation-cost-function"] = getActivationCostFunction()->typeName();
+    properties["weight-cost-function"]     = getWeightCostFunction()->typeName();
+}
+
+void Layer::load(util::InputTarArchive& archive, const util::PropertyTree& properties)
+{
+    setActivationFunction(ActivationFunctionFactory::create(properties["activation-function"]));
+    setActivationCostFunction(ActivationCostFunctionFactory::create(properties["activation-cost-function"]));
+    setWeightCostFunction(WeightCostFunctionFactory::create(properties["weight-cost-function"]));
 }
 
 }

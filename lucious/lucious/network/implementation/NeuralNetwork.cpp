@@ -8,6 +8,7 @@
 #include <lucious/network/interface/CostFunction.h>
 #include <lucious/network/interface/CostFunctionFactory.h>
 #include <lucious/network/interface/Layer.h>
+#include <lucious/network/interface/LayerFactory.h>
 
 #include <lucious/optimizer/interface/NeuralNetworkSolver.h>
 
@@ -18,6 +19,7 @@
 
 #include <lucious/util/interface/Knobs.h>
 #include <lucious/util/interface/debug.h>
+#include <lucious/util/interface/PropertyTree.h>
 
 // Standard Library Includes
 #include <cassert>
@@ -394,14 +396,40 @@ const NeuralNetwork::NeuralNetworkSolver* NeuralNetwork::getSolver() const
     return _solver.get();
 }
 
-void NeuralNetwork::save(util::TarArchive& archive, const std::string& name) const
+void NeuralNetwork::save(util::OutputTarArchive& archive, util::PropertyTree& tree) const
 {
-    assertM(false, "Not Implemented");
+    auto& layers = tree["layers"];
+
+    layers["layer-count"] = size();
+
+    size_t index = 0;
+
+    for(auto& layer : *this)
+    {
+        auto& layerProperties = layers[index++];
+
+        layer->save(archive, layerProperties);
+    }
+
+    tree["cost-function"] = getCostFunction()->typeName();
 }
 
-void NeuralNetwork::load(const util::TarArchive& archive, const std::string& name)
+void NeuralNetwork::load(util::InputTarArchive& archive, const util::PropertyTree& properties)
 {
-    assertM(false, "Not Implemented");
+    auto& layers = properties["layers"];
+
+    setCostFunction(CostFunctionFactory::create(properties["cost-function"]));
+
+    size_t layerCount = layers.get<size_t>("layer-count");
+
+    for(size_t i = 0; i < layerCount; ++i)
+    {
+        auto& layerProperties = layers[i];
+
+        addLayer(LayerFactory::create(layerProperties["type"]));
+
+        back()->load(archive, layerProperties);
+    }
 }
 
 std::string NeuralNetwork::shapeString() const

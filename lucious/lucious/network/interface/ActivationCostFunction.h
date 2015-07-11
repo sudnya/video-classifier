@@ -6,6 +6,9 @@
 
 #pragma once
 
+// Standard Library Includes
+#include <string>
+
 // Forward Declarations
 namespace lucious { namespace matrix { class Matrix; } }
 
@@ -30,6 +33,9 @@ public:
 
     /*! \brief Get the gradient for the given activations. */
     virtual Matrix getGradient(const Matrix&) const = 0;
+
+public:
+    virtual std::string typeName() const = 0;
 
 public:
     virtual ActivationCostFunction* clone() const = 0;

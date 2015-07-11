@@ -29,6 +29,9 @@ public:
     virtual Matrix getGradient(const Matrix&) const;
 
 public:
+    virtual std::string typeName() const;
+
+public:
     virtual ActivationCostFunction* clone() const;
 
 };

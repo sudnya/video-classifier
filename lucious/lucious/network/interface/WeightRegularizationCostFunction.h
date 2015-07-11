@@ -28,6 +28,9 @@ public:
     virtual Matrix getGradient(const Matrix& weights) const;
 
 public:
+    virtual std::string typeName() const;
+
+public:
     virtual WeightCostFunction* clone() const;
 
 };

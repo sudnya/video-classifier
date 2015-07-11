@@ -6,6 +6,9 @@
 
 #pragma once
 
+// Standard Library Includes
+#include <string>
+
 // Forward Declarations
 namespace lucious { namespace matrix { class Matrix; } }
 
@@ -29,6 +32,9 @@ public:
 
     /*! \brief Compute the gradient with respect to the weights. */
     virtual Matrix getGradient(const Matrix& weights) const = 0;
+
+public:
+    virtual std::string typeName() const = 0;
 
 public:
     virtual WeightCostFunction* clone() const = 0;
