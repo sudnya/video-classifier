@@ -1,8 +1,14 @@
+/*	\file   PropertyTree.h
+	\date   Saturday August 10, 2015
+	\author Gregory Diamos <solusstultus@gmail.com>
+	\brief  The header file for the PropertyTree class.
+*/
 
 #pragma once
 
 // Standard Library Includes
 #include <string>
+#include <set>
 
 namespace lucious
 {
@@ -16,9 +22,9 @@ class PropertyTreeImplementation;
 class PropertyTree
 {
 public:
-    typedef std::vector<PropertyTree> TreeVector;
-    typedef TreeVector::iterator iterator;
-    typedef TreeVector::const_iterator const_iterator;
+    typedef std::set<PropertyTree> TreeSet;
+    typedef TreeSet::iterator iterator;
+    typedef TreeSet::const_iterator const_iterator;
 
 public:
     explicit PropertyTree(const std::string& name);
@@ -44,10 +50,11 @@ public:
     T key() const;
 
 public:
-    std::string& key() const;
+    std::string& key();
+    const std::string& key() const;
 
 public:
-    std::string& value() const;
+    const std::string& value() const;
 
 public:
     std::string& path() const;
@@ -72,8 +79,11 @@ public:
     const_iterator end() const;
 
 public:
-    bool empty();
+    bool empty() const;
     size_t size() const;
+
+public:
+    bool operator<(const PropertyTree& ) const;
 
 public:
     void saveJson(std::ostream& json) const;
@@ -84,12 +94,14 @@ public:
 private:
     std::unique_ptr<PropertyTreeImplementation> _implementation;
 
+private:
+    friend class PropertyTreeImplementation;
+
 };
 
 }
 
 }
 
-
-
+#include <lucious/util/implementation/PropertyTree-inl.h>
 

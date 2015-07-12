@@ -41,6 +41,11 @@ CostFunction* SumOfSquaresCostFunction::clone() const
     return new SumOfSquaresCostFunction;
 }
 
+std::string SumOfSquaresCostFunction::typeName() const
+{
+    return "SumOfSquaresCostFunction";
+}
+
 }
 
 }

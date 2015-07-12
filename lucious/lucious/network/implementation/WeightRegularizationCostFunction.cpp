@@ -43,6 +43,11 @@ WeightCostFunction* WeightRegularizationCostFunction::clone() const
     return new WeightRegularizationCostFunction;
 }
 
+std::string WeightRegularizationCostFunction::typeName() const
+{
+    return "WeightRegularizationCostFunction";
+}
+
 }
 
 }

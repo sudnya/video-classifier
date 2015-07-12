@@ -212,7 +212,7 @@ void Layer::saveLayer(util::OutputTarArchive& archive, util::PropertyTree& prope
     properties["weight-cost-function"]     = getWeightCostFunction()->typeName();
 }
 
-void Layer::load(util::InputTarArchive& archive, const util::PropertyTree& properties)
+void Layer::loadLayer(util::InputTarArchive& archive, const util::PropertyTree& properties)
 {
     setActivationFunction(ActivationFunctionFactory::create(properties["activation-function"]));
     setActivationCostFunction(ActivationCostFunctionFactory::create(properties["activation-cost-function"]));

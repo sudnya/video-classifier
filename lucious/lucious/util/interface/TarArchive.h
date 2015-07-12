@@ -2,7 +2,6 @@
 	\date   Saturday August 10, 2013
 	\author Gregory Diamos <solusstultus@gmail.com>
 	\brief  An interface to a tar archive.
-
 */
 
 #pragma once

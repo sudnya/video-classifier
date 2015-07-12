@@ -60,6 +60,11 @@ CostFunction* SoftmaxCostFunction::clone() const
     return new SoftmaxCostFunction;
 }
 
+std::string SoftmaxCostFunction::typeName() const
+{
+    return "SoftmaxCostFunction";
+}
+
 }
 
 }
