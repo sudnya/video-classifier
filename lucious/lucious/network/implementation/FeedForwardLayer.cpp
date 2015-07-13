@@ -354,8 +354,8 @@ size_t FeedForwardLayer::getFloatingPointOperationCount() const
 
 void FeedForwardLayer::save(util::OutputTarArchive& archive, util::PropertyTree& properties) const
 {
-    properties["weights"] = properties.path() + ".weights.npy";
-    properties["bias"]    = properties.path() + ".bias.npy";
+    properties["weights"] = properties.path() + "." + properties.key() + ".weights.npy";
+    properties["bias"]    = properties.path() + "." + properties.key() + ".bias.npy";
 
     saveToArchive(archive, properties["weights"], _weights);
     saveToArchive(archive, properties["bias"],    _bias);

@@ -1,7 +1,7 @@
-/*	\file   PropertyTree.h
-	\date   Saturday August 10, 2015
-	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The source file for the PropertyTree class.
+/*  \file   PropertyTree.h
+    \date   Saturday August 10, 2015
+    \author Gregory Diamos <solusstultus@gmail.com>
+    \brief  The source file for the PropertyTree class.
 */
 
 // Lucious Includes
@@ -147,6 +147,7 @@ PropertyTree& PropertyTree::operator=(const std::string& v)
 
 PropertyTree& PropertyTree::operator=(const PropertyTree& tree)
 {
+    _implementation->createValue();
     _implementation->setValue(tree);
 
     return *this;
@@ -176,7 +177,7 @@ std::string& PropertyTree::path() const
 
 PropertyTree::operator std::string() const
 {
-    return key();
+    return value();
 }
 
 PropertyTree& PropertyTree::operator[](const std::string& key)
@@ -224,41 +225,69 @@ bool PropertyTree::operator<(const PropertyTree& right) const
     return key() < right.key();
 }
 
-void PropertyTree::saveJson(std::ostream& json) const
+static void saveJson(const PropertyTree& tree, std::ostream& json)
 {
-    if(empty())
+    if(tree.empty())
     {
-        json << "\"" << key() << "\"";
+        json << "\"" << tree.key() << "\"";
+        return;
     }
-    else
+
+    if(tree.size() == 1)
     {
-        if(size() == 1)
+        json << "\"" << tree.key() << "\" : ";
+
+        if(!tree.begin()->empty())
         {
-            json << "\"" << key() << "\" : \"" << value() << "\"";
+            json << "{ ";
         }
-        else
+
+        saveJson(*tree.begin(), json);
+
+        if(!tree.begin()->empty())
         {
-            json << "\"" << key() << "\" : { ";
-
-            bool first = true;
-
-            for(auto& child : *this)
-            {
-                if(first)
-                {
-                    first = false;
-                }
-                else
-                {
-                    json << ", ";
-                }
-
-                child.saveJson(json);
-            }
-
             json << " }";
         }
     }
+    else
+    {
+        json << "\"" << tree.key() << "\" : { ";
+
+        bool first = true;
+
+        for(auto& child : tree)
+        {
+            if(first)
+            {
+                first = false;
+            }
+            else
+            {
+                json << ", ";
+            }
+
+            saveJson(child, json);
+        }
+
+        json << " }";
+    }
+
+}
+
+void PropertyTree::saveJson(std::ostream& json) const
+{
+    json << "{ ";
+    util::saveJson(*this, json);
+    json << " }";
+}
+
+std::string PropertyTree::jsonString() const
+{
+    std::stringstream stream;
+
+    saveJson(stream);
+
+    return stream.str();
 }
 
 static bool isWhitespace(char c)
@@ -310,6 +339,18 @@ static std::string getNextToken(std::istream& json)
     return token;
 }
 
+static std::string getNextString(std::istream& json)
+{
+    std::string token;
+
+    while(json.good() && json.peek() != '\"')
+    {
+        token += json.get();
+    }
+
+    return token;
+}
+
 static std::string peekToken(std::istream& json)
 {
     size_t position = json.tellg();
@@ -349,7 +390,7 @@ static void parseKey(PropertyTree& result, std::istream& json)
 {
     parseQuote(json);
 
-    auto token = getNextToken(json);
+    auto token = getNextString(json);
 
     parseQuote(json);
 
@@ -360,7 +401,7 @@ static void parseSingleValue(PropertyTree& result, std::istream& json)
 {
     parseQuote(json);
 
-    auto token = getNextToken(json);
+    auto token = getNextString(json);
 
     parseQuote(json);
 

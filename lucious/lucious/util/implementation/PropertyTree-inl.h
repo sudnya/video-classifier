@@ -50,7 +50,7 @@ std::string toString(const T& t)
 template<typename T>
 PropertyTree& PropertyTree::operator=(const T& t)
 {
-    return operator=(std::to_string(t));
+    return operator=(toString(t));
 }
 
 template<typename T>

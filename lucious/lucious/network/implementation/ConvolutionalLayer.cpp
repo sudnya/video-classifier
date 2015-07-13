@@ -364,8 +364,8 @@ size_t ConvolutionalLayer::getFloatingPointOperationCount() const
 
 void ConvolutionalLayer::save(util::OutputTarArchive& archive, util::PropertyTree& properties) const
 {
-    properties["weights"] = properties.path() + ".weights.npy";
-    properties["bias"]    = properties.path() + ".bias.npy";
+    properties["weights"] = properties.path() + "." + properties.key() + ".weights.npy";
+    properties["bias"]    = properties.path() + "." + properties.key() + ".bias.npy";
 
     properties["input-size"]    = _inputSize->toString();
     properties["filter-stride"] = _filterStride->toString();

@@ -7,27 +7,41 @@
 // Lucious Includes
 #include <lucious/model/interface/Model.h>
 
+#include <lucious/network/interface/NeuralNetwork.h>
+#include <lucious/network/interface/LayerFactory.h>
+#include <lucious/network/interface/Layer.h>
+
+#include <lucious/matrix/interface/RandomOperations.h>
+#include <lucious/matrix/interface/Matrix.h>
+
+#include <lucious/util/interface/debug.h>
+
+// Standard Library Includes
+#include <iostream>
+#include <sstream>
+#include <fstream>
+
 bool testSaveLoad()
 {
     lucious::matrix::srand(4);
 
-    Model model;
+    lucious::model::Model model;
 
-    for(size_t i = 0; i < 1024; ++i)
+    for(size_t i = 0; i < 128; ++i)
     {
         std::stringstream labelName;
 
         labelName << "output" << i;
 
-        mdoel.setOutputLabel(labelName.str());
+        model.setOutputLabel(i, labelName.str());
     }
 
-    NeuralNetwork network;
+    lucious::network::NeuralNetwork network;
 
     network.addLayer(
-        LayerFactory::create("ConvolutionalLayer",
-            std::make_tuple("InputWidth", 32),
-            std::make_tuple("InputHeight", 32),
+        lucious::network::LayerFactory::create("ConvolutionalLayer",
+            std::make_tuple("InputWidth", 8),
+            std::make_tuple("InputHeight", 8),
             std::make_tuple("InputColors", 3),
             std::make_tuple("FilterWidth", 3),
             std::make_tuple("FilterHeight", 3),
@@ -36,27 +50,34 @@ bool testSaveLoad()
     ));
 
     network.addLayer(
-        LayerFactory::create("FeedForwardLayer",
+        lucious::network::LayerFactory::create("FeedForwardLayer",
             std::make_tuple("InputSize", network.getOutputCount()),
             std::make_tuple("OutputSize", network.getOutputCount()))
     );
 
     network.addLayer(
-        LayerFactory::create("FeedForwardLayer",
+        lucious::network::LayerFactory::create("FeedForwardLayer",
             std::make_tuple("InputSize", network.getOutputCount()),
-            std::make_tuple("OutputSize", 1024))
+            std::make_tuple("OutputSize", 128))
     );
 
     network.initialize();
 
     model.setNeuralNetwork("Classifier", network);
 
-    auto input     = lucious::matrix::rand(network.getInputSize());
+    auto input     = lucious::matrix::rand(network.getInputSize(), network.precision());
     auto reference = network.runInputs(input);
 
     std::stringstream stream;
 
+    std::ofstream output("examples/model.tar");
+
     model.save(stream);
+    model.save(output);
+
+    output.close();
+
+    model.clear();
     model.load(stream);
 
     network = model.getNeuralNetwork("Classifier");
@@ -71,7 +92,7 @@ bool testSaveLoad()
     }
     else
     {
-        std::cout << " Matrix Save Load Test Passed\n";
+        std::cout << " Model Save Load Test Passed\n";
     }
 
     return reference == computed;
@@ -79,6 +100,8 @@ bool testSaveLoad()
 
 int main(int argc, char** argv)
 {
+    lucious::util::enableAllLogs();
+
     std::cout << "Running model unit tests\n";
 
     bool passed = true;

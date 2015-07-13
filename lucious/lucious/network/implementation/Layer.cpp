@@ -207,9 +207,18 @@ std::string Layer::shapeString() const
 
 void Layer::saveLayer(util::OutputTarArchive& archive, util::PropertyTree& properties) const
 {
-    properties["activation-function"]      = getActivationFunction()->typeName();
-    properties["activation-cost-function"] = getActivationCostFunction()->typeName();
-    properties["weight-cost-function"]     = getWeightCostFunction()->typeName();
+    properties["activation-function"] = getActivationFunction()->typeName();
+
+    if(getActivationCostFunction() != nullptr)
+    {
+        properties["activation-cost-function"] = getActivationCostFunction()->typeName();
+    }
+    else
+    {
+        properties["activation-cost-function"] = "None";
+    }
+
+    properties["weight-cost-function"] = getWeightCostFunction()->typeName();
 }
 
 void Layer::loadLayer(util::InputTarArchive& archive, const util::PropertyTree& properties)

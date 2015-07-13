@@ -430,6 +430,8 @@ void NeuralNetwork::load(util::InputTarArchive& archive, const util::PropertyTre
 
         back()->load(archive, layerProperties);
     }
+
+    util::log("NeuralNetwork") << "Loaded " << shapeString();
 }
 
 std::string NeuralNetwork::shapeString() const

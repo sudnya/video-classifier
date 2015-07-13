@@ -89,6 +89,9 @@ public:
     void saveJson(std::ostream& json) const;
 
 public:
+    std::string jsonString() const;
+
+public:
     static PropertyTree loadJson(std::istream& json);
 
 private:

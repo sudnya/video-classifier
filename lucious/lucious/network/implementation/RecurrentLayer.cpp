@@ -382,9 +382,9 @@ size_t RecurrentLayer::getFloatingPointOperationCount() const
 
 void RecurrentLayer::save(util::OutputTarArchive& archive, util::PropertyTree& properties) const
 {
-    properties["forward-weights"]   = properties.path() + ".forward-weights.npy";
-    properties["recurrent-weights"] = properties.path() + ".recurrent-weights.npy";
-    properties["bias"]              = properties.path() + ".bias.npy";
+    properties["forward-weights"]   = properties.path() + "." + properties.key() + ".forward-weights.npy";
+    properties["recurrent-weights"] = properties.path() + "." + properties.key() + ".recurrent-weights.npy";
+    properties["bias"]              = properties.path() + "." + properties.key() + ".bias.npy";
 
     properties["batch-size"] = std::to_string(_expectedBatchSize);
 

@@ -142,6 +142,24 @@ std::string Dimension::toString() const
     return stream.str();
 }
 
+Dimension Dimension::fromString(const std::string& s)
+{
+    std::stringstream stream(s);
+
+    Dimension result;
+
+    while(stream.good())
+    {
+        size_t value = 0;
+
+        stream >> value;
+
+        while(stream.good() && stream.get() != ',');
+    }
+
+    return result;
+}
+
 CUDA_DECORATOR Dimension Dimension::operator+(const Dimension& d) const
 {
     assert(size() == d.size());
