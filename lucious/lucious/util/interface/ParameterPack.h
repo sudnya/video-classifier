@@ -68,13 +68,24 @@ private:
     template<typename T>
     void _fill(const std::tuple<std::string, T>& t)
     {
-        _parameters[std::get<0>(t)] = std::to_string(std::get<1>(t));
+        _parameters[std::get<0>(t)] = _toString(std::get<1>(t));
     }
 
     template<typename T>
     void _fill(const std::tuple<const char*, T>& t)
     {
-        _parameters[std::get<0>(t)] = std::to_string(std::get<1>(t));
+        _parameters[std::get<0>(t)] = _toString(std::get<1>(t));
+    }
+
+private:
+    template<typename T>
+    std::string _toString(const T& t)
+    {
+        std::stringstream stream;
+
+        stream << t;
+
+        return stream.str();
     }
 
 private:

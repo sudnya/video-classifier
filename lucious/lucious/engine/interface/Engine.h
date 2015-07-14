@@ -1,4 +1,4 @@
-/*    \file   Engine.h
+/*  \file   Engine.h
     \date   Saturday August 10, 2013
     \author Gregory Diamos <solusstultus@gmail.com>
     \brief  The header file for the Engine class.
@@ -12,6 +12,7 @@
 // Standard Library Includes
 #include <ostream>
 #include <memory>
+#include <list>
 
 // Forward Declarations
 namespace lucious { namespace model   { class Model;             } }
@@ -20,6 +21,7 @@ namespace lucious { namespace results { class ResultProcessor;   } }
 namespace lucious { namespace network { class NeuralNetwork;     } }
 namespace lucious { namespace results { class ResultVector;      } }
 namespace lucious { namespace matrix  { class Matrix;            } }
+namespace lucious { namespace engine  { class EngineObserver;    } }
 
 namespace lucious
 {
@@ -69,6 +71,9 @@ public:
     /*! \brief Get the model, the caller retains ownership */
     Model* getModel();
 
+    /*! \brief Get the model, the caller retains ownership */
+    const Model* getModel() const;
+
     /*! \brief Get the result handler, the enginer retains ownership */
     ResultProcessor* getResultProcessor();
 
@@ -81,6 +86,12 @@ public:
     void setBatchSize(size_t samples);
     /*! \brief Set should standardize input  */
     void setStandardizeInput(bool standardize);
+    /*! \brief Add an observer */
+    void addObserver(std::unique_ptr<EngineObserver>&& observer);
+
+public:
+    /*! \brief Get the number of epochs to be run by the engine */
+    size_t getEpochs() const;
 
 protected:
     /*! \brief Called before the engine starts running on a given model */
@@ -119,6 +130,12 @@ protected:
 
 protected:
     std::unique_ptr<NeuralNetwork> _aggregateNetwork;
+
+private:
+    typedef std::list<std::unique_ptr<EngineObserver>> ObserverList;
+
+private:
+    ObserverList _observers;
 
 };
 

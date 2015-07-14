@@ -7,6 +7,8 @@
 // Lucious Includes
 #include <lucious/engine/interface/Engine.h>
 #include <lucious/engine/interface/EngineFactory.h>
+#include <lucious/engine/interface/EngineObserverFactory.h>
+#include <lucious/engine/interface/EngineObserver.h>
 
 #include <lucious/model/interface/Model.h>
 
@@ -44,6 +46,7 @@ typedef lucious::matrix::Matrix Matrix;
 typedef lucious::matrix::Dimension Dimension;
 typedef lucious::model::Model Model;
 typedef lucious::engine::Engine Engine;
+typedef lucious::engine::EngineObserverFactory EngineObserverFactory;
 typedef lucious::database::SampleDatabase SampleDatabase;
 typedef lucious::results::LabelMatchResultProcessor LabelMatchResultProcessor;
 
@@ -69,7 +72,8 @@ public:
 
 };
 
-static Dimension addConvolutionalLayer(NeuralNetwork& classifier, const Dimension& inputSize, size_t filters)
+static Dimension addConvolutionalLayer(NeuralNetwork& classifier,
+    const Dimension& inputSize, size_t filters)
 {
     // conv 3-64 layer
     classifier.addLayer(std::make_unique<ConvolutionalLayer>(
@@ -107,6 +111,7 @@ static Dimension addPoolingLayer(NeuralNetwork& classifier, const Dimension& str
 
 static void addClassifier(Model& model, const Parameters& parameters)
 {
+    // Create a classifier modeled after VGG
     NeuralNetwork classifier;
 
     Dimension inputSize(parameters.xPixels, parameters.yPixels, parameters.colors, 1, 1);
@@ -142,15 +147,18 @@ static void addClassifier(Model& model, const Parameters& parameters)
     }
 
     // connect the network
-    classifier.addLayer(std::make_unique<FeedForwardLayer>(classifier.back()->getOutputCount(), parameters.layerSize));
-    classifier.addLayer(std::make_unique<FeedForwardLayer>(classifier.back()->getOutputCount(), parameters.layerSize));
+    classifier.addLayer(std::make_unique<FeedForwardLayer>(classifier.back()->getOutputCount(),
+        parameters.layerSize));
+    classifier.addLayer(std::make_unique<FeedForwardLayer>(classifier.back()->getOutputCount(),
+        parameters.layerSize));
 
     SampleDatabase inputDatabase(parameters.inputPath);
     inputDatabase.load();
 
     auto labels = inputDatabase.getAllPossibleLabels();
 
-    classifier.addLayer(std::make_unique<FeedForwardLayer>(classifier.back()->getOutputCount(), labels.size()));
+    classifier.addLayer(std::make_unique<FeedForwardLayer>(
+        classifier.back()->getOutputCount(), labels.size()));
 
     size_t index = 0;
 
@@ -159,14 +167,15 @@ static void addClassifier(Model& model, const Parameters& parameters)
         model.setOutputLabel(index++, label);
     }
 
-    classifier.setCostFunction(lucious::network::CostFunctionFactory::create("SoftMaxCostFunction"));
-    //classifier.setCostFunction(lucious::network::CostFunctionFactory::create("SumOfSquaresCostFunction"));
+    classifier.setCostFunction(
+        lucious::network::CostFunctionFactory::create("SoftMaxCostFunction"));
 
     classifier.initialize();
 
     model.setNeuralNetwork("Classifier", classifier);
 
-    lucious::util::log("BenchmarkImageNet") << "Classifier Architecture " << classifier.shapeString() << "\n";
+    lucious::util::log("BenchmarkImageNet") << "Classifier Architecture "
+        << classifier.shapeString() << "\n";
 }
 
 static void createModel(Model& model, const Parameters& parameters)
@@ -181,7 +190,8 @@ static void createModel(Model& model, const Parameters& parameters)
 static void setSampleStatistics(Model& model, const Parameters& parameters)
 {
     // Setup sample stats
-    std::unique_ptr<Engine> engine(lucious::engine::EngineFactory::create("SampleStatisticsEngine"));
+    std::unique_ptr<Engine> engine(
+        lucious::engine::EngineFactory::create("SampleStatisticsEngine"));
 
     engine->setModel(&model);
     engine->setBatchSize(128);
@@ -201,6 +211,8 @@ static void trainNetwork(Model& model, const Parameters& parameters)
     engine->setBatchSize(parameters.batchSize);
     engine->setStandardizeInput(true);
     engine->setMaximumSamplesToRun(parameters.maximumSamples);
+    engine->addObserver(EngineObserverFactory::create("ModelCheckpointer",
+        std::make_tuple("Path", parameters.outputPath)));
 
     // read from database and use model to train
     engine->runOnDatabaseFile(parameters.inputPath);
@@ -269,7 +281,8 @@ static void setupSolverParameters()
     lucious::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::AnnealingRate", "1.00000");
     lucious::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::MaxGradNorm", "10.0");
     lucious::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::IterationsPerBatch", "1");
-    lucious::util::KnobDatabase::setKnob("GeneralDifferentiableSolver::Type", "NesterovAcceleratedGradientSolver");
+    lucious::util::KnobDatabase::setKnob("GeneralDifferentiableSolver::Type",
+        "NesterovAcceleratedGradientSolver");
     lucious::util::KnobDatabase::setKnob("InputVisualDataProducer::CropImages", "0");
     //lucious::util::KnobDatabase::setKnob("GeneralDifferentiableSolver::Type", "LBFGSSolver");
 }
@@ -291,9 +304,8 @@ int main(int argc, char** argv)
     parser.parse("-t", "--test-path", parameters.testPath,
         "examples/image-net/validation/validation-set.txt",
         "The path of the database of test image files.");
-    parser.parse("-o", "--input-path", parameters.outputPath,
-        "models/image-net.tgz",
-        "The path to save the model.");
+    parser.parse("-o", "--output-path", parameters.outputPath,
+        "models/image-net.tar", "The path to save the model.");
 
     parser.parse("-e", "--epochs", parameters.epochs, 1,
         "The number of epochs (passes over all inputs) to train the network for.");
@@ -305,13 +317,18 @@ int main(int argc, char** argv)
         "(comma-separated list of modules, e.g. NeuralNetwork, Layer, ...).");
 
     parser.parse("-s", "--seed", parameters.seed, false, "Seed with time.");
-    parser.parse("-S", "--maximum-samples", parameters.maximumSamples, 10000000, "The maximum number of samples to train/test on.");
+    parser.parse("-S", "--maximum-samples", parameters.maximumSamples, 10000000,
+        "The maximum number of samples to train/test on.");
 
-    parser.parse("-x", "--x-pixels", parameters.xPixels, 224, "The number of X pixels to consider from the input image.");
-    parser.parse("-y", "--y-pixels", parameters.yPixels, 224, "The number of Y pixels to consider from the input image.");
-    parser.parse("-c", "--colors", parameters.colors, 3, "The number of colors to consider from the input image.");
+    parser.parse("-x", "--x-pixels", parameters.xPixels, 224,
+        "The number of X pixels to consider from the input image.");
+    parser.parse("-y", "--y-pixels", parameters.yPixels, 224,
+        "The number of Y pixels to consider from the input image.");
+    parser.parse("-c", "--colors", parameters.colors, 3,
+        "The number of colors to consider from the input image.");
 
-    parser.parse("-l", "--layer-size", parameters.layerSize, 4096, "The size of each fully connected layer.");
+    parser.parse("-l", "--layer-size", parameters.layerSize, 4096,
+        "The size of each fully connected layer.");
     parser.parse("", "--layers", parameters.layers, 7, "The total number of layers.");
 
     parser.parse("-v", "--verbose", verbose, false, "Print out log messages during execution");

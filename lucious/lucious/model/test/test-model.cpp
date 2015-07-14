@@ -72,8 +72,6 @@ bool testSaveLoad()
 
     model.save(stream);
 
-    output.close();
-
     model.clear();
     model.load(stream);
 
@@ -97,7 +95,7 @@ bool testSaveLoad()
 
 int main(int argc, char** argv)
 {
-    lucious::util::enableAllLogs();
+    //lucious::util::enableAllLogs();
 
     std::cout << "Running model unit tests\n";
 

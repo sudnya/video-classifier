@@ -6,6 +6,7 @@
 
 // Lucious Includes
 #include <lucious/engine/interface/Engine.h>
+#include <lucious/engine/interface/EngineObserver.h>
 
 #include <lucious/network/interface/NeuralNetwork.h>
 #include <lucious/network/interface/Layer.h>
@@ -41,7 +42,8 @@ namespace engine
 {
 
 Engine::Engine()
-: _dataProducer(input::InputDataProducerFactory::create()), _resultProcessor(results::ResultProcessorFactory::create("NullResultProcessor"))
+: _dataProducer(input::InputDataProducerFactory::create()),
+  _resultProcessor(results::ResultProcessorFactory::create("NullResultProcessor"))
 {
 
 }
@@ -78,7 +80,8 @@ void Engine::runOnDatabaseFile(const std::string& path)
     runOnDataProducer(*_dataProducer);
 }
 
-static void copyProducerParameters(input::InputDataProducer& newProducer, input::InputDataProducer& dataProducer)
+static void copyProducerParameters(input::InputDataProducer& newProducer,
+    input::InputDataProducer& dataProducer)
 {
     if(&newProducer == &dataProducer)
     {
@@ -116,6 +119,11 @@ void Engine::runOnDataProducer(InputDataProducer& producer)
             _resultProcessor->process(std::move(results));
         }
 
+        for(auto& observer : _observers)
+        {
+            observer->epochCompleted(*this);
+        }
+
         util::log("Engine") << " Finished epoch " << epoch <<  ".\n";
 
         producer.reset();
@@ -131,6 +139,11 @@ Engine::ResultProcessor* Engine::extractResultProcessor()
 }
 
 Engine::Model* Engine::getModel()
+{
+    return _dataProducer->getModel();
+}
+
+const Engine::Model* Engine::getModel() const
 {
     return _dataProducer->getModel();
 }
@@ -158,6 +171,16 @@ void Engine::setEpochs(size_t epochs)
 void Engine::setStandardizeInput(bool standardize)
 {
     _dataProducer->setStandardizeInput(standardize);
+}
+
+void Engine::addObserver(std::unique_ptr<EngineObserver>&& observer)
+{
+    _observers.push_back(std::move(observer));
+}
+
+size_t Engine::getEpochs() const
+{
+    return _dataProducer->getEpochs();
 }
 
 void Engine::registerModel()
@@ -241,7 +264,8 @@ void Engine::restoreAggregateNetwork()
 
 void Engine::_setupProducer(const std::string& path)
 {
-    std::unique_ptr<InputDataProducer> newProducer(input::InputDataProducerFactory::createForDatabase(path));
+    std::unique_ptr<InputDataProducer> newProducer(
+        input::InputDataProducerFactory::createForDatabase(path));
 
     copyProducerParameters(*newProducer, *_dataProducer);
 
