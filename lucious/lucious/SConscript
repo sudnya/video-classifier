@@ -35,6 +35,9 @@ programs.append(env.Program('test-matrix', \
 programs.append(env.Program('test-matrix-vector', \
     ['matrix/test/test-matrix-vector.cpp'], LIBS=lucious_libs))
 
+programs.append(env.Program('test-model', \
+    ['model/test/test-model.cpp'], LIBS=lucious_libs))
+
 #programs.append(env.Program('test-lucious-visualization', \
 #    ['visualization/test/test-lucious-visualization.cpp'], LIBS=lucious_libs))
 

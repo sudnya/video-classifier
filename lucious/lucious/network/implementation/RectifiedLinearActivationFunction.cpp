@@ -50,6 +50,11 @@ ActivationFunction* RectifiedLinearActivationFunction::clone() const
     return new RectifiedLinearActivationFunction(*this);
 }
 
+std::string RectifiedLinearActivationFunction::typeName() const
+{
+    return "RectifiedLinearActivaitonFunction";
+}
+
 }
 
 }

@@ -50,6 +50,11 @@ ActivationFunction* SigmoidActivationFunction::clone() const
     return new SigmoidActivationFunction(*this);
 }
 
+std::string SigmoidActivationFunction::typeName() const
+{
+    return "SigmoidActivationFunction";
+}
+
 }
 
 }

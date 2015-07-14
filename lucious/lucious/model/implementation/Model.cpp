@@ -1,7 +1,7 @@
-/*	\file   Model.cpp
-	\date   Saturday August 10, 2013
-	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The source file for the Model class.
+/*    \file   Model.cpp
+    \date   Saturday August 10, 2013
+    \author Gregory Diamos <solusstultus@gmail.com>
+    \brief  The source file for the Model class.
 */
 
 // Lucious Includes
@@ -40,67 +40,67 @@ Model::Model()
 }
 
 const Model::NeuralNetwork& Model::getNeuralNetwork(
-	const std::string& name) const
+    const std::string& name) const
 {
-	auto network = _neuralNetworkMap.find(name);
+    auto network = _neuralNetworkMap.find(name);
 
-	assertM(network != _neuralNetworkMap.end(), "Invalid neural network name "
-		+ name);
+    assertM(network != _neuralNetworkMap.end(), "Invalid neural network name "
+        + name);
 
-	return *network->second;
+    return *network->second;
 }
 
 Model::NeuralNetwork& Model::getNeuralNetwork(
-	const std::string& name)
+    const std::string& name)
 {
-	auto network = _neuralNetworkMap.find(name);
+    auto network = _neuralNetworkMap.find(name);
 
-	assertM(network != _neuralNetworkMap.end(), "Invalid neural network name "
-		+ name);
+    assertM(network != _neuralNetworkMap.end(), "Invalid neural network name "
+        + name);
 
-	return *network->second;
+    return *network->second;
 }
 
 bool Model::containsNeuralNetwork(const std::string& name) const
 {
-	return _neuralNetworkMap.count(name) != 0;
+    return _neuralNetworkMap.count(name) != 0;
 }
 
 void Model::setNeuralNetwork(
-	const std::string& name, const NeuralNetwork& n)
+    const std::string& name, const NeuralNetwork& n)
 {
-	if(!containsNeuralNetwork(name))
-	{
-		_neuralNetworkMap[name] = _neuralNetworks.insert(_neuralNetworks.end(), n);
-	}
-	else
-	{
-		*_neuralNetworkMap[name] = n;
-	}
+    if(!containsNeuralNetwork(name))
+    {
+        _neuralNetworkMap[name] = _neuralNetworks.insert(_neuralNetworks.end(), n);
+    }
+    else
+    {
+        *_neuralNetworkMap[name] = n;
+    }
 }
 
 void Model::setOutputLabel(size_t output, const std::string& label)
 {
-	_outputLabels[output] = label;
+    _outputLabels[output] = label;
 }
 
 std::string Model::getOutputLabel(size_t output) const
 {
-	auto label = _outputLabels.find(output);
+    auto label = _outputLabels.find(output);
 
-	assert(label != _outputLabels.end());
+    assert(label != _outputLabels.end());
 
-	return label->second;
+    return label->second;
 }
 
 size_t Model::getOutputCount() const
 {
-	return _outputLabels.size();
+    return _outputLabels.size();
 }
 
 void Model::save(std::ostream& stream) const
 {
-	util::OutputTarArchive tar(stream);
+    util::OutputTarArchive tar(stream);
 
     util::PropertyTree properties("metadata");
 
@@ -108,7 +108,9 @@ void Model::save(std::ostream& stream) const
 
     for(auto& network : _neuralNetworkMap)
     {
-        network.second->save(tar, networks[network.first]);
+        auto& networkProperties = networks[network.first];
+
+        network.second->save(tar, networkProperties);
     }
 
     auto& outputLabels = properties["output-labels"];
@@ -118,11 +120,14 @@ void Model::save(std::ostream& stream) const
         outputLabels[std::to_string(outputLabel.first)] = outputLabel.second;
     }
 
-    auto& attributes = properties["attributes"];
-
-    for(auto& attribute : _attributes)
+    if(!_attributes.empty())
     {
-        attributes[attribute.first] = attribute.second;
+        auto& attributes = properties["attributes"];
+
+        for(auto& attribute : _attributes)
+        {
+            attributes[attribute.first] = attribute.second;
+        }
     }
 
     std::stringstream json;
@@ -134,33 +139,39 @@ void Model::save(std::ostream& stream) const
 
 void Model::load(std::istream& stream)
 {
-	if(_loaded) return;
+    if(_loaded) return;
 
-	_loaded = true;
+    _loaded = true;
 
-	_neuralNetworks.clear();
+    clear();
 
-	util::log("Model") << "Loading classification-model from '"
-		<< _path << "'\n";
+    util::log("Model") << "Loading classification-model from '"
+        << _path << "'\n";
 
-	util::InputTarArchive tar(stream);
+    util::InputTarArchive tar(stream);
 
     std::stringstream metadataText;
 
     tar.extractFile("metadata.txt", metadataText);
 
-    auto metadata = util::PropertyTree::loadJson(metadataText);
+    util::log("Model") << " metadata text: " << metadataText.str() << "\n";
+
+    auto metadataObject = util::PropertyTree::loadJson(metadataText);
+
+    util::log("Model") << " metadata object: " << metadataObject.jsonString() << "\n";
+
+    auto& metadata = metadataObject["metadata"];
 
     auto& networks = metadata["networks"];
 
-	for(auto& network : networks)
-	{
+    for(auto& network : networks)
+    {
         auto name = network.key();
 
-		setNeuralNetwork(name, network::NeuralNetwork());
+        setNeuralNetwork(name, network::NeuralNetwork());
 
-		getNeuralNetwork(name).load(tar, network);
-	}
+        getNeuralNetwork(name).load(tar, network);
+    }
 
     auto& attributes = metadata["attributes"];
 
@@ -205,47 +216,51 @@ void Model::load()
 
 void Model::clear()
 {
-	_neuralNetworks.clear();
+    _loaded = false;
+    _neuralNetworks.clear();
+    _neuralNetworkMap.clear();
+    _outputLabels.clear();
+    _attributes.clear();
 }
 
 Model::iterator Model::begin()
 {
-	return _neuralNetworks.begin();
+    return _neuralNetworks.begin();
 }
 
 Model::const_iterator Model::begin() const
 {
-	return _neuralNetworks.begin();
+    return _neuralNetworks.begin();
 }
 
 Model::iterator Model::end()
 {
-	return _neuralNetworks.end();
+    return _neuralNetworks.end();
 }
 
 Model::const_iterator Model::end() const
 {
-	return _neuralNetworks.end();
+    return _neuralNetworks.end();
 }
 
 Model::reverse_iterator Model::rbegin()
 {
-	return _neuralNetworks.rbegin();
+    return _neuralNetworks.rbegin();
 }
 
 Model::const_reverse_iterator Model::rbegin() const
 {
-	return _neuralNetworks.rbegin();
+    return _neuralNetworks.rbegin();
 }
 
 Model::reverse_iterator Model::rend()
 {
-	return _neuralNetworks.rend();
+    return _neuralNetworks.rend();
 }
 
 Model::const_reverse_iterator Model::rend() const
 {
-	return _neuralNetworks.rend();
+    return _neuralNetworks.rend();
 }
 
 }

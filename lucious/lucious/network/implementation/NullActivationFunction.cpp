@@ -50,6 +50,11 @@ ActivationFunction* NullActivationFunction::clone() const
     return new NullActivationFunction(*this);
 }
 
+std::string NullActivationFunction::typeName() const
+{
+    return "NullActivationFunction";
+}
+
 }
 
 }

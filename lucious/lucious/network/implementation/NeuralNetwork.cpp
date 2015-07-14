@@ -56,7 +56,8 @@ void NeuralNetwork::initialize()
     }
 }
 
-double NeuralNetwork::getCostAndGradient(MatrixVector& gradient, const Matrix& input, const Matrix& reference) const
+double NeuralNetwork::getCostAndGradient(MatrixVector& gradient, const Matrix& input,
+    const Matrix& reference) const
 {
     MatrixVector activations;
 
@@ -92,7 +93,8 @@ double NeuralNetwork::getCostAndGradient(MatrixVector& gradient, const Matrix& i
 
         delta = (*layer)->runReverse(grad, activations, delta);
 
-        for(auto gradMatrix = grad.rbegin(); gradMatrix != grad.rend(); ++gradMatrix, ++gradientMatrix)
+        for(auto gradMatrix = grad.rbegin(); gradMatrix != grad.rend();
+            ++gradMatrix, ++gradientMatrix)
         {
             *gradientMatrix = std::move(*gradMatrix);
         }
@@ -107,17 +109,20 @@ double NeuralNetwork::getCostAndGradient(MatrixVector& gradient, const Matrix& i
 
     if(util::isLogEnabled("NeuralNetwork::Detail"))
     {
-        util::log("NeuralNetwork::Detail") << "  cost function result: " << costFunctionResult.debugString();
+        util::log("NeuralNetwork::Detail") << "  cost function result: "
+            << costFunctionResult.debugString();
     }
     else
     {
-        util::log("NeuralNetwork") << "  cost function result shape: " << costFunctionResult.shapeString() << "\n";
+        util::log("NeuralNetwork") << "  cost function result shape: "
+            << costFunctionResult.shapeString() << "\n";
     }
 
     return weightCost + reduce(costFunctionResult, {}, matrix::Add())[0];
 }
 
-double NeuralNetwork::getInputCostAndGradient(Matrix& gradient, const Matrix& input, const Matrix& reference) const
+double NeuralNetwork::getInputCostAndGradient(Matrix& gradient,
+    const Matrix& input, const Matrix& reference) const
 {
     MatrixVector activations;
 
@@ -168,7 +173,8 @@ double NeuralNetwork::getCost(const Matrix& input, const Matrix& reference) cons
         weightCost += layer->computeWeightCost();
     }
 
-    return weightCost + reduce(getCostFunction()->computeCost(result, reference), {}, matrix::Add())[0];
+    return weightCost +
+        reduce(getCostFunction()->computeCost(result, reference), {}, matrix::Add())[0];
 }
 
 NeuralNetwork::Matrix NeuralNetwork::runInputs(const Matrix& m) const
@@ -408,6 +414,8 @@ void NeuralNetwork::save(util::OutputTarArchive& archive, util::PropertyTree& tr
     {
         auto& layerProperties = layers[index++];
 
+        layerProperties["type"] = layer->getTypeName();
+
         layer->save(archive, layerProperties);
     }
 
@@ -430,6 +438,8 @@ void NeuralNetwork::load(util::InputTarArchive& archive, const util::PropertyTre
 
         back()->load(archive, layerProperties);
     }
+
+    util::log("NeuralNetwork") << "Loaded " << shapeString();
 }
 
 std::string NeuralNetwork::shapeString() const

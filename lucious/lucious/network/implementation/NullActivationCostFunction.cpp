@@ -36,6 +36,11 @@ ActivationCostFunction* NullActivationCostFunction::clone() const
     return new NullActivationCostFunction(*this);
 }
 
+std::string NullActivationCostFunction::typeName() const
+{
+    return "NullActivationCostFunction";
+}
+
 }
 
 }

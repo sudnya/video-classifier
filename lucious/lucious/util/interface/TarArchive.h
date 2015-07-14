@@ -2,7 +2,6 @@
 	\date   Saturday August 10, 2013
 	\author Gregory Diamos <solusstultus@gmail.com>
 	\brief  An interface to a tar archive.
-
 */
 
 #pragma once
@@ -34,8 +33,7 @@ public:
 	void addFile(const std::string& name, std::istream& file);
 
 private:
-	OutputTarArchiveImplementation* _archive;
-
+    std::unique_ptr<OutputTarArchiveImplementation> _implementation;
 };
 
 class InputTarArchiveImplementation;
@@ -62,7 +60,7 @@ public:
 	void extractFile(const std::string& name, std::ostream& file);
 
 private:
-	InputTarArchiveImplementation* _archive;
+    std::unique_ptr<InputTarArchiveImplementation> _implementation;
 
 };
 

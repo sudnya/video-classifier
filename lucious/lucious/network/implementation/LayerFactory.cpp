@@ -61,7 +61,7 @@ std::unique_ptr<Layer> LayerFactory::create(const std::string& name, const Param
         size_t paddingHeight = parameters.get("PaddingHeight", 0);
 
         return std::make_unique<ConvolutionalLayer>(
-            matrix::Dimension(inputWidth,  inputHeight,  inputColors,  inputBatch),
+            matrix::Dimension(inputWidth,  inputHeight,  inputColors,  inputBatch, 1),
             matrix::Dimension({filterWidth, filterHeight, filterInputs, filterOutputs}),
             matrix::Dimension({strideWidth, strideHeight}),
             matrix::Dimension({paddingWidth, paddingHeight})
