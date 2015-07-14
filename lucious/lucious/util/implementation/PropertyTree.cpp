@@ -136,6 +136,12 @@ PropertyTree::PropertyTree(const PropertyTree& tree)
 
 }
 
+PropertyTree::PropertyTree(PropertyTree&& tree)
+: _implementation(std::move(tree._implementation))
+{
+
+}
+
 PropertyTree& PropertyTree::operator=(const std::string& v)
 {
     _implementation->createValue();
@@ -188,6 +194,11 @@ PropertyTree& PropertyTree::operator[](const std::string& key)
 const PropertyTree& PropertyTree::operator[](const std::string& key) const
 {
     return _implementation->getValue(key);
+}
+
+void PropertyTree::add(const PropertyTree& tree)
+{
+    _implementation->children.emplace(tree);
 }
 
 PropertyTree::iterator PropertyTree::begin()
@@ -405,7 +416,7 @@ static void parseSingleValue(PropertyTree& result, std::istream& json)
 
     parseQuote(json);
 
-    result = token;
+    result.add(PropertyTree(token));
 }
 
 static void parseValue(PropertyTree& result, std::istream& json)
@@ -418,7 +429,7 @@ static void parseValue(PropertyTree& result, std::istream& json)
     }
     else
     {
-        result = PropertyTree::loadJson(json);
+        result.add(PropertyTree::loadJson(json));
     }
 }
 
@@ -438,11 +449,22 @@ static void parseJsonObjectBody(PropertyTree& result, std::istream& json)
 {
     while(true)
     {
-        parseKey(result, json);
+        PropertyTree child;
+
+        parseKey(child, json);
 
         parseColon(json);
 
-        parseValue(result, json);
+        parseValue(child, json);
+
+        if(result.empty())
+        {
+            result = std::move(child);
+        }
+        else
+        {
+            result.add(child);
+        }
 
         auto comma = peekToken(json);
 

@@ -33,6 +33,7 @@ public:
 
 public:
     PropertyTree(const PropertyTree& tree);
+    PropertyTree(PropertyTree&& tree);
 
 public:
     template<typename T>
@@ -70,6 +71,9 @@ public:
 
     PropertyTree& operator[](const std::string& key);
     const PropertyTree& operator[](const std::string& key) const;
+
+public:
+    void add(const PropertyTree& child);
 
 public:
           iterator begin();

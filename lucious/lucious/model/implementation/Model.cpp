@@ -154,9 +154,11 @@ void Model::load(std::istream& stream)
 
     tar.extractFile("metadata.txt", metadataText);
 
-    util::log("Model") << " metadata: " << metadataText.str() << "\n";
+    util::log("Model") << " metadata text: " << metadataText.str() << "\n";
 
     auto metadata = util::PropertyTree::loadJson(metadataText);
+
+    util::log("Model") << " metadata object: " << metadata.jsonString() << "\n";
 
     auto& networks = metadata["networks"];
 
