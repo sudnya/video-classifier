@@ -41,6 +41,7 @@ public:
 
     PropertyTree& operator=(const std::string& value);
     PropertyTree& operator=(const PropertyTree& tree);
+    PropertyTree& operator=(PropertyTree&& tree);
 
 public:
     template<typename T>

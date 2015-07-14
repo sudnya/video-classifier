@@ -223,9 +223,12 @@ void Layer::saveLayer(util::OutputTarArchive& archive, util::PropertyTree& prope
 
 void Layer::loadLayer(util::InputTarArchive& archive, const util::PropertyTree& properties)
 {
-    setActivationFunction(ActivationFunctionFactory::create(properties["activation-function"]));
-    setActivationCostFunction(ActivationCostFunctionFactory::create(properties["activation-cost-function"]));
-    setWeightCostFunction(WeightCostFunctionFactory::create(properties["weight-cost-function"]));
+    setActivationFunction(ActivationFunctionFactory::create(
+        properties["activation-function"]));
+    setActivationCostFunction(ActivationCostFunctionFactory::create(
+        properties["activation-cost-function"]));
+    setWeightCostFunction(WeightCostFunctionFactory::create(
+        properties["weight-cost-function"]));
 }
 
 }

@@ -63,13 +63,16 @@ static std::string getEncodedPrecision(const Precision& precision)
 }
 
 
-static void addHeader(std::ostream& file, const std::string& matrixShapeString, const Precision& matrixPrecision)
+static void addHeader(std::ostream& file, const std::string& matrixShapeString,
+    const Precision& matrixPrecision)
 {
-    std::string headerPrefix("{'descr': '" + getEncodedPrecision(matrixPrecision) + "', 'fortran_order': True, 'shape': ");
+    std::string headerPrefix("{'descr': '" + getEncodedPrecision(matrixPrecision) +
+        "', 'fortran_order': True, 'shape': ");
     size_t boundaryAlignment = 16;
     size_t magicAndVersionLength = 10;
     std::string shapeDim      = "(" + matrixShapeString + "), }";
-    uint8_t remainingBytes    = getAlignment(headerPrefix.size() + shapeDim.size() + 1 + magicAndVersionLength, boundaryAlignment);
+    uint8_t remainingBytes    = getAlignment(headerPrefix.size() + shapeDim.size() + 1 +
+        magicAndVersionLength, boundaryAlignment);
     std::string headerPostfix = std::string(remainingBytes, ' ') + "\n";
 
     std::string headerString  = headerPrefix + shapeDim + headerPostfix;
@@ -78,14 +81,14 @@ static void addHeader(std::ostream& file, const std::string& matrixShapeString, 
     file.write(reinterpret_cast<const char*>(headerString.data()), headerString.size());
 }
 
-
 static void checkMagic(std::istream& file)
 {
     std::string magicString("......");
     file.read(const_cast<char*>(magicString.data()), 6);
     if(magicString != "\x93NUMPY")
     {
-        throw std::runtime_error("Magic string: " + magicString + " does not match expected x93NUMPY");
+        throw std::runtime_error("Magic string: " + magicString +
+            " does not match expected x93NUMPY");
     }
 }
 
@@ -99,11 +102,13 @@ static void checkVersion(std::istream& file)
 
     if(majorVersion != 0x01)
     {
-        throw std::runtime_error("Major version: " + std::to_string(majorVersion) + " does not match expected 0x01");
+        throw std::runtime_error("Major version: " + std::to_string(majorVersion) +
+            " does not match expected 0x01");
     }
     if(minorVersion != 0x00)
     {
-        throw std::runtime_error("Minor version: " + std::to_string(minorVersion) + " does not match expected 0x00");
+        throw std::runtime_error("Minor version: " + std::to_string(minorVersion) +
+            " does not match expected 0x00");
     }
 }
 
@@ -118,7 +123,7 @@ public:
         uint16_t headerLength = 0;
         file.read(reinterpret_cast<char*>(&headerLength), 2);
 
-        util::log("FileOperations") << " header length: " << headerLength << std::endl;
+        util::log("FileOperations") << "Loading header length: " << headerLength << std::endl;
 
         std::string header(headerLength, ' ');
 
@@ -176,12 +181,22 @@ private:
         bool searching = false;
         std::string compound = "";
 
+        util::log("FileOperations") << " Loaded compound entries:\n";
+
         for(auto entry : separate_entries)
         {
             if(entry.find("(") != std::string::npos)
             {
-                compound += entry;
-                searching = true;
+                if(entry.find(")") != std::string::npos)
+                {
+                    util::log("FileOperations") << "  compound entry: '" << entry << "'\n";
+                    entries.push_back(entry);
+                }
+                else
+                {
+                    compound += entry;
+                    searching = true;
+                }
                 continue;
             }
 
@@ -191,7 +206,7 @@ private:
 
                 if(entry.find(")") != std::string::npos)
                 {
-                    util::log("FileOperations") << "compound entry: '" << compound << "'\n";
+                    util::log("FileOperations") << "  compound entry: '" << compound << "'\n";
                     entries.push_back(compound);
                     compound.clear();
                     searching = false;
@@ -200,11 +215,15 @@ private:
                 continue;
             }
 
-            util::log("FileOperations") << "entry: '" << entry << "'\n";
             if(entry.find(":") != std::string::npos)
             {
                 entries.push_back(entry);
             }
+        }
+
+        if(!entries.empty())
+        {
+            util::log("FileOperations") << " Loaded dictionary entries:\n";
         }
 
         for(auto entry : entries)
@@ -213,13 +232,14 @@ private:
 
             if(keyAndValue.size() != 2)
             {
-                throw std::runtime_error("Invalid dictionary format, missing key/value pair in " + entry);
+                throw std::runtime_error("Invalid dictionary format, missing "
+                    "key/value pair in " + entry);
             }
 
             auto key   = util::removeWhitespace(util::strip(util::strip(keyAndValue[0], "}"), "{"));
             auto value = util::removeWhitespace(util::strip(util::strip(keyAndValue[1], "}"), "{"));
 
-            util::log("FileOperations") << "key: " << key << ", value: " << value << "\n";
+            util::log("FileOperations") << "  key: " << key << ", value: " << value << "\n";
 
             result[key] = value;
         }
@@ -319,7 +339,8 @@ void save(std::ostream& file, const Matrix& input)
     addVersion(file);
     addHeader(file, input.shapeString(), input.precision());
 
-    file.write(reinterpret_cast<const char*>(input.data()), input.elements() * input.precision().size());
+    file.write(reinterpret_cast<const char*>(input.data()),
+        input.elements() * input.precision().size());
 }
 
 void saveToArchive(util::OutputTarArchive& archive, const std::string& path, const Matrix& input)

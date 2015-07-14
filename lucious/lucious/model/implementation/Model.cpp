@@ -143,7 +143,7 @@ void Model::load(std::istream& stream)
 
     _loaded = true;
 
-    _neuralNetworks.clear();
+    clear();
 
     util::log("Model") << "Loading classification-model from '"
         << _path << "'\n";
@@ -156,9 +156,11 @@ void Model::load(std::istream& stream)
 
     util::log("Model") << " metadata text: " << metadataText.str() << "\n";
 
-    auto metadata = util::PropertyTree::loadJson(metadataText);
+    auto metadataObject = util::PropertyTree::loadJson(metadataText);
 
-    util::log("Model") << " metadata object: " << metadata.jsonString() << "\n";
+    util::log("Model") << " metadata object: " << metadataObject.jsonString() << "\n";
+
+    auto& metadata = metadataObject["metadata"];
 
     auto& networks = metadata["networks"];
 
@@ -216,6 +218,9 @@ void Model::clear()
 {
     _loaded = false;
     _neuralNetworks.clear();
+    _neuralNetworkMap.clear();
+    _outputLabels.clear();
+    _attributes.clear();
 }
 
 Model::iterator Model::begin()

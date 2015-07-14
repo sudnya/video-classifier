@@ -70,10 +70,7 @@ bool testSaveLoad()
 
     std::stringstream stream;
 
-    std::ofstream output("examples/model.tar");
-
     model.save(stream);
-    model.save(output);
 
     output.close();
 

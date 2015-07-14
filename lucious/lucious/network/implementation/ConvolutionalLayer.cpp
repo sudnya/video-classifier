@@ -397,7 +397,8 @@ std::unique_ptr<Layer> ConvolutionalLayer::clone() const
 std::unique_ptr<Layer> ConvolutionalLayer::mirror() const
 {
     return std::make_unique<ConvolutionalLayer>(*_inputSize,
-        matrix::Dimension(_weights.size()[0], _weights.size()[1], _weights.size()[3], _weights.size()[2]),
+        matrix::Dimension(_weights.size()[0], _weights.size()[1],
+            _weights.size()[3], _weights.size()[2]),
         *_filterStride, *_inputPadding, precision());
 }
 

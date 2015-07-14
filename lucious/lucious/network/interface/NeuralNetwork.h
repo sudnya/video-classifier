@@ -47,13 +47,15 @@ public:
 
 public:
     /*! \brief Get the cost and gradient. */
-    double getCostAndGradient(MatrixVector& gradient, const Matrix& input, const Matrix& reference) const;
+    double getCostAndGradient(MatrixVector& gradient,
+        const Matrix& input, const Matrix& reference) const;
     /*! \brief Get the cost. */
     double getCost(const Matrix& input, const Matrix& reference) const;
 
 public:
     /*! \brief Get the cost and gradient with respect to the inputs. */
-    double getInputCostAndGradient(Matrix& gradient, const Matrix& input, const Matrix& reference) const;
+    double getInputCostAndGradient(Matrix& gradient,
+        const Matrix& input, const Matrix& reference) const;
 
 public:
     /*! \brief Run input samples through the network, return the output */

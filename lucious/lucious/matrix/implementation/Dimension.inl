@@ -154,6 +154,8 @@ Dimension Dimension::fromString(const std::string& s)
 
         stream >> value;
 
+        result.push_back(value);
+
         while(stream.good() && stream.get() != ',');
     }
 

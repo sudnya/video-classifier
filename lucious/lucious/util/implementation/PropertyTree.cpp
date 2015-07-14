@@ -159,6 +159,13 @@ PropertyTree& PropertyTree::operator=(const PropertyTree& tree)
     return *this;
 }
 
+PropertyTree& PropertyTree::operator=(PropertyTree&& tree)
+{
+    _implementation = std::move(tree._implementation);
+
+    return *this;
+}
+
 std::string& PropertyTree::key()
 {
     return _implementation->key;
@@ -246,23 +253,34 @@ static void saveJson(const PropertyTree& tree, std::ostream& json)
 
     if(tree.size() == 1)
     {
-        json << "\"" << tree.key() << "\" : ";
-
-        if(!tree.begin()->empty())
+        if(!tree.key().empty())
         {
-            json << "{ ";
+            json << "\"" << tree.key() << "\" : ";
+
+            if(!tree.begin()->empty())
+            {
+                json << "{ ";
+            }
         }
 
         saveJson(*tree.begin(), json);
 
-        if(!tree.begin()->empty())
+        if(!tree.key().empty())
         {
-            json << " }";
+            if(!tree.begin()->empty())
+            {
+                json << " }";
+            }
         }
     }
     else
     {
-        json << "\"" << tree.key() << "\" : { ";
+        if(!tree.key().empty())
+        {
+            json << "\"" << tree.key() << "\" : ";
+
+            json << "{ ";
+        }
 
         bool first = true;
 
@@ -280,7 +298,10 @@ static void saveJson(const PropertyTree& tree, std::ostream& json)
             saveJson(child, json);
         }
 
-        json << " }";
+        if(!tree.key().empty())
+        {
+            json << " }";
+        }
     }
 
 }
@@ -429,7 +450,12 @@ static void parseValue(PropertyTree& result, std::istream& json)
     }
     else
     {
-        result.add(PropertyTree::loadJson(json));
+        auto value = PropertyTree::loadJson(json);
+
+        for(auto& child : value)
+        {
+            result.add(child);
+        }
     }
 }
 
@@ -457,14 +483,7 @@ static void parseJsonObjectBody(PropertyTree& result, std::istream& json)
 
         parseValue(child, json);
 
-        if(result.empty())
-        {
-            result = std::move(child);
-        }
-        else
-        {
-            result.add(child);
-        }
+        result.add(child);
 
         auto comma = peekToken(json);
 
