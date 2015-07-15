@@ -4,10 +4,10 @@
     \brief  The source file for the EngineObserver class.
 */
 
-// Lucious Inclues
-#include <lucious/engine/interface/EngineObserver.h>
+// Lucius Inclues
+#include <lucius/engine/interface/EngineObserver.h>
 
-namespace lucious
+namespace lucius
 {
 
 namespace engine

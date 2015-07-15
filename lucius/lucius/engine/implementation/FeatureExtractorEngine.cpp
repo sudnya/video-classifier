@@ -4,25 +4,25 @@
     \brief  The source file for the FeatureExtractorEngine class.
 */
 
-// Lucious Includes
-#include <lucious/engine/interface/FeatureExtractorEngine.h>
+// Lucius Includes
+#include <lucius/engine/interface/FeatureExtractorEngine.h>
 
-#include <lucious/network/interface/NeuralNetwork.h>
+#include <lucius/network/interface/NeuralNetwork.h>
 
-#include <lucious/results/interface/FeatureResultProcessor.h>
-#include <lucious/results/interface/FeatureResult.h>
+#include <lucius/results/interface/FeatureResultProcessor.h>
+#include <lucius/results/interface/FeatureResult.h>
 
-#include <lucious/results/interface/ResultVector.h>
+#include <lucius/results/interface/ResultVector.h>
 
-#include <lucious/model/interface/Model.h>
+#include <lucius/model/interface/Model.h>
 
-#include <lucious/matrix/interface/Matrix.h>
-#include <lucious/matrix/interface/MatrixTransformations.h>
+#include <lucius/matrix/interface/Matrix.h>
+#include <lucius/matrix/interface/MatrixTransformations.h>
 
 // Standard Library Includes
 #include <cassert>
 
-namespace lucious
+namespace lucius
 {
 
 namespace engine

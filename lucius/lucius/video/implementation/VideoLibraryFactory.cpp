@@ -4,11 +4,11 @@
 	\brief  The header file for the VideoLibraryFactory class.
 */
 
-// Lucious Includes
-#include <lucious/video/interface/VideoLibraryFactory.h>
-#include <lucious/video/interface/OpenCVVideoLibrary.h>
+// Lucius Includes
+#include <lucius/video/interface/VideoLibraryFactory.h>
+#include <lucius/video/interface/OpenCVVideoLibrary.h>
 
-namespace lucious
+namespace lucius
 {
 
 namespace video

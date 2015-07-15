@@ -11,10 +11,10 @@
 #define SCREEN_WIDTH 80
 
 #include <sstream>
-#include <lucious/util/interface/macros.h>
+#include <lucius/util/interface/macros.h>
 #include <cassert>
 #include "debug.h"
-#include <lucious/util/interface/string.h>
+#include <lucius/util/interface/string.h>
 
 #ifdef REPORT_BASE
 #undef REPORT_BASE 
@@ -22,7 +22,7 @@
 
 #define REPORT_BASE 0
 
-namespace lucious
+namespace lucius
 {
 
 namespace util

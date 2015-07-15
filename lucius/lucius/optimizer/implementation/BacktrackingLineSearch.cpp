@@ -4,19 +4,19 @@
     \brief  The source file for the BacktrackingLineSearch class.
 */
 
-// Lucious Includes
-#include <lucious/optimizer/interface/BacktrackingLineSearch.h>
+// Lucius Includes
+#include <lucius/optimizer/interface/BacktrackingLineSearch.h>
 
-#include <lucious/optimizer/interface/CostAndGradientFunction.h>
+#include <lucius/optimizer/interface/CostAndGradientFunction.h>
 
-#include <lucious/matrix/interface/MatrixVector.h>
-#include <lucious/matrix/interface/MatrixVectorOperations.h>
-#include <lucious/matrix/interface/Operation.h>
+#include <lucius/matrix/interface/MatrixVector.h>
+#include <lucius/matrix/interface/MatrixVectorOperations.h>
+#include <lucius/matrix/interface/Operation.h>
 
-#include <lucious/util/interface/Knobs.h>
-#include <lucious/util/interface/debug.h>
+#include <lucius/util/interface/Knobs.h>
+#include <lucius/util/interface/debug.h>
 
-namespace lucious
+namespace lucius
 {
 
 namespace optimizer

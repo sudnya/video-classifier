@@ -11,13 +11,13 @@
 #ifndef TIMER_H_INCLUDED
 #define TIMER_H_INCLUDED
 
-#include <lucious/util/interface/LowLevelTimer.h>
+#include <lucius/util/interface/LowLevelTimer.h>
 #include <string>
 
 /*!
 	\brief a namespace for hydrazine classes and functions
 */
-namespace lucious
+namespace lucius
 {
 
 namespace util

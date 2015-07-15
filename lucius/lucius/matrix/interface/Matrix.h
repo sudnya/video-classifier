@@ -6,11 +6,11 @@
 
 #pragma once
 
-// Lucious Includes
-#include <lucious/matrix/interface/FloatReference.h>
-#include <lucious/matrix/interface/FloatIterator.h>
-#include <lucious/matrix/interface/Dimension.h>
-#include <lucious/matrix/interface/Precision.h>
+// Lucius Includes
+#include <lucius/matrix/interface/FloatReference.h>
+#include <lucius/matrix/interface/FloatIterator.h>
+#include <lucius/matrix/interface/Dimension.h>
+#include <lucius/matrix/interface/Precision.h>
 
 // Standard Library Includes
 #include <string>
@@ -18,9 +18,9 @@
 #include <memory>
 
 // Forward Declarations
-namespace lucious { namespace matrix { class Allocation; } }
+namespace lucius { namespace matrix { class Allocation; } }
 
-namespace lucious
+namespace lucius
 {
 
 namespace matrix

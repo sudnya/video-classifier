@@ -4,11 +4,11 @@
 	\brief  The source file for the ImageLibraryFactory class.
 */
 
-// Lucious Includes
-#include <lucious/video/interface/ImageLibraryFactory.h>
-#include <lucious/video/interface/OpenCVImageLibrary.h>
+// Lucius Includes
+#include <lucius/video/interface/ImageLibraryFactory.h>
+#include <lucius/video/interface/OpenCVImageLibrary.h>
 
-namespace lucious
+namespace lucius
 {
 
 namespace video

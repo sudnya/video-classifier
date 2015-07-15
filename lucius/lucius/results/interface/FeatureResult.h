@@ -6,16 +6,16 @@
 
 #pragma once
 
-// Lucious Includes
-#include <lucious/results/interface/Result.h>
+// Lucius Includes
+#include <lucius/results/interface/Result.h>
 
 // Standard Library Includes
 #include <memory>
 
 // Forward Declarations
-namespace lucious { namespace matrix { class Matrix; } }
+namespace lucius { namespace matrix { class Matrix; } }
 
-namespace lucious
+namespace lucius
 {
 
 namespace results

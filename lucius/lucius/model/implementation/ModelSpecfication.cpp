@@ -4,23 +4,23 @@
 	\brief  The source file for the ModelSpecification class.
 */
 
-// Lucious Includes
-#include <lucious/model/interface/ModelSpecification.h>
-#include <lucious/model/interface/Model.h>
+// Lucius Includes
+#include <lucius/model/interface/ModelSpecification.h>
+#include <lucius/model/interface/Model.h>
 
-#include <lucious/network/interface/NeuralNetwork.h>
-#include <lucious/network/interface/Layer.h>
-#include <lucious/network/interface/LayerFactory.h>
+#include <lucius/network/interface/NeuralNetwork.h>
+#include <lucius/network/interface/Layer.h>
+#include <lucius/network/interface/LayerFactory.h>
 
-#include <lucious/matrix/interface/Dimension.h>
+#include <lucius/matrix/interface/Dimension.h>
 
-#include <lucious/util/interface/json.h>
+#include <lucius/util/interface/json.h>
 
 // Standard Library Includes
 #include <sstream>
 #include <random>
 
-namespace lucious
+namespace lucius
 {
 
 namespace model

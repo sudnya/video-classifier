@@ -5,12 +5,12 @@
 #ifndef ARGUMENT_PARSER_CPP_INCLUDED
 #define ARGUMENT_PARSER_CPP_INCLUDED
 
-#include <lucious/util/interface/ArgumentParser.h>
+#include <lucius/util/interface/ArgumentParser.h>
 
 // Standard Library Includes
 #include <cstdlib>
 
-namespace lucious
+namespace lucius
 {
 
 namespace util

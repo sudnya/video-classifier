@@ -4,24 +4,24 @@
     \brief  The source file for the ClassifierEngine class.
 */
 
-// Lucious Includes
-#include <lucious/engine/interface/ClassifierEngine.h>
+// Lucius Includes
+#include <lucius/engine/interface/ClassifierEngine.h>
 
-#include <lucious/network/interface/NeuralNetwork.h>
+#include <lucius/network/interface/NeuralNetwork.h>
 
-#include <lucious/model/interface/Model.h>
+#include <lucius/model/interface/Model.h>
 
-#include <lucious/results/interface/ResultProcessorFactory.h>
-#include <lucious/results/interface/LabelMatchResult.h>
-#include <lucious/results/interface/LabelResult.h>
-#include <lucious/results/interface/ResultVector.h>
+#include <lucius/results/interface/ResultProcessorFactory.h>
+#include <lucius/results/interface/LabelMatchResult.h>
+#include <lucius/results/interface/LabelResult.h>
+#include <lucius/results/interface/ResultVector.h>
 
-#include <lucious/matrix/interface/Matrix.h>
-#include <lucious/matrix/interface/MatrixTransformations.h>
+#include <lucius/matrix/interface/Matrix.h>
+#include <lucius/matrix/interface/MatrixTransformations.h>
 
-#include <lucious/util/interface/debug.h>
+#include <lucius/util/interface/debug.h>
 
-namespace lucious
+namespace lucius
 {
 
 namespace engine

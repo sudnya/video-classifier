@@ -7,13 +7,13 @@
 
 #pragma once
 
-// Lucious Includes
-#include <lucious/optimizer/interface/LineSearch.h>
+// Lucius Includes
+#include <lucius/optimizer/interface/LineSearch.h>
 
 // Standard Library Includes
 #include <cstring>
 
-namespace lucious
+namespace lucius
 {
 
 namespace optimizer

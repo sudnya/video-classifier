@@ -4,31 +4,31 @@
      \brief  The implementation of the RecurrentLayer class.
 */
 
-// Lucious Includes
-#include <lucious/network/interface/RecurrentLayer.h>
+// Lucius Includes
+#include <lucius/network/interface/RecurrentLayer.h>
 
-#include <lucious/network/interface/ActivationFunction.h>
-#include <lucious/network/interface/ActivationCostFunction.h>
-#include <lucious/network/interface/WeightCostFunction.h>
+#include <lucius/network/interface/ActivationFunction.h>
+#include <lucius/network/interface/ActivationCostFunction.h>
+#include <lucius/network/interface/WeightCostFunction.h>
 
-#include <lucious/matrix/interface/CopyOperations.h>
-#include <lucious/matrix/interface/MatrixOperations.h>
-#include <lucious/matrix/interface/MatrixTransformations.h>
-#include <lucious/matrix/interface/BlasOperations.h>
-#include <lucious/matrix/interface/RandomOperations.h>
-#include <lucious/matrix/interface/RecurrentOperations.h>
-#include <lucious/matrix/interface/Operation.h>
-#include <lucious/matrix/interface/MatrixVector.h>
-#include <lucious/matrix/interface/Matrix.h>
-#include <lucious/matrix/interface/FileOperations.h>
+#include <lucius/matrix/interface/CopyOperations.h>
+#include <lucius/matrix/interface/MatrixOperations.h>
+#include <lucius/matrix/interface/MatrixTransformations.h>
+#include <lucius/matrix/interface/BlasOperations.h>
+#include <lucius/matrix/interface/RandomOperations.h>
+#include <lucius/matrix/interface/RecurrentOperations.h>
+#include <lucius/matrix/interface/Operation.h>
+#include <lucius/matrix/interface/MatrixVector.h>
+#include <lucius/matrix/interface/Matrix.h>
+#include <lucius/matrix/interface/FileOperations.h>
 
-#include <lucious/util/interface/debug.h>
-#include <lucious/util/interface/Knobs.h>
-#include <lucious/util/interface/memory.h>
-#include <lucious/util/interface/TarArchive.h>
-#include <lucious/util/interface/PropertyTree.h>
+#include <lucius/util/interface/debug.h>
+#include <lucius/util/interface/Knobs.h>
+#include <lucius/util/interface/memory.h>
+#include <lucius/util/interface/TarArchive.h>
+#include <lucius/util/interface/PropertyTree.h>
 
-namespace lucious
+namespace lucius
 {
 
 namespace network

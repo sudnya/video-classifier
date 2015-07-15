@@ -1,36 +1,36 @@
-/*	\file   lucious-classifier.cpp
+/*	\file   lucius-classifier.cpp
 	\date   Saturday August 10, 2013
 	\author Gregory Diamos <solusstultus@gmail.com>
 	\brief  The interface to the video classifier tool.
 */
 
-// Lucious Includes
-#include <lucious/engine/interface/EngineFactory.h>
-#include <lucious/engine/interface/Engine.h>
+// Lucius Includes
+#include <lucius/engine/interface/EngineFactory.h>
+#include <lucius/engine/interface/Engine.h>
 
-#include <lucious/visualization/interface/NeuronVisualizer.h>
+#include <lucius/visualization/interface/NeuronVisualizer.h>
 
-#include <lucious/model/interface/ModelBuilder.h>
-#include <lucious/model/interface/Model.h>
+#include <lucius/model/interface/ModelBuilder.h>
+#include <lucius/model/interface/Model.h>
 
-#include <lucious/video/interface/Image.h>
+#include <lucius/video/interface/Image.h>
 
-#include <lucious/network/interface/NeuralNetwork.h>
+#include <lucius/network/interface/NeuralNetwork.h>
 
-#include <lucious/util/interface/ArgumentParser.h>
-#include <lucious/util/interface/paths.h>
-#include <lucious/util/interface/debug.h>
-#include <lucious/util/interface/Knobs.h>
+#include <lucius/util/interface/ArgumentParser.h>
+#include <lucius/util/interface/paths.h>
+#include <lucius/util/interface/debug.h>
+#include <lucius/util/interface/Knobs.h>
 
 // Standard Library Includes
 #include <stdexcept>
 #include <fstream>
 #include <memory>
 
-namespace lucious
+namespace lucius
 {
 
-typedef lucious::util::StringVector StringVector;
+typedef lucius::util::StringVector StringVector;
 
 static void setOptions(const std::string& options);
 
@@ -92,7 +92,7 @@ static void runClassifier(const std::string& outputFilename,
 	const std::string& inputFileNames, const std::string& modelFileName,
 	bool shouldClassify, bool shouldTrain, bool shouldLearnFeatures, bool shouldExtractFeatures)
 {
-	util::log("lucious-classifier") << "Loading classifier.\n";
+	util::log("lucius-classifier") << "Loading classifier.\n";
 
 	try
 	{
@@ -115,7 +115,7 @@ static void runClassifier(const std::string& outputFilename,
 	}
 	catch(const std::exception& e)
 	{
-		std::cout << "Lucious Classifier Failed:\n";
+		std::cout << "Lucius Classifier Failed:\n";
 		std::cout << "Message: " << e.what() << "\n\n";
 	}
 	
@@ -252,7 +252,7 @@ static void setupKnobs(size_t maximumSamples, size_t batchSize)
 
 int main(int argc, char** argv)
 {
-	lucious::util::ArgumentParser parser(argc, argv);
+	lucius::util::ArgumentParser parser(argc, argv);
 	
 	std::string inputFileNames;
 	std::string modelFileName;
@@ -274,7 +274,7 @@ int main(int argc, char** argv)
 	
 	bool verbose = false;
 
-	parser.description("The Lucious image and video classifier.");
+	parser.description("The Lucius image and video classifier.");
 
 	parser.parse("-i", "--input",  inputFileNames,
 		"", "The input image or video database path.");
@@ -314,39 +314,39 @@ int main(int argc, char** argv)
 		"(comma-separated list of modules, e.g. NeuralNetwork, Layer, ...).");
 	parser.parse();
 
-	lucious::setupKnobs(maximumSamples, batchSize);
+	lucius::setupKnobs(maximumSamples, batchSize);
 
 	if(verbose)
 	{
-		lucious::util::enableAllLogs();
+		lucius::util::enableAllLogs();
 	}
 	else
 	{
-		lucious::enableSpecificLogs(loggingEnabledModules);
+		lucius::enableSpecificLogs(loggingEnabledModules);
 	}
 
 	try
 	{
-		lucious::setOptions(options);
+		lucius::setOptions(options);
 		
 		if(createNewModel)
 		{
-			lucious::createNewModel(modelFileName, modelSpecificationPath);
+			lucius::createNewModel(modelFileName, modelSpecificationPath);
 		}
 		else if(visualizeNetwork)
 		{
-			lucious::visualizeNeurons(modelFileName, outputPath);
+			lucius::visualizeNeurons(modelFileName, outputPath);
 		}
 		else
 		{
-			lucious::runClassifier(outputPath, inputFileNames, modelFileName, 
+			lucius::runClassifier(outputPath, inputFileNames, modelFileName, 
 				shouldClassify, shouldTrain, shouldLearnFeatures,
 				shouldExtractFeatures);
 		}
 	}
 	catch(const std::exception& e)
 	{
-		std::cout << "Lucious Classifier Failed:\n";
+		std::cout << "Lucius Classifier Failed:\n";
 		std::cout << "Message: " << e.what() << "\n\n";
 	}
 

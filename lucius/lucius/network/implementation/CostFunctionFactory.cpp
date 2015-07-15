@@ -4,13 +4,13 @@
     \brief  The header file for the CostFunctionFactory class.
 */
 
-// Lucious Includes
-#include <lucious/network/interface/CostFunctionFactory.h>
+// Lucius Includes
+#include <lucius/network/interface/CostFunctionFactory.h>
 
-#include <lucious/network/interface/SumOfSquaresCostFunction.h>
-#include <lucious/network/interface/SoftmaxCostFunction.h>
+#include <lucius/network/interface/SumOfSquaresCostFunction.h>
+#include <lucius/network/interface/SoftmaxCostFunction.h>
 
-namespace lucious
+namespace lucius
 {
 
 namespace network

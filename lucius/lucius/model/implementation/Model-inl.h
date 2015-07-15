@@ -6,14 +6,14 @@
 
 #pragma once
 
-// Lucious Includes
-#include <lucious/model/interface/Model.h>
+// Lucius Includes
+#include <lucius/model/interface/Model.h>
 
 // Standard Library Includes
 #include <sstream>
 #include <cassert>
 
-namespace lucious
+namespace lucius
 {
 
 namespace model

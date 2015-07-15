@@ -4,17 +4,17 @@
 	\brief  The source file for the Knob class.
 */
 
-// Lucious Includes
-#include <lucious/util/interface/Knobs.h>
-#include <lucious/util/interface/KnobFile.h>
+// Lucius Includes
+#include <lucius/util/interface/Knobs.h>
+#include <lucius/util/interface/KnobFile.h>
 
-#include <lucious/util/interface/SystemCompatibility.h>
+#include <lucius/util/interface/SystemCompatibility.h>
 
 // Standard Library Includes
 #include <stdexcept>
 #include <map>
 
-namespace lucious
+namespace lucius
 {
 
 namespace util

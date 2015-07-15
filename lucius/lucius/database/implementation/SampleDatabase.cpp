@@ -4,16 +4,16 @@
 	\brief  The source file for the SampleDatabase class.
 */
 
-// Lucious Includes
-#include <lucious/database/interface/SampleDatabase.h>
-#include <lucious/database/interface/SampleDatabaseParser.h>
-#include <lucious/database/interface/Sample.h>
+// Lucius Includes
+#include <lucius/database/interface/SampleDatabase.h>
+#include <lucius/database/interface/SampleDatabaseParser.h>
+#include <lucius/database/interface/Sample.h>
 
 // Standard Library Includes
 #include <fstream>
 #include <stdexcept>
 
-namespace lucious
+namespace lucius
 {
 
 namespace database

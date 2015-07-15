@@ -12,9 +12,9 @@
 #include <set>
 
 // Forward Declarations
-namespace lucious { namespace database { class Sample; } }
+namespace lucius { namespace database { class Sample; } }
 
-namespace lucious
+namespace lucius
 {
 
 namespace database

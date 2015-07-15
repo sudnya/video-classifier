@@ -4,16 +4,16 @@
     \brief  The source file for the InputDataProducer class.
 */
 
-// Lucious Includes
-#include <lucious/input/interface/InputDataProducerFactory.h>
+// Lucius Includes
+#include <lucius/input/interface/InputDataProducerFactory.h>
 
-#include <lucious/input/interface/InputAudioDataProducer.h>
-#include <lucious/input/interface/InputTextDataProducer.h>
-#include <lucious/input/interface/InputVisualDataProducer.h>
+#include <lucius/input/interface/InputAudioDataProducer.h>
+#include <lucius/input/interface/InputTextDataProducer.h>
+#include <lucius/input/interface/InputVisualDataProducer.h>
 
-#include <lucious/database/interface/SampleDatabase.h>
+#include <lucius/database/interface/SampleDatabase.h>
 
-namespace lucious
+namespace lucius
 {
 
 namespace input

@@ -4,16 +4,16 @@
 	\brief  The source file for the OpenCVImageLibrary class.
 */
 
-// Lucious Includes
-#include <lucious/video/interface/OpenCVImageLibrary.h>
-#include <lucious/video/interface/OpenCVLibrary.h>
+// Lucius Includes
+#include <lucius/video/interface/OpenCVImageLibrary.h>
+#include <lucius/video/interface/OpenCVLibrary.h>
 
-#include <lucious/util/interface/string.h>
+#include <lucius/util/interface/string.h>
 
 // Standard Library Interface
 #include <stdexcept>
 
-namespace lucious
+namespace lucius
 {
 
 namespace video

@@ -4,51 +4,51 @@
     \brief  A benchmark for test for classifying image net images
 */
 
-// Lucious Includes
-#include <lucious/engine/interface/Engine.h>
-#include <lucious/engine/interface/EngineFactory.h>
-#include <lucious/engine/interface/EngineObserverFactory.h>
-#include <lucious/engine/interface/EngineObserver.h>
+// Lucius Includes
+#include <lucius/engine/interface/Engine.h>
+#include <lucius/engine/interface/EngineFactory.h>
+#include <lucius/engine/interface/EngineObserverFactory.h>
+#include <lucius/engine/interface/EngineObserver.h>
 
-#include <lucious/model/interface/Model.h>
+#include <lucius/model/interface/Model.h>
 
-#include <lucious/database/interface/SampleDatabase.h>
+#include <lucius/database/interface/SampleDatabase.h>
 
-#include <lucious/results/interface/ResultProcessor.h>
-#include <lucious/results/interface/LabelMatchResultProcessor.h>
+#include <lucius/results/interface/ResultProcessor.h>
+#include <lucius/results/interface/LabelMatchResultProcessor.h>
 
-#include <lucious/network/interface/NeuralNetwork.h>
-#include <lucious/network/interface/FeedForwardLayer.h>
-#include <lucious/network/interface/ConvolutionalLayer.h>
-#include <lucious/network/interface/CostFunctionFactory.h>
+#include <lucius/network/interface/NeuralNetwork.h>
+#include <lucius/network/interface/FeedForwardLayer.h>
+#include <lucius/network/interface/ConvolutionalLayer.h>
+#include <lucius/network/interface/CostFunctionFactory.h>
 
-#include <lucious/network/interface/ActivationFunctionFactory.h>
+#include <lucius/network/interface/ActivationFunctionFactory.h>
 
-#include <lucious/video/interface/Image.h>
-#include <lucious/video/interface/ImageVector.h>
+#include <lucius/video/interface/Image.h>
+#include <lucius/video/interface/ImageVector.h>
 
-#include <lucious/matrix/interface/RandomOperations.h>
-#include <lucious/matrix/interface/Matrix.h>
+#include <lucius/matrix/interface/RandomOperations.h>
+#include <lucius/matrix/interface/Matrix.h>
 
-#include <lucious/util/interface/debug.h>
-#include <lucious/util/interface/paths.h>
-#include <lucious/util/interface/memory.h>
-#include <lucious/util/interface/ArgumentParser.h>
-#include <lucious/util/interface/Knobs.h>
+#include <lucius/util/interface/debug.h>
+#include <lucius/util/interface/paths.h>
+#include <lucius/util/interface/memory.h>
+#include <lucius/util/interface/ArgumentParser.h>
+#include <lucius/util/interface/Knobs.h>
 
 // Type definitions
-typedef lucious::video::Image Image;
-typedef lucious::network::NeuralNetwork NeuralNetwork;
-typedef lucious::network::FeedForwardLayer FeedForwardLayer;
-typedef lucious::network::ConvolutionalLayer ConvolutionalLayer;
-typedef lucious::video::ImageVector ImageVector;
-typedef lucious::matrix::Matrix Matrix;
-typedef lucious::matrix::Dimension Dimension;
-typedef lucious::model::Model Model;
-typedef lucious::engine::Engine Engine;
-typedef lucious::engine::EngineObserverFactory EngineObserverFactory;
-typedef lucious::database::SampleDatabase SampleDatabase;
-typedef lucious::results::LabelMatchResultProcessor LabelMatchResultProcessor;
+typedef lucius::video::Image Image;
+typedef lucius::network::NeuralNetwork NeuralNetwork;
+typedef lucius::network::FeedForwardLayer FeedForwardLayer;
+typedef lucius::network::ConvolutionalLayer ConvolutionalLayer;
+typedef lucius::video::ImageVector ImageVector;
+typedef lucius::matrix::Matrix Matrix;
+typedef lucius::matrix::Dimension Dimension;
+typedef lucius::model::Model Model;
+typedef lucius::engine::Engine Engine;
+typedef lucius::engine::EngineObserverFactory EngineObserverFactory;
+typedef lucius::database::SampleDatabase SampleDatabase;
+typedef lucius::results::LabelMatchResultProcessor LabelMatchResultProcessor;
 
 class Parameters
 {
@@ -168,13 +168,13 @@ static void addClassifier(Model& model, const Parameters& parameters)
     }
 
     classifier.setCostFunction(
-        lucious::network::CostFunctionFactory::create("SoftMaxCostFunction"));
+        lucius::network::CostFunctionFactory::create("SoftMaxCostFunction"));
 
     classifier.initialize();
 
     model.setNeuralNetwork("Classifier", classifier);
 
-    lucious::util::log("BenchmarkImageNet") << "Classifier Architecture "
+    lucius::util::log("BenchmarkImageNet") << "Classifier Architecture "
         << classifier.shapeString() << "\n";
 }
 
@@ -191,7 +191,7 @@ static void setSampleStatistics(Model& model, const Parameters& parameters)
 {
     // Setup sample stats
     std::unique_ptr<Engine> engine(
-        lucious::engine::EngineFactory::create("SampleStatisticsEngine"));
+        lucius::engine::EngineFactory::create("SampleStatisticsEngine"));
 
     engine->setModel(&model);
     engine->setBatchSize(128);
@@ -204,7 +204,7 @@ static void setSampleStatistics(Model& model, const Parameters& parameters)
 static void trainNetwork(Model& model, const Parameters& parameters)
 {
     // Train the network
-    std::unique_ptr<Engine> engine(lucious::engine::EngineFactory::create("LearnerEngine"));
+    std::unique_ptr<Engine> engine(lucius::engine::EngineFactory::create("LearnerEngine"));
 
     engine->setModel(&model);
     engine->setEpochs(parameters.epochs);
@@ -220,7 +220,7 @@ static void trainNetwork(Model& model, const Parameters& parameters)
 
 static double testNetwork(Model& model, const Parameters& parameters)
 {
-    std::unique_ptr<Engine> engine(lucious::engine::EngineFactory::create("ClassifierEngine"));
+    std::unique_ptr<Engine> engine(lucius::engine::EngineFactory::create("ClassifierEngine"));
 
     engine->setBatchSize(128);
     engine->setModel(&model);
@@ -233,7 +233,7 @@ static double testNetwork(Model& model, const Parameters& parameters)
     // get the result processor
     auto resultProcessor = static_cast<LabelMatchResultProcessor*>(engine->getResultProcessor());
 
-    lucious::util::log("BenchmarkImageNet") << resultProcessor->toString();
+    lucius::util::log("BenchmarkImageNet") << resultProcessor->toString();
 
     return resultProcessor->getAccuracy();
 }
@@ -242,11 +242,11 @@ static void runBenchmark(const Parameters& parameters)
 {
     if(parameters.seed)
     {
-        lucious::matrix::srand(std::time(0));
+        lucius::matrix::srand(std::time(0));
     }
     else
     {
-        lucious::matrix::srand(82912);
+        lucius::matrix::srand(82912);
     }
 
     // Create a deep model for first layer classification
@@ -276,27 +276,27 @@ static void runBenchmark(const Parameters& parameters)
 
 static void setupSolverParameters()
 {
-    lucious::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::LearningRate", "1.0e-2");
-    lucious::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::Momentum", "0.9");
-    lucious::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::AnnealingRate", "1.00000");
-    lucious::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::MaxGradNorm", "10.0");
-    lucious::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::IterationsPerBatch", "1");
-    lucious::util::KnobDatabase::setKnob("GeneralDifferentiableSolver::Type",
+    lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::LearningRate", "1.0e-2");
+    lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::Momentum", "0.9");
+    lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::AnnealingRate", "1.00000");
+    lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::MaxGradNorm", "10.0");
+    lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::IterationsPerBatch", "1");
+    lucius::util::KnobDatabase::setKnob("GeneralDifferentiableSolver::Type",
         "NesterovAcceleratedGradientSolver");
-    lucious::util::KnobDatabase::setKnob("InputVisualDataProducer::CropImages", "0");
-    //lucious::util::KnobDatabase::setKnob("GeneralDifferentiableSolver::Type", "LBFGSSolver");
+    lucius::util::KnobDatabase::setKnob("InputVisualDataProducer::CropImages", "0");
+    //lucius::util::KnobDatabase::setKnob("GeneralDifferentiableSolver::Type", "LBFGSSolver");
 }
 
 int main(int argc, char** argv)
 {
-    lucious::util::ArgumentParser parser(argc, argv);
+    lucius::util::ArgumentParser parser(argc, argv);
 
     Parameters parameters;
 
     std::string loggingEnabledModules;
     bool verbose = false;
 
-    parser.description("A test for lucious difficult classication performance.");
+    parser.description("A test for lucius difficult classication performance.");
 
     parser.parse("-i", "--input-path", parameters.inputPath,
         "examples/image-net/training/training-set.txt",
@@ -339,14 +339,14 @@ int main(int argc, char** argv)
 
     if(verbose)
     {
-        lucious::util::enableAllLogs();
+        lucius::util::enableAllLogs();
     }
     else
     {
-        lucious::util::enableSpecificLogs(loggingEnabledModules);
+        lucius::util::enableSpecificLogs(loggingEnabledModules);
     }
 
-    lucious::util::log("BenchmarkImageNet") << "Benchmark begins\n";
+    lucius::util::log("BenchmarkImageNet") << "Benchmark begins\n";
 
     try
     {
@@ -354,7 +354,7 @@ int main(int argc, char** argv)
     }
     catch(const std::exception& e)
     {
-        std::cout << "Lucious Image-Net Benchmark Failed:\n";
+        std::cout << "Lucius Image-Net Benchmark Failed:\n";
         std::cout << "Message: " << e.what() << "\n\n";
     }
 

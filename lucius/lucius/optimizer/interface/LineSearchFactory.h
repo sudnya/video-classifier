@@ -11,9 +11,9 @@
 #include <memory>
 
 // Forward Declarations
-namespace lucious { namespace optimizer { class LineSearch; } }
+namespace lucius { namespace optimizer { class LineSearch; } }
 
-namespace lucious
+namespace lucius
 {
 
 namespace optimizer

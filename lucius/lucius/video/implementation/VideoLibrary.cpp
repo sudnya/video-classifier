@@ -4,10 +4,10 @@
 	\brief  The source file for the VideoLibrary class.
 */
 
-// Lucious Includes
-#include <lucious/video/interface/VideoLibrary.h>
+// Lucius Includes
+#include <lucius/video/interface/VideoLibrary.h>
 
-namespace lucious
+namespace lucius
 {
 
 namespace video

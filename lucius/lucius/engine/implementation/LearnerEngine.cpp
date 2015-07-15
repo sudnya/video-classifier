@@ -4,21 +4,21 @@
     \brief  The source file for the LearnerEngine class.
 */
 
-// Lucious Includes
-#include <lucious/engine/interface/LearnerEngine.h>
+// Lucius Includes
+#include <lucius/engine/interface/LearnerEngine.h>
 
-#include <lucious/network/interface/NeuralNetwork.h>
+#include <lucius/network/interface/NeuralNetwork.h>
 
-#include <lucious/results/interface/ResultVector.h>
+#include <lucius/results/interface/ResultVector.h>
 
-#include <lucious/matrix/interface/Matrix.h>
+#include <lucius/matrix/interface/Matrix.h>
 
-#include <lucious/util/interface/debug.h>
+#include <lucius/util/interface/debug.h>
 
 // Standard Library Includes
 #include <cassert>
 
-namespace lucious
+namespace lucius
 {
 
 namespace engine

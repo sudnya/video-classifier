@@ -6,17 +6,17 @@
 
 #pragma once
 
-// Lucious Includes
-#include <lucious/util/interface/ParameterPack.h>
+// Lucius Includes
+#include <lucius/util/interface/ParameterPack.h>
 
 // Standard Library
 #include <string>
 #include <memory>
 
 // Forward Declarations
-namespace lucious { namespace network { class Layer; } }
+namespace lucius { namespace network { class Layer; } }
 
-namespace lucious
+namespace lucius
 {
 
 namespace network

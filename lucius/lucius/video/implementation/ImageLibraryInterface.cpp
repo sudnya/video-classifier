@@ -4,19 +4,19 @@
 	\brief  The source file for the ImageLibraryInterface class.
 */
 
-// Lucious Includes
-#include <lucious/video/interface/ImageLibraryInterface.h>
+// Lucius Includes
+#include <lucius/video/interface/ImageLibraryInterface.h>
 
-#include <lucious/video/interface/ImageLibrary.h>
-#include <lucious/video/interface/ImageLibraryFactory.h>
+#include <lucius/video/interface/ImageLibrary.h>
+#include <lucius/video/interface/ImageLibraryFactory.h>
 
-#include <lucious/util/interface/paths.h>
+#include <lucius/util/interface/paths.h>
 
 // Standard Library Includes
 #include <map>
 #include <stdexcept>
 
-namespace lucious
+namespace lucius
 {
 
 namespace video

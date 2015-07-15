@@ -8,7 +8,7 @@
 
 // Forward Declarations
 
-namespace lucious
+namespace lucius
 {
 
 namespace matrix

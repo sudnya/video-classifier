@@ -4,18 +4,18 @@
     \brief  The source file for the CurandLibrary class.
 */
 
-// Lucious Includes
-#include <lucious/matrix/interface/CurandLibrary.h>
+// Lucius Includes
+#include <lucius/matrix/interface/CurandLibrary.h>
 
-#include <lucious/parallel/interface/cuda.h>
+#include <lucius/parallel/interface/cuda.h>
 
-#include <lucious/util/interface/Casts.h>
+#include <lucius/util/interface/Casts.h>
 
 // System-Specific Includes
 #include <dlfcn.h>
 #include <stdexcept>
 
-namespace lucious
+namespace lucius
 {
 
 namespace matrix

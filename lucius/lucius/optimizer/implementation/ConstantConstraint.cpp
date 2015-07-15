@@ -4,16 +4,16 @@
     \brief  The source file for the ConstantConstraint class.
 */
 
-// Lucious Includes
-#include <lucious/optimizer/interface/ConstantConstraint.h>
+// Lucius Includes
+#include <lucius/optimizer/interface/ConstantConstraint.h>
 
-#include <lucious/matrix/interface/Matrix.h>
-#include <lucious/matrix/interface/MatrixOperations.h>
-#include <lucious/matrix/interface/Operation.h>
+#include <lucius/matrix/interface/Matrix.h>
+#include <lucius/matrix/interface/MatrixOperations.h>
+#include <lucius/matrix/interface/Operation.h>
 
-#include <lucious/util/interface/debug.h>
+#include <lucius/util/interface/debug.h>
 
-namespace lucious
+namespace lucius
 {
 
 namespace optimizer

@@ -8,9 +8,9 @@
 #ifndef CASTS_H_INCLUDED
 #define CASTS_H_INCLUDED
 
-#include <lucious/util/interface/debug.h>
+#include <lucius/util/interface/debug.h>
 
-namespace lucious
+namespace lucius
 {
 
 namespace util

@@ -4,18 +4,18 @@
     \brief  The source file for the ModelCheckpointer class.
 */
 
-// Lucious Includes
-#include <lucious/engine/interface/ModelCheckpointer.h>
+// Lucius Includes
+#include <lucius/engine/interface/ModelCheckpointer.h>
 
-#include <lucious/engine/interface/Engine.h>
+#include <lucius/engine/interface/Engine.h>
 
-#include <lucious/model/interface/Model.h>
+#include <lucius/model/interface/Model.h>
 
 // Standard Library Includes
 #include <fstream>
 #include <stdexcept>
 
-namespace lucious
+namespace lucius
 {
 
 namespace engine

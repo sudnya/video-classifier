@@ -4,18 +4,18 @@
     \brief  The source file for the LabelMatchResultProcessor class.
 */
 
-// Lucious Includes
-#include <lucious/results/interface/LabelMatchResultProcessor.h>
-#include <lucious/results/interface/LabelMatchResult.h>
-#include <lucious/results/interface/ResultVector.h>
+// Lucius Includes
+#include <lucius/results/interface/LabelMatchResultProcessor.h>
+#include <lucius/results/interface/LabelMatchResult.h>
+#include <lucius/results/interface/ResultVector.h>
 
-#include <lucious/util/interface/debug.h>
+#include <lucius/util/interface/debug.h>
 
 // Standard Library Includes
 #include <sstream>
 #include <cassert>
 
-namespace lucious
+namespace lucius
 {
 
 namespace results

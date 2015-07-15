@@ -8,8 +8,8 @@
 	\date 27 Oct 2009
 */
 
-#include <lucious/util/interface/json.h>
-#include <lucious/util/interface/debug.h>
+#include <lucius/util/interface/json.h>
+#include <lucius/util/interface/debug.h>
 
 #include <math.h>
 #include <sstream>
@@ -24,7 +24,7 @@
 	ss << "line " << line << ": " << msg << "\n before: " << buffer; throw std::runtime_error(ss.str()); }
 
 ////////////////////////////////////////////////////////////////////////////////
-namespace lucious {
+namespace lucius {
 namespace util {
 
 json::Value::Value(): type(Null) {

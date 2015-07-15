@@ -6,10 +6,10 @@
 
 #pragma once
 
-// Lucious Includes
-#include <lucious/optimizer/interface/GeneralNondifferentiableSolver.h>
+// Lucius Includes
+#include <lucius/optimizer/interface/GeneralNondifferentiableSolver.h>
 
-namespace lucious
+namespace lucius
 {
 
 namespace optimizer

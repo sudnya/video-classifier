@@ -3,27 +3,27 @@
  * The implementation of the layer class
  */
 
-// Lucious Includes
-#include <lucious/network/interface/Layer.h>
+// Lucius Includes
+#include <lucius/network/interface/Layer.h>
 
-#include <lucious/network/interface/ActivationCostFunction.h>
-#include <lucious/network/interface/ActivationFunction.h>
-#include <lucious/network/interface/WeightCostFunction.h>
+#include <lucius/network/interface/ActivationCostFunction.h>
+#include <lucius/network/interface/ActivationFunction.h>
+#include <lucius/network/interface/WeightCostFunction.h>
 
-#include <lucious/network/interface/ActivationCostFunctionFactory.h>
-#include <lucious/network/interface/ActivationFunctionFactory.h>
-#include <lucious/network/interface/WeightCostFunctionFactory.h>
+#include <lucius/network/interface/ActivationCostFunctionFactory.h>
+#include <lucius/network/interface/ActivationFunctionFactory.h>
+#include <lucius/network/interface/WeightCostFunctionFactory.h>
 
-#include <lucious/matrix/interface/Matrix.h>
-#include <lucious/matrix/interface/MatrixVector.h>
-#include <lucious/matrix/interface/MatrixTransformations.h>
+#include <lucius/matrix/interface/Matrix.h>
+#include <lucius/matrix/interface/MatrixVector.h>
+#include <lucius/matrix/interface/MatrixTransformations.h>
 
-#include <lucious/util/interface/PropertyTree.h>
+#include <lucius/util/interface/PropertyTree.h>
 
 // Standard Library Includes
 #include <sstream>
 
-namespace lucious
+namespace lucius
 {
 
 namespace network

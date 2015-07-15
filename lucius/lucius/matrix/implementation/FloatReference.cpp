@@ -1,15 +1,15 @@
 
-// Lucious Includes
-#include <lucious/matrix/interface/FloatReference.h>
+// Lucius Includes
+#include <lucius/matrix/interface/FloatReference.h>
 
-#include <lucious/util/interface/Metaprogramming.h>
+#include <lucius/util/interface/Metaprogramming.h>
 
-#include <lucious/parallel/interface/Synchronization.h>
+#include <lucius/parallel/interface/Synchronization.h>
 
 // Standard Library Includes
 #include <cassert>
 
-namespace lucious
+namespace lucius
 {
 namespace matrix
 {

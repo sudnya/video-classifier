@@ -4,10 +4,10 @@
     \brief  The source file for the Operation classes.
 */
 
-// Lucious Includes
-#include <lucious/matrix/interface/Operation.h>
+// Lucius Includes
+#include <lucius/matrix/interface/Operation.h>
 
-namespace lucious
+namespace lucius
 {
 namespace matrix
 {

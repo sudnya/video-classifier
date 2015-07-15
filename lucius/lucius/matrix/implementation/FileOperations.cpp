@@ -1,21 +1,21 @@
-// Lucious Includes
-#include <lucious/matrix/interface/FileOperations.h>
+// Lucius Includes
+#include <lucius/matrix/interface/FileOperations.h>
 
-#include <lucious/matrix/interface/TransposeOperations.h>
-#include <lucious/matrix/interface/CopyOperations.h>
+#include <lucius/matrix/interface/TransposeOperations.h>
+#include <lucius/matrix/interface/CopyOperations.h>
 
-#include <lucious/matrix/interface/Matrix.h>
-#include <lucious/matrix/interface/Dimension.h>
-#include <lucious/matrix/interface/Precision.h>
+#include <lucius/matrix/interface/Matrix.h>
+#include <lucius/matrix/interface/Dimension.h>
+#include <lucius/matrix/interface/Precision.h>
 
-#include <lucious/util/interface/debug.h>
-#include <lucious/util/interface/string.h>
-#include <lucious/util/interface/TarArchive.h>
+#include <lucius/util/interface/debug.h>
+#include <lucius/util/interface/string.h>
+#include <lucius/util/interface/TarArchive.h>
 
 #include <fstream>
 #include <map>
 
-namespace lucious
+namespace lucius
 {
 namespace matrix
 {

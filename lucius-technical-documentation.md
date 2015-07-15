@@ -1,8 +1,8 @@
-# **Lucious Technical Documentation**
+# **Lucius Technical Documentation**
 
 ## Overview
 
-Lucious is a high-performance open-source neural network classification system.
+Lucius is a high-performance open-source neural network classification system.
 It provides fast implementations of recently published research techniques drawn
 from the fields of computer vision, machine learning, and optimization with clean
 software interfaces that builds on multiple platforms with minimal dependencies.
@@ -10,7 +10,7 @@ software interfaces that builds on multiple platforms with minimal dependencies.
 This project implements a general purpose classification system.  The focus of
 the project is on achieving robust performance (classification accuracy) with
 minimal human interaction. Unlike most classification systems, which rely on
-domain specific heuristics to perform feature selection, Lucious uses Deep Neural
+domain specific heuristics to perform feature selection, Lucius uses Deep Neural
 networks to automatically learn important features automatically over time without
 any human interaction.
 
@@ -44,7 +44,7 @@ of this network can be used directly as features; in other words, the network
 itself becomes a feature selection system.
 
 The following image includes a visualization of some of the low level features
-(inputs that a pooling layer neuron maximally responds to) that were learned by Lucious after
+(inputs that a pooling layer neuron maximally responds to) that were learned by Lucius after
 being presented 10,000 random images.
 
 ![Layer One Features](/documentation/tech-report/images/first-layer-neurons-8x8-tiles.jpg "Layer One Feature Responses")
@@ -62,7 +62,7 @@ From this paper:
 
 The accompanying figure on the top-right shows the corresponding spatial domain representation (impulse response) of each of the Gabor Filters.
 
-Lucious is influenced by the following research groups in deep learning:
+Lucius is influenced by the following research groups in deep learning:
 
 * Andrew Ng (Automatic Feature Selection): http://ufldl.stanford.edu/wiki/index.php/UFLDL_Tutorial
 * Yann Lecun (Learning Feature Hierarchies): http://www.cs.nyu.edu/~yann/talks/lecun-20110505-lip6.pdf
@@ -70,7 +70,7 @@ Lucious is influenced by the following research groups in deep learning:
 
 ## 2. Supervised Learning
 
-Lucious uses a well known design involving an artificial neural network for supervised learning.  The input
+Lucius uses a well known design involving an artificial neural network for supervised learning.  The input
 data is preprocessed using the feature selection network.
 
 ## 3. Classification
@@ -81,7 +81,7 @@ neural networks to obtain a predicted class.
 
 ## 4. High Performance Architecture
 
-Lucious is designed with high performance in mind to be able to scale to large
+Lucius is designed with high performance in mind to be able to scale to large
 data sets. It uses three principles to achieve high performance.
 
 * Use high performance accelerator architectures (e.g. GPUs) in single nodes.
@@ -107,12 +107,12 @@ These libraries are used internally by the following interfaces:
 * The unsupervised learning module
 * The classification module
 
-In Lucious, the classification system is called a Model.  Models contain a serialized representation
+In Lucius, the classification system is called a Model.  Models contain a serialized representation
 of the entire system, including all neural networks and associated metadata.  The model builder is
 used to create a blank model with new parameters (network topology, labels, etc).
 
 Once a model has been created, it can be updated with supervised or unsupervised learning, or it
-can be used directly to perform classification.  Lucious currently supports video and image input
+can be used directly to perform classification.  Lucius currently supports video and image input
 data sets, but none of the modules are tied to this representation.  Supporting a new input format
 (e.g. text or numeric data) would simply require a new data conversion component that transforms the input
 into a standardized vector of floating point values, and presents it to the existing models.

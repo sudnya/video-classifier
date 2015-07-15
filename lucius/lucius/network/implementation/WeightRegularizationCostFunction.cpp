@@ -4,16 +4,16 @@
     \brief  The source file for the WeightRegularizationCostFunction class.
 */
 
-// Lucious Includes
-#include <lucious/network/interface/WeightRegularizationCostFunction.h>
+// Lucius Includes
+#include <lucius/network/interface/WeightRegularizationCostFunction.h>
 
-#include <lucious/matrix/interface/Matrix.h>
-#include <lucious/matrix/interface/MatrixOperations.h>
-#include <lucious/matrix/interface/Operation.h>
+#include <lucius/matrix/interface/Matrix.h>
+#include <lucius/matrix/interface/MatrixOperations.h>
+#include <lucius/matrix/interface/Operation.h>
 
-#include <lucious/util/interface/Knobs.h>
+#include <lucius/util/interface/Knobs.h>
 
-namespace lucious
+namespace lucius
 {
 
 namespace network

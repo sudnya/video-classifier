@@ -4,13 +4,13 @@
     \brief  The source file for the Vector class.
 */
 
-// Lucious Includes
-#include <lucious/video/interface/ImageVector.h>
+// Lucius Includes
+#include <lucius/video/interface/ImageVector.h>
 
-#include <lucious/util/interface/debug.h>
-#include <lucious/util/interface/math.h>
+#include <lucius/util/interface/debug.h>
+#include <lucius/util/interface/math.h>
 
-namespace lucious
+namespace lucius
 {
 
 namespace video

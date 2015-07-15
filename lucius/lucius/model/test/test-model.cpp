@@ -4,17 +4,17 @@
     \brief  The source file for the model unit tests.
 */
 
-// Lucious Includes
-#include <lucious/model/interface/Model.h>
+// Lucius Includes
+#include <lucius/model/interface/Model.h>
 
-#include <lucious/network/interface/NeuralNetwork.h>
-#include <lucious/network/interface/LayerFactory.h>
-#include <lucious/network/interface/Layer.h>
+#include <lucius/network/interface/NeuralNetwork.h>
+#include <lucius/network/interface/LayerFactory.h>
+#include <lucius/network/interface/Layer.h>
 
-#include <lucious/matrix/interface/RandomOperations.h>
-#include <lucious/matrix/interface/Matrix.h>
+#include <lucius/matrix/interface/RandomOperations.h>
+#include <lucius/matrix/interface/Matrix.h>
 
-#include <lucious/util/interface/debug.h>
+#include <lucius/util/interface/debug.h>
 
 // Standard Library Includes
 #include <iostream>
@@ -23,9 +23,9 @@
 
 bool testSaveLoad()
 {
-    lucious::matrix::srand(4);
+    lucius::matrix::srand(4);
 
-    lucious::model::Model model;
+    lucius::model::Model model;
 
     for(size_t i = 0; i < 128; ++i)
     {
@@ -36,10 +36,10 @@ bool testSaveLoad()
         model.setOutputLabel(i, labelName.str());
     }
 
-    lucious::network::NeuralNetwork network;
+    lucius::network::NeuralNetwork network;
 
     network.addLayer(
-        lucious::network::LayerFactory::create("ConvolutionalLayer",
+        lucius::network::LayerFactory::create("ConvolutionalLayer",
             std::make_tuple("InputWidth", 8),
             std::make_tuple("InputHeight", 8),
             std::make_tuple("InputColors", 3),
@@ -50,13 +50,13 @@ bool testSaveLoad()
     ));
 
     network.addLayer(
-        lucious::network::LayerFactory::create("FeedForwardLayer",
+        lucius::network::LayerFactory::create("FeedForwardLayer",
             std::make_tuple("InputSize", network.getOutputCount()),
             std::make_tuple("OutputSize", network.getOutputCount()))
     );
 
     network.addLayer(
-        lucious::network::LayerFactory::create("FeedForwardLayer",
+        lucius::network::LayerFactory::create("FeedForwardLayer",
             std::make_tuple("InputSize", network.getOutputCount()),
             std::make_tuple("OutputSize", 128))
     );
@@ -65,7 +65,7 @@ bool testSaveLoad()
 
     model.setNeuralNetwork("Classifier", network);
 
-    auto input     = lucious::matrix::rand(network.getInputSize(), network.precision());
+    auto input     = lucius::matrix::rand(network.getInputSize(), network.precision());
     auto reference = network.runInputs(input);
 
     std::stringstream stream;
@@ -95,7 +95,7 @@ bool testSaveLoad()
 
 int main(int argc, char** argv)
 {
-    //lucious::util::enableAllLogs();
+    //lucius::util::enableAllLogs();
 
     std::cout << "Running model unit tests\n";
 

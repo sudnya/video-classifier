@@ -4,11 +4,11 @@
 	\brief  The source file for the Sample class.
 */
 
-#include <lucious/database/interface/Sample.h>
+#include <lucius/database/interface/Sample.h>
 
-#include <lucious/video/interface/Video.h>
+#include <lucius/video/interface/Video.h>
 
-namespace lucious
+namespace lucius
 {
 
 namespace database

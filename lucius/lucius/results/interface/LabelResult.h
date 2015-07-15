@@ -6,13 +6,13 @@
 
 #pragma once
 
-// Lucious Includes
-#include <lucious/results/interface/Result.h>
+// Lucius Includes
+#include <lucius/results/interface/Result.h>
 
 // Standard Library Includes
 #include <string>
 
-namespace lucious
+namespace lucius
 {
 
 namespace results

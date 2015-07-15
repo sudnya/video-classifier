@@ -4,9 +4,9 @@
 	\brief  The source file for the OpenCVLibrary class.
 */
 
-// Lucious Includes
-#include <lucious/video/interface/OpenCVLibrary.h>
-#include <lucious/util/interface/Casts.h>
+// Lucius Includes
+#include <lucius/video/interface/OpenCVLibrary.h>
+#include <lucius/util/interface/Casts.h>
 
 // Standard Library Includes
 #include <stdexcept>
@@ -14,7 +14,7 @@
 // System-Specific Includes
 #include <dlfcn.h>
 
-namespace lucious
+namespace lucius
 {
 
 namespace video

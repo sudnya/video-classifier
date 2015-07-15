@@ -4,11 +4,11 @@
 	\brief  The source file for the FeatureResult class.
 */
 
-// Lucious Includes
-#include <lucious/results/interface/FeatureResult.h>
-#include <lucious/matrix/interface/Matrix.h>
+// Lucius Includes
+#include <lucius/results/interface/FeatureResult.h>
+#include <lucius/matrix/interface/Matrix.h>
 
-namespace lucious
+namespace lucius
 {
 
 namespace results

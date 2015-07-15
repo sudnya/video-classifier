@@ -4,16 +4,16 @@
     \brief  The source file for the LineSearch class.
 */
 
-// Lucious Includes
-#include <lucious/optimizer/interface/LineSearchFactory.h>
-#include <lucious/optimizer/interface/LineSearch.h>
+// Lucius Includes
+#include <lucius/optimizer/interface/LineSearchFactory.h>
+#include <lucius/optimizer/interface/LineSearch.h>
 
-#include <lucious/optimizer/interface/MoreThuenteLineSearch.h>
-#include <lucious/optimizer/interface/BacktrackingLineSearch.h>
+#include <lucius/optimizer/interface/MoreThuenteLineSearch.h>
+#include <lucius/optimizer/interface/BacktrackingLineSearch.h>
 
-#include <lucious/util/interface/Knobs.h>
+#include <lucius/util/interface/Knobs.h>
 
-namespace lucious
+namespace lucius
 {
 
 namespace optimizer

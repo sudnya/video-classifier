@@ -6,9 +6,9 @@
 
 #pragma once
 
-#include <lucious/results/interface/ResultProcessor.h>
+#include <lucius/results/interface/ResultProcessor.h>
 
-namespace lucious
+namespace lucius
 {
 
 namespace results

@@ -10,7 +10,7 @@
 #include <string>
 #include <set>
 
-namespace lucious
+namespace lucius
 {
 
 namespace util
@@ -111,5 +111,5 @@ private:
 
 }
 
-#include <lucious/util/implementation/PropertyTree-inl.h>
+#include <lucius/util/implementation/PropertyTree-inl.h>
 

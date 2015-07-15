@@ -4,16 +4,16 @@
     \brief  The source file for the EngineObserverFactory class.
 */
 
-// Lucious Includes
-#include <lucious/engine/interface/EngineObserverFactory.h>
-#include <lucious/engine/interface/EngineObserver.h>
+// Lucius Includes
+#include <lucius/engine/interface/EngineObserverFactory.h>
+#include <lucius/engine/interface/EngineObserver.h>
 
-#include <lucious/engine/interface/ModelCheckpointer.h>
+#include <lucius/engine/interface/ModelCheckpointer.h>
 
 // Standard Library Includes
-#include <lucious/util/interface/memory.h>
+#include <lucius/util/interface/memory.h>
 
-namespace lucious
+namespace lucius
 {
 
 namespace engine

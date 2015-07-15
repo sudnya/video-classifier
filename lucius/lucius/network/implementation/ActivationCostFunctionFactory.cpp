@@ -4,11 +4,11 @@
     \brief  The source file for the ActivationCostFunctionFactory class.
 */
 
-// Lucious Includes
-#include <lucious/network/interface/ActivationCostFunctionFactory.h>
-#include <lucious/network/interface/NullActivationCostFunction.h>
+// Lucius Includes
+#include <lucius/network/interface/ActivationCostFunctionFactory.h>
+#include <lucius/network/interface/NullActivationCostFunction.h>
 
-namespace lucious
+namespace lucius
 {
 
 namespace network

@@ -4,7 +4,7 @@
 // Standard Library Includes
 #include <cstddef>
 
-namespace lucious
+namespace lucius
 {
 namespace parallel
 {

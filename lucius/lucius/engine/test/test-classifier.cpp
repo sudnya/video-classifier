@@ -3,22 +3,22 @@
  * A unit test that implements a neural network to perform XOR
 */
 
-#include <lucious/network/interface/NeuralNetwork.h>
-#include <lucious/network/interface/FeedForwardLayer.h>
-#include <lucious/network/interface/ActivationFunctionFactory.h>
+#include <lucius/network/interface/NeuralNetwork.h>
+#include <lucius/network/interface/FeedForwardLayer.h>
+#include <lucius/network/interface/ActivationFunctionFactory.h>
 
-#include <lucious/matrix/interface/Matrix.h>
-#include <lucious/matrix/interface/Precision.h>
+#include <lucius/matrix/interface/Matrix.h>
+#include <lucius/matrix/interface/Precision.h>
 
-#include <lucious/util/interface/Knobs.h>
-#include <lucious/util/interface/debug.h>
-#include <lucious/util/interface/memory.h>
-#include <lucious/util/interface/ArgumentParser.h>
+#include <lucius/util/interface/Knobs.h>
+#include <lucius/util/interface/debug.h>
+#include <lucius/util/interface/memory.h>
+#include <lucius/util/interface/ArgumentParser.h>
 
 #include <random>
 #include <cstdlib>
 
-namespace lucious
+namespace lucius
 {
 namespace engine
 {
@@ -227,18 +227,18 @@ static void enableSpecificLogs(const std::string& modules)
 
 static void setupSolverParameters()
 {
-    lucious::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::LearningRate", "4.0e-2");
-    lucious::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::Momentum", "0.95");
-    lucious::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::AnnealingRate", "1.000");
-    lucious::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::MaxGradNorm", "2000.0");
-    lucious::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::IterationsPerBatch", "10");
-    lucious::util::KnobDatabase::setKnob("GeneralDifferentiableSolver::Type", "NesterovAcceleratedGradientSolver");
+    lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::LearningRate", "4.0e-2");
+    lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::Momentum", "0.95");
+    lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::AnnealingRate", "1.000");
+    lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::MaxGradNorm", "2000.0");
+    lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::IterationsPerBatch", "10");
+    lucius::util::KnobDatabase::setKnob("GeneralDifferentiableSolver::Type", "NesterovAcceleratedGradientSolver");
 
 }
 
 int main(int argc, char** argv)
 {
-    lucious::util::ArgumentParser parser(argc, argv);
+    lucius::util::ArgumentParser parser(argc, argv);
 
     bool verbose = false;
     bool seed = false;
@@ -247,7 +247,7 @@ int main(int argc, char** argv)
     unsigned iterations = 0;
     unsigned networkSize = 0;
 
-    parser.description("A lucious nerual network sanity test.");
+    parser.description("A lucius nerual network sanity test.");
 
     parser.parse("-i", "--iterations", iterations, 30,
         "The number of iterations to train for");
@@ -267,22 +267,22 @@ int main(int argc, char** argv)
 
     if(verbose)
     {
-        lucious::util::enableAllLogs();
+        lucius::util::enableAllLogs();
     }
     else
     {
-        lucious::engine::enableSpecificLogs(loggingEnabledModules);
+        lucius::engine::enableSpecificLogs(loggingEnabledModules);
     }
 
-    lucious::util::log("TestClassifier") << "Test begings\n";
+    lucius::util::log("TestClassifier") << "Test begings\n";
 
     try
     {
-        lucious::engine::runTest(iterations, seed, networkSize);
+        lucius::engine::runTest(iterations, seed, networkSize);
     }
     catch(const std::exception& e)
     {
-        std::cout << "Lucious Classifier Test Failed:\n";
+        std::cout << "Lucius Classifier Test Failed:\n";
         std::cout << "Message: " << e.what() << "\n\n";
     }
 

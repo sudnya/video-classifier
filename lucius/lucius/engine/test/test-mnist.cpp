@@ -4,48 +4,48 @@
     \brief  A unit test for classifying mnist digits.
 */
 
-// Lucious Includes
-#include <lucious/engine/interface/Engine.h>
-#include <lucious/engine/interface/EngineFactory.h>
+// Lucius Includes
+#include <lucius/engine/interface/Engine.h>
+#include <lucius/engine/interface/EngineFactory.h>
 
-#include <lucious/visualization/interface/NeuronVisualizer.h>
+#include <lucius/visualization/interface/NeuronVisualizer.h>
 
-#include <lucious/model/interface/Model.h>
+#include <lucius/model/interface/Model.h>
 
-#include <lucious/results/interface/ResultProcessor.h>
-#include <lucious/results/interface/LabelMatchResultProcessor.h>
+#include <lucius/results/interface/ResultProcessor.h>
+#include <lucius/results/interface/LabelMatchResultProcessor.h>
 
-#include <lucious/network/interface/NeuralNetwork.h>
-#include <lucious/network/interface/FeedForwardLayer.h>
-#include <lucious/network/interface/ConvolutionalLayer.h>
-#include <lucious/network/interface/CostFunctionFactory.h>
+#include <lucius/network/interface/NeuralNetwork.h>
+#include <lucius/network/interface/FeedForwardLayer.h>
+#include <lucius/network/interface/ConvolutionalLayer.h>
+#include <lucius/network/interface/CostFunctionFactory.h>
 
-#include <lucious/network/interface/ActivationFunctionFactory.h>
+#include <lucius/network/interface/ActivationFunctionFactory.h>
 
-#include <lucious/video/interface/Image.h>
-#include <lucious/video/interface/ImageVector.h>
+#include <lucius/video/interface/Image.h>
+#include <lucius/video/interface/ImageVector.h>
 
-#include <lucious/matrix/interface/RandomOperations.h>
-#include <lucious/matrix/interface/Matrix.h>
+#include <lucius/matrix/interface/RandomOperations.h>
+#include <lucius/matrix/interface/Matrix.h>
 
-#include <lucious/util/interface/debug.h>
-#include <lucious/util/interface/paths.h>
-#include <lucious/util/interface/memory.h>
-#include <lucious/util/interface/ArgumentParser.h>
-#include <lucious/util/interface/Knobs.h>
+#include <lucius/util/interface/debug.h>
+#include <lucius/util/interface/paths.h>
+#include <lucius/util/interface/memory.h>
+#include <lucius/util/interface/ArgumentParser.h>
+#include <lucius/util/interface/Knobs.h>
 
 // Type definitions
-typedef lucious::video::Image Image;
-typedef lucious::network::NeuralNetwork NeuralNetwork;
-typedef lucious::network::FeedForwardLayer FeedForwardLayer;
-typedef lucious::network::ConvolutionalLayer ConvolutionalLayer;
-typedef lucious::video::ImageVector ImageVector;
-typedef lucious::matrix::Matrix Matrix;
-typedef lucious::matrix::Dimension Dimension;
-typedef lucious::visualization::NeuronVisualizer NeuronVisualizer;
-typedef lucious::model::Model Model;
-typedef lucious::engine::Engine Engine;
-typedef lucious::results::LabelMatchResultProcessor LabelMatchResultProcessor;
+typedef lucius::video::Image Image;
+typedef lucius::network::NeuralNetwork NeuralNetwork;
+typedef lucius::network::FeedForwardLayer FeedForwardLayer;
+typedef lucius::network::ConvolutionalLayer ConvolutionalLayer;
+typedef lucius::video::ImageVector ImageVector;
+typedef lucius::matrix::Matrix Matrix;
+typedef lucius::matrix::Dimension Dimension;
+typedef lucius::visualization::NeuronVisualizer NeuronVisualizer;
+typedef lucius::model::Model Model;
+typedef lucius::engine::Engine Engine;
+typedef lucius::results::LabelMatchResultProcessor LabelMatchResultProcessor;
 
 class Parameters
 {
@@ -99,7 +99,7 @@ static void addFeatureSelector(Model& model, const Parameters& parameters)
     //featureSelector.addLayer(std::make_unique<FeedForwardLayer>(parameters.layerSize, parameters.layerSize));
 
     featureSelector.initialize();
-    lucious::util::log("TestMNIST")
+    lucius::util::log("TestMNIST")
         << "Building feature selector network with "
         << featureSelector.getOutputCount() << " output neurons\n";
 
@@ -117,7 +117,7 @@ static void addClassifier(Model& model, const Parameters& parameters)
     //classifier.addLayer(std::make_unique<FeedForwardLayer>(parameters.layerSize, parameters.layerSize));
     classifier.addLayer(std::make_unique<FeedForwardLayer>(parameters.layerSize, 10                  ));
 
-    classifier.setCostFunction(lucious::network::CostFunctionFactory::create("SoftMaxCostFunction"));
+    classifier.setCostFunction(lucius::network::CostFunctionFactory::create("SoftMaxCostFunction"));
 
     classifier.initialize();
 
@@ -132,11 +132,11 @@ static void addClassifier(Model& model, const Parameters& parameters)
 
     model.setNeuralNetwork("Classifier", classifier);
 
-    lucious::util::log("TestMNIST")
+    lucius::util::log("TestMNIST")
         << "Feature Selector Architecture "
         << featureSelector.shapeString() << "\n";
 
-    lucious::util::log("TestMNIST")
+    lucius::util::log("TestMNIST")
         << "Classifier Architecture "
         << classifier.shapeString() << "\n";
 }
@@ -154,7 +154,7 @@ static void createModel(Model& model, const Parameters& parameters)
 static void setSampleStatistics(Model& model, const Parameters& parameters)
 {
     // Setup sample stats
-    std::unique_ptr<Engine> engine(lucious::engine::EngineFactory::create("SampleStatisticsEngine"));
+    std::unique_ptr<Engine> engine(lucius::engine::EngineFactory::create("SampleStatisticsEngine"));
 
     engine->setModel(&model);
     engine->setBatchSize(128);
@@ -167,7 +167,7 @@ static void setSampleStatistics(Model& model, const Parameters& parameters)
 static void trainNetwork(Model& model, const Parameters& parameters)
 {
     // Train the network
-    std::unique_ptr<Engine> engine(lucious::engine::EngineFactory::create("LearnerEngine"));
+    std::unique_ptr<Engine> engine(lucius::engine::EngineFactory::create("LearnerEngine"));
 
     engine->setModel(&model);
     engine->setEpochs(parameters.epochs);
@@ -181,7 +181,7 @@ static void trainNetwork(Model& model, const Parameters& parameters)
 
 static double testNetwork(Model& model, const Parameters& parameters)
 {
-    std::unique_ptr<Engine> engine(lucious::engine::EngineFactory::create("ClassifierEngine"));
+    std::unique_ptr<Engine> engine(lucius::engine::EngineFactory::create("ClassifierEngine"));
 
     engine->setBatchSize(parameters.batchSize);
     engine->setModel(&model);
@@ -194,7 +194,7 @@ static double testNetwork(Model& model, const Parameters& parameters)
     // get the result processor
     auto resultProcessor = static_cast<LabelMatchResultProcessor*>(engine->getResultProcessor());
 
-    lucious::util::log("TestMNIST") << resultProcessor->toString();
+    lucius::util::log("TestMNIST") << resultProcessor->toString();
 
     return resultProcessor->getAccuracy();
 }
@@ -209,7 +209,7 @@ static void createCollage(Model& model, const Parameters& parameters)
     // Visualize the network
     auto network = &model.getNeuralNetwork("FeatureSelector");
 
-    lucious::visualization::NeuronVisualizer visualizer(network);
+    lucius::visualization::NeuronVisualizer visualizer(network);
 
     auto image = visualizer.visualizeInputTilesForAllNeurons();
 
@@ -222,11 +222,11 @@ static void runTest(const Parameters& parameters)
 {
     if(parameters.seed)
     {
-        lucious::matrix::srand(std::time(0));
+        lucius::matrix::srand(std::time(0));
     }
     else
     {
-        lucious::matrix::srand(377);
+        lucius::matrix::srand(377);
     }
 
     // Create a deep model for first layer classification
@@ -256,24 +256,24 @@ static void runTest(const Parameters& parameters)
 
 static void setupSolverParameters()
 {
-    lucious::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::LearningRate", "1.0e-2");
-    lucious::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::Momentum", "0.9");
-    lucious::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::AnnealingRate", "1.00001");
-    lucious::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::MaxGradNorm", "10.0");
-    lucious::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::IterationsPerBatch", "1");
-    lucious::util::KnobDatabase::setKnob("GeneralDifferentiableSolver::Type", "NesterovAcceleratedGradientSolver");
+    lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::LearningRate", "1.0e-2");
+    lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::Momentum", "0.9");
+    lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::AnnealingRate", "1.00001");
+    lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::MaxGradNorm", "10.0");
+    lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::IterationsPerBatch", "1");
+    lucius::util::KnobDatabase::setKnob("GeneralDifferentiableSolver::Type", "NesterovAcceleratedGradientSolver");
 }
 
 int main(int argc, char** argv)
 {
-    lucious::util::ArgumentParser parser(argc, argv);
+    lucius::util::ArgumentParser parser(argc, argv);
 
     Parameters parameters;
 
     std::string loggingEnabledModules;
     bool verbose = false;
 
-    parser.description("A test for lucious difficult classication performance.");
+    parser.description("A test for lucius difficult classication performance.");
 
     parser.parse("-i", "--input-path", parameters.inputPath,
         "examples/mnist-explicit-training.txt",
@@ -318,14 +318,14 @@ int main(int argc, char** argv)
 
     if(verbose)
     {
-        lucious::util::enableAllLogs();
+        lucius::util::enableAllLogs();
     }
     else
     {
-        lucious::util::enableSpecificLogs(loggingEnabledModules);
+        lucius::util::enableSpecificLogs(loggingEnabledModules);
     }
 
-    lucious::util::log("TestMNIST") << "Test begins\n";
+    lucius::util::log("TestMNIST") << "Test begins\n";
 
     try
     {
@@ -333,7 +333,7 @@ int main(int argc, char** argv)
     }
     catch(const std::exception& e)
     {
-        std::cout << "Lucious MNIST Test Failed:\n";
+        std::cout << "Lucius MNIST Test Failed:\n";
         std::cout << "Message: " << e.what() << "\n\n";
     }
 

@@ -6,7 +6,7 @@
 
 #pragma once
 
-namespace lucious
+namespace lucius
 {
 
 namespace parallel

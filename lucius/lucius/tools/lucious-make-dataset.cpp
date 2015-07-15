@@ -1,19 +1,19 @@
-/*	\file   lucious-make-dataset.cpp
+/*	\file   lucius-make-dataset.cpp
 	\date   Saturday August 10, 2015
 	\author Gregory Diamos <solusstultus@gmail.com>
 	\brief  A tool for splitting a dataset into training/validation sets.
 */
 
-// Lucious Includes
-#include <lucious/database/interface/SampleDatabase.h>
-#include <lucious/database/interface/Sample.h>
+// Lucius Includes
+#include <lucius/database/interface/SampleDatabase.h>
+#include <lucius/database/interface/Sample.h>
 
-#include <lucious/video/interface/Image.h>
+#include <lucius/video/interface/Image.h>
 
-#include <lucious/util/interface/ArgumentParser.h>
-#include <lucious/util/interface/paths.h>
-#include <lucious/util/interface/debug.h>
-#include <lucious/util/interface/Knobs.h>
+#include <lucius/util/interface/ArgumentParser.h>
+#include <lucius/util/interface/paths.h>
+#include <lucius/util/interface/debug.h>
+#include <lucius/util/interface/Knobs.h>
 
 // Standard Library Includes
 #include <stdexcept>
@@ -21,7 +21,7 @@
 #include <memory>
 #include <algorithm>
 
-namespace lucious
+namespace lucius
 {
 
 static void createDirectories(const std::string& outputPath, const std::string& setName, const util::StringVector& labels)
@@ -38,7 +38,7 @@ static void copySampleToDatabase(database::SampleDatabase& outputDatabase, const
 
     auto path = util::joinPaths(directory, util::joinPaths(sample.label(), util::getFile(sample.path())));
 
-    util::log("LuciousMakeDataset") << "Copying sample '" + sample.path() + "' to '" + path + "'\n";
+    util::log("LuciusMakeDataset") << "Copying sample '" + sample.path() + "' to '" + path + "'\n";
 
     util::copyFile(path, sample.path());
 
@@ -138,7 +138,7 @@ static void enableSpecificLogs(const std::string& modules)
 
 int main(int argc, char** argv)
 {
-	lucious::util::ArgumentParser parser(argc, argv);
+	lucius::util::ArgumentParser parser(argc, argv);
 
 	std::string inputFileName;
 	std::string outputPath;
@@ -167,20 +167,20 @@ int main(int argc, char** argv)
 
 	if(verbose)
 	{
-		lucious::util::enableAllLogs();
+		lucius::util::enableAllLogs();
 	}
 	else
 	{
-		lucious::enableSpecificLogs(loggingEnabledModules);
+		lucius::enableSpecificLogs(loggingEnabledModules);
 	}
 
 	try
 	{
-        lucious::splitDatabase(outputPath, inputFileName, validationSamples);
+        lucius::splitDatabase(outputPath, inputFileName, validationSamples);
 	}
 	catch(const std::exception& e)
 	{
-		std::cout << "Lucious Data Set Creation Failed:\n";
+		std::cout << "Lucius Data Set Creation Failed:\n";
 		std::cout << "Message: " << e.what() << "\n\n";
 	}
 

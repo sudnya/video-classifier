@@ -10,9 +10,9 @@
 #include <string>
 
 // Forward Declarations
-namespace lucious { namespace video { class VideoLibrary; } }
+namespace lucius { namespace video { class VideoLibrary; } }
 
-namespace lucious
+namespace lucius
 {
 
 namespace video

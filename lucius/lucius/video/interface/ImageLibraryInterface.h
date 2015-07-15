@@ -11,7 +11,7 @@
 #include <string>
 #include <cstdint>
 
-namespace lucious
+namespace lucius
 {
 
 namespace video

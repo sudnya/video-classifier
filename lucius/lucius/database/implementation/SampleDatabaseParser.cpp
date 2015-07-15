@@ -4,23 +4,23 @@
 	\brief  The source file for the SampleDatabaseParser class.
 */
 
-// Lucious Includes
-#include <lucious/database/interface/SampleDatabaseParser.h>
-#include <lucious/database/interface/SampleDatabase.h>
-#include <lucious/database/interface/Sample.h>
+// Lucius Includes
+#include <lucius/database/interface/SampleDatabaseParser.h>
+#include <lucius/database/interface/SampleDatabase.h>
+#include <lucius/database/interface/Sample.h>
 
-#include <lucious/video/interface/Video.h>
-#include <lucious/video/interface/Image.h>
+#include <lucius/video/interface/Video.h>
+#include <lucius/video/interface/Image.h>
 
-#include <lucious/util/interface/paths.h>
-#include <lucious/util/interface/string.h>
+#include <lucius/util/interface/paths.h>
+#include <lucius/util/interface/string.h>
 
 // Standard Library Includes
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
 
-namespace lucious
+namespace lucius
 {
 
 namespace database

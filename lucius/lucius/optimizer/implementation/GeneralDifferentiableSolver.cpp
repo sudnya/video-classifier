@@ -3,13 +3,13 @@
  * The implementation for the GeneralDifferentiableSolver class 
  */
 
-// Lucious Includes
-#include <lucious/optimizer/interface/GeneralDifferentiableSolver.h>
+// Lucius Includes
+#include <lucius/optimizer/interface/GeneralDifferentiableSolver.h>
 
-#include <lucious/matrix/interface/MatrixVector.h>
-#include <lucious/matrix/interface/Matrix.h>
+#include <lucius/matrix/interface/MatrixVector.h>
+#include <lucius/matrix/interface/Matrix.h>
 
-namespace lucious
+namespace lucius
 {
 
 namespace optimizer

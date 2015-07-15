@@ -4,10 +4,10 @@
     \brief  The source file for the memory unit tests.
 */
 
-// Lucious Includes
-#include <lucious/parallel/interface/Memory.h>
+// Lucius Includes
+#include <lucius/parallel/interface/Memory.h>
 
-#include <lucious/util/interface/debug.h>
+#include <lucius/util/interface/debug.h>
 
 // Standard Library Includes
 #include <iostream>
@@ -23,7 +23,7 @@ bool testMallocFree()
 
     for(auto size : sizes)
     {
-        auto* address = lucious::parallel::malloc(size);
+        auto* address = lucius::parallel::malloc(size);
 
         if(address == nullptr)
         {
@@ -32,7 +32,7 @@ bool testMallocFree()
             return false;
         }
 
-        lucious::parallel::free(address);
+        lucius::parallel::free(address);
     }
 
     std::cout << " Test Malloc Free Passed\n";
@@ -53,7 +53,7 @@ bool testAllocatedMemoryCopy()
 
     for(auto size : sizes)
     {
-        auto* address = lucious::parallel::malloc(size);
+        auto* address = lucius::parallel::malloc(size);
 
         std::vector<uint8_t> inputData(size);
 
@@ -80,7 +80,7 @@ bool testAllocatedMemoryCopy()
             }
         }
 
-        lucious::parallel::free(address);
+        lucius::parallel::free(address);
     }
 
     std::cout << " Test Allocated Memory Copy Passed\n";
@@ -90,7 +90,7 @@ bool testAllocatedMemoryCopy()
 
 int main(int argc, char** argv)
 {
-    //lucious::util::enableAllLogs();
+    //lucius::util::enableAllLogs();
 
     std::cout << "Running memory unit tests\n";
 

@@ -6,16 +6,16 @@
 
 #pragma once
 
-// Lucious Includes
-#include <lucious/optimizer/interface/NeuralNetworkSolver.h>
+// Lucius Includes
+#include <lucius/optimizer/interface/NeuralNetworkSolver.h>
 
 // Standard Library Includes
 #include <memory>
 
 // Forward Declarations
-namespace lucious { namespace optimizer { class GeneralDifferentiableSolver; } }
+namespace lucius { namespace optimizer { class GeneralDifferentiableSolver; } }
 
-namespace lucious
+namespace lucius
 {
 
 namespace optimizer

@@ -6,21 +6,21 @@
 
 #pragma once
 
-// Lucious Includes
-#include <lucious/video/interface/Image.h>
+// Lucius Includes
+#include <lucius/video/interface/Image.h>
 
-#include <lucious/matrix/interface/Matrix.h>
+#include <lucius/matrix/interface/Matrix.h>
 
-#include <lucious/util/interface/string.h>
+#include <lucius/util/interface/string.h>
 
 // Standard Library Includes
 #include <vector>
 #include <random>
 
 // Forward Declarations
-namespace lucious { namespace neuralnetwork { class NeuralNetwork; } }
+namespace lucius { namespace neuralnetwork { class NeuralNetwork; } }
 
-namespace lucious
+namespace lucius
 {
 
 namespace video

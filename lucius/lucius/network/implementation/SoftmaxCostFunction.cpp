@@ -4,18 +4,18 @@
     \brief  The source file for the SoftmaxCostFunction class.
 */
 
-// Lucious Includes
-#include <lucious/network/interface/SoftmaxCostFunction.h>
+// Lucius Includes
+#include <lucius/network/interface/SoftmaxCostFunction.h>
 
-#include <lucious/matrix/interface/Matrix.h>
-#include <lucious/matrix/interface/MatrixOperations.h>
-#include <lucious/matrix/interface/Operation.h>
+#include <lucius/matrix/interface/Matrix.h>
+#include <lucius/matrix/interface/MatrixOperations.h>
+#include <lucius/matrix/interface/Operation.h>
 
-#include <lucious/util/interface/debug.h>
+#include <lucius/util/interface/debug.h>
 
 #include <string>
 
-namespace lucious
+namespace lucius
 {
 
 namespace network

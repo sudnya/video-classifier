@@ -5,18 +5,18 @@
 
 #pragma once
 
-// Lucious Includes
-#include <lucious/optimizer/interface/Solver.h>
+// Lucius Includes
+#include <lucius/optimizer/interface/Solver.h>
 
 // Standard Library Includes
 #include <cstdlib>
 
 // Forward Declarations
-namespace lucious { namespace matrix    { class Matrix;                  } }
-namespace lucious { namespace matrix    { class MatrixVector;            } }
-namespace lucious { namespace optimizer { class CostAndGradientFunction; } }
+namespace lucius { namespace matrix    { class Matrix;                  } }
+namespace lucius { namespace matrix    { class MatrixVector;            } }
+namespace lucius { namespace optimizer { class CostAndGradientFunction; } }
 
-namespace lucious
+namespace lucius
 {
 
 namespace optimizer

@@ -10,7 +10,7 @@
 #include <string>
 #include <sstream>
 
-namespace lucious
+namespace lucius
 {
 
 namespace util

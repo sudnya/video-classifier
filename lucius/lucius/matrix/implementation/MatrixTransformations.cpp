@@ -1,13 +1,13 @@
 
-// Lucious Includes
-#include <lucious/matrix/interface/MatrixTransformations.h>
-#include <lucious/matrix/interface/DimensionTransformations.h>
-#include <lucious/matrix/interface/CopyOperations.h>
+// Lucius Includes
+#include <lucius/matrix/interface/MatrixTransformations.h>
+#include <lucius/matrix/interface/DimensionTransformations.h>
+#include <lucius/matrix/interface/CopyOperations.h>
 
 // Standard Library Includes
 #include <set>
 
-namespace lucious
+namespace lucius
 {
 namespace matrix
 {

@@ -4,38 +4,38 @@
     \brief  A unit test for classifying cats vs dogs.
 */
 
-// Lucious Includes
-#include <lucious/engine/interface/Engine.h>
-#include <lucious/engine/interface/EngineFactory.h>
+// Lucius Includes
+#include <lucius/engine/interface/Engine.h>
+#include <lucius/engine/interface/EngineFactory.h>
 
-#include <lucious/visualization/interface/NeuronVisualizer.h>
+#include <lucius/visualization/interface/NeuronVisualizer.h>
 
-#include <lucious/model/interface/Model.h>
+#include <lucius/model/interface/Model.h>
 
-#include <lucious/results/interface/ResultProcessor.h>
-#include <lucious/results/interface/LabelMatchResultProcessor.h>
+#include <lucius/results/interface/ResultProcessor.h>
+#include <lucius/results/interface/LabelMatchResultProcessor.h>
 
-#include <lucious/network/interface/FeedForwardLayer.h>
-#include <lucious/network/interface/NeuralNetwork.h>
-#include <lucious/network/interface/ActivationFunctionFactory.h>
+#include <lucius/network/interface/FeedForwardLayer.h>
+#include <lucius/network/interface/NeuralNetwork.h>
+#include <lucius/network/interface/ActivationFunctionFactory.h>
 
-#include <lucious/video/interface/Image.h>
-#include <lucious/video/interface/ImageVector.h>
+#include <lucius/video/interface/Image.h>
+#include <lucius/video/interface/ImageVector.h>
 
-#include <lucious/util/interface/debug.h>
-#include <lucious/util/interface/paths.h>
-#include <lucious/util/interface/ArgumentParser.h>
+#include <lucius/util/interface/debug.h>
+#include <lucius/util/interface/paths.h>
+#include <lucius/util/interface/ArgumentParser.h>
 
 // Type definitions
-typedef lucious::video::Image Image;
-typedef lucious::network::NeuralNetwork NeuralNetwork;
-typedef lucious::network::FeedForwardLayer FeedForwardLayer;
-typedef lucious::video::ImageVector ImageVector;
-typedef lucious::matrix::Matrix Matrix;
-typedef lucious::visualization::NeuronVisualizer NeuronVisualizer;
-typedef lucious::model::Model Model;
-typedef lucious::engine::Engine Engine;
-typedef lucious::results::LabelMatchResultProcessor LabelMatchResultProcessor;
+typedef lucius::video::Image Image;
+typedef lucius::network::NeuralNetwork NeuralNetwork;
+typedef lucius::network::FeedForwardLayer FeedForwardLayer;
+typedef lucius::video::ImageVector ImageVector;
+typedef lucius::matrix::Matrix Matrix;
+typedef lucius::visualization::NeuronVisualizer NeuronVisualizer;
+typedef lucius::model::Model Model;
+typedef lucius::engine::Engine Engine;
+typedef lucius::results::LabelMatchResultProcessor LabelMatchResultProcessor;
 
 class Parameters
 {
@@ -109,7 +109,7 @@ static void addFeatureSelector(Model& model, const Parameters& parameters,
             featureSelector.back()->getOutputBlockingFactor()));
 
     featureSelector.initializeRandomly(engine);
-    lucious::util::log("TestCatsVsDogs")
+    lucius::util::log("TestCatsVsDogs")
         << "Building feature selector network with "
         << featureSelector.getOutputCountForInputCount(
         parameters.xPixels * parameters.yPixels * parameters.colors) << " output neurons\n";
@@ -132,7 +132,7 @@ static void addClassifier(Model& model, const Parameters& parameters,
     classifier.addLayer(new FeedForwardLayer(1, fullyConnectedInputs, fullyConnectedSize));
     classifier.addLayer(new FeedForwardLayer(1, fullyConnectedSize,   fullyConnectedSize));
     classifier.addLayer(new FeedForwardLayer(1, fullyConnectedSize,   2                 ));
-    //classifier.back()->setActivationFunction(lucious::network::ActivationFunctionFactory::create("SigmoidActivationFunction"));
+    //classifier.back()->setActivationFunction(lucius::network::ActivationFunctionFactory::create("SigmoidActivationFunction"));
 
     classifier.initializeRandomly(engine);
 
@@ -141,11 +141,11 @@ static void addClassifier(Model& model, const Parameters& parameters,
 
     model.setNeuralNetwork("Classifier", classifier);
 
-    lucious::util::log("TestCatsVsDogs")
+    lucius::util::log("TestCatsVsDogs")
         << "Feature Selector Architecture "
         << featureSelector.shapeString() << "\n";
 
-    lucious::util::log("TestCatsVsDogs")
+    lucius::util::log("TestCatsVsDogs")
         << "Classifier Architecture "
         << classifier.shapeString() << "\n";
 }
@@ -162,7 +162,7 @@ static void createModel(Model& model, const Parameters& parameters,
 static void trainNetwork(Model& model, const Parameters& parameters)
 {
     // Train the network
-    std::unique_ptr<Engine> engine(lucious::engine::EngineFactory::create("LearnerEngine"));
+    std::unique_ptr<Engine> engine(lucius::engine::EngineFactory::create("LearnerEngine"));
 
     engine->setModel(&model);
     engine->setEpochs(parameters.epochs);
@@ -174,7 +174,7 @@ static void trainNetwork(Model& model, const Parameters& parameters)
 
 static float testNetwork(Model& model, const Parameters& parameters)
 {
-    std::unique_ptr<Engine> engine(lucious::engine::EngineFactory::create("ClassifierEngine"));
+    std::unique_ptr<Engine> engine(lucius::engine::EngineFactory::create("ClassifierEngine"));
 
     engine->setBatchSize(parameters.batchSize);
     engine->setModel(&model);
@@ -185,7 +185,7 @@ static float testNetwork(Model& model, const Parameters& parameters)
     // get the result processor
     auto resultProcessor = static_cast<LabelMatchResultProcessor*>(engine->getResultProcessor());
 
-    lucious::util::log("TestCatsVsDogs") << resultProcessor->toString();
+    lucius::util::log("TestCatsVsDogs") << resultProcessor->toString();
 
     return resultProcessor->getAccuracy();
 }
@@ -195,7 +195,7 @@ static void createCollage(Model& model, const Parameters& parameters)
     // Visualize the network
     auto network = &model.getNeuralNetwork("FeatureSelector");
 
-    lucious::visualization::NeuronVisualizer visualizer(network);
+    lucius::visualization::NeuronVisualizer visualizer(network);
 
     auto image = visualizer.visualizeInputTilesForAllNeurons();
 
@@ -238,14 +238,14 @@ static void runTest(const Parameters& parameters)
 
 int main(int argc, char** argv)
 {
-    lucious::util::ArgumentParser parser(argc, argv);
+    lucius::util::ArgumentParser parser(argc, argv);
 
     Parameters parameters;
 
     std::string loggingEnabledModules;
     bool verbose = false;
 
-    parser.description("A test for lucious difficult classication performance.");
+    parser.description("A test for lucius difficult classication performance.");
 
     parser.parse("-i", "--input-path", parameters.inputPath,
         "examples/cats-dogs-explicit-training-small.txt",
@@ -282,14 +282,14 @@ int main(int argc, char** argv)
 
     if(verbose)
     {
-        lucious::util::enableAllLogs();
+        lucius::util::enableAllLogs();
     }
     else
     {
-        lucious::util::enableSpecificLogs(loggingEnabledModules);
+        lucius::util::enableSpecificLogs(loggingEnabledModules);
     }
 
-    lucious::util::log("TestCatsVsDogs") << "Test begins\n";
+    lucius::util::log("TestCatsVsDogs") << "Test begins\n";
 
     try
     {
@@ -297,7 +297,7 @@ int main(int argc, char** argv)
     }
     catch(const std::exception& e)
     {
-        std::cout << "Lucious Cats vs Dogs Test Failed:\n";
+        std::cout << "Lucius Cats vs Dogs Test Failed:\n";
         std::cout << "Message: " << e.what() << "\n\n";
     }
 

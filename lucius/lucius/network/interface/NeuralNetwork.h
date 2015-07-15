@@ -13,18 +13,18 @@
 #include <memory>
 
 // Forward Declaration
-namespace lucious { namespace network   { class Layer;               } }
-namespace lucious { namespace network   { class CostFunction;        } }
-namespace lucious { namespace matrix    { class Matrix;              } }
-namespace lucious { namespace matrix    { class MatrixVector;        } }
-namespace lucious { namespace matrix    { class Precision;           } }
-namespace lucious { namespace matrix    { class Dimension;           } }
-namespace lucious { namespace util      { class InputTarArchive;     } }
-namespace lucious { namespace util      { class OutputTarArchive;    } }
-namespace lucious { namespace util      { class PropertyTree;        } }
-namespace lucious { namespace optimizer { class NeuralNetworkSolver; } }
+namespace lucius { namespace network   { class Layer;               } }
+namespace lucius { namespace network   { class CostFunction;        } }
+namespace lucius { namespace matrix    { class Matrix;              } }
+namespace lucius { namespace matrix    { class MatrixVector;        } }
+namespace lucius { namespace matrix    { class Precision;           } }
+namespace lucius { namespace matrix    { class Dimension;           } }
+namespace lucius { namespace util      { class InputTarArchive;     } }
+namespace lucius { namespace util      { class OutputTarArchive;    } }
+namespace lucius { namespace util      { class PropertyTree;        } }
+namespace lucius { namespace optimizer { class NeuralNetworkSolver; } }
 
-namespace lucious
+namespace lucius
 {
 namespace network
 {

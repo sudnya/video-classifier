@@ -4,7 +4,7 @@
 // Standard Library Includes
 #include <tuple>
 
-namespace lucious
+namespace lucius
 {
 namespace util
 {

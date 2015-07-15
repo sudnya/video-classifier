@@ -11,10 +11,10 @@
 #include <memory>
 
 // Forward Declarations
-namespace lucious { namespace model { class Model;                            } }
-namespace lucious { namespace model { class ModelSpecificationImplementation; } }
+namespace lucius { namespace model { class Model;                            } }
+namespace lucius { namespace model { class ModelSpecificationImplementation; } }
 
-namespace lucious
+namespace lucius
 {
 
 namespace model

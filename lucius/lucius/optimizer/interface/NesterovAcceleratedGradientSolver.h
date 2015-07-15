@@ -7,13 +7,13 @@
 
 #pragma once
 
-// Lucious Includes
-#include <lucious/optimizer/interface/GeneralDifferentiableSolver.h>
+// Lucius Includes
+#include <lucius/optimizer/interface/GeneralDifferentiableSolver.h>
 
 // Standard Library Includes
 #include <memory>
 
-namespace lucious
+namespace lucius
 {
 
 namespace optimizer

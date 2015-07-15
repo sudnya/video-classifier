@@ -10,10 +10,10 @@
 #include <string>
 
 // Forward Declarations
-namespace lucious { namespace results { class ResultProcessor; } } 
-namespace lucious { namespace results { class ResultVector;    } } 
+namespace lucius { namespace results { class ResultProcessor; } } 
+namespace lucius { namespace results { class ResultVector;    } } 
 
-namespace lucious
+namespace lucius
 {
 
 namespace results

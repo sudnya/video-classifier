@@ -5,11 +5,11 @@
 */
 
 // Minvera Includes
-#include <lucious/optimizer/interface/GeneralNondifferentiableSolver.h>
+#include <lucius/optimizer/interface/GeneralNondifferentiableSolver.h>
 
-#include <lucious/matrix/interface/Matrix.h>
+#include <lucius/matrix/interface/Matrix.h>
 
-namespace lucious
+namespace lucius
 {
 
 namespace optimizer

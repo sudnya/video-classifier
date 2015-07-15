@@ -5,8 +5,8 @@
 		compilaiton
 */
 
-// Lucious includes
-#include <lucious/util/interface/SystemCompatibility.h>
+// Lucius includes
+#include <lucius/util/interface/SystemCompatibility.h>
 
 // System Includes
 #ifdef HAVE_CONFIG_H
@@ -33,7 +33,7 @@
 #include <algorithm>
 #include <cstdlib>
 
-namespace lucious
+namespace lucius
 {
 
 namespace util

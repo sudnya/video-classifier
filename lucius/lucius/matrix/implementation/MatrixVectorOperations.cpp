@@ -1,16 +1,16 @@
 
-// Lucious Includes
-#include <lucious/matrix/interface/MatrixVectorOperations.h>
-#include <lucious/matrix/interface/MatrixVector.h>
-#include <lucious/matrix/interface/MatrixOperations.h>
-#include <lucious/matrix/interface/Operation.h>
-#include <lucious/matrix/interface/MatrixTransformations.h>
-#include <lucious/matrix/interface/DimensionTransformations.h>
+// Lucius Includes
+#include <lucius/matrix/interface/MatrixVectorOperations.h>
+#include <lucius/matrix/interface/MatrixVector.h>
+#include <lucius/matrix/interface/MatrixOperations.h>
+#include <lucius/matrix/interface/Operation.h>
+#include <lucius/matrix/interface/MatrixTransformations.h>
+#include <lucius/matrix/interface/DimensionTransformations.h>
 
-#include <lucious/parallel/interface/ParallelFor.h>
-#include <lucious/parallel/interface/ConcurrentCollectives.h>
+#include <lucius/parallel/interface/ParallelFor.h>
+#include <lucius/parallel/interface/ConcurrentCollectives.h>
 
-namespace lucious
+namespace lucius
 {
 namespace matrix
 {

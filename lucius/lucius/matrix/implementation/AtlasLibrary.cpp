@@ -4,9 +4,9 @@
     \brief  The source file for the AtlasLibrary class.
 */
 
-// Lucious Includes
-#include <lucious/matrix/interface/AtlasLibrary.h>
-#include <lucious/util/interface/Casts.h>
+// Lucius Includes
+#include <lucius/matrix/interface/AtlasLibrary.h>
+#include <lucius/util/interface/Casts.h>
 
 // Standard Library Includes
 #include <stdexcept>
@@ -14,7 +14,7 @@
 // System-Specific Includes
 #include <dlfcn.h>
 
-namespace lucious
+namespace lucius
 {
 
 namespace matrix

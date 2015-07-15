@@ -5,36 +5,36 @@
 */
 
 // Minvera Includes
-#include <lucious/visualization/interface/NeuronVisualizer.h>
+#include <lucius/visualization/interface/NeuronVisualizer.h>
 
-#include <lucious/network/interface/NeuralNetwork.h>
-#include <lucious/network/interface/Layer.h>
+#include <lucius/network/interface/NeuralNetwork.h>
+#include <lucius/network/interface/Layer.h>
 
-#include <lucious/video/interface/Image.h>
+#include <lucius/video/interface/Image.h>
 
-#include <lucious/optimizer/interface/GeneralDifferentiableSolver.h>
-#include <lucious/optimizer/interface/GeneralDifferentiableSolverFactory.h>
+#include <lucius/optimizer/interface/GeneralDifferentiableSolver.h>
+#include <lucius/optimizer/interface/GeneralDifferentiableSolverFactory.h>
 
-#include <lucious/optimizer/interface/CostAndGradientFunction.h>
-#include <lucious/optimizer/interface/CostFunction.h>
-#include <lucious/optimizer/interface/ConstantConstraint.h>
+#include <lucius/optimizer/interface/CostAndGradientFunction.h>
+#include <lucius/optimizer/interface/CostFunction.h>
+#include <lucius/optimizer/interface/ConstantConstraint.h>
 
-#include <lucious/matrix/interface/Matrix.h>
-#include <lucious/matrix/interface/MatrixVector.h>
-#include <lucious/matrix/interface/RandomOperations.h>
-#include <lucious/matrix/interface/MatrixOperations.h>
-#include <lucious/matrix/interface/Operation.h>
+#include <lucius/matrix/interface/Matrix.h>
+#include <lucius/matrix/interface/MatrixVector.h>
+#include <lucius/matrix/interface/RandomOperations.h>
+#include <lucius/matrix/interface/MatrixOperations.h>
+#include <lucius/matrix/interface/Operation.h>
 
-#include <lucious/util/interface/Knobs.h>
-#include <lucious/util/interface/math.h>
-#include <lucious/util/interface/debug.h>
+#include <lucius/util/interface/Knobs.h>
+#include <lucius/util/interface/math.h>
+#include <lucius/util/interface/debug.h>
 
 // Standard Library Includes
 #include <cassert>
 #include <random>
 #include <cstdlib>
 
-namespace lucious
+namespace lucius
 {
 
 namespace visualization

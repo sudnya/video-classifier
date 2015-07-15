@@ -4,35 +4,35 @@
     \brief  The source file for the TestOptimizer tool.
 */
 
-// Lucious Includes
-#include <lucious/optimizer/interface/GeneralDifferentiableSolverFactory.h>
-#include <lucious/optimizer/interface/GeneralDifferentiableSolver.h>
-#include <lucious/optimizer/interface/CostAndGradientFunction.h>
+// Lucius Includes
+#include <lucius/optimizer/interface/GeneralDifferentiableSolverFactory.h>
+#include <lucius/optimizer/interface/GeneralDifferentiableSolver.h>
+#include <lucius/optimizer/interface/CostAndGradientFunction.h>
 
-#include <lucious/matrix/interface/Matrix.h>
-#include <lucious/matrix/interface/MatrixVector.h>
-#include <lucious/matrix/interface/MatrixVectorOperations.h>
-#include <lucious/matrix/interface/Operation.h>
+#include <lucius/matrix/interface/Matrix.h>
+#include <lucius/matrix/interface/MatrixVector.h>
+#include <lucius/matrix/interface/MatrixVectorOperations.h>
+#include <lucius/matrix/interface/Operation.h>
 
-#include <lucious/util/interface/ArgumentParser.h>
-#include <lucious/util/interface/Knobs.h>
-#include <lucious/util/interface/string.h>
-#include <lucious/util/interface/debug.h>
+#include <lucius/util/interface/ArgumentParser.h>
+#include <lucius/util/interface/Knobs.h>
+#include <lucius/util/interface/string.h>
+#include <lucius/util/interface/debug.h>
 
 // Standard Library Includes
 #include <iostream>
 #include <cassert>
 #include <cmath>
 
-class SimpleQuadraticCostAndGradientFunction : public lucious::optimizer::CostAndGradientFunction
+class SimpleQuadraticCostAndGradientFunction : public lucius::optimizer::CostAndGradientFunction
 {
 public:
     virtual double computeCostAndGradient(MatrixVector& gradient,
         const MatrixVector& inputs) const
     {
-        double cost = lucious::matrix::dotProduct(inputs, inputs);
+        double cost = lucius::matrix::dotProduct(inputs, inputs);
 
-        gradient = apply(inputs, lucious::matrix::Multiply(2.0));
+        gradient = apply(inputs, lucius::matrix::Multiply(2.0));
 
         return cost;
     }
@@ -43,11 +43,11 @@ static bool testSimpleQuadratic(const std::string& name)
 {
     // Solves a quadratic (convex) in 16 dimensions
 
-    auto solver = lucious::optimizer::GeneralDifferentiableSolverFactory::create(name);
+    auto solver = lucius::optimizer::GeneralDifferentiableSolverFactory::create(name);
 
     assert(solver != nullptr);
 
-    lucious::matrix::Matrix input(4, 4);
+    lucius::matrix::Matrix input(4, 4);
 
     input(0, 0) = 0.5;
     input(0, 1) = 0.5;
@@ -85,19 +85,19 @@ static bool testSimpleQuadratic(const std::string& name)
     return success;
 }
 
-class SimpleQuarticCostAndGradientFunction : public lucious::optimizer::CostAndGradientFunction
+class SimpleQuarticCostAndGradientFunction : public lucius::optimizer::CostAndGradientFunction
 {
 public:
     virtual double computeCostAndGradient(MatrixVector& gradient,
         const MatrixVector& inputs) const
     {
-        auto shiftedInputs = apply(inputs, lucious::matrix::Add(-3.0));
+        auto shiftedInputs = apply(inputs, lucius::matrix::Add(-3.0));
 
-        auto shiftedInputsCubed = apply(shiftedInputs, lucious::matrix::Pow(3.0));
+        auto shiftedInputsCubed = apply(shiftedInputs, lucius::matrix::Pow(3.0));
 
-        double cost = reduce(apply(MatrixVector(shiftedInputsCubed), shiftedInputs, lucious::matrix::Multiply()), {}, lucious::matrix::Add())[0][0];
+        double cost = reduce(apply(MatrixVector(shiftedInputsCubed), shiftedInputs, lucius::matrix::Multiply()), {}, lucius::matrix::Add())[0][0];
 
-        gradient = apply(shiftedInputsCubed, lucious::matrix::Multiply(4.0));
+        gradient = apply(shiftedInputsCubed, lucius::matrix::Multiply(4.0));
 
         return cost;
     }
@@ -107,11 +107,11 @@ public:
 static bool testSimpleQuartic(const std::string& name)
 {
     // Solves a quartic (convex) in 16 dimensions
-    auto solver = lucious::optimizer::GeneralDifferentiableSolverFactory::create(name);
+    auto solver = lucius::optimizer::GeneralDifferentiableSolverFactory::create(name);
 
     assert(solver != nullptr);
 
-    lucious::matrix::Matrix input(4, 4);
+    lucius::matrix::Matrix input(4, 4);
 
     input(0, 0) = 0.5;
     input(0, 1) = 0.5;
@@ -173,16 +173,16 @@ static bool test(const std::string& name)
 
 static void setupSolverParameters()
 {
-    lucious::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::LearningRate", "3.0e-2");
-    lucious::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::Momentum", "0.9999");
-    lucious::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::AnnealingRate", "1.000");
-    lucious::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::MaxGradNorm", "2000.0");
-    lucious::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::IterationsPerBatch", "1000");
+    lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::LearningRate", "3.0e-2");
+    lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::Momentum", "0.9999");
+    lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::AnnealingRate", "1.000");
+    lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::MaxGradNorm", "2000.0");
+    lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::IterationsPerBatch", "1000");
 }
 
 int main(int argc, char** argv)
 {
-    lucious::util::ArgumentParser parser(argc, argv);
+    lucius::util::ArgumentParser parser(argc, argv);
 
     bool enableAllLogs = false;
     std::string logs = "";
@@ -194,14 +194,14 @@ int main(int argc, char** argv)
 
     if(enableAllLogs)
     {
-        lucious::util::enableAllLogs();
+        lucius::util::enableAllLogs();
     }
 
-    lucious::util::enableSpecificLogs(logs);
+    lucius::util::enableSpecificLogs(logs);
 
     setupSolverParameters();
 
-    auto solvers = lucious::optimizer::GeneralDifferentiableSolverFactory::enumerate();
+    auto solvers = lucius::optimizer::GeneralDifferentiableSolverFactory::enumerate();
 
     bool success = true;
 

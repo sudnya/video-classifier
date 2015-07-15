@@ -6,13 +6,13 @@
 
 #pragma once
 
-// Lucious Includes
-#include <lucious/engine/interface/Engine.h>
+// Lucius Includes
+#include <lucius/engine/interface/Engine.h>
 
 // Forward Declarations
-namespace lucious { namespace engine { class Learner; } }
+namespace lucius { namespace engine { class Learner; } }
 
-namespace lucious
+namespace lucius
 {
 
 namespace engine

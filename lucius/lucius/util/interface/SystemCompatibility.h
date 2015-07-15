@@ -12,7 +12,7 @@
 #include <unordered_map>
 #include <unordered_set>
 
-namespace lucious
+namespace lucius
 {
 
 namespace util

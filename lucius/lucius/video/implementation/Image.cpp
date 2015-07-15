@@ -4,21 +4,21 @@
 	\brief  The source file for the Image class.
 */
 
-// Lucious Includes
-#include <lucious/video/interface/Image.h>
-#include <lucious/video/interface/ImageLibraryInterface.h>
+// Lucius Includes
+#include <lucius/video/interface/Image.h>
+#include <lucius/video/interface/ImageLibraryInterface.h>
 
-#include <lucious/matrix/interface/Matrix.h>
+#include <lucius/matrix/interface/Matrix.h>
 
-#include <lucious/util/interface/paths.h>
-#include <lucious/util/interface/debug.h>
+#include <lucius/util/interface/paths.h>
+#include <lucius/util/interface/debug.h>
 
 // Standard Library Includes
 #include <cstring>
 #include <cassert>
 #include <cmath>
 
-namespace lucious
+namespace lucius
 {
 
 namespace video

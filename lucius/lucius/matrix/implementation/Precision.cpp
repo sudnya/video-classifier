@@ -1,11 +1,11 @@
 
-// Lucious Includes
-#include <lucious/matrix/interface/Precision.h>
+// Lucius Includes
+#include <lucius/matrix/interface/Precision.h>
 
-#include <lucious/util/interface/debug.h>
-#include <lucious/util/interface/Knobs.h>
+#include <lucius/util/interface/debug.h>
+#include <lucius/util/interface/Knobs.h>
 
-namespace lucious
+namespace lucius
 {
 namespace matrix
 {

@@ -4,29 +4,29 @@
     \brief  The source file for the Engine class.
 */
 
-// Lucious Includes
-#include <lucious/engine/interface/Engine.h>
-#include <lucious/engine/interface/EngineObserver.h>
+// Lucius Includes
+#include <lucius/engine/interface/Engine.h>
+#include <lucius/engine/interface/EngineObserver.h>
 
-#include <lucious/network/interface/NeuralNetwork.h>
-#include <lucious/network/interface/Layer.h>
-#include <lucious/network/interface/CostFunction.h>
+#include <lucius/network/interface/NeuralNetwork.h>
+#include <lucius/network/interface/Layer.h>
+#include <lucius/network/interface/CostFunction.h>
 
-#include <lucious/results/interface/ResultProcessorFactory.h>
-#include <lucious/results/interface/ResultVector.h>
-#include <lucious/results/interface/ResultProcessor.h>
+#include <lucius/results/interface/ResultProcessorFactory.h>
+#include <lucius/results/interface/ResultVector.h>
+#include <lucius/results/interface/ResultProcessor.h>
 
-#include <lucious/input/interface/InputDataProducerFactory.h>
-#include <lucious/input/interface/InputDataProducer.h>
+#include <lucius/input/interface/InputDataProducerFactory.h>
+#include <lucius/input/interface/InputDataProducer.h>
 
-#include <lucious/model/interface/Model.h>
+#include <lucius/model/interface/Model.h>
 
-#include <lucious/matrix/interface/Matrix.h>
+#include <lucius/matrix/interface/Matrix.h>
 
-#include <lucious/util/interface/debug.h>
-#include <lucious/util/interface/paths.h>
-#include <lucious/util/interface/math.h>
-#include <lucious/util/interface/Knobs.h>
+#include <lucius/util/interface/debug.h>
+#include <lucius/util/interface/paths.h>
+#include <lucius/util/interface/math.h>
+#include <lucius/util/interface/Knobs.h>
 
 // Standard Library Includes
 #include <stdexcept>
@@ -35,7 +35,7 @@
 #include <cstdlib>
 #include <algorithm>
 
-namespace lucious
+namespace lucius
 {
 
 namespace engine

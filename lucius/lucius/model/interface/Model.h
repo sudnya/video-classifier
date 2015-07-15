@@ -13,9 +13,9 @@
 #include <vector>
 
 // Forward Declarations
-namespace lucious { namespace network { class NeuralNetwork; } }
+namespace lucius { namespace network { class NeuralNetwork; } }
 
-namespace lucious
+namespace lucius
 {
 
 namespace model
@@ -106,5 +106,5 @@ private:
 
 }
 
-#include <lucious/model/implementation/Model-inl.h>
+#include <lucius/model/implementation/Model-inl.h>
 

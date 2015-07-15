@@ -6,10 +6,10 @@
 
 #pragma once
 
-// Lucious Includes
-#include <lucious/network/interface/CostFunction.h>
+// Lucius Includes
+#include <lucius/network/interface/CostFunction.h>
 
-namespace lucious
+namespace lucius
 {
 
 namespace network

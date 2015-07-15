@@ -6,10 +6,10 @@
 
 #pragma once
 
-// Lucious Includes
-#include <lucious/engine/interface/Engine.h>
+// Lucius Includes
+#include <lucius/engine/interface/Engine.h>
 
-namespace lucious
+namespace lucius
 {
 
 namespace engine

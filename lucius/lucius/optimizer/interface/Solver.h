@@ -10,10 +10,10 @@
 #include <vector>
 
 // Forward Declarations
-namespace lucious { namespace matrix    { class Matrix;     } }
-namespace lucious { namespace optimizer { class Constraint; } }
+namespace lucius { namespace matrix    { class Matrix;     } }
+namespace lucius { namespace optimizer { class Constraint; } }
 
-namespace lucious
+namespace lucius
 {
 
 namespace optimizer

@@ -4,10 +4,10 @@
     \brief  The source file for the WeightCostFunction class.
 */
 
-// Lucious Includes
-#include <lucious/network/interface/WeightCostFunction.h>
+// Lucius Includes
+#include <lucius/network/interface/WeightCostFunction.h>
 
-namespace lucious
+namespace lucius
 {
 
 namespace network

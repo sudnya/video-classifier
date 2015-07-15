@@ -4,11 +4,11 @@
 	\brief  The source file for the FeatureResultProcessor class.
 */
 
-#include <lucious/results/interface/FeatureResultProcessor.h>
+#include <lucius/results/interface/FeatureResultProcessor.h>
 
-#include <lucious/util/interface/debug.h>
+#include <lucius/util/interface/debug.h>
 
-namespace lucious
+namespace lucius
 {
 
 namespace results

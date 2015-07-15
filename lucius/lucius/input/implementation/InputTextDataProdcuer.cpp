@@ -4,13 +4,13 @@
     \brief  The source file for the InputTextDataProducer class.
 */
 
-#include <lucious/input/interface/InputTextDataProducer.h>
+#include <lucius/input/interface/InputTextDataProducer.h>
 
-#include <lucious/matrix/interface/Matrix.h>
+#include <lucius/matrix/interface/Matrix.h>
 
-#include <lucious/util/interface/debug.h>
+#include <lucius/util/interface/debug.h>
 
-namespace lucious
+namespace lucius
 {
 
 namespace input

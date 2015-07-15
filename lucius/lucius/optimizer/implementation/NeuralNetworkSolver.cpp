@@ -4,13 +4,13 @@
  */
 
 
-#include <lucious/optimizer/interface/NeuralNetworkSolver.h>
-#include <lucious/optimizer/interface/SimpleNeuralNetworkSolver.h>
+#include <lucius/optimizer/interface/NeuralNetworkSolver.h>
+#include <lucius/optimizer/interface/SimpleNeuralNetworkSolver.h>
 
-#include <lucious/util/interface/debug.h>
-#include <lucious/util/interface/Knobs.h>
+#include <lucius/util/interface/debug.h>
+#include <lucius/util/interface/Knobs.h>
 
-namespace lucious
+namespace lucius
 {
 namespace optimizer
 {

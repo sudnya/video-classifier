@@ -4,13 +4,13 @@
 	\brief  The source file for the library of math utility functions.
 */
 
-// Lucious Includes
-#include <lucious/util/interface/math.h>
+// Lucius Includes
+#include <lucius/util/interface/math.h>
 
 // Standard Library Includes
 #include <utility>
 
-namespace lucious
+namespace lucius
 {
 
 namespace util

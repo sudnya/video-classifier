@@ -1,12 +1,12 @@
 
 #pragma once
 
-// Lucious Includes
-#include <lucious/matrix/interface/Matrix.h>
+// Lucius Includes
+#include <lucius/matrix/interface/Matrix.h>
 
-#include <lucious/parallel/interface/cuda.h>
+#include <lucius/parallel/interface/cuda.h>
 
-namespace lucious
+namespace lucius
 {
 namespace matrix
 {
@@ -26,5 +26,5 @@ CUDA_DECORATOR inline const void* getAddress(const Dimension& stride, const Dime
 }
 }
 
-#include <lucious/matrix/implementation/DimensionTransformations.inl>
+#include <lucius/matrix/implementation/DimensionTransformations.inl>
 

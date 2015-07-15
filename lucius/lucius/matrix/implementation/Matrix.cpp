@@ -4,22 +4,22 @@
     \brief  The source file for the Matrix class.
 */
 
-// Lucious Includes
-#include <lucious/matrix/interface/Matrix.h>
-#include <lucious/matrix/interface/Allocation.h>
-#include <lucious/matrix/interface/DimensionTransformations.h>
-#include <lucious/matrix/interface/MatrixTransformations.h>
-#include <lucious/matrix/interface/MatrixOperations.h>
-#include <lucious/matrix/interface/Operation.h>
+// Lucius Includes
+#include <lucius/matrix/interface/Matrix.h>
+#include <lucius/matrix/interface/Allocation.h>
+#include <lucius/matrix/interface/DimensionTransformations.h>
+#include <lucius/matrix/interface/MatrixTransformations.h>
+#include <lucius/matrix/interface/MatrixOperations.h>
+#include <lucius/matrix/interface/Operation.h>
 
-#include <lucious/parallel/interface/Synchronization.h>
+#include <lucius/parallel/interface/Synchronization.h>
 
-#include <lucious/util/interface/debug.h>
+#include <lucius/util/interface/debug.h>
 
 // Standard Library Includes
 #include <cmath>
 
-namespace lucious
+namespace lucius
 {
 
 namespace matrix

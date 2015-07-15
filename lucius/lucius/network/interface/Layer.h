@@ -11,18 +11,18 @@
 #include <memory>
 
 // Forward Declarations
-namespace lucious { namespace matrix  { class Matrix;                 } }
-namespace lucious { namespace matrix  { class Dimension;              } }
-namespace lucious { namespace matrix  { class MatrixVector;           } }
-namespace lucious { namespace matrix  { class Precision;              } }
-namespace lucious { namespace network { class ActivationFunction;     } }
-namespace lucious { namespace network { class ActivationCostFunction; } }
-namespace lucious { namespace network { class WeightCostFunction;     } }
-namespace lucious { namespace util    { class InputTarArchive;        } }
-namespace lucious { namespace util    { class OutputTarArchive;       } }
-namespace lucious { namespace util    { class PropertyTree;           } }
+namespace lucius { namespace matrix  { class Matrix;                 } }
+namespace lucius { namespace matrix  { class Dimension;              } }
+namespace lucius { namespace matrix  { class MatrixVector;           } }
+namespace lucius { namespace matrix  { class Precision;              } }
+namespace lucius { namespace network { class ActivationFunction;     } }
+namespace lucius { namespace network { class ActivationCostFunction; } }
+namespace lucius { namespace network { class WeightCostFunction;     } }
+namespace lucius { namespace util    { class InputTarArchive;        } }
+namespace lucius { namespace util    { class OutputTarArchive;       } }
+namespace lucius { namespace util    { class PropertyTree;           } }
 
-namespace lucious
+namespace lucius
 {
 namespace network
 {

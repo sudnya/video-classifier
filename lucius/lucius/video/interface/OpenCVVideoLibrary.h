@@ -6,14 +6,14 @@
 
 #pragma once
 
-// Lucious Includes
-#include <lucious/video/interface/VideoLibrary.h>
-#include <lucious/video/interface/VideoStream.h>
+// Lucius Includes
+#include <lucius/video/interface/VideoLibrary.h>
+#include <lucius/video/interface/VideoStream.h>
 
 // Forward Declarations
-namespace lucious { namespace video { class CvCapture; } }
+namespace lucius { namespace video { class CvCapture; } }
 
-namespace lucious
+namespace lucius
 {
 
 namespace video

@@ -4,10 +4,10 @@
 	\brief  Function implementations of common path manipulations
 */
 
-// Lucious Includes
-#include <lucious/util/interface/paths.h>
-#include <lucious/util/interface/string.h>
-#include <lucious/util/interface/debug.h>
+// Lucius Includes
+#include <lucius/util/interface/paths.h>
+#include <lucius/util/interface/string.h>
+#include <lucius/util/interface/debug.h>
 
 // Standard Library Includes
 #include <stdexcept>
@@ -19,7 +19,7 @@
 #include <dirent.h>
 #endif
 
-namespace lucious
+namespace lucius
 {
 
 namespace util

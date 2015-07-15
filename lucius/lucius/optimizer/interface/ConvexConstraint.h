@@ -6,10 +6,10 @@
 
 #pragma once
 
-// Lucious Includes
-#include <lucious/optimizer/interface/Constraint.h>
+// Lucius Includes
+#include <lucius/optimizer/interface/Constraint.h>
 
-namespace lucious
+namespace lucius
 {
 
 namespace optimizer

@@ -32,7 +32,7 @@
 
 #include <ctime>
 
-namespace lucious
+namespace lucius
 {
 
 namespace util

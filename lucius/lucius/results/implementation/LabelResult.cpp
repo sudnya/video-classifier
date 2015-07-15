@@ -4,9 +4,9 @@
 	\brief  The source file for the LabelResult class.
 */
 
-#include <lucious/results/interface/LabelResult.h>
+#include <lucius/results/interface/LabelResult.h>
 
-namespace lucious
+namespace lucius
 {
 
 namespace results

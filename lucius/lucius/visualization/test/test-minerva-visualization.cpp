@@ -1,29 +1,29 @@
-/*! \file   test-lucious-visualization.cpp
+/*! \file   test-lucius-visualization.cpp
 	\author Gregory Diamos <solusstultus@gmail.com>
 	\date   Tuesday November 19, 2013
 	\brief  A unit test for neural network visualization.
 */
 
-// Lucious Includes
-#include <lucious/video/interface/Image.h>
-#include <lucious/video/interface/ImageVector.h>
-#include <lucious/neuralnetwork/interface/NeuralNetwork.h>
+// Lucius Includes
+#include <lucius/video/interface/Image.h>
+#include <lucius/video/interface/ImageVector.h>
+#include <lucius/neuralnetwork/interface/NeuralNetwork.h>
 
-#include <lucious/matrix/interface/Matrix.h>
+#include <lucius/matrix/interface/Matrix.h>
 
-#include <lucious/visualization/interface/NeuronVisualizer.h>
+#include <lucius/visualization/interface/NeuronVisualizer.h>
 
-#include <lucious/util/interface/debug.h>
-#include <lucious/util/interface/paths.h>
-#include <lucious/util/interface/ArgumentParser.h>
+#include <lucius/util/interface/debug.h>
+#include <lucius/util/interface/paths.h>
+#include <lucius/util/interface/ArgumentParser.h>
 
 // Type definitions
-typedef lucious::video::Image Image;
-typedef lucious::neuralnetwork::NeuralNetwork NeuralNetwork;
-typedef lucious::neuralnetwork::Layer Layer;
-typedef lucious::video::ImageVector ImageVector;
-typedef lucious::matrix::Matrix Matrix;
-typedef lucious::visualization::NeuronVisualizer NeuronVisualizer;
+typedef lucius::video::Image Image;
+typedef lucius::neuralnetwork::NeuralNetwork NeuralNetwork;
+typedef lucius::neuralnetwork::Layer Layer;
+typedef lucius::video::ImageVector ImageVector;
+typedef lucius::matrix::Matrix Matrix;
+typedef lucius::visualization::NeuronVisualizer NeuronVisualizer;
 
 static NeuralNetwork createNeuralNetwork(size_t xPixels, size_t yPixels,
 	size_t colors, std::default_random_engine& engine)
@@ -148,10 +148,10 @@ static void trainNetwork(NeuralNetwork& neuralNetwork, const Image& image,
 	float noiseMagnitude, size_t iterations, size_t batchSize,
 	std::default_random_engine& engine)
 {
-	lucious::util::log("TestVisualization") << "Training the network.\n";
+	lucius::util::log("TestVisualization") << "Training the network.\n";
 	for(size_t i = 0; i != iterations; ++i)
 	{
-		lucious::util::log("TestVisualization") << " Iteration " << i << " out of "
+		lucius::util::log("TestVisualization") << " Iteration " << i << " out of "
 			<< iterations << "\n";
 		ImageVector batch = generateBatch(image, noiseMagnitude,
 			batchSize, engine);
@@ -162,8 +162,8 @@ static void trainNetwork(NeuralNetwork& neuralNetwork, const Image& image,
 		
 		Matrix reference = generateReference(batch);
 		
-		lucious::util::log("TestVisualization") << "  Input:     " << input.toString();
-		lucious::util::log("TestVisualization") << "  Reference: " << reference.toString();
+		lucius::util::log("TestVisualization") << "  Input:     " << input.toString();
+		lucius::util::log("TestVisualization") << "  Reference: " << reference.toString();
 		
 		neuralNetwork.train(input, reference);
 	}
@@ -177,11 +177,11 @@ static float testNetwork(NeuralNetwork& neuralNetwork, const Image& image,
 
 	iterations = std::max(iterations, 1UL);
 
-	lucious::util::log("TestVisualization") << "Testing the accuracy of the trained network.\n";
+	lucius::util::log("TestVisualization") << "Testing the accuracy of the trained network.\n";
 
 	for(size_t i = 0; i != iterations; ++i)
 	{
-		lucious::util::log("TestVisualization") << " Iteration " << i << " out of "
+		lucius::util::log("TestVisualization") << " Iteration " << i << " out of "
 			<< iterations << "\n";
 		
 		ImageVector batch = generateBatch(image, noiseMagnitude,
@@ -193,8 +193,8 @@ static float testNetwork(NeuralNetwork& neuralNetwork, const Image& image,
 		
 		Matrix reference = generateReference(batch);
 		
-		lucious::util::log("TestVisualization") << "  Input:     " << input.toString();
-		lucious::util::log("TestVisualization") << "  Reference: " << reference.toString();
+		lucius::util::log("TestVisualization") << "  Input:     " << input.toString();
+		lucius::util::log("TestVisualization") << "  Reference: " << reference.toString();
 		
 		accuracy += neuralNetwork.computeAccuracy(input, reference);
 	}
@@ -204,8 +204,8 @@ static float testNetwork(NeuralNetwork& neuralNetwork, const Image& image,
 
 static std::string rename(const std::string& name)
 {
-	return lucious::util::stripExtension(name) + "-reference" +
-		lucious::util::getExtension(name);
+	return lucius::util::stripExtension(name) + "-reference" +
+		lucius::util::getExtension(name);
 }
 
 static float visualizeNetwork(NeuralNetwork& neuralNetwork, const Image& referenceImage,
@@ -225,11 +225,11 @@ static float visualizeNetwork(NeuralNetwork& neuralNetwork, const Image& referen
 	
 	visualizer.visualizeNeuron(image, 0);
 
-	lucious::util::log("TestVisualization") << "Reference response: "
+	lucius::util::log("TestVisualization") << "Reference response: "
 		<< neuralNetwork.runInputs(referenceImage.convertToStandardizedMatrix(
 			neuralNetwork.getInputCount(),
 			neuralNetwork.getInputBlockingFactor(), image.colorComponents())).toString();
-	lucious::util::log("TestVisualization") << "Visualized response: "
+	lucius::util::log("TestVisualization") << "Visualized response: "
 		<< neuralNetwork.runInputs(image.convertToStandardizedMatrix(
 			neuralNetwork.getInputCount(),
 			neuralNetwork.getInputBlockingFactor(), image.colorComponents())).toString();
@@ -292,17 +292,17 @@ static void runTest(const std::string& imagePath, float noiseMagnitude,
 
 static void enableSpecificLogs(const std::string& modules)
 {
-	auto individualModules = lucious::util::split(modules, ",");
+	auto individualModules = lucius::util::split(modules, ",");
 	
 	for(auto& module : individualModules)
 	{
-		lucious::util::enableLog(module);
+		lucius::util::enableLog(module);
 	}
 }
 
 int main(int argc, char** argv)
 {
-    lucious::util::ArgumentParser parser(argc, argv);
+    lucius::util::ArgumentParser parser(argc, argv);
     
     bool verbose = false;
     bool seed = false;
@@ -317,7 +317,7 @@ int main(int argc, char** argv)
 	std::string image;
 	std::string outputPath;
 
-    parser.description("A test for lucious neural network visualization.");
+    parser.description("A test for lucius neural network visualization.");
 
     parser.parse("-i", "--image", image, "images/cat.jpg",
         "The input image to train on, and perform visualization on.");
@@ -346,14 +346,14 @@ int main(int argc, char** argv)
 
     if(verbose)
 	{
-		lucious::util::enableAllLogs();
+		lucius::util::enableAllLogs();
 	}
 	else
 	{
 		enableSpecificLogs(loggingEnabledModules);
 	}
     
-    lucious::util::log("TestVisualization") << "Test begins\n";
+    lucius::util::log("TestVisualization") << "Test begins\n";
     
     try
     {
@@ -362,7 +362,7 @@ int main(int argc, char** argv)
     }
     catch(const std::exception& e)
     {
-        std::cout << "Lucious Visualization Test Failed:\n";
+        std::cout << "Lucius Visualization Test Failed:\n";
         std::cout << "Message: " << e.what() << "\n\n";
     }
 

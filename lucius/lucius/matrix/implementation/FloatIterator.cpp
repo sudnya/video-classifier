@@ -1,9 +1,9 @@
 
-// Lucious Includes
-#include <lucious/matrix/interface/FloatIterator.h>
-#include <lucious/matrix/interface/DimensionTransformations.h>
+// Lucius Includes
+#include <lucius/matrix/interface/FloatIterator.h>
+#include <lucius/matrix/interface/DimensionTransformations.h>
 
-namespace lucious
+namespace lucius
 {
 namespace matrix
 {

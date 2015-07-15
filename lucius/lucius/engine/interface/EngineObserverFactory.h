@@ -6,17 +6,17 @@
 
 #pragma once
 
-// Lucious Includes
-#include <lucious/util/interface/ParameterPack.h>
+// Lucius Includes
+#include <lucius/util/interface/ParameterPack.h>
 
 // Standard Library Includes
 #include <string>
 #include <memory>
 
 // Forward Declarations
-namespace lucious { namespace engine { class EngineObserver; } }
+namespace lucius { namespace engine { class EngineObserver; } }
 
-namespace lucious
+namespace lucius
 {
 
 namespace engine

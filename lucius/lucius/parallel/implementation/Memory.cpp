@@ -1,13 +1,13 @@
 
 
-// Lucious Includes
-#include <lucious/parallel/interface/Memory.h>
-#include <lucious/parallel/interface/CudaRuntimeLibrary.h>
+// Lucius Includes
+#include <lucius/parallel/interface/Memory.h>
+#include <lucius/parallel/interface/CudaRuntimeLibrary.h>
 
 // Standard Library Includes
 #include <cstdlib>
 
-namespace lucious
+namespace lucius
 {
 namespace parallel
 {

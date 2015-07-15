@@ -6,16 +6,16 @@
 
 #pragma once
 
-// Lucious Includes
-#include <lucious/network/interface/Layer.h>
+// Lucius Includes
+#include <lucius/network/interface/Layer.h>
 
 // Standard Library Includes
 #include <memory>
 
 // Fordward Declarations
-namespace lucious { namespace matrix { class Precision; } }
+namespace lucius { namespace matrix { class Precision; } }
 
-namespace lucious
+namespace lucius
 {
 namespace network
 {

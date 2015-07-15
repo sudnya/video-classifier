@@ -7,9 +7,9 @@
 #pragma once
 
 // Forward Declarations
-namespace lucious { namespace video { class CvCapture; } }
+namespace lucius { namespace video { class CvCapture; } }
 
-namespace lucious
+namespace lucius
 {
 
 namespace video

@@ -4,10 +4,10 @@
 	\brief  The source file for the GeneralNondifferentiableSolverFactory class.
 */
 
-// Lucious Includes
-#include <lucious/optimizer/interface/GeneralNondifferentiableSolverFactory.h>
+// Lucius Includes
+#include <lucius/optimizer/interface/GeneralNondifferentiableSolverFactory.h>
 
-namespace lucious
+namespace lucius
 {
 
 namespace optimizer

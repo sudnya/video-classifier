@@ -4,13 +4,13 @@
 	\brief   The source file for the CostAndGradientFunction class.
 */
 
-// Lucious Includes
-#include <lucious/optimizer/interface/CostAndGradientFunction.h>
+// Lucius Includes
+#include <lucius/optimizer/interface/CostAndGradientFunction.h>
 
-#include <lucious/matrix/interface/Matrix.h>
-#include <lucious/matrix/interface/MatrixVector.h>
+#include <lucius/matrix/interface/Matrix.h>
+#include <lucius/matrix/interface/MatrixVector.h>
 
-namespace lucious
+namespace lucius
 {
 
 namespace optimizer

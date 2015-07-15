@@ -9,10 +9,10 @@
 // Standard Library Includes
 #include <string>
 
-// Lucious Includes
-#include <lucious/engine/interface/EngineObserver.h>
+// Lucius Includes
+#include <lucius/engine/interface/EngineObserver.h>
 
-namespace lucious
+namespace lucius
 {
 
 namespace engine

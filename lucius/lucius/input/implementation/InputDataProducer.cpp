@@ -4,18 +4,18 @@
     \brief  The source file for the InputDataProducer class.
 */
 
-// Lucious Includes
-#include <lucious/input/interface/InputDataProducer.h>
+// Lucius Includes
+#include <lucius/input/interface/InputDataProducer.h>
 
-#include <lucious/model/interface/Model.h>
+#include <lucius/model/interface/Model.h>
 
-#include <lucious/network/interface/NeuralNetwork.h>
+#include <lucius/network/interface/NeuralNetwork.h>
 
-#include <lucious/matrix/interface/Dimension.h>
+#include <lucius/matrix/interface/Dimension.h>
 
-#include <lucious/util/interface/Knobs.h>
+#include <lucius/util/interface/Knobs.h>
 
-namespace lucious
+namespace lucius
 {
 
 namespace input

@@ -1,13 +1,13 @@
 #pragma once
 
-// Lucious Includes
-#include <lucious/parallel/interface/cuda.h>
-#include <lucious/parallel/interface/assert.h>
+// Lucius Includes
+#include <lucius/parallel/interface/cuda.h>
+#include <lucius/parallel/interface/assert.h>
 
 // Standard Library Includes
 #include <string>
 
-namespace lucious
+namespace lucius
 {
 namespace matrix
 {
@@ -106,5 +106,5 @@ private:
 }
 }
 
-#include <lucious/matrix/implementation/Dimension.inl>
+#include <lucius/matrix/implementation/Dimension.inl>
 

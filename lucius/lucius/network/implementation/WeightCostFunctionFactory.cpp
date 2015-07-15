@@ -4,12 +4,12 @@
     \brief  The source file for the WeightCostFunctionFactory class.
 */
 
-// Lucious Includes
-#include <lucious/network/interface/WeightCostFunctionFactory.h>
+// Lucius Includes
+#include <lucius/network/interface/WeightCostFunctionFactory.h>
 
-#include <lucious/network/interface/WeightRegularizationCostFunction.h>
+#include <lucius/network/interface/WeightRegularizationCostFunction.h>
 
-namespace lucious
+namespace lucius
 {
 
 namespace network

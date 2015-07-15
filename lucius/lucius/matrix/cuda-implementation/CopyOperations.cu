@@ -1,18 +1,18 @@
 
-// Lucious Includes
-#include <lucious/matrix/interface/CopyOperations.h>
-#include <lucious/matrix/interface/MatrixTransformations.h>
-#include <lucious/matrix/interface/Matrix.h>
-#include <lucious/matrix/interface/Operation.h>
+// Lucius Includes
+#include <lucius/matrix/interface/CopyOperations.h>
+#include <lucius/matrix/interface/MatrixTransformations.h>
+#include <lucius/matrix/interface/Matrix.h>
+#include <lucius/matrix/interface/Operation.h>
 
-#include <lucious/parallel/interface/MultiBulkSynchronousParallel.h>
+#include <lucius/parallel/interface/MultiBulkSynchronousParallel.h>
 
-#include <lucious/util/interface/Metaprogramming.h>
+#include <lucius/util/interface/Metaprogramming.h>
 
 // Standard Library Includes
 #include <tuple>
 
-namespace lucious
+namespace lucius
 {
 namespace matrix
 {

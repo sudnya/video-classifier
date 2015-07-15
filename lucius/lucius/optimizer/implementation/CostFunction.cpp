@@ -4,10 +4,10 @@
     \brief   The source file for the CostFunction class.
 */
 
-// Lucious Includes
-#include <lucious/optimizer/interface/CostFunction.h>
+// Lucius Includes
+#include <lucius/optimizer/interface/CostFunction.h>
 
-namespace lucious
+namespace lucius
 {
 
 namespace optimizer

@@ -4,11 +4,11 @@
     \brief  The source file for the Solver class.
 */
 
-// Lucious Includes
-#include <lucious/optimizer/interface/Solver.h>
-#include <lucious/optimizer/interface/Constraint.h>
+// Lucius Includes
+#include <lucius/optimizer/interface/Solver.h>
+#include <lucius/optimizer/interface/Constraint.h>
 
-namespace lucious
+namespace lucius
 {
 
 namespace optimizer

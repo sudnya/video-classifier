@@ -10,7 +10,7 @@
 #include <string>
 #include <vector>
 
-namespace lucious
+namespace lucius
 {
 
 namespace database

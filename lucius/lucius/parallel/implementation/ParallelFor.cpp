@@ -1,14 +1,14 @@
 
-// Lucious Includes
-#include <lucious/parallel/interface/ParallelFor.h>
-#include <lucious/parallel/interface/ConcurrentCollectives.h>
-#include <lucious/parallel/interface/Synchronization.h>
+// Lucius Includes
+#include <lucius/parallel/interface/ParallelFor.h>
+#include <lucius/parallel/interface/ConcurrentCollectives.h>
+#include <lucius/parallel/interface/Synchronization.h>
 
 // Standard Library Includes
 #include <thread>
 #include <list>
 
-namespace lucious
+namespace lucius
 {
 namespace parallel
 {

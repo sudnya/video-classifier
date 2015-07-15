@@ -4,17 +4,17 @@
     \brief  The source file for the MoreThuenteLineSearch class.
 */
 
-// Lucious Includes
-#include <lucious/optimizer/interface/MoreThuenteLineSearch.h>
+// Lucius Includes
+#include <lucius/optimizer/interface/MoreThuenteLineSearch.h>
 
-#include <lucious/optimizer/interface/CostAndGradientFunction.h>
+#include <lucius/optimizer/interface/CostAndGradientFunction.h>
 
-#include <lucious/matrix/interface/MatrixVector.h>
-#include <lucious/matrix/interface/MatrixVectorOperations.h>
-#include <lucious/matrix/interface/Operation.h>
+#include <lucius/matrix/interface/MatrixVector.h>
+#include <lucius/matrix/interface/MatrixVectorOperations.h>
+#include <lucius/matrix/interface/Operation.h>
 
-#include <lucious/util/interface/Knobs.h>
-#include <lucious/util/interface/debug.h>
+#include <lucius/util/interface/Knobs.h>
+#include <lucius/util/interface/debug.h>
 
 // Standard Library Includes
 #include <algorithm>
@@ -22,7 +22,7 @@
 #include <stdexcept>
 #include <cassert>
 
-namespace lucious
+namespace lucius
 {
 
 namespace optimizer

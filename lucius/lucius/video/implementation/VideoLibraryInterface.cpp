@@ -4,17 +4,17 @@
 	\brief  The source file for the VideoLibraryInterface class.
 */
 
-// Lucious Includes
-#include <lucious/video/interface/VideoLibraryInterface.h>
-#include <lucious/video/interface/VideoLibraryFactory.h>
-#include <lucious/video/interface/VideoLibrary.h>
+// Lucius Includes
+#include <lucius/video/interface/VideoLibraryInterface.h>
+#include <lucius/video/interface/VideoLibraryFactory.h>
+#include <lucius/video/interface/VideoLibrary.h>
 
-#include <lucious/util/interface/paths.h>
+#include <lucius/util/interface/paths.h>
 
 // Standard Library Includes
 #include <map>
 
-namespace lucious
+namespace lucius
 {
 
 namespace video

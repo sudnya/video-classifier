@@ -4,26 +4,26 @@
 	\brief  The source file for the ModelBuilder class.
 */
 
-// Lucious Includes
-#include <lucious/model/interface/ModelBuilder.h>
-#include <lucious/model/interface/Model.h>
-#include <lucious/model/interface/ModelSpecification.h>
-#include <lucious/model/interface/BuiltInSpecifications.h>
+// Lucius Includes
+#include <lucius/model/interface/ModelBuilder.h>
+#include <lucius/model/interface/Model.h>
+#include <lucius/model/interface/ModelSpecification.h>
+#include <lucius/model/interface/BuiltInSpecifications.h>
 
-#include <lucious/network/interface/NeuralNetwork.h>
+#include <lucius/network/interface/NeuralNetwork.h>
 
-#include <lucious/util/interface/Knobs.h>
-#include <lucious/util/interface/debug.h>
+#include <lucius/util/interface/Knobs.h>
+#include <lucius/util/interface/debug.h>
 
-namespace lucious
+namespace lucius
 {
 
 namespace model
 {
 
-typedef lucious::network::NeuralNetwork NeuralNetwork;
-typedef lucious::network::Layer Layer;
-typedef lucious::matrix::Matrix Matrix;
+typedef lucius::network::NeuralNetwork NeuralNetwork;
+typedef lucius::network::Layer Layer;
+typedef lucius::matrix::Matrix Matrix;
 
 static void initializeModelFromSpecification(Model* model, const std::string& specification)
 {

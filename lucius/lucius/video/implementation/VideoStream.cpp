@@ -4,10 +4,10 @@
 	\brief  The source file for the VideoStream class.
 */
 
-// Lucious Includes
-#include <lucious/video/interface/VideoStream.h>
+// Lucius Includes
+#include <lucius/video/interface/VideoStream.h>
 
-namespace lucious
+namespace lucius
 {
 
 namespace video

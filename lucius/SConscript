@@ -12,22 +12,22 @@ def toSharedObject(filename):
     return root + '.os'
 
 # set environment variables
-lucious_args = ARGUMENTS
-lucious_cmd_line_targets = COMMAND_LINE_TARGETS
-lucious_path_to_root_dir = ".."
+lucius_args = ARGUMENTS
+lucius_cmd_line_targets = COMMAND_LINE_TARGETS
+lucius_path_to_root_dir = ".."
 
 # try to import an environment
-exec open(lucious_path_to_root_dir + "/scripts/which.py")
+exec open(lucius_path_to_root_dir + "/scripts/which.py")
 env = BuildEnvironment()
-env['LUCIOUS_PATH'] = Dir('.').abspath
+env['LUCIUS_PATH'] = Dir('.').abspath
 
-env['path_to_root_dir'] = os.path.abspath(lucious_path_to_root_dir)
+env['path_to_root_dir'] = os.path.abspath(lucius_path_to_root_dir)
 
 # find all source files in the source tree
-directories = ['lucious/driver', 'lucious/util', 'lucious/engine',
-    'lucious/matrix', 'lucious/model', 'lucious/network',
-    'lucious/optimizer', 'lucious/parallel', 'lucious/video', 'lucious/visualization',
-    'lucious/database', 'lucious/input', 'lucious/results']
+directories = ['lucius/driver', 'lucius/util', 'lucius/engine',
+    'lucius/matrix', 'lucius/model', 'lucius/network',
+    'lucius/optimizer', 'lucius/parallel', 'lucius/video', 'lucius/visualization',
+    'lucius/database', 'lucius/input', 'lucius/results']
 
 source_directories = [os.path.join(i, 'implementation') for i in directories]
 cuda_source_directories = [os.path.join(i, 'cuda-implementation') for i in directories]
@@ -47,23 +47,23 @@ for dir in cuda_source_directories:
             sources.append(env.CUDASharedObject(cuda_source))
 
 # create the library
-liblucious = env.SharedLibrary('lucious', sources, LIBS=env['EXTRA_LIBS'])
-lucious_libs = ['lucious'] + env['EXTRA_LIBS']
+liblucius = env.SharedLibrary('lucius', sources, LIBS=env['EXTRA_LIBS'])
+lucius_libs = ['lucius'] + env['EXTRA_LIBS']
 
 if env['install']:
-    liblucious = env.Install(os.path.join(env['install_path'], "lib"),
-        liblucious)
+    liblucius = env.Install(os.path.join(env['install_path'], "lib"),
+        liblucius)
 
-env['LUCIOUS_LIBS'] = lucious_libs
+env['LUCIUS_LIBS'] = lucius_libs
 
 # create the programs
 programs = []
 
-programs.extend(SConscript('lucious/SConscript',    exports='env'))
+programs.extend(SConscript('lucius/SConscript',    exports='env'))
 programs.extend(SConscript('benchmarks/SConscript', exports='env'))
 
 for program in programs:
-    env.Depends(program, liblucious)
+    env.Depends(program, liblucius)
 
 # install it all
 if env['install']:

@@ -1,21 +1,21 @@
 
-// Lucious Includes
-#include <lucious/matrix/interface/ConvolutionalOperations.h>
-#include <lucious/matrix/interface/CudnnLibrary.h>
+// Lucius Includes
+#include <lucius/matrix/interface/ConvolutionalOperations.h>
+#include <lucius/matrix/interface/CudnnLibrary.h>
 
-#include <lucious/matrix/interface/BlasOperations.h>
-#include <lucious/matrix/interface/MatrixView.h>
-#include <lucious/matrix/interface/Matrix.h>
-#include <lucious/matrix/interface/MatrixTransformations.h>
+#include <lucius/matrix/interface/BlasOperations.h>
+#include <lucius/matrix/interface/MatrixView.h>
+#include <lucius/matrix/interface/Matrix.h>
+#include <lucius/matrix/interface/MatrixTransformations.h>
  
-#include <lucious/parallel/interface/MultiBulkSynchronousParallel.h>
+#include <lucius/parallel/interface/MultiBulkSynchronousParallel.h>
 
-#include <lucious/util/interface/Metaprogramming.h>
+#include <lucius/util/interface/Metaprogramming.h>
 
 // Standard Library Includes
 #include <vector>
 
-namespace lucious
+namespace lucius
 {
 namespace matrix
 {

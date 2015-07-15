@@ -2,9 +2,9 @@
 
 #pragma once
 
-#include <lucious/parallel/interface/cuda.h>
+#include <lucius/parallel/interface/cuda.h>
 
-namespace lucious
+namespace lucius
 {
 namespace parallel
 {

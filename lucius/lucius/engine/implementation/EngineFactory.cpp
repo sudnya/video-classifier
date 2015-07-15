@@ -4,16 +4,16 @@
     \brief  The source file for the EngineFactory class.
 */
 
-// Lucious Includes
-#include <lucious/engine/interface/EngineFactory.h>
+// Lucius Includes
+#include <lucius/engine/interface/EngineFactory.h>
 
-#include <lucious/engine/interface/ClassifierEngine.h>
-#include <lucious/engine/interface/FeatureExtractorEngine.h>
-#include <lucious/engine/interface/LearnerEngine.h>
-#include <lucious/engine/interface/UnsupervisedLearnerEngine.h>
-#include <lucious/engine/interface/SampleStatisticsEngine.h>
+#include <lucius/engine/interface/ClassifierEngine.h>
+#include <lucius/engine/interface/FeatureExtractorEngine.h>
+#include <lucius/engine/interface/LearnerEngine.h>
+#include <lucius/engine/interface/UnsupervisedLearnerEngine.h>
+#include <lucius/engine/interface/SampleStatisticsEngine.h>
 
-namespace lucious
+namespace lucius
 {
 
 namespace engine

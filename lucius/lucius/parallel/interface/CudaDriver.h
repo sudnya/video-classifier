@@ -6,14 +6,14 @@
 
 #pragma once
 
-// Lucious Includes
-#include <lucious/parallel/interface/CudaDriverTypes.h>
+// Lucius Includes
+#include <lucius/parallel/interface/CudaDriverTypes.h>
 
 // Standard Library Includes
 #include <cstring>
 #include <string>
 
-namespace lucious
+namespace lucius
 {
 
 namespace parallel

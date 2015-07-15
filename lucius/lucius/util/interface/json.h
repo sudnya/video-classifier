@@ -16,7 +16,7 @@
 #include <string>
 #include <fstream>
 
-namespace lucious {
+namespace lucius {
 namespace util {
 namespace json {
 

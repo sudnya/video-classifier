@@ -4,13 +4,13 @@
 	\brief  The source file for the BuiltInSpecifications class.
 */
 
-// Lucious Includes 
-#include <lucious/model/interface/BuiltInSpecifications.h>
+// Lucius Includes 
+#include <lucius/model/interface/BuiltInSpecifications.h>
 
 // Standard Library Includes
 #include <sstream>
 
-namespace lucious
+namespace lucius
 {
 
 namespace model

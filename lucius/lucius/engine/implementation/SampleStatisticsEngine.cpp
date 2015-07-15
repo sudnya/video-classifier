@@ -4,21 +4,21 @@
     \brief  The source file for the SampleStatisticsEngine class.
 */
 
-// Lucious Includes
-#include <lucious/engine/interface/SampleStatisticsEngine.h>
+// Lucius Includes
+#include <lucius/engine/interface/SampleStatisticsEngine.h>
 
-#include <lucious/model/interface/Model.h>
+#include <lucius/model/interface/Model.h>
 
-#include <lucious/results/interface/ResultVector.h>
+#include <lucius/results/interface/ResultVector.h>
 
-#include <lucious/matrix/interface/Matrix.h>
+#include <lucius/matrix/interface/Matrix.h>
 
-#include <lucious/util/interface/debug.h>
+#include <lucius/util/interface/debug.h>
 
 // Standard Library Includes
 #include <cmath>
 
-namespace lucious
+namespace lucius
 {
 
 namespace engine

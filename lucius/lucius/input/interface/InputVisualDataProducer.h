@@ -6,16 +6,16 @@
 
 #pragma once
 
-// Lucious Includes
-#include <lucious/input/interface/InputDataProducer.h>
+// Lucius Includes
+#include <lucius/input/interface/InputDataProducer.h>
 
-#include <lucious/video/interface/ImageVector.h>
-#include <lucious/video/interface/Video.h>
+#include <lucius/video/interface/ImageVector.h>
+#include <lucius/video/interface/Video.h>
 
 // Stanard Library Includes
 #include <random>
 
-namespace lucious
+namespace lucius
 {
 
 namespace input

@@ -6,8 +6,8 @@
 
 #pragma once
 
-// Lucious Includes
-#include <lucious/util/interface/string.h>
+// Lucius Includes
+#include <lucius/util/interface/string.h>
 
 // Standard Library Includes
 #include <ostream>
@@ -15,15 +15,15 @@
 #include <list>
 
 // Forward Declarations
-namespace lucious { namespace model   { class Model;             } }
-namespace lucious { namespace input   { class InputDataProducer; } }
-namespace lucious { namespace results { class ResultProcessor;   } }
-namespace lucious { namespace network { class NeuralNetwork;     } }
-namespace lucious { namespace results { class ResultVector;      } }
-namespace lucious { namespace matrix  { class Matrix;            } }
-namespace lucious { namespace engine  { class EngineObserver;    } }
+namespace lucius { namespace model   { class Model;             } }
+namespace lucius { namespace input   { class InputDataProducer; } }
+namespace lucius { namespace results { class ResultProcessor;   } }
+namespace lucius { namespace network { class NeuralNetwork;     } }
+namespace lucius { namespace results { class ResultVector;      } }
+namespace lucius { namespace matrix  { class Matrix;            } }
+namespace lucius { namespace engine  { class EngineObserver;    } }
 
-namespace lucious
+namespace lucius
 {
 
 namespace engine

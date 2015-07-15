@@ -4,12 +4,12 @@
     \brief  The source file for the CublasLibrary class.
 */
 
-// Lucious Includes
-#include <lucious/matrix/interface/CublasLibrary.h>
+// Lucius Includes
+#include <lucius/matrix/interface/CublasLibrary.h>
 
-#include <lucious/parallel/interface/cuda.h>
+#include <lucius/parallel/interface/cuda.h>
 
-#include <lucious/util/interface/Casts.h>
+#include <lucius/util/interface/Casts.h>
 
 // Standard Library Includes
 #include <stdexcept>
@@ -17,7 +17,7 @@
 // System-Specific Includes
 #include <dlfcn.h>
 
-namespace lucious
+namespace lucius
 {
 
 namespace matrix

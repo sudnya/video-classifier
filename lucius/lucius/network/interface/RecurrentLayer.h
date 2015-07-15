@@ -6,10 +6,10 @@
 
 #pragma once
 
-// Lucious Includes
-#include <lucious/network/interface/Layer.h>
+// Lucius Includes
+#include <lucius/network/interface/Layer.h>
 
-namespace lucious
+namespace lucius
 {
 namespace network
 {

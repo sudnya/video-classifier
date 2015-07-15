@@ -4,11 +4,11 @@
 	\brief  The source file for the ResultVector class.
 */
 
-// Lucious Includes
-#include <lucious/results/interface/ResultVector.h>
-#include <lucious/results/interface/Result.h>
+// Lucius Includes
+#include <lucius/results/interface/ResultVector.h>
+#include <lucius/results/interface/Result.h>
 
-namespace lucious
+namespace lucius
 {
 
 namespace results

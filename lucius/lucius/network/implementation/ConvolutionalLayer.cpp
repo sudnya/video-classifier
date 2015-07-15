@@ -4,32 +4,32 @@
      \brief  The source for the ConvolutionalLayer class.
 */
 
-// Lucious Includes
-#include <lucious/network/interface/ConvolutionalLayer.h>
+// Lucius Includes
+#include <lucius/network/interface/ConvolutionalLayer.h>
 
-#include <lucious/network/interface/ActivationFunction.h>
-#include <lucious/network/interface/ActivationCostFunction.h>
-#include <lucious/network/interface/WeightCostFunction.h>
+#include <lucius/network/interface/ActivationFunction.h>
+#include <lucius/network/interface/ActivationCostFunction.h>
+#include <lucius/network/interface/WeightCostFunction.h>
 
-#include <lucious/matrix/interface/Matrix.h>
-#include <lucious/matrix/interface/MatrixOperations.h>
-#include <lucious/matrix/interface/BlasOperations.h>
-#include <lucious/matrix/interface/ConvolutionalOperations.h>
-#include <lucious/matrix/interface/RandomOperations.h>
-#include <lucious/matrix/interface/Operation.h>
-#include <lucious/matrix/interface/MatrixVector.h>
-#include <lucious/matrix/interface/FileOperations.h>
+#include <lucius/matrix/interface/Matrix.h>
+#include <lucius/matrix/interface/MatrixOperations.h>
+#include <lucius/matrix/interface/BlasOperations.h>
+#include <lucius/matrix/interface/ConvolutionalOperations.h>
+#include <lucius/matrix/interface/RandomOperations.h>
+#include <lucius/matrix/interface/Operation.h>
+#include <lucius/matrix/interface/MatrixVector.h>
+#include <lucius/matrix/interface/FileOperations.h>
 
-#include <lucious/util/interface/debug.h>
-#include <lucious/util/interface/Knobs.h>
-#include <lucious/util/interface/memory.h>
-#include <lucious/util/interface/TarArchive.h>
-#include <lucious/util/interface/PropertyTree.h>
+#include <lucius/util/interface/debug.h>
+#include <lucius/util/interface/Knobs.h>
+#include <lucius/util/interface/memory.h>
+#include <lucius/util/interface/TarArchive.h>
+#include <lucius/util/interface/PropertyTree.h>
 
 // Standard Library Includes
 #include <memory>
 
-namespace lucious
+namespace lucius
 {
 namespace network
 {

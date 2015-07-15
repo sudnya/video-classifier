@@ -9,7 +9,7 @@
 // Standard Library Includes
 #include <string>
 
-namespace lucious
+namespace lucius
 {
 
 namespace util

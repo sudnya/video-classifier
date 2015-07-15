@@ -4,10 +4,10 @@
 	\brief  The source file for the LinearSolver class.
 */
 
-// Lucious Includes
-#include <lucious/optimizer/interface/LinearSolver.h>
+// Lucius Includes
+#include <lucius/optimizer/interface/LinearSolver.h>
 
-namespace lucious
+namespace lucius
 {
 
 namespace optimizer

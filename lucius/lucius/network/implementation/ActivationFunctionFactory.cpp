@@ -4,14 +4,14 @@
     \brief  The source file for the ActivationFunctionFactory class.
 */
 
-// Lucious Includes
-#include <lucious/network/interface/ActivationFunctionFactory.h>
+// Lucius Includes
+#include <lucius/network/interface/ActivationFunctionFactory.h>
 
-#include <lucious/network/interface/SigmoidActivationFunction.h>
-#include <lucious/network/interface/RectifiedLinearActivationFunction.h>
-#include <lucious/network/interface/NullActivationFunction.h>
+#include <lucius/network/interface/SigmoidActivationFunction.h>
+#include <lucius/network/interface/RectifiedLinearActivationFunction.h>
+#include <lucius/network/interface/NullActivationFunction.h>
 
-namespace lucious
+namespace lucius
 {
 
 namespace network

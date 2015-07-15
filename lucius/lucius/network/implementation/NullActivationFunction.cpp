@@ -4,14 +4,14 @@
     \brief  The header file for the NullActivationFunction class.
 */
 
-// Lucious Includes
-#include <lucious/network/interface/NullActivationFunction.h>
+// Lucius Includes
+#include <lucius/network/interface/NullActivationFunction.h>
 
-#include <lucious/matrix/interface/Matrix.h>
-#include <lucious/matrix/interface/MatrixOperations.h>
-#include <lucious/matrix/interface/Operation.h>
+#include <lucius/matrix/interface/Matrix.h>
+#include <lucius/matrix/interface/MatrixOperations.h>
+#include <lucius/matrix/interface/Operation.h>
 
-namespace lucious
+namespace lucius
 {
 
 namespace network

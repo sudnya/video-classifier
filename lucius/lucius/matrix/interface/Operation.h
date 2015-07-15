@@ -6,14 +6,14 @@
 
 #pragma once
 
-// Lucious Includes
-#include <lucious/parallel/interface/cuda.h>
+// Lucius Includes
+#include <lucius/parallel/interface/cuda.h>
 
 // Standard Library Includes
 #include <cmath>
 #include <algorithm>
 
-namespace lucious
+namespace lucius
 {
 namespace matrix
 {

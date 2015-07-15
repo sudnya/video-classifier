@@ -4,15 +4,15 @@
 	\brief  The source file for the LabelResultProcessor class.
 */
 
-// Lucious Includes
-#include <lucious/results/interface/LabelResultProcessor.h>
+// Lucius Includes
+#include <lucius/results/interface/LabelResultProcessor.h>
 
-#include <lucious/util/interface/debug.h>
+#include <lucius/util/interface/debug.h>
 
 // Standard Library Includes
 #include <unordered_map>
 
-namespace lucious
+namespace lucius
 {
 
 namespace results

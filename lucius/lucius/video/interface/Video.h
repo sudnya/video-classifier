@@ -6,14 +6,14 @@
 
 #pragma once
 
-// Lucious Includes
-#include <lucious/video/interface/ImageVector.h>
+// Lucius Includes
+#include <lucius/video/interface/ImageVector.h>
 
 // Standard Library Includes
 #include <string>
 #include <vector>
 
-namespace lucious
+namespace lucius
 {
 
 namespace video

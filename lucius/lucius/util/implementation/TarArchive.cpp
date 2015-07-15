@@ -5,17 +5,17 @@
 
 */
 
-// Lucious Includes
-#include <lucious/util/interface/TarArchive.h>
+// Lucius Includes
+#include <lucius/util/interface/TarArchive.h>
 
-#include <lucious/util/interface/debug.h>
+#include <lucius/util/interface/debug.h>
 
 // Standard Library Includes
 #include <stdexcept>
 #include <iomanip>
 #include <map>
 
-namespace lucious
+namespace lucius
 {
 
 namespace util

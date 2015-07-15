@@ -10,9 +10,9 @@
 #include <string>
 
 // Forward Declarations
-namespace lucious { namespace model { class Model; } }
+namespace lucius { namespace model { class Model; } }
 
-namespace lucious
+namespace lucius
 {
 
 namespace model

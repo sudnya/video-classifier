@@ -5,25 +5,25 @@
 */
 
 
-// Lucious Includes
-#include <lucious/input/interface/InputVisualDataProducer.h>
+// Lucius Includes
+#include <lucius/input/interface/InputVisualDataProducer.h>
 
-#include <lucious/model/interface/Model.h>
+#include <lucius/model/interface/Model.h>
 
-#include <lucious/database/interface/SampleDatabase.h>
-#include <lucious/database/interface/Sample.h>
+#include <lucius/database/interface/SampleDatabase.h>
+#include <lucius/database/interface/Sample.h>
 
-#include <lucious/matrix/interface/MatrixOperations.h>
-#include <lucious/matrix/interface/Operation.h>
-#include <lucious/matrix/interface/Matrix.h>
+#include <lucius/matrix/interface/MatrixOperations.h>
+#include <lucius/matrix/interface/Operation.h>
+#include <lucius/matrix/interface/Matrix.h>
 
-#include <lucious/util/interface/Knobs.h>
-#include <lucious/util/interface/debug.h>
-#include <lucious/util/interface/math.h>
+#include <lucius/util/interface/Knobs.h>
+#include <lucius/util/interface/debug.h>
+#include <lucius/util/interface/math.h>
 
 #include <map>
 
-namespace lucious
+namespace lucius
 {
 
 namespace input

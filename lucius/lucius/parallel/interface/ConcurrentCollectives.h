@@ -1,13 +1,13 @@
 
 #pragma once
 
-// Lucious Includes
-#include <lucious/parallel/interface/cuda.h>
+// Lucius Includes
+#include <lucius/parallel/interface/cuda.h>
 
 // Standard Library Includes
 #include <cstddef>
 
-namespace lucious
+namespace lucius
 {
 namespace parallel
 {
@@ -30,7 +30,7 @@ public:
 }
 }
 
-#include <lucious/parallel/implementation/ConcurrentCollectives.inl>
+#include <lucius/parallel/implementation/ConcurrentCollectives.inl>
 
 
 

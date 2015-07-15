@@ -6,10 +6,10 @@
 
 #pragma once
 
-// Lucious Includes
-#include <lucious/video/interface/ImageLibraryInterface.h>
+// Lucius Includes
+#include <lucius/video/interface/ImageLibraryInterface.h>
 
-namespace lucious
+namespace lucius
 {
 
 namespace video

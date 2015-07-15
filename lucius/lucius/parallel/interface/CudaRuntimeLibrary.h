@@ -10,7 +10,7 @@
 #include <cstring>
 #include <string>
 
-namespace lucious
+namespace lucius
 {
 
 namespace parallel

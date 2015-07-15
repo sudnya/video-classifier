@@ -1,18 +1,18 @@
 
 
-// Lucious Includes
-#include <lucious/matrix/interface/RandomOperations.h>
-#include <lucious/matrix/interface/CurandLibrary.h>
-#include <lucious/matrix/interface/Matrix.h>
+// Lucius Includes
+#include <lucius/matrix/interface/RandomOperations.h>
+#include <lucius/matrix/interface/CurandLibrary.h>
+#include <lucius/matrix/interface/Matrix.h>
 
-#include <lucious/parallel/interface/Synchronization.h>
+#include <lucius/parallel/interface/Synchronization.h>
 
-#include <lucious/util/interface/debug.h>
+#include <lucius/util/interface/debug.h>
 
 // Standard Library Includes
 #include <random>
 
-namespace lucious
+namespace lucius
 {
 namespace matrix
 {

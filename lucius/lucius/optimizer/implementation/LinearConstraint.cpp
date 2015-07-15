@@ -4,12 +4,12 @@
 	\brief  The source file for the LinearConstrain class.
 */
 
-// Lucious Includes
-#include <lucious/optimizer/interface/LinearConstraint.h>
+// Lucius Includes
+#include <lucius/optimizer/interface/LinearConstraint.h>
 
-#include <lucious/util/interface/debug.h>
+#include <lucius/util/interface/debug.h>
 
-namespace lucious
+namespace lucius
 {
 
 namespace optimizer

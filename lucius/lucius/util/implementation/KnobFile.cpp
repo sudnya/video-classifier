@@ -4,10 +4,10 @@
 	\brief  The source file for the KnobFile class.
 */
 
-// Lucious Includes
-#include <lucious/util/interface/KnobFile.h>
-#include <lucious/util/interface/string.h>
-#include <lucious/util/interface/Knobs.h>
+// Lucius Includes
+#include <lucius/util/interface/KnobFile.h>
+#include <lucius/util/interface/string.h>
+#include <lucius/util/interface/Knobs.h>
 
 
 // Standard Library Includes
@@ -16,7 +16,7 @@
 #include <stdexcept>
 #include <iostream>
 
-namespace lucious
+namespace lucius
 {
 
 namespace util

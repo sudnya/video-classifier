@@ -10,12 +10,12 @@
 #include <string>
 
 // Forward Declarations
-namespace lucious
+namespace lucius
 {
 	namespace optimizer { class GeneralNondifferentiableSolver; }
 }
 
-namespace lucious
+namespace lucius
 {
 
 namespace optimizer

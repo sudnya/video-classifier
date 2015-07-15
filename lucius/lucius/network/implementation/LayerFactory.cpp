@@ -4,18 +4,18 @@
     \brief  The source file for the LayerFactory class
 */
 
-// Lucious Includes
-#include <lucious/network/interface/LayerFactory.h>
+// Lucius Includes
+#include <lucius/network/interface/LayerFactory.h>
 
-#include <lucious/network/interface/FeedForwardLayer.h>
-#include <lucious/network/interface/RecurrentLayer.h>
-#include <lucious/network/interface/ConvolutionalLayer.h>
+#include <lucius/network/interface/FeedForwardLayer.h>
+#include <lucius/network/interface/RecurrentLayer.h>
+#include <lucius/network/interface/ConvolutionalLayer.h>
 
-#include <lucious/matrix/interface/Dimension.h>
+#include <lucius/matrix/interface/Dimension.h>
 
-#include <lucious/util/interface/memory.h>
+#include <lucius/util/interface/memory.h>
 
-namespace lucious
+namespace lucius
 {
 
 namespace network

@@ -1,9 +1,9 @@
 
 
-#include <lucious/parallel/interface/cuda.h>
-#include <lucious/parallel/interface/CudaRuntimeLibrary.h>
+#include <lucius/parallel/interface/cuda.h>
+#include <lucius/parallel/interface/CudaRuntimeLibrary.h>
 
-namespace lucious
+namespace lucius
 {
 
 namespace parallel

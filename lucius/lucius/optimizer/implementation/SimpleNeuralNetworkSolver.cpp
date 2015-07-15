@@ -4,28 +4,28 @@
     \brief  The source file for the SimpleNeuralNetworkSolver class.
 */
 
-// Lucious Includes
-#include <lucious/optimizer/interface/SimpleNeuralNetworkSolver.h>
-#include <lucious/optimizer/interface/GeneralDifferentiableSolver.h>
-#include <lucious/optimizer/interface/GeneralDifferentiableSolverFactory.h>
-#include <lucious/optimizer/interface/CostAndGradientFunction.h>
+// Lucius Includes
+#include <lucius/optimizer/interface/SimpleNeuralNetworkSolver.h>
+#include <lucius/optimizer/interface/GeneralDifferentiableSolver.h>
+#include <lucius/optimizer/interface/GeneralDifferentiableSolverFactory.h>
+#include <lucius/optimizer/interface/CostAndGradientFunction.h>
 
-#include <lucious/network/interface/NeuralNetwork.h>
-#include <lucious/network/interface/Layer.h>
+#include <lucius/network/interface/NeuralNetwork.h>
+#include <lucius/network/interface/Layer.h>
 
-#include <lucious/matrix/interface/Matrix.h>
-#include <lucious/matrix/interface/MatrixVector.h>
+#include <lucius/matrix/interface/Matrix.h>
+#include <lucius/matrix/interface/MatrixVector.h>
 
-#include <lucious/util/interface/Knobs.h>
-#include <lucious/util/interface/SystemCompatibility.h>
-#include <lucious/util/interface/debug.h>
+#include <lucius/util/interface/Knobs.h>
+#include <lucius/util/interface/SystemCompatibility.h>
+#include <lucius/util/interface/debug.h>
 
 // Standard Libary Includes
 #include <list>
 #include <set>
 #include <stack>
 
-namespace lucious
+namespace lucius
 {
 
 namespace optimizer

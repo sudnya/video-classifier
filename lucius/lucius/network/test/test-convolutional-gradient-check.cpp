@@ -4,26 +4,26 @@
     \brief  A unit test for a convolutiona neural network gradient calculation.
 */
 
-// Lucious Includes
-#include <lucious/network/interface/NeuralNetwork.h>
-#include <lucious/network/interface/ConvolutionalLayer.h>
-#include <lucious/network/interface/FeedForwardLayer.h>
-#include <lucious/network/interface/CostFunctionFactory.h>
-#include <lucious/network/interface/ActivationFunctionFactory.h>
+// Lucius Includes
+#include <lucius/network/interface/NeuralNetwork.h>
+#include <lucius/network/interface/ConvolutionalLayer.h>
+#include <lucius/network/interface/FeedForwardLayer.h>
+#include <lucius/network/interface/CostFunctionFactory.h>
+#include <lucius/network/interface/ActivationFunctionFactory.h>
 
-#include <lucious/matrix/interface/Matrix.h>
-#include <lucious/matrix/interface/MatrixVector.h>
-#include <lucious/matrix/interface/MatrixOperations.h>
-#include <lucious/matrix/interface/Operation.h>
+#include <lucius/matrix/interface/Matrix.h>
+#include <lucius/matrix/interface/MatrixVector.h>
+#include <lucius/matrix/interface/MatrixOperations.h>
+#include <lucius/matrix/interface/Operation.h>
 
-#include <lucious/matrix/interface/RandomOperations.h>
+#include <lucius/matrix/interface/RandomOperations.h>
 
-#include <lucious/util/interface/debug.h>
-#include <lucious/util/interface/memory.h>
-#include <lucious/util/interface/ArgumentParser.h>
-#include <lucious/util/interface/Knobs.h>
-#include <lucious/util/interface/Timer.h>
-#include <lucious/util/interface/SystemCompatibility.h>
+#include <lucius/util/interface/debug.h>
+#include <lucius/util/interface/memory.h>
+#include <lucius/util/interface/ArgumentParser.h>
+#include <lucius/util/interface/Knobs.h>
+#include <lucius/util/interface/Timer.h>
+#include <lucius/util/interface/SystemCompatibility.h>
 
 // Standard Library Includes
 #include <random>
@@ -31,7 +31,7 @@
 #include <memory>
 #include <cassert>
 
-namespace lucious
+namespace lucius
 {
 
 namespace network
@@ -138,7 +138,7 @@ static bool gradientCheck(NeuralNetwork& network, const Matrix& input, const Mat
                 difference += thisDifference;
                 total += std::pow(computedGradient, 2.0);
 
-                lucious::util::log("TestConvolutionalGradientCheck") << " (layer " << layerId << ", matrix " << matrixId
+                lucius::util::log("TestConvolutionalGradientCheck") << " (layer " << layerId << ", matrix " << matrixId
                     << ", weight " << weightId << ") value is " << computedGradient << " estimate is "
                     << estimatedGradient << " (newCost " << newCost << ", oldCost " << cost << ")"
                     << " difference is " << thisDifference << " \n";
@@ -210,7 +210,7 @@ static void runTest(size_t layerSize, bool seed)
 
 int main(int argc, char** argv)
 {
-    lucious::util::ArgumentParser parser(argc, argv);
+    lucius::util::ArgumentParser parser(argc, argv);
 
     bool verbose = false;
     bool seed = false;
@@ -218,7 +218,7 @@ int main(int argc, char** argv)
 
     size_t layerSize  = 0;
 
-    parser.description("The lucious neural network gradient check.");
+    parser.description("The lucius neural network gradient check.");
 
     parser.parse("-S", "--layer-size", layerSize, 10, "The number of neurons per layer.");
 
@@ -231,22 +231,22 @@ int main(int argc, char** argv)
 
     if(verbose)
     {
-        lucious::util::enableAllLogs();
+        lucius::util::enableAllLogs();
     }
     else
     {
-        lucious::util::enableSpecificLogs(loggingEnabledModules);
+        lucius::util::enableSpecificLogs(loggingEnabledModules);
     }
 
-    lucious::util::log("TestConvolutionalGradientCheck") << "Test begins\n";
+    lucius::util::log("TestConvolutionalGradientCheck") << "Test begins\n";
 
     try
     {
-        lucious::network::runTest(layerSize, seed);
+        lucius::network::runTest(layerSize, seed);
     }
     catch(const std::exception& e)
     {
-        std::cout << "Lucious Neural Network Performance Test Failed:\n";
+        std::cout << "Lucius Neural Network Performance Test Failed:\n";
         std::cout << "Message: " << e.what() << "\n\n";
     }
 

@@ -4,10 +4,10 @@
     \brief  The source file for the ActivationFunction class.
 */
 
-// Lucious Includes
-#include <lucious/network/interface/ActivationFunction.h>
+// Lucius Includes
+#include <lucius/network/interface/ActivationFunction.h>
 
-namespace lucious
+namespace lucius
 {
 
 namespace network

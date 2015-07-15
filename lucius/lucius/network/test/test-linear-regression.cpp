@@ -4,24 +4,24 @@
     \brief  A unit test for a linear regression example.
 */
 
-// Lucious Includes
-#include <lucious/network/interface/ActivationFunctionFactory.h>
-#include <lucious/network/interface/CostFunctionFactory.h>
-#include <lucious/network/interface/FeedForwardLayer.h>
-#include <lucious/network/interface/NeuralNetwork.h>
+// Lucius Includes
+#include <lucius/network/interface/ActivationFunctionFactory.h>
+#include <lucius/network/interface/CostFunctionFactory.h>
+#include <lucius/network/interface/FeedForwardLayer.h>
+#include <lucius/network/interface/NeuralNetwork.h>
 
-#include <lucious/matrix/interface/Matrix.h>
-#include <lucious/matrix/interface/MatrixTransformations.h>
-#include <lucious/matrix/interface/MatrixOperations.h>
-#include <lucious/matrix/interface/Precision.h>
-#include <lucious/matrix/interface/Operation.h>
+#include <lucius/matrix/interface/Matrix.h>
+#include <lucius/matrix/interface/MatrixTransformations.h>
+#include <lucius/matrix/interface/MatrixOperations.h>
+#include <lucius/matrix/interface/Precision.h>
+#include <lucius/matrix/interface/Operation.h>
 
-#include <lucious/util/interface/ArgumentParser.h>
-#include <lucious/util/interface/debug.h>
-#include <lucious/util/interface/Knobs.h>
-#include <lucious/util/interface/memory.h>
+#include <lucius/util/interface/ArgumentParser.h>
+#include <lucius/util/interface/debug.h>
+#include <lucius/util/interface/Knobs.h>
+#include <lucius/util/interface/memory.h>
 
-namespace lucious
+namespace lucius
 {
 
 double data[] = {
@@ -601,14 +601,14 @@ void compare(const matrix::Matrix& predictions, const matrix::Matrix& reference)
 
 void setupParameters()
 {
-    lucious::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::LearningRate", "1.0e-4");
-    lucious::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::Momentum", "0.95");
-    lucious::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::AnnealingRate", "1.00000");
-    lucious::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::MaxGradNorm", "10.0");
-    lucious::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::IterationsPerBatch", "5000");
-    lucious::util::KnobDatabase::setKnob("GeneralDifferentiableSolver::Type", "NesterovAcceleratedGradientSolver");
-    //lucious::util::KnobDatabase::setKnob("GeneralDifferentiableSolver::Type", "LBFGSSolver");
-    lucious::util::KnobDatabase::setKnob("LBFGSSolver::MaxIterations", "5000");
+    lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::LearningRate", "1.0e-4");
+    lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::Momentum", "0.95");
+    lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::AnnealingRate", "1.00000");
+    lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::MaxGradNorm", "10.0");
+    lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::IterationsPerBatch", "5000");
+    lucius::util::KnobDatabase::setKnob("GeneralDifferentiableSolver::Type", "NesterovAcceleratedGradientSolver");
+    //lucius::util::KnobDatabase::setKnob("GeneralDifferentiableSolver::Type", "LBFGSSolver");
+    lucius::util::KnobDatabase::setKnob("LBFGSSolver::MaxIterations", "5000");
 }
 
 void linearRegressionExample()
@@ -663,12 +663,12 @@ void linearRegressionExample()
 
 int main(int argc, char** argv)
 {
-    lucious::util::ArgumentParser parser(argc, argv);
+    lucius::util::ArgumentParser parser(argc, argv);
 
     bool verbose = false;
     std::string loggingEnabledModules;
 
-    parser.description("The lucious linear regression example.");
+    parser.description("The lucius linear regression example.");
 
     parser.parse("-L", "--log-module", loggingEnabledModules, "",
         "Print out log messages during execution for specified modules "
@@ -680,22 +680,22 @@ int main(int argc, char** argv)
 
     if(verbose)
     {
-        lucious::util::enableAllLogs();
+        lucius::util::enableAllLogs();
     }
     else
     {
-        lucious::util::enableSpecificLogs(loggingEnabledModules);
+        lucius::util::enableSpecificLogs(loggingEnabledModules);
     }
 
-    lucious::util::log("LinearRegressionExample") << "Test begins\n";
+    lucius::util::log("LinearRegressionExample") << "Test begins\n";
 
     try
     {
-        lucious::linearRegressionExample();
+        lucius::linearRegressionExample();
     }
     catch(const std::exception& e)
     {
-        std::cout << "Lucious Linear Regression Example Failed:\n";
+        std::cout << "Lucius Linear Regression Example Failed:\n";
         std::cout << "Message: " << e.what() << "\n\n";
     }
 

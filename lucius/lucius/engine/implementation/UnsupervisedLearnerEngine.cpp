@@ -4,24 +4,24 @@
     \brief  The source file for the UnsupervisedLearnerEngine class.
 */
 
-// Lucious Includes
-#include <lucious/engine/interface/UnsupervisedLearnerEngine.h>
+// Lucius Includes
+#include <lucius/engine/interface/UnsupervisedLearnerEngine.h>
 
-#include <lucious/model/interface/Model.h>
+#include <lucius/model/interface/Model.h>
 
-#include <lucious/network/interface/NeuralNetwork.h>
-#include <lucious/network/interface/Layer.h>
+#include <lucius/network/interface/NeuralNetwork.h>
+#include <lucius/network/interface/Layer.h>
 
-#include <lucious/results/interface/ResultVector.h>
+#include <lucius/results/interface/ResultVector.h>
 
-#include <lucious/matrix/interface/Matrix.h>
-#include <lucious/matrix/interface/MatrixOperations.h>
-#include <lucious/matrix/interface/Operation.h>
+#include <lucius/matrix/interface/Matrix.h>
+#include <lucius/matrix/interface/MatrixOperations.h>
+#include <lucius/matrix/interface/Operation.h>
 
-#include <lucious/util/interface/debug.h>
-#include <lucious/util/interface/Knobs.h>
+#include <lucius/util/interface/debug.h>
+#include <lucius/util/interface/Knobs.h>
 
-namespace lucious
+namespace lucius
 {
 
 namespace engine

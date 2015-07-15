@@ -6,13 +6,13 @@
 
 #pragma once
 
-// Lucious Includes
-#include <lucious/network/interface/ActivationFunction.h>
+// Lucius Includes
+#include <lucius/network/interface/ActivationFunction.h>
 
 // Forward Declarations
-namespace lucious { namespace matrix { class Matrix; } }
+namespace lucius { namespace matrix { class Matrix; } }
 
-namespace lucious
+namespace lucius
 {
 
 namespace network

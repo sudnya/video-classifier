@@ -11,9 +11,9 @@
 #include <cstddef>
 
 // Forward Declarations
-namespace lucious { namespace results { class Result; } }
+namespace lucius { namespace results { class Result; } }
 
-namespace lucious
+namespace lucius
 {
 
 namespace results

@@ -10,9 +10,9 @@
 #include <string>
 
 // Forward Declarations
-namespace lucious { namespace network { class ActivationFunction; } }
+namespace lucius { namespace network { class ActivationFunction; } }
 
-namespace lucious
+namespace lucius
 {
 
 namespace network

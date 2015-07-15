@@ -4,18 +4,18 @@
 	\brief  A unit test for image and video display.
 */
 
-// Lucious Includes
-#include <lucious/video/interface/Image.h>
-#include <lucious/video/interface/Video.h>
-#include <lucious/video/interface/ImageLibraryInterface.h>
+// Lucius Includes
+#include <lucius/video/interface/Image.h>
+#include <lucius/video/interface/Video.h>
+#include <lucius/video/interface/ImageLibraryInterface.h>
 
-#include <lucious/util/interface/debug.h>
-#include <lucious/util/interface/ArgumentParser.h>
+#include <lucius/util/interface/debug.h>
+#include <lucius/util/interface/ArgumentParser.h>
 
 // Standard Library Includes
 #include <stdexcept>
 
-namespace lucious
+namespace lucius
 {
 
 namespace video
@@ -70,7 +70,7 @@ static void runTest(const std::string& inputPath, size_t xPixels,
 
 int main(int argc, char** argv)
 {
-    lucious::util::ArgumentParser parser(argc, argv);
+    lucius::util::ArgumentParser parser(argc, argv);
     
     bool verbose = false;
     std::string loggingEnabledModules;
@@ -82,7 +82,7 @@ int main(int argc, char** argv)
 	size_t yPixels = 0;
 	size_t colors  = 0;
 
-    parser.description("The lucious video and image display test.");
+    parser.description("The lucius video and image display test.");
 
     parser.parse("-i", "--input-path", imagePath, "images/cat.jpg",
         "The input video or image path to display..");
@@ -104,22 +104,22 @@ int main(int argc, char** argv)
 
     if(verbose)
 	{
-		lucious::util::enableAllLogs();
+		lucius::util::enableAllLogs();
 	}
 	else
 	{
-		lucious::util::enableSpecificLogs(loggingEnabledModules);
+		lucius::util::enableSpecificLogs(loggingEnabledModules);
 	}
     
-    lucious::util::log("TestDisplay") << "Test begins\n";
+    lucius::util::log("TestDisplay") << "Test begins\n";
     
     try
     {
-        lucious::video::runTest(imagePath, xPixels, yPixels, colors, displayText);
+        lucius::video::runTest(imagePath, xPixels, yPixels, colors, displayText);
     }
     catch(const std::exception& e)
     {
-        std::cout << "Lucious Display Test Failed:\n";
+        std::cout << "Lucius Display Test Failed:\n";
         std::cout << "Message: " << e.what() << "\n\n";
     }
 

@@ -1,9 +1,9 @@
 
-// Lucious Includes
-#include <lucious/matrix/interface/Allocation.h>
-#include <lucious/parallel/interface/Memory.h>
+// Lucius Includes
+#include <lucius/matrix/interface/Allocation.h>
+#include <lucius/parallel/interface/Memory.h>
 
-namespace lucious
+namespace lucius
 {
 namespace matrix
 {

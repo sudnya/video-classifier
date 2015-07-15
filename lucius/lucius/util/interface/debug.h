@@ -16,11 +16,11 @@
 #include <iostream>
 #include <sstream>
 #include <cassert>
-#include <lucious/util/interface/Timer.h>
+#include <lucius/util/interface/Timer.h>
 
 #include <iosfwd>
 
-namespace lucious
+namespace lucius
 {
 
 namespace util
@@ -152,13 +152,13 @@ namespace util
 
 // Swallow all types
 template <typename T>
-lucious::util::NullStream & operator<<(lucious::util::NullStream & s, T const &)
+lucius::util::NullStream & operator<<(lucius::util::NullStream & s, T const &)
 {
 	return s;
 }
 
 // Swallow manipulator templates
-inline lucious::util::NullStream & operator<<(lucious::util::NullStream & s,
+inline lucius::util::NullStream & operator<<(lucius::util::NullStream & s,
 	std::ostream &(std::ostream&))
 {
 	return s;
@@ -197,8 +197,8 @@ inline lucious::util::NullStream & operator<<(lucious::util::NullStream & s,
 		if(REPORT_BASE >= REPORT_ERROR_LEVEL && (x) >= REPORT_ERROR_LEVEL)\
 		{ \
 			{\
-			std::cout << "(" << lucious::util::_debugTime() << ") " \
-				<< lucious::util::_debugFile( __FILE__, __LINE__ ) \
+			std::cout << "(" << lucius::util::_debugTime() << ") " \
+				<< lucius::util::_debugFile( __FILE__, __LINE__ ) \
 				<< " " << y << "\n";\
 			}\
 		 \
@@ -218,8 +218,8 @@ inline lucious::util::NullStream & operator<<(lucious::util::NullStream & s,
 		if(REPORT_BASE >= REPORT_ERROR_LEVEL)\
 		{ \
 			{\
-			std::cout << "(" << lucious::util::_debugTime() << ") " \
-				<< lucious::util::_debugFile( __FILE__, __LINE__ ) \
+			std::cout << "(" << lucius::util::_debugTime() << ") " \
+				<< lucius::util::_debugFile( __FILE__, __LINE__ ) \
 					<< " " << y << "\n";\
 			}\
 		 \
@@ -235,8 +235,8 @@ inline lucious::util::NullStream & operator<<(lucious::util::NullStream & s,
 		if(!(x))\
 		{ \
 			{\
-			std::cout << "(" << lucious::util::_debugTime() << ") " \
-				<< lucious::util::_debugFile( __FILE__, __LINE__ ) \
+			std::cout << "(" << lucius::util::_debugTime() << ") " \
+				<< lucius::util::_debugFile( __FILE__, __LINE__ ) \
 					<< " Assertion message: " << y << "\n";\
 			}\
 			assert(x);\

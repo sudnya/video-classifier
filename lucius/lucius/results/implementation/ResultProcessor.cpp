@@ -4,10 +4,10 @@
 	\brief  The source file for the ResultProcessor class.
 */
 
-// Lucious Includes
-#include <lucious/results/interface/ResultProcessor.h>
+// Lucius Includes
+#include <lucius/results/interface/ResultProcessor.h>
 
-namespace lucious
+namespace lucius
 {
 
 namespace results

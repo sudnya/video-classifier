@@ -4,15 +4,15 @@
 	\brief  The source file for the ResultProcessorfactor class.
 */
 
-// Lucious Includes
-#include <lucious/results/interface/ResultProcessorFactory.h>
+// Lucius Includes
+#include <lucius/results/interface/ResultProcessorFactory.h>
 
-#include <lucious/results/interface/NullResultProcessor.h>
-#include <lucious/results/interface/LabelResultProcessor.h>
-#include <lucious/results/interface/LabelMatchResultProcessor.h>
-#include <lucious/results/interface/FeatureResultProcessor.h>
+#include <lucius/results/interface/NullResultProcessor.h>
+#include <lucius/results/interface/LabelResultProcessor.h>
+#include <lucius/results/interface/LabelMatchResultProcessor.h>
+#include <lucius/results/interface/FeatureResultProcessor.h>
 
-namespace lucious
+namespace lucius
 {
 
 namespace results

@@ -10,10 +10,10 @@
 #include <string>
 
 // Forward Declarations
-namespace lucious { namespace matrix { class Matrix;    } }
-namespace lucious { namespace matrix { class Operation; } }
+namespace lucius { namespace matrix { class Matrix;    } }
+namespace lucius { namespace matrix { class Operation; } }
 
-namespace lucious
+namespace lucius
 {
 
 namespace network

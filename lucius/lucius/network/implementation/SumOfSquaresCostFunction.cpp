@@ -4,14 +4,14 @@
     \brief  The source file for the SumOfSquaresCostFunction class.
 */
 
-// Lucious Includes
-#include <lucious/network/interface/SumOfSquaresCostFunction.h>
+// Lucius Includes
+#include <lucius/network/interface/SumOfSquaresCostFunction.h>
 
-#include <lucious/matrix/interface/Matrix.h>
-#include <lucious/matrix/interface/MatrixOperations.h>
-#include <lucious/matrix/interface/Operation.h>
+#include <lucius/matrix/interface/Matrix.h>
+#include <lucius/matrix/interface/MatrixOperations.h>
+#include <lucius/matrix/interface/Operation.h>
 
-namespace lucious
+namespace lucius
 {
 
 namespace network

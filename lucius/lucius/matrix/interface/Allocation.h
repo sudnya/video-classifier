@@ -6,7 +6,7 @@
 #include <cstdint>
 #include <cstddef>
 
-namespace lucious
+namespace lucius
 {
 namespace matrix
 {

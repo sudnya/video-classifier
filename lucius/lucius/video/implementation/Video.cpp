@@ -4,20 +4,20 @@
 	\brief  The source file for the Video class.
 */
 
-// Lucious Includes
-#include <lucious/video/interface/Video.h>
-#include <lucious/video/interface/VideoLibraryInterface.h>
-#include <lucious/video/interface/VideoLibrary.h>
-#include <lucious/video/interface/VideoStream.h>
+// Lucius Includes
+#include <lucius/video/interface/Video.h>
+#include <lucius/video/interface/VideoLibraryInterface.h>
+#include <lucius/video/interface/VideoLibrary.h>
+#include <lucius/video/interface/VideoStream.h>
 
-#include <lucious/util/interface/paths.h>
-#include <lucious/util/interface/debug.h>
+#include <lucius/util/interface/paths.h>
+#include <lucius/util/interface/debug.h>
 
 // Standard Library Includes
 #include <stdexcept>
 #include <sstream>
 
-namespace lucious
+namespace lucius
 {
 
 namespace video

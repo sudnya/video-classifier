@@ -6,13 +6,13 @@
 
 #pragma once
 
-// Lucious Includes
-#include <lucious/optimizer/interface/Solver.h>
+// Lucius Includes
+#include <lucius/optimizer/interface/Solver.h>
 
 // Forward Declarations
-namespace lucious { namespace optimizer { class CostFunction; } }
+namespace lucius { namespace optimizer { class CostFunction; } }
 
-namespace lucious
+namespace lucius
 {
 
 namespace optimizer

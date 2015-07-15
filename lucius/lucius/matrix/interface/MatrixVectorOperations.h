@@ -1,12 +1,12 @@
 #pragma once
 
 // Forward Declarations
-namespace lucious { namespace matrix { class MatrixVector; } }
-namespace lucious { namespace matrix { class Operation;    } }
-namespace lucious { namespace matrix { class Precision;    } }
-namespace lucious { namespace matrix { class Dimension;    } }
+namespace lucius { namespace matrix { class MatrixVector; } }
+namespace lucius { namespace matrix { class Operation;    } }
+namespace lucius { namespace matrix { class Precision;    } }
+namespace lucius { namespace matrix { class Dimension;    } }
 
-namespace lucious
+namespace lucius
 {
 namespace matrix
 {

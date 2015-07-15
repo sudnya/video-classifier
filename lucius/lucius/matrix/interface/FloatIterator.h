@@ -1,11 +1,11 @@
 
 #pragma once
 
-// Lucious Includes
-#include <lucious/matrix/interface/FloatReference.h>
-#include <lucious/matrix/interface/Dimension.h>
+// Lucius Includes
+#include <lucius/matrix/interface/FloatReference.h>
+#include <lucius/matrix/interface/Dimension.h>
 
-namespace lucious
+namespace lucius
 {
 namespace matrix
 {

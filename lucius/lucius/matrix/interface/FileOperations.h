@@ -6,11 +6,11 @@
 #include <ostream>
 
 // Forward Declarations
-namespace lucious { namespace matrix { class Matrix;           } }
-namespace lucious { namespace util   { class InputTarArchive;  } }
-namespace lucious { namespace util   { class OutputTarArchive; } }
+namespace lucius { namespace matrix { class Matrix;           } }
+namespace lucius { namespace util   { class InputTarArchive;  } }
+namespace lucius { namespace util   { class OutputTarArchive; } }
 
-namespace lucious
+namespace lucius
 {
 namespace matrix
 {

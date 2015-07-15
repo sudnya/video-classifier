@@ -3,30 +3,30 @@
  * The implementation of the Neural Network class
  */
 
-// Lucious Includes
-#include <lucious/network/interface/NeuralNetwork.h>
-#include <lucious/network/interface/CostFunction.h>
-#include <lucious/network/interface/CostFunctionFactory.h>
-#include <lucious/network/interface/Layer.h>
-#include <lucious/network/interface/LayerFactory.h>
+// Lucius Includes
+#include <lucius/network/interface/NeuralNetwork.h>
+#include <lucius/network/interface/CostFunction.h>
+#include <lucius/network/interface/CostFunctionFactory.h>
+#include <lucius/network/interface/Layer.h>
+#include <lucius/network/interface/LayerFactory.h>
 
-#include <lucious/optimizer/interface/NeuralNetworkSolver.h>
+#include <lucius/optimizer/interface/NeuralNetworkSolver.h>
 
-#include <lucious/matrix/interface/Matrix.h>
-#include <lucious/matrix/interface/MatrixVector.h>
-#include <lucious/matrix/interface/Operation.h>
-#include <lucious/matrix/interface/MatrixOperations.h>
+#include <lucius/matrix/interface/Matrix.h>
+#include <lucius/matrix/interface/MatrixVector.h>
+#include <lucius/matrix/interface/Operation.h>
+#include <lucius/matrix/interface/MatrixOperations.h>
 
-#include <lucious/util/interface/Knobs.h>
-#include <lucious/util/interface/debug.h>
-#include <lucious/util/interface/PropertyTree.h>
+#include <lucius/util/interface/Knobs.h>
+#include <lucius/util/interface/debug.h>
+#include <lucius/util/interface/PropertyTree.h>
 
 // Standard Library Includes
 #include <cassert>
 #include <vector>
 #include <ctime>
 
-namespace lucious
+namespace lucius
 {
 
 namespace network

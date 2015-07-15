@@ -5,10 +5,10 @@
 */
 
 
-#include <lucious/util/interface/string.h>
-#include <lucious/util/interface/debug.h>
+#include <lucius/util/interface/string.h>
+#include <lucius/util/interface/debug.h>
 
-namespace lucious
+namespace lucius
 {
 
 namespace util

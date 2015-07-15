@@ -4,19 +4,19 @@
 	\brief  A unit test for the performance of the neural network.
 */
 
-// Lucious Includes
-#include <lucious/network/interface/NeuralNetwork.h>
-#include <lucious/network/interface/FeedForwardLayer.h>
+// Lucius Includes
+#include <lucius/network/interface/NeuralNetwork.h>
+#include <lucius/network/interface/FeedForwardLayer.h>
 
-#include <lucious/model/interface/Model.h>
+#include <lucius/model/interface/Model.h>
 
-#include <lucious/matrix/interface/Matrix.h>
+#include <lucius/matrix/interface/Matrix.h>
 
-#include <lucious/util/interface/debug.h>
-#include <lucious/util/interface/ArgumentParser.h>
-#include <lucious/util/interface/Knobs.h>
-#include <lucious/util/interface/Timer.h>
-#include <lucious/util/interface/SystemCompatibility.h>
+#include <lucius/util/interface/debug.h>
+#include <lucius/util/interface/ArgumentParser.h>
+#include <lucius/util/interface/Knobs.h>
+#include <lucius/util/interface/Timer.h>
+#include <lucius/util/interface/SystemCompatibility.h>
 
 // Standard Library Includes
 #include <random>
@@ -24,7 +24,7 @@
 #include <memory>
 #include <cassert>
 
-namespace lucious
+namespace lucius
 {
 
 namespace network
@@ -178,7 +178,7 @@ static void reportUnsupervisedTrainingPerformance(NeuralNetwork& network,
 	std::cout << " Memory required:     " << megabytes                           << " MB\n";
 	std::cout << " Machine FLOPS:       " << toGiga(machineFlops)                << " GFLOPS\n";
 	std::cout << " Speed of light:      " << speedOfLight                        << " seconds\n";
-	std::cout << " Lucious time:        " << timer.seconds()                     << " seconds\n";
+	std::cout << " Lucius time:        " << timer.seconds()                     << " seconds\n";
 	std::cout << "\n";
 	std::cout << " CPU-SLOWDOWN:        " << slowdown                            << "x\n";
 
@@ -261,7 +261,7 @@ static void runTest(size_t iterations, size_t trainingIterations,
 
 int main(int argc, char** argv)
 {
-    lucious::util::ArgumentParser parser(argc, argv);
+    lucius::util::ArgumentParser parser(argc, argv);
     
     bool verbose = false;
     bool seed = false;
@@ -275,7 +275,7 @@ int main(int argc, char** argv)
 	size_t batchSize = 0;
 	size_t classificationIterations = 0;
 
-    parser.description("The lucious neural network benchmark.");
+    parser.description("The lucius neural network benchmark.");
 
     parser.parse("-i", "--iterations", iterations, 2,
         "The number of iterations to run unsupervised learning for.");
@@ -302,18 +302,18 @@ int main(int argc, char** argv)
 
     if(verbose)
 	{
-		lucious::util::enableAllLogs();
+		lucius::util::enableAllLogs();
 	}
 	else
 	{
-		lucious::util::enableSpecificLogs(loggingEnabledModules);
+		lucius::util::enableSpecificLogs(loggingEnabledModules);
 	}
     
-    lucious::util::log("TestNeuralNetworkPerformance") << "Test begins\n";
+    lucius::util::log("TestNeuralNetworkPerformance") << "Test begins\n";
     
     try
     {
-        lucious::network::runTest(
+        lucius::network::runTest(
 			iterations, trainingIterations, batchSize, classificationIterations,
 			xPixels, yPixels, colors, seed);
 		
@@ -321,7 +321,7 @@ int main(int argc, char** argv)
     }
     catch(const std::exception& e)
     {
-        std::cout << "Lucious Neural Network Performance Test Failed:\n";
+        std::cout << "Lucius Neural Network Performance Test Failed:\n";
         std::cout << "Message: " << e.what() << "\n\n";
     }
 

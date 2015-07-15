@@ -4,24 +4,24 @@
     \brief  The source file for the Model class.
 */
 
-// Lucious Includes
-#include <lucious/model/interface/Model.h>
+// Lucius Includes
+#include <lucius/model/interface/Model.h>
 
-#include <lucious/network/interface/NeuralNetwork.h>
+#include <lucius/network/interface/NeuralNetwork.h>
 
-#include <lucious/matrix/interface/Matrix.h>
+#include <lucius/matrix/interface/Matrix.h>
 
-#include <lucious/util/interface/TarArchive.h>
-#include <lucious/util/interface/PropertyTree.h>
+#include <lucius/util/interface/TarArchive.h>
+#include <lucius/util/interface/PropertyTree.h>
 
-#include <lucious/util/interface/debug.h>
-#include <lucious/util/interface/json.h>
+#include <lucius/util/interface/debug.h>
+#include <lucius/util/interface/json.h>
 
 // Standard Library Includes
 #include <sstream>
 #include <map>
 
-namespace lucious
+namespace lucius
 {
 
 namespace model

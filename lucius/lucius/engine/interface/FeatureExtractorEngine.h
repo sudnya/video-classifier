@@ -6,14 +6,14 @@
 
 #pragma once
 
-// Lucious Includes
-#include <lucious/engine/interface/Engine.h>
+// Lucius Includes
+#include <lucius/engine/interface/Engine.h>
 
 // Standard Library Includes
 #include <memory>
 #include <fstream>
 
-namespace lucious
+namespace lucius
 {
 
 namespace engine

@@ -16,9 +16,9 @@
 	#include <mach/mach_time.h>
 #endif
 
-#include <lucious/util/interface/LowLevelTimer.h>
+#include <lucius/util/interface/LowLevelTimer.h>
 
-namespace lucious
+namespace lucius
 {
 
 namespace util

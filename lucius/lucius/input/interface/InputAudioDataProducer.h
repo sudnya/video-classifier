@@ -6,9 +6,9 @@
 
 #pragma once
 
-#include <lucious/input/interface/InputDataProducer.h>
+#include <lucius/input/interface/InputDataProducer.h>
 
-namespace lucious
+namespace lucius
 {
 
 namespace input

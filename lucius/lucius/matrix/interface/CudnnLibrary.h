@@ -10,7 +10,7 @@
 #include <cstddef>
 #include <string>
 
-namespace lucious
+namespace lucius
 {
 
 namespace matrix

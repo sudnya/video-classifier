@@ -4,12 +4,12 @@
 	\brief  A unit test for images.
 */
 
-// Lucious Includes
-#include <lucious/video/interface/Image.h>
+// Lucius Includes
+#include <lucius/video/interface/Image.h>
 
-#include <lucious/util/interface/debug.h>
-#include <lucious/util/interface/paths.h>
-#include <lucious/util/interface/ArgumentParser.h>
+#include <lucius/util/interface/debug.h>
+#include <lucius/util/interface/paths.h>
+#include <lucius/util/interface/ArgumentParser.h>
 
 
 int main(int argc, char** argv)

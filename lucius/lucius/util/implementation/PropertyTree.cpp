@@ -4,13 +4,13 @@
     \brief  The source file for the PropertyTree class.
 */
 
-// Lucious Includes
-#include <lucious/util/interface/PropertyTree.h>
+// Lucius Includes
+#include <lucius/util/interface/PropertyTree.h>
 
 // Standard Library Includes
 #include <cassert>
 
-namespace lucious
+namespace lucius
 {
 
 namespace util

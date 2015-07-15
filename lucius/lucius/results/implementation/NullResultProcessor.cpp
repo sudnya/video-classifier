@@ -4,12 +4,12 @@
 	\brief  The source file for the NullResultProcessor class.
 */
 
-// Lucious Includes
-#include <lucious/results/interface/NullResultProcessor.h>
+// Lucius Includes
+#include <lucius/results/interface/NullResultProcessor.h>
 
-#include <lucious/util/interface/debug.h>
+#include <lucius/util/interface/debug.h>
 
-namespace lucious
+namespace lucius
 {
 
 namespace results

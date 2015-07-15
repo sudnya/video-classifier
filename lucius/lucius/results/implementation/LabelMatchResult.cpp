@@ -4,9 +4,9 @@
 	\brief  The source file for the LabelMatchResult class.
 */
 
-#include <lucious/results/interface/LabelMatchResult.h>
+#include <lucius/results/interface/LabelMatchResult.h>
 
-namespace lucious
+namespace lucius
 {
 
 namespace results

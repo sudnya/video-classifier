@@ -4,63 +4,63 @@
 #    \file   SConscript
 #    \author Gregory Diamos <solusstultus@gmail.com>
 #    \date   June 13, 2015
-#    \brief  The SCons program build script for lucious
+#    \brief  The SCons program build script for lucius
 ################################################################################
 
 
 Import('env')
 
-lucious_libs = env['LUCIOUS_LIBS']
+lucius_libs = env['LUCIUS_LIBS']
 
 programs = []
 
-programs.append(env.Program('lucious-classifier', \
-    ['tools/lucious-classifier.cpp'], LIBS=lucious_libs))
+programs.append(env.Program('lucius-classifier', \
+    ['tools/lucius-classifier.cpp'], LIBS=lucius_libs))
 
-programs.append(env.Program('lucious-make-dataset', \
-    ['tools/lucious-make-dataset.cpp'], LIBS=lucious_libs))
+programs.append(env.Program('lucius-make-dataset', \
+    ['tools/lucius-make-dataset.cpp'], LIBS=lucius_libs))
 
 programs.append(env.Program('test-classifier', \
-    ['engine/test/test-classifier.cpp'], LIBS=lucious_libs))
+    ['engine/test/test-classifier.cpp'], LIBS=lucius_libs))
 
 programs.append(env.Program('test-mnist', \
-    ['engine/test/test-mnist.cpp'], LIBS=lucious_libs))
+    ['engine/test/test-mnist.cpp'], LIBS=lucius_libs))
 
 programs.append(env.Program('test-bracket-matching', \
-    ['engine/test/test-bracket-matching.cpp'], LIBS=lucious_libs))
+    ['engine/test/test-bracket-matching.cpp'], LIBS=lucius_libs))
 
 programs.append(env.Program('test-matrix', \
-    ['matrix/test/test-matrix.cpp'], LIBS=lucious_libs))
+    ['matrix/test/test-matrix.cpp'], LIBS=lucius_libs))
 
 programs.append(env.Program('test-matrix-vector', \
-    ['matrix/test/test-matrix-vector.cpp'], LIBS=lucious_libs))
+    ['matrix/test/test-matrix-vector.cpp'], LIBS=lucius_libs))
 
 programs.append(env.Program('test-model', \
-    ['model/test/test-model.cpp'], LIBS=lucious_libs))
+    ['model/test/test-model.cpp'], LIBS=lucius_libs))
 
-#programs.append(env.Program('test-lucious-visualization', \
-#    ['visualization/test/test-lucious-visualization.cpp'], LIBS=lucious_libs))
+#programs.append(env.Program('test-lucius-visualization', \
+#    ['visualization/test/test-lucius-visualization.cpp'], LIBS=lucius_libs))
 
 programs.append(env.Program('test-memory', \
-    ['parallel/test/test-memory.cpp'], LIBS=lucious_libs))
+    ['parallel/test/test-memory.cpp'], LIBS=lucius_libs))
 
-programs.append(env.Program('test-lucious-display', \
-    ['video/test/test-display.cpp'], LIBS=lucious_libs))
+programs.append(env.Program('test-lucius-display', \
+    ['video/test/test-display.cpp'], LIBS=lucius_libs))
 
-#programs.append(env.Program('test-lucious-performance', \
-#    ['network/test/test-neuralnetwork-performance.cpp'], LIBS=lucious_libs))
+#programs.append(env.Program('test-lucius-performance', \
+#    ['network/test/test-neuralnetwork-performance.cpp'], LIBS=lucius_libs))
 
 programs.append(env.Program('test-gradient', \
-    ['network/test/test-gradient-check.cpp'], LIBS=lucious_libs))
+    ['network/test/test-gradient-check.cpp'], LIBS=lucius_libs))
 
 programs.append(env.Program('test-convolutional-gradient', \
-    ['network/test/test-convolutional-gradient-check.cpp'], LIBS=lucious_libs))
+    ['network/test/test-convolutional-gradient-check.cpp'], LIBS=lucius_libs))
 
 programs.append(env.Program('test-linear-regression', \
-    ['network/test/test-linear-regression.cpp'], LIBS=lucious_libs))
+    ['network/test/test-linear-regression.cpp'], LIBS=lucius_libs))
 
 programs.append(env.Program('test-optimizer', \
-    ['optimizer/test/test-optimizer.cpp'], LIBS=lucious_libs))
+    ['optimizer/test/test-optimizer.cpp'], LIBS=lucius_libs))
 
 Return('programs')
 
