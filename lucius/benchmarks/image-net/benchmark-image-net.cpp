@@ -250,7 +250,7 @@ static void runBenchmark(const Parameters& parameters)
     }
 
     // Create a deep model for first layer classification
-    Model model(parameters.outputPath);
+    Model model;
 
     createModel(model, parameters);
 
@@ -279,7 +279,7 @@ static void setupSolverParameters()
     lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::LearningRate", "1.0e-2");
     lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::Momentum", "0.9");
     lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::AnnealingRate", "1.00000");
-    lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::MaxGradNorm", "10.0");
+    lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::MaxGradNorm", "5.0");
     lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::IterationsPerBatch", "1");
     lucius::util::KnobDatabase::setKnob("GeneralDifferentiableSolver::Type",
         "NesterovAcceleratedGradientSolver");
