@@ -350,7 +350,8 @@ int main(int argc, char** argv)
         "(comma-separated list of modules, e.g. NeuralNetwork, Layer, ...).");
 
     parser.parse("-s", "--seed", parameters.seed, false, "Seed with time.");
-    parser.parse("-S", "--maximum-samples", parameters.maximumSamples, 8000, "The maximum number of samples to train/test on.");
+    parser.parse("-S", "--maximum-samples", parameters.maximumSamples, 8000,
+        "The maximum number of samples to train/test on.");
 
     parser.parse("-l", "--layer-size", parameters.layerSize, 32,
         "The size of each fully connected feed forward and recurrent layer.");

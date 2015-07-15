@@ -203,6 +203,11 @@ void Model::save() const
 
 void Model::load()
 {
+    if(_loaded)
+    {
+        return;
+    }
+
     std::ifstream stream(_path);
 
     if(!stream.is_open())
