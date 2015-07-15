@@ -272,6 +272,11 @@ static void getVideoBatch(ImageVector& batch, VideoVector& videos,
     size_t& remainingSamples, size_t batchSize,
     std::default_random_engine& generator, bool requiresLabeledData)
 {
+    if(videos.empty())
+    {
+        return;
+    }
+
     util::log("InputVisualDataProducer") << "Filling video batch\n";
 
     size_t frameCount = std::min(batchSize, remainingSamples);

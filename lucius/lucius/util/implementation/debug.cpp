@@ -19,6 +19,7 @@
 // Standard Library Includes
 #include <memory>
 #include <unordered_set>
+#include <fstream>
 
 
 #ifdef HAVE_CONFIG_H
@@ -94,6 +95,33 @@ namespace util
 		{
 			return enableAll || (enabledLogs.count(logName) != 0);
 		}
+
+    public:
+        std::ostream& getLog()
+        {
+            if(_logFile)
+            {
+                _logFile->flush();
+
+                return *_logFile;
+            }
+
+            return std::cout;
+        }
+
+    public:
+        void setLogFile(const std::string& name)
+        {
+            _logFile.reset(new std::ofstream(name));
+
+            if(!_logFile->is_open())
+            {
+                throw std::runtime_error("Failed to open log file '" + name + "' for writing.");
+            }
+        }
+
+    private:
+        std::unique_ptr<std::ofstream> _logFile;
 	};
 
 	LogDatabase::LogDatabase()
@@ -119,6 +147,11 @@ namespace util
 		}
 	}
 
+    void setLogFile(const std::string& name)
+    {
+        logDatabase.setLogFile(name);
+    }
+
 	void enableLog(const std::string& name)
 	{
 		logDatabase.enabledLogs.insert(name);
@@ -130,11 +163,9 @@ namespace util
 	{
 		if(logDatabase.isEnabled(name))
 		{
-			std::cout << "(" << _debugTime() << "): " << name << ": ";
+			logDatabase.getLog() << "(" << _debugTime() << "): " << name << ": ";
 
-            assert(std::cout.good());
-
-			return std::cout;
+			return logDatabase.getLog();
 		}
 
 		if(nullstream == nullptr)

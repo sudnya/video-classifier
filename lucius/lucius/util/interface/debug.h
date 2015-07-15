@@ -35,80 +35,80 @@ namespace util
 	extern std::string _debugFile( const std::string& file, unsigned int line );
 
 	/*! \brief Convert an iterable range to a string
-		
+
 		T must implement the concept of a forward iterator and the object being
 			pointed to must be able to be accepted by operator<<
-		
+
 		\param begin Iterator to the start of the range
 		\param end Iterator to the end of the range
 		\param space The string used as a space
-		
+
 		\return A string representation of the specified range.
 	*/
-	template < typename T > std::string toString( T begin, T end, 
+	template < typename T > std::string toString( T begin, T end,
 		std::string space = " ", unsigned int limit = 80 )
 	{
 		std::stringstream stream;
-		
+
 		if( begin != end )
 		{
 			stream << *begin;
 			++begin;
 		}
-		
+
 		for( T iterator = begin; iterator != end; ++iterator )
 		{
-			stream << space;			
+			stream << space;
 			stream << *iterator;
 			if( stream.str().size() > limit )
 			{
 				break;
 			}
 		}
-		
+
 		return stream.str();
 	}
 
 	/*! \brief Convert an iterable range to a string using a formatting functor
-		
+
 		T must implement the concept of a forward iterator and the object being
-			pointed to must be able to be accepted 
+			pointed to must be able to be accepted
 			by operator<< format( object )
-		
+
 		\param begin Iterator to the start of the range
 		\param end Iterator to the end of the range
 		\param space The string used as a space
-		
+
 		\return A string representation of the specified range.
 
 	*/
-	template < typename T, typename Format > std::string toFormattedString( 
-		T begin, T end, Format format, std::string space = " ", 
+	template < typename T, typename Format > std::string toFormattedString(
+		T begin, T end, Format format, std::string space = " ",
 		unsigned int limit = 80 )
 	{
 		std::stringstream stream;
-		
+
 		if( begin != end )
 		{
 			stream << format( begin );
 			++begin;
 		}
-		
+
 		for( T iterator = begin; iterator != end; ++iterator )
 		{
-			stream << space;			
+			stream << space;
 			stream << format( iterator );
 			if( stream.str().size() > limit )
 			{
 				break;
 			}
 		}
-		
+
 		return stream.str();
 	}
 
 	/*!
-		\brief Strip the front of a file	
+		\brief Strip the front of a file
 	*/
 	template< char delimiter >
 	std::string stripReportPath( const std::string& string )
@@ -122,10 +122,10 @@ namespace util
 
 	/*! \brief Return the stream with the current name */
 	extern std::ostream& _getStream(const std::string& name);
-	
+
 	#if 0
 	extern NullStream nullstream;
-	
+
 	inline std::ostream& log(const std::string& path)
 	{
 			return nullstream;
@@ -134,9 +134,9 @@ namespace util
 	inline std::ostream& log(const std::string& path)
 	{
 			return _getStream(path);
-	}		
+	}
 	#endif
-	
+
 	extern bool isLogEnabled(const std::string& logName);
 
 
@@ -145,7 +145,10 @@ namespace util
 
 	/* Enable a comma sepearated list of logs */
 	extern void enableSpecificLogs(const std::string& modules);
-	
+
+	/* Set the log file name. */
+	extern void setLogFile(const std::string& name);
+
 }
 
 }
@@ -167,9 +170,9 @@ inline lucius::util::NullStream & operator<<(lucius::util::NullStream & s,
 /*!
 
 	\def REPORT_ERROR_LEVEL
-	
+
 	\brief The threshold to print out the debugging message.
-	
+
 	If the debugging error levels is less than this, it will not be printed out.
 
 */
@@ -180,15 +183,15 @@ inline lucius::util::NullStream & operator<<(lucius::util::NullStream & s,
 
 /*!
 	\def reportE(x,y)
-	\brief a MACRO that prints a string to stdio if DEBUG is defined and x is 
-	greater than REPORT_ERROR_LEVEL, or exits the program if the error level 
-	is greater than EXIT_ERROR_LEVEL.  
-	
-	If MPI_DEBUG is defined, it appends the rank to the beginning of the error 
+	\brief a MACRO that prints a string to stdio if DEBUG is defined and x is
+	greater than REPORT_ERROR_LEVEL, or exits the program if the error level
+	is greater than EXIT_ERROR_LEVEL.
+
+	If MPI_DEBUG is defined, it appends the rank to the beginning of the error
 	message.
-	
+
 	\param x The error level
-	\param y The message to print.  You can use the << operators to send 
+	\param y The message to print.  You can use the << operators to send
 		multiple arguments
 */
 

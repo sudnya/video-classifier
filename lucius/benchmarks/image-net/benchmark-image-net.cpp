@@ -283,7 +283,7 @@ static void setupSolverParameters()
     lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::IterationsPerBatch", "1");
     lucius::util::KnobDatabase::setKnob("GeneralDifferentiableSolver::Type",
         "NesterovAcceleratedGradientSolver");
-    lucius::util::KnobDatabase::setKnob("InputVisualDataProducer::CropImages", "0");
+    lucius::util::KnobDatabase::setKnob("InputVisualDataProducer::CropImagesRandomly", "1");
     //lucius::util::KnobDatabase::setKnob("GeneralDifferentiableSolver::Type", "LBFGSSolver");
 }
 
@@ -336,6 +336,8 @@ int main(int argc, char** argv)
     parser.parse();
 
     setupSolverParameters();
+
+    lucius::util::setLogFile("image-net-benchmark.log");
 
     if(verbose)
     {
