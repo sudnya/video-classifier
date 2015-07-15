@@ -4,18 +4,18 @@
 #    \file   SConscript
 #    \author Gregory Diamos <solusstultus@gmail.com>
 #    \date   June 13, 2015
-#    \brief  The SCons program build script for lucious benchmarks
+#    \brief  The SCons program build script for lucius benchmarks
 ################################################################################
 
 
 Import('env')
 
-lucious_libs = env['LUCIOUS_LIBS']
+lucius_libs = env['LUCIUS_LIBS']
 
 programs = []
 
 programs.append(env.Program('benchmark-imagenet', \
-    ['image-net/benchmark-image-net.cpp'], LIBS=lucious_libs))
+    ['image-net/benchmark-image-net.cpp'], LIBS=lucius_libs))
 
 Return('programs')
 

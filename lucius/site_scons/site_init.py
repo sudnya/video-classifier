@@ -77,7 +77,7 @@ def getCFLAGS(mode, warn, warnings_as_errors, CC):
     elif mode == 'debug':
         # turn on debug mode
         result.append(gCompilerOptions[CC]['debug'])
-        result.append('-DLUCIOUS_DEBUG')
+        result.append('-DLUCIUS_DEBUG')
 
     if warn:
         # turn on all warnings
@@ -199,13 +199,13 @@ def BuildEnvironment():
     # add a variable to determine the install path
     default_install_path = '/usr/local'
 
-    if 'LUCIOUS_INSTALL_PATH' in os.environ:
-        default_install_path = os.environ['LUCIOUS_INSTALL_PATH']
+    if 'LUCIUS_INSTALL_PATH' in os.environ:
+        default_install_path = os.environ['LUCIUS_INSTALL_PATH']
 
-    vars.Add(PathVariable('install_path', 'The lucious install path',
+    vars.Add(PathVariable('install_path', 'The lucius install path',
         default_install_path, PathVariable.PathIsDirCreate))
 
-    vars.Add(BoolVariable('install', 'Include lucious install path in default '
+    vars.Add(BoolVariable('install', 'Include lucius install path in default '
         'targets that will be built and configure to install in the '
         'install_path (defaults to false unless one of the targets is '
         '"install")', 0))
@@ -258,7 +258,7 @@ def BuildEnvironment():
     env.Replace(BUILD_ROOT = str(env.Dir('.').abspath))
     env.AppendUnique(CPPPATH = env['BUILD_ROOT'])
 
-    # set lucious include path
+    # set lucius include path
     if env['install']:
         env.AppendUnique(LIBPATH = os.path.abspath(os.path.join(env['install_path'], 'lib')))
     else:

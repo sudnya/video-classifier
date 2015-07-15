@@ -1,13 +1,13 @@
 
 #pragma once
 
-// Lucious Includes
-#include <lucious/matrix/interface/Dimension.h>
+// Lucius Includes
+#include <lucius/matrix/interface/Dimension.h>
 
 // Standard Library Includes
 #include <sstream>
 
-namespace lucious
+namespace lucius
 {
 namespace matrix
 {

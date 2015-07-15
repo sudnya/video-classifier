@@ -45,9 +45,9 @@ KnobDatabaseImplementation::KnobDatabaseImplementation()
 void KnobDatabaseImplementation::loadKnobFiles()
 {
 	// Check for an environment variable
-	if(isEnvironmentVariableDefined("LUCIOUS_KNOB_FILE"))
+	if(isEnvironmentVariableDefined("LUCIUS_KNOB_FILE"))
 	{
-		KnobFile knobFile(getEnvironmentVariable("LUCIOUS_KNOB_FILE"));
+		KnobFile knobFile(getEnvironmentVariable("LUCIUS_KNOB_FILE"));
 
 		knobFile.loadKnobs();
 	}

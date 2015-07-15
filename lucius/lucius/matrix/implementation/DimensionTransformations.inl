@@ -1,12 +1,12 @@
 
 #pragma once
 
-// Lucious Includes
-#include <lucious/matrix/interface/DimensionTransformations.h>
+// Lucius Includes
+#include <lucius/matrix/interface/DimensionTransformations.h>
 
-#include <lucious/parallel/interface/ScalarOperations.h>
+#include <lucius/parallel/interface/ScalarOperations.h>
 
-namespace lucious
+namespace lucius
 {
 namespace matrix
 {

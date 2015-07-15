@@ -1,10 +1,10 @@
 
 #pragma once
 
-// Lucious Includes
-#include <lucious/parallel/interface/ConcurrentCollectives.h>
+// Lucius Includes
+#include <lucius/parallel/interface/ConcurrentCollectives.h>
 
-namespace lucious
+namespace lucius
 {
 namespace parallel
 {
