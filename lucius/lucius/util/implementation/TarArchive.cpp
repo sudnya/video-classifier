@@ -14,6 +14,7 @@
 #include <stdexcept>
 #include <iomanip>
 #include <map>
+#include <cstring>
 
 namespace lucius
 {

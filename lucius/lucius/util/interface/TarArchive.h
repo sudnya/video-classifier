@@ -9,6 +9,7 @@
 // Standard Library Includes
 #include <string>
 #include <vector>
+#include <memory>
 
 namespace lucius
 {
