@@ -49,7 +49,7 @@ static std::string loadFile(const std::string& path);
 static void createNewModel(const std::string& modelFileName, const std::string& modelSpecificationPath)
 {
 	model::ModelBuilder builder;
-	
+
 	std::unique_ptr<model::Model> model;
 
 	if(modelSpecificationPath.empty())
@@ -61,9 +61,9 @@ static void createNewModel(const std::string& modelFileName, const std::string& 
 		auto specification = loadFile(modelSpecificationPath);
 
 		model.reset(builder.create(modelFileName, specification));
-		
+
 	}
-	
+
 	model->save();
 }
 
@@ -71,18 +71,18 @@ static void visualizeNeurons(const std::string& modelFileName,
 	const std::string& outputPath)
 {
 	model::Model model(modelFileName);
-	
+
 	model.load();
-	
+
 	std::string networkName = util::KnobDatabase::getKnobValue(
 		"NetworkToVisualize", "FeatureSelector");
-	
+
 	auto network = model.getNeuralNetwork(networkName);
 
 	visualization::NeuronVisualizer visualizer(&network);
 
 	auto image = visualizer.visualizeInputTilesForAllNeurons();
-	
+
 	image.setPath(util::joinPaths(outputPath, networkName + ".png"));
 
 	image.save();
@@ -98,10 +98,10 @@ static void runClassifier(const std::string& outputFilename,
 	{
 		checkInputs(inputFileNames, modelFileName, shouldClassify,
 			shouldTrain, shouldLearnFeatures, shouldExtractFeatures);
-	
+
 		auto engine = createEngine(outputFilename, shouldClassify, shouldTrain,
 			shouldLearnFeatures, shouldExtractFeatures);
-		
+
 		if(engine == nullptr)
 		{
 			throw std::runtime_error("Failed to create classifier engine.");
@@ -118,23 +118,23 @@ static void runClassifier(const std::string& outputFilename,
 		std::cout << "Lucius Classifier Failed:\n";
 		std::cout << "Message: " << e.what() << "\n\n";
 	}
-	
+
 }
 
 static void setOptions(const std::string& options)
 {
 	auto individualOptions = util::split(options, ",");
-	
+
 	for(auto& option : individualOptions)
 	{
 		auto keyAndValue = util::split(option, "=");
-		
+
 		if (keyAndValue.size() != 2)
 		{
 			throw std::runtime_error("Invalid command line option '" +
 				option + "'");
 		}
-	
+
 		util::KnobDatabase::addKnob(keyAndValue[0], keyAndValue[1]);
 	}
 }
@@ -145,17 +145,17 @@ static void checkInputs(const std::string& inputFileNames,
 	bool& shouldExtractFeatures)
 {
 	unsigned int count = 0;
-	
+
 	if(shouldClassify)        count += 1;
 	if(shouldTrain)           count += 1;
 	if(shouldLearnFeatures)   count += 1;
 	if(shouldExtractFeatures) count += 1;
-	
+
 	if(count == 0)
 	{
 		shouldClassify = true;
 	}
-	
+
 	if(count > 1)
 	{
 		throw std::runtime_error("Only one operation "
@@ -168,7 +168,7 @@ static std::unique_ptr<engine::Engine> createEngine(
 	bool shouldTrain, bool shouldLearnFeatures, bool shouldExtractFeatures)
 {
 	typedef std::unique_ptr<engine::Engine> EnginePointer;
-	
+
 	if(shouldTrain)
 	{
 		return EnginePointer(engine::EngineFactory::create("LearnerEngine"));
@@ -180,44 +180,51 @@ static std::unique_ptr<engine::Engine> createEngine(
 	else if(shouldExtractFeatures)
 	{
 		auto engine = EnginePointer(engine::EngineFactory::create("FeatureExtractorEngine"));
-		
+
 		if(engine)
 		{
 			engine->setOutputFilename(outputFilename);
 		}
-		
+
 		return engine;
 	}
-	
-	return EnginePointer(engine::EngineFactory::create("ClassifierEngine"));
+
+	auto engine = EnginePointer(engine::EngineFactory::create("ClassifierEngine"));
+
+    if(engine)
+    {
+        engine->setStandardizeInput(true);
+    }
+
+    return engine;
 }
 
 static std::string loadFile(const std::string& path)
 {
 	std::ifstream stream(path);
-	
+
 	if(!stream.good())
 	{
 		throw std::runtime_error("Failed to open file '" + path + "' for reading.");
 	}
-	
+
 	stream.seekg(0, std::ios::end);
 
-	size_t size = stream.tellg();	
+	size_t size = stream.tellg();
 
 	std::string contents(size, ' ');
-	
+
 	stream.seekg(0, std::ios::beg);
 
 	stream.read((char*)contents.data(), size);
-	
+
 	return contents;
 }
 
 static void enableSpecificLogs(const std::string& modules)
 {
 	auto individualModules = util::split(modules, ",");
-	
+
 	for(auto& module : individualModules)
 	{
 		util::enableLog(module);
@@ -227,7 +234,7 @@ static void enableSpecificLogs(const std::string& modules)
 static std::string toString(size_t value)
 {
 	std::stringstream stream;
-	
+
 	stream << value;
 
 	return stream.str();
@@ -240,7 +247,7 @@ static void setupKnobs(size_t maximumSamples, size_t batchSize)
 		util::KnobDatabase::setKnob("InputDataProducer::MaximumSampleCount",
 			toString(maximumSamples));
 	}
-	
+
 	if(batchSize > 0)
 	{
 		util::KnobDatabase::setKnob("InputDataProducer::BatchSize",
@@ -253,7 +260,7 @@ static void setupKnobs(size_t maximumSamples, size_t batchSize)
 int main(int argc, char** argv)
 {
 	lucius::util::ArgumentParser parser(argc, argv);
-	
+
 	std::string inputFileNames;
 	std::string modelFileName;
 	std::string modelSpecificationPath;
@@ -266,12 +273,12 @@ int main(int argc, char** argv)
 	bool shouldExtractFeatures = false;
 	bool createNewModel        = false;
 	bool visualizeNetwork      = false;
-	
+
 	size_t maximumSamples = 0;
 	size_t batchSize      = 0;
-	
+
 	std::string loggingEnabledModules;
-	
+
 	bool verbose = false;
 
 	parser.description("The Lucius image and video classifier.");
@@ -281,7 +288,7 @@ int main(int argc, char** argv)
 	parser.parse("-o", "--output",  outputPath,
 		"", "The output path to store generated files "
 			"(for visualization or feature extraction).");
-	
+
 	parser.parse("-m", "--model",  modelFileName,
 		"", "The path to the model to use for classification (or to update).");
 
@@ -297,7 +304,7 @@ int main(int argc, char** argv)
 		"Perform unsupervised learning on unlabeled input data.");
 	parser.parse("-V", "--visualize-network", visualizeNetwork, false,
 		"Produce visualization for each neuron.");
-	parser.parse("", "--options", options, "", 
+	parser.parse("", "--options", options, "",
 		"A comma separated list of options (option_name=option_value, ...).");
 
 	parser.parse("-s", "--maximum-samples", maximumSamples, 0, "Override the maximum "
@@ -328,7 +335,7 @@ int main(int argc, char** argv)
 	try
 	{
 		lucius::setOptions(options);
-		
+
 		if(createNewModel)
 		{
 			lucius::createNewModel(modelFileName, modelSpecificationPath);
@@ -339,7 +346,7 @@ int main(int argc, char** argv)
 		}
 		else
 		{
-			lucius::runClassifier(outputPath, inputFileNames, modelFileName, 
+			lucius::runClassifier(outputPath, inputFileNames, modelFileName,
 				shouldClassify, shouldTrain, shouldLearnFeatures,
 				shouldExtractFeatures);
 		}

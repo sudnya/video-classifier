@@ -52,7 +52,7 @@ ActivationFunction* RectifiedLinearActivationFunction::clone() const
 
 std::string RectifiedLinearActivationFunction::typeName() const
 {
-    return "RectifiedLinearActivaitonFunction";
+    return "RectifiedLinearActivationFunction";
 }
 
 }

@@ -60,6 +60,8 @@ public:
     size_t layerSize;
     size_t layers;
 
+    size_t factor;
+
     size_t epochs;
     size_t batchSize;
 
@@ -120,29 +122,29 @@ static void addClassifier(Model& model, const Parameters& parameters)
 
     inputSize = addPoolingLayer(classifier, {2, 2});
 
-    inputSize = addConvolutionalLayer(classifier, inputSize, 128);
+    inputSize = addConvolutionalLayer(classifier, inputSize, 128 / parameters.factor);
     inputSize = addPoolingLayer(classifier, {2, 2});
 
     if(parameters.layers > 7)
     {
 
-        inputSize = addConvolutionalLayer(classifier, inputSize, 256);
-        inputSize = addConvolutionalLayer(classifier, inputSize, 256);
+        inputSize = addConvolutionalLayer(classifier, inputSize, 256 / parameters.factor);
+        inputSize = addConvolutionalLayer(classifier, inputSize, 256 / parameters.factor);
         inputSize = addPoolingLayer(classifier, {2, 2});
     }
 
     if(parameters.layers > 10)
     {
-        inputSize = addConvolutionalLayer(classifier, inputSize, 512);
-        inputSize = addConvolutionalLayer(classifier, inputSize, 512);
+        inputSize = addConvolutionalLayer(classifier, inputSize, 512 / parameters.factor);
+        inputSize = addConvolutionalLayer(classifier, inputSize, 512 / parameters.factor);
         inputSize = addPoolingLayer(classifier, {2, 2});
     }
 
 
     if(parameters.layers > 13)
     {
-        inputSize = addConvolutionalLayer(classifier, inputSize, 512);
-        inputSize = addConvolutionalLayer(classifier, inputSize, 512);
+        inputSize = addConvolutionalLayer(classifier, inputSize, 512 / parameters.factor);
+        inputSize = addConvolutionalLayer(classifier, inputSize, 512 / parameters.factor);
         inputSize = addPoolingLayer(classifier, {2, 2});
     }
 
@@ -294,6 +296,7 @@ int main(int argc, char** argv)
     Parameters parameters;
 
     std::string loggingEnabledModules;
+    std::string logFile;
     bool verbose = false;
 
     parser.description("A test for lucius difficult classication performance.");
@@ -311,6 +314,8 @@ int main(int argc, char** argv)
         "The number of epochs (passes over all inputs) to train the network for.");
     parser.parse("-b", "--batch-size", parameters.batchSize, 64,
         "The number of images to use for each iteration.");
+    parser.parse("-f", "--reduction-factor", parameters.factor, 1,
+        "Reduce the network output sizes by this factor.");
 
     parser.parse("-L", "--log-module", loggingEnabledModules, "",
         "Print out log messages during execution for specified modules "
@@ -330,6 +335,7 @@ int main(int argc, char** argv)
     parser.parse("-l", "--layer-size", parameters.layerSize, 4096,
         "The size of each fully connected layer.");
     parser.parse("", "--layers", parameters.layers, 7, "The total number of layers.");
+    parser.parse("", "--log-file", logFile, "", "Save output to this logfile instead of std::cout.");
 
     parser.parse("-v", "--verbose", verbose, false, "Print out log messages during execution");
 
@@ -337,7 +343,10 @@ int main(int argc, char** argv)
 
     setupSolverParameters();
 
-    lucius::util::setLogFile("image-net-benchmark.log");
+    if(!logFile.empty())
+    {
+        lucius::util::setLogFile(logFile);
+    }
 
     if(verbose)
     {
