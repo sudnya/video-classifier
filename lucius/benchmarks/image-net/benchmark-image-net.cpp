@@ -68,6 +68,7 @@ public:
     std::string inputPath;
     std::string testPath;
     std::string outputPath;
+    std::string validationReportPath;
 
     size_t maximumSamples;
     bool seed;
@@ -215,6 +216,9 @@ static void trainNetwork(Model& model, const Parameters& parameters)
     engine->setMaximumSamplesToRun(parameters.maximumSamples);
     engine->addObserver(EngineObserverFactory::create("ModelCheckpointer",
         std::make_tuple("Path", parameters.outputPath)));
+    engine->addObserver(EngineObserverFactory::create("ValidationErrorObserver",
+        std::make_tuple("InputPath", parameters.testPath),
+        std::make_tuple("OutputPath", parameters.validationReportPath)));
 
     // read from database and use model to train
     engine->runOnDatabaseFile(parameters.inputPath);
@@ -309,6 +313,8 @@ int main(int argc, char** argv)
         "The path of the database of test image files.");
     parser.parse("-o", "--output-path", parameters.outputPath,
         "models/image-net.tar", "The path to save the model.");
+    parser.parse("-r", "--report-path", parameters.validationReportPath,
+        "models/image-net-validation.csv", "The path to save validation results.");
 
     parser.parse("-e", "--epochs", parameters.epochs, 1,
         "The number of epochs (passes over all inputs) to train the network for.");

@@ -9,6 +9,7 @@
 #include <lucius/engine/interface/EngineObserver.h>
 
 #include <lucius/engine/interface/ModelCheckpointer.h>
+#include <lucius/engine/interface/ValidationErrorObserver.h>
 
 // Standard Library Includes
 #include <lucius/util/interface/memory.h>
@@ -32,6 +33,13 @@ std::unique_ptr<EngineObserver> EngineObserverFactory::create(const std::string&
         auto path = parameters.get<std::string>("Path", "");
 
         return std::make_unique<ModelCheckpointer>(path);
+    }
+    else if(name == "ValidationErrorObserver")
+    {
+        auto inputPath  = parameters.get<std::string>("InputPath",  "");
+        auto outputPath = parameters.get<std::string>("OutputPath", "");
+
+        return std::make_unique<ValidationErrorObserver>(inputPath, outputPath);
     }
 
     return nullptr;
