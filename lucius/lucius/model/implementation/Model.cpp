@@ -137,6 +137,15 @@ void Model::save(std::ostream& stream) const
     tar.addFile("metadata.txt", json);
 }
 
+void Model::load(const std::string& path)
+{
+    clear();
+
+    _path = path;
+
+    load();
+}
+
 void Model::load(std::istream& stream)
 {
     if(_loaded) return;

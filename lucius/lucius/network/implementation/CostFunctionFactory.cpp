@@ -22,7 +22,7 @@ CostFunction* CostFunctionFactory::create(const std::string& name)
     {
         return new SumOfSquaresCostFunction;
     }
-    else if("SoftMaxCostFunction" == name)
+    else if("SoftmaxCostFunction" == name)
     {
         return new SoftmaxCostFunction;
     }

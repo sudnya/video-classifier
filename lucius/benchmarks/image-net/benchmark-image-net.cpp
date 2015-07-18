@@ -65,6 +65,7 @@ public:
     size_t epochs;
     size_t batchSize;
 
+    std::string modelPath;
     std::string inputPath;
     std::string testPath;
     std::string outputPath;
@@ -258,9 +259,16 @@ static void runBenchmark(const Parameters& parameters)
     // Create a deep model for first layer classification
     Model model;
 
-    createModel(model, parameters);
+    if(!parameters.modelPath.empty())
+    {
+        model.load(parameters.modelPath);
+    }
+    else
+    {
+        createModel(model, parameters);
 
-    setSampleStatistics(model, parameters);
+        setSampleStatistics(model, parameters);
+    }
 
     trainNetwork(model, parameters);
 
@@ -282,7 +290,7 @@ static void runBenchmark(const Parameters& parameters)
 
 static void setupSolverParameters()
 {
-    lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::LearningRate", "1.0e-2");
+    lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::LearningRate", "1.0e-3");
     lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::Momentum", "0.9");
     lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::AnnealingRate", "1.00000");
     lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::MaxGradNorm", "5.0");
@@ -315,6 +323,8 @@ int main(int argc, char** argv)
         "models/image-net.tar", "The path to save the model.");
     parser.parse("-r", "--report-path", parameters.validationReportPath,
         "models/image-net-validation.csv", "The path to save validation results.");
+    parser.parse("-m", "--model-path", parameters.modelPath,
+        "", "The path to restore a previously saved model from.");
 
     parser.parse("-e", "--epochs", parameters.epochs, 1,
         "The number of epochs (passes over all inputs) to train the network for.");

@@ -117,7 +117,7 @@ static void addClassifier(Model& model, const Parameters& parameters)
     //classifier.addLayer(std::make_unique<FeedForwardLayer>(parameters.layerSize, parameters.layerSize));
     classifier.addLayer(std::make_unique<FeedForwardLayer>(parameters.layerSize, 10                  ));
 
-    classifier.setCostFunction(lucius::network::CostFunctionFactory::create("SoftMaxCostFunction"));
+    classifier.setCostFunction(lucius::network::CostFunctionFactory::create("SoftmaxCostFunction"));
 
     classifier.initialize();
 

@@ -86,7 +86,7 @@ static NeuralNetwork createFeedForwardFullyConnectedSoftmaxNetwork(
         network.addLayer(std::make_unique<FeedForwardLayer>(layerSize, layerSize, DoublePrecision()));
     }
 
-    network.setCostFunction(CostFunctionFactory::create("SoftMaxCostFunction"));
+    network.setCostFunction(CostFunctionFactory::create("SoftmaxCostFunction"));
 
     network.initialize();
 
