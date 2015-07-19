@@ -64,7 +64,10 @@ public:
 
     size_t epochs;
     size_t batchSize;
+    double learningRate;
+    double momentum;
 
+    std::string modelPath;
     std::string inputPath;
     std::string testPath;
     std::string outputPath;
@@ -126,28 +129,17 @@ static void addClassifier(Model& model, const Parameters& parameters)
     inputSize = addConvolutionalLayer(classifier, inputSize, 128 / parameters.factor);
     inputSize = addPoolingLayer(classifier, {2, 2});
 
-    if(parameters.layers > 7)
-    {
+    inputSize = addConvolutionalLayer(classifier, inputSize, 256 / parameters.factor);
+    inputSize = addConvolutionalLayer(classifier, inputSize, 256 / parameters.factor);
+    inputSize = addPoolingLayer(classifier, {2, 2});
 
-        inputSize = addConvolutionalLayer(classifier, inputSize, 256 / parameters.factor);
-        inputSize = addConvolutionalLayer(classifier, inputSize, 256 / parameters.factor);
-        inputSize = addPoolingLayer(classifier, {2, 2});
-    }
+    inputSize = addConvolutionalLayer(classifier, inputSize, 512 / parameters.factor);
+    inputSize = addConvolutionalLayer(classifier, inputSize, 512 / parameters.factor);
+    inputSize = addPoolingLayer(classifier, {2, 2});
 
-    if(parameters.layers > 10)
-    {
-        inputSize = addConvolutionalLayer(classifier, inputSize, 512 / parameters.factor);
-        inputSize = addConvolutionalLayer(classifier, inputSize, 512 / parameters.factor);
-        inputSize = addPoolingLayer(classifier, {2, 2});
-    }
-
-
-    if(parameters.layers > 13)
-    {
-        inputSize = addConvolutionalLayer(classifier, inputSize, 512 / parameters.factor);
-        inputSize = addConvolutionalLayer(classifier, inputSize, 512 / parameters.factor);
-        inputSize = addPoolingLayer(classifier, {2, 2});
-    }
+    inputSize = addConvolutionalLayer(classifier, inputSize, 512 / parameters.factor);
+    inputSize = addConvolutionalLayer(classifier, inputSize, 512 / parameters.factor);
+    inputSize = addPoolingLayer(classifier, {2, 2});
 
     // connect the network
     classifier.addLayer(std::make_unique<FeedForwardLayer>(classifier.back()->getOutputCount(),
@@ -171,7 +163,7 @@ static void addClassifier(Model& model, const Parameters& parameters)
     }
 
     classifier.setCostFunction(
-        lucius::network::CostFunctionFactory::create("SoftMaxCostFunction"));
+        lucius::network::CostFunctionFactory::create("SoftmaxCostFunction"));
 
     classifier.initialize();
 
@@ -258,9 +250,16 @@ static void runBenchmark(const Parameters& parameters)
     // Create a deep model for first layer classification
     Model model;
 
-    createModel(model, parameters);
+    if(!parameters.modelPath.empty())
+    {
+        model.load(parameters.modelPath);
+    }
+    else
+    {
+        createModel(model, parameters);
 
-    setSampleStatistics(model, parameters);
+        setSampleStatistics(model, parameters);
+    }
 
     trainNetwork(model, parameters);
 
@@ -280,12 +279,12 @@ static void runBenchmark(const Parameters& parameters)
     model.save();
 }
 
-static void setupSolverParameters()
+static void setupSolverParameters(const Parameters& parameters)
 {
-    lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::LearningRate", "1.0e-2");
-    lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::Momentum", "0.9");
+    lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::LearningRate", parameters.learningRate);
+    lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::Momentum", parameters.momentum);
     lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::AnnealingRate", "1.00000");
-    lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::MaxGradNorm", "5.0");
+    lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::MaxGradNorm", "10.0");
     lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::IterationsPerBatch", "1");
     lucius::util::KnobDatabase::setKnob("GeneralDifferentiableSolver::Type",
         "NesterovAcceleratedGradientSolver");
@@ -315,11 +314,18 @@ int main(int argc, char** argv)
         "models/image-net.tar", "The path to save the model.");
     parser.parse("-r", "--report-path", parameters.validationReportPath,
         "models/image-net-validation.csv", "The path to save validation results.");
+    parser.parse("-m", "--model-path", parameters.modelPath,
+        "", "The path to restore a previously saved model from.");
 
     parser.parse("-e", "--epochs", parameters.epochs, 1,
         "The number of epochs (passes over all inputs) to train the network for.");
     parser.parse("-b", "--batch-size", parameters.batchSize, 64,
         "The number of images to use for each iteration.");
+    parser.parse("", "--learning-rate", parameters.learningRate, 1.0e-3,
+        "The learning rate to use in SGD.");
+    parser.parse("", "--momentum", parameters.momentum, 0.99,
+        "The momentum to use in SGD.");
+
     parser.parse("-f", "--reduction-factor", parameters.factor, 1,
         "Reduce the network output sizes by this factor.");
 
@@ -340,14 +346,14 @@ int main(int argc, char** argv)
 
     parser.parse("-l", "--layer-size", parameters.layerSize, 4096,
         "The size of each fully connected layer.");
-    parser.parse("", "--layers", parameters.layers, 7, "The total number of layers.");
+    parser.parse("", "--layers", parameters.layers, 11, "The total number of layers.");
     parser.parse("", "--log-file", logFile, "", "Save output to this logfile instead of std::cout.");
 
     parser.parse("-v", "--verbose", verbose, false, "Print out log messages during execution");
 
     parser.parse();
 
-    setupSolverParameters();
+    setupSolverParameters(parameters);
 
     if(!logFile.empty())
     {
@@ -377,3 +383,4 @@ int main(int argc, char** argv)
 
     return 0;
 }
+

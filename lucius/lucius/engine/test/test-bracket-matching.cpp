@@ -215,7 +215,7 @@ static void addClassifier(Model& model, const Parameters& parameters)
         std::make_tuple("InputSize",  parameters.layerSize),
         std::make_tuple("OutputSize", 5)));
 
-    classifier.setCostFunction(lucius::network::CostFunctionFactory::create("SoftMaxCostFunction"));
+    classifier.setCostFunction(lucius::network::CostFunctionFactory::create("SoftmaxCostFunction"));
 
     classifier.initialize();
 

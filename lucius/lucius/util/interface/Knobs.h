@@ -18,6 +18,16 @@ namespace util
 
 class KnobDatabase
 {
+public:
+    template<typename T>
+    static void setKnob(const std::string& name, const T& value)
+    {
+        std::stringstream stream;
+
+        stream << value;
+
+        setKnob(name, stream.str());
+    }
 
 public:
 	static void addKnob(const std::string& name, const std::string& value);
@@ -31,11 +41,11 @@ public:
 	static T getKnobValue(const std::string& knobname, const T& defaultValue);
 
 	static bool knobExists(const std::string& knobname);
-	
+
 	static std::string getKnobValue(const std::string& knobname,
 		const std::string& defaultValue);
 
-public:	
+public:
 	static std::string getKnobValueAsString(const std::string& knobname);
 };
 
@@ -44,11 +54,11 @@ T KnobDatabase::getKnobValue(const std::string& knobname)
 {
 	std::string string = getKnobValueAsString(knobname);
 	std::stringstream stream(string);
-	
+
 	T value = 0;
-	
+
 	stream >> value;
-	
+
 	return value;
 }
 
@@ -59,7 +69,7 @@ T KnobDatabase::getKnobValue(const std::string& knobname, const T& defaultValue)
 	{
 		return defaultValue;
 	}
-	
+
 	return getKnobValue<T>(knobname);
 }
 

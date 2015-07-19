@@ -60,6 +60,9 @@ public:
 	size_t getOutputCount() const;
 
 public:
+    void load(const std::string& path);
+
+public:
     void save(std::ostream& stream) const;
     void load(std::istream& stream);
 
