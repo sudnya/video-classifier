@@ -84,7 +84,8 @@ results::ResultVector compareWithReference(const util::StringVector& labels,
 {
     results::ResultVector result;
 
-    for(auto label = labels.begin(), reference = references.begin(); label != labels.end(); ++reference, ++label)
+    for(auto label = labels.begin(), reference = references.begin();
+        label != labels.end(); ++reference, ++label)
     {
         result.push_back(new results::LabelMatchResult(*label, *reference));
     }
@@ -110,13 +111,14 @@ ClassifierEngine::ResultVector ClassifierEngine::runOnBatch(Matrix&& input, Matr
 
     auto result = network->runInputs(std::move(input));
 
-    auto labels = convertActivationsToLabels(std::move(result), *getModel());
-
     restoreAggregateNetwork();
+
+    auto labels = convertActivationsToLabels(std::move(result), *getModel());
 
     if(_shouldUseLabeledData)
     {
-        return compareWithReference(labels, convertActivationsToLabels(std::move(reference), *getModel()));
+        return compareWithReference(labels,
+            convertActivationsToLabels(std::move(reference), *getModel()));
     }
 
     return recordLabels(labels);

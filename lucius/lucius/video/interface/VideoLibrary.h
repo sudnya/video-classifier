@@ -23,12 +23,13 @@ class VideoLibrary
 {
 public:
 	typedef std::vector<std::string> StringVector;
-	
+
 public:
 	virtual ~VideoLibrary();
-	
+
 public:
 	virtual VideoStream* newStream(const std::string& path) = 0;
+	virtual VideoStream* newCameraStream() = 0;
 	virtual void freeStream(VideoStream* s) = 0;
 
 public:

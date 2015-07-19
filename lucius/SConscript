@@ -61,6 +61,7 @@ programs = []
 
 programs.extend(SConscript('lucius/SConscript',    exports='env'))
 programs.extend(SConscript('benchmarks/SConscript', exports='env'))
+programs.extend(SConscript('demos/SConscript', exports='env'))
 
 for program in programs:
     env.Depends(program, liblucius)

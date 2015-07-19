@@ -87,6 +87,10 @@ protected:
 protected:
     util::StringVector getOutputLabels() const;
 
+protected:
+    /*! \brief Standardize an input feature matrix. */
+    void standardize(Matrix& input);
+
 private:
     size_t _epochs;
     bool   _requiresLabeledData;

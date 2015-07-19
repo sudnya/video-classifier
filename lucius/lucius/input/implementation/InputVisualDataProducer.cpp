@@ -92,24 +92,6 @@ static ImageVector getBatch(ImageVector& images, VideoVector& video,
     size_t& remainingSamples, size_t& nextImage, size_t batchSize, std::default_random_engine& generator,
     bool requiresLabeledData);
 
-static void standardizeInput(matrix::Matrix& input, double mean, double standardDeviation)
-{
-    // subtract mean
-    apply(input, input, matrix::Subtract(mean));
-
-    // truncate to three standard deviations
-    apply(input, input, matrix::Minimum( 3.0 * standardDeviation));
-    apply(input, input, matrix::Maximum(-3.0 * standardDeviation));
-
-    // divide by standard deviation
-    apply(input, input, matrix::Divide(standardDeviation));
-
-    if(util::isLogEnabled("InputVisualDataProducer::Detail"))
-    {
-        util::log("InputVisualDataProducer::Detail") << "Standardized input " << input.toString();
-    }
-}
-
 InputVisualDataProducer::InputAndReferencePair InputVisualDataProducer::pop()
 {
     assert(_initialized);
@@ -142,8 +124,7 @@ InputVisualDataProducer::InputAndReferencePair InputVisualDataProducer::pop()
 
     if(getStandardizeInput())
     {
-        standardizeInput(input, _model->getAttribute<double>("InputSampleMean"),
-            _model->getAttribute<double>("InputSampleStandardDeviation"));
+        standardize(input);
     }
 
     util::log("InputVisualDataProducer") << "Loaded batch of '" << batch.size()
@@ -195,16 +176,15 @@ static void parseImageDatabase(ImageVector& images, VideoVector& videos,
 
         if(sample.isImageSample())
         {
-
             if(sample.hasLabel())
             {
-                util::log("InputVisualDataProducer::Detail") << "  found labeled image '" << sample.path()
-                    << "' with label '" << sample.label() << "'\n";
+                util::log("InputVisualDataProducer::Detail") << "  found labeled image '"
+                    << sample.path() << "' with label '" << sample.label() << "'\n";
             }
             else
             {
-                util::log("InputVisualDataProducer::Detail") << "  found unlabeled image '" << sample.path()
-                    << "'\n";
+                util::log("InputVisualDataProducer::Detail") << "  found unlabeled image '"
+                    << sample.path() << "'\n";
             }
 
             images.push_back(Image(sample.path(), sample.label()));
@@ -213,13 +193,13 @@ static void parseImageDatabase(ImageVector& images, VideoVector& videos,
         {
             if(sample.hasLabel())
             {
-                util::log("InputVisualDataProducer::Detail") << "  found labeled video '" << sample.path()
-                    << "' with label '" << sample.label() << "'\n";
+                util::log("InputVisualDataProducer::Detail") << "  found labeled video '"
+                    << sample.path() << "' with label '" << sample.label() << "'\n";
             }
             else
             {
-                util::log("InputVisualDataProducer::Detail") << "  found unlabeled video '" << sample.path()
-                    << "'n";
+                util::log("InputVisualDataProducer::Detail") << "  found unlabeled video '"
+                    << sample.path() << "'n";
             }
 
             videos.push_back(Video(sample.path(), sample.label(),
@@ -231,13 +211,16 @@ static void parseImageDatabase(ImageVector& images, VideoVector& videos,
 }
 
 static void getVideoBatch(ImageVector& batch, VideoVector& videos,
-    size_t& remainingSamples, size_t batchSize, std::default_random_engine& generator, bool requiresLabeledData);
+    size_t& remainingSamples, size_t batchSize, std::default_random_engine& generator,
+    bool requiresLabeledData);
+
 static void getImageBatch(ImageVector& batch, ImageVector& images,
-    size_t& remainingSamples, size_t& nextImage, size_t batchSize, std::default_random_engine& generator);
+    size_t& remainingSamples, size_t& nextImage, size_t batchSize,
+    std::default_random_engine& generator);
 
 static ImageVector getBatch(ImageVector& images, VideoVector& videos,
-    size_t& remainingSamples, size_t& nextImage, size_t batchSize, std::default_random_engine& generator,
-    bool requiresLabeledData)
+    size_t& remainingSamples, size_t& nextImage, size_t batchSize,
+    std::default_random_engine& generator, bool requiresLabeledData)
 {
     std::uniform_int_distribution<size_t> distribution(0, batchSize);
 

@@ -24,7 +24,7 @@ public:
 
 public:
     /*! \brief Called after each iteration completed by the engine. */
-    virtual void epochCompleted(const Engine& engine) = 0;
+    virtual void epochCompleted(Engine& engine) = 0;
 
 };
 

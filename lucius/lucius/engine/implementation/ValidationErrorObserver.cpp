@@ -33,12 +33,12 @@ ValidationErrorObserver::~ValidationErrorObserver()
 
 }
 
-void ValidationErrorObserver::epochCompleted(const Engine& runningEngine)
+void ValidationErrorObserver::epochCompleted(Engine& runningEngine)
 {
     std::unique_ptr<Engine> engine(lucius::engine::EngineFactory::create("ClassifierEngine"));
 
     engine->setBatchSize(128);
-    engine->setModel(const_cast<model::Model*>(runningEngine.getModel()));
+    engine->setModel(runningEngine.getModel());
     engine->setStandardizeInput(true);
 
     // read from database and use model to test

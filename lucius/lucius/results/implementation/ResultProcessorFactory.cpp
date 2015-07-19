@@ -11,6 +11,7 @@
 #include <lucius/results/interface/LabelResultProcessor.h>
 #include <lucius/results/interface/LabelMatchResultProcessor.h>
 #include <lucius/results/interface/FeatureResultProcessor.h>
+#include <lucius/results/interface/VideoDisplayResultProcessor.h>
 
 namespace lucius
 {
@@ -36,7 +37,11 @@ ResultProcessor* ResultProcessorFactory::create(const std::string& name)
 	{
 		return new FeatureResultProcessor;
 	}
-	
+	else if(name == "VideoDisplayResultProcessor")
+	{
+		return new VideoDisplayResultProcessor;
+	}
+
 	return nullptr;
 }
 

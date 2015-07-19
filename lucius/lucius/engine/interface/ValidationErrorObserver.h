@@ -28,7 +28,7 @@ public:
 
 public:
     /*! \brief Called after each iteration completed by the engine. */
-    virtual void epochCompleted(const Engine& engine);
+    virtual void epochCompleted(Engine& engine);
 
 private:
     std::vector<double> _accuracy;

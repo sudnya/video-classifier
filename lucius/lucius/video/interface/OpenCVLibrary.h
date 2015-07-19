@@ -47,7 +47,7 @@ public:
 	typedef IplImage Image;
     typedef void CvArr;
 	typedef void* CvTrackbarCallback;
-	
+
     static const int CV_LOAD_IMAGE_COLOR = 1;
 
 	static const int IPL_DEPTH_SIGN = 0x80000000;
@@ -64,7 +64,7 @@ public:
 	static const int CV_CAP_PROP_POS_AVI_RATIO = 2;
 	static const int CV_CAP_PROP_FRAME_COUNT   = 7;
 	static const int CV_CAP_PROP_POS_FRAMES    = 1;
-	
+
     static const int CV_WINDOW_AUTOSIZE = 1;
 
 public:
@@ -74,14 +74,16 @@ public:
 public:
 	static IplImage* cvLoadImage(const char* filename,
 		int iscolor = CV_LOAD_IMAGE_COLOR);
-	static int cvSaveImage(const char* filename, const IplImage* image, const int* params = nullptr);
-	
+	static int cvSaveImage(const char* filename, const IplImage* image,
+        const int* params = nullptr);
+
 	static void cvReleaseImage(IplImage**);
 
 public:
 	static CvCapture* cvCreateFileCapture(const char* filename);
+	static CvCapture* cvCaptureFromCAM(int device);
 	static void cvReleaseCapture(CvCapture**);
-	
+
 	static double cvGetCaptureProperty(CvCapture*, int property);
 	static int cvSetCaptureProperty(CvCapture*, int property, double value);
 	static bool cvGrabFrame(CvCapture*);
@@ -93,15 +95,16 @@ public:
     static void cvShowImage(const char* name, const IplImage* image);
     static void cvWaitKey(int millisecondDelay = 0);
 	static int cvCreateTrackbar(const char* trackbar_name,
-		const char* window_name, int* value = nullptr, int count = 100, CvTrackbarCallback on_change = nullptr);	
+		const char* window_name, int* value = nullptr, int count = 100,
+        CvTrackbarCallback on_change = nullptr);
 
 public:
-	static void cvDisplayOverlay(const char* name, const char* text, int delayInMilliseconds);   
-	
+	static void cvDisplayOverlay(const char* name, const char* text, int delayInMilliseconds);
+
 
 private:
 	static void _check();
-	
+
 private:
 	class Interface
 	{
@@ -112,8 +115,9 @@ private:
 
 	public:
 		CvCapture* (*cvCreateFileCapture)(const char* filename);
+		CvCapture* (*cvCreateCameraCapture)(int);
 		void (*cvReleaseCapture)(CvCapture**);
-	
+
 		double (*cvGetCaptureProperty)(CvCapture*, int property);
 		int (*cvSetCaptureProperty)(CvCapture*, int property, double value);
 		bool (*cvGrabFrame)(CvCapture*);
@@ -123,14 +127,14 @@ private:
 		void (*cvShowImage) (const char* name, const IplImage* image);
     	void (*cvWaitKey) (int millisecondDelay);
 		int (*cvCreateTrackbar) (const char* trackbar_name,
-			const char* window_name, int* value, int count, CvTrackbarCallback on_change);	
-		void (*cvDisplayOverlay) (const char* name, const char* text, int delayInMilliseconds);   
-		
- 
+			const char* window_name, int* value, int count, CvTrackbarCallback on_change);
+		void (*cvDisplayOverlay) (const char* name, const char* text, int delayInMilliseconds);
+
+
 	public:
 		/*! \brief The constructor zeros out all of the pointers */
 		Interface();
-		
+
 		/*! \brief The destructor closes dlls */
 		~Interface();
 		/*! \brief Load the library */
@@ -139,12 +143,12 @@ private:
 		bool loaded() const;
 		/*! \brief unloads the library */
 		void unload();
-				
+
 	private:
-		
+
 		void* _library;
 	};
-	
+
 private:
 	static Interface _interface;
 
