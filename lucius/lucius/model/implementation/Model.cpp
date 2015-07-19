@@ -150,9 +150,9 @@ void Model::load(std::istream& stream)
 {
     if(_loaded) return;
 
-    _loaded = true;
-
     clear();
+
+    _loaded = true;
 
     util::log("Model") << "Loading classification-model from '"
         << _path << "'\n";

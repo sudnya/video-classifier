@@ -12,8 +12,12 @@
 #include <lucius/network/interface/NeuralNetwork.h>
 
 #include <lucius/matrix/interface/Dimension.h>
+#include <lucius/matrix/interface/Matrix.h>
+#include <lucius/matrix/interface/MatrixOperations.h>
+#include <lucius/matrix/interface/Operation.h>
 
 #include <lucius/util/interface/Knobs.h>
+#include <lucius/util/interface/debug.h>
 
 namespace lucius
 {
@@ -117,6 +121,27 @@ util::StringVector InputDataProducer::getOutputLabels() const
     }
 
     return labels;
+}
+
+void InputDataProducer::standardize(Matrix& input)
+{
+    auto mean              = getModel()->getAttribute<double>("InputSampleMean");
+    auto standardDeviation = getModel()->getAttribute<double>("InputSampleStandardDeviation");
+
+    // subtract mean
+    apply(input, input, matrix::Subtract(mean));
+
+    // truncate to three standard deviations
+    apply(input, input, matrix::Minimum( 3.0 * standardDeviation));
+    apply(input, input, matrix::Maximum(-3.0 * standardDeviation));
+
+    // divide by standard deviation
+    apply(input, input, matrix::Divide(standardDeviation));
+
+    if(util::isLogEnabled("InputDataProducer::Detail"))
+    {
+        util::log("InputDataProducer::Detail") << "Standardized input " << input.toString();
+    }
 }
 
 }

@@ -29,6 +29,11 @@ VideoStream* OpenCVVideoLibrary::newStream(const std::string& path)
 	return new OpenCVVideoStream(path);
 }
 
+VideoStream* OpenCVVideoLibrary::newCameraStream()
+{
+	return new OpenCVVideoStream();
+}
+
 void OpenCVVideoLibrary::freeStream(VideoStream* s)
 {
 	delete s;
@@ -37,12 +42,18 @@ void OpenCVVideoLibrary::freeStream(VideoStream* s)
 OpenCVVideoLibrary::StringVector
 	OpenCVVideoLibrary::getSupportedExtensions() const
 {
-	return StringVector(util::split(".avi|.mp4", "|"));
+	return StringVector(util::split(".avi|.mp4|camera", "|"));
 }
 
 OpenCVVideoLibrary::OpenCVVideoStream::OpenCVVideoStream(
 	const std::string& path)
 : _path(path), _cvCapture(OpenCVLibrary::cvCreateFileCapture(path.c_str()))
+{
+
+}
+
+OpenCVVideoLibrary::OpenCVVideoStream::OpenCVVideoStream()
+: _cvCapture(OpenCVLibrary::cvCaptureFromCAM(0))
 {
 
 }
@@ -64,29 +75,29 @@ bool OpenCVVideoLibrary::OpenCVVideoStream::getNextFrame(Image& frame)
 	{
 		return false;
 	}
-	
+
 	OpenCVLibrary::Image* image = OpenCVLibrary::cvRetrieveFrame(_cvCapture);
 
 	if(image == nullptr)
 	{
 		throw std::runtime_error("Failed to retrieve frame from video stream.");
 	}
-	
+
 	int colorSize = (image->depth % 32) / 8;
 	int pixelSize = image->nChannels * colorSize;
 
 	Image::ByteVector data(image->height * image->width *
 		pixelSize);
-	
+
 	for(int y = 0; y < image->height; ++y)
 	{
 		int position = y * image->widthStep;
 		int dataPosition = y * image->width * pixelSize;
-		
+
 		std::memcpy(&data[dataPosition], &image->imageData[position],
 			std::min(image->widthStep, image->width * pixelSize));
 	}
-	
+
 	frame = Image(image->width, image->height, image->nChannels,
 		colorSize, _path, "", data);
 

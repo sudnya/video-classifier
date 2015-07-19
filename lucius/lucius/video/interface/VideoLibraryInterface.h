@@ -25,6 +25,7 @@ public:
 
 public:
 	static VideoLibrary* getLibraryThatSupports(const std::string& path);
+	static VideoLibrary* getLibraryThatSupportsCamera();
 
 };
 

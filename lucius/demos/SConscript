@@ -1,0 +1,23 @@
+#! /usr/bin/python
+
+################################################################################
+#    \file   SConscript
+#    \author Gregory Diamos <solusstultus@gmail.com>
+#    \date   June 13, 2015
+#    \brief  The SCons program build script for lucius demos
+################################################################################
+
+
+Import('env')
+
+lucius_libs = env['LUCIUS_LIBS']
+
+programs = []
+
+programs.append(env.Program('lucius-image-classifier-demo', \
+    ['image-classifier/lucius-image-classifier-demo.cpp'], LIBS=lucius_libs))
+
+Return('programs')
+
+
+

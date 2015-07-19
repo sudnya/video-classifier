@@ -31,7 +31,7 @@ ModelCheckpointer::~ModelCheckpointer()
 
 }
 
-void ModelCheckpointer::epochCompleted(const Engine& engine)
+void ModelCheckpointer::epochCompleted(Engine& engine)
 {
     std::ofstream file(_path);
 

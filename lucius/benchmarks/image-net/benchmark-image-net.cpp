@@ -281,8 +281,10 @@ static void runBenchmark(const Parameters& parameters)
 
 static void setupSolverParameters(const Parameters& parameters)
 {
-    lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::LearningRate", parameters.learningRate);
-    lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::Momentum", parameters.momentum);
+    lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::LearningRate",
+        parameters.learningRate);
+    lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::Momentum",
+        parameters.momentum);
     lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::AnnealingRate", "1.00000");
     lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::MaxGradNorm", "10.0");
     lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::IterationsPerBatch", "1");
