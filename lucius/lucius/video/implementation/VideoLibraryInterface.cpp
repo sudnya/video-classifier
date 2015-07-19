@@ -24,23 +24,23 @@ class VideoLibraryDatabase
 {
 public:
 	typedef std::map<std::string, VideoLibrary*> ExtensionToLibraryMap;
-	
+
 public:
 	VideoLibraryDatabase()
 	{
 		_libraries = VideoLibraryFactory::createAll();
-		
+
 		for(auto library : _libraries)
 		{
 			auto formats = library->getSupportedExtensions();
-			
+
 			for(auto format : formats)
 			{
 				libraries.insert(std::make_pair(format, library));
 			}
 		}
 	}
-	
+
 	~VideoLibraryDatabase()
 	{
 		for(auto library : _libraries)
@@ -61,22 +61,32 @@ static VideoLibraryDatabase database;
 
 bool VideoLibraryInterface::isVideoTypeSupported(const std::string& extension)
 {
-	return database.libraries.count(extension) != 0;	
+	return database.libraries.count(extension) != 0;
 }
 
 VideoLibrary* VideoLibraryInterface::getLibraryThatSupports(
 	const std::string& path)
 {
-	auto extension = util::getExtension(path);
-	
-	auto library = database.libraries.find(extension);
-	
+	auto capability = util::getExtension(path);
+
+    if(capability.empty())
+    {
+        capability = path;
+    }
+
+	auto library = database.libraries.find(capability);
+
 	if(library == database.libraries.end())
 	{
 		return nullptr;
 	}
-	
+
 	return library->second;
+}
+
+VideoLibrary* VideoLibraryInterface::getLibraryThatSupportsCamera()
+{
+	return getLibraryThatSupports("camera");
 }
 
 }

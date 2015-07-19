@@ -49,6 +49,26 @@ ResultVector::const_iterator ResultVector::end() const
 	return _results.end();
 }
 
+ResultVector::value_type& ResultVector::back()
+{
+    return _results.back();
+}
+
+const ResultVector::value_type& ResultVector::back() const
+{
+    return _results.back();
+}
+
+ResultVector::value_type& ResultVector::front()
+{
+    return _results.front();
+}
+
+const ResultVector::value_type& ResultVector::front() const
+{
+    return _results.front();
+}
+
 size_t ResultVector::size() const
 {
 	return _results.size();

@@ -28,6 +28,7 @@ private:
 public:
 	typedef Vector::iterator       iterator;
 	typedef Vector::const_iterator const_iterator;
+    typedef Vector::value_type     value_type;
 
 public:
 	ResultVector();
@@ -46,6 +47,13 @@ public:
 
 	iterator       end();
 	const_iterator end() const;
+
+public:
+          value_type& back();
+    const value_type& back() const;
+
+          value_type& front();
+    const value_type& front() const;
 
 public:
 	size_t size()  const;

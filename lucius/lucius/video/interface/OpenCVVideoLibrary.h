@@ -23,6 +23,7 @@ class OpenCVVideoLibrary : public VideoLibrary
 {
 public:
 	virtual VideoStream* newStream(const std::string& path);
+	virtual VideoStream* newCameraStream();
 	virtual void freeStream(VideoStream* s);
 
 public:
@@ -32,23 +33,24 @@ public:
 	class OpenCVVideoStream : public VideoStream
 	{
 	public:
+		OpenCVVideoStream();
 		OpenCVVideoStream(const std::string& path);
 		virtual ~OpenCVVideoStream();
-		
+
 	public:
 		OpenCVVideoStream(const OpenCVVideoStream&) = delete;
 		OpenCVVideoStream& operator=(const OpenCVVideoStream&) = delete;
-		
+
 	public:
 		virtual bool finished() const;
 		virtual bool getNextFrame(Image&);
 		virtual size_t getTotalFrames() const;
 		virtual bool seek(size_t frame);
-	
+
 	private:
 		std::string _path;
 		CvCapture*  _cvCapture;
-	
+
 	};
 
 };
