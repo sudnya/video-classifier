@@ -16,7 +16,7 @@ LAYER_OUTPUT_REDUCTION_FACTOR="1"
 EPOCHS="20"
 LEARNING_RATE="0.001"
 MOMENTUM="0.9"
-RESUME_FROM="/home/normal/checkout/video-classifier/lucius/experiments/image-net/benchmark-image-net-128-width-128-height-3-colors-1024-layer-size-13-layers-16-mini-batch-0.001-learning-rate-0.99-momentum-1-reduction-factor/model.tar"
+RESUME_FROM="/home/normal/checkout/video-classifier/lucius/experiments/image-net/benchmark-image-net-128-width-128-height-3-colors-1024-layer-size-13-layers-16-mini-batch-0.001-learning-rate-0.9-momentum-1-reduction-factor/model.tar"
 
 EXPERIMENT_NAME="benchmark-image-net-$INPUT_WIDTH-width-$INPUT_HEIGHT-height-$INPUT_COLORS-colors-$LAYER_SIZE-layer-size-$LAYERS-layers-$MINI_BATCH_SIZE-mini-batch-$LEARNING_RATE-learning-rate-$MOMENTUM-momentum-$LAYER_OUTPUT_REDUCTION_FACTOR-reduction-factor"
 
