@@ -217,7 +217,7 @@ void OpenCVLibrary::Interface::load()
 	DynLink(cvCreateTrackbar);
 
 	// This is buggy on OSX
-	// DynLink(cvDisplayOverlay);
+	//DynLink(cvDisplayOverlay);
 
 	#undef DynLink
 

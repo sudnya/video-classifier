@@ -13,6 +13,8 @@
 
 #include <lucius/matrix/interface/Matrix.h>
 
+#include <lucius/util/interface/Knobs.h>
+
 // Standard Library Includes
 #include <limits>
 
@@ -52,8 +54,11 @@ InputCameraDataProducer::InputAndReferencePair InputCameraDataProducer::pop()
 
     batch.push_back(image);
 
-    auto input = batch.getDownsampledFeatureMatrix(imageDimension[0], imageDimension[1],
-        imageDimension[2]);
+    double cropWindowRatio = util::KnobDatabase::getKnobValue(
+        "InputCameraDataProducer::CropWindowRatio", 0.15);
+
+    auto input = batch.getCropFeatureMatrix(imageDimension[0], imageDimension[1],
+        imageDimension[2], cropWindowRatio);
 
     standardize(input);
 
