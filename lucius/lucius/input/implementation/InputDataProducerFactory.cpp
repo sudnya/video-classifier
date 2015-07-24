@@ -19,7 +19,8 @@ namespace lucius
 namespace input
 {
 
-InputDataProducer* InputDataProducerFactory::create(const std::string& producerName, const std::string& databaseName)
+InputDataProducer* InputDataProducerFactory::create(const std::string& producerName,
+    const std::string& databaseName)
 {
     if(producerName == "InputAudioDataProducer")
     {

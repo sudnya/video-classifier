@@ -28,9 +28,11 @@ namespace input
 InputDataProducer::InputDataProducer()
 :  _requiresLabeledData(false), _standardizeInput(false), _model(nullptr)
 {
-    _epochs              = util::KnobDatabase::getKnobValue("InputDataProducer::Epochs",               60);
-    _maximumSamplesToRun = util::KnobDatabase::getKnobValue("InputDataProducer::MaximumSamplesToRun", 1e9);
-    _batchSize           = util::KnobDatabase::getKnobValue("InputDataProducer::BatchSize",            64);
+    _epochs    = util::KnobDatabase::getKnobValue("InputDataProducer::Epochs",    60);
+    _batchSize = util::KnobDatabase::getKnobValue("InputDataProducer::BatchSize", 64);
+
+    _maximumSamplesToRun = util::KnobDatabase::getKnobValue(
+        "InputDataProducer::MaximumSamplesToRun", 1e9);
 }
 
 InputDataProducer::~InputDataProducer()
