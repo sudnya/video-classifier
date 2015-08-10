@@ -30,7 +30,8 @@ namespace input
 {
 
 InputVisualDataProducer::InputVisualDataProducer(const std::string& imageDatabaseFilename)
-: _sampleDatabasePath(imageDatabaseFilename), _remainingSamples(0), _nextImage(0), _initialized(false)
+: _sampleDatabasePath(imageDatabaseFilename), _remainingSamples(0), _nextImage(0),
+  _initialized(false)
 {
 
 }
@@ -89,7 +90,8 @@ void InputVisualDataProducer::initialize()
 }
 
 static ImageVector getBatch(ImageVector& images, VideoVector& video,
-    size_t& remainingSamples, size_t& nextImage, size_t batchSize, std::default_random_engine& generator,
+    size_t& remainingSamples, size_t& nextImage, size_t batchSize,
+    std::default_random_engine& generator,
     bool requiresLabeledData);
 
 InputVisualDataProducer::InputAndReferencePair InputVisualDataProducer::pop()
@@ -350,7 +352,8 @@ static VideoAndFrameVector pickRandomFrames(VideoVector& videos,
 }
 
 static void getImageBatch(ImageVector& batch, ImageVector& images,
-    size_t& remainingSamples, size_t& nextImage, size_t maxBatchSize, std::default_random_engine& generator)
+    size_t& remainingSamples, size_t& nextImage, size_t maxBatchSize,
+    std::default_random_engine& generator)
 {
     auto batchSize = std::min(images.size(),
         std::min(remainingSamples, (size_t)maxBatchSize));

@@ -39,6 +39,7 @@ public:
 public:
 	bool isVideoSample() const;
 	bool isImageSample() const;
+	bool isAudioSample() const;
 
 	bool hasLabel() const;
 

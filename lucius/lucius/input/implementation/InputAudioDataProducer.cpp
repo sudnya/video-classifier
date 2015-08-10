@@ -1,4 +1,4 @@
-/*    \file   InputAudioDataProducer.cpp
+/*  \file   InputAudioDataProducer.cpp
     \date   Saturday August 10, 2014
     \author Gregory Diamos <solusstultus@gmail.com>
     \brief  The source file for the InputAudioDataProducer class.
@@ -9,6 +9,7 @@
 #include <lucius/matrix/interface/Matrix.h>
 
 #include <lucius/util/interface/debug.h>
+#include <lucius/util/interface/memory.h>
 
 namespace lucius
 {
@@ -19,8 +20,10 @@ namespace input
 class InputAudioDataProducerImplementation
 {
 public:
-    InputAudioDataProducerImplementation(const std::string& audioDatabaseFilename)
-    : _databaseFilename(audioDatabaseFilename)
+    InputAudioDataProducerImplementation(InputAudioDataProducer* producer,
+        const std::string& audioDatabaseFilename)
+    : _producer(producer), _databaseFilename(audioDatabaseFilename),
+      _remainingSamples(0), _nextSample(0)
     {
 
     }
@@ -58,7 +61,7 @@ public:
 
         for(size_t i = 0; i < samplesToCache; ++i)
         {
-            _audio[i].load();
+            _audio[i].cache();
         }
 
         reset();
@@ -66,14 +69,165 @@ public:
         _initialized = true;
     }
 
-private:
+public:
+    InputAudioDataProducer::InputAndReferencePair pop()
+    {
+        assert(_initialized);
+
+        auto batch = _getBatch();
+
+        auto audioDimension = _producer->getInputSize();
+
+        auto input = batch.getFeatureMatrixForFrameSize(audioDimension[0]);
+
+        auto reference = batch.getReference(_producer->getOutputLabels());
+
+        if(_producer->getStandardizeInput())
+        {
+            _producer->standardize(input);
+        }
+
+        util::log("InputAudioDataProducer") << "Loaded batch of '" << batch.size()
+            <<  "' audio samples, " << _remainingSamples << " remaining in this epoch.\n";
+
+        return InputAudioDataProducer::InputAndReferencePair(
+            std::move(input), std::move(reference));
+    }
+
+    void empty() const
+    {
+        return _remainingSamples == 0;
+    }
+
+public:
+    size_t getUniqueSampleCount()
+    {
+        return std::min(_producer->getMaximumSamplesToRun(), _audio.size());
+    }
+
+public:
     void reset()
     {
         _remainingSamples = getUniqueSampleCount();
+        _nextSample       = 0;
+        _nextNoiseSample  = 0;
 
         std::shuffle(_audio.begin(), _audio.end(), _generator);
         std::shuffle(_noise.begin(), _noise.end(), _generator);
     }
+
+private:
+    AudioVector _getBatch()
+    {
+        AudioVector batch;
+
+        auto batchSize = std::min(_audio.size(),
+            std::min(_remainingSamples, (size_t)maxBatchSize));
+
+        for(size_t i = 0; i < batchSize; ++i)
+        {
+            auto audio = _sample(_audio[_nextSample],      _audioTimesteps         );
+            auto noise = _sample(_noise[_nextNoiseSample], _totalTimestepsPerSample);
+
+            batch.push_back(_merge(audio, noise));
+
+            --_remainingSamples;
+            ++_nextSample;
+            _nextNoiseSample = (_nextNoiseSample + 1) % _noise.size();
+        }
+    }
+
+    Audio _sample(const Audio& audio, size_t timesteps) const
+    {
+        if(timesteps <= audio.size())
+        {
+            return _zeroPad(audio, timesteps);
+        }
+
+        size_t remainder = audio.size() - timesteps;
+
+        size_t position = _generator() % remainder;
+
+        return audio.slice(position, position + timesteps);
+    }
+
+    void _zeroPad(Audio& audio, size_t timesteps) const
+    {
+        size_t position = audio.size();
+
+        audio.resize(timesteps);
+
+        for(; position < audio.size(); ++position)
+        {
+            audio.setSample(position, 0.0);
+        }
+    }
+
+    Audio _merge(const Audio& audio, const Audio& noise) const
+    {
+        assert(audio.size() < noise.size());
+
+        size_t remainder = noise.size() - audio.size();
+
+        auto result = noise;
+
+        result.clearLabels();
+
+        size_t position = _generator() % remainder;
+
+        for(auto& sample : audio)
+        {
+            result.setSample(position, sample + result.getSample(position));
+
+            ++position;
+        }
+
+        result.addLabel(0,                       position,                noise.label());
+        result.addLabel(position,                position + audio.size(), audio.label());
+        result.addLabel(position + audio.size(), noise.size(),            noise.label());
+
+        return result;
+    }
+
+private:
+    void _parseAudioDatabase()
+    {
+        util::log("InputAudioDataProducer") << " scanning audio database '"
+            << _databaseFilename << "'\n";
+
+        database::SampleDatabase sampleDatabase(_databaseFilename);
+
+        sampleDatabase.load();
+
+        for(auto& sample : sampleDatabase)
+        {
+            if(!sample.hasLabel() && requiresLabeledData)
+            {
+                util::log("InputAudioDataProducer::Detail") << "  skipped unlabeled data '"
+                    << sample.path() << "'\n";
+                continue;
+            }
+
+            if(sample.isAudioSample())
+            {
+                if(sample.hasLabel())
+                {
+                    util::log("InputAudioDataProducer::Detail") << "  found labeled image '"
+                        << sample.path() << "' with label '" << sample.label() << "'\n";
+                }
+                else
+                {
+                    util::log("InputAudioDataProducer::Detail") << "  found unlabeled image '"
+                        << sample.path() << "'\n";
+                }
+
+                _audio.push_back(Audio(sample.path(), sample.label()));
+            }
+        }
+    }
+
+private:
+    InputAudioDataProducer* _producer;
 
 private:
     std::string _databaseFilename;
@@ -90,11 +244,17 @@ private:
 
 private:
     size_t _remainingSamples;
+    size_t _nextSample;
+
+private:
+    size_t _totalTimestepsPerSample;
+    size_t _audioTimesteps;
 
 };
 
 InputAudioDataProducer::InputAudioDataProducer(const std::string& audioDatabaseFilename)
-: _implementation(new InputAudioDataProducerImplementation(audioDatabaseFilename))
+: _implementation(std::make_unique<InputAudioDataProducerImplementation>(
+    this, audioDatabaseFilename))
 {
 
 }
