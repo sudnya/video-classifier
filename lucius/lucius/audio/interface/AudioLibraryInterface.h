@@ -35,11 +35,18 @@ public:
 	typedef std::vector<uint8_t> DataVector;
 
 public:
+    class HeaderAndData
+    {
+    public:
+        Header     header;
+        DataVector data;
+    };
+
+public:
 	static bool isAudioTypeSupported(const std::string& extension);
 
 public:
-	static Header loadHeader(const std::string& path);
-	static DataVector loadData(const std::string& path);
+	static HeaderAndData loadHeader(const std::string& path);
 
 public:
 	static void saveAudio(const std::string& path, const Header& header,

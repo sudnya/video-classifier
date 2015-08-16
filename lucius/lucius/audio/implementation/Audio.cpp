@@ -192,7 +192,7 @@ void Audio::_load()
     _bytesPerSample = header.bytesPerSample;
     _samplingRate   = header.samplingRate;
 
-    _data = AudioLibraryInterface::loadData();
+    _data = AudioLibraryInterface::loadData(_path);
 
     _isLoaded = true;
 }

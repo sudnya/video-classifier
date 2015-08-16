@@ -57,7 +57,8 @@ public:
         {
             auto fullDimension = linearToDimension(i, resultView.size());
 
-            resultView(fullDimension) = nativeOperation(leftView(fullDimension), rightView(fullDimension));
+            resultView(fullDimension) = nativeOperation(leftView(fullDimension),
+                rightView(fullDimension));
         }
     }
 
@@ -307,7 +308,8 @@ void applyOverOperations(Matrix& result, const Matrix& input, const Operation& o
 
     assert(op == PossibleOperationType());
 
-    applyOverPrecisions<PossibleOperationType, AllPrecisions>(result, input, op, precision, AllPrecisions());
+    applyOverPrecisions<PossibleOperationType, AllPrecisions>(result, input, op,
+        precision, AllPrecisions());
 }
 
 template<typename PossibleOperations>
@@ -365,7 +367,8 @@ public:
         {
             NativeType value = rawInput[i];
 
-            for(size_t inputElement = i + elements; inputElement < inputElements; inputElement += elements)
+            for(size_t inputElement = i + elements; inputElement < inputElements;
+                inputElement += elements)
             {
                 value = nativeOperation(value, rawInput[inputElement]);
             }
@@ -388,20 +391,23 @@ public:
 };
 
 template <typename ActualOperation, typename ActualPrecision>
-void reduceAllDimensionsStep(Matrix& result, const Matrix& input, const ActualOperation& nativeOperation, const ActualPrecision& p)
+void reduceAllDimensionsStep(Matrix& result, const Matrix& input,
+    const ActualOperation& nativeOperation, const ActualPrecision& p)
 {
     typedef typename ActualPrecision::type NativeType;
 
     NativeType*       rawResult = static_cast<NativeType*>(result.data());
     const NativeType* rawInput  = static_cast<const NativeType*>(input.data());
 
-    auto lambda = ReduceAllDimensionsStepLambda<NativeType, ActualOperation>{rawResult, rawInput, result.elements(), input.elements(), nativeOperation};
+    auto lambda = ReduceAllDimensionsStepLambda<NativeType, ActualOperation>{rawResult, rawInput,
+        result.elements(), input.elements(), nativeOperation};
 
     parallel::multiBulkSynchronousParallel(lambda);
 }
 
 template <typename ActualOperation, typename ActualPrecision>
-void reduceAllDimensions(Matrix& result, const Matrix& input, const ActualOperation& nativeOperation, const ActualPrecision& p)
+void reduceAllDimensions(Matrix& result, const Matrix& input,
+    const ActualOperation& nativeOperation, const ActualPrecision& p)
 {
     if(input.elements() < tileSize)
     {
@@ -683,7 +689,8 @@ void broadcast(Matrix& result, const Matrix& left, const Matrix& right, const Di
 
 }
 
-void broadcast(Matrix& result, const Matrix& left, const Matrix& right, const Dimension& d, const Operation& op)
+void broadcast(Matrix& result, const Matrix& left, const Matrix& right,
+    const Dimension& d, const Operation& op)
 {
     detail::broadcast(result, left, right, d, op, AllBinaryOperations());
 }

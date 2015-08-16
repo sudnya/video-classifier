@@ -26,8 +26,7 @@ public:
 	virtual ~AudioLibrary();
 
 public:
-	virtual Header     loadHeader(const std::string& path) = 0;
-	virtual DataVector loadData  (const std::string& path) = 0;
+	virtual HeaderAndData loadAudio(const std::string& path) = 0;
 
 public:
 	virtual void saveAudio(const std::string& path, const Header& header,

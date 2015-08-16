@@ -16,7 +16,8 @@ class FloatIterator
 {
 public:
     FloatIterator();
-    FloatIterator(const Precision& p, const Dimension& size, const Dimension& stride, const Dimension& offset, void* d);
+    FloatIterator(const Precision& p, const Dimension& size,
+        const Dimension& stride, const Dimension& offset, void* d);
 
 public:
     FloatIterator(const FloatIterator& );
@@ -54,7 +55,8 @@ class ConstFloatIterator
 {
 public:
     ConstFloatIterator();
-    ConstFloatIterator(const Precision& p, const Dimension& s, const Dimension& stride, const Dimension& offset, const void* d);
+    ConstFloatIterator(const Precision& p, const Dimension& s,
+        const Dimension& stride, const Dimension& offset, const void* d);
 
 public:
     ConstFloatIterator(const FloatIterator& );
