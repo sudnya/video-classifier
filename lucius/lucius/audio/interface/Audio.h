@@ -21,6 +21,8 @@ class Audio
 {
 public:
     Audio(const std::string& path, const std::string& defaultLabel);
+    Audio(std::istream& stream, const std::string& format);
+
     Audio(size_t samples, size_t bytesPerSample, size_t frequency)
 
 public:
@@ -58,6 +60,9 @@ public:
 public:
           void* getDataForTimestep(size_t timestep);
     const void* getDataForTimestep(size_t timesetp) const;
+
+public:
+    bool operator==(const Audio& ) const;
 
 private:
     std::string _path;

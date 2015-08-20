@@ -26,7 +26,8 @@ LibavcodecAudioLibrary::HeaderAndData LibavcodecAudioLibrary::loadAudio(const st
 
     LibavcodecLibrary::av_init_packet(&packet);
 
-    AVCodec* codec = LibavcodecLibrary::avcodec_find_decoder(getCodecForPath(path));
+    AVCodec* codec = LibavcodecLibrary::avcodec_find_decoder(
+        util::getExtension(path));
 
     if(codec == nullptr)
     {
@@ -82,14 +83,15 @@ LibavcodecAudioLibrary::HeaderAndData LibavcodecAudioLibrary::loadAudio(const st
 
         if(gotFrame)
         {
-            headerAndData.header.samples += LibavcodecLibrary::getSamples(decodedFrame);
+            headerAndData.header.samples += LibavcodecLibrary::getNumberOfSamples(decodedFrame);
 
             headerAndData.header.bytesPerSample =
                 LibavcodecLibrary::getBytesPerSampleForFormat(context);
             headerAndData.header.samplingRate = LibavcodecLibrary::getSamplingRate(context);
 
             int dataSize = LibavcodecLibrary::av_samples_get_buffer_size(nullptr,
-                LibavcodecLibrary::getChannelCount(context), decodedFrame->nb_samples,
+                LibavcodecLibrary::getChannelCount(context),
+                LibavcodecLibrary::getNumberOfSamples(decodedFrame),
                 LibavcodecLibrary::getSampleFormat(context), 1);
             assert(dataSize >= 0);
 
@@ -97,7 +99,8 @@ LibavcodecAudioLibrary::HeaderAndData LibavcodecAudioLibrary::loadAudio(const st
 
             headerAndData.data.resize(position + dataSize);
 
-            std::memcpy(headerAndData.data.data(), decodedFrame->data[0], dataSize);
+            std::memcpy(headerAndData.data.data(),
+                LibavcodecLibrary::getData(decodedFrame), dataSize);
         }
 
         packet.size -= length;
@@ -131,7 +134,7 @@ void LibavcodecAudioLibrary::saveAudio(const std::string& path, const Header& he
     const DataVector& data)
 {
     LibavcodecLibrary::AVCodec* codec =
-        LibavcodecLibrary::avcodec_find_encoder(getCodecForPath(path));
+        LibavcodecLibrary::avcodec_find_encoder_by_name(util::getExtension(path));
 
     if(codec == nullptr)
     {
@@ -145,7 +148,7 @@ void LibavcodecAudioLibrary::saveAudio(const std::string& path, const Header& he
         throw std::runtime_error("Could not create context for " + path);
     }
 
-    LibavcodecLibrary::setBitRate(context, getBitrate());
+    LibavcodecLibrary::setBitRate(context, getBitRate());
     LibavcodecLibrary::setSampleFormat(context, header.bytesPerSample);
 
     if(!LibavcodecLibrary::check_sample_fmt(codec, getSampleFormat(context)))
@@ -154,7 +157,7 @@ void LibavcodecAudioLibrary::saveAudio(const std::string& path, const Header& he
     }
 
     LibavcodecLibrary::setSampleRate(codec, header.samplingRate);
-    LibavcodecLibrary::setChannelLayout(codec, LibavcodecLibrary::AV_CH_LAYOUT_MONO);
+    LibavcodecLibrary::setChannelLayout(codec, LibavcodecLibrary::AV_CH_FRONT_LEFT);
     LibavcodecLibrary::setChannelCount(codec, 1);
 
     auto status = LibavcodecLibrary::avcodec_open2(context, codec, nullptr);
@@ -173,15 +176,15 @@ void LibavcodecAudioLibrary::saveAudio(const std::string& path, const Header& he
 
     LibavcodecLibrary::AVFrameRAII frame;
 
-    frame->nb_samples     = LibavcodecLibrary::getFrameSize(context);
-    frame->format         = LibavcodecLibrary::getSampleFomat(context);
-    frame->channel_layout = LibavcodecLibrary::getChannelLayout(context);
+    LibavcodecLibrary::setNumberOfSamples(frame, LibavcodecLibrary::getFrameSize(context));
+    LibavcodecLibrary::setSampleFormat(frame, LibavcodecLibrary::getSampleFomat(context));
+    LibavcodecLibrary::setChannelLayout(frame, LibavcodecLibrary::getChannelLayout(context));
 
     /* the codec gives us the frame size, in samples,
      * we calculate the size of the samples buffer in bytes */
     size_t bufferSize = LibavcodecLibrary::av_samples_get_buffer_size(nullptr,
         LibavcodecLibrary::getChannelCount(context), LibavcodecLibrary::getFrameSize(context),
-        LibavcodecLibrary::getSampleFomat(context), 0);
+        LibavcodecLibrary::getSampleFormat(context), 0);
 
     if(bufferSize < 0)
     {
@@ -193,21 +196,23 @@ void LibavcodecAudioLibrary::saveAudio(const std::string& path, const Header& he
     /* setup the data pointers in the AVFrame */
     auto status = LibavcodecLibrary::avcodec_fill_audio_frame(frame,
         LibavcodecLibrary::getChannelCount(context), LibavcodecLibrary::getSampleFomat(context),
-        reinterpret_cast<const uint8_t*>(buffer.data), bufferSize, 0);
+        reinterpret_cast<const uint8_t*>(buffer.data()), bufferSize, 0);
 
     if(status < 0)
     {
         throw std::runtime_error("Could not setup audio frame");
     }
 
-    for(size_t sample = 0; sample < header.samples; sample += frame->nb_samples)
+    for(size_t sample = 0; sample < header.samples;
+        sample += LibavcodecLibrary::getNumberOfSamples(frame))
     {
         LibavcodecLibrary::av_init_packet(&packet);
 
         packet.data = nullptr;
         packet.size = 0;
 
-        std::memcpy(buffer.data(), data.getDataForTimestep(sample), bufferSize);
+        std::memcpy(buffer.data(), reinterpret_cast<const uint8_t*>(data.data()) +
+            (sample * header.bytesPerSample), bufferSize);
 
         int gotOutput = 0;
 
