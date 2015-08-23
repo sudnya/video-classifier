@@ -9,8 +9,13 @@
 // Lucius Includes
 #include <lucius/audio/interface/Audio.h>
 
+#include <lucius/util/interface/string.h>
+
 // Standard Library Includes
 #include <vector>
+
+// Forward Declarations
+namespace lucius { namespace matrix { class Matrix; } }
 
 namespace lucius
 {
@@ -23,6 +28,7 @@ class AudioVector
 {
 private:
     typedef std::vector<Audio> BaseAudioVector;
+    typedef matrix::Matrix Matrix;
 
 public:
     typedef BaseAudioVector::iterator       iterator;
@@ -48,8 +54,9 @@ public:
 	const Audio& back() const;
 
 public:
-	size_t size()  const;
-	bool   empty() const;
+    size_t timesteps() const;
+	size_t size()      const;
+	bool   empty()     const;
 
 public:
 	void clear();
@@ -58,7 +65,7 @@ public:
 	void push_back(const Audio& audio);
 
 public:
-    Matrix getFeatureMatrixWithFrameSize(size_t samplesPerFrame) const;
+    Matrix getFeatureMatrixForFrameSize(size_t samplesPerFrame) const;
     Matrix getReference(const util::StringVector& labels) const;
 
 private:

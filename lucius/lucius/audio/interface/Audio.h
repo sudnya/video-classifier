@@ -9,6 +9,7 @@
 // Standard Library Includes
 #include <string>
 #include <map>
+#include <vector>
 
 namespace lucius
 {
@@ -23,7 +24,10 @@ public:
     Audio(const std::string& path, const std::string& defaultLabel);
     Audio(std::istream& stream, const std::string& format);
 
-    Audio(size_t samples, size_t bytesPerSample, size_t frequency)
+    Audio(size_t samples, size_t bytesPerSample, size_t frequency);
+
+public:
+    void save(std::ostream& stream, const std::string& format);
 
 public:
     void addLabel(size_t start, size_t end, const std::string& label);
@@ -40,12 +44,13 @@ public:
 
 public:
     double duration() const;
+    size_t timesteps() const;
     size_t size() const;
     size_t bytes() const;
     size_t bytesPerSample() const;
 
 public:
-    size_t resize(size_t timesteps);
+    void resize(size_t timesteps);
 
 public:
     double getSample(size_t timestep) const;
@@ -58,11 +63,18 @@ public:
     std::string getLabelForTimestep(size_t timestep) const;
 
 public:
+    std::string label() const;
+
+public:
           void* getDataForTimestep(size_t timestep);
     const void* getDataForTimestep(size_t timesetp) const;
 
 public:
     bool operator==(const Audio& ) const;
+    bool operator!=(const Audio& ) const;
+
+public:
+    static bool isPathAnAudio(const std::string& );
 
 private:
     std::string _path;
@@ -78,13 +90,17 @@ private:
 
     public:
         size_t startTimestep;
-        size_t endTimestep
+        size_t endTimestep;
 
     public:
         std::string label;
     };
 
+private:
     typedef std::map<size_t, Label> LabelMap;
+
+private:
+	typedef std::vector<uint8_t> ByteVector;
 
 private:
     LabelMap _labels;
@@ -101,6 +117,7 @@ private:
 
 private:
     void _load();
+    void _load(std::istream& stream, const std::string& format);
 
 };
 

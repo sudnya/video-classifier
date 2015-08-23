@@ -4,12 +4,23 @@
     \brief  The source file for the InputAudioDataProducer class.
 */
 
+
+// Lucius Includes
 #include <lucius/input/interface/InputAudioDataProducer.h>
+
+#include <lucius/database/interface/SampleDatabase.h>
+#include <lucius/database/interface/Sample.h>
+
+#include <lucius/audio/interface/AudioVector.h>
 
 #include <lucius/matrix/interface/Matrix.h>
 
+#include <lucius/util/interface/Knobs.h>
 #include <lucius/util/interface/debug.h>
 #include <lucius/util/interface/memory.h>
+
+// Standard Library Includes
+#include <random>
 
 namespace lucius
 {
@@ -17,13 +28,16 @@ namespace lucius
 namespace input
 {
 
+typedef audio::Audio       Audio;
+typedef audio::AudioVector AudioVector;
+
 class InputAudioDataProducerImplementation
 {
 public:
     InputAudioDataProducerImplementation(InputAudioDataProducer* producer,
         const std::string& audioDatabaseFilename)
     : _producer(producer), _databaseFilename(audioDatabaseFilename),
-      _remainingSamples(0), _nextSample(0)
+      _remainingSamples(0), _nextSample(0), _nextNoiseSample(0)
     {
 
     }
@@ -57,7 +71,7 @@ public:
         size_t samplesToCache = util::KnobDatabase::getKnobValue(
             "InputAudioDataProducer::CacheSize", 128);
 
-        samplesToCache = std::min(samplesToCache, _images.size());
+        samplesToCache = std::min(samplesToCache, _audio.size());
 
         for(size_t i = 0; i < samplesToCache; ++i)
         {
@@ -94,7 +108,7 @@ public:
             std::move(input), std::move(reference));
     }
 
-    void empty() const
+    bool empty() const
     {
         return _remainingSamples == 0;
     }
@@ -121,8 +135,8 @@ private:
     {
         AudioVector batch;
 
-        auto batchSize = std::min(_audio.size(),
-            std::min(_remainingSamples, (size_t)maxBatchSize));
+        auto batchSize = std::min(_audio.size(), std::min(_remainingSamples,
+            _producer->getBatchSize()));
 
         for(size_t i = 0; i < batchSize; ++i)
         {
@@ -135,13 +149,19 @@ private:
             ++_nextSample;
             _nextNoiseSample = (_nextNoiseSample + 1) % _noise.size();
         }
+
+        return batch;
     }
 
-    Audio _sample(const Audio& audio, size_t timesteps) const
+    Audio _sample(const Audio& audio, size_t timesteps)
     {
         if(timesteps <= audio.size())
         {
-            return _zeroPad(audio, timesteps);
+            auto copy = audio;
+
+            _zeroPad(copy, timesteps);
+
+            return copy;
         }
 
         size_t remainder = audio.size() - timesteps;
@@ -163,7 +183,7 @@ private:
         }
     }
 
-    Audio _merge(const Audio& audio, const Audio& noise) const
+    Audio _merge(const Audio& audio, const Audio& noise)
     {
         assert(audio.size() < noise.size());
 
@@ -175,9 +195,10 @@ private:
 
         size_t position = _generator() % remainder;
 
-        for(auto& sample : audio)
+        for(size_t existingPosition = 0; existingPosition != audio.size(); ++existingPosition)
         {
-            result.setSample(position, sample + result.getSample(position));
+            result.setSample(position, audio.getSample(existingPosition) +
+                result.getSample(position));
 
             ++position;
         }
@@ -201,7 +222,7 @@ private:
 
         for(auto& sample : sampleDatabase)
         {
-            if(!sample.hasLabel() && requiresLabeledData)
+            if(!sample.hasLabel() && _producer->getRequiresLabeledData())
             {
                 util::log("InputAudioDataProducer::Detail") << "  skipped unlabeled data '"
                     << sample.path() << "'\n";
@@ -245,6 +266,7 @@ private:
 private:
     size_t _remainingSamples;
     size_t _nextSample;
+    size_t _nextNoiseSample;
 
 private:
     size_t _totalTimestepsPerSample;

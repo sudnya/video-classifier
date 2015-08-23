@@ -7,6 +7,11 @@
 // Lucius Includes
 #include <lucius/audio/interface/Audio.h>
 
+// Standard Library Includes
+#include <cmath>
+#include <sstream>
+#include <iostream>
+
 static lucius::audio::Audio generateSimpleTone()
 {
     size_t frequency = 44100;
@@ -28,9 +33,9 @@ static void runTest()
 
     std::stringstream stream;
 
-    simpleTone.save(stream, "flac");
+    simpleTone.save(stream, ".flac");
 
-    lucius::audio::Audio loadedTone(stream, "flac");
+    lucius::audio::Audio loadedTone(stream, ".flac");
 
     if(simpleTone != loadedTone)
     {

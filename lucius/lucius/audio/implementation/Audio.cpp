@@ -4,9 +4,16 @@
     \brief  The source file for the Audio class.
 */
 
+// Lucius Includes
+#include <lucius/audio/interface/Audio.h>
+#include <lucius/audio/interface/AudioLibraryInterface.h>
+
+#include <lucius/util/interface/debug.h>
+#include <lucius/util/interface/paths.h>
+
 // Standard Library Includes
-#include <string>
-#include <map>
+#include <cassert>
+#include <fstream>
 
 namespace lucius
 {
@@ -15,15 +22,26 @@ namespace audio
 {
 
 Audio::Audio(const std::string& path, const std::string& label)
-: _path(path), _isLoaded(path), _defaultLabel(label)
+: _path(path), _isLoaded(false), _defaultLabel(label)
 {
 
+}
+
+Audio::Audio(std::istream& stream, const std::string& format)
+{
+    _load(stream, format);
 }
 
 Audio::Audio(size_t samples, size_t bytesPerSample, size_t frequency)
 : _isLoaded(true), _samples(samples), _bytesPerSample(bytesPerSample), _samplingRate(frequency)
 {
+    _data.resize(_samples * _bytesPerSample);
+}
 
+void Audio::save(std::ostream& stream, const std::string& format)
+{
+    AudioLibraryInterface::saveAudio(stream, format,
+        AudioLibraryInterface::Header(_samples, _bytesPerSample, _samplingRate), _data);
 }
 
 void Audio::addLabel(size_t start, size_t end, const std::string& label)
@@ -45,7 +63,7 @@ void Audio::invalidateCache()
 {
     _isLoaded = false;
 
-    std::swap(_data, ByteVector());
+   _data = std::move(ByteVector());
 }
 
 size_t Audio::frequency() const
@@ -83,7 +101,7 @@ size_t Audio::bytesPerSample() const
     return _bytesPerSample;
 }
 
-size_t Audio::resize(size_t timesteps)
+void Audio::resize(size_t timesteps)
 {
     _load();
 
@@ -99,19 +117,19 @@ double Audio::getSample(size_t timestep) const
     {
     case 1:
     {
-        return reinterpret_cast<int8_t&>(_data[timestep]);
+        return reinterpret_cast<const int8_t&>(_data[timestep]);
     }
     case 2:
     {
-        return reinterpret_cast<int16_t&>(_data[timestep]);
+        return reinterpret_cast<const int16_t&>(_data[timestep]);
     }
     case 4:
     {
-        return reinterpret_cast<int32_t&>(_data[timestep]);
+        return reinterpret_cast<const int32_t&>(_data[timestep]);
     }
     case 8:
     {
-        return reinterpret_cast<int64_t&>(_data[timestep]);
+        return reinterpret_cast<const int64_t&>(_data[timestep]);
     }
     default:
         break;
@@ -127,18 +145,22 @@ void Audio::setSample(size_t timestep, double value)
     case 1:
     {
         reinterpret_cast<int8_t&>(_data[timestep]) = value;
+        break;
     }
     case 2:
     {
-        reinterpret_cast<int16_t&>(_data[timestep]) value;
+        reinterpret_cast<int16_t&>(_data[timestep]) = value;
+        break;
     }
     case 4:
     {
-        reinterpret_cast<int32_t&>(_data[timestep]) value;
+        reinterpret_cast<int32_t&>(_data[timestep]) = value;
+        break;
     }
     case 8:
     {
         reinterpret_cast<int64_t&>(_data[timestep]) = value;
+        break;
     }
     default:
     {
@@ -169,6 +191,11 @@ std::string Audio::getLabelForTimestep(size_t timestep) const
     return _defaultLabel;
 }
 
+std::string Audio::label() const
+{
+    return _defaultLabel;
+}
+
 void* Audio::getDataForTimestep(size_t timestep)
 {
     return &_data[timestep * bytesPerSample()];
@@ -179,6 +206,32 @@ const void* Audio::getDataForTimestep(size_t timestep) const
     return &_data[timestep * bytesPerSample()];
 }
 
+bool Audio::operator==(const Audio& audio) const
+{
+    return  (_samples        == audio._samples) &&
+            (_bytesPerSample == audio._bytesPerSample) &&
+            (_samplingRate   == audio._samplingRate) &&
+            (_data           == audio._data);
+}
+
+bool Audio::operator!=(const Audio& audio) const
+{
+    return !(*this == audio);
+}
+
+bool Audio::isPathAnAudio(const std::string& path)
+{
+	auto extension = util::getExtension(path);
+
+	return AudioLibraryInterface::isAudioTypeSupported(extension);
+}
+
+Audio::Label::Label(size_t start, size_t end, const std::string& l)
+: startTimestep(start), endTimestep(end), label(l)
+{
+
+}
+
 void Audio::_load()
 {
     if(_isLoaded)
@@ -186,13 +239,30 @@ void Audio::_load()
         return;
     }
 
-    auto header = AudioLibraryInterface::loadHeader(_path);
+    std::ifstream file(_path);
 
-    _samples        = header.samples;
-    _bytesPerSample = header.bytesPerSample;
-    _samplingRate   = header.samplingRate;
+    if(!file.is_open())
+    {
+        throw std::runtime_error("Failed to open " + _path + " for reading.");
+    }
 
-    _data = AudioLibraryInterface::loadData(_path);
+    _load(file, util::getExtension(_path));
+}
+
+void Audio::_load(std::istream& stream, const std::string& format)
+{
+    if(_isLoaded)
+    {
+        return;
+    }
+
+    auto headerAndData = AudioLibraryInterface::loadAudio(stream, format);
+
+    _samples        = headerAndData.header.samples;
+    _bytesPerSample = headerAndData.header.bytesPerSample;
+    _samplingRate   = headerAndData.header.samplingRate;
+
+    _data = std::move(headerAndData.data);
 
     _isLoaded = true;
 }

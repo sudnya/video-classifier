@@ -9,6 +9,14 @@
 
 #include <lucius/audio/interface/LibavcodecLibrary.h>
 
+#include <lucius/util/interface/paths.h>
+#include <lucius/util/interface/string.h>
+#include <lucius/util/interface/Knobs.h>
+
+// Standard Library Includes
+#include <fstream>
+#include <cassert>
+
 namespace lucius
 {
 
@@ -20,52 +28,48 @@ LibavcodecAudioLibrary::~LibavcodecAudioLibrary()
 
 }
 
-LibavcodecAudioLibrary::HeaderAndData LibavcodecAudioLibrary::loadAudio(const std::string& path)
+LibavcodecAudioLibrary::HeaderAndData LibavcodecAudioLibrary::loadAudio(std::istream& stream,
+    const std::string& format)
 {
     LibavcodecLibrary::AVPacket packet;
 
     LibavcodecLibrary::av_init_packet(&packet);
 
-    AVCodec* codec = LibavcodecLibrary::avcodec_find_decoder(
-        util::getExtension(path));
+    auto codecName = util::strip(format, ".");
+
+    auto* codec = LibavcodecLibrary::avcodec_find_decoder_by_name(
+        codecName.c_str());
 
     if(codec == nullptr)
     {
-        throw std::runtime_error("Failed to open decoder for " + path);
+        throw std::runtime_error("Failed to open decoder for " + format);
     }
 
     LibavcodecLibrary::AVCodecContextRAII context(codec);
 
     if(context == nullptr)
     {
-        throw std::runtime_error("Failed to allocate codec context for " + path);
+        throw std::runtime_error("Failed to allocate codec context for " + format);
     }
 
     auto status = LibavcodecLibrary::avcodec_open2(context, codec, nullptr);
 
     if(status < 0)
     {
-        throw std::runtime_error("Failed to open codec for " + path);
+        throw std::runtime_error("Failed to open codec for " + format);
     }
 
     HeaderAndData headerAndData;
 
-    std::ifstream file(path);
-
-    if(!file.is_open())
-    {
-        throw std::runtime_error("Failed to open input file " + path + " for reading.");
-    }
-
     DataVector buffer(LibavcodecLibrary::AUDIO_INBUF_SIZE +
-        LibavcodecLibrary::FF_INPUT_BUFFER_PADDING_SIZE);
+        LibavcodecLibrary::AV_INPUT_BUFFER_PADDING_SIZE);
 
-    size_t fileSize = getFileSize(file);
+    size_t fileSize = util::getFileSize(stream);
 
     packet.data = buffer.data();
     packet.size = std::min(fileSize, buffer.size());
 
-    file.read(packet.data, packet.size());
+    stream.read(reinterpret_cast<char*>(packet.data), packet.size);
 
     LibavcodecLibrary::AVFrameRAII decodedFrame;
 
@@ -78,7 +82,7 @@ LibavcodecAudioLibrary::HeaderAndData LibavcodecAudioLibrary::loadAudio(const st
 
         if(length < 0)
         {
-            throw std::runtime_error("Error while decoding " + path);
+            throw std::runtime_error("Error while decoding " + format);
         }
 
         if(gotFrame)
@@ -115,10 +119,10 @@ LibavcodecAudioLibrary::HeaderAndData LibavcodecAudioLibrary::loadAudio(const st
 
             packet.data = buffer.data();
 
-            file.read(packet.data + packet.size,
+            stream.read(reinterpret_cast<char*>(packet.data + packet.size),
                 LibavcodecLibrary::AUDIO_INBUF_SIZE - packet.size);
 
-            length = file.gcount();
+            length = stream.gcount();
 
             if(length > 0)
             {
@@ -130,28 +134,49 @@ LibavcodecAudioLibrary::HeaderAndData LibavcodecAudioLibrary::loadAudio(const st
     return headerAndData;
 }
 
-void LibavcodecAudioLibrary::saveAudio(const std::string& path, const Header& header,
-    const DataVector& data)
+static int check_sample_fmt(LibavcodecLibrary::AVCodec *codec,
+    LibavcodecLibrary::AVSampleFormat format)
 {
+    auto* p = LibavcodecLibrary::getSampleFormats(codec);
+
+    while(*p != LibavcodecLibrary::AV_SAMPLE_FMT_NONE)
+    {
+        if(*p == format)
+        {
+            return 1;
+        }
+
+        p++;
+    }
+
+    return 0;
+}
+
+void LibavcodecAudioLibrary::saveAudio(std::ostream& stream, const std::string& format,
+    const Header& header, const DataVector& data)
+{
+    auto codecName = util::strip(format, ".");
+
     LibavcodecLibrary::AVCodec* codec =
-        LibavcodecLibrary::avcodec_find_encoder_by_name(util::getExtension(path));
+        LibavcodecLibrary::avcodec_find_encoder_by_name(codecName.c_str());
 
     if(codec == nullptr)
     {
-        throw std::runtime_error("Could not find encoder for " + path);
+        throw std::runtime_error("Could not find encoder for " + format);
     }
 
     LibavcodecLibrary::AVCodecContextRAII context(codec);
 
     if(context == nullptr)
     {
-        throw std::runtime_error("Could not create context for " + path);
+        throw std::runtime_error("Could not create context for " + format);
     }
 
     LibavcodecLibrary::setBitRate(context, getBitRate());
-    LibavcodecLibrary::setSampleFormat(context, header.bytesPerSample);
+    LibavcodecLibrary::setSampleFormat(context,
+        LibavcodecLibrary::getSampleFormatWithBytes(header.bytesPerSample));
 
-    if(!LibavcodecLibrary::check_sample_fmt(codec, getSampleFormat(context)))
+    if(!check_sample_fmt(codec, LibavcodecLibrary::getSampleFormat(context)))
     {
         throw std::runtime_error("Encoder does not support this sample format.");
     }
@@ -167,22 +192,15 @@ void LibavcodecAudioLibrary::saveAudio(const std::string& path, const Header& he
         throw std::runtime_error("Could not open codec.");
     }
 
-    std::ofstream file(path);
-
-    if(!file.is_open())
-    {
-        throw std::runtime_error("Could not open " + path + " for writing.");
-    }
-
     LibavcodecLibrary::AVFrameRAII frame;
 
     LibavcodecLibrary::setNumberOfSamples(frame, LibavcodecLibrary::getFrameSize(context));
-    LibavcodecLibrary::setSampleFormat(frame, LibavcodecLibrary::getSampleFomat(context));
+    LibavcodecLibrary::setSampleFormat(frame, LibavcodecLibrary::getSampleFormat(context));
     LibavcodecLibrary::setChannelLayout(frame, LibavcodecLibrary::getChannelLayout(context));
 
     /* the codec gives us the frame size, in samples,
      * we calculate the size of the samples buffer in bytes */
-    size_t bufferSize = LibavcodecLibrary::av_samples_get_buffer_size(nullptr,
+    int bufferSize = LibavcodecLibrary::av_samples_get_buffer_size(nullptr,
         LibavcodecLibrary::getChannelCount(context), LibavcodecLibrary::getFrameSize(context),
         LibavcodecLibrary::getSampleFormat(context), 0);
 
@@ -194,8 +212,8 @@ void LibavcodecAudioLibrary::saveAudio(const std::string& path, const Header& he
     DataVector buffer(bufferSize);
 
     /* setup the data pointers in the AVFrame */
-    auto status = LibavcodecLibrary::avcodec_fill_audio_frame(frame,
-        LibavcodecLibrary::getChannelCount(context), LibavcodecLibrary::getSampleFomat(context),
+    status = LibavcodecLibrary::avcodec_fill_audio_frame(frame,
+        LibavcodecLibrary::getChannelCount(context), LibavcodecLibrary::getSampleFormat(context),
         reinterpret_cast<const uint8_t*>(buffer.data()), bufferSize, 0);
 
     if(status < 0)
@@ -206,17 +224,17 @@ void LibavcodecAudioLibrary::saveAudio(const std::string& path, const Header& he
     for(size_t sample = 0; sample < header.samples;
         sample += LibavcodecLibrary::getNumberOfSamples(frame))
     {
-        LibavcodecLibrary::av_init_packet(&packet);
+        LibavcodecLibrary::AVPacketRAII packet;
 
-        packet.data = nullptr;
-        packet.size = 0;
+        packet->data = nullptr;
+        packet->size = 0;
 
         std::memcpy(buffer.data(), reinterpret_cast<const uint8_t*>(data.data()) +
             (sample * header.bytesPerSample), bufferSize);
 
         int gotOutput = 0;
 
-        auto status = LibavcodecLibrary::avcodec_encode_audio2(context, &packet,
+        auto status = LibavcodecLibrary::avcodec_encode_audio2(context, packet,
             frame, &gotOutput);
 
         if(status < 0)
@@ -226,14 +244,15 @@ void LibavcodecAudioLibrary::saveAudio(const std::string& path, const Header& he
 
         if(gotOutput != 0)
         {
-            file.write(packet.data, packet.size);
-            LibavcodecLibrary::av_free_packet(&packet);
+            stream.write(reinterpret_cast<char*>(packet->data), packet->size);
         }
     }
 
     for(int gotOutput = true; gotOutput != 0; )
     {
-        auto status = LibavcodecLibrary::avcodec_encode_audio2(context, &packet,
+        LibavcodecLibrary::AVPacketRAII packet;
+
+        auto status = LibavcodecLibrary::avcodec_encode_audio2(context, packet,
             frame, &gotOutput);
 
         if(status < 0)
@@ -243,7 +262,7 @@ void LibavcodecAudioLibrary::saveAudio(const std::string& path, const Header& he
 
         if(gotOutput != 0)
         {
-            file.write(packet.data, packet.size);
+            stream.write(reinterpret_cast<char*>(packet->data), packet->size);
         }
     }
 }
@@ -251,6 +270,11 @@ void LibavcodecAudioLibrary::saveAudio(const std::string& path, const Header& he
 LibavcodecAudioLibrary::StringVector LibavcodecAudioLibrary::getSupportedExtensions() const
 {
     return StringVector(util::split(".mp4|.mp2|.mp3|.wav|.flac", "|"));
+}
+
+size_t LibavcodecAudioLibrary::getBitRate() const
+{
+    return util::KnobDatabase::getKnobValue("LibavcodecAudioLibrary::Bitrate", 64000);
 }
 
 }

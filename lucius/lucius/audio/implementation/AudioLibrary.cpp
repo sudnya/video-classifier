@@ -5,7 +5,7 @@
 */
 
 // Lucius Includes
-#include <lucius/video/interface/AudioLibrary.h>
+#include <lucius/audio/interface/AudioLibrary.h>
 
 namespace lucius
 {

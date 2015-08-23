@@ -7,7 +7,8 @@
 #pragma once
 
 // Lucius Includes
-#include <lucius/video/interface/AudioLibraryInterface.h>
+#include <lucius/audio/interface/AudioLibraryInterface.h>
+#include <lucius/audio/interface/AudioLibrary.h>
 
 namespace lucius
 {
@@ -15,26 +16,26 @@ namespace lucius
 namespace audio
 {
 
-class LibavcodecAudioLibrary
+class LibavcodecAudioLibrary : public AudioLibrary
 {
 public:
-	typedef AudioLibraryInterface::Header     Header;
-	typedef AudioLibraryInterface::DataVector DataVector;
-	typedef std::vector<std::string>          StringVector;
+	typedef std::vector<std::string> StringVector;
 
 public:
 	virtual ~LibavcodecAudioLibrary();
 
 public:
-	virtual Header     loadHeader(const std::string& path);
-	virtual DataVector loadData  (const std::string& path);
+	virtual HeaderAndData loadAudio(std::istream& stream, const std::string& format);
 
 public:
-	virtual void saveAudio(const std::string& path, const Header& header,
+	virtual void saveAudio(std::ostream& stream, const std::string& format, const Header& header,
 		const DataVector& data);
 
 public:
 	virtual StringVector getSupportedExtensions() const;
+
+public:
+    size_t getBitRate() const;
 
 
 };

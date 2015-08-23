@@ -10,6 +10,8 @@
 #include <vector>
 #include <string>
 #include <cstdint>
+#include <istream>
+#include <ostream>
 
 namespace lucius
 {
@@ -24,11 +26,15 @@ public:
 	{
 	public:
 		Header(size_t _samples, size_t _bytesPerSample, size_t _samplingRate);
+        Header();
 
 	public:
         size_t samples;
         size_t bytesPerSample;
         size_t samplingRate;
+
+    public:
+        bool operator==(const Header&) const;
     };
 
 public:
@@ -46,11 +52,11 @@ public:
 	static bool isAudioTypeSupported(const std::string& extension);
 
 public:
-	static HeaderAndData loadHeader(const std::string& path);
+	static HeaderAndData loadAudio(std::istream& path, const std::string& format);
 
 public:
-	static void saveAudio(const std::string& path, const Header& header,
-		const DataVector& data);
+	static void saveAudio(std::ostream& path, const std::string& format,
+        const Header& header, const DataVector& data);
 
 };
 

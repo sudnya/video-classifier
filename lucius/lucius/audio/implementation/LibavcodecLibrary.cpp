@@ -7,11 +7,103 @@
 // Lucius Includes
 #include <lucius/audio/interface/LibavcodecLibrary.h>
 
+#include <lucius/util/interface/Casts.h>
+
+// Standard Library Includes
+#include <stdexcept>
+#include <cassert>
+
+// System-Specific Includes
+#include <dlfcn.h>
+
 namespace lucius
 {
 
 namespace audio
 {
+
+LibavcodecLibrary::AVCodecContextRAII::AVCodecContextRAII(AVCodec* codec)
+: _context(nullptr)
+{
+    _context = avcodec_alloc_context3(codec);
+
+    if(_context == nullptr)
+    {
+        throw std::runtime_error("Failed to allocate libavcodec context.");
+    }
+}
+
+LibavcodecLibrary::AVCodecContextRAII::~AVCodecContextRAII()
+{
+    avcodec_close(_context);
+    av_free(_context);
+}
+
+LibavcodecLibrary::AVCodecContextRAII::operator AVCodecContext*()
+{
+    return _context;
+}
+
+LibavcodecLibrary::AVCodecContextRAII::operator const AVCodecContext*() const
+{
+    return _context;
+}
+
+LibavcodecLibrary::LibavcodecLibrary::AVFrameRAII::AVFrameRAII()
+: _frame(nullptr)
+{
+    _frame = av_frame_alloc();
+
+    if(_frame == nullptr)
+    {
+        throw std::runtime_error("Failed to allocate frame.");
+    }
+}
+
+LibavcodecLibrary::AVFrameRAII::~AVFrameRAII()
+{
+    av_frame_free(&_frame);
+}
+
+LibavcodecLibrary::AVFrameRAII::operator AVFrame*()
+{
+    return _frame;
+}
+
+LibavcodecLibrary::AVFrameRAII::operator const AVFrame*() const
+{
+    return _frame;
+}
+
+LibavcodecLibrary::AVPacketRAII::AVPacketRAII()
+{
+    av_init_packet(&_packet);
+}
+
+LibavcodecLibrary::AVPacketRAII::~AVPacketRAII()
+{
+    av_free_packet(&_packet);
+}
+
+LibavcodecLibrary::AVPacketRAII::operator AVPacket*()
+{
+    return &_packet;
+}
+
+LibavcodecLibrary::AVPacketRAII::operator const AVPacket*() const
+{
+    return &_packet;
+}
+
+LibavcodecLibrary::AVPacket* LibavcodecLibrary::AVPacketRAII::operator->()
+{
+    return &_packet;
+}
+
+const LibavcodecLibrary::AVPacket* LibavcodecLibrary::AVPacketRAII::operator->() const
+{
+    return &_packet;
+}
 
 void LibavcodecLibrary::load()
 {
@@ -27,7 +119,7 @@ size_t LibavcodecLibrary::getNumberOfSamples(const AVFrame* frame)
 {
     int64_t result = 0;
 
-    int status = av_opt_get_int(frame, "nb_samples", 0, &result);
+    int status = av_opt_get_int(const_cast<AVFrame*>(frame), "nb_samples", 0, &result);
 
     if(status < 0)
     {
@@ -51,7 +143,22 @@ void* LibavcodecLibrary::getData(AVFrame* frame)
     return result;
 }
 
-size_t LibavcodecLibrary::getBytesPerSampleForFormat(const AVContext* context)
+const LibavcodecLibrary::AVSampleFormat* LibavcodecLibrary::getSampleFormats(const AVCodec* codec)
+{
+    enum AVSampleFormat* result = nullptr;
+
+    int status = av_opt_get(const_cast<AVCodec*>(codec), "sample_fmts", 0,
+        reinterpret_cast<uint8_t**>(&result));
+
+    if(status < 0)
+    {
+        throw std::runtime_error("Failed to get sample formats.");
+    }
+
+    return result;
+}
+
+size_t LibavcodecLibrary::getBytesPerSampleForFormat(const AVCodecContext* context)
 {
     auto format = getSampleFormat(context);
 
@@ -117,11 +224,42 @@ size_t LibavcodecLibrary::getBytesPerSampleForFormat(const AVContext* context)
     return 0;
 }
 
-size_t LibavcodecLibrary::getSamplingRate(const AVContext* context)
+LibavcodecLibrary::AVSampleFormat LibavcodecLibrary::getSampleFormatWithBytes(size_t bytes)
+{
+    switch(bytes)
+    {
+    case 1:
+    {
+        return AV_SAMPLE_FMT_U8;
+    }
+    case 2:
+    {
+        return AV_SAMPLE_FMT_S16;
+    }
+    case 4:
+    {
+        return AV_SAMPLE_FMT_S32;
+    }
+    case 8:
+    {
+        return AV_SAMPLE_FMT_DBL;
+    }
+    default:
+    {
+        break;
+    }
+    }
+
+    assert(false);
+
+    return AV_SAMPLE_FMT_NONE;
+}
+
+size_t LibavcodecLibrary::getSamplingRate(const AVCodecContext* context)
 {
     int64_t result = 0;
 
-    int status = av_opt_get_int(frame, "sample_rate", 0, &result);
+    int status = av_opt_get_int(const_cast<AVCodecContext*>(context), "sample_rate", 0, &result);
 
     if(status < 0)
     {
@@ -131,11 +269,11 @@ size_t LibavcodecLibrary::getSamplingRate(const AVContext* context)
     return result;
 }
 
-size_t LibavcodecLibrary::getChannelCount(const AVContext* context)
+size_t LibavcodecLibrary::getChannelCount(const AVCodecContext* context)
 {
     int64_t result = 0;
 
-    int status = av_opt_get_int(frame, "channels", 0, &result);
+    int status = av_opt_get_int(const_cast<AVCodecContext*>(context), "channels", 0, &result);
 
     if(status < 0)
     {
@@ -145,11 +283,11 @@ size_t LibavcodecLibrary::getChannelCount(const AVContext* context)
     return result;
 }
 
-size_t LibavcodecLibrary::getFrameSize(const AVContext* context)
+size_t LibavcodecLibrary::getFrameSize(const AVCodecContext* context)
 {
     int64_t result = 0;
 
-    int status = av_opt_get_int(frame, "frame_size", 0, &result);
+    int status = av_opt_get_int(const_cast<AVCodecContext*>(context), "frame_size", 0, &result);
 
     if(status < 0)
     {
@@ -159,11 +297,13 @@ size_t LibavcodecLibrary::getFrameSize(const AVContext* context)
     return result;
 }
 
-enum LibavcodecLibrary::AVSampleFormat LibavcodecLibrary::getSampleFormat(const AVContext* context)
+enum LibavcodecLibrary::AVSampleFormat LibavcodecLibrary::getSampleFormat(
+    const AVCodecContext* context)
 {
     enum AVSampleFormat result;
 
-    int status = av_opt_get_sample_fmt(context, "sample_fmt", 0, &result);
+    int status = av_opt_get_sample_fmt(const_cast<AVCodecContext*>(context),
+        "sample_fmt", 0, &result);
 
     if(status < 0)
     {
@@ -173,11 +313,12 @@ enum LibavcodecLibrary::AVSampleFormat LibavcodecLibrary::getSampleFormat(const 
     return result;
 }
 
-int64_t LibavcodecLibrary::getChannelLayout(const AVContext* context)
+int64_t LibavcodecLibrary::getChannelLayout(const AVCodecContext* context)
 {
     int64_t result = 0;
 
-    int status = av_opt_get_channel_layout(context, "channel_layout", 0, &result);
+    int status = av_opt_get_channel_layout(const_cast<AVCodecContext*>(context),
+        "channel_layout", 0, &result);
 
     if(status < 0)
     {
@@ -187,44 +328,84 @@ int64_t LibavcodecLibrary::getChannelLayout(const AVContext* context)
     return result;
 }
 
-void LibavcodecLibrary::setBitRate(AVContext* context, size_t bitRate)
+void LibavcodecLibrary::setBitRate(AVCodecContext* context, size_t bitRate)
 {
-    av_opt_set_int(context, "bit_rate", rate, 0);
+    int status = av_opt_set_int(context, "bit_rate", bitRate, 0);
+
+    if(status < 0)
+    {
+        throw std::runtime_error("Failed to set bit rate.");
+    }
 }
 
-void LibavcodecLibrary::setSampleFormat(AVContext* context, enum AVSampleFormat format)
+void LibavcodecLibrary::setSampleFormat(AVCodecContext* context, enum AVSampleFormat format)
 {
-    av_opt_set_sample_fmt(context, "sample_fmt", format, 0);
+    int status = av_opt_set_sample_fmt(context, "sample_fmt", format, 0);
+
+    if(status < 0)
+    {
+        throw std::runtime_error("Failed to set sample format.");
+    }
 }
 
 void LibavcodecLibrary::setSampleRate(AVCodec* codec, size_t rate)
 {
-    av_opt_set_int(context, "sample_rate", rate, 0);
+    int status = av_opt_set_int(codec, "sample_rate", rate, 0);
+
+    if(status < 0)
+    {
+        throw std::runtime_error("Failed to set sample rate.");
+    }
 }
 
 void LibavcodecLibrary::setChannelLayout(AVCodec* codec, int64_t layout)
 {
-    av_opt_set_channel_layout(frame, "channel_layout", layout, 0);
+    int status = av_opt_set_channel_layout(codec, "channel_layout", layout, 0);
+
+    if(status < 0)
+    {
+        throw std::runtime_error("Failed to set channel layout.");
+    }
 }
 
 void LibavcodecLibrary::setChannelCount(AVCodec* codec, size_t count)
 {
-    av_opt_set_int(codec, "channels", count, 0);
+    int status = av_opt_set_int(codec, "channels", count, 0);
+
+    if(status < 0)
+    {
+        throw std::runtime_error("Failed to set channel count.");
+    }
 }
 
 void LibavcodecLibrary::setNumberOfSamples(AVFrame* frame, size_t samples)
 {
-    av_opt_set_int(codec, "nb_samples", samples, 0);
+    int status = av_opt_set_int(frame, "nb_samples", samples, 0);
+
+    if(status < 0)
+    {
+        throw std::runtime_error("Failed to set sample count.");
+    }
 }
 
 void LibavcodecLibrary::setSampleFormat(AVFrame* frame, enum AVSampleFormat format)
 {
-    av_opt_set_sample_fmt(frame, "sample_fmt", format, 0);
+    int status = av_opt_set_sample_fmt(frame, "sample_fmt", format, 0);
+
+    if(status < 0)
+    {
+        throw std::runtime_error("Failed to set sample format.");
+    }
 }
 
 void LibavcodecLibrary::setChannelLayout(AVFrame* frame, int64_t layout)
 {
-    av_opt_set_channel_layout(frame, "channel_layout", layout, 0);
+    int status = av_opt_set_channel_layout(frame, "channel_layout", layout, 0);
+
+    if(status < 0)
+    {
+        throw std::runtime_error("Failed to set channel layout.");
+    }
 }
 
 LibavcodecLibrary::AVCodec* LibavcodecLibrary::avcodec_find_decoder_by_name(const char* name)
@@ -248,7 +429,7 @@ void LibavcodecLibrary::av_init_packet(AVPacket* packet)
     return (*_interface.av_init_packet)(packet);
 }
 
-AVCodecContext* LibavcodecLibrary::avcodec_alloc_context3(AVCodec* codec)
+LibavcodecLibrary::AVCodecContext* LibavcodecLibrary::avcodec_alloc_context3(AVCodec* codec)
 {
     _check();
 
@@ -263,7 +444,7 @@ int LibavcodecLibrary::avcodec_open2(AVCodecContext* avctx, const AVCodec* codec
     return (*_interface.avcodec_open2)(avctx, codec, options);
 }
 
-AVFrame* LibavcodecLibrary::av_frame_alloc()
+LibavcodecLibrary::AVFrame* LibavcodecLibrary::av_frame_alloc()
 {
     _check();
 
@@ -287,13 +468,6 @@ int LibavcodecLibrary::av_samples_get_buffer_size(int* linesize, int nb_channels
         sample_fmt, align);
 }
 
-int LibavcodecLibrary::check_sample_fmt(AVCodec* codec, enum AVSampleFormat sample_fmt)
-{
-    _check();
-
-    return (*_interface.check_sample_fmt)(codec, sample_fmt);
-}
-
 int LibavcodecLibrary::avcodec_fill_audio_frame(AVFrame* frame, int nb_channels,
     enum AVSampleFormat sample_fmt, const uint8_t* buf, int buf_size, int align)
 {
@@ -311,11 +485,72 @@ int LibavcodecLibrary::avcodec_encode_audio2(AVCodecContext* avctx, AVPacket* av
     return (*_interface.avcodec_encode_audio2)(avctx, avpkt, frame, got_packet_ptr);
 }
 
+int LibavcodecLibrary::av_opt_get_int(void* obj, const char* name, int flags, int64_t* out_val)
+{
+    _check();
+
+    return (*_interface.av_opt_get_int)(obj, name, flags, out_val);
+}
+
+
+int LibavcodecLibrary::av_opt_get(void* obj, const char* name, int flags, uint8_t** out_val)
+{
+    _check();
+
+    return (*_interface.av_opt_get)(obj, name, flags, out_val);
+}
+
+int LibavcodecLibrary::av_opt_get_sample_fmt(void* obj, const char* name, int search_flags,
+    enum AVSampleFormat* out_fmt)
+{
+    _check();
+
+    return (*_interface.av_opt_get_sample_fmt)(obj, name, search_flags, out_fmt);
+}
+
+int LibavcodecLibrary::av_opt_get_channel_layout(void* obj, const char* name, int search_flags,
+    int64_t* ch_layout)
+{
+    _check();
+
+    return (*_interface.av_opt_get_channel_layout)(obj, name, search_flags, ch_layout);
+}
+
+int LibavcodecLibrary::av_opt_set_int(void* obj, const char* name, int64_t val, int search_flags)
+{
+    _check();
+
+    return (*_interface.av_opt_set_int)(obj, name, val, search_flags);
+}
+
+int LibavcodecLibrary::av_opt_set_sample_fmt(void* obj, const char* name,
+    enum AVSampleFormat fmt, int search_flags)
+{
+    _check();
+
+    return (*_interface.av_opt_set_sample_fmt)(obj, name, fmt, search_flags);
+}
+
+int LibavcodecLibrary::av_opt_set_channel_layout(void* obj, const char* name, int64_t ch_layout,
+    int search_flags)
+{
+    _check();
+
+    return (*_interface.av_opt_set_channel_layout)(obj, name, ch_layout, search_flags);
+}
+
 void LibavcodecLibrary::av_free(void* pointer)
 {
     _check();
 
     return (*_interface.av_free)(pointer);
+}
+
+void LibavcodecLibrary::av_free_packet(AVPacket* packet)
+{
+    _check();
+
+    return (*_interface.av_free_packet)(packet);
 }
 
 int LibavcodecLibrary::avcodec_close(AVCodecContext* avctx)
@@ -387,6 +622,8 @@ void LibavcodecLibrary::Interface::load()
 	#define DynLink(function) util::bit_cast(function, dlsym(_library, #function)); \
         checkFunction((void*)function, #function)
 
+	DynLink(avcodec_register_all);
+
 	DynLink(avcodec_find_decoder_by_name);
 	DynLink(avcodec_find_encoder_by_name);
 
@@ -396,15 +633,26 @@ void LibavcodecLibrary::Interface::load()
 	DynLink(avcodec_decode_audio4);
 	DynLink(av_samples_get_buffer_size);
 
-	DynLink(check_sample_fmt);
 	DynLink(avcodec_fill_audio_frame);
 	DynLink(avcodec_encode_audio2);
 
+	DynLink(av_opt_get_int);
+	DynLink(av_opt_get);
+	DynLink(av_opt_get_sample_fmt);
+	DynLink(av_opt_get_channel_layout);
+
+	DynLink(av_opt_set_int);
+	DynLink(av_opt_set_sample_fmt);
+	DynLink(av_opt_set_channel_layout);
+
 	DynLink(av_free);
+	DynLink(av_free_packet);
 	DynLink(avcodec_close);
 	DynLink(av_frame_free);
 
 	#undef DynLink
+
+    (*avcodec_register_all)();
 
     util::log("LibavcodecLibrary") << " Loaded library '" << libraryName << "' succeeded\n";
 }
@@ -421,6 +669,8 @@ void LibavcodecLibrary::Interface::unload()
     dlclose(_library);
     _library = nullptr;
 }
+
+LibavcodecLibrary::Interface LibavcodecLibrary::_interface;
 
 }
 

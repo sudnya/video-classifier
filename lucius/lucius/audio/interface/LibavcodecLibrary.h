@@ -7,6 +7,7 @@
 #pragma once
 
 // Standard Library Includes
+#include <cstdint>
 #include <cstddef>
 
 namespace lucius
@@ -73,8 +74,10 @@ public:
         AV_CH_LAYOUT_NATIVE = 0x8000000000000000ULL
     };
 
-    const int AUDIO_INBUF_SIZE = 20480;
-    const int AV_INPUT_BUFFER_PADDING_SIZE = 32;
+    static const int AUDIO_INBUF_SIZE = 20480;
+    static const int AV_INPUT_BUFFER_PADDING_SIZE = 32;
+    static const int AUDIO_REFILL_THRESH = 4096;
+    static const int64_t AV_NOPTS_VALUE = (int64_t)(0x8000000000000000ULL);
 
     typedef struct AVPacket {
         /**
@@ -158,6 +161,28 @@ public:
         AVFrame* _frame;
     };
 
+    class AVPacketRAII
+    {
+    public:
+        AVPacketRAII();
+        ~AVPacketRAII();
+
+    public:
+        operator AVPacket*();
+        operator const AVPacket*() const;
+
+    public:
+        AVPacket* operator->();
+        const AVPacket* operator->() const;
+
+    public:
+        AVPacketRAII(const AVPacketRAII& ) = delete;
+        AVPacketRAII& operator=(const AVPacketRAII& ) = delete;
+
+    private:
+        AVPacket _packet;
+    };
+
 public:
 	static void load();
 	static bool loaded();
@@ -166,15 +191,18 @@ public:
     static size_t getNumberOfSamples(const AVFrame* frame);
     static void* getData(AVFrame* frame);
 
-    static size_t getBytesPerSampleForFormat(const AVContext* context);
-    static size_t getSamplingRate(const AVContext* context);
-    static size_t getChannelCount(const AVContext* context);
-    static size_t getFrameSize(const AVContext* context);
-    static enum AVSampleFormat getSampleFormat(const AVContext* context);
-    static int64_t getChannelLayout(const AVContext* context);
+    static const enum AVSampleFormat* getSampleFormats(const AVCodec* codec);
 
-    static void setBitRate(AVContext* context, size_t bitRate);
-    static void setSampleFormat(AVContext* context, enum AVSampleFormat);
+    static size_t getBytesPerSampleForFormat(const AVCodecContext* context);
+    static enum AVSampleFormat getSampleFormatWithBytes(size_t bytes);
+    static size_t getSamplingRate(const AVCodecContext* context);
+    static size_t getChannelCount(const AVCodecContext* context);
+    static size_t getFrameSize(const AVCodecContext* context);
+    static enum AVSampleFormat getSampleFormat(const AVCodecContext* context);
+    static int64_t getChannelLayout(const AVCodecContext* context);
+
+    static void setBitRate(AVCodecContext* context, size_t bitRate);
+    static void setSampleFormat(AVCodecContext* context, enum AVSampleFormat);
 
     static void setSampleRate(AVCodec* codec, size_t rate);
     static void setChannelLayout(AVCodec* codec, int64_t layout);
@@ -197,7 +225,6 @@ public:
         int* got_frame_ptr, const AVPacket* avpkt);
     static int av_samples_get_buffer_size(int* linesize, int nb_channels, int nb_samples,
         enum AVSampleFormat sample_fmt, int align);
-    static int check_sample_fmt(AVCodec* codec, enum AVSampleFormat sample_fmt);
 
 public:
     static int avcodec_fill_audio_frame(AVFrame* frame, int nb_channels,
@@ -222,6 +249,7 @@ public:
 
 public:
     static void av_free(void*);
+    static void av_free_packet(AVPacket* packet);
     static int avcodec_close(AVCodecContext* avctx);
     static void av_frame_free(AVFrame** frame);
 
@@ -231,6 +259,9 @@ private:
 private:
 	class Interface
 	{
+    public:
+        void (*avcodec_register_all)();
+
     public:
         AVCodec* (*avcodec_find_decoder_by_name)(const char*);
         AVCodec* (*avcodec_find_encoder_by_name)(const char*);
@@ -244,8 +275,7 @@ private:
         int (*avcodec_decode_audio4)(AVCodecContext* avctx, AVFrame* frame,
             int* got_frame_ptr, const AVPacket* avpkt);
         int (*av_samples_get_buffer_size)(int* linesize, int nb_channels, int nb_samples,
-            enum AVSampleFormat sample
-        int (*check_sample_fmt)(AVCodec *codec, enum AVSampleFormat sample_fmt);
+            enum AVSampleFormat sample_fmt, int align);
 
     public:
         int (*avcodec_fill_audio_frame)(AVFrame* frame, int nb_channels,
@@ -270,7 +300,8 @@ private:
 
     public:
         void (*av_free)(void*);
-        int (*avcodec_close)(AVCodecContext* avctx);
+        void (*av_free_packet)(AVPacket* packet);
+        int  (*avcodec_close)(AVCodecContext* avctx);
         void (*av_frame_free)(AVFrame** frame);
 
 	public:

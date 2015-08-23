@@ -7,6 +7,10 @@
 // Lucius Includes
 #include <lucius/audio/interface/AudioVector.h>
 
+#include <lucius/matrix/interface/Matrix.h>
+
+#include <lucius/util/interface/debug.h>
+
 namespace lucius
 {
 
@@ -63,6 +67,18 @@ const Audio& AudioVector::back() const
     return _audio.back();
 }
 
+size_t AudioVector::timesteps() const
+{
+    size_t minTimesteps = std::numeric_limits<size_t>::max();
+
+    for(auto& sample : *this)
+    {
+        minTimesteps = std::min(minTimesteps, sample.size());
+    }
+
+    return minTimesteps;
+}
+
 size_t AudioVector::size() const
 {
     return _audio.size();
@@ -83,20 +99,20 @@ void AudioVector::push_back(const Audio& audio)
     _audio.push_back(audio);
 }
 
-AudioVector::Matrix AudioVector::getFeatureMatrix() const
+AudioVector::Matrix AudioVector::getFeatureMatrixForFrameSize(size_t frameSize) const
 {
-    Matrix features({frameSize(), size(), timesteps()});
+    Matrix features({frameSize, size(), timesteps() / frameSize});
 
-    for(size_t timestep = 0; timestep != timesteps; ++timestep)
+    for(size_t timestep = 0; timestep != timesteps(); ++timestep)
     {
         for(size_t audioId = 0; audioId != size(); ++audioId)
         {
             auto& audio = (*this)[audioId];
 
-            for(size_t sample = 0; sample != frameSize(); ++sample)
+            for(size_t sample = 0; sample != frameSize; ++sample)
             {
                 features(sample, audioId, timestep) =
-                    audio.getSample(sample + timestep * frameSize());
+                    audio.getSample(sample + timestep * frameSize);
             }
         }
     }
@@ -108,7 +124,7 @@ AudioVector::Matrix AudioVector::getReference(const util::StringVector& labels) 
 {
     Matrix reference(matrix::Dimension({labels.size(), size(), timesteps()}));
 
-    util::log("AudioVector") << "Generating reference image:\n";
+    util::log("AudioVector") << "Generating reference audio:\n";
 
     for(size_t timestep = 0; timestep != timesteps(); ++timestep)
     {
@@ -138,7 +154,7 @@ AudioVector::Matrix AudioVector::getReference(const util::StringVector& labels) 
         }
     }
 
-    util::log("ImageVector") << " Generated matrix: " << reference.toString() << "\n";
+    util::log("AudioVector") << " Generated matrix: " << reference.toString() << "\n";
 
     return reference;
 

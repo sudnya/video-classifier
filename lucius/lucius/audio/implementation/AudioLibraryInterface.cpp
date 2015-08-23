@@ -10,6 +10,11 @@
 #include <lucius/audio/interface/AudioLibrary.h>
 #include <lucius/audio/interface/AudioLibraryFactory.h>
 
+#include <lucius/util/interface/paths.h>
+
+// Standard Library Includes
+#include <map>
+
 namespace lucius
 {
 
@@ -19,7 +24,7 @@ namespace audio
 class AudioLibraryDatabase
 {
 public:
-	typedef std::map<std::string, std::unique_ptr<ImageLibrary>> ExtensionToLibraryMap;
+	typedef std::map<std::string, AudioLibrary*> ExtensionToLibraryMap;
 
 public:
 	AudioLibraryDatabase()
@@ -32,7 +37,7 @@ public:
 
 			for(auto format : formats)
 			{
-				libraries.emplace(format, std::move(library));
+				libraries.emplace(format, library.get());
 			}
 		}
 	}
@@ -47,11 +52,24 @@ private:
 
 static AudioLibraryDatabase database;
 
+AudioLibraryInterface::Header::Header()
+: Header(0,0,0)
+{
+
+}
+
 AudioLibraryInterface::Header::Header(size_t _samples,
-    size_t _bytesPerSample, size_t _samplingRate);
+    size_t _bytesPerSample, size_t _samplingRate)
 : samples(_samples), bytesPerSample(_bytesPerSample), samplingRate(_samplingRate)
 {
 
+}
+
+bool AudioLibraryInterface::Header::operator==(const Header& header) const
+{
+    return (samples == header.samples) &&
+           (bytesPerSample == header.bytesPerSample) &&
+           (samplingRate == header.samplingRate);
 }
 
 bool AudioLibraryInterface::isAudioTypeSupported(const std::string& extension)
@@ -59,10 +77,9 @@ bool AudioLibraryInterface::isAudioTypeSupported(const std::string& extension)
     return database.libraries.count(extension) != 0;
 }
 
-AudioLibraryInterface::Header AudioLibraryInterface::loadHeader(const std::string& path)
+AudioLibraryInterface::HeaderAndData AudioLibraryInterface::loadAudio(std::istream& stream,
+    const std::string& extension)
 {
-	auto extension = util::getExtension(path);
-
 	auto library = database.libraries.find(extension);
 
 	if(library == database.libraries.end())
@@ -71,13 +88,12 @@ AudioLibraryInterface::Header AudioLibraryInterface::loadHeader(const std::strin
 			extension + "'");
 	}
 
-	return library->second->loadHeader(path);
+	return library->second->loadAudio(stream, extension);
 }
 
-AudioLibraryInterface::DataVector AudioLibraryInterface::loadData(const std::string& path)
+void AudioLibraryInterface::saveAudio(std::ostream& stream, const std::string& extension,
+    const Header& header, const DataVector& data)
 {
-	auto extension = util::getExtension(path);
-
 	auto library = database.libraries.find(extension);
 
 	if(library == database.libraries.end())
@@ -86,23 +102,7 @@ AudioLibraryInterface::DataVector AudioLibraryInterface::loadData(const std::str
 			extension + "'");
 	}
 
-	return library->second->loadData(path);
-}
-
-void AudioLibraryInterface::saveAudio(const std::string& path, const Header& header,
-    const DataVector& data)
-{
-	auto extension = util::getExtension(path);
-
-	auto library = database.libraries.find(extension);
-
-	if(library == database.libraries.end())
-	{
-		throw std::runtime_error("No audio library can support extension '" +
-			extension + "'");
-	}
-
-	library->second->saveAudio(path, header, data);
+	library->second->saveAudio(stream, extension, header, data);
 }
 
 }
