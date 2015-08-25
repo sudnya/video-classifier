@@ -242,7 +242,14 @@ private:
                         << sample.path() << "'\n";
                 }
 
-                _audio.push_back(Audio(sample.path(), sample.label()));
+                if(sample.label() == "noise")
+                {
+                    _noise.push_back(Audio(sample.path(), sample.label()));
+                }
+                else
+                {
+                    _audio.push_back(Audio(sample.path(), sample.label()));
+                }
             }
         }
     }

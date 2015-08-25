@@ -103,7 +103,7 @@ LibavcodecAudioLibrary::HeaderAndData LibavcodecAudioLibrary::loadAudio(std::ist
 
             headerAndData.data.resize(position + dataSize);
 
-            std::memcpy(headerAndData.data.data(),
+            std::memcpy(reinterpret_cast<uint8_t*>(headerAndData.data.data()) + position,
                 LibavcodecLibrary::getData(decodedFrame), dataSize);
         }
 
@@ -134,10 +134,10 @@ LibavcodecAudioLibrary::HeaderAndData LibavcodecAudioLibrary::loadAudio(std::ist
     return headerAndData;
 }
 
-static int check_sample_fmt(LibavcodecLibrary::AVCodec *codec,
+static int checkSampleFormat(LibavcodecLibrary::AVCodec *codec,
     LibavcodecLibrary::AVSampleFormat format)
 {
-    auto* p = LibavcodecLibrary::getSampleFormats(codec);
+    auto* p = codec->sample_fmts;
 
     while(*p != LibavcodecLibrary::AV_SAMPLE_FMT_NONE)
     {
@@ -150,6 +150,36 @@ static int check_sample_fmt(LibavcodecLibrary::AVCodec *codec,
     }
 
     return 0;
+}
+
+static int selectChannelLayout(LibavcodecLibrary::AVCodec *codec)
+{
+    const uint64_t* layout = nullptr;
+
+    uint64_t bestLayout          = 0;
+    int      highestChannelCount = 0;
+
+    if(!codec->channel_layouts)
+    {
+        return LibavcodecLibrary::AV_CH_LAYOUT_MONO;
+    }
+
+    layout = codec->channel_layouts;
+
+    while(*layout)
+    {
+        int channels = LibavcodecLibrary::av_get_channel_layout_nb_channels(*layout);
+
+        if(channels > highestChannelCount)
+        {
+            bestLayout          = *layout;
+            highestChannelCount = channels;
+        }
+
+        ++layout;
+    }
+
+    return bestLayout;
 }
 
 void LibavcodecAudioLibrary::saveAudio(std::ostream& stream, const std::string& format,
@@ -176,14 +206,14 @@ void LibavcodecAudioLibrary::saveAudio(std::ostream& stream, const std::string& 
     LibavcodecLibrary::setSampleFormat(context,
         LibavcodecLibrary::getSampleFormatWithBytes(header.bytesPerSample));
 
-    if(!check_sample_fmt(codec, LibavcodecLibrary::getSampleFormat(context)))
+    if(!checkSampleFormat(codec, LibavcodecLibrary::getSampleFormat(context)))
     {
         throw std::runtime_error("Encoder does not support this sample format.");
     }
 
-    LibavcodecLibrary::setSampleRate(codec, header.samplingRate);
-    LibavcodecLibrary::setChannelLayout(codec, LibavcodecLibrary::AV_CH_FRONT_LEFT);
-    LibavcodecLibrary::setChannelCount(codec, 1);
+    LibavcodecLibrary::setSampleRate(context, header.samplingRate);
+    LibavcodecLibrary::setChannelLayout(context, selectChannelLayout(codec));
+    LibavcodecLibrary::setChannelCount(context, 1);
 
     auto status = LibavcodecLibrary::avcodec_open2(context, codec, nullptr);
 
@@ -229,8 +259,21 @@ void LibavcodecAudioLibrary::saveAudio(std::ostream& stream, const std::string& 
         packet->data = nullptr;
         packet->size = 0;
 
-        std::memcpy(buffer.data(), reinterpret_cast<const uint8_t*>(data.data()) +
-            (sample * header.bytesPerSample), bufferSize);
+        if(header.samples - sample < LibavcodecLibrary::getNumberOfSamples(frame))
+        {
+            size_t remainingBytes = (header.samples - sample) * header.bytesPerSample;
+
+            std::memcpy(buffer.data(), reinterpret_cast<const uint8_t*>(data.data()) +
+                (sample * header.bytesPerSample),
+                remainingBytes);
+
+            std::memset(&buffer[remainingBytes], 0, bufferSize - remainingBytes);
+        }
+        else
+        {
+            std::memcpy(buffer.data(), reinterpret_cast<const uint8_t*>(data.data()) +
+                (sample * header.bytesPerSample), bufferSize);
+        }
 
         int gotOutput = 0;
 
@@ -252,8 +295,11 @@ void LibavcodecAudioLibrary::saveAudio(std::ostream& stream, const std::string& 
     {
         LibavcodecLibrary::AVPacketRAII packet;
 
+        packet->data = nullptr;
+        packet->size = 0;
+
         auto status = LibavcodecLibrary::avcodec_encode_audio2(context, packet,
-            frame, &gotOutput);
+            nullptr, &gotOutput);
 
         if(status < 0)
         {

@@ -21,7 +21,7 @@ static lucius::audio::Audio generateSimpleTone()
 
     for(size_t i = 0; i < samples; ++i)
     {
-        sample.setSample(i, std::sin(i) * 10000.0);
+        sample.setSample(i, std::sin(i * 2.0 * 3.14 * 440 / frequency) * 10000.0);
     }
 
     return sample;
@@ -37,9 +37,35 @@ static void runTest()
 
     lucius::audio::Audio loadedTone(stream, ".flac");
 
+    if(loadedTone.size() > simpleTone.size())
+    {
+        loadedTone.resize(simpleTone.size());
+    }
+
     if(simpleTone != loadedTone)
     {
         std::cout << "Test Failed: Audio signal does not match.\n";
+
+        std::cout << " Input  size is: " << simpleTone.size() << "\n";
+        std::cout << " Output size is: " << loadedTone.size() << "\n";
+
+        std::cout << " Input  frequency is: " << simpleTone.frequency() << "\n";
+        std::cout << " Output frequency is: " << loadedTone.frequency() << "\n";
+
+        std::cout << " Input  sample size is: " << simpleTone.bytesPerSample() << "\n";
+        std::cout << " Output sample size is: " << loadedTone.bytesPerSample() << "\n";
+
+        for(size_t timestep = 0; timestep != simpleTone.size(); ++timestep)
+        {
+            if(simpleTone.getSample(timestep) != loadedTone.getSample(timestep))
+            {
+                std::cout << " Mismatched sample " << timestep << ", original value "
+                    << simpleTone.getSample(timestep) << " vs loaded value "
+                    << loadedTone.getSample(timestep) << "\n";
+                break;
+            }
+        }
+
         return;
     }
 

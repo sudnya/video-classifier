@@ -225,7 +225,20 @@ int main(int argc, char** argv)
     std::string loggingEnabledModules;
     bool verbose = false;
 
-    parser.description("A test for minerva recurrent network performance.");
+    parser.description("A test for lucius recurrent network speech recognition performance.");
+
+    parser.parse("-i", "--input-path", parameters.inputPath,
+        "examples/imperative-speech/training/training-set.txt",
+        "The path of the database of training audio files.");
+    parser.parse("-t", "--test-path", parameters.testPath,
+        "examples/imperative-speech/validation/validation-set.txt",
+        "The path of the database of test audio files.");
+    parser.parse("-o", "--output-path", parameters.outputPath,
+        "models/imperative-speech.tar", "The path to save the model.");
+    parser.parse("-r", "--report-path", parameters.validationReportPath,
+        "models/imperative-speech-validation.csv", "The path to save validation results.");
+    parser.parse("-m", "--model-path", parameters.modelPath,
+        "", "The path to restore a previously saved model from.");
 
     parser.parse("-e", "--epochs", parameters.epochs, 20,
         "The number of epochs (passes over all inputs) to train the network for.");

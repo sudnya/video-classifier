@@ -20,7 +20,18 @@ class LibavcodecLibrary
 {
 public:
     class AVCodec;
-    class AVCodecContext;
+    class AVClass;
+
+    enum AVMediaType
+    {
+        AVMEDIA_TYPE_UNKNOWN = -1,  ///< Usually treated as AVMEDIA_TYPE_DATA
+        AVMEDIA_TYPE_VIDEO,
+        AVMEDIA_TYPE_AUDIO,
+        AVMEDIA_TYPE_DATA,          ///< Opaque data information usually continuous
+        AVMEDIA_TYPE_SUBTITLE,
+        AVMEDIA_TYPE_ATTACHMENT,    ///< Opaque data information usually sparse
+        AVMEDIA_TYPE_NB
+    };
 
     class AVFrame;
     class AVDictionary;
@@ -28,7 +39,8 @@ public:
     class AVBufferRef;
     class AVPacketSideData;
 
-    enum AVSampleFormat {
+    enum AVSampleFormat
+    {
         AV_SAMPLE_FMT_NONE = -1,
         AV_SAMPLE_FMT_U8,          ///< unsigned 8 bits
         AV_SAMPLE_FMT_S16,         ///< signed 16 bits
@@ -43,6 +55,238 @@ public:
         AV_SAMPLE_FMT_DBLP,        ///< double, planar
 
         AV_SAMPLE_FMT_NB           ///< Number of sample formats. DO NOT USE if linking dynamically
+    };
+
+    enum AVPixelFormat {
+        AV_PIX_FMT_NONE = -1,
+        AV_PIX_FMT_YUV420P,
+        AV_PIX_FMT_YUYV422,
+        AV_PIX_FMT_RGB24,
+        AV_PIX_FMT_BGR24,
+        AV_PIX_FMT_YUV422P,
+        AV_PIX_FMT_YUV444P,
+        AV_PIX_FMT_YUV410P,
+        AV_PIX_FMT_YUV411P,
+        AV_PIX_FMT_GRAY8,
+        AV_PIX_FMT_MONOWHITE,
+        AV_PIX_FMT_MONOBLACK,
+        AV_PIX_FMT_PAL8,
+        AV_PIX_FMT_YUVJ420P,
+        AV_PIX_FMT_YUVJ422P,
+        AV_PIX_FMT_YUVJ444P
+    };
+
+    static const int AV_NUM_DATA_POINTERS = 8;
+
+    enum AVColorSpace
+    {
+        AVCOL_SPC_RGB         = 0,
+        AVCOL_SPC_BT709       = 1,
+        AVCOL_SPC_UNSPECIFIED = 2,
+        AVCOL_SPC_RESERVED    = 3,
+        AVCOL_SPC_FCC         = 4,
+        AVCOL_SPC_BT470BG     = 5,
+        AVCOL_SPC_SMPTE170M   = 6,
+        AVCOL_SPC_SMPTE240M   = 7,
+        AVCOL_SPC_YCOCG       = 8,
+        AVCOL_SPC_BT2020_NCL  = 9,
+        AVCOL_SPC_BT2020_CL   = 10,
+        AVCOL_SPC_NB
+    };
+
+    enum AVColorRange
+    {
+        AVCOL_RANGE_UNSPECIFIED = 0,
+        AVCOL_RANGE_MPEG        = 1,
+        AVCOL_RANGE_JPEG        = 2,
+        AVCOL_RANGE_NB
+    };
+
+    enum AVFieldOrder
+    {
+        AV_FIELD_UNKNOWN,
+        AV_FIELD_PROGRESSIVE,
+        AV_FIELD_TT,
+        AV_FIELD_BB,
+        AV_FIELD_TB,
+        AV_FIELD_BT
+    };
+
+    enum AVColorPrimaries
+    {
+        AVCOL_PRI_RESERVED0   = 0,
+        AVCOL_PRI_BT709       = 1,
+        AVCOL_PRI_UNSPECIFIED = 2,
+        AVCOL_PRI_RESERVED    = 3,
+        AVCOL_PRI_BT470M      = 4,
+
+        AVCOL_PRI_BT470BG     = 5,
+        AVCOL_PRI_SMPTE170M   = 6,
+        AVCOL_PRI_SMPTE240M   = 7,
+        AVCOL_PRI_FILM        = 8,
+        AVCOL_PRI_BT2020      = 9,
+        AVCOL_PRI_NB,
+    };
+
+    enum AVChromaLocation
+    {
+        AVCHROMA_LOC_UNSPECIFIED = 0,
+        AVCHROMA_LOC_LEFT        = 1,
+        AVCHROMA_LOC_CENTER      = 2,
+        AVCHROMA_LOC_TOPLEFT     = 3,
+        AVCHROMA_LOC_TOP         = 4,
+        AVCHROMA_LOC_BOTTOMLEFT  = 5,
+        AVCHROMA_LOC_BOTTOM      = 6,
+        AVCHROMA_LOC_NB
+    };
+
+    enum AVColorTransferCharacteristic
+    {
+        AVCOL_TRC_RESERVED0    = 0,
+        AVCOL_TRC_BT709        = 1,
+        AVCOL_TRC_UNSPECIFIED  = 2,
+        AVCOL_TRC_RESERVED     = 3,
+        AVCOL_TRC_GAMMA22      = 4,
+        AVCOL_TRC_GAMMA28      = 5,
+        AVCOL_TRC_SMPTE170M    = 6,
+        AVCOL_TRC_SMPTE240M    = 7,
+        AVCOL_TRC_LINEAR       = 8,
+        AVCOL_TRC_LOG          = 9,
+        AVCOL_TRC_LOG_SQRT     = 10,
+        AVCOL_TRC_IEC61966_2_4 = 11,
+        AVCOL_TRC_BT1361_ECG   = 12,
+        AVCOL_TRC_IEC61966_2_1 = 13,
+        AVCOL_TRC_BT2020_10    = 14,
+        AVCOL_TRC_BT2020_12    = 15,
+        AVCOL_TRC_NB,
+    };
+
+    class AVRational
+    {
+    public:
+        int num;
+        int den;
+    };
+
+    class AVCodecContext
+    {
+    public:
+        const AVClass* av_class;
+        int log_level_offset;
+        enum AVMediaType codec_type;
+        const AVCodec* codec;
+        char codec_name [32];
+        int codec_id;
+        unsigned int codec_tag;
+        unsigned int stream_codec_tag;
+        void* priv_data;
+
+        struct AVCodecInternal *internal;
+        void *opaque;
+
+        int bit_rate;
+        int bit_rate_tolerance;
+        int global_quality;
+        int compression_level;
+        int flags;
+        int flags2;
+
+        uint8_t *extradata;
+        int extradata_size;
+
+        AVRational time_base;
+        int ticks_per_frame;
+        int delay;
+        int width, height;
+        int coded_width, coded_height;
+        int gop_size;
+        enum AVPixelFormat pix_fmt;
+        int me_method;
+        void (*draw_horiz_band)(AVCodecContext *s,
+                              const AVFrame *src, int offset[AV_NUM_DATA_POINTERS],
+                              int y, int type, int height);
+
+        enum AVPixelFormat (*get_format)(AVCodecContext *s, const enum AVPixelFormat * fmt);
+        int max_b_frames;
+        float b_quant_factor;
+        int rc_strategy;
+        int b_frame_strategy;
+        float b_quant_offset;
+        int has_b_frames;
+        int mpeg_quant;
+        float i_quant_factor;
+        float i_quant_offset;
+        float lumi_masking;
+        float temporal_cplx_masking;
+        float spatial_cplx_masking;
+        float p_masking;
+        float dark_masking;
+        int slice_count;
+        int prediction_method;
+        int *slice_offset;
+
+        AVRational sample_aspect_ratio;
+
+        int me_cmp;
+        int me_sub_cmp;
+        int mb_cmp;
+        int ildct_cmp;
+        int dia_size;
+        int last_predictor_count;
+        int pre_me;
+        int me_pre_cmp;
+        int pre_dia_size;
+        int me_subpel_quality;
+        int dtg_active_format;
+        int me_range;
+        int intra_quant_bias;
+        int inter_quant_bias;
+        int slice_flags;
+        int xvmc_acceleration;
+        int mb_decision;
+        uint16_t *intra_matrix;
+        uint16_t *inter_matrix;
+        int scenechange_threshold;
+        int noise_reduction;
+        int me_threshold;
+        int mb_threshold;
+        int intra_dc_precision;
+        int skip_top;
+        int skip_bottom;
+        float border_masking;
+        int mb_lmin;
+        int mb_lmax;
+        int me_penalty_compensation;
+        int bidir_refine;
+        int brd_scale;
+        int keyint_min;
+        int refs;
+        int chromaoffset;
+        int scenechange_factor;
+        int mv0_threshold;
+        int b_sensitivity;
+        enum AVColorPrimaries color_primaries;
+        enum AVColorTransferCharacteristic color_trc;
+        enum AVColorSpace colorspace;
+        enum AVColorRange color_range;
+        enum AVChromaLocation chroma_sample_location;
+
+        int slices;
+
+        enum AVFieldOrder field_order;
+
+        int sample_rate; ///< samples per second
+        int channels;    ///< number of audio channels
+        enum AVSampleFormat sample_fmt;  ///< sample format
+        int frame_size;
+        int frame_number;
+        int	block_align;
+
+        int	cutoff;
+
+        int	request_channels;
+
+        uint64_t channel_layout;
     };
 
     enum AVChannelLayout {
@@ -74,10 +318,14 @@ public:
         AV_CH_LAYOUT_NATIVE = 0x8000000000000000ULL
     };
 
+    static const int AV_CH_LAYOUT_STEREO = (AV_CH_FRONT_LEFT|AV_CH_FRONT_RIGHT);
+    static const int AV_CH_LAYOUT_MONO   = (AV_CH_FRONT_CENTER);
+
     static const int AUDIO_INBUF_SIZE = 20480;
     static const int AV_INPUT_BUFFER_PADDING_SIZE = 32;
     static const int AUDIO_REFILL_THRESH = 4096;
-    static const int64_t AV_NOPTS_VALUE = (int64_t)(0x8000000000000000ULL);
+    static const int64_t AV_NOPTS_VALUE = 0x8000000000000000ULL;
+    static const int AV_OPT_SEARCH_CHILDREN = 0x0001;
 
     typedef struct AVPacket {
         /**
@@ -113,7 +361,7 @@ public:
          * Additional packet data that can be provided by the container.
          * Packet can contain several types of side information.
          */
-        AVPacketSideData *side_data;
+        AVPacketSideData* side_data;
         int side_data_elems;
 
         /**
@@ -124,6 +372,32 @@ public:
 
         uint64_t who_cares[16];
     } AVPacket;
+
+    class AVCodec
+    {
+    public:
+        const char* name;
+        const char* long_name;
+        enum AVMediaType type;
+        int id;
+        int capabilities;
+        const AVRational* supported_framerates;
+        const int* pix_fmts;
+        const int* supported_samplerates;
+        const enum AVSampleFormat* sample_fmts;
+        const uint64_t* channel_layouts;
+    };
+
+    class AVFrame
+    {
+    public:
+        uint8_t *data[AV_NUM_DATA_POINTERS];
+        int linesize[AV_NUM_DATA_POINTERS];
+        uint8_t **extended_data;
+        int width, height;
+        int nb_samples;
+        int format;
+    };
 
     class AVCodecContextRAII
     {
@@ -191,8 +465,6 @@ public:
     static size_t getNumberOfSamples(const AVFrame* frame);
     static void* getData(AVFrame* frame);
 
-    static const enum AVSampleFormat* getSampleFormats(const AVCodec* codec);
-
     static size_t getBytesPerSampleForFormat(const AVCodecContext* context);
     static enum AVSampleFormat getSampleFormatWithBytes(size_t bytes);
     static size_t getSamplingRate(const AVCodecContext* context);
@@ -203,10 +475,9 @@ public:
 
     static void setBitRate(AVCodecContext* context, size_t bitRate);
     static void setSampleFormat(AVCodecContext* context, enum AVSampleFormat);
-
-    static void setSampleRate(AVCodec* codec, size_t rate);
-    static void setChannelLayout(AVCodec* codec, int64_t layout);
-    static void setChannelCount(AVCodec* codec, size_t count);
+    static void setSampleRate(AVCodecContext* context, size_t sampleRate);
+    static void setChannelLayout(AVCodecContext* context, int64_t layout);
+    static void setChannelCount(AVCodecContext* context, size_t count);
 
     static void setNumberOfSamples(AVFrame* frame, size_t samples);
     static void setSampleFormat(AVFrame* frame, enum AVSampleFormat);
@@ -241,11 +512,21 @@ public:
         int64_t* ch_layout);
 
 public:
+    static int av_opt_set(void* obj, const char* name, const char* val, int search_flags);
     static int av_opt_set_int(void* obj, const char* name, int64_t val, int search_flags);
     static int av_opt_set_sample_fmt(void *obj, const char *name,
         enum AVSampleFormat fmt, int search_flags);
     static int av_opt_set_channel_layout(void* obj, const char* name, int64_t ch_layout,
         int search_flags);
+
+public:
+    static int av_opt_show2(void* obj, void* av_log_obj, int req_flags, int rej_flags);
+
+public:
+    static void av_frame_set_channel_layout(AVFrame *frame, int64_t val);
+
+public:
+    static int av_get_channel_layout_nb_channels(uint64_t layout);
 
 public:
     static void av_free(void*);
@@ -292,11 +573,21 @@ private:
             int64_t* ch_layout);
 
     public:
+        int (*av_opt_set)(void* obj, const char* name, const char* val, int search_flags);
         int (*av_opt_set_int)(void* obj, const char* name, int64_t val, int search_flags);
         int (*av_opt_set_sample_fmt)(void *obj, const char *name,
             enum AVSampleFormat fmt, int search_flags);
         int (*av_opt_set_channel_layout)(void* obj, const char* name, int64_t ch_layout,
             int search_flags);
+
+    public:
+        int (*av_opt_show2)(void* obj, void* av_log_obj, int req_flags, int rej_flags);
+
+    public:
+        void (*av_frame_set_channel_layout)(AVFrame *frame, int64_t val);
+
+    public:
+        int (*av_get_channel_layout_nb_channels)(uint64_t layout);
 
     public:
         void (*av_free)(void*);
