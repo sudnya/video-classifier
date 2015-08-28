@@ -27,15 +27,15 @@ static lucius::audio::Audio generateSimpleTone()
     return sample;
 }
 
-static void runTest()
+static void testGenericLossless(const std::string& format)
 {
     auto simpleTone = generateSimpleTone();
 
     std::stringstream stream;
 
-    simpleTone.save(stream, ".flac");
+    simpleTone.save(stream, format);
 
-    lucius::audio::Audio loadedTone(stream, ".flac");
+    lucius::audio::Audio loadedTone(stream, format);
 
     if(loadedTone.size() > simpleTone.size())
     {
@@ -44,22 +44,22 @@ static void runTest()
 
     if(simpleTone != loadedTone)
     {
-        std::cout << "Test Failed: Audio signal does not match.\n";
+        std::cout << " Test Failed: Audio signal does not match.\n";
 
-        std::cout << " Input  size is: " << simpleTone.size() << "\n";
-        std::cout << " Output size is: " << loadedTone.size() << "\n";
+        std::cout << "  Input  size is: " << simpleTone.size() << "\n";
+        std::cout << "  Output size is: " << loadedTone.size() << "\n";
 
-        std::cout << " Input  frequency is: " << simpleTone.frequency() << "\n";
-        std::cout << " Output frequency is: " << loadedTone.frequency() << "\n";
+        std::cout << "  Input  frequency is: " << simpleTone.frequency() << "\n";
+        std::cout << "  Output frequency is: " << loadedTone.frequency() << "\n";
 
-        std::cout << " Input  sample size is: " << simpleTone.bytesPerSample() << "\n";
-        std::cout << " Output sample size is: " << loadedTone.bytesPerSample() << "\n";
+        std::cout << "  Input  sample size is: " << simpleTone.bytesPerSample() << "\n";
+        std::cout << "  Output sample size is: " << loadedTone.bytesPerSample() << "\n";
 
         for(size_t timestep = 0; timestep != simpleTone.size(); ++timestep)
         {
             if(simpleTone.getSample(timestep) != loadedTone.getSample(timestep))
             {
-                std::cout << " Mismatched sample " << timestep << ", original value "
+                std::cout << "  Mismatched sample " << timestep << ", original value "
                     << simpleTone.getSample(timestep) << " vs loaded value "
                     << loadedTone.getSample(timestep) << "\n";
                 break;
@@ -69,7 +69,13 @@ static void runTest()
         return;
     }
 
-    std::cout << "Test Passed\n";
+    std::cout << " Test " << format << " Passed\n";
+}
+
+static void runTest()
+{
+    testGenericLossless(".flac");
+    testGenericLossless(".wav");
 }
 
 int main(int argc, char** argv)

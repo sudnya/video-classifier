@@ -5,35 +5,40 @@
 */
 
 // Lucious Includes
-#include <minerva/engine/interface/Engine.h>
-#include <minerva/engine/interface/EngineFactory.h>
+#include <lucius/engine/interface/Engine.h>
+#include <lucius/engine/interface/EngineFactory.h>
+#include <lucius/engine/interface/EngineObserver.h>
+#include <lucius/engine/interface/EngineObserverFactory.h>
 
-#include <minerva/model/interface/Model.h>
+#include <lucius/model/interface/Model.h>
 
-#include <minerva/results/interface/ResultProcessor.h>
-#include <minerva/results/interface/LabelMatchResultProcessor.h>
+#include <lucius/results/interface/ResultProcessor.h>
+#include <lucius/results/interface/LabelMatchResultProcessor.h>
 
-#include <minerva/network/interface/NeuralNetwork.h>
-#include <minerva/network/interface/LayerFactory.h>
-#include <minerva/network/interface/Layer.h>
-#include <minerva/network/interface/CostFunctionFactory.h>
+#include <lucius/network/interface/NeuralNetwork.h>
+#include <lucius/network/interface/LayerFactory.h>
+#include <lucius/network/interface/Layer.h>
+#include <lucius/network/interface/CostFunctionFactory.h>
 
-#include <minerva/matrix/interface/RandomOperations.h>
-#include <minerva/matrix/interface/Matrix.h>
-#include <minerva/matrix/interface/MatrixOperations.h>
+#include <lucius/matrix/interface/RandomOperations.h>
+#include <lucius/matrix/interface/Matrix.h>
+#include <lucius/matrix/interface/MatrixOperations.h>
 
-#include <minerva/util/interface/ArgumentParser.h>
-#include <minerva/util/interface/Knobs.h>
+#include <lucius/util/interface/ArgumentParser.h>
+#include <lucius/util/interface/Knobs.h>
 
 // Type definitions
-typedef minerva::network::NeuralNetwork NeuralNetwork;
-typedef minerva::network::LayerFactory LayerFactory;
-typedef minerva::matrix::Matrix Matrix;
-typedef minerva::matrix::Dimension Dimension;
-typedef minerva::matrix::SinglePrecision SinglePrecision;
-typedef minerva::model::Model Model;
-typedef minerva::engine::Engine Engine;
-typedef minerva::results::LabelMatchResultProcessor LabelMatchResultProcessor;
+typedef lucius::network::NeuralNetwork NeuralNetwork;
+typedef lucius::network::LayerFactory LayerFactory;
+typedef lucius::network::CostFunctionFactory CostFunctionFactory;
+typedef lucius::matrix::Matrix Matrix;
+typedef lucius::matrix::Dimension Dimension;
+typedef lucius::matrix::SinglePrecision SinglePrecision;
+typedef lucius::model::Model Model;
+typedef lucius::engine::Engine Engine;
+typedef lucius::engine::EngineFactory EngineFactory;
+typedef lucius::engine::EngineObserverFactory EngineObserverFactory;
+typedef lucius::results::LabelMatchResultProcessor LabelMatchResultProcessor;
 
 class Parameters
 {
@@ -97,18 +102,19 @@ static void addClassifier(Model& model, const Parameters& parameters)
         std::make_tuple("InputSize",  parameters.layerSize),
         std::make_tuple("OutputSize", 3)));
 
-    classifier.setCostFunction(CostFunctionFactory::create("SoftMaxCostFunction"));
+    classifier.setCostFunction(CostFunctionFactory::create("SoftmaxCostFunction"));
 
     classifier.initialize();
 
     model.setNeuralNetwork("Classifier", classifier);
 
     // Add output neuron labels
-    model.setOutputLabel(0, "background");
+    model.setOutputLabel(0, "noise");
     model.setOutputLabel(1, "speech");
     model.setOutputLabel(2, "imperative-speech");
 
-    minerva::util::log("") << "Classifier Architecture " << classifier.shapeString() << "\n";
+    lucius::util::log("BenchmarkImperativeSpeech") << "Classifier Architecture "
+        << classifier.shapeString() << "\n";
 }
 
 static void createModel(Model& model, const Parameters& parameters)
@@ -132,7 +138,7 @@ static void setSampleStatistics(Model& model, const Parameters& parameters)
 static void trainNetwork(Model& model, const Parameters& parameters)
 {
     // Train the network
-    std::unique_ptr<Engine> engine(minerva::engine::EngineFactory::create("LearnerEngine"));
+    std::unique_ptr<Engine> engine(lucius::engine::EngineFactory::create("LearnerEngine"));
 
     engine->setModel(&model);
     engine->setEpochs(parameters.epochs);
@@ -151,7 +157,7 @@ static void trainNetwork(Model& model, const Parameters& parameters)
 
 static double testNetwork(Model& model, const Parameters& parameters)
 {
-    std::unique_ptr<Engine> engine(minerva::engine::EngineFactory::create("ClassifierEngine"));
+    std::unique_ptr<Engine> engine(lucius::engine::EngineFactory::create("ClassifierEngine"));
 
     engine->setBatchSize(parameters.batchSize);
     engine->setModel(&model);
@@ -164,7 +170,7 @@ static double testNetwork(Model& model, const Parameters& parameters)
     // get the result processor
     auto resultProcessor = static_cast<LabelMatchResultProcessor*>(engine->getResultProcessor());
 
-    minerva::util::log("BenchmarkImperativeSpeech") << resultProcessor->toString();
+    lucius::util::log("BenchmarkImperativeSpeech") << resultProcessor->toString();
 
     return resultProcessor->getAccuracy();
 }
@@ -173,11 +179,11 @@ static void runTest(const Parameters& parameters)
 {
     if(parameters.seed)
     {
-        minerva::matrix::srand(std::time(0));
+        lucius::matrix::srand(std::time(0));
     }
     else
     {
-        minerva::matrix::srand(377);
+        lucius::matrix::srand(377);
     }
 
     // Create a deep recurrent model for sequence prediction
@@ -205,20 +211,20 @@ static void runTest(const Parameters& parameters)
 
 static void setupSolverParameters(const Parameters& parameters)
 {
-    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::LearningRate",
+    lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::LearningRate",
         parameters.learningRate);
-    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::Momentum",
+    lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::Momentum",
         parameters.momentum);
-    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::AnnealingRate", "1.00000");
-    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::MaxGradNorm", "1000.0");
-    minerva::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::IterationsPerBatch", "1");
-    minerva::util::KnobDatabase::setKnob("GeneralDifferentiableSolver::Type",
+    lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::AnnealingRate", "1.00000");
+    lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::MaxGradNorm", "1000.0");
+    lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::IterationsPerBatch", "1");
+    lucius::util::KnobDatabase::setKnob("GeneralDifferentiableSolver::Type",
         "NesterovAcceleratedGradientSolver");
 }
 
 int main(int argc, char** argv)
 {
-    minerva::util::ArgumentParser parser(argc, argv);
+    lucius::util::ArgumentParser parser(argc, argv);
 
     Parameters parameters;
 
@@ -261,7 +267,7 @@ int main(int argc, char** argv)
         "The size of each fully connected feed forward and recurrent layer.");
 
     parser.parse("", "--sampling-rate",  parameters.samplingRate, 44100,
-        "The input audio sampling rate in hertz.")
+        "The input audio sampling rate in hertz.");
     parser.parse("", "--frame-duration", parameters.frameDuration, 441,
         "The number of input samples per frame.");
 
@@ -279,14 +285,14 @@ int main(int argc, char** argv)
 
     if(verbose)
     {
-        minerva::util::enableAllLogs();
+        lucius::util::enableAllLogs();
     }
     else
     {
-        minerva::util::enableSpecificLogs(loggingEnabledModules);
+        lucius::util::enableSpecificLogs(loggingEnabledModules);
     }
 
-    minerva::util::log("BenchmarkImperativeSpeech") << "Benchmark begins\n";
+    lucius::util::log("BenchmarkImperativeSpeech") << "Benchmark begins\n";
 
     try
     {

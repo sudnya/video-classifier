@@ -107,6 +107,14 @@ bool SampleDatabase::containsImageSamples() const
 
 bool SampleDatabase::containsAudioSamples() const
 {
+	for(auto& sample : _samples)
+	{
+		if(sample.isAudioSample())
+		{
+			return true;
+		}
+	}
+
 	return false;
 }
 
