@@ -44,7 +44,7 @@ static void testGenericLossless(const std::string& format)
 
     if(simpleTone != loadedTone)
     {
-        std::cout << " Test Failed: Audio signal does not match.\n";
+        std::cout << " Test Failed: Audio signal does not match for format " + format + ".\n";
 
         std::cout << "  Input  size is: " << simpleTone.size() << "\n";
         std::cout << "  Output size is: " << loadedTone.size() << "\n";

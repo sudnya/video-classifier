@@ -39,6 +39,8 @@ public:
     void cache();
     void invalidateCache();
 
+    bool isCached() const;
+
 public:
     size_t frequency() const;
 

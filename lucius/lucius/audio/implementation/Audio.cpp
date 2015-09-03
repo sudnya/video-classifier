@@ -28,6 +28,7 @@ Audio::Audio(const std::string& path, const std::string& label)
 }
 
 Audio::Audio(std::istream& stream, const std::string& format)
+: _isLoaded(false)
 {
     _load(stream, format);
 }
@@ -64,6 +65,11 @@ void Audio::invalidateCache()
     _isLoaded = false;
 
    _data = std::move(ByteVector());
+}
+
+bool Audio::isCached() const
+{
+    return _isLoaded;
 }
 
 size_t Audio::frequency() const
@@ -245,6 +251,8 @@ void Audio::_load()
     {
         throw std::runtime_error("Failed to open " + _path + " for reading.");
     }
+
+    util::log("Audio") << "Loading audio from '" + _path + "'\n";
 
     _load(file, util::getExtension(_path));
 }

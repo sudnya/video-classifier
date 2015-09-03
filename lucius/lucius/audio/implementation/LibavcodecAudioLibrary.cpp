@@ -16,6 +16,7 @@
 // Standard Library Includes
 #include <fstream>
 #include <cassert>
+#include <iostream>
 
 namespace lucius
 {
@@ -27,6 +28,40 @@ LibavcodecAudioLibrary::~LibavcodecAudioLibrary()
 {
 
 }
+
+static int readFunction(void* opaqueStream, uint8_t* buffer, int bufferSize)
+{
+    auto& stream = *reinterpret_cast<std::istream*>(opaqueStream);
+
+    stream.read(reinterpret_cast<char*>(buffer), bufferSize);
+
+    return stream.gcount();
+}
+
+static int64_t seekFunction(void* opaqueStream, int64_t offset, int whence)
+{
+    auto& stream = *reinterpret_cast<std::istream*>(opaqueStream);
+
+    if(whence == LibavcodecLibrary::AVSEEK_SIZE)
+    {
+        size_t position = stream.tellg();
+
+        stream.seekg(0, std::ios::beg);
+        size_t begin = stream.tellg();
+
+        stream.seekg(0, std::ios::end);
+        size_t end = stream.tellg();
+
+        stream.seekg(position, std::ios::beg);
+
+        return end - begin;
+    }
+
+    stream.seekg(offset, std::ios::beg);
+
+    return stream.tellg();
+}
+
 
 LibavcodecAudioLibrary::HeaderAndData LibavcodecAudioLibrary::loadAudio(std::istream& stream,
     const std::string& format)
@@ -61,20 +96,70 @@ LibavcodecAudioLibrary::HeaderAndData LibavcodecAudioLibrary::loadAudio(std::ist
 
     HeaderAndData headerAndData;
 
-    DataVector buffer(LibavcodecLibrary::AUDIO_INBUF_SIZE +
-        LibavcodecLibrary::AV_INPUT_BUFFER_PADDING_SIZE);
+    size_t bufferSize = LibavcodecLibrary::AUDIO_INBUF_SIZE +
+        LibavcodecLibrary::AV_INPUT_BUFFER_PADDING_SIZE;
 
-    size_t fileSize = util::getFileSize(stream);
+    std::unique_ptr<uint8_t, void(*)(void*)> buffer(reinterpret_cast<uint8_t*>(
+        LibavcodecLibrary::av_malloc(bufferSize)),
+        &LibavcodecLibrary::av_free);
 
-    packet.data = buffer.data();
-    packet.size = std::min(fileSize, buffer.size());
+    if(!buffer)
+    {
+        throw std::runtime_error("Failed to allocate buffer.");
+    }
 
-    stream.read(reinterpret_cast<char*>(packet.data), packet.size);
+    std::unique_ptr<LibavcodecLibrary::AVIOContext, void(*)(void*)> avioContext(
+        LibavcodecLibrary::avio_alloc_context(
+        buffer.get(), bufferSize, 0, reinterpret_cast<void*>(static_cast<std::istream*>(&stream)),
+        &readFunction, nullptr, &seekFunction), &LibavcodecLibrary::av_free);
+
+    if(!avioContext)
+    {
+        throw std::runtime_error("Failed to allocate avio context.");
+    }
+
+    std::unique_ptr<LibavcodecLibrary::AVFormatContext,
+        void(*)(LibavcodecLibrary::AVFormatContext*)> avFormat(
+            LibavcodecLibrary::avformat_alloc_context(),
+            &LibavcodecLibrary::avformat_free_context);
+
+    if(!avFormat)
+    {
+        throw std::runtime_error("Failed to allocate avformat context.");
+    }
+
+    avFormat->pb = avioContext.get();
+
+    auto avFormatPtr = avFormat.get();
+
+    int openStatus = LibavcodecLibrary::avformat_open_input(&avFormatPtr,
+        "invalidFilename", nullptr, nullptr);
+
+    if(openStatus < 0)
+    {
+        // the library frees the format context on error
+        avFormat.release();
+        buffer.release();
+
+        throw std::runtime_error("Failed to open avformat input with error " +
+            LibavcodecLibrary::getErrorCode(openStatus) + ".");
+    }
 
     LibavcodecLibrary::AVFrameRAII decodedFrame;
 
-    while(packet.size > 0)
+    while(true)
     {
+        int gotPacket = LibavcodecLibrary::av_read_frame(avFormat.get(), &packet);
+
+        if(gotPacket < 0)
+        {
+            if(headerAndData.header.samples == 0)
+            {
+                throw std::runtime_error("Failed to get any samples.");
+            }
+            break;
+        }
+
         int gotFrame = 0;
 
         int length = LibavcodecLibrary::avcodec_decode_audio4(context,
@@ -107,6 +192,12 @@ LibavcodecAudioLibrary::HeaderAndData LibavcodecAudioLibrary::loadAudio(std::ist
                 LibavcodecLibrary::getData(decodedFrame), dataSize);
         }
 
+        if(length != packet.size)
+        {
+            throw std::runtime_error("Did not decode the entire packet.");
+        }
+
+        #if 0
         packet.size -= length;
         packet.data += length;
 
@@ -129,7 +220,11 @@ LibavcodecAudioLibrary::HeaderAndData LibavcodecAudioLibrary::loadAudio(std::ist
                 packet.size += length;
             }
         }
+        #endif
     }
+
+    LibavcodecLibrary::av_free(avioContext->buffer);
+    buffer.release();
 
     return headerAndData;
 }
@@ -315,7 +410,7 @@ void LibavcodecAudioLibrary::saveAudio(std::ostream& stream, const std::string& 
 
 LibavcodecAudioLibrary::StringVector LibavcodecAudioLibrary::getSupportedExtensions() const
 {
-    return StringVector(util::split(".mp4|.mp2|.mp3|.wav|.flac", "|"));
+    return StringVector(util::split(".mp4|.mp2|.mp3|.flac", "|"));
 }
 
 size_t LibavcodecAudioLibrary::getBitRate() const

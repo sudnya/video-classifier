@@ -115,7 +115,7 @@ bool LibavcodecLibrary::loaded()
 	return _interface.loaded();
 }
 
-static std::string getErrorCode(int32_t _code)
+std::string LibavcodecLibrary::getErrorCode(int32_t _code)
 {
     int32_t code = -_code;
 
@@ -483,6 +483,58 @@ int LibavcodecLibrary::av_get_channel_layout_nb_channels(uint64_t layout)
     return (*_interface.av_get_channel_layout_nb_channels)(layout);
 }
 
+LibavcodecLibrary::AVIOContext* LibavcodecLibrary::avio_alloc_context(unsigned char* buffer,
+    int buffer_size,
+    int write_flag,
+    void* opaque,
+    int(*read_packet)(void* opaque, uint8_t* buf, int buf_size),
+    int(*write_packet)(void* opaque, uint8_t* buf, int buf_size),
+    int64_t(*seek)(void* opaque, int64_t offset, int whence))
+{
+    _check();
+
+    return (*_interface.avio_alloc_context)(buffer, buffer_size, write_flag, opaque,
+        read_packet, write_packet, seek);
+}
+
+LibavcodecLibrary::AVFormatContext* LibavcodecLibrary::avformat_alloc_context()
+{
+    _check();
+
+    return (*_interface.avformat_alloc_context)();
+}
+
+void LibavcodecLibrary::avformat_free_context(AVFormatContext* context)
+{
+    _check();
+
+    return (*_interface.avformat_free_context)(context);
+}
+
+int LibavcodecLibrary::LibavcodecLibrary::avformat_open_input(AVFormatContext** ps,
+    const char* filename, AVInputFormat* fmt, AVDictionary** options)
+{
+    _check();
+
+    int status = (*_interface.avformat_open_input)(ps, filename, fmt, options);
+
+    return status;
+}
+
+int LibavcodecLibrary::av_read_frame(AVFormatContext* s, AVPacket* pkt)
+{
+    _check();
+
+    return (*_interface.av_read_frame)(s, pkt);
+}
+
+void* LibavcodecLibrary::av_malloc(size_t size)
+{
+    _check();
+
+    return (*_interface.av_malloc)(size);
+}
+
 void LibavcodecLibrary::av_free(void* pointer)
 {
     _check();
@@ -548,9 +600,9 @@ void LibavcodecLibrary::Interface::load()
 	if(loaded()) return;
 
     #ifdef __APPLE__
-    const char* libraryName = "libavcodec.dylib";
+    const char* libraryName = "libavformat.dylib";
     #else
-    const char* libraryName = "libavcodec.so";
+    const char* libraryName = "libavformat.so";
     #endif
 
 	_library = dlopen(libraryName, RTLD_LAZY);
@@ -567,6 +619,7 @@ void LibavcodecLibrary::Interface::load()
         checkFunction((void*)function, #function)
 
 	DynLink(avcodec_register_all);
+	DynLink(av_register_all);
 
 	DynLink(avcodec_find_decoder_by_name);
 	DynLink(avcodec_find_encoder_by_name);
@@ -597,6 +650,16 @@ void LibavcodecLibrary::Interface::load()
 
     DynLink(av_get_channel_layout_nb_channels);
 
+    DynLink(avformat_alloc_context);
+    DynLink(avformat_free_context);
+
+    DynLink(avio_alloc_context);
+
+    DynLink(avformat_open_input);
+    DynLink(av_read_frame);
+
+    DynLink(av_malloc);
+
 	DynLink(av_free);
 	DynLink(av_free_packet);
 	DynLink(avcodec_close);
@@ -605,6 +668,7 @@ void LibavcodecLibrary::Interface::load()
 	#undef DynLink
 
     (*avcodec_register_all)();
+    (*av_register_all)();
 
     util::log("LibavcodecLibrary") << " Loaded library '" << libraryName << "' succeeded\n";
 }

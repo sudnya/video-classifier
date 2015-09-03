@@ -9,6 +9,7 @@
 // Standard Library Includes
 #include <cstdint>
 #include <cstddef>
+#include <string>
 
 namespace lucius
 {
@@ -77,6 +78,7 @@ public:
     };
 
     static const int AV_NUM_DATA_POINTERS = 8;
+    static const int AVSEEK_SIZE = 0x10000;
 
     enum AVColorSpace
     {
@@ -399,6 +401,26 @@ public:
         int format;
     };
 
+    class AVInputFormat;
+    class AVOutputFormat;
+
+    class AVIOContext
+    {
+    public:
+        const AVClass* av_class;
+        unsigned char* buffer;
+    };
+
+    class AVFormatContext
+    {
+    public:
+        const AVClass* av_class;
+        AVInputFormat* iformat;
+        AVOutputFormat* oformat;
+        void* priv_data;
+        AVIOContext* pb;
+    };
+
     class AVCodecContextRAII
     {
     public:
@@ -460,6 +482,9 @@ public:
 public:
 	static void load();
 	static bool loaded();
+
+public:
+    static std::string getErrorCode(int32_t status);
 
 public:
     static size_t getNumberOfSamples(const AVFrame* frame);
@@ -529,6 +554,29 @@ public:
     static int av_get_channel_layout_nb_channels(uint64_t layout);
 
 public:
+    static AVIOContext* avio_alloc_context(unsigned char* buffer,
+        int buffer_size,
+        int write_flag,
+        void* opaque,
+        int (*read_packet)(void* opaque, uint8_t* buf, int buf_size),
+        int (*write_packet)(void* opaque, uint8_t* buf, int buf_size),
+        int64_t(*seek)(void* opaque, int64_t offset, int whence));
+
+public:
+    static AVFormatContext* avformat_alloc_context();
+    static void avformat_free_context(AVFormatContext* );
+
+public:
+    static int avformat_open_input(AVFormatContext** ps, const char* filename,
+        AVInputFormat* fmt, AVDictionary** options);
+
+public:
+    static int av_read_frame(AVFormatContext* s, AVPacket* pkt);
+
+public:
+    static void* av_malloc(size_t size);
+
+public:
     static void av_free(void*);
     static void av_free_packet(AVPacket* packet);
     static int avcodec_close(AVCodecContext* avctx);
@@ -542,6 +590,7 @@ private:
 	{
     public:
         void (*avcodec_register_all)();
+        void (*av_register_all)();
 
     public:
         AVCodec* (*avcodec_find_decoder_by_name)(const char*);
@@ -588,6 +637,28 @@ private:
 
     public:
         int (*av_get_channel_layout_nb_channels)(uint64_t layout);
+
+    public:
+        AVIOContext* (*avio_alloc_context)(unsigned char* buffer,
+            int buffer_size,
+            int write_flag,
+            void* opaque,
+            int(*read_packet)(void* opaque, uint8_t* buf, int buf_size),
+            int(*write_packet)(void* opaque, uint8_t* buf, int buf_size),
+            int64_t(*seek)(void* opaque, int64_t offset, int whence));
+
+    public:
+        AVFormatContext* (*avformat_alloc_context)();
+        void (*avformat_free_context)(AVFormatContext* );
+
+    public:
+        int (*avformat_open_input)(AVFormatContext** ps, const char* filename,
+            AVInputFormat* fmt, AVDictionary** options);
+
+        int (*av_read_frame)(AVFormatContext* s, AVPacket* pkt);
+
+    public:
+        void* (*av_malloc)(size_t size);
 
     public:
         void (*av_free)(void*);

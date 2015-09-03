@@ -37,7 +37,8 @@ public:
     InputAudioDataProducerImplementation(InputAudioDataProducer* producer,
         const std::string& audioDatabaseFilename)
     : _producer(producer), _databaseFilename(audioDatabaseFilename),
-      _remainingSamples(0), _nextSample(0), _nextNoiseSample(0)
+      _remainingSamples(0), _nextSample(0), _nextNoiseSample(0), _totalTimestepsPerSample(0),
+      _audioTimesteps(0)
     {
 
     }
@@ -64,6 +65,11 @@ public:
         {
             _generator.seed(127);
         }
+
+        _totalTimestepsPerSample = util::KnobDatabase::getKnobValue(
+            "InputAudioDataProducer::TotalTimestepsPerSample", 128);
+        _audioTimesteps          = util::KnobDatabase::getKnobValue(
+            "InputAudioDataProducer::AudioTimesteps", 16);
 
         _parseAudioDatabase();
 
@@ -140,8 +146,24 @@ private:
 
         for(size_t i = 0; i < batchSize; ++i)
         {
+            bool isAudioCached = _audio[_nextSample].isCached();
+            bool isNoiseCached = _noise[_nextNoiseSample].isCached();
+
+            _audio[_nextSample].cache();
+            _noise[_nextNoiseSample].cache();
+
             auto audio = _sample(_audio[_nextSample],      _audioTimesteps         );
             auto noise = _sample(_noise[_nextNoiseSample], _totalTimestepsPerSample);
+
+            if(!isAudioCached)
+            {
+                _audio[_nextSample].invalidateCache();
+            }
+
+            if(!isNoiseCached)
+            {
+                _noise[_nextNoiseSample].invalidateCache();
+            }
 
             batch.push_back(_merge(audio, noise));
 
