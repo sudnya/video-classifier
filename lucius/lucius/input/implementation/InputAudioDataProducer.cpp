@@ -172,6 +172,8 @@ private:
                 _noise[_nextNoiseSample].invalidateCache();
             }
 
+            _downsampleToMatchFrequencies(audio, noise);
+
             batch.push_back(_merge(audio, noise));
 
             --_remainingSamples;
@@ -239,6 +241,24 @@ private:
         result.addLabel(position + audio.size(), noise.size(),            noise.label());
 
         return result;
+    }
+
+    void _downsampleToMatchFrequencies(Audio& first, Audio& second)
+    {
+        size_t minimumFrequency = std::min(first.frequency(), second.frequency());
+
+        _downsample(first,  minimumFrequency);
+        _downsample(second, minimumFrequency);
+    }
+
+    void _downsample(Audio& audio, size_t frequency)
+    {
+        if(audio.frequency() == frequency)
+        {
+            return;
+        }
+
+        audio = audio.downsample(frequency);
     }
 
 private:

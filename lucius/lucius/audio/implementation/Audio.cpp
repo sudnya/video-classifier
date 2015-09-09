@@ -192,6 +192,22 @@ Audio Audio::slice(size_t startingSample, size_t endingSample) const
     return result;
 }
 
+Audio Audio::downsample(size_t newFrequency) const
+{
+    size_t samples = size() * newFrequency / frequency();
+
+    Audio result(samples, bytesPerSample(), newFrequency);
+
+    for(size_t sample = 0; sample != samples; ++sample)
+    {
+        size_t originalSample = std::min(sample * frequency() / newFrequency, size());
+
+        result.setSample(sample, getSample(originalSample));
+    }
+
+    return result;
+}
+
 std::string Audio::getLabelForSample(size_t sample) const
 {
     auto label = _labels.lower_bound(sample);
