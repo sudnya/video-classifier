@@ -54,9 +54,9 @@ public:
 	const Audio& back() const;
 
 public:
-    size_t timesteps() const;
-	size_t size()      const;
-	bool   empty()     const;
+    size_t samples() const;
+	size_t size()    const;
+	bool   empty()   const;
 
 public:
 	void clear();
@@ -66,7 +66,7 @@ public:
 
 public:
     Matrix getFeatureMatrixForFrameSize(size_t samplesPerFrame) const;
-    Matrix getReference(const util::StringVector& labels) const;
+    Matrix getReference(const util::StringVector& labels, size_t samplesPerFrame) const;
 
 private:
     BaseAudioVector _audio;

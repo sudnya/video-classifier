@@ -105,12 +105,32 @@ model::Model* InputDataProducer::getModel()
     return _model;
 }
 
+static bool isImageModel(const model::Model* model)
+{
+    return model->hasAttribute("ResolutionX");
+}
+
+static bool isAudioModel(const model::Model* model)
+{
+    return model->hasAttribute("SamplesPerFrame");
+}
+
 matrix::Dimension InputDataProducer::getInputSize() const
 {
     // TODO: specialize this for different data types
-    return {getModel()->getAttribute<size_t>("ResolutionX"),
-           getModel()->getAttribute<size_t>("ResolutionY"),
-           getModel()->getAttribute<size_t>("ColorComponents")};
+    if(isImageModel(getModel()))
+    {
+        return {getModel()->getAttribute<size_t>("ResolutionX"),
+               getModel()->getAttribute<size_t>("ResolutionY"),
+               getModel()->getAttribute<size_t>("ColorComponents")};
+    }
+
+    if(isAudioModel(getModel()))
+    {
+        return {getModel()->getAttribute<size_t>("SamplesPerFrame")};
+    }
+
+    throw std::runtime_error("Unknown model type.");
 }
 
 util::StringVector InputDataProducer::getOutputLabels() const

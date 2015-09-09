@@ -421,6 +421,14 @@ public:
         AVIOContext* pb;
     };
 
+    class AVStream
+    {
+    public:
+        int index;
+        int id;
+        AVCodecContext* codec;
+    };
+
     class AVCodecContextRAII
     {
     public:
@@ -430,6 +438,9 @@ public:
     public:
         operator AVCodecContext*();
         operator const AVCodecContext*() const;
+
+    public:
+        AVCodecContext* operator->();
 
     public:
         AVCodecContextRAII(const AVCodecContextRAII& ) = delete;
@@ -571,7 +582,20 @@ public:
         AVInputFormat* fmt, AVDictionary** options);
 
 public:
+    static AVStream* avformat_new_stream(AVFormatContext* s, const AVCodec* c);
+    static int avformat_write_header(AVFormatContext* s, AVDictionary** options);
+    static int av_write_trailer(AVFormatContext* s);
+
+public:
+    static int av_write_frame(AVFormatContext* s, AVPacket* pkt);
     static int av_read_frame(AVFormatContext* s, AVPacket* pkt);
+
+public:
+    static AVOutputFormat* av_guess_format(const char* short_name, const char* filename,
+        const char* mime_type);
+
+public:
+    static int avcodec_copy_context(AVCodecContext* dest, const AVCodecContext* src);
 
 public:
     static void* av_malloc(size_t size);
@@ -655,7 +679,21 @@ private:
         int (*avformat_open_input)(AVFormatContext** ps, const char* filename,
             AVInputFormat* fmt, AVDictionary** options);
 
+    public:
+        AVStream* (*avformat_new_stream)(AVFormatContext* s, const AVCodec* c);
+        int (*avformat_write_header)(AVFormatContext* s, AVDictionary** options);
+        int (*av_write_trailer)(AVFormatContext* s);
+
+    public:
+        int (*av_write_frame)(AVFormatContext* s, AVPacket* pkt);
         int (*av_read_frame)(AVFormatContext* s, AVPacket* pkt);
+
+    public:
+        AVOutputFormat* (*av_guess_format)(const char* short_name, const char* filename,
+            const char* mime_type);
+
+    public:
+        int (*avcodec_copy_context)(AVCodecContext* dest, const AVCodecContext* src);
 
     public:
         void* (*av_malloc)(size_t size);

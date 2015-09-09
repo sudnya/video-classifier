@@ -9,6 +9,8 @@
 #include <lucius/database/interface/SampleDatabase.h>
 #include <lucius/database/interface/Sample.h>
 
+#include <lucius/audio/interface/Audio.h>
+
 #include <lucius/video/interface/Video.h>
 #include <lucius/video/interface/Image.h>
 
@@ -104,11 +106,11 @@ static void parseLabeledPath(SampleDatabase* database, const std::string& line,
 
 	auto label = removeWhitespace(components[1]);
 
-	if(video::Image::isPathAnImage(filePath))
+	if(video::Image::isPathAnImage(filePath) || audio::Audio::isPathAnAudio(filePath))
 	{
 		if(components.size() != 2)
 		{
-			throw std::runtime_error("Malformed labeled image statement '" +
+			throw std::runtime_error("Malformed labeled statement '" +
 				line + "', should be (path, label).");
 		}
 
@@ -118,7 +120,7 @@ static void parseLabeledPath(SampleDatabase* database, const std::string& line,
 	{
 		if(components.size() != 4)
 		{
-			throw std::runtime_error("Malformed labeled video statement '" +
+			throw std::runtime_error("Malformed labeled statement '" +
 				line + "', should be (path, label, startFrame, endFrame).");
 		}
 

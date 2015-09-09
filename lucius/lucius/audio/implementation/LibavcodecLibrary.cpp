@@ -49,6 +49,11 @@ LibavcodecLibrary::AVCodecContextRAII::operator const AVCodecContext*() const
     return _context;
 }
 
+LibavcodecLibrary::AVCodecContext* LibavcodecLibrary::AVCodecContextRAII::operator->()
+{
+    return _context;
+}
+
 LibavcodecLibrary::LibavcodecLibrary::AVFrameRAII::AVFrameRAII()
 : _frame(nullptr)
 {
@@ -521,11 +526,55 @@ int LibavcodecLibrary::LibavcodecLibrary::avformat_open_input(AVFormatContext** 
     return status;
 }
 
+LibavcodecLibrary::AVStream* LibavcodecLibrary::avformat_new_stream(AVFormatContext* s,
+    const AVCodec* c)
+{
+    _check();
+
+    return (*_interface.avformat_new_stream)(s, c);
+}
+
+int LibavcodecLibrary::avformat_write_header(AVFormatContext* s, AVDictionary** options)
+{
+    _check();
+
+    return (*_interface.avformat_write_header)(s, options);
+}
+
+int LibavcodecLibrary::av_write_trailer(AVFormatContext* s)
+{
+    _check();
+
+    return (*_interface.av_write_trailer)(s);
+}
+
+int LibavcodecLibrary::av_write_frame(AVFormatContext* s, AVPacket* pkt)
+{
+    _check();
+
+    return (*_interface.av_write_frame)(s, pkt);
+}
+
 int LibavcodecLibrary::av_read_frame(AVFormatContext* s, AVPacket* pkt)
 {
     _check();
 
     return (*_interface.av_read_frame)(s, pkt);
+}
+
+LibavcodecLibrary::AVOutputFormat* LibavcodecLibrary::av_guess_format(const char* short_name,
+    const char* filename, const char* mime_type)
+{
+    _check();
+
+    return (*_interface.av_guess_format)(short_name, filename, mime_type);
+}
+
+int LibavcodecLibrary::avcodec_copy_context(AVCodecContext* dest, const AVCodecContext* src)
+{
+    _check();
+
+    return (*_interface.avcodec_copy_context)(dest, src);
 }
 
 void* LibavcodecLibrary::av_malloc(size_t size)
@@ -656,7 +705,17 @@ void LibavcodecLibrary::Interface::load()
     DynLink(avio_alloc_context);
 
     DynLink(avformat_open_input);
+
+    DynLink(avformat_new_stream);
+    DynLink(avformat_write_header);
+    DynLink(av_write_trailer);
+
     DynLink(av_read_frame);
+    DynLink(av_write_frame);
+
+    DynLink(av_guess_format);
+
+    DynLink(avcodec_copy_context);
 
     DynLink(av_malloc);
 

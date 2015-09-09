@@ -119,6 +119,9 @@ static void addClassifier(Model& model, const Parameters& parameters)
 
 static void createModel(Model& model, const Parameters& parameters)
 {
+    model.setAttribute("SamplingRate",    parameters.samplingRate);
+    model.setAttribute("SamplesPerFrame", parameters.frameDuration);
+
     addClassifier(model, parameters);
 }
 
@@ -129,7 +132,7 @@ static void setSampleStatistics(Model& model, const Parameters& parameters)
 
     engine->setModel(&model);
     engine->setBatchSize(128);
-    engine->setMaximumSamplesToRun(1024);
+    engine->setMaximumSamplesToRun(128);
 
     // read from database and use model to train
     engine->runOnDatabaseFile(parameters.inputPath);
@@ -248,11 +251,11 @@ int main(int argc, char** argv)
 
     parser.parse("-e", "--epochs", parameters.epochs, 20,
         "The number of epochs (passes over all inputs) to train the network for.");
-    parser.parse("-b", "--batch-size", parameters.batchSize, 128,
+    parser.parse("-b", "--batch-size", parameters.batchSize, 8,
         "The number of sample to use for each iteration.");
-    parser.parse("", "--learning-rate", parameters.learningRate, 1.0e-2,
+    parser.parse("", "--learning-rate", parameters.learningRate, 1.0e-4,
         "The learning rate for gradient descent.");
-    parser.parse("", "--momentum", parameters.momentum, 0.99,
+    parser.parse("", "--momentum", parameters.momentum, 0.9,
         "The momentum for gradient descent.");
 
     parser.parse("-L", "--log-module", loggingEnabledModules, "",

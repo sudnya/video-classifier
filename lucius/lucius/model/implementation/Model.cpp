@@ -93,6 +93,11 @@ std::string Model::getOutputLabel(size_t output) const
     return label->second;
 }
 
+bool Model::hasAttribute(const std::string& name) const
+{
+    return _attributes.count(name) != 0;
+}
+
 size_t Model::getOutputCount() const
 {
     return _outputLabels.size();

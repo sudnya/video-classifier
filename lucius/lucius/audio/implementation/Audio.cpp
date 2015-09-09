@@ -50,6 +50,11 @@ void Audio::addLabel(size_t start, size_t end, const std::string& label)
     _labels.emplace(start, Label(start, end, label));
 }
 
+void Audio::setDefaultLabel(const std::string& label)
+{
+    _defaultLabel = label;
+}
+
 void Audio::clearLabels()
 {
     _labels.clear();
@@ -107,15 +112,15 @@ size_t Audio::bytesPerSample() const
     return _bytesPerSample;
 }
 
-void Audio::resize(size_t timesteps)
+void Audio::resize(size_t samples)
 {
     _load();
 
-    _samples = timesteps;
+    _samples = samples;
     _data.resize(_samples * _bytesPerSample);
 }
 
-double Audio::getSample(size_t timestep) const
+double Audio::getSample(size_t sample) const
 {
     assert(_isLoaded);
 
@@ -123,19 +128,19 @@ double Audio::getSample(size_t timestep) const
     {
     case 1:
     {
-        return reinterpret_cast<const int8_t&>(_data[timestep]);
+        return reinterpret_cast<const int8_t&>(_data[sample]);
     }
     case 2:
     {
-        return reinterpret_cast<const int16_t&>(_data[timestep]);
+        return reinterpret_cast<const int16_t&>(_data[sample]);
     }
     case 4:
     {
-        return reinterpret_cast<const int32_t&>(_data[timestep]);
+        return reinterpret_cast<const int32_t&>(_data[sample]);
     }
     case 8:
     {
-        return reinterpret_cast<const int64_t&>(_data[timestep]);
+        return reinterpret_cast<const int64_t&>(_data[sample]);
     }
     default:
         break;
@@ -144,28 +149,28 @@ double Audio::getSample(size_t timestep) const
     assertM(false, "Invalid bytes per sample.");
 }
 
-void Audio::setSample(size_t timestep, double value)
+void Audio::setSample(size_t sample, double value)
 {
     switch(_bytesPerSample)
     {
     case 1:
     {
-        reinterpret_cast<int8_t&>(_data[timestep]) = value;
+        reinterpret_cast<int8_t&>(_data[sample]) = value;
         break;
     }
     case 2:
     {
-        reinterpret_cast<int16_t&>(_data[timestep]) = value;
+        reinterpret_cast<int16_t&>(_data[sample]) = value;
         break;
     }
     case 4:
     {
-        reinterpret_cast<int32_t&>(_data[timestep]) = value;
+        reinterpret_cast<int32_t&>(_data[sample]) = value;
         break;
     }
     case 8:
     {
-        reinterpret_cast<int64_t&>(_data[timestep]) = value;
+        reinterpret_cast<int64_t&>(_data[sample]) = value;
         break;
     }
     default:
@@ -175,21 +180,23 @@ void Audio::setSample(size_t timestep, double value)
     }
 }
 
-Audio Audio::slice(size_t startingTimestep, size_t endingTimestep) const
+Audio Audio::slice(size_t startingSample, size_t endingSample) const
 {
-    Audio result(endingTimestep - startingTimestep, bytesPerSample(), frequency());
+    Audio result(endingSample - startingSample, bytesPerSample(), frequency());
 
-    std::memcpy(result.getDataForTimestep(0), getDataForTimestep(startingTimestep),
+    std::memcpy(result.getDataForSample(0), getDataForSample(startingSample),
         result.bytes());
+
+    result.setDefaultLabel(_defaultLabel);
 
     return result;
 }
 
-std::string Audio::getLabelForTimestep(size_t timestep) const
+std::string Audio::getLabelForSample(size_t sample) const
 {
-    auto label = _labels.lower_bound(timestep);
+    auto label = _labels.lower_bound(sample);
 
-    if(label != _labels.end() && timestep < label->second.endTimestep)
+    if(label != _labels.end() && sample < label->second.endSample)
     {
         return label->second.label;
     }
@@ -202,14 +209,14 @@ std::string Audio::label() const
     return _defaultLabel;
 }
 
-void* Audio::getDataForTimestep(size_t timestep)
+void* Audio::getDataForSample(size_t sample)
 {
-    return &_data[timestep * bytesPerSample()];
+    return &_data[sample * bytesPerSample()];
 }
 
-const void* Audio::getDataForTimestep(size_t timestep) const
+const void* Audio::getDataForSample(size_t sample) const
 {
-    return &_data[timestep * bytesPerSample()];
+    return &_data[sample * bytesPerSample()];
 }
 
 bool Audio::operator==(const Audio& audio) const
@@ -233,7 +240,7 @@ bool Audio::isPathAnAudio(const std::string& path)
 }
 
 Audio::Label::Label(size_t start, size_t end, const std::string& l)
-: startTimestep(start), endTimestep(end), label(l)
+: startSample(start), endSample(end), label(l)
 {
 
 }

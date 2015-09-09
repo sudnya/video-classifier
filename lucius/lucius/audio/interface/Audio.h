@@ -31,6 +31,7 @@ public:
 
 public:
     void addLabel(size_t start, size_t end, const std::string& label);
+    void setDefaultLabel(const std::string& label);
 
 public:
     void clearLabels();
@@ -46,30 +47,29 @@ public:
 
 public:
     double duration() const;
-    size_t timesteps() const;
     size_t size() const;
     size_t bytes() const;
     size_t bytesPerSample() const;
 
 public:
-    void resize(size_t timesteps);
+    void resize(size_t samples);
 
 public:
-    double getSample(size_t timestep) const;
-    void   setSample(size_t timestep, double value);
+    double getSample(size_t sample) const;
+    void   setSample(size_t sample, double value);
 
 public:
-    Audio slice(size_t startingTimestep, size_t endingTimestep) const;
+    Audio slice(size_t startingSample, size_t endingSample) const;
 
 public:
-    std::string getLabelForTimestep(size_t timestep) const;
+    std::string getLabelForSample(size_t sample) const;
 
 public:
     std::string label() const;
 
 public:
-          void* getDataForTimestep(size_t timestep);
-    const void* getDataForTimestep(size_t timesetp) const;
+          void* getDataForSample(size_t sample);
+    const void* getDataForSample(size_t sample) const;
 
 public:
     bool operator==(const Audio& ) const;
@@ -91,8 +91,8 @@ private:
         Label(size_t start, size_t end, const std::string& label);
 
     public:
-        size_t startTimestep;
-        size_t endTimestep;
+        size_t startSample;
+        size_t endSample;
 
     public:
         std::string label;

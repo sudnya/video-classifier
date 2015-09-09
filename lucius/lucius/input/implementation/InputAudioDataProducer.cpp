@@ -37,7 +37,7 @@ public:
     InputAudioDataProducerImplementation(InputAudioDataProducer* producer,
         const std::string& audioDatabaseFilename)
     : _producer(producer), _databaseFilename(audioDatabaseFilename),
-      _remainingSamples(0), _nextSample(0), _nextNoiseSample(0), _totalTimestepsPerSample(0),
+      _remainingSamples(0), _nextSample(0), _nextNoiseSample(0), _totalTimestepsPerUtterance(0),
       _audioTimesteps(0)
     {
 
@@ -66,22 +66,29 @@ public:
             _generator.seed(127);
         }
 
-        _totalTimestepsPerSample = util::KnobDatabase::getKnobValue(
-            "InputAudioDataProducer::TotalTimestepsPerSample", 128);
-        _audioTimesteps          = util::KnobDatabase::getKnobValue(
+        _totalTimestepsPerUtterance = util::KnobDatabase::getKnobValue(
+            "InputAudioDataProducer::TotalTimestepsPerUtterance", 128);
+        _audioTimesteps             = util::KnobDatabase::getKnobValue(
             "InputAudioDataProducer::AudioTimesteps", 16);
 
         _parseAudioDatabase();
 
         // Determine how many images to cache
         size_t samplesToCache = util::KnobDatabase::getKnobValue(
-            "InputAudioDataProducer::CacheSize", 128);
+            "InputAudioDataProducer::CacheSize", 16);
 
-        samplesToCache = std::min(samplesToCache, _audio.size());
+        size_t audioSamplesToCache = std::min(samplesToCache, _audio.size());
 
-        for(size_t i = 0; i < samplesToCache; ++i)
+        for(size_t i = 0; i < audioSamplesToCache; ++i)
         {
             _audio[i].cache();
+        }
+
+        size_t noiseSamplesToCache = std::min(samplesToCache, _noise.size());
+
+        for(size_t i = 0; i < noiseSamplesToCache; ++i)
+        {
+            _noise[i].cache();
         }
 
         reset();
@@ -100,7 +107,7 @@ public:
 
         auto input = batch.getFeatureMatrixForFrameSize(audioDimension[0]);
 
-        auto reference = batch.getReference(_producer->getOutputLabels());
+        auto reference = batch.getReference(_producer->getOutputLabels(), audioDimension[0]);
 
         if(_producer->getStandardizeInput())
         {
@@ -152,8 +159,8 @@ private:
             _audio[_nextSample].cache();
             _noise[_nextNoiseSample].cache();
 
-            auto audio = _sample(_audio[_nextSample],      _audioTimesteps         );
-            auto noise = _sample(_noise[_nextNoiseSample], _totalTimestepsPerSample);
+            auto audio = _sample(_audio[_nextSample],      _audioTimesteps            );
+            auto noise = _sample(_noise[_nextNoiseSample], _totalTimestepsPerUtterance);
 
             if(!isAudioCached)
             {
@@ -177,27 +184,29 @@ private:
 
     Audio _sample(const Audio& audio, size_t timesteps)
     {
-        if(timesteps <= audio.size())
+        size_t samples = timesteps * _getFrameSize();
+
+        if(samples >= audio.size())
         {
             auto copy = audio;
 
-            _zeroPad(copy, timesteps);
+            _zeroPad(copy, samples);
 
             return copy;
         }
 
-        size_t remainder = audio.size() - timesteps;
+        size_t remainder = audio.size() - samples;
 
         size_t position = _generator() % remainder;
 
-        return audio.slice(position, position + timesteps);
+        return audio.slice(position, position + samples);
     }
 
-    void _zeroPad(Audio& audio, size_t timesteps) const
+    void _zeroPad(Audio& audio, size_t samples) const
     {
         size_t position = audio.size();
 
-        audio.resize(timesteps);
+        audio.resize(samples);
 
         for(; position < audio.size(); ++position)
         {
@@ -230,6 +239,12 @@ private:
         result.addLabel(position + audio.size(), noise.size(),            noise.label());
 
         return result;
+    }
+
+private:
+    size_t _getFrameSize() const
+    {
+        return _producer->getInputSize()[0];
     }
 
 private:
@@ -298,7 +313,7 @@ private:
     size_t _nextNoiseSample;
 
 private:
-    size_t _totalTimestepsPerSample;
+    size_t _totalTimestepsPerUtterance;
     size_t _audioTimesteps;
 
 };

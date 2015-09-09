@@ -67,16 +67,16 @@ const Audio& AudioVector::back() const
     return _audio.back();
 }
 
-size_t AudioVector::timesteps() const
+size_t AudioVector::samples() const
 {
-    size_t minTimesteps = std::numeric_limits<size_t>::max();
+    size_t minSamples = std::numeric_limits<size_t>::max();
 
     for(auto& sample : *this)
     {
-        minTimesteps = std::min(minTimesteps, sample.size());
+        minSamples = std::min(minSamples, sample.size());
     }
 
-    return minTimesteps;
+    return minSamples;
 }
 
 size_t AudioVector::size() const
@@ -101,18 +101,28 @@ void AudioVector::push_back(const Audio& audio)
 
 AudioVector::Matrix AudioVector::getFeatureMatrixForFrameSize(size_t frameSize) const
 {
-    Matrix features({frameSize, size(), timesteps() / frameSize});
+    size_t timesteps = (samples() + frameSize - 1) / frameSize;
 
-    for(size_t timestep = 0; timestep != timesteps(); ++timestep)
+    Matrix features({frameSize, size(), timesteps});
+
+    for(size_t timestep = 0; timestep != timesteps; ++timestep)
     {
         for(size_t audioId = 0; audioId != size(); ++audioId)
         {
             auto& audio = (*this)[audioId];
 
-            for(size_t sample = 0; sample != frameSize; ++sample)
+            size_t sample  = 0;
+            size_t samples = std::min(audio.size() - timestep * frameSize, frameSize);
+
+            for(; sample != samples; ++sample)
             {
                 features(sample, audioId, timestep) =
                     audio.getSample(sample + timestep * frameSize);
+            }
+
+            for(; sample < frameSize; ++sample)
+            {
+                features(sample, audioId, timestep) = 0;
             }
         }
     }
@@ -120,29 +130,31 @@ AudioVector::Matrix AudioVector::getFeatureMatrixForFrameSize(size_t frameSize) 
     return features;
 }
 
-AudioVector::Matrix AudioVector::getReference(const util::StringVector& labels) const
+AudioVector::Matrix AudioVector::getReference(const util::StringVector& labels,
+    size_t frameSize) const
 {
-    Matrix reference(matrix::Dimension({labels.size(), size(), timesteps()}));
+    size_t timesteps = (samples() + frameSize - 1) / frameSize;
+
+    Matrix reference(matrix::Dimension({labels.size(), size(), timesteps}));
 
     util::log("AudioVector") << "Generating reference audio:\n";
 
-    for(size_t timestep = 0; timestep != timesteps(); ++timestep)
+    for(size_t timestep = 0; timestep != timesteps; ++timestep)
     {
         util::log("AudioVector") << " For timestep " << timestep << "\n";
+        size_t sample = timestep * frameSize;
 
         for(size_t audioId = 0; audioId != size(); ++audioId)
         {
             util::log("AudioVector") << "  For audio sample " << audioId << " with label '"
-                << (*this)[audioId].getLabelForTimestep(timestep) << "'\n";
+                << (*this)[audioId].getLabelForSample(sample) << "'\n";
 
-            for(size_t outputNeuron = 0;
-                outputNeuron != labels.size(); ++outputNeuron)
+            for(size_t outputNeuron = 0; outputNeuron != labels.size(); ++outputNeuron)
             {
                 util::log("AudioVector") << "   For output neuron" << outputNeuron
-                    << " with label '"
-                    << labels[outputNeuron] << "'\n";
+                    << " with label '" << labels[outputNeuron] << "'\n";
 
-                if((*this)[audioId].getLabelForTimestep(timestep) == labels[outputNeuron])
+                if((*this)[audioId].getLabelForSample(sample) == labels[outputNeuron])
                 {
                     reference(outputNeuron, audioId, timestep) = 1.0;
                 }
