@@ -159,8 +159,15 @@ private:
             _audio[_nextSample].cache();
             _noise[_nextNoiseSample].cache();
 
-            auto audio = _sample(_audio[_nextSample],      _audioTimesteps            );
-            auto noise = _sample(_noise[_nextNoiseSample], _totalTimestepsPerUtterance);
+            auto audio = _audio[_nextSample];
+            auto noise = _noise[_nextNoiseSample];
+
+            _downsampleToMatchFrequencies(audio, noise);
+
+            auto selectedTimesteps = ((_generator() % _audioTimesteps) + (_audioTimesteps)) / 2;
+
+            audio = _sample(audio, selectedTimesteps          );
+            noise = _sample(noise, _totalTimestepsPerUtterance);
 
             if(!isAudioCached)
             {
@@ -171,8 +178,6 @@ private:
             {
                 _noise[_nextNoiseSample].invalidateCache();
             }
-
-            _downsampleToMatchFrequencies(audio, noise);
 
             batch.push_back(_merge(audio, noise));
 

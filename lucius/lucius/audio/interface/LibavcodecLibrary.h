@@ -40,6 +40,18 @@ public:
     class AVBufferRef;
     class AVPacketSideData;
 
+    enum AVPictureType
+    {
+       AV_PICTURE_TYPE_NONE = 0, ///< Undefined
+       AV_PICTURE_TYPE_I,     ///< Intra
+       AV_PICTURE_TYPE_P,     ///< Predicted
+       AV_PICTURE_TYPE_B,     ///< Bi-dir predicted
+       AV_PICTURE_TYPE_S,     ///< S(GMC)-VOP MPEG4
+       AV_PICTURE_TYPE_SI,    ///< Switching Intra
+       AV_PICTURE_TYPE_SP,    ///< Switching Predicted
+       AV_PICTURE_TYPE_BI,    ///< BI type
+    };
+
     enum AVSampleFormat
     {
         AV_SAMPLE_FMT_NONE = -1,
@@ -399,6 +411,9 @@ public:
         int width, height;
         int nb_samples;
         int format;
+        enum AVPictureType pict_type;
+        AVRational sample_aspect_ratio;
+        int64_t pts;
     };
 
     class AVInputFormat;
@@ -411,6 +426,16 @@ public:
         unsigned char* buffer;
     };
 
+    class AVStream
+    {
+    public:
+        int index;
+        int id;
+        AVCodecContext* codec;
+        void* priv_data;
+        AVRational time_base;
+    };
+
     class AVFormatContext
     {
     public:
@@ -419,14 +444,9 @@ public:
         AVOutputFormat* oformat;
         void* priv_data;
         AVIOContext* pb;
-    };
-
-    class AVStream
-    {
-    public:
-        int index;
-        int id;
-        AVCodecContext* codec;
+        int ctx_flags;
+        unsigned int nb_streams;
+        AVStream** streams;
     };
 
     class AVCodecContextRAII
@@ -459,6 +479,10 @@ public:
     public:
         operator AVFrame*();
         operator const AVFrame*() const;
+
+    public:
+        AVFrame* operator->();
+        const AVFrame* operator->() const;
 
     public:
         AVFrameRAII(const AVFrameRAII& ) = delete;
@@ -540,6 +564,9 @@ public:
         const AVFrame* frame, int* got_packet_ptr);
 
 public:
+    static void av_codec_set_pkt_timebase(AVCodecContext* avctx, AVRational val);
+
+public:
     static int av_opt_get_int(void* obj, const char* name, int search_flags, int64_t* out_val);
     static int av_opt_get(void* obj, const char* name, int search_flags, uint8_t** out_val);
     static int av_opt_get_sample_fmt(void* obj, const char* name, int search_flags,
@@ -580,6 +607,7 @@ public:
 public:
     static int avformat_open_input(AVFormatContext** ps, const char* filename,
         AVInputFormat* fmt, AVDictionary** options);
+    static int avformat_find_stream_info(AVFormatContext* ic, AVDictionary** options);
 
 public:
     static AVStream* avformat_new_stream(AVFormatContext* s, const AVCodec* c);
@@ -638,6 +666,9 @@ private:
             const AVFrame* frame, int* got_packet_ptr);
 
     public:
+        void (*av_codec_set_pkt_timebase)(AVCodecContext* avctx, AVRational val);
+
+    public:
         int (*av_opt_get_int)(void* obj, const char* name, int search_flags, int64_t* out_val);
         int (*av_opt_get)(void* obj, const char* name, int search_flags, uint8_t** out_val);
         int (*av_opt_get_sample_fmt)(void* obj, const char* name, int search_flags,
@@ -678,6 +709,7 @@ private:
     public:
         int (*avformat_open_input)(AVFormatContext** ps, const char* filename,
             AVInputFormat* fmt, AVDictionary** options);
+        int (*avformat_find_stream_info)(AVFormatContext* ic, AVDictionary** options);
 
     public:
         AVStream* (*avformat_new_stream)(AVFormatContext* s, const AVCodec* c);

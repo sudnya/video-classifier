@@ -76,6 +76,30 @@ static int64_t seekFunction(void* opaqueStream, int64_t offset, int whence)
     return stream.tellg();
 }
 
+static int64_t seekWriteFunction(void* opaqueStream, int64_t offset, int whence)
+{
+    auto& stream = *reinterpret_cast<std::ostream*>(opaqueStream);
+
+    if(whence == LibavcodecLibrary::AVSEEK_SIZE)
+    {
+        size_t position = stream.tellp();
+
+        stream.seekp(0, std::ios::beg);
+        size_t begin = stream.tellp();
+
+        stream.seekp(0, std::ios::end);
+        size_t end = stream.tellp();
+
+        stream.seekp(position, std::ios::beg);
+
+        return end - begin;
+    }
+
+    stream.seekp(offset, std::ios::beg);
+
+    return stream.tellp();
+}
+
 
 LibavcodecAudioLibrary::HeaderAndData LibavcodecAudioLibrary::loadAudio(std::istream& stream,
     const std::string& format)
@@ -146,7 +170,7 @@ LibavcodecAudioLibrary::HeaderAndData LibavcodecAudioLibrary::loadAudio(std::ist
 
     auto avFormatPtr = avFormat.get();
 
-    int openStatus = LibavcodecLibrary::avformat_open_input(&avFormatPtr,
+    auto openStatus = LibavcodecLibrary::avformat_open_input(&avFormatPtr,
         "invalidFilename", nullptr, nullptr);
 
     if(openStatus < 0)
@@ -158,6 +182,17 @@ LibavcodecAudioLibrary::HeaderAndData LibavcodecAudioLibrary::loadAudio(std::ist
         throw std::runtime_error("Failed to open avformat input with error " +
             LibavcodecLibrary::getErrorCode(openStatus) + ".");
     }
+
+    status = LibavcodecLibrary::avformat_find_stream_info(avFormatPtr, nullptr);
+
+    if(status < 0)
+    {
+        throw std::runtime_error("Failed to find stream info with error " +
+            LibavcodecLibrary::getErrorCode(status) + ".");
+    }
+
+    LibavcodecLibrary::av_codec_set_pkt_timebase(context,
+        {1, static_cast<int>(LibavcodecLibrary::getSamplingRate(context))});
 
     LibavcodecLibrary::AVFrameRAII decodedFrame;
 
@@ -279,7 +314,54 @@ void LibavcodecAudioLibrary::saveAudio(std::ostream& stream, const std::string& 
         throw std::runtime_error("Could not find encoder for " + format);
     }
 
-    LibavcodecLibrary::AVCodecContextRAII context(codec);
+    size_t ioBufferSize = LibavcodecLibrary::AUDIO_INBUF_SIZE +
+        LibavcodecLibrary::AV_INPUT_BUFFER_PADDING_SIZE;
+
+    std::unique_ptr<uint8_t, void(*)(void*)> ioBuffer(reinterpret_cast<uint8_t*>(
+        LibavcodecLibrary::av_malloc(ioBufferSize)),
+        &LibavcodecLibrary::av_free);
+
+    if(!ioBuffer)
+    {
+        throw std::runtime_error("Failed to allocate IO buffer.");
+    }
+
+    std::unique_ptr<LibavcodecLibrary::AVIOContext, void(*)(void*)> avioContext(
+        LibavcodecLibrary::avio_alloc_context(
+        ioBuffer.get(), ioBufferSize, 1,
+        reinterpret_cast<void*>(static_cast<std::ostream*>(&stream)),
+        nullptr, &writeFunction, &seekWriteFunction), &LibavcodecLibrary::av_free);
+
+    if(!avioContext)
+    {
+        throw std::runtime_error("Failed to allocate avio context.");
+    }
+
+    std::unique_ptr<LibavcodecLibrary::AVFormatContext,
+        void(*)(LibavcodecLibrary::AVFormatContext*)> formatContext(
+            LibavcodecLibrary::avformat_alloc_context(),
+            &LibavcodecLibrary::avformat_free_context);
+
+    if(!formatContext)
+    {
+        throw std::runtime_error("Failed to allocate avformat context.");
+    }
+
+    formatContext->pb = avioContext.get();
+    formatContext->oformat = LibavcodecLibrary::av_guess_format(codecName.c_str(),
+        format.c_str(), nullptr);
+
+    auto avFormatStream = LibavcodecLibrary::avformat_new_stream(formatContext.get(), codec);
+
+    if(avFormatStream == nullptr)
+    {
+        throw std::runtime_error("Failed to add stream to format context.");
+    }
+
+    auto context = avFormatStream->codec;
+
+    avFormatStream->id = formatContext->nb_streams - 1;
+    avFormatStream->time_base = {1, static_cast<int>(header.samplingRate)};
 
     if(context == nullptr)
     {
@@ -306,78 +388,27 @@ void LibavcodecAudioLibrary::saveAudio(std::ostream& stream, const std::string& 
         throw std::runtime_error("Could not open codec.");
     }
 
-    LibavcodecLibrary::AVFrameRAII frame;
-
-    LibavcodecLibrary::setNumberOfSamples(frame, LibavcodecLibrary::getFrameSize(context));
-    LibavcodecLibrary::setSampleFormat(frame, LibavcodecLibrary::getSampleFormat(context));
-    LibavcodecLibrary::setChannelLayout(frame, LibavcodecLibrary::getChannelLayout(context));
-
-    /* the codec gives us the frame size, in samples,
-     * we calculate the size of the samples buffer in bytes */
-    int bufferSize = LibavcodecLibrary::av_samples_get_buffer_size(nullptr,
-        LibavcodecLibrary::getChannelCount(context), LibavcodecLibrary::getFrameSize(context),
-        LibavcodecLibrary::getSampleFormat(context), 0);
-
-    DataVector buffer(bufferSize);
-
-    size_t ioBufferSize = LibavcodecLibrary::AUDIO_INBUF_SIZE +
-        LibavcodecLibrary::AV_INPUT_BUFFER_PADDING_SIZE;
-
-    std::unique_ptr<uint8_t, void(*)(void*)> ioBuffer(reinterpret_cast<uint8_t*>(
-        LibavcodecLibrary::av_malloc(ioBufferSize)),
-        &LibavcodecLibrary::av_free);
-
-    if(!ioBuffer)
-    {
-        throw std::runtime_error("Failed to allocate IO buffer.");
-    }
-
-    std::unique_ptr<LibavcodecLibrary::AVIOContext, void(*)(void*)> avioContext(
-        LibavcodecLibrary::avio_alloc_context(
-        ioBuffer.get(), ioBufferSize, 1,
-        reinterpret_cast<void*>(static_cast<std::ostream*>(&stream)),
-        nullptr, &writeFunction, nullptr), &LibavcodecLibrary::av_free);
-
-    if(!avioContext)
-    {
-        throw std::runtime_error("Failed to allocate avio context.");
-    }
-
-    std::unique_ptr<LibavcodecLibrary::AVFormatContext,
-        void(*)(LibavcodecLibrary::AVFormatContext*)> formatContext(
-            LibavcodecLibrary::avformat_alloc_context(),
-            &LibavcodecLibrary::avformat_free_context);
-
-    if(!formatContext)
-    {
-        throw std::runtime_error("Failed to allocate avformat context.");
-    }
-
-    formatContext->pb = avioContext.get();
-    formatContext->oformat = LibavcodecLibrary::av_guess_format(codecName.c_str(),
-        format.c_str(), nullptr);
-
-    auto avFormatStream = LibavcodecLibrary::avformat_new_stream(formatContext.get(),
-        context->codec);
-
-    if(avFormatStream == nullptr)
-    {
-        throw std::runtime_error("Failed to add stream to format context.");
-    }
-
-    status = LibavcodecLibrary::avcodec_copy_context(avFormatStream->codec, context);
-
-    if(status < 0)
-    {
-        throw std::runtime_error("Failed to copy codec context to stream.");
-    }
-
     status = LibavcodecLibrary::avformat_write_header(formatContext.get(), nullptr);
 
     if(status < 0)
     {
         throw std::runtime_error("Failed to write header to stream.");
     }
+
+    /* the codec gives us the frame size, in samples,
+     * we calculate the size of the samples buffer in bytes */
+    int bufferSize = LibavcodecLibrary::av_samples_get_buffer_size(nullptr,
+        1, LibavcodecLibrary::getFrameSize(context),
+        LibavcodecLibrary::getSampleFormatWithBytes(header.bytesPerSample), 0);
+
+    DataVector buffer(bufferSize);
+
+    LibavcodecLibrary::AVFrameRAII frame;
+
+    LibavcodecLibrary::setNumberOfSamples(frame, LibavcodecLibrary::getFrameSize(context));
+    LibavcodecLibrary::setSampleFormat(frame,
+        LibavcodecLibrary::getSampleFormatWithBytes(header.bytesPerSample));
+    LibavcodecLibrary::setChannelLayout(frame, selectChannelLayout(codec));
 
     /* setup the data pointers in the AVFrame */
     status = LibavcodecLibrary::avcodec_fill_audio_frame(frame,
@@ -408,6 +439,8 @@ void LibavcodecAudioLibrary::saveAudio(std::ostream& stream, const std::string& 
                 (sample * header.bytesPerSample), bufferSize);
         }
 
+        frame->pts = sample;
+
         LibavcodecLibrary::AVPacketRAII packet;
 
         packet->data = nullptr;
@@ -417,6 +450,8 @@ void LibavcodecAudioLibrary::saveAudio(std::ostream& stream, const std::string& 
 
         auto status = LibavcodecLibrary::avcodec_encode_audio2(context, packet,
             frame, &gotOutput);
+
+        packet->pts = sample + 1;
 
         if(status < 0)
         {
@@ -438,6 +473,8 @@ void LibavcodecAudioLibrary::saveAudio(std::ostream& stream, const std::string& 
 
         auto status = LibavcodecLibrary::avcodec_encode_audio2(context, packet,
             nullptr, &gotOutput);
+
+        packet->pts = header.samples + 1;
 
         if(status < 0)
         {

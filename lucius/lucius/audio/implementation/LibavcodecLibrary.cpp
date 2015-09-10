@@ -80,6 +80,16 @@ LibavcodecLibrary::AVFrameRAII::operator const AVFrame*() const
     return _frame;
 }
 
+LibavcodecLibrary::AVFrame* LibavcodecLibrary::AVFrameRAII::operator->()
+{
+    return _frame;
+}
+
+const LibavcodecLibrary::AVFrame* LibavcodecLibrary::AVFrameRAII::operator->() const
+{
+    return _frame;
+}
+
 LibavcodecLibrary::AVPacketRAII::AVPacketRAII()
 {
     av_init_packet(&_packet);
@@ -285,12 +295,16 @@ void LibavcodecLibrary::setSampleFormat(AVCodecContext* context, enum AVSampleFo
 
 void LibavcodecLibrary::setSampleRate(AVCodecContext* codec, size_t rate)
 {
+    /*
     int status = av_opt_set_int(codec, "ar", rate, 0);
 
     if(status < 0)
     {
         throw std::runtime_error("Failed to set sample rate.");
     }
+    */
+   // codec->time_base   = {0, 0};
+    codec->sample_rate = rate;
 }
 
 void LibavcodecLibrary::setChannelLayout(AVCodecContext* codec, int64_t layout)
@@ -404,6 +418,13 @@ int LibavcodecLibrary::avcodec_encode_audio2(AVCodecContext* avctx, AVPacket* av
     _check();
 
     return (*_interface.avcodec_encode_audio2)(avctx, avpkt, frame, got_packet_ptr);
+}
+
+void LibavcodecLibrary::av_codec_set_pkt_timebase(AVCodecContext* avctx, AVRational val)
+{
+    _check();
+
+    return (*_interface.av_codec_set_pkt_timebase)(avctx, val);
 }
 
 int LibavcodecLibrary::av_opt_get_int(void* obj, const char* name, int flags, int64_t* out_val)
@@ -522,6 +543,15 @@ int LibavcodecLibrary::LibavcodecLibrary::avformat_open_input(AVFormatContext** 
     _check();
 
     int status = (*_interface.avformat_open_input)(ps, filename, fmt, options);
+
+    return status;
+}
+
+int LibavcodecLibrary::avformat_find_stream_info(AVFormatContext* ic, AVDictionary** options)
+{
+    _check();
+
+    int status = (*_interface.avformat_find_stream_info)(ic, options);
 
     return status;
 }
@@ -683,6 +713,8 @@ void LibavcodecLibrary::Interface::load()
 	DynLink(avcodec_fill_audio_frame);
 	DynLink(avcodec_encode_audio2);
 
+    DynLink(av_codec_set_pkt_timebase);
+
 	DynLink(av_opt_get_int);
 	DynLink(av_opt_get);
 	DynLink(av_opt_get_sample_fmt);
@@ -705,6 +737,7 @@ void LibavcodecLibrary::Interface::load()
     DynLink(avio_alloc_context);
 
     DynLink(avformat_open_input);
+    DynLink(avformat_find_stream_info);
 
     DynLink(avformat_new_stream);
     DynLink(avformat_write_header);
