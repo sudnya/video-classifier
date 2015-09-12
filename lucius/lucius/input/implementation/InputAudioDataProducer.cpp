@@ -21,6 +21,7 @@
 
 // Standard Library Includes
 #include <random>
+#include <fstream>
 
 namespace lucius
 {
@@ -36,7 +37,7 @@ class InputAudioDataProducerImplementation
 public:
     InputAudioDataProducerImplementation(InputAudioDataProducer* producer,
         const std::string& audioDatabaseFilename)
-    : _producer(producer), _databaseFilename(audioDatabaseFilename),
+    : _producer(producer), _databaseFilename(audioDatabaseFilename), _initialized(false),
       _remainingSamples(0), _nextSample(0), _nextNoiseSample(0), _totalTimestepsPerUtterance(0),
       _audioTimesteps(0)
     {
@@ -67,9 +68,9 @@ public:
         }
 
         _totalTimestepsPerUtterance = util::KnobDatabase::getKnobValue(
-            "InputAudioDataProducer::TotalTimestepsPerUtterance", 128);
+            "InputAudioDataProducer::TotalTimestepsPerUtterance", 512);
         _audioTimesteps             = util::KnobDatabase::getKnobValue(
-            "InputAudioDataProducer::AudioTimesteps", 16);
+            "InputAudioDataProducer::AudioTimesteps", 64);
 
         _parseAudioDatabase();
 
@@ -164,10 +165,35 @@ private:
 
             _downsampleToMatchFrequencies(audio, noise);
 
-            auto selectedTimesteps = ((_generator() % _audioTimesteps) + (_audioTimesteps)) / 2;
+            //_scaleRandomly(audio, 1.0);
+            _scaleRandomly(noise, 1.0);
+
+            auto selectedTimesteps = ((_generator() % _audioTimesteps) + _audioTimesteps) / 2;
 
             audio = _sample(audio, selectedTimesteps          );
             noise = _sample(noise, _totalTimestepsPerUtterance);
+
+            batch.push_back(_merge(audio, noise));
+
+            #if 0
+            {
+                std::stringstream filename;
+
+                filename << "audio" << _nextSample << "noise" << _nextNoiseSample << ".wav";
+
+                std::ofstream file(filename.str());
+
+                batch.back().save(file, ".wav");
+
+                std::stringstream audiofilename;
+
+                audiofilename << "audio" << _nextSample << ".wav";
+
+                std::ofstream audiofile(audiofilename.str());
+
+                _audio[_nextSample].save(audiofile, ".wav");
+            }
+            #endif
 
             if(!isAudioCached)
             {
@@ -178,8 +204,6 @@ private:
             {
                 _noise[_nextNoiseSample].invalidateCache();
             }
-
-            batch.push_back(_merge(audio, noise));
 
             --_remainingSamples;
             ++_nextSample;
@@ -223,15 +247,15 @@ private:
 
     Audio _merge(const Audio& audio, const Audio& noise)
     {
-        assert(audio.size() < noise.size());
+        assert(2 * audio.size() < noise.size());
 
-        size_t remainder = noise.size() - audio.size();
+        size_t remainder = noise.size() - 2 * audio.size();
 
         auto result = noise;
 
         result.clearLabels();
 
-        size_t position = _generator() % remainder;
+        size_t position = audio.size() + (_generator() % remainder);
 
         for(size_t existingPosition = 0; existingPosition != audio.size(); ++existingPosition)
         {
@@ -263,7 +287,17 @@ private:
             return;
         }
 
-        audio = audio.downsample(frequency);
+        audio = audio.sample(frequency);
+    }
+
+    void _scaleRandomly(Audio& audio, double factor)
+    {
+        double scale = factor * (((_generator() % 10000) + 5000) / 10000.0);
+
+        for(size_t sample = 0; sample != audio.size(); ++sample)
+        {
+            audio.setSample(sample, scale * audio.getSample(sample));
+        }
     }
 
 private:

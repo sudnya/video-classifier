@@ -104,10 +104,6 @@ static int64_t seekWriteFunction(void* opaqueStream, int64_t offset, int whence)
 LibavcodecAudioLibrary::HeaderAndData LibavcodecAudioLibrary::loadAudio(std::istream& stream,
     const std::string& format)
 {
-    LibavcodecLibrary::AVPacket packet;
-
-    LibavcodecLibrary::av_init_packet(&packet);
-
     auto codecName = util::strip(format, ".");
 
     auto* codec = LibavcodecLibrary::avcodec_find_decoder_by_name(
@@ -198,7 +194,9 @@ LibavcodecAudioLibrary::HeaderAndData LibavcodecAudioLibrary::loadAudio(std::ist
 
     while(true)
     {
-        int gotPacket = LibavcodecLibrary::av_read_frame(avFormat.get(), &packet);
+        LibavcodecLibrary::AVPacketRAII packet;
+
+        int gotPacket = LibavcodecLibrary::av_read_frame(avFormat.get(), packet);
 
         if(gotPacket < 0)
         {
@@ -212,7 +210,7 @@ LibavcodecAudioLibrary::HeaderAndData LibavcodecAudioLibrary::loadAudio(std::ist
         int gotFrame = 0;
 
         int length = LibavcodecLibrary::avcodec_decode_audio4(context,
-             decodedFrame, &gotFrame, &packet);
+             decodedFrame, &gotFrame, packet);
 
         if(length < 0)
         {
@@ -227,7 +225,9 @@ LibavcodecAudioLibrary::HeaderAndData LibavcodecAudioLibrary::loadAudio(std::ist
                 LibavcodecLibrary::getBytesPerSampleForFormat(context);
             headerAndData.header.samplingRate = LibavcodecLibrary::getSamplingRate(context);
 
-            int dataSize = LibavcodecLibrary::av_samples_get_buffer_size(nullptr,
+            int dataSize = 0;
+
+            LibavcodecLibrary::av_samples_get_buffer_size(&dataSize,
                 LibavcodecLibrary::getChannelCount(context),
                 LibavcodecLibrary::getNumberOfSamples(decodedFrame),
                 LibavcodecLibrary::getSampleFormat(context), 1);
@@ -241,7 +241,7 @@ LibavcodecAudioLibrary::HeaderAndData LibavcodecAudioLibrary::loadAudio(std::ist
                 LibavcodecLibrary::getData(decodedFrame), dataSize);
         }
 
-        if(length != packet.size)
+        if(length != packet->size)
         {
             throw std::runtime_error("Did not decode the entire packet.");
         }

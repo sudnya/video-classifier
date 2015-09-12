@@ -127,6 +127,7 @@ static void createModel(Model& model, const Parameters& parameters)
 
 static void setSampleStatistics(Model& model, const Parameters& parameters)
 {
+    lucius::util::log("BenchmarkImperativeSpeech") << "Computing sample statistics\n";
     // Setup sample stats
     std::unique_ptr<Engine> engine(EngineFactory::create("SampleStatisticsEngine"));
 
@@ -140,6 +141,7 @@ static void setSampleStatistics(Model& model, const Parameters& parameters)
 
 static void trainNetwork(Model& model, const Parameters& parameters)
 {
+    lucius::util::log("BenchmarkImperativeSpeech") << "Training network\n";
     // Train the network
     std::unique_ptr<Engine> engine(lucius::engine::EngineFactory::create("LearnerEngine"));
 
@@ -160,6 +162,8 @@ static void trainNetwork(Model& model, const Parameters& parameters)
 
 static double testNetwork(Model& model, const Parameters& parameters)
 {
+    lucius::util::log("BenchmarkImperativeSpeech") << "Testing network \n";
+
     std::unique_ptr<Engine> engine(lucius::engine::EngineFactory::create("ClassifierEngine"));
 
     engine->setBatchSize(parameters.batchSize);
@@ -218,8 +222,8 @@ static void setupSolverParameters(const Parameters& parameters)
         parameters.learningRate);
     lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::Momentum",
         parameters.momentum);
-    lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::AnnealingRate", "1.00000");
-    lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::MaxGradNorm", "1000.0");
+    lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::AnnealingRate", "1.0001");
+    lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::MaxGradNorm", "100.0");
     lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::IterationsPerBatch", "1");
     lucius::util::KnobDatabase::setKnob("GeneralDifferentiableSolver::Type",
         "NesterovAcceleratedGradientSolver");
@@ -253,7 +257,7 @@ int main(int argc, char** argv)
         "The number of epochs (passes over all inputs) to train the network for.");
     parser.parse("-b", "--batch-size", parameters.batchSize, 8,
         "The number of sample to use for each iteration.");
-    parser.parse("", "--learning-rate", parameters.learningRate, 1.0e-4,
+    parser.parse("", "--learning-rate", parameters.learningRate, 1.0e-5,
         "The learning rate for gradient descent.");
     parser.parse("", "--momentum", parameters.momentum, 0.9,
         "The momentum for gradient descent.");
@@ -269,14 +273,14 @@ int main(int argc, char** argv)
     parser.parse("-l", "--layer-size", parameters.layerSize, 128,
         "The size of each fully connected feed forward and recurrent layer.");
 
-    parser.parse("", "--sampling-rate",  parameters.samplingRate, 44100,
+    parser.parse("", "--sampling-rate",  parameters.samplingRate, 8000,
         "The input audio sampling rate in hertz.");
-    parser.parse("", "--frame-duration", parameters.frameDuration, 441,
+    parser.parse("", "--frame-duration", parameters.frameDuration, 160,
         "The number of input samples per frame.");
 
-    parser.parse("-f", "--forward-layers", parameters.forwardLayers, 3,
+    parser.parse("-f", "--forward-layers", parameters.forwardLayers, 4,
         "The number of feed forward layers.");
-    parser.parse("-r", "--recurrent-layers", parameters.recurrentLayers, 2,
+    parser.parse("-r", "--recurrent-layers", parameters.recurrentLayers, 1,
         "The number of recurrent layers.");
 
     parser.parse("-v", "--verbose", verbose, false,

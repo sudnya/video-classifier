@@ -132,15 +132,15 @@ double Audio::getSample(size_t sample) const
     }
     case 2:
     {
-        return reinterpret_cast<const int16_t&>(_data[sample]);
+        return reinterpret_cast<const int16_t&>(_data[sample * 2]);
     }
     case 4:
     {
-        return reinterpret_cast<const int32_t&>(_data[sample]);
+        return reinterpret_cast<const int32_t&>(_data[sample * 4]);
     }
     case 8:
     {
-        return reinterpret_cast<const int64_t&>(_data[sample]);
+        return reinterpret_cast<const int64_t&>(_data[sample * 8]);
     }
     default:
         break;
@@ -160,17 +160,17 @@ void Audio::setSample(size_t sample, double value)
     }
     case 2:
     {
-        reinterpret_cast<int16_t&>(_data[sample]) = value;
+        reinterpret_cast<int16_t&>(_data[sample * 2]) = value;
         break;
     }
     case 4:
     {
-        reinterpret_cast<int32_t&>(_data[sample]) = value;
+        reinterpret_cast<int32_t&>(_data[sample * 4]) = value;
         break;
     }
     case 8:
     {
-        reinterpret_cast<int64_t&>(_data[sample]) = value;
+        reinterpret_cast<int64_t&>(_data[sample * 8]) = value;
         break;
     }
     default:
@@ -192,7 +192,7 @@ Audio Audio::slice(size_t startingSample, size_t endingSample) const
     return result;
 }
 
-Audio Audio::downsample(size_t newFrequency) const
+Audio Audio::sample(size_t newFrequency) const
 {
     size_t samples = size() * newFrequency / frequency();
 
@@ -205,16 +205,25 @@ Audio Audio::downsample(size_t newFrequency) const
         result.setSample(sample, getSample(originalSample));
     }
 
+    result.setDefaultLabel(_defaultLabel);
+
     return result;
 }
 
-std::string Audio::getLabelForSample(size_t sample) const
+std::string Audio::getLabelForSample(size_t samplePosition) const
 {
-    auto label = _labels.lower_bound(sample);
+    auto possibleLabel = _labels.lower_bound(samplePosition);
 
-    if(label != _labels.end() && sample < label->second.endSample)
+    if(possibleLabel != _labels.begin())
     {
-        return label->second.label;
+        --possibleLabel;
+    }
+
+    if(possibleLabel != _labels.end() &&
+        samplePosition >= possibleLabel->first &&
+        samplePosition < possibleLabel->second.endSample)
+    {
+        return possibleLabel->second.label;
     }
 
     return _defaultLabel;

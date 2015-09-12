@@ -222,6 +222,10 @@ def downloadImagesForTerms(selectedTermIds, classes, options):
         print 'For term: \'' + term + "\'"
         termName = getNameForTerm(term)
 
+        if len(termName) == 0:
+            print ' Skipping invalid term'
+            continue
+
         print ' Downloading all images that match the term: \'' + getDirectoryForTerm(termName) + "\'"
 
         remainingImages = int(options.maximum_images) - imageCount
@@ -370,7 +374,7 @@ def main():
         selectedTermIds, classes = selectTerms(int(options.terms))
 
     print 'Selected', str(len(selectedTermIds)), 'terms, each with', options.maximum_images_per_term, 'images'
-    
+
     socket.setdefaulttimeout(10.0)
 
     downloadImagesForTerms(selectedTermIds, classes, options)

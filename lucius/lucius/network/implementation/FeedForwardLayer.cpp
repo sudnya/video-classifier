@@ -194,9 +194,10 @@ matrix::Matrix FeedForwardLayer::runReverseImplementation(MatrixVector& gradient
 
     if(util::isLogEnabled("FeedForwardLayer"))
     {
-        util::log("FeedForwardLayer") << " Running reverse propagation on matrix (" << difference.size()[0]
-            << " rows, " << difference.size()[1] << " columns) through layer with dimensions ("
-            << getInputCount() << " inputs, " << getOutputCount() << " outputs).\n";
+        util::log("FeedForwardLayer") << " Running reverse propagation on matrix ("
+            << difference.size()[0] << " rows, " << difference.size()[1]
+            << " columns) through layer with dimensions (" << getInputCount() << " inputs, "
+            << getOutputCount() << " outputs).\n";
         util::log("FeedForwardLayer") << "  layer: " << _weights.shapeString() << "\n";
     }
 
@@ -212,7 +213,8 @@ matrix::Matrix FeedForwardLayer::runReverseImplementation(MatrixVector& gradient
 
     if(util::isLogEnabled("FeedForwardLayer"))
     {
-        util::log("FeedForwardLayer") << "  output size: " << outputActivations.shapeString() << "\n";
+        util::log("FeedForwardLayer") << "  output size: " << outputActivations.shapeString()
+            << "\n";
     }
 
     if(util::isLogEnabled("FeedForwardLayer::Detail"))
@@ -221,7 +223,8 @@ matrix::Matrix FeedForwardLayer::runReverseImplementation(MatrixVector& gradient
     }
 
     // finish computing the deltas
-    auto deltas = apply(getActivationFunction()->applyDerivative(outputActivations), difference, matrix::Multiply());
+    auto deltas = apply(getActivationFunction()->applyDerivative(outputActivations),
+        difference, matrix::Multiply());
 
     if(util::isLogEnabled("FeedForwardLayer::Detail"))
     {
@@ -229,21 +232,23 @@ matrix::Matrix FeedForwardLayer::runReverseImplementation(MatrixVector& gradient
     }
 
     // compute gradient for the weights
-    auto samples = outputActivations.size()[1];
+    auto samples = activations.back().size()[1];
 
     auto weightGradient = gemm(Matrix(deltas), false, 1.0 / samples, inputActivations, true);
 
     // add in the weight cost function term
     if(getWeightCostFunction() != nullptr)
     {
-        apply(weightGradient, weightGradient, getWeightCostFunction()->getGradient(_weights), matrix::Add());
+        apply(weightGradient, weightGradient, getWeightCostFunction()->getGradient(_weights),
+            matrix::Add());
     }
 
     gradients.push_back(std::move(weightGradient));
 
     if(util::isLogEnabled("FeedForwardLayer"))
     {
-        util::log("FeedForwardLayer") << "  weight grad shape: " << weightGradient.shapeString() << "\n";
+        util::log("FeedForwardLayer") << "  weight grad shape: "
+            << weightGradient.shapeString() << "\n";
     }
 
     if(util::isLogEnabled("FeedForwardLayer::Detail"))
@@ -256,7 +261,8 @@ matrix::Matrix FeedForwardLayer::runReverseImplementation(MatrixVector& gradient
 
     if(util::isLogEnabled("FeedForwardLayer"))
     {
-        util::log("FeedForwardLayer") << "  bias grad shape: " << biasGradient.shapeString() << "\n";
+        util::log("FeedForwardLayer") << "  bias grad shape: "
+            << biasGradient.shapeString() << "\n";
     }
 
     if(util::isLogEnabled("FeedForwardLayer::Detail"))
@@ -275,9 +281,11 @@ matrix::Matrix FeedForwardLayer::runReverseImplementation(MatrixVector& gradient
 
     if(getActivationCostFunction() != nullptr)
     {
-        auto activationCostFunctionGradient = getActivationCostFunction()->getGradient(outputActivations);
+        auto activationCostFunctionGradient =
+            getActivationCostFunction()->getGradient(outputActivations);
 
-        apply(previousLayerDeltas, deltasPropagatedReverse, activationCostFunctionGradient, matrix::Multiply());
+        apply(previousLayerDeltas, deltasPropagatedReverse,
+            activationCostFunctionGradient, matrix::Multiply());
     }
     else
     {
@@ -286,12 +294,14 @@ matrix::Matrix FeedForwardLayer::runReverseImplementation(MatrixVector& gradient
 
     if(util::isLogEnabled("FeedForwardLayer"))
     {
-        util::log("FeedForwardLayer") << "  output shape: " << previousLayerDeltas.shapeString() << "\n";
+        util::log("FeedForwardLayer") << "  output shape: "
+            << previousLayerDeltas.shapeString() << "\n";
     }
 
     if(util::isLogEnabled("FeedForwardLayer::Detail"))
     {
-        util::log("FeedForwardLayer::Detail") << "  output: " << previousLayerDeltas.debugString();
+        util::log("FeedForwardLayer::Detail") << "  output: "
+            << previousLayerDeltas.debugString();
     }
 
     return unfoldTime(previousLayerDeltas, differenceWithTime.size());

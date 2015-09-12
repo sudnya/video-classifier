@@ -36,7 +36,8 @@ void LabelMatchResultProcessor::process(const ResultVector& results)
 {
     _total += results.size();
 
-    util::log("LabelMatchResultProcessor") << "Processing batch of " << results.size() << " results.\n";
+    util::log("LabelMatchResultProcessor") << "Processing batch of "
+        << results.size() << " results.\n";
 
     for(auto result : results)
     {
@@ -48,7 +49,8 @@ void LabelMatchResultProcessor::process(const ResultVector& results)
             continue;
         }
 
-        util::log("LabelMatchResultProcessor") << " label '" << matchResult->label << "', reference '" << matchResult->reference << "'\n";
+        util::log("LabelMatchResultProcessor::Detail") << " label '" << matchResult->label
+            << "', reference '" << matchResult->reference << "'\n";
 
         if(matchResult->label == matchResult->reference)
         {

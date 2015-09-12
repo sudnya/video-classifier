@@ -30,7 +30,8 @@ SoftmaxCostFunction::~SoftmaxCostFunction()
 
 static Matrix softmax(const Matrix& output)
 {
-    auto normalizedOutput = broadcast(output, reduce(output, {0}, matrix::Maximum()), {0}, matrix::Subtract());
+    auto normalizedOutput = broadcast(output,
+        reduce(output, {0}, matrix::Maximum()), {0}, matrix::Subtract());
 
     auto expOutput = apply(normalizedOutput, matrix::Exp());
 

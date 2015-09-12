@@ -60,7 +60,7 @@ public:
 
 public:
     Audio slice(size_t startingSample, size_t endingSample) const;
-    Audio downsample(size_t newFrequency) const;
+    Audio sample(size_t newFrequency) const;
 
 public:
     std::string getLabelForSample(size_t sample) const;
