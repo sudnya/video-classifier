@@ -223,7 +223,7 @@ static void setupSolverParameters(const Parameters& parameters)
     lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::Momentum",
         parameters.momentum);
     lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::AnnealingRate", "1.0001");
-    lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::MaxGradNorm", "100.0");
+    lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::MaxGradNorm",   "100.0");
     lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::IterationsPerBatch", "1");
     lucius::util::KnobDatabase::setKnob("GeneralDifferentiableSolver::Type",
         "NesterovAcceleratedGradientSolver");

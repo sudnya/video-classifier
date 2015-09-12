@@ -1,7 +1,7 @@
-/*	\file   LibavcodecLibrary.cpp
-	\date   August 15, 2015
-	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The source file for the LibavcodecLibrary class.
+/*    \file   LibavcodecLibrary.cpp
+    \date   August 15, 2015
+    \author Gregory Diamos <solusstultus@gmail.com>
+    \brief  The source file for the LibavcodecLibrary class.
 */
 
 // Lucius Includes
@@ -122,12 +122,12 @@ const LibavcodecLibrary::AVPacket* LibavcodecLibrary::AVPacketRAII::operator->()
 
 void LibavcodecLibrary::load()
 {
-	_interface.load();
+    _interface.load();
 }
 
 bool LibavcodecLibrary::loaded()
 {
-	return _interface.loaded();
+    return _interface.loaded();
 }
 
 std::string LibavcodecLibrary::getErrorCode(int32_t _code)
@@ -644,14 +644,14 @@ void LibavcodecLibrary::av_frame_free(AVFrame** frame)
 
 void LibavcodecLibrary::_check()
 {
-	load();
+    load();
 
-	if(!loaded())
-	{
-		throw std::runtime_error("Tried to call libavcodec function when "
-			"the library is not loaded. Loading library failed, consider "
-			"installing libavcodec.");
-	}
+    if(!loaded())
+    {
+        throw std::runtime_error("Tried to call libavcodec function when "
+            "the library is not loaded. Loading library failed, consider "
+            "installing libavcodec.");
+    }
 }
 
 LibavcodecLibrary::Interface::Interface()
@@ -667,16 +667,16 @@ LibavcodecLibrary::Interface::~Interface()
 
 static void checkFunction(void* pointer, const std::string& name)
 {
-	if(pointer == nullptr)
-	{
-		throw std::runtime_error("Failed to load function '" + name +
-			"' from dynamic library.");
-	}
+    if(pointer == nullptr)
+    {
+        throw std::runtime_error("Failed to load function '" + name +
+            "' from dynamic library.");
+    }
 }
 
 void LibavcodecLibrary::Interface::load()
 {
-	if(loaded()) return;
+    if(loaded()) return;
 
     #ifdef __APPLE__
     const char* libraryName = "libavformat.dylib";
@@ -684,46 +684,46 @@ void LibavcodecLibrary::Interface::load()
     const char* libraryName = "libavformat.so";
     #endif
 
-	_library = dlopen(libraryName, RTLD_LAZY);
+    _library = dlopen(libraryName, RTLD_LAZY);
 
     util::log("LibavcodecLibrary") << "Loading library '" << libraryName << "'\n";
 
     if(!loaded())
-	{
+    {
         util::log("LibavcodecLibrary") << " Loading library '" << libraryName << "' failed\n";
-		return;
-	}
+        return;
+    }
 
-	#define DynLink(function) util::bit_cast(function, dlsym(_library, #function)); \
+    #define DynLink(function) util::bit_cast(function, dlsym(_library, #function)); \
         checkFunction((void*)function, #function)
 
-	DynLink(avcodec_register_all);
-	DynLink(av_register_all);
+    DynLink(avcodec_register_all);
+    DynLink(av_register_all);
 
-	DynLink(avcodec_find_decoder_by_name);
-	DynLink(avcodec_find_encoder_by_name);
+    DynLink(avcodec_find_decoder_by_name);
+    DynLink(avcodec_find_encoder_by_name);
 
-	DynLink(av_init_packet);
-	DynLink(avcodec_alloc_context3);
-	DynLink(avcodec_open2);
-	DynLink(av_frame_alloc);
-	DynLink(avcodec_decode_audio4);
-	DynLink(av_samples_get_buffer_size);
+    DynLink(av_init_packet);
+    DynLink(avcodec_alloc_context3);
+    DynLink(avcodec_open2);
+    DynLink(av_frame_alloc);
+    DynLink(avcodec_decode_audio4);
+    DynLink(av_samples_get_buffer_size);
 
-	DynLink(avcodec_fill_audio_frame);
-	DynLink(avcodec_encode_audio2);
+    DynLink(avcodec_fill_audio_frame);
+    DynLink(avcodec_encode_audio2);
 
     DynLink(av_codec_set_pkt_timebase);
 
-	DynLink(av_opt_get_int);
-	DynLink(av_opt_get);
-	DynLink(av_opt_get_sample_fmt);
-	DynLink(av_opt_get_channel_layout);
+    DynLink(av_opt_get_int);
+    DynLink(av_opt_get);
+    DynLink(av_opt_get_sample_fmt);
+    DynLink(av_opt_get_channel_layout);
 
-	DynLink(av_opt_set);
-	DynLink(av_opt_set_int);
-	DynLink(av_opt_set_sample_fmt);
-	DynLink(av_opt_set_channel_layout);
+    DynLink(av_opt_set);
+    DynLink(av_opt_set_int);
+    DynLink(av_opt_set_sample_fmt);
+    DynLink(av_opt_set_channel_layout);
 
     DynLink(av_opt_show2);
 
@@ -752,12 +752,12 @@ void LibavcodecLibrary::Interface::load()
 
     DynLink(av_malloc);
 
-	DynLink(av_free);
-	DynLink(av_free_packet);
-	DynLink(avcodec_close);
-	DynLink(av_frame_free);
+    DynLink(av_free);
+    DynLink(av_free_packet);
+    DynLink(avcodec_close);
+    DynLink(av_frame_free);
 
-	#undef DynLink
+    #undef DynLink
 
     (*avcodec_register_all)();
     (*av_register_all)();
