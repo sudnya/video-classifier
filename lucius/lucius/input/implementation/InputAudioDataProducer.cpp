@@ -166,7 +166,7 @@ private:
             _downsampleToMatchFrequencies(audio, noise);
 
             //_scaleRandomly(audio, 1.0);
-            _scaleRandomly(noise, 1.0);
+            //_scaleRandomly(noise, 1.0);
 
             auto selectedTimesteps = ((_generator() % _audioTimesteps) + _audioTimesteps) / 2;
 
