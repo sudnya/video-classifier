@@ -26,7 +26,7 @@ set up the environment for your system.
 
 Follow the built-in help messages.
 
- minerva-classifier -h
+ lucius-classifier -h
 
 
 
