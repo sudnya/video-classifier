@@ -1,7 +1,7 @@
-/*	\file   NeuronVisualizer.h
-	\date   Sunday August 11, 2013
-	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The header file for the NeuronVisualizer class.
+/*    \file   NeuronVisualizer.h
+    \date   Sunday August 11, 2013
+    \author Gregory Diamos <solusstultus@gmail.com>
+    \brief  The header file for the NeuronVisualizer class.
 */
 
 #pragma once
@@ -22,22 +22,22 @@ namespace visualization
 class NeuronVisualizer
 {
 public:
-	typedef network::NeuralNetwork NeuralNetwork;
-	typedef video::Image Image;
+    typedef network::NeuralNetwork NeuralNetwork;
+    typedef video::Image Image;
 
 public:
-	NeuronVisualizer(const NeuralNetwork* network);
+    NeuronVisualizer(const NeuralNetwork* network);
 
 public:
-	void visualizeNeuron(Image& image, size_t outputNeuron);
-	Image visualizeInputTileForNeuron(size_t outputNeuron);
-	Image visualizeInputTilesForAllNeurons();
+    void visualizeNeuron(Image& image, size_t outputNeuron);
+    Image visualizeInputTileForNeuron(size_t outputNeuron);
+    Image visualizeInputTilesForAllNeurons();
 
 public:
-	void setNeuralNetwork(const NeuralNetwork* network);
-	
+    void setNeuralNetwork(const NeuralNetwork* network);
+
 private:
-	const NeuralNetwork* _network;
+    const NeuralNetwork* _network;
 };
 
 }

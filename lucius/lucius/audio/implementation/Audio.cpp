@@ -259,9 +259,9 @@ bool Audio::operator!=(const Audio& audio) const
 
 bool Audio::isPathAnAudio(const std::string& path)
 {
-	auto extension = util::getExtension(path);
+    auto extension = util::getExtension(path);
 
-	return AudioLibraryInterface::isAudioTypeSupported(extension);
+    return AudioLibraryInterface::isAudioTypeSupported(extension);
 }
 
 Audio::Label::Label(size_t start, size_t end, const std::string& l)

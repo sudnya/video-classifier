@@ -1,7 +1,7 @@
-/*	\file   ResultProcessor.cpp
-	\date   Saturday August 10, 2014
-	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The source file for the ResultProcessor class.
+/*    \file   ResultProcessor.cpp
+    \date   Saturday August 10, 2014
+    \author Gregory Diamos <solusstultus@gmail.com>
+    \brief  The source file for the ResultProcessor class.
 */
 
 // Lucius Includes
@@ -20,7 +20,7 @@ ResultProcessor::~ResultProcessor()
 
 void ResultProcessor::setOutputFilename(const std::string& filename)
 {
-	// intentionally blank
+    // intentionally blank
 }
 
 }

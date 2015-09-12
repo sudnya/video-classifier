@@ -1,7 +1,7 @@
-/*	\file   LibavcodecAudioLibrary.cpp
-	\date   Thursday August 15, 2015
-	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The source file for the LibavcodecAudioLibrary class.
+/*    \file   LibavcodecAudioLibrary.cpp
+    \date   Thursday August 15, 2015
+    \author Gregory Diamos <solusstultus@gmail.com>
+    \brief  The source file for the LibavcodecAudioLibrary class.
 */
 
 // Lucius Includes

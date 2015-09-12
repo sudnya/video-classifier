@@ -56,7 +56,7 @@ private:
             _cpuEngine.reset(new std::default_random_engine);
         }
 
-		CurandLibrary::load();
+        CurandLibrary::load();
 
         if(!_cudaEngine && CurandLibrary::loaded())
         {

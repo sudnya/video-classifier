@@ -1,7 +1,7 @@
-/*	\file   Knobs.cpp
-	\date   Saturday August 10, 2013
-	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The source file for the Knob class.
+/*    \file   Knobs.cpp
+    \date   Saturday August 10, 2013
+    \author Gregory Diamos <solusstultus@gmail.com>
+    \brief  The source file for the Knob class.
 */
 
 // Lucius Includes
@@ -23,73 +23,73 @@ namespace util
 class KnobDatabaseImplementation
 {
 public:
-	typedef std::map<std::string, std::string> StringMap;
+    typedef std::map<std::string, std::string> StringMap;
 
 public:
-	KnobDatabaseImplementation();
+    KnobDatabaseImplementation();
 
 private:
-	void loadKnobFiles();
+    void loadKnobFiles();
 
 public:
-	StringMap knobs;
+    StringMap knobs;
 };
 
 static KnobDatabaseImplementation database;
 
 KnobDatabaseImplementation::KnobDatabaseImplementation()
 {
-	loadKnobFiles();
+    loadKnobFiles();
 }
 
 void KnobDatabaseImplementation::loadKnobFiles()
 {
-	// Check for an environment variable
-	if(isEnvironmentVariableDefined("LUCIUS_KNOB_FILE"))
-	{
-		KnobFile knobFile(getEnvironmentVariable("LUCIUS_KNOB_FILE"));
+    // Check for an environment variable
+    if(isEnvironmentVariableDefined("LUCIUS_KNOB_FILE"))
+    {
+        KnobFile knobFile(getEnvironmentVariable("LUCIUS_KNOB_FILE"));
 
-		knobFile.loadKnobs();
-	}
+        knobFile.loadKnobs();
+    }
 }
 
 void KnobDatabase::addKnob(const std::string& name, const std::string& value)
 {
-	database.knobs[name] = value;
+    database.knobs[name] = value;
 }
 
 void KnobDatabase::setKnob(const std::string& name, const std::string& value)
 {
-	database.knobs[name] = value;
+    database.knobs[name] = value;
 }
 
 bool KnobDatabase::knobExists(const std::string& knobname)
 {
-	return database.knobs.count(knobname) != 0;
+    return database.knobs.count(knobname) != 0;
 }
 
 std::string KnobDatabase::getKnobValueAsString(const std::string& knobname)
 {
-	auto knob = database.knobs.find(knobname);
+    auto knob = database.knobs.find(knobname);
 
-	if(knob == database.knobs.end())
-	{
-		throw std::runtime_error("Attempted to use uniniatilized knob '" +
-			knobname + "'");
-	}
+    if(knob == database.knobs.end())
+    {
+        throw std::runtime_error("Attempted to use uniniatilized knob '" +
+            knobname + "'");
+    }
 
-	return knob->second;
+    return knob->second;
 }
 
 std::string KnobDatabase::getKnobValue(const std::string& knobname,
-	const std::string& defaultValue)
+    const std::string& defaultValue)
 {
-	if(!knobExists(knobname))
-	{
-		return defaultValue;
-	}
+    if(!knobExists(knobname))
+    {
+        return defaultValue;
+    }
 
-	return getKnobValueAsString(knobname);
+    return getKnobValueAsString(knobname);
 }
 
 }

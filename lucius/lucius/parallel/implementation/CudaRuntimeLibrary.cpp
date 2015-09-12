@@ -31,7 +31,7 @@ void CudaRuntimeLibrary::load()
 
 bool CudaRuntimeLibrary::loaded()
 {
-	load();
+    load();
 
     return _interface.loaded();
 

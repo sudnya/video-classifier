@@ -1,7 +1,7 @@
-/*	\file   paths.h
-	\date   Thursday August 15, 2013
-	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  Function implementations of common path manipulations
+/*    \file   paths.h
+    \date   Thursday August 15, 2013
+    \author Gregory Diamos <solusstultus@gmail.com>
+    \brief  Function implementations of common path manipulations
 */
 
 // Lucius Includes
@@ -27,31 +27,31 @@ namespace util
 
 char separator()
 {
-	return '/';
+    return '/';
 }
 
 std::string getExtension(const std::string& path)
 {
-	auto components = split(path, ".");
+    auto components = split(path, ".");
 
-	if(components.size() < 2)
-	{
-		return "";
-	}
+    if(components.size() < 2)
+    {
+        return "";
+    }
 
-	return "." + components.back();
+    return "." + components.back();
 }
 
 std::string stripExtension(const std::string& path)
 {
-	auto position = path.rfind(".");
+    auto position = path.rfind(".");
 
-	if(position == std::string::npos)
-	{
-		return path;
-	}
+    if(position == std::string::npos)
+    {
+        return path;
+    }
 
-	return path.substr(0, position);
+    return path.substr(0, position);
 }
 
 std::string stripTrailingSeparators(const std::string& originalPath)
@@ -70,135 +70,135 @@ std::string getDirectory(const std::string& originalPath)
 {
     auto path = stripTrailingSeparators(originalPath);
 
-	auto position = path.rfind(separator());
+    auto position = path.rfind(separator());
 
-	if(position == std::string::npos)
-	{
-		return "";
-	}
+    if(position == std::string::npos)
+    {
+        return "";
+    }
 
-	return path.substr(0, position);
+    return path.substr(0, position);
 }
 
 std::string getFile(const std::string& path)
 {
-	auto position = path.rfind(separator());
+    auto position = path.rfind(separator());
 
-	if(position == std::string::npos)
-	{
-		return "";
-	}
+    if(position == std::string::npos)
+    {
+        return "";
+    }
 
-	return path.substr(position + 1);
+    return path.substr(position + 1);
 }
 
 std::string getRelativePath(const std::string& baseDirectory,
-	const std::string& path)
+    const std::string& path)
 {
-	if(isAbsolutePath(path)) return path;
+    if(isAbsolutePath(path)) return path;
 
-	return joinPaths(baseDirectory, path);
+    return joinPaths(baseDirectory, path);
 }
 
 std::string joinPaths(const std::string& left, const std::string& right)
 {
-	return left + separator() + right;
+    return left + separator() + right;
 }
 
 bool isAbsolutePath(const std::string& path)
 {
-	if(path.empty()) return false;
+    if(path.empty()) return false;
 
-	return path.front() == separator();
+    return path.front() == separator();
 }
 
 static void listDirectoryRecursively(StringVector& files, const std::string& path)
 {
-	#ifndef _WIN32
-	DIR* directory = opendir(path.c_str());
+    #ifndef _WIN32
+    DIR* directory = opendir(path.c_str());
 
-	if(directory == nullptr)
-	{
-		throw std::runtime_error("Could not open directory '" + path + "'");
-	}
+    if(directory == nullptr)
+    {
+        throw std::runtime_error("Could not open directory '" + path + "'");
+    }
 
-	while(true)
-	{
-		auto entry = readdir(directory);
+    while(true)
+    {
+        auto entry = readdir(directory);
 
-		if(entry == nullptr)
-		{
-			break;
-		}
+        if(entry == nullptr)
+        {
+            break;
+        }
 
-		auto name = std::string(entry->d_name);
+        auto name = std::string(entry->d_name);
 
-		// skip the current and previous directory
-		if(name == ".." || name == ".")
-		{
-			continue;
-		}
+        // skip the current and previous directory
+        if(name == ".." || name == ".")
+        {
+            continue;
+        }
 
-		if(isDirectory(name))
-		{
-			listDirectoryRecursively(files, joinPaths(path, name));
-		}
-		else
-		{
-			files.push_back(name);
-		}
-	}
+        if(isDirectory(name))
+        {
+            listDirectoryRecursively(files, joinPaths(path, name));
+        }
+        else
+        {
+            files.push_back(name);
+        }
+    }
 
-	closedir(directory);
+    closedir(directory);
 
-	#endif
+    #endif
 }
 
 StringVector listDirectoryRecursively(const std::string& path)
 {
-	StringVector files;
+    StringVector files;
 
-	listDirectoryRecursively(files, path);
+    listDirectoryRecursively(files, path);
 
-	return files;
+    return files;
 }
 
 bool isFile(const std::string& path)
 {
-	#ifndef _WIN32
-	struct stat fileStats;
+    #ifndef _WIN32
+    struct stat fileStats;
 
-	auto result = stat(path.c_str(), &fileStats);
+    auto result = stat(path.c_str(), &fileStats);
 
-	if(result != 0)
-	{
-		return false;
-	}
+    if(result != 0)
+    {
+        return false;
+    }
 
-	return S_ISREG(fileStats.st_mode);
+    return S_ISREG(fileStats.st_mode);
 
-	#else
-	assertM(false, "Not implemented for this platform.");
-	#endif
+    #else
+    assertM(false, "Not implemented for this platform.");
+    #endif
 }
 
 bool isDirectory(const std::string& path)
 {
-	#ifndef _WIN32
-	struct stat fileStats;
+    #ifndef _WIN32
+    struct stat fileStats;
 
-	auto result = stat(path.c_str(), &fileStats);
+    auto result = stat(path.c_str(), &fileStats);
 
-	if(result != 0)
-	{
-		return false;
-	}
+    if(result != 0)
+    {
+        return false;
+    }
 
-	return S_ISDIR(fileStats.st_mode);
+    return S_ISDIR(fileStats.st_mode);
 
-	#else
-	assertM(false, "Not implemented for this platform.");
-	#endif
+    #else
+    assertM(false, "Not implemented for this platform.");
+    #endif
 }
 
 void makeDirectory(const std::string& path)

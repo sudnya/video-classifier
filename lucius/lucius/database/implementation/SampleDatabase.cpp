@@ -1,7 +1,7 @@
 /*! \file   SampleDatabase.cpp
-	\date   Saturday December 6, 2013
-	\author Gregory Diamos <solusstutus@gmail.com>
-	\brief  The source file for the SampleDatabase class.
+    \date   Saturday December 6, 2013
+    \author Gregory Diamos <solusstutus@gmail.com>
+    \brief  The source file for the SampleDatabase class.
 */
 
 // Lucius Includes
@@ -36,106 +36,106 @@ SampleDatabase::~SampleDatabase()
 
 SampleDatabase::StringVector SampleDatabase::getAllPossibleLabels() const
 {
-	return StringVector(_labels.begin(), _labels.end());
+    return StringVector(_labels.begin(), _labels.end());
 }
 
 size_t SampleDatabase::getTotalLabelCount() const
 {
-	return _labels.size();
+    return _labels.size();
 }
 
 SampleDatabase::iterator SampleDatabase::begin()
 {
-	return _samples.begin();
+    return _samples.begin();
 }
 
 SampleDatabase::const_iterator SampleDatabase::begin() const
 {
-	return _samples.begin();
+    return _samples.begin();
 }
 
 SampleDatabase::iterator SampleDatabase::end()
 {
-	return _samples.end();
+    return _samples.end();
 }
 
 SampleDatabase::const_iterator SampleDatabase::end() const
 {
-	return _samples.end();
+    return _samples.end();
 }
 
 size_t SampleDatabase::size() const
 {
-	return _samples.size();
+    return _samples.size();
 }
 
 bool SampleDatabase::empty() const
 {
-	return _samples.empty();
+    return _samples.empty();
 }
 
 const std::string& SampleDatabase::path() const
 {
-	return _path;
+    return _path;
 }
 
 bool SampleDatabase::containsVideoSamples() const
 {
-	for(auto& sample : _samples)
-	{
-		if(sample.isVideoSample())
-		{
-			return true;
-		}
-	}
+    for(auto& sample : _samples)
+    {
+        if(sample.isVideoSample())
+        {
+            return true;
+        }
+    }
 
-	return false;
+    return false;
 }
 
 bool SampleDatabase::containsImageSamples() const
 {
-	for(auto& sample : _samples)
-	{
-		if(sample.isImageSample())
-		{
-			return true;
-		}
-	}
+    for(auto& sample : _samples)
+    {
+        if(sample.isImageSample())
+        {
+            return true;
+        }
+    }
 
-	return false;
+    return false;
 }
 
 bool SampleDatabase::containsAudioSamples() const
 {
-	for(auto& sample : _samples)
-	{
-		if(sample.isAudioSample())
-		{
-			return true;
-		}
-	}
+    for(auto& sample : _samples)
+    {
+        if(sample.isAudioSample())
+        {
+            return true;
+        }
+    }
 
-	return false;
+    return false;
 }
 
 bool SampleDatabase::containsTextSamples() const
 {
-	return false;
+    return false;
 }
 
 void SampleDatabase::addSample(const Sample& sample)
 {
-	if(sample.hasLabel())
-	{
-		_labels.insert(sample.label());
-	}
+    if(sample.hasLabel())
+    {
+        _labels.insert(sample.label());
+    }
 
-	return _samples.push_back(sample);
+    return _samples.push_back(sample);
 }
 
 void SampleDatabase::addLabel(const std::string& label)
 {
-	_labels.insert(label);
+    _labels.insert(label);
 }
 
 void SampleDatabase::save() const
@@ -163,9 +163,9 @@ void SampleDatabase::save() const
 
 void SampleDatabase::load()
 {
-	SampleDatabaseParser parser(this);
+    SampleDatabaseParser parser(this);
 
-	parser.parse();
+    parser.parse();
 }
 
 }

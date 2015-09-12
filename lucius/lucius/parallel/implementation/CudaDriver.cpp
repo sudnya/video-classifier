@@ -29,7 +29,7 @@ void CudaDriver::load()
 
 bool CudaDriver::loaded()
 {
-	load();
+    load();
 
     return _interface.loaded();
 }
@@ -456,7 +456,7 @@ static void checkFunction(void* pointer, const std::string& name)
 void CudaDriver::Interface::load()
 {
     if(loaded()) return;
-	if(!parallel::isCudaEnabled()) return;
+    if(!parallel::isCudaEnabled()) return;
 
     #ifdef __APPLE__
     const char* libraryName = "libcuda.dylib";

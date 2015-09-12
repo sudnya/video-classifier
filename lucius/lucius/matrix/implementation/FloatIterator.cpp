@@ -37,10 +37,10 @@ static Dimension advance(const Dimension& offset, const Dimension& size)
         }
     }
 
-	if(carry)
-	{
-		return size;
-	}
+    if(carry)
+    {
+        return size;
+    }
 
     return result;
 }
@@ -69,7 +69,7 @@ FloatIterator& FloatIterator::operator++()
 {
     _offset = detail::advance(_offset, _size);
 
-	return *this;
+    return *this;
 }
 
 bool FloatIterator::operator==(const FloatIterator& i) const
@@ -137,9 +137,9 @@ ConstFloatReference ConstFloatIterator::operator*()
 
 ConstFloatIterator& ConstFloatIterator::operator++()
 {
-	_offset = detail::advance(_offset, _size);
+    _offset = detail::advance(_offset, _size);
 
-	return *this;
+    return *this;
 }
 
 bool ConstFloatIterator::operator==(const FloatIterator& i) const

@@ -22,12 +22,12 @@ GeneralDifferentiableSolver::~GeneralDifferentiableSolver()
 {
 
 }
-	
+    
 double GeneralDifferentiableSolver::solve(Matrix& inputs, const CostAndGradientFunction& callBack)
 {
-	MatrixVector inputSet({inputs});
-	
-	return solve(inputSet, callBack);
+    MatrixVector inputSet({inputs});
+    
+    return solve(inputSet, callBack);
 }
 
 }

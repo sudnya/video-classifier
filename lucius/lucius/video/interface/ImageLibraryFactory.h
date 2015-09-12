@@ -1,7 +1,7 @@
-/*	\file   ImageLibraryFactory.h
-	\date   Thursday August 15, 2013
-	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The header file for the ImageLibraryFactory class.
+/*    \file   ImageLibraryFactory.h
+    \date   Thursday August 15, 2013
+    \author Gregory Diamos <solusstultus@gmail.com>
+    \brief  The header file for the ImageLibraryFactory class.
 */
 
 #pragma once
@@ -22,12 +22,12 @@ namespace video
 class ImageLibraryFactory
 {
 public:
-	typedef std::vector<ImageLibrary*> ImageLibraryVector;
-	
+    typedef std::vector<ImageLibrary*> ImageLibraryVector;
+
 public:
-	static ImageLibrary* create(const std::string& name);
-	static ImageLibraryVector createAll();
-	
+    static ImageLibrary* create(const std::string& name);
+    static ImageLibraryVector createAll();
+
 
 };
 

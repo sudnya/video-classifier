@@ -1,7 +1,7 @@
-/*	\file   VideoLibraryInterface.cpp
-	\date   Thursday August 15, 2013
-	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The source file for the VideoLibraryInterface class.
+/*    \file   VideoLibraryInterface.cpp
+    \date   Thursday August 15, 2013
+    \author Gregory Diamos <solusstultus@gmail.com>
+    \brief  The source file for the VideoLibraryInterface class.
 */
 
 // Lucius Includes
@@ -23,37 +23,37 @@ namespace video
 class VideoLibraryDatabase
 {
 public:
-	typedef std::map<std::string, VideoLibrary*> ExtensionToLibraryMap;
+    typedef std::map<std::string, VideoLibrary*> ExtensionToLibraryMap;
 
 public:
-	VideoLibraryDatabase()
-	{
-		_libraries = VideoLibraryFactory::createAll();
+    VideoLibraryDatabase()
+    {
+        _libraries = VideoLibraryFactory::createAll();
 
-		for(auto library : _libraries)
-		{
-			auto formats = library->getSupportedExtensions();
+        for(auto library : _libraries)
+        {
+            auto formats = library->getSupportedExtensions();
 
-			for(auto format : formats)
-			{
-				libraries.insert(std::make_pair(format, library));
-			}
-		}
-	}
+            for(auto format : formats)
+            {
+                libraries.insert(std::make_pair(format, library));
+            }
+        }
+    }
 
-	~VideoLibraryDatabase()
-	{
-		for(auto library : _libraries)
-		{
-			delete library;
-		}
-	}
+    ~VideoLibraryDatabase()
+    {
+        for(auto library : _libraries)
+        {
+            delete library;
+        }
+    }
 
 public:
-	ExtensionToLibraryMap libraries;
+    ExtensionToLibraryMap libraries;
 
 private:
-	VideoLibraryFactory::VideoLibraryVector _libraries;
+    VideoLibraryFactory::VideoLibraryVector _libraries;
 
 };
 
@@ -61,32 +61,32 @@ static VideoLibraryDatabase database;
 
 bool VideoLibraryInterface::isVideoTypeSupported(const std::string& extension)
 {
-	return database.libraries.count(extension) != 0;
+    return database.libraries.count(extension) != 0;
 }
 
 VideoLibrary* VideoLibraryInterface::getLibraryThatSupports(
-	const std::string& path)
+    const std::string& path)
 {
-	auto capability = util::getExtension(path);
+    auto capability = util::getExtension(path);
 
     if(capability.empty())
     {
         capability = path;
     }
 
-	auto library = database.libraries.find(capability);
+    auto library = database.libraries.find(capability);
 
-	if(library == database.libraries.end())
-	{
-		return nullptr;
-	}
+    if(library == database.libraries.end())
+    {
+        return nullptr;
+    }
 
-	return library->second;
+    return library->second;
 }
 
 VideoLibrary* VideoLibraryInterface::getLibraryThatSupportsCamera()
 {
-	return getLibraryThatSupports("camera");
+    return getLibraryThatSupports("camera");
 }
 
 }

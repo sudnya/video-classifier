@@ -1,7 +1,7 @@
 /*! \file   Sample.cpp
-	\date   Saturday December 6, 2013
-	\author Gregory Diamos <solusstutus@gmail.com>
-	\brief  The source file for the Sample class.
+    \date   Saturday December 6, 2013
+    \author Gregory Diamos <solusstutus@gmail.com>
+    \brief  The source file for the Sample class.
 */
 
 #include <lucius/database/interface/Sample.h>
@@ -18,8 +18,8 @@ namespace database
 {
 
 Sample::Sample(const std::string& path,
-	const std::string& label,
-	size_t beginFrame, size_t endFrame)
+    const std::string& label,
+    size_t beginFrame, size_t endFrame)
 : _path(path), _label(label),
   _beginFrame(beginFrame), _endFrame(endFrame)
 {
@@ -28,32 +28,32 @@ Sample::Sample(const std::string& path,
 
 const std::string& Sample::path() const
 {
-	return _path;
+    return _path;
 }
 
 const std::string& Sample::label() const
 {
-	return _label;
+    return _label;
 }
 
 size_t Sample::beginFrame() const
 {
-	return _beginFrame;
+    return _beginFrame;
 }
 
 size_t Sample::endFrame() const
 {
-	return _endFrame;
+    return _endFrame;
 }
 
 bool Sample::isVideoSample() const
 {
-	return video::Video::isPathAVideo(path());
+    return video::Video::isPathAVideo(path());
 }
 
 bool Sample::isImageSample() const
 {
-	return video::Image::isPathAnImage(path());
+    return video::Image::isPathAnImage(path());
 }
 
 bool Sample::isAudioSample() const
@@ -63,7 +63,7 @@ bool Sample::isAudioSample() const
 
 bool Sample::hasLabel() const
 {
-	return !label().empty();
+    return !label().empty();
 }
 
 }

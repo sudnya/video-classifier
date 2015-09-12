@@ -1,7 +1,7 @@
 /*! \file:   CostAndGradientFunction.cpp
-	\author: Gregory Diamos <gregory.diamos@gatech.edu>
-	\date:   Tuesday January 21, 2014
-	\brief   The source file for the CostAndGradientFunction class.
+    \author: Gregory Diamos <gregory.diamos@gatech.edu>
+    \date:   Tuesday January 21, 2014
+    \brief   The source file for the CostAndGradientFunction class.
 */
 
 // Lucius Includes

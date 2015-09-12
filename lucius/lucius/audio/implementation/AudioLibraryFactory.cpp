@@ -1,7 +1,7 @@
-/*	\file   AudioLibraryFactory.cpp
-	\date   Thursday August 15, 2015
-	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The source file for the AudioLibraryFactory class.
+/*    \file   AudioLibraryFactory.cpp
+    \date   Thursday August 15, 2015
+    \author Gregory Diamos <solusstultus@gmail.com>
+    \brief  The source file for the AudioLibraryFactory class.
 */
 
 // Lucius Includes
@@ -18,26 +18,26 @@ namespace audio
 
 std::unique_ptr<AudioLibrary> AudioLibraryFactory::create(const std::string& name)
 {
-	if(name == "LibavcodecAudioLibrary")
-	{
-		return std::unique_ptr<AudioLibrary>(new LibavcodecAudioLibrary);
-	}
-	else if(name == "WavAudioLibrary")
-	{
-		return std::unique_ptr<AudioLibrary>(new WavAudioLibrary);
-	}
+    if(name == "LibavcodecAudioLibrary")
+    {
+        return std::unique_ptr<AudioLibrary>(new LibavcodecAudioLibrary);
+    }
+    else if(name == "WavAudioLibrary")
+    {
+        return std::unique_ptr<AudioLibrary>(new WavAudioLibrary);
+    }
 
-	return std::unique_ptr<AudioLibrary>(nullptr);
+    return std::unique_ptr<AudioLibrary>(nullptr);
 }
 
 AudioLibraryFactory::AudioLibraryVector AudioLibraryFactory::createAll()
 {
-	AudioLibraryVector libraries;
+    AudioLibraryVector libraries;
 
-	libraries.emplace_back(create("LibavcodecAudioLibrary"));
-	libraries.emplace_back(create("WavAudioLibrary"));
+    libraries.emplace_back(create("LibavcodecAudioLibrary"));
+    libraries.emplace_back(create("WavAudioLibrary"));
 
-	return libraries;
+    return libraries;
 }
 
 }

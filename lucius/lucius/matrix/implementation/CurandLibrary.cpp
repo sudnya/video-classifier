@@ -28,8 +28,8 @@ void CurandLibrary::load()
 
 bool CurandLibrary::loaded()
 {
-	load();
-	
+    load();
+    
     return _interface.loaded();
 }
 
@@ -235,7 +235,7 @@ void CurandLibrary::Interface::load()
 {
     if(_failed)  return;
     if(loaded()) return;
-	if(!parallel::isCudaEnabled()) return;
+    if(!parallel::isCudaEnabled()) return;
     
     #ifdef __APPLE__
     //const char* libraryName = "libcurand-optimized.dylib";

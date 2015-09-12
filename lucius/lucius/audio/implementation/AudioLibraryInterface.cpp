@@ -1,7 +1,7 @@
-/*	\file   AudioLibraryInterface.cpp
-	\date   Thursday August 15, 2015
-	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The source file for the AudioLibraryInterface class.
+/*    \file   AudioLibraryInterface.cpp
+    \date   Thursday August 15, 2015
+    \author Gregory Diamos <solusstultus@gmail.com>
+    \brief  The source file for the AudioLibraryInterface class.
 */
 
 // Lucius Includes
@@ -24,29 +24,29 @@ namespace audio
 class AudioLibraryDatabase
 {
 public:
-	typedef std::map<std::string, AudioLibrary*> ExtensionToLibraryMap;
+    typedef std::map<std::string, AudioLibrary*> ExtensionToLibraryMap;
 
 public:
-	AudioLibraryDatabase()
-	{
-		_libraries = AudioLibraryFactory::createAll();
+    AudioLibraryDatabase()
+    {
+        _libraries = AudioLibraryFactory::createAll();
 
-		for(auto& library : _libraries)
-		{
-			auto formats = library->getSupportedExtensions();
+        for(auto& library : _libraries)
+        {
+            auto formats = library->getSupportedExtensions();
 
-			for(auto format : formats)
-			{
-				libraries.emplace(format, library.get());
-			}
-		}
-	}
+            for(auto format : formats)
+            {
+                libraries.emplace(format, library.get());
+            }
+        }
+    }
 
 public:
-	ExtensionToLibraryMap libraries;
+    ExtensionToLibraryMap libraries;
 
 private:
-	AudioLibraryFactory::AudioLibraryVector _libraries;
+    AudioLibraryFactory::AudioLibraryVector _libraries;
 
 };
 
@@ -80,29 +80,29 @@ bool AudioLibraryInterface::isAudioTypeSupported(const std::string& extension)
 AudioLibraryInterface::HeaderAndData AudioLibraryInterface::loadAudio(std::istream& stream,
     const std::string& extension)
 {
-	auto library = database.libraries.find(extension);
+    auto library = database.libraries.find(extension);
 
-	if(library == database.libraries.end())
-	{
-		throw std::runtime_error("No audio library can support extension '" +
-			extension + "'");
-	}
+    if(library == database.libraries.end())
+    {
+        throw std::runtime_error("No audio library can support extension '" +
+            extension + "'");
+    }
 
-	return library->second->loadAudio(stream, extension);
+    return library->second->loadAudio(stream, extension);
 }
 
 void AudioLibraryInterface::saveAudio(std::ostream& stream, const std::string& extension,
     const Header& header, const DataVector& data)
 {
-	auto library = database.libraries.find(extension);
+    auto library = database.libraries.find(extension);
 
-	if(library == database.libraries.end())
-	{
-		throw std::runtime_error("No audio library can support extension '" +
-			extension + "'");
-	}
+    if(library == database.libraries.end())
+    {
+        throw std::runtime_error("No audio library can support extension '" +
+            extension + "'");
+    }
 
-	library->second->saveAudio(stream, extension, header, data);
+    library->second->saveAudio(stream, extension, header, data);
 }
 
 }
