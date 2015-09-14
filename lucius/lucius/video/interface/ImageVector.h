@@ -17,9 +17,6 @@
 #include <vector>
 #include <random>
 
-// Forward Declarations
-namespace lucius { namespace neuralnetwork { class NeuralNetwork; } }
-
 namespace lucius
 {
 
@@ -32,8 +29,6 @@ public:
 	typedef std::vector<Image>              BaseImageVector;
 	typedef BaseImageVector::iterator       iterator;
 	typedef BaseImageVector::const_iterator const_iterator;
-
-	typedef neuralnetwork::NeuralNetwork NeuralNetwork;
 
 	typedef matrix::Matrix Matrix;
 

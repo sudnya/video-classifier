@@ -17,6 +17,9 @@ programs = []
 programs.append(env.Program('benchmark-imagenet', \
     ['image-net/benchmark-image-net.cpp'], LIBS=lucius_libs))
 
+programs.append(env.Program('benchmark-imperative-speech', \
+    ['imperative-speech/benchmark-imperative-speech.cpp'], LIBS=lucius_libs))
+
 Return('programs')
 
 

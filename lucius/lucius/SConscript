@@ -47,6 +47,9 @@ programs.append(env.Program('test-memory', \
 programs.append(env.Program('test-lucius-display', \
     ['video/test/test-display.cpp'], LIBS=lucius_libs))
 
+programs.append(env.Program('test-lucius-audio', \
+    ['audio/test/test-audio.cpp'], LIBS=lucius_libs))
+
 #programs.append(env.Program('test-lucius-performance', \
 #    ['network/test/test-neuralnetwork-performance.cpp'], LIBS=lucius_libs))
 

@@ -28,9 +28,11 @@ namespace input
 InputDataProducer::InputDataProducer()
 :  _requiresLabeledData(false), _standardizeInput(false), _model(nullptr)
 {
-    _epochs              = util::KnobDatabase::getKnobValue("InputDataProducer::Epochs",               60);
-    _maximumSamplesToRun = util::KnobDatabase::getKnobValue("InputDataProducer::MaximumSamplesToRun", 1e9);
-    _batchSize           = util::KnobDatabase::getKnobValue("InputDataProducer::BatchSize",            64);
+    _epochs    = util::KnobDatabase::getKnobValue("InputDataProducer::Epochs",    60);
+    _batchSize = util::KnobDatabase::getKnobValue("InputDataProducer::BatchSize", 64);
+
+    _maximumSamplesToRun = util::KnobDatabase::getKnobValue(
+        "InputDataProducer::MaximumSamplesToRun", 1e9);
 }
 
 InputDataProducer::~InputDataProducer()
@@ -103,12 +105,32 @@ model::Model* InputDataProducer::getModel()
     return _model;
 }
 
+static bool isImageModel(const model::Model* model)
+{
+    return model->hasAttribute("ResolutionX");
+}
+
+static bool isAudioModel(const model::Model* model)
+{
+    return model->hasAttribute("SamplesPerFrame");
+}
+
 matrix::Dimension InputDataProducer::getInputSize() const
 {
     // TODO: specialize this for different data types
-    return {getModel()->getAttribute<size_t>("ResolutionX"),
-           getModel()->getAttribute<size_t>("ResolutionY"),
-           getModel()->getAttribute<size_t>("ColorComponents")};
+    if(isImageModel(getModel()))
+    {
+        return {getModel()->getAttribute<size_t>("ResolutionX"),
+               getModel()->getAttribute<size_t>("ResolutionY"),
+               getModel()->getAttribute<size_t>("ColorComponents")};
+    }
+
+    if(isAudioModel(getModel()))
+    {
+        return {getModel()->getAttribute<size_t>("SamplesPerFrame")};
+    }
+
+    throw std::runtime_error("Unknown model type.");
 }
 
 util::StringVector InputDataProducer::getOutputLabels() const

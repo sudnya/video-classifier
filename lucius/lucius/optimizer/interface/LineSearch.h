@@ -1,4 +1,3 @@
-
 /*! \brief  LineSearch.h
 	\date   August 23, 2014
 	\author Gregory Diamos <solustultus@gmail.com>
@@ -24,7 +23,7 @@ class LineSearch
 public:
 	typedef matrix::Matrix       Matrix;
 	typedef matrix::MatrixVector MatrixVector;
-	
+
 public:
 	virtual ~LineSearch();
 

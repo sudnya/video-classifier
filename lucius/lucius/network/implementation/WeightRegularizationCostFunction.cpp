@@ -31,7 +31,8 @@ double WeightRegularizationCostFunction::getCost(const Matrix& weights) const
     return reduce(apply(weights, matrix::Square()), {}, matrix::Add())[0] * (lambda / 2.0);
 }
 
-WeightRegularizationCostFunction::Matrix WeightRegularizationCostFunction::getGradient(const Matrix& weights) const
+WeightRegularizationCostFunction::Matrix WeightRegularizationCostFunction::getGradient(
+    const Matrix& weights) const
 {
     double lambda = util::KnobDatabase::getKnobValue("NeuralNetwork::Lambda", 0.000);
 

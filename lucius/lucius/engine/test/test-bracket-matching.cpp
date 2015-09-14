@@ -270,6 +270,7 @@ static double testNetwork(Model& model, const Parameters& parameters, InputDataP
 
     engine->setBatchSize(parameters.batchSize);
     engine->setModel(&model);
+    engine->setStandardizeInput(true);
     engine->setMaximumSamplesToRun(1024);
 
     // read from producer and use model to test

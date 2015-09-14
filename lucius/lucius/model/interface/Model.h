@@ -57,6 +57,9 @@ public:
 	T getAttribute(const std::string& name) const;
 
 public:
+    bool hasAttribute(const std::string& name) const;
+
+public:
 	size_t getOutputCount() const;
 
 public:

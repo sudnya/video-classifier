@@ -81,13 +81,13 @@ public:
     const model::Model* getModel() const;
     model::Model* getModel();
 
-protected:
+public:
     Dimension getInputSize() const;
 
-protected:
+public:
     util::StringVector getOutputLabels() const;
 
-protected:
+public:
     /*! \brief Standardize an input feature matrix. */
     void standardize(Matrix& input);
 
