@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <cstddef>
 #include <string>
+#include <vector>
 
 namespace lucius
 {
@@ -748,6 +749,9 @@ private:
         bool loaded() const;
         /*! \brief unloads the library */
         void unload();
+
+    private:
+        typedef std::vector<std::string> StringVector;
 
     private:
         void _tryLink(void*& function, const StringVector& possibleFunctions);

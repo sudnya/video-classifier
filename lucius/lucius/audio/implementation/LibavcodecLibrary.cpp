@@ -8,6 +8,7 @@
 #include <lucius/audio/interface/LibavcodecLibrary.h>
 
 #include <lucius/util/interface/Casts.h>
+#include <lucius/util/interface/string.h>
 
 // Standard Library Includes
 #include <stdexcept>
@@ -758,7 +759,7 @@ void LibavcodecLibrary::Interface::load()
 
     #undef DynLink
 
-    _tryLink(av_frame_alloc, {"av_frame_alloc", "avcodec_alloc_frame"});
+    _tryLink(reinterpret_cast<void*&>(av_frame_alloc), {"av_frame_alloc", "avcodec_alloc_frame"});
 
     (*avcodec_register_all)();
     (*av_register_all)();
