@@ -39,30 +39,30 @@ public:
     ~AudioVector();
 
 public:
-	iterator       begin();
-	const_iterator begin() const;
+    iterator       begin();
+    const_iterator begin() const;
 
-	iterator       end();
-	const_iterator end() const;
-
-public:
-	      Audio& operator[](size_t index);
-	const Audio& operator[](size_t index) const;
+    iterator       end();
+    const_iterator end() const;
 
 public:
-	      Audio& back();
-	const Audio& back() const;
+          Audio& operator[](size_t index);
+    const Audio& operator[](size_t index) const;
+
+public:
+          Audio& back();
+    const Audio& back() const;
 
 public:
     size_t samples() const;
-	size_t size()    const;
-	bool   empty()   const;
+    size_t size()    const;
+    bool   empty()   const;
 
 public:
-	void clear();
+    void clear();
 
 public:
-	void push_back(const Audio& audio);
+    void push_back(const Audio& audio);
 
 public:
     Matrix getFeatureMatrixForFrameSize(size_t samplesPerFrame) const;

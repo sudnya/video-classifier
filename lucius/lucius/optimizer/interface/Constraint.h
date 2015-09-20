@@ -1,7 +1,7 @@
 /*! \file   Constraint.h
-	\author Gregory Diamos <gregory.diamos@gmail.com>
-	\date   Sunday March 9, 2014
-	\brief  The header file for the Constrain class.
+    \author Gregory Diamos <gregory.diamos@gmail.com>
+    \date   Sunday March 9, 2014
+    \brief  The header file for the Constrain class.
 */
 
 #pragma once
@@ -19,20 +19,20 @@ namespace optimizer
 class Constraint
 {
 public:
-	typedef matrix::Matrix Matrix;
+    typedef matrix::Matrix Matrix;
 
 public:
-	virtual ~Constraint();
+    virtual ~Constraint();
 
 public:
-	/*! \brief Does the solution satisfy the specified constraint */
-	virtual bool isSatisfied(const Matrix& ) const = 0; 
+    /*! \brief Does the solution satisfy the specified constraint */
+    virtual bool isSatisfied(const Matrix& ) const = 0; 
 
 public:
-	virtual void apply(Matrix& ) const = 0;
+    virtual void apply(Matrix& ) const = 0;
 
 public:
-	virtual Constraint* clone() const = 0;
+    virtual Constraint* clone() const = 0;
 
 };
 

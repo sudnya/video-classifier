@@ -706,7 +706,6 @@ void LibavcodecLibrary::Interface::load()
     DynLink(av_init_packet);
     DynLink(avcodec_alloc_context3);
     DynLink(avcodec_open2);
-    DynLink(av_frame_alloc);
     DynLink(avcodec_decode_audio4);
     DynLink(av_samples_get_buffer_size);
 
@@ -759,6 +758,8 @@ void LibavcodecLibrary::Interface::load()
 
     #undef DynLink
 
+    _tryLink(av_frame_alloc, {"av_frame_alloc", "avcodec_alloc_frame"});
+
     (*avcodec_register_all)();
     (*av_register_all)();
 
@@ -776,6 +777,22 @@ void LibavcodecLibrary::Interface::unload()
 
     dlclose(_library);
     _library = nullptr;
+}
+
+void LibavcodecLibrary::Interface::_tryLink(void*& function, const StringVector& names)
+{
+    for(auto& name : names)
+    {
+        util::bit_cast(function, dlsym(_library, name.c_str()));
+
+        if(function != nullptr)
+        {
+            return;
+        }
+    }
+
+    throw std::runtime_error("Failed to load function with any of these names {'" +
+        util::join(names, ", ") + "'} from dynamic library.");
 }
 
 LibavcodecLibrary::Interface LibavcodecLibrary::_interface;

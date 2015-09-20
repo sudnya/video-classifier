@@ -1,7 +1,7 @@
-/*	\file   GPULBFGSSolver.h
-	\date   Saturday August 10, 2013
-	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The header file for the GPULBFGSSolver class.
+/*    \file   GPULBFGSSolver.h
+    \date   Saturday August 10, 2013
+    \author Gregory Diamos <solusstultus@gmail.com>
+    \brief  The header file for the GPULBFGSSolver class.
 */
 
 #pragma once
@@ -18,17 +18,17 @@ namespace optimizer
 class GPULBFGSSolver : public GeneralDifferentiableSolver
 {
 public:
-	virtual ~GPULBFGSSolver();
+    virtual ~GPULBFGSSolver();
 
 public:
-	virtual double solve(MatrixVector& inputs, 
-		const CostAndGradientFunction& callback);
+    virtual double solve(MatrixVector& inputs, 
+        const CostAndGradientFunction& callback);
 
 public:
-	static double getMemoryOverhead();
+    static double getMemoryOverhead();
 
 public:
-	static bool isSupported();
+    static bool isSupported();
 
 };
 

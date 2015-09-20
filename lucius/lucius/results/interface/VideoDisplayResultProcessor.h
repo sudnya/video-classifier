@@ -1,7 +1,7 @@
-/*	\file   VideoDisplayResultProcessor.h
-	\date   Saturday August 10, 2015
-	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The header file for the VideoDisplayResultProcessor class.
+/*    \file   VideoDisplayResultProcessor.h
+    \date   Saturday August 10, 2015
+    \author Gregory Diamos <solusstultus@gmail.com>
+    \brief  The header file for the VideoDisplayResultProcessor class.
 */
 
 #pragma once
@@ -18,15 +18,15 @@ namespace results
 class VideoDisplayResultProcessor : public ResultProcessor
 {
 public:
-	virtual ~VideoDisplayResultProcessor();
+    virtual ~VideoDisplayResultProcessor();
 
 public:
-	/*! \brief Process a batch of results */
-	virtual void process(const ResultVector& );
+    /*! \brief Process a batch of results */
+    virtual void process(const ResultVector& );
 
 public:
-	/*! \brief Return a description of the results. */
-	virtual std::string toString() const;
+    /*! \brief Return a description of the results. */
+    virtual std::string toString() const;
 
 };
 

@@ -1,7 +1,7 @@
-/*	\file   LineSearchFactory.h
-	\date   Saturday August 10, 2014
-	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The header file for the LineSearch class.
+/*    \file   LineSearchFactory.h
+    \date   Saturday August 10, 2014
+    \author Gregory Diamos <solusstultus@gmail.com>
+    \brief  The header file for the LineSearch class.
 */
 
 #pragma once
@@ -23,10 +23,10 @@ namespace optimizer
 class LineSearchFactory
 {
 public:
-	static std::unique_ptr<LineSearch> create(const std::string& searchName);
+    static std::unique_ptr<LineSearch> create(const std::string& searchName);
 
 public:
-	static std::unique_ptr<LineSearch> create();
+    static std::unique_ptr<LineSearch> create();
 
 };
 

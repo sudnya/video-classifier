@@ -1,7 +1,7 @@
-/*	\file   LibavcodecAudioLibrary.h
-	\date   Thursday August 15, 2015
-	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The header file for the LibavcodecAudioLibrary class.
+/*    \file   LibavcodecAudioLibrary.h
+    \date   Thursday August 15, 2015
+    \author Gregory Diamos <solusstultus@gmail.com>
+    \brief  The header file for the LibavcodecAudioLibrary class.
 */
 
 #pragma once
@@ -19,20 +19,20 @@ namespace audio
 class LibavcodecAudioLibrary : public AudioLibrary
 {
 public:
-	typedef std::vector<std::string> StringVector;
+    typedef std::vector<std::string> StringVector;
 
 public:
-	virtual ~LibavcodecAudioLibrary();
+    virtual ~LibavcodecAudioLibrary();
 
 public:
-	virtual HeaderAndData loadAudio(std::istream& stream, const std::string& format);
+    virtual HeaderAndData loadAudio(std::istream& stream, const std::string& format);
 
 public:
-	virtual void saveAudio(std::ostream& stream, const std::string& format, const Header& header,
-		const DataVector& data);
+    virtual void saveAudio(std::ostream& stream, const std::string& format, const Header& header,
+        const DataVector& data);
 
 public:
-	virtual StringVector getSupportedExtensions() const;
+    virtual StringVector getSupportedExtensions() const;
 
 public:
     size_t getBitRate() const;

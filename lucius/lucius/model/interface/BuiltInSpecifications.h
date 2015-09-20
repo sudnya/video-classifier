@@ -1,7 +1,7 @@
-/*	\file   BuiltInSpecifications.h
-	\date   Saturday April 26, 2014
-	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The header file for the BuiltInSpecifications class.
+/*    \file   BuiltInSpecifications.h
+    \date   Saturday April 26, 2014
+    \author Gregory Diamos <solusstultus@gmail.com>
+    \brief  The header file for the BuiltInSpecifications class.
 */
 
 #pragma once
@@ -19,7 +19,7 @@ namespace model
 class BuiltInSpecifications
 {
 public:
-	static std::string getConvolutionalFastModelSpecification(size_t outputCount);
+    static std::string getConvolutionalFastModelSpecification(size_t outputCount);
 
 };
 

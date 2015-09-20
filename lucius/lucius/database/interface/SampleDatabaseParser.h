@@ -1,7 +1,7 @@
 /*! \file   SampleDatabaseParser.h
-	\date   Saturday December 6, 2013
-	\author Gregory Diamos <solusstutus@gmail.com>
-	\brief  The header file for the SampleDatabaseParser class.
+    \date   Saturday December 6, 2013
+    \author Gregory Diamos <solusstutus@gmail.com>
+    \brief  The header file for the SampleDatabaseParser class.
 */
 
 #pragma once
@@ -23,13 +23,13 @@ namespace database
 class SampleDatabaseParser
 {
 public:
-	SampleDatabaseParser(SampleDatabase* database);
+    SampleDatabaseParser(SampleDatabase* database);
 
 public:
-	void parse();
+    void parse();
 
 private:
-	SampleDatabase* _database;
+    SampleDatabase* _database;
 
 };
 

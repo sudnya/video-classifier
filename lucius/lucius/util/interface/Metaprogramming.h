@@ -12,7 +12,7 @@ namespace util
 template<typename T>
 struct RemoveFirstType
 {
-	typedef std::tuple<> type;
+    typedef std::tuple<> type;
 };
 
 template<typename T, typename... Ts>

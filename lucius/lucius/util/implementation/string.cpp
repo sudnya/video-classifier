@@ -19,7 +19,7 @@ void strlcpy(char* dest, const char* src, unsigned int length)
     const char* end = src + (length - 1);
     for(; src != end; ++src, ++dest)
     {
-        *dest = *src;    
+        *dest = *src;
         if(*src == '\0')
         {
             return;
@@ -28,24 +28,24 @@ void strlcpy(char* dest, const char* src, unsigned int length)
     *dest = '\0';
 }
 
-StringVector split(const std::string& string, 
+StringVector split(const std::string& string,
     const std::string& delimiter)
 {
     size_t begin = 0;
     size_t end = 0;
     StringVector strings;
-    
+
     while(end != std::string::npos)
     {
         end = string.find(delimiter, begin);
-        
+
         if(end > begin)
         {
             std::string substring = string.substr(begin, end - begin);
-            
+
             if(!substring.empty()) strings.push_back(substring);
         }
-        
+
         begin = end + delimiter.size();
     }
 
@@ -60,20 +60,20 @@ static bool isWhitespace(char c)
 std::string removeWhitespace(const std::string& string)
 {
     std::string result;
-    
+
     auto begin = string.begin();
-    
+
     for( ; begin != string.end(); ++begin)
     {
         if(!isWhitespace(*begin)) break;
     }
-    
+
     auto end = string.end();
 
     if(end != begin)
     {
         --end;
-        
+
         for( ; end != begin; --end)
         {
             if(!isWhitespace(*end))
@@ -81,11 +81,11 @@ std::string removeWhitespace(const std::string& string)
                 break;
             }
         }
-        
+
         ++end;
     }
 
-    return std::string(begin, end);    
+    return std::string(begin, end);
 }
 
 std::string strip(const std::string& string, const std::string& delimiter)
@@ -93,29 +93,29 @@ std::string strip(const std::string& string, const std::string& delimiter)
     std::string result;
     size_t begin = 0;
     size_t end = 0;
-    
+
     while(end != std::string::npos)
     {
         end = string.find(delimiter, begin);
         result += string.substr(begin, end - begin);
         begin = end + delimiter.size();
     }
-    
+
     return result;
 }
 
-std::string format(const std::string& input, 
-    const std::string& firstPrefix, const std::string& prefix, 
+std::string format(const std::string& input,
+    const std::string& firstPrefix, const std::string& prefix,
     unsigned int width)
 {
     std::string word;
     std::string result = firstPrefix;
     unsigned int currentIndex = firstPrefix.size();
 
-    for(std::string::const_iterator fi = input.begin(); 
+    for(std::string::const_iterator fi = input.begin();
         fi != input.end(); ++fi)
     {
-        if(*fi == ' ' || *fi == '\t' || *fi == '\n' 
+        if(*fi == ' ' || *fi == '\t' || *fi == '\n'
             || *fi == '\r' || *fi == '\f')
         {
             if(currentIndex + word.size() > width)
@@ -124,7 +124,7 @@ std::string format(const std::string& input,
                 result += "\n";
                 result += prefix;
             }
-            
+
             if(!word.empty())
             {
                 result += word + " ";
@@ -144,7 +144,7 @@ std::string format(const std::string& input,
         result += "\n";
         result += prefix;
     }
-    
+
     result += word + "\n";
     return result;
 }
@@ -177,13 +177,13 @@ std::string toGraphVizParsableLabel(const std::string& string)
 {
     std::string result;
     for(std::string::const_iterator fi = string.begin();
-        fi != string.end(); ++fi) 
+        fi != string.end(); ++fi)
     {
-        if(*fi == '{') 
+        if(*fi == '{')
         {
             result.push_back('[');
         }
-        else if(*fi == '}') 
+        else if(*fi == '}')
         {
             result.push_back(']');
         }
@@ -191,10 +191,10 @@ std::string toGraphVizParsableLabel(const std::string& string)
         {
             result.push_back('/');
         }
-        else 
+        else
         {
             result.push_back(*fi);
-        }    
+        }
     }
     return result;
 }
@@ -202,10 +202,10 @@ std::string toGraphVizParsableLabel(const std::string& string)
 std::string addLineNumbers(const std::string& string, unsigned int line)
 {
     std::stringstream result;
-    
+
     result << line++ << " ";
-    
-    for(std::string::const_iterator s = string.begin(); 
+
+    for(std::string::const_iterator s = string.begin();
         s != string.end(); ++s)
     {
         if(*s == '\n')
@@ -223,7 +223,7 @@ std::string addLineNumbers(const std::string& string, unsigned int line)
 std::string dataToString(const void* data, unsigned int size)
 {
     std::stringstream stream;
-    
+
     while(size > 0)
     {
         stream << "0x";
@@ -235,6 +235,26 @@ std::string dataToString(const void* data, unsigned int size)
     }
 
     return stream.str();
+}
+
+std::string join(const StringVector& strings, const std::string& delimiter)
+{
+    auto string = strings.begin();
+
+    std::string result;
+
+    if(string != strings.end())
+    {
+        result += *string;
+        ++string;
+    }
+
+    for(; string != strings.end(); ++string)
+    {
+        result += delimiter + *string;
+    }
+
+    return result;
 }
 
 }

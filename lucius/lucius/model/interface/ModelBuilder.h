@@ -1,7 +1,7 @@
-/*	\file   ModelBuilder.h
-	\date   Saturday August 10, 2013
-	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The header file for the ModelBuilder class.
+/*    \file   ModelBuilder.h
+    \date   Saturday August 10, 2013
+    \author Gregory Diamos <solusstultus@gmail.com>
+    \brief  The header file for the ModelBuilder class.
 */
 
 #pragma once
@@ -22,13 +22,13 @@ namespace model
 class ModelBuilder
 {
 public:
-	/*! \brief Create a new model at the specified path */
-	Model* create(const std::string& path);
+    /*! \brief Create a new model at the specified path */
+    Model* create(const std::string& path);
 
 public:
-	/*! \brief Create a new model at the specified path using the
-		specified topology. */
-	Model* create(const std::string& path, const std::string& specificationPath);
+    /*! \brief Create a new model at the specified path using the
+        specified topology. */
+    Model* create(const std::string& path, const std::string& specificationPath);
 
 };
 

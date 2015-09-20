@@ -103,7 +103,7 @@ private:
     typedef std::map<size_t, Label> LabelMap;
 
 private:
-	typedef std::vector<uint8_t> ByteVector;
+    typedef std::vector<uint8_t> ByteVector;
 
 private:
     LabelMap _labels;

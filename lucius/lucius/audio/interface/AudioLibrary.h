@@ -1,7 +1,7 @@
-/*	\file   AudioLibrary.h
-	\date   Thursday August 15, 2015
-	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The header file for the AudioLibrary class.
+/*    \file   AudioLibrary.h
+    \date   Thursday August 15, 2015
+    \author Gregory Diamos <solusstultus@gmail.com>
+    \brief  The header file for the AudioLibrary class.
 */
 
 #pragma once
@@ -22,23 +22,23 @@ namespace audio
 class AudioLibrary
 {
 public:
-	typedef AudioLibraryInterface::Header        Header;
-	typedef AudioLibraryInterface::HeaderAndData HeaderAndData;
-	typedef AudioLibraryInterface::DataVector    DataVector;
-	typedef std::vector<std::string>             StringVector;
+    typedef AudioLibraryInterface::Header        Header;
+    typedef AudioLibraryInterface::HeaderAndData HeaderAndData;
+    typedef AudioLibraryInterface::DataVector    DataVector;
+    typedef std::vector<std::string>             StringVector;
 
 public:
-	virtual ~AudioLibrary();
+    virtual ~AudioLibrary();
 
 public:
-	virtual HeaderAndData loadAudio(std::istream& , const std::string& format) = 0;
+    virtual HeaderAndData loadAudio(std::istream& , const std::string& format) = 0;
 
 public:
-	virtual void saveAudio(std::ostream& path, const std::string& format, const Header& header,
-		const DataVector& data) = 0;
+    virtual void saveAudio(std::ostream& path, const std::string& format, const Header& header,
+        const DataVector& data) = 0;
 
 public:
-	virtual StringVector getSupportedExtensions() const = 0;
+    virtual StringVector getSupportedExtensions() const = 0;
 
 
 };

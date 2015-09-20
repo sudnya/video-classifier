@@ -1,7 +1,7 @@
 /*! \file   SampleDatabase.h
-	\date   Saturday December 6, 2013
-	\author Gregory Diamos <solusstutus@gmail.com>
-	\brief  The header file for the SampleDatabase class.
+    \date   Saturday December 6, 2013
+    \author Gregory Diamos <solusstutus@gmail.com>
+    \brief  The header file for the SampleDatabase class.
 */
 
 #pragma once
@@ -24,60 +24,60 @@ namespace database
 class SampleDatabase
 {
 public:
-	typedef std::vector<std::string> StringVector;
-	typedef std::vector<Sample> SampleVector;
+    typedef std::vector<std::string> StringVector;
+    typedef std::vector<Sample> SampleVector;
 
-	typedef SampleVector::iterator iterator;
-	typedef SampleVector::const_iterator const_iterator;
-
-public:
-	SampleDatabase();
-	SampleDatabase(const std::string& path);
-	~SampleDatabase();
+    typedef SampleVector::iterator iterator;
+    typedef SampleVector::const_iterator const_iterator;
 
 public:
-	StringVector getAllPossibleLabels() const;
-	size_t getTotalLabelCount() const;
+    SampleDatabase();
+    SampleDatabase(const std::string& path);
+    ~SampleDatabase();
 
 public:
-	iterator begin();
-	const_iterator begin() const;
-
-	iterator end();
-	const_iterator end() const;
+    StringVector getAllPossibleLabels() const;
+    size_t getTotalLabelCount() const;
 
 public:
-	size_t size()  const;
-	bool   empty() const;
+    iterator begin();
+    const_iterator begin() const;
+
+    iterator end();
+    const_iterator end() const;
 
 public:
-	const std::string& path() const;
+    size_t size()  const;
+    bool   empty() const;
 
 public:
-	bool containsVideoSamples() const;
-	bool containsImageSamples() const;
-	bool containsAudioSamples() const;
-	bool containsTextSamples() const;
+    const std::string& path() const;
 
 public:
-	void addSample(const Sample& sample);
-	void addLabel(const std::string& label);
+    bool containsVideoSamples() const;
+    bool containsImageSamples() const;
+    bool containsAudioSamples() const;
+    bool containsTextSamples() const;
+
+public:
+    void addSample(const Sample& sample);
+    void addLabel(const std::string& label);
 
 public:
     void save() const;
 
 public:
-	void load();
+    void load();
 
 private:
-	typedef std::set<std::string> StringSet;
+    typedef std::set<std::string> StringSet;
 
 private:
-	std::string _path;
+    std::string _path;
 
 private:
-	SampleVector _samples;
-	StringSet    _labels;
+    SampleVector _samples;
+    StringSet    _labels;
 
 };
 

@@ -18,33 +18,33 @@ namespace optimizer
 class NeuralNetworkSolver
 {
 public:
-	typedef network::NeuralNetwork NeuralNetwork;
-	typedef matrix::Matrix         Matrix;
+    typedef network::NeuralNetwork NeuralNetwork;
+    typedef matrix::Matrix         Matrix;
 
 public:
-	NeuralNetworkSolver(NeuralNetwork* n);
+    NeuralNetworkSolver(NeuralNetwork* n);
 
-	virtual ~NeuralNetworkSolver();
-
-public:
-	virtual void solve() = 0;
+    virtual ~NeuralNetworkSolver();
 
 public:
-	virtual NeuralNetworkSolver* clone() const = 0;
+    virtual void solve() = 0;
 
 public:
-	void setInput(const Matrix* input);
-	void setReference(const Matrix* reference);
-	void setNetwork(NeuralNetwork* network);
+    virtual NeuralNetworkSolver* clone() const = 0;
 
 public:
-	static NeuralNetworkSolver* create(NeuralNetwork* n);
+    void setInput(const Matrix* input);
+    void setReference(const Matrix* reference);
+    void setNetwork(NeuralNetwork* network);
+
+public:
+    static NeuralNetworkSolver* create(NeuralNetwork* n);
 
 protected:
-	NeuralNetwork* _network;
+    NeuralNetwork* _network;
 
-	const Matrix* _input;
-	const Matrix* _reference;
+    const Matrix* _input;
+    const Matrix* _reference;
 };
 
 }

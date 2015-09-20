@@ -1,7 +1,7 @@
 /*! \file   Sample.h
-	\date   Saturday December 6, 2013
-	\author Gregory Diamos <solusstutus@gmail.com>
-	\brief  The header file for the Sample class.
+    \date   Saturday December 6, 2013
+    \author Gregory Diamos <solusstutus@gmail.com>
+    \brief  The header file for the Sample class.
 */
 
 #pragma once
@@ -20,36 +20,36 @@ namespace database
 class Sample
 {
 public:
-	typedef std::vector<std::string> StringVector;
+    typedef std::vector<std::string> StringVector;
 
 public:
-	Sample(const std::string& path = "",
-		const std::string& label = "",
-		size_t beginFrame = 0,
-		size_t endFrame   = 0);
+    Sample(const std::string& path = "",
+        const std::string& label = "",
+        size_t beginFrame = 0,
+        size_t endFrame   = 0);
 
 public:
-	const std::string& path()  const;
-	const std::string& label() const;
+    const std::string& path()  const;
+    const std::string& label() const;
 
 public:
-	size_t beginFrame() const;
-	size_t endFrame() const;
+    size_t beginFrame() const;
+    size_t endFrame() const;
 
 public:
-	bool isVideoSample() const;
-	bool isImageSample() const;
-	bool isAudioSample() const;
+    bool isVideoSample() const;
+    bool isImageSample() const;
+    bool isAudioSample() const;
 
-	bool hasLabel() const;
+    bool hasLabel() const;
 
 private:
-	std::string _path;
-	std::string _label;
+    std::string _path;
+    std::string _label;
 
 private:
-	size_t _beginFrame;
-	size_t _endFrame;
+    size_t _beginFrame;
+    size_t _endFrame;
 
 };
 

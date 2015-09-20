@@ -1,7 +1,7 @@
-/*	\file   PropertyTree-inl.h
-	\date   Saturday August 10, 2015
-	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The template implementation file for the PropertyTree class.
+/*    \file   PropertyTree-inl.h
+    \date   Saturday August 10, 2015
+    \author Gregory Diamos <solusstultus@gmail.com>
+    \brief  The template implementation file for the PropertyTree class.
 */
 
 #pragma once
