@@ -726,12 +726,9 @@ void LibavcodecLibrary::Interface::load()
 
     DynLink(av_opt_get_int);
     DynLink(av_opt_get);
-    DynLink(av_opt_get_channel_layout);
 
     DynLink(av_opt_set);
     DynLink(av_opt_set_int);
-    DynLink(av_opt_set_sample_fmt);
-    DynLink(av_opt_set_channel_layout);
 
     DynLink(av_opt_show2);
 
@@ -767,9 +764,13 @@ void LibavcodecLibrary::Interface::load()
 
     _tryLink(reinterpret_cast<void*&>(av_frame_alloc), {"av_frame_alloc", "avcodec_alloc_frame"});
 
+    // Optionally supported functions
     util::bit_cast(av_frame_set_channel_layout, dlsym(_library, "av_frame_set_channel_layout"));
     util::bit_cast(av_codec_set_pkt_timebase, dlsym(_library, "av_codec_set_pkt_timebase"));
     util::bit_cast(av_opt_get_sample_fmt, dlsym(_library, "av_opt_get_sample_fmt"));
+    util::bit_cast(av_opt_get_channel_layout, dlsym(_library, "av_opt_get_channel_layout"));
+    util::bit_cast(av_opt_set_sample_fmt, dlsym(_library, "av_opt_set_sample_fmt"));
+    util::bit_cast(av_opt_set_channel_layout, dlsym(_library, "av_opt_set_channel_layout"));
 
     (*avcodec_register_all)();
     (*av_register_all)();
