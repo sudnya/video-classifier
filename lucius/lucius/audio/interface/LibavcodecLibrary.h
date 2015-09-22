@@ -415,6 +415,20 @@ public:
         enum AVPictureType pict_type;
         AVRational sample_aspect_ratio;
         int64_t pts;
+        int64_t pkt_pts;
+        int64_t pkt_dts;
+        int coded_picture_number;
+        int display_picture_number;
+        int quality;
+        void* opaque;
+        uint64_t error[AV_NUM_DATA_POINTERS];
+        int repeat_pict;
+        int interlaced_frame;
+        int top_field_first;
+        int palette_has_changed;
+        int64_t reordered_opaque;
+        int sample_rate;
+        uint64_t channel_layout;
     };
 
     class AVInputFormat;

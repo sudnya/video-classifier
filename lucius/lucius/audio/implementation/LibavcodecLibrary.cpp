@@ -502,9 +502,14 @@ int LibavcodecLibrary::av_opt_show2(void* obj, void* av_log_obj, int req_flags, 
     return (*_interface.av_opt_show2)(obj, av_log_obj, req_flags, rej_flags);
 }
 
-void LibavcodecLibrary::av_frame_set_channel_layout(AVFrame *frame, int64_t val)
+void LibavcodecLibrary::av_frame_set_channel_layout(AVFrame* frame, int64_t val)
 {
     _check();
+
+    if(_interface.av_frame_set_channel_layout == nullptr)
+    {
+        frame->channel_layout = val;
+    }
 
     return (*_interface.av_frame_set_channel_layout)(frame, val);
 }
@@ -730,8 +735,6 @@ void LibavcodecLibrary::Interface::load()
 
     DynLink(av_opt_show2);
 
-    DynLink(av_frame_set_channel_layout);
-
     DynLink(av_get_channel_layout_nb_channels);
 
     DynLink(avformat_alloc_context);
@@ -764,6 +767,7 @@ void LibavcodecLibrary::Interface::load()
 
     _tryLink(reinterpret_cast<void*&>(av_frame_alloc), {"av_frame_alloc", "avcodec_alloc_frame"});
 
+    util::bit_cast(av_frame_set_channel_layout, dlsym(_library, "av_frame_set_channel_layout"));
     util::bit_cast(av_codec_set_pkt_timebase, dlsym(_library, "av_codec_set_pkt_timebase"));
     util::bit_cast(av_opt_get_sample_fmt, dlsym(_library, "av_opt_get_sample_fmt"));
 
