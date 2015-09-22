@@ -17,6 +17,9 @@
 #include <fstream>
 #include <cassert>
 #include <iostream>
+#include <stdexcept>
+#include <memory>
+#include <cstring>
 
 namespace lucius
 {
