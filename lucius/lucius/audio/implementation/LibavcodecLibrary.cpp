@@ -758,11 +758,11 @@ void LibavcodecLibrary::Interface::load()
     DynLink(av_free);
     DynLink(av_free_packet);
     DynLink(avcodec_close);
-    DynLink(av_frame_free);
 
     #undef DynLink
 
     _tryLink(reinterpret_cast<void*&>(av_frame_alloc), {"av_frame_alloc", "avcodec_alloc_frame"});
+    _tryLink(reinterpret_cast<void*&>(av_frame_free),  {"av_frame_free",  "av_free"});
 
     // Optionally supported functions
     util::bit_cast(av_frame_set_channel_layout, dlsym(_library, "av_frame_set_channel_layout"));
