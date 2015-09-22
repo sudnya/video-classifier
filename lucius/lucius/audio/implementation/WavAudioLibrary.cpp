@@ -9,6 +9,8 @@
 
 // Standard Library Includes
 #include <cassert>
+#include <stdexcept>
+#include <cstring>
 
 namespace lucius
 {

@@ -22,6 +22,7 @@
 // Standard Library Includes
 #include <random>
 #include <fstream>
+#include <algorithm>
 
 namespace lucius
 {

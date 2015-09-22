@@ -14,6 +14,7 @@
 // Standard Library Includes
 #include <cassert>
 #include <fstream>
+#include <cstring>
 
 namespace lucius
 {
