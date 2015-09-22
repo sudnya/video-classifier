@@ -427,7 +427,7 @@ void LibavcodecLibrary::av_codec_set_pkt_timebase(AVCodecContext* avctx, AVRatio
 
     if(_interface.av_codec_set_pkt_timebase == nullptr)
     {
-        avctx->pkt_timebase = val;
+        //avctx->pkt_timebase = val;
         return;
     }
 
@@ -721,7 +721,6 @@ void LibavcodecLibrary::Interface::load()
 
     DynLink(av_opt_get_int);
     DynLink(av_opt_get);
-    DynLink(av_opt_get_sample_fmt);
     DynLink(av_opt_get_channel_layout);
 
     DynLink(av_opt_set);
@@ -766,6 +765,7 @@ void LibavcodecLibrary::Interface::load()
     _tryLink(reinterpret_cast<void*&>(av_frame_alloc), {"av_frame_alloc", "avcodec_alloc_frame"});
 
     util::bit_cast(av_codec_set_pkt_timebase, dlsym(_library, "av_codec_set_pkt_timebase"));
+    util::bit_cast(av_opt_get_sample_fmt, dlsym(_library, "av_opt_get_sample_fmt"));
 
     (*avcodec_register_all)();
     (*av_register_all)();
