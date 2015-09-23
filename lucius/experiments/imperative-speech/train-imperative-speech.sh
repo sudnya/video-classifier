@@ -6,7 +6,7 @@ CUDA_DEVICES="0"
 
 INPUT_TRAINING_DATASET="/mnt/Data/summer2015/imperative-speech/training/database.txt"
 INPUT_VALIDATION_DATASET="/mnt/Data/summer2015/imperative-speech/validation/database.txt"
-LOGS="NesterovAcceleratedGradientSolver,BenchmarkImageNet,LabelMatchResultProcessor"
+LOGS="NesterovAcceleratedGradientSolver,BenchmarkImperativeSpeech,InputAudioDataProducer,LabelMatchResultProcessor"
 
 LAYER_SIZE="128"
 SAMPLING_RATE=8000
