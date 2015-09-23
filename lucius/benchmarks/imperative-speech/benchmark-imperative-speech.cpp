@@ -236,6 +236,7 @@ int main(int argc, char** argv)
     Parameters parameters;
 
     std::string loggingEnabledModules;
+    std::string logFile;
     bool verbose = false;
 
     parser.description("A test for lucius recurrent network speech recognition performance.");
@@ -282,6 +283,8 @@ int main(int argc, char** argv)
         "The number of feed forward layers.");
     parser.parse("-r", "--recurrent-layers", parameters.recurrentLayers, 1,
         "The number of recurrent layers.");
+    parser.parse("", "--log-file", logFile, "",
+        "Save output to this logfile instead of std::cout.");
 
     parser.parse("-v", "--verbose", verbose, false,
         "Print out log messages during execution");
@@ -289,6 +292,11 @@ int main(int argc, char** argv)
     parser.parse();
 
     setupSolverParameters(parameters);
+
+    if(!logFile.empty())
+    {
+        lucius::util::setLogFile(logFile);
+    }
 
     if(verbose)
     {
