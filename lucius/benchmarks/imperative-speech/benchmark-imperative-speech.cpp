@@ -63,6 +63,9 @@ public:
     double learningRate;
     double momentum;
 
+    double noiseRateLower;
+    double noiseRateUpper;
+
     size_t maximumSamples;
 
     bool seed;
@@ -222,6 +225,10 @@ static void setupSolverParameters(const Parameters& parameters)
         parameters.learningRate);
     lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::Momentum",
         parameters.momentum);
+    lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::NoiseRateLower",
+        parameters.noiseRateLower);
+    lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::NoiseRateUpper",
+        parameters.noiseRateUpper);
     lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::AnnealingRate", "1.0001");
     lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::MaxGradNorm",   "100.0");
     lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::IterationsPerBatch", "1");
@@ -278,6 +285,11 @@ int main(int argc, char** argv)
         "The input audio sampling rate in hertz.");
     parser.parse("", "--frame-duration", parameters.frameDuration, 160,
         "The number of input samples per frame.");
+
+    parser.parse("", "--noise-rate-lower",  parameters.noiseRateLower, 0.0,
+        "The minimum magnitude to scale noise by.");
+    parser.parse("", "--noise-rate-upper", parameters.noiseRateUpper, 0.2,
+        "The maximum magnitude to scale noise by.");
 
     parser.parse("-f", "--forward-layers", parameters.forwardLayers, 4,
         "The number of feed forward layers.");
