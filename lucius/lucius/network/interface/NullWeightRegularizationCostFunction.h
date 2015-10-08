@@ -1,5 +1,5 @@
-/*  \file   WeightRegularizationCostFunction.h
-    \date   November 19, 2014
+/*  \file   NullWeightRegularizationCostFunction.h
+    \date   September 28, 2015
     \author Gregory Diamos <solusstultus@gmail.com>
     \brief  The header file for the WeightCostFunction class.
 */
@@ -15,10 +15,10 @@ namespace lucius
 namespace network
 {
 
-class WeightRegularizationCostFunction : public WeightCostFunction
+class NullWeightRegularizationCostFunction : public WeightCostFunction
 {
 public:
-    virtual ~WeightRegularizationCostFunction();
+    virtual ~NullWeightRegularizationCostFunction();
 
 public:
     /*! \brief Run the cost function on the specified weights. */
@@ -38,6 +38,5 @@ public:
 }
 
 }
-
 
 

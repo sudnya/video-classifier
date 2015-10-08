@@ -44,8 +44,10 @@ Layer::~Layer()
 
 Layer::Layer(const Layer& l)
 : _activationFunction(l.getActivationFunction()->clone()),
-  _activationCostFunction(l.getActivationCostFunction() == nullptr ? nullptr : l.getActivationCostFunction()->clone()),
-  _weightCostFunction(l.getWeightCostFunction() == nullptr ? nullptr : l.getWeightCostFunction()->clone())
+  _activationCostFunction(l.getActivationCostFunction() == nullptr ?
+    nullptr : l.getActivationCostFunction()->clone()),
+  _weightCostFunction(l.getWeightCostFunction() == nullptr ?
+    nullptr : l.getWeightCostFunction()->clone())
 {
 
 }

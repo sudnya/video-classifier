@@ -148,7 +148,7 @@ void RecurrentLayer::runForwardImplementation(MatrixVector& activations) const
     size_t miniBatch       = inputActivations.size()[1];
     size_t timesteps       = inputActivations.size()[2];
 
-    auto unbiasedOutput = gemm(Matrix(_forwardWeights), false, 1.0, reshape(inputActivations, {activationCount, miniBatch * timesteps}), false);
+    auto unbiasedOutput = gemm(1.0, Matrix(_forwardWeights), false, 1.0, reshape(inputActivations, {activationCount, miniBatch * timesteps}), false);
 
     auto activation = broadcast(unbiasedOutput, _bias, {}, matrix::Add());
 
@@ -257,7 +257,7 @@ Matrix RecurrentLayer::runReverseImplementation(MatrixVector& gradients,
     // compute gradient for the forward weights
     auto samples = miniBatch;
 
-    auto weightGradient = gemm(Matrix(forwardDeltas), false, 1.0 / samples, forwardInputActivations, true);
+    auto weightGradient = gemm(1.0, Matrix(forwardDeltas), false, 1.0 / samples, forwardInputActivations, true);
 
     // add in the weight cost function term
     if(getWeightCostFunction() != nullptr)

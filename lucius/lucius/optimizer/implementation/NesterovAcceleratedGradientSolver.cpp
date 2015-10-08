@@ -51,8 +51,11 @@ static void reportProgress(double cost, double expcost, double gradientNorm, dou
     message << std::fixed;
 
     message << "Update (cost " << std::fixed << cost << ", running cost sum " << expcost
-        << ", gradient-norm " << gradientNorm << ", " << step << " step)\n";
-    
+        << ", gradient-norm " << gradientNorm << ", ";
+
+    message << std::scientific;
+    message << step << " step)\n";
+
     util::log("NesterovAcceleratedGradientSolver") << message.str();
 }
 

@@ -8,6 +8,7 @@
 #include <lucius/network/interface/WeightCostFunctionFactory.h>
 
 #include <lucius/network/interface/WeightRegularizationCostFunction.h>
+#include <lucius/network/interface/NullWeightRegularizationCostFunction.h>
 
 namespace lucius
 {
@@ -21,13 +22,17 @@ WeightCostFunction* WeightCostFunctionFactory::create(const std::string& costFun
     {
         return new WeightRegularizationCostFunction;
     }
+    else if(costFunctionName == "NullWeightRegularizationCostFunction")
+    {
+        return new NullWeightRegularizationCostFunction;
+    }
 
     return nullptr;
 }
 
 WeightCostFunction* WeightCostFunctionFactory::create()
 {
-    return create("WeightRegularizationCostFunction");
+    return create("NullWeightRegularizationCostFunction");
 }
 
 }

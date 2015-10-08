@@ -52,7 +52,7 @@ FeedForwardLayer::FeedForwardLayer(size_t inputs, size_t outputs)
 
 FeedForwardLayer::FeedForwardLayer(size_t inputs, size_t outputs, const matrix::Precision& precision)
 : _parameters(new MatrixVector({Matrix({outputs, inputs}, precision), Matrix({outputs}, precision)})),
- _weights((*_parameters)[0]), _bias((*_parameters)[1])
+  _weights((*_parameters)[0]), _bias((*_parameters)[1])
 {
 
 }
@@ -155,7 +155,7 @@ void FeedForwardLayer::runForwardImplementation(MatrixVector& activations) const
         util::log("FeedForwardLayer") << "  input shape: " << activations.back().shapeString() << "\n";
     }
 
-    auto unbiasedOutput = gemm(Matrix(_weights), false, 1.0, m, false);
+    auto unbiasedOutput = gemm(1.0, Matrix(_weights), false, 1.0, m, false);
 
     auto output = broadcast(unbiasedOutput, _bias, {}, matrix::Add());
 
@@ -234,7 +234,7 @@ matrix::Matrix FeedForwardLayer::runReverseImplementation(MatrixVector& gradient
     // compute gradient for the weights
     auto samples = activations.back().size()[1];
 
-    auto weightGradient = gemm(Matrix(deltas), false, 1.0 / samples, inputActivations, true);
+    auto weightGradient = gemm(1.0, Matrix(deltas), false, 1.0 / samples, inputActivations, true);
 
     // add in the weight cost function term
     if(getWeightCostFunction() != nullptr)
@@ -388,7 +388,7 @@ std::unique_ptr<Layer> FeedForwardLayer::clone() const
 
 std::unique_ptr<Layer> FeedForwardLayer::mirror() const
 {
-    return std::make_unique<FeedForwardLayer>(getInputCount(), getOutputCount(), precision());
+    return std::make_unique<FeedForwardLayer>(getOutputCount(), getInputCount(), precision());
 }
 
 std::string FeedForwardLayer::getTypeName() const

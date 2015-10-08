@@ -22,7 +22,7 @@ void gemm(Matrix& result, const Matrix& left, const Matrix& right)
 
 Matrix gemm(const Matrix& left, const Matrix& right)
 {
-    return gemm(left, false, 1.0, right, false);
+    return gemm(1.0, left, false, 1.0, right, false);
 }
 
 void gemm(Matrix& result, const Matrix& left, bool transposeLeft, const Matrix& right, bool transposeRight)
@@ -32,7 +32,7 @@ void gemm(Matrix& result, const Matrix& left, bool transposeLeft, const Matrix& 
 
 Matrix gemm(const Matrix& left, bool transposeLeft, const Matrix& right, bool transposeRight)
 {
-    return gemm(left, transposeLeft, 1.0, right, transposeRight);
+    return gemm(1.0, left, transposeLeft, 1.0, right, transposeRight);
 }
 
 void gemm(Matrix& result, double beta,
@@ -123,7 +123,7 @@ void gemm(Matrix& result, double beta,
     }
 }
 
-Matrix gemm(const Matrix& left, bool transposeLeft, double alpha,
+Matrix gemm(double beta, const Matrix& left, bool transposeLeft, double alpha,
     const Matrix& right, bool transposeRight)
 {
     size_t rows    = transposeLeft  ? left.size()[1]  : left.size()[0];
@@ -131,7 +131,7 @@ Matrix gemm(const Matrix& left, bool transposeLeft, double alpha,
 
     Matrix result({rows, columns}, left.precision());
 
-    gemm(result, 0.0, left, transposeLeft, alpha, right, transposeRight);
+    gemm(result, beta, left, transposeLeft, alpha, right, transposeRight);
 
     return result;
 }
