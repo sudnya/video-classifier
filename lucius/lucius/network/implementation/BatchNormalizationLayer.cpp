@@ -133,12 +133,12 @@ static void computeMeansAndVariances(Matrix& means, Matrix& variances,
     auto newMeans = apply(reduce(activations, {1}, matrix::Add()),
         matrix::Multiply(1.0 / activations.size()[1]));
 
-    auto deltas = apply(newMeans, means, matrix::Subtract());
+    auto deltas = apply(Matrix(newMeans), means, matrix::Subtract());
 
     apply(means, means, apply(deltas,
         matrix::Multiply(static_cast<double>(existingSamples) / samples)), matrix::Add());
 
-    auto newDifferences = broadcast(activations, newMeans, matrix::Subtract());
+    auto newDifferences = broadcast(activations, newMeans, {1}, matrix::Subtract());
     auto newSumOfSquareDifferences = reduce(apply(newDifferences, matrix::Square()), {1},
         matrix::Square());
 
@@ -155,30 +155,33 @@ static void computeMeansAndVariances(Matrix& means, Matrix& variances,
 
 static Matrix normalize(const Matrix& activations, const Matrix& means, const Matrix& variances)
 {
-    auto shifted = broadcast(activations, means, matrix::Subtract());
+    auto shifted = broadcast(activations, means, {1}, matrix::Subtract());
 
     auto deviation = apply(apply(variances, matrix::Add(std::numeric_limits<double>::epsilon())),
         matrix::Square());
 
-    return apply(shifted, deviation, matrix::Divide());
+    return apply(Matrix(shifted), deviation, matrix::Divide());
 }
 
 static Matrix scaleAndShift(const Matrix& activations, const Matrix& gamma, const Matrix& beta)
 {
-    return broadcast(broadcast(activations, gamma, matrix::Multiply()), beta, matrix::Add());
+    return broadcast(broadcast(activations, gamma, {1}, matrix::Multiply()),
+        beta, {1}, matrix::Add());
 }
 
 void BatchNormalizationLayer::runForwardImplementation(MatrixVector& activations) const
 {
     auto inputActivations = foldTime(activations.back());
 
-    computeMeansAndVariances(_means, _variances, inputActivations, _samples);
+    computeMeansAndVariances(_means, _variances, _sumOfSquaresOfDifferences,
+        inputActivations, _samples);
 
     auto normalizedActivations = normalize(inputActivations, _means, _variances);
 
-    auto outputActivations = unfoldTime(scaleAndShift(normalizedActivations, _gamma, _beta));
+    auto outputActivations = unfoldTime(scaleAndShift(normalizedActivations, _gamma, _beta),
+        activations.back().size());
 
-    activations.push_back(std::move(activation));
+    activations.push_back(std::move(activations));
 }
 
 Matrix BatchNormalizationLayer::runReverseImplementation(MatrixVector& gradients,
@@ -199,18 +202,18 @@ Matrix BatchNormalizationLayer::runReverseImplementation(MatrixVector& gradients
     // Get sizes
     size_t miniBatchSize = outputActivations.size()[1];
 
-    _samples += miniBatchSize;
+    const_cast<size_t&>(_samples) += miniBatchSize;
 
     // Compute derivatives:
 
     //  dl/dx^ = gamma * dl/dy
-    auto xHatDeltas = broadcast(deltas, _gamma, matrix::Multiply());
+    auto xHatDeltas = broadcast(deltas, _gamma, {1}, matrix::Multiply());
 
     //  inputMinusMean = input - mean
-    auto inputMinusMean = broadcast(inputActivations, _means, matrix::Subtract());
+    auto inputMinusMean = broadcast(inputActivations, _means, {1}, matrix::Subtract());
 
     // variancePlusEpsilon = variance + epsilon
-    auto variancePlusEpsilon = apply(_variance,
+    auto variancePlusEpsilon = apply(_variances,
         matrix::Add(std::numeric_limits<double>::epsilon()));
 
     //  dl/dVariance = sum_mini_batch(dl/dx^ * (inputMinusMean) * (-1.0/2.0) * (variance + epsilon)^(-3.0/2.0))
@@ -218,9 +221,10 @@ Matrix BatchNormalizationLayer::runReverseImplementation(MatrixVector& gradients
         matrix::Multiply(-1.0/2.0));
 
     auto variancePlusEpsilonPowHalfTimesInputMinusMean = broadcast(inputMinusMean,
-        variancePlusEpsilonPowHalf, matrix::Multiply());
+        variancePlusEpsilonPowHalf, {1}, matrix::Multiply());
 
-    auto varianceDeltas = reduce(apply(xHatDeltas, variancePlusEpsilonPowHalfTimesInputMinusMean,
+    auto varianceDeltas = reduce(
+        apply(Matrix(xHatDeltas), variancePlusEpsilonPowHalfTimesInputMinusMean,
         matrix::Multiply()), {1}, matrix::Add());
 
     // dl/dMean = (-1.0 / sqrt(variance + epsilon)) * sum_over_mini_batch(xHatDeltas) +
@@ -230,29 +234,29 @@ Matrix BatchNormalizationLayer::runReverseImplementation(MatrixVector& gradients
     auto negativeInverseSqrtVariancePlusEpsilon = apply(apply(sqrtVariancePlusEpsilon,
         matrix::Inverse()), matrix::Multiply(-1.0));
 
-    auto leftMeanDeltas = apply(negativeInverseSqrtVariancePlusEpsilon,
+    auto leftMeanDeltas = apply(Matrix(negativeInverseSqrtVariancePlusEpsilon),
         reduce(xHatDeltas, {1}, matrix::Add()), matrix::Multiply());
 
-    auto rightMeanDeltas = apply(varianceDeltas,
-        reduce(apply(inputMinuxMean, matrix::Multiply(-2.0 / miniBatchSize)), {1}, matrix::Add()),
+    auto rightMeanDeltas = apply(Matrix(varianceDeltas),
+        reduce(apply(inputMinusMean, matrix::Multiply(-2.0 / miniBatchSize)), {1}, matrix::Add()),
         matrix::Multiply());
 
-    auto meanDeltas = apply(leftMeanDeltas, rightMeanDeltas, matrix::Add());
+    auto meanDeltas = apply(Matrix(leftMeanDeltas), rightMeanDeltas, matrix::Add());
 
     // dl/dx = dl/dx^ * 1.0 / sqrt(variance + epsilon) +
     //         dl/dVariance * 2.0 (x - mean) / miniBatchSize +
     //         dl/dmean * 1.0 / miniBatchSize
 
     auto leftInputDeltas = broadcast(xHatDeltas,
-        apply(sqrtVariancePlusEpsilon, matrix::Inverse()), matrix::Multiply());
+        apply(sqrtVariancePlusEpsilon, matrix::Inverse()), {1}, matrix::Multiply());
 
     auto middleInputDeltas = apply(apply(inputMinusMean, matrix::Multiply(2.0 / miniBatchSize)),
         matrix::Multiply());
 
     auto rightInputDeltas = apply(meanDeltas, matrix::Multiply(1.0 / miniBatchSize));
 
-    auto inputDeltas = broadcast(broadcast(leftInputDeltas, middleInputDeltas, matrix::Add()),
-        rightInputDeltas, matrix::Add());
+    auto inputDeltas = broadcast(broadcast(leftInputDeltas, middleInputDeltas, {1}, matrix::Add()),
+        rightInputDeltas, {1}, matrix::Add());
 
     // dl/dBeta = sum_over_mini_batch(dl/dy)
     auto betaDeltas = reduce(deltas, {1}, matrix::Add());
@@ -265,7 +269,7 @@ Matrix BatchNormalizationLayer::runReverseImplementation(MatrixVector& gradients
 
     gradients.push_back(gammaDeltas);
 
-    return unfoldTime(inputDeltas);
+    return unfoldTime(inputDeltas, outputActivations.size());
 }
 
 MatrixVector& BatchNormalizationLayer::weights()
