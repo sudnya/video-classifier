@@ -59,7 +59,7 @@ BatchNormalizationLayer::~BatchNormalizationLayer()
 BatchNormalizationLayer::BatchNormalizationLayer(const BatchNormalizationLayer& l)
 : _parameters(std::make_unique<MatrixVector>(*l._parameters)),
   _gamma((*_parameters)[0]), _beta((*_parameters)[1]),
-  _internal_parameters(std::make_unique<MatrixVector>(*l._parameters)),
+  _internal_parameters(std::make_unique<MatrixVector>(*l._internal_parameters)),
   _means((*_internal_parameters)[0]), _variances((*_internal_parameters)[1]),
   _samples(l._samples)
 {
@@ -145,17 +145,21 @@ static void updateMeansAndVariances(Matrix& means, Matrix& variances,
     Matrix& onlineMeans, Matrix& onlineVariances,
     const Matrix& activations, size_t& existingSamples)
 {
+    // Xb
     means = computeMeans(activations);
     variances = computeVariances(activations, means);
 
     size_t totalSamples = existingSamples + activations.size()[1];
 
+    // delta = Xb - Xa
     auto deltas = apply(Matrix(means), onlineMeans, matrix::Subtract());
 
+    // Xx
     apply(onlineMeans, onlineMeans, apply(deltas,
         matrix::Multiply(static_cast<double>(activations.size()[1]) / totalSamples)),
         matrix::Add());
 
+    // M2b
     auto differences = broadcast(activations, means, {1}, matrix::Subtract());
     auto sumOfSquareDifferences = reduce(apply(differences, matrix::Square()), {1},
         matrix::Add());
@@ -164,6 +168,7 @@ static void updateMeansAndVariances(Matrix& means, Matrix& variances,
         matrix::Multiply(
             static_cast<double>(existingSamples) * activations.size()[1] / totalSamples));
 
+    // M2a
     auto onlineSumOfSquareDifferences = apply(onlineVariances,
         matrix::Multiply(existingSamples));
 
@@ -462,7 +467,7 @@ void BatchNormalizationLayer::save(util::OutputTarArchive& archive,
     saveToArchive(archive, properties["gamma"], _gamma);
     saveToArchive(archive, properties["beta"],  _beta);
 
-    saveToArchive(archive, properties["means"], _beta);
+    saveToArchive(archive, properties["means"], _means);
     saveToArchive(archive, properties["variances"], _variances);
 
     saveLayer(archive, properties);
@@ -474,7 +479,7 @@ void BatchNormalizationLayer::load(util::InputTarArchive& archive,
     _gamma = matrix::loadFromArchive(archive, properties["gamma"]);
     _beta  = matrix::loadFromArchive(archive, properties["beta"]);
 
-    _means = matrix::loadFromArchive(archive, properties["beta"]);
+    _means = matrix::loadFromArchive(archive, properties["means"]);
     _variances = matrix::loadFromArchive(archive, properties["variances"]);
     _samples = properties.get<size_t>("samples");
 
@@ -483,7 +488,7 @@ void BatchNormalizationLayer::load(util::InputTarArchive& archive,
 
 std::unique_ptr<Layer> BatchNormalizationLayer::clone() const
 {
-    return std::make_unique<BatchNormalizationLayer>(getInputCount(), precision());
+    return std::make_unique<BatchNormalizationLayer>(*this);
 }
 
 std::unique_ptr<Layer> BatchNormalizationLayer::mirror() const

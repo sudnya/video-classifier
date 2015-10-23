@@ -532,7 +532,7 @@ int main(int argc, char** argv)
     size_t layerSize  = 0;
     size_t layerCount = 0;
     size_t timesteps  = 0;
-    size_t batchSize  = 2;
+    size_t batchSize  = 10;
 
     parser.description("The lucius neural network gradient check.");
 
