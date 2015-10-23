@@ -193,7 +193,7 @@ public:
 
     CUDA_DECORATOR float operator()(const float& l) const
     {
-        return powf(l, _value);
+        return powf(l, static_cast<float>(_value));
     }
 
 public:
@@ -678,7 +678,7 @@ public:
     template<typename T>
     CUDA_DECORATOR T operator()(const T& r) const
     {
-        return 1.0 / r;
+        return T(1.0) / r;
     }
 
 };

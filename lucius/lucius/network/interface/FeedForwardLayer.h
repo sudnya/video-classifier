@@ -37,10 +37,10 @@ public:
     virtual void initialize();
 
 public:
-    virtual void runForwardImplementation(MatrixVector& activations) const;
+    virtual void runForwardImplementation(MatrixVector& activations);
     virtual Matrix runReverseImplementation(MatrixVector& gradients,
         MatrixVector& activations,
-        const Matrix& deltas) const;
+        const Matrix& deltas);
 
 public:
     virtual       MatrixVector& weights();

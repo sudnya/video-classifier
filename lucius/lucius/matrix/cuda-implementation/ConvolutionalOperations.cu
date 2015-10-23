@@ -1297,7 +1297,7 @@ void genericReverseConvolutionGradientsOverPrecisions(Matrix& gradients, const M
     auto reshapedDeltas = gatherReverseConvolutionGradientsDeltas(deltasFoldedTime, PrecisionType());
 
     // then multiply like forward convolution
-    auto reshapedGradients = gemm(1.0, Matrix(reshapedDeltas), false, alpha, reshapedInput, false);
+    auto reshapedGradients = gemm(Matrix(reshapedDeltas), false, alpha, reshapedInput, false);
 
     scatterReverseConvolutionGradientsResult(gradients, reshapedGradients, PrecisionType());
 }

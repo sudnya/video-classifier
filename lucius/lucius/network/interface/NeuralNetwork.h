@@ -48,18 +48,18 @@ public:
 public:
     /*! \brief Get the cost and gradient. */
     double getCostAndGradient(MatrixVector& gradient,
-        const Matrix& input, const Matrix& reference) const;
+        const Matrix& input, const Matrix& reference);
     /*! \brief Get the cost. */
-    double getCost(const Matrix& input, const Matrix& reference) const;
+    double getCost(const Matrix& input, const Matrix& reference);
 
 public:
     /*! \brief Get the cost and gradient with respect to the inputs. */
     double getInputCostAndGradient(Matrix& gradient,
-        const Matrix& input, const Matrix& reference) const;
+        const Matrix& input, const Matrix& reference);
 
 public:
     /*! \brief Run input samples through the network, return the output */
-    Matrix runInputs(const Matrix& m) const;
+    Matrix runInputs(const Matrix& m);
 
 public:
     /*! \brief Add an existing layer, the network takes ownership */
@@ -156,6 +156,10 @@ public:
     void save(util::OutputTarArchive& archive, util::PropertyTree& properties) const;
     /*! \brief Intialize the network from the tar file and header. */
     void load(util::InputTarArchive& archive, const util::PropertyTree& properties);
+
+public:
+    /*! \brief Indicate that the network is being trained or not. */
+    void setIsTraining(bool training);
 
 public:
     std::string shapeString() const;

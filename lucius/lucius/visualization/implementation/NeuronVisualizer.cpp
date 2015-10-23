@@ -45,13 +45,13 @@ typedef network::NeuralNetwork NeuralNetwork;
 typedef video::Image Image;
 typedef optimizer::ConstantConstraint ConstantConstraint;
 
-NeuronVisualizer::NeuronVisualizer(const NeuralNetwork* network)
+NeuronVisualizer::NeuronVisualizer(NeuralNetwork* network)
 : _network(network)
 {
 
 }
 
-static void visualizeNeuron(const NeuralNetwork& , Image& , size_t);
+static void visualizeNeuron(NeuralNetwork& , Image& , size_t);
 
 void NeuronVisualizer::visualizeNeuron(Image& image, size_t outputNeuron)
 {
@@ -59,11 +59,11 @@ void NeuronVisualizer::visualizeNeuron(Image& image, size_t outputNeuron)
 }
 
 static void getTileDimensions(size_t& x, size_t& y, size_t& colors,
-    const NeuralNetwork& tile);
+    NeuralNetwork& tile);
 static size_t sqrtRoundUp(size_t);
-static size_t getXPixelsPerTile(const NeuralNetwork& );
-static size_t getYPixelsPerTile(const NeuralNetwork& );
-static size_t getColorsPerTile(const NeuralNetwork& );
+static size_t getXPixelsPerTile(NeuralNetwork& );
+static size_t getYPixelsPerTile(NeuralNetwork& );
+static size_t getColorsPerTile(NeuralNetwork& );
 
 Image NeuronVisualizer::visualizeInputTileForNeuron(size_t outputNeuron)
 {
@@ -118,7 +118,7 @@ Image NeuronVisualizer::visualizeInputTilesForAllNeurons()
 }
 
 static void getTileDimensions(size_t& x, size_t& y, size_t& colors,
-    const NeuralNetwork& tile)
+    NeuralNetwork& tile)
 {
     x = getXPixelsPerTile(tile);
     y = getYPixelsPerTile(tile);
@@ -138,41 +138,41 @@ static size_t sqrtRoundUp(size_t value)
     return result;
 }
 
-static size_t getXPixelsPerTile(const NeuralNetwork& network)
+static size_t getXPixelsPerTile(NeuralNetwork& network)
 {
     return getYPixelsPerTile(network);
 }
 
-static size_t getYPixelsPerTile(const NeuralNetwork& network)
+static size_t getYPixelsPerTile(NeuralNetwork& network)
 {
     size_t inputs = network.getInputCount();
 
     return sqrtRoundUp(inputs / getColorsPerTile(network));
 }
 
-static size_t getColorsPerTile(const NeuralNetwork& network)
+static size_t getColorsPerTile(NeuralNetwork& network)
 {
     size_t inputs = network.getInputCount();
 
     return inputs % 3 == 0 ? 3 : 1;
 }
 
-static Matrix optimizeWithDerivative(const NeuralNetwork*, const Image& , size_t);
+static Matrix optimizeWithDerivative(NeuralNetwork*, const Image& , size_t);
 static void updateImage(Image& , const Matrix& );
 
-static void visualizeNeuron(const NeuralNetwork& network, Image& image, size_t outputNeuron)
+static void visualizeNeuron(NeuralNetwork& network, Image& image, size_t outputNeuron)
 {
     auto matrix = optimizeWithDerivative(&network, image, outputNeuron);
 
     updateImage(image, matrix);
 }
 
-void NeuronVisualizer::setNeuralNetwork(const NeuralNetwork* network)
+void NeuronVisualizer::setNeuralNetwork(NeuralNetwork* network)
 {
     _network = network;
 }
 
-static Matrix generateRandomImage(const NeuralNetwork* network, double range)
+static Matrix generateRandomImage(NeuralNetwork* network, double range)
 {
     return apply(matrix::rand({network->getInputCount()}, network->precision()), matrix::Multiply(range));
 }
@@ -180,7 +180,7 @@ static Matrix generateRandomImage(const NeuralNetwork* network, double range)
 class CostAndGradientFunction : public optimizer::CostAndGradientFunction
 {
 public:
-    CostAndGradientFunction(const NeuralNetwork* n, const Matrix* r)
+    CostAndGradientFunction(NeuralNetwork* n, const Matrix* r)
     : _network(n), _reference(r)
     {
 
@@ -205,11 +205,11 @@ public:
     }
 
 private:
-    const NeuralNetwork* _network;
-    const Matrix*        _reference;
+    NeuralNetwork* _network;
+    const Matrix*  _reference;
 };
 
-static Matrix generateReferenceForNeuron(const NeuralNetwork* network,
+static Matrix generateReferenceForNeuron(NeuralNetwork* network,
     size_t neuron)
 {
     Matrix reference(1, network->getOutputCount());
@@ -226,7 +226,7 @@ static void addConstraints(optimizer::GeneralDifferentiableSolver& solver)
     solver.addConstraint(ConstantConstraint(-1.0f, ConstantConstraint::GreaterThanOrEqual));
 }
 
-static Matrix optimizeWithDerivative(double& bestCost, const NeuralNetwork* network,
+static Matrix optimizeWithDerivative(double& bestCost, NeuralNetwork* network,
     const Matrix& input, size_t neuron)
 {
     auto reference = generateReferenceForNeuron(network, neuron);
@@ -259,7 +259,7 @@ static Matrix optimizeWithDerivative(double& bestCost, const NeuralNetwork* netw
     return bestSoFar.front();
 }
 
-static Matrix optimizeWithDerivative(const NeuralNetwork* network,
+static Matrix optimizeWithDerivative(NeuralNetwork* network,
     const Image& image, size_t neuron)
 {
     double range = util::KnobDatabase::getKnobValue("NeuronVisualizer::InputRange", 0.01f);

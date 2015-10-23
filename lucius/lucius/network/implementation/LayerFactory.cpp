@@ -10,6 +10,7 @@
 #include <lucius/network/interface/FeedForwardLayer.h>
 #include <lucius/network/interface/RecurrentLayer.h>
 #include <lucius/network/interface/ConvolutionalLayer.h>
+#include <lucius/network/interface/BatchNormalizationLayer.h>
 
 #include <lucius/matrix/interface/Dimension.h>
 
@@ -66,6 +67,12 @@ std::unique_ptr<Layer> LayerFactory::create(const std::string& name, const Param
             matrix::Dimension({strideWidth, strideHeight}),
             matrix::Dimension({paddingWidth, paddingHeight})
         );
+    }
+    else if ("BatchNormalizationLayer" == name)
+    {
+        size_t size = parameters.get("Size", 1);
+
+        return std::make_unique<BatchNormalizationLayer>(size);
     }
 
     return nullptr;

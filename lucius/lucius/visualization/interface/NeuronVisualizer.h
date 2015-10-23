@@ -26,7 +26,7 @@ public:
     typedef video::Image Image;
 
 public:
-    NeuronVisualizer(const NeuralNetwork* network);
+    NeuronVisualizer(NeuralNetwork* network);
 
 public:
     void visualizeNeuron(Image& image, size_t outputNeuron);
@@ -34,10 +34,10 @@ public:
     Image visualizeInputTilesForAllNeurons();
 
 public:
-    void setNeuralNetwork(const NeuralNetwork* network);
+    void setNeuralNetwork(NeuralNetwork* network);
 
 private:
-    const NeuralNetwork* _network;
+    NeuralNetwork* _network;
 };
 
 }

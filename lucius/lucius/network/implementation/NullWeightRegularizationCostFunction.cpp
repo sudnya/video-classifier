@@ -8,7 +8,7 @@
 #include <lucius/network/interface/NullWeightRegularizationCostFunction.h>
 
 #include <lucius/matrix/interface/Matrix.h>
-#include <lucius/matrix/interface/CopyOperations.h>
+#include <lucius/matrix/interface/MatrixOperations.h>
 
 namespace lucius
 {
@@ -29,7 +29,7 @@ double NullWeightRegularizationCostFunction::getCost(const Matrix& weights) cons
 NullWeightRegularizationCostFunction::Matrix NullWeightRegularizationCostFunction::getGradient(
     const Matrix& weights) const
 {
-    return copy(weights);
+    return zeros(weights.size(), weights.precision());
 }
 
 WeightCostFunction* NullWeightRegularizationCostFunction::clone() const

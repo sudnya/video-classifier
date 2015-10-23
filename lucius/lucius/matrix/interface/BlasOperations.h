@@ -18,7 +18,7 @@ Matrix gemm(const Matrix& left, bool transposeLeft, const Matrix& right, bool tr
 void gemm(Matrix& result, double beta,
     const Matrix& left, bool transposeLeft, double alpha,
     const Matrix& right, bool transposeRight);
-Matrix gemm(double beta, const Matrix& left, bool transposeLeft, double alpha,
+Matrix gemm(const Matrix& left, bool transposeLeft, double alpha,
     const Matrix& right, bool transposeRight);
 
 }

@@ -25,7 +25,8 @@ public:
     ConvolutionalLayer(const matrix::Dimension& inputSize, const matrix::Dimension& filterSize,
         const matrix::Dimension& filterStride, const matrix::Dimension& inputPadding);
     ConvolutionalLayer(const matrix::Dimension& inputSize, const matrix::Dimension& filterSize,
-        const matrix::Dimension& filterStride, const matrix::Dimension& inputPadding, const matrix::Precision&);
+        const matrix::Dimension& filterStride, const matrix::Dimension& inputPadding,
+        const matrix::Precision&);
 
 public:
     ConvolutionalLayer(const ConvolutionalLayer& );
@@ -35,10 +36,10 @@ public:
     virtual void initialize();
 
 public:
-    virtual void runForwardImplementation(MatrixVector& activations) const;
+    virtual void runForwardImplementation(MatrixVector& activations);
     virtual Matrix runReverseImplementation(MatrixVector& gradients,
         MatrixVector& activations,
-        const Matrix& deltas) const;
+        const Matrix& deltas);
 
 public:
     virtual       MatrixVector& weights();

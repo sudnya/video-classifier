@@ -51,8 +51,10 @@ RecurrentLayer::RecurrentLayer(size_t size, size_t batchSize)
 }
 
 RecurrentLayer::RecurrentLayer(size_t size, size_t batchSize, const matrix::Precision& precision)
-: _parameters(new MatrixVector({Matrix({size, size}, precision), Matrix({size}, precision), Matrix({size, size}, precision)})),
-  _forwardWeights((*_parameters)[0]), _bias((*_parameters)[1]), _recurrentWeights((*_parameters)[2]), _expectedBatchSize(batchSize)
+: _parameters(new MatrixVector({Matrix({size, size}, precision),
+    Matrix({size}, precision), Matrix({size, size}, precision)})),
+  _forwardWeights((*_parameters)[0]), _bias((*_parameters)[1]),
+  _recurrentWeights((*_parameters)[2]), _expectedBatchSize(batchSize)
 {
 
 }
@@ -127,7 +129,7 @@ static matrix::Matrix unfoldTimeAndBatch(const Matrix& input, size_t batchSize)
     return reshape(input, {activationCount, miniBatch, timesteps});
 }
 
-void RecurrentLayer::runForwardImplementation(MatrixVector& activations) const
+void RecurrentLayer::runForwardImplementation(MatrixVector& activations)
 {
     auto inputActivations = unfoldTimeAndBatch(activations.back(), _expectedBatchSize);
 
@@ -148,7 +150,7 @@ void RecurrentLayer::runForwardImplementation(MatrixVector& activations) const
     size_t miniBatch       = inputActivations.size()[1];
     size_t timesteps       = inputActivations.size()[2];
 
-    auto unbiasedOutput = gemm(1.0, Matrix(_forwardWeights), false, 1.0, reshape(inputActivations, {activationCount, miniBatch * timesteps}), false);
+    auto unbiasedOutput = gemm(Matrix(_forwardWeights), false, 1.0, reshape(inputActivations, {activationCount, miniBatch * timesteps}), false);
 
     auto activation = broadcast(unbiasedOutput, _bias, {}, matrix::Add());
 
@@ -181,7 +183,7 @@ void RecurrentLayer::runForwardImplementation(MatrixVector& activations) const
 
 Matrix RecurrentLayer::runReverseImplementation(MatrixVector& gradients,
     MatrixVector& activations,
-    const Matrix& foldedDeltas) const
+    const Matrix& foldedDeltas)
 {
     auto deltas = unfoldTimeAndBatch(foldedDeltas, _expectedBatchSize);
 
@@ -257,7 +259,7 @@ Matrix RecurrentLayer::runReverseImplementation(MatrixVector& gradients,
     // compute gradient for the forward weights
     auto samples = miniBatch;
 
-    auto weightGradient = gemm(1.0, Matrix(forwardDeltas), false, 1.0 / samples, forwardInputActivations, true);
+    auto weightGradient = gemm(Matrix(forwardDeltas), false, 1.0 / samples, forwardInputActivations, true);
 
     // add in the weight cost function term
     if(getWeightCostFunction() != nullptr)
@@ -342,7 +344,8 @@ const matrix::Precision& RecurrentLayer::precision() const
 
 double RecurrentLayer::computeWeightCost() const
 {
-    return getWeightCostFunction()->getCost(_forwardWeights) + getWeightCostFunction()->getCost(_recurrentWeights);
+    return getWeightCostFunction()->getCost(_forwardWeights) +
+        getWeightCostFunction()->getCost(_recurrentWeights);
 }
 
 Dimension RecurrentLayer::getInputSize() const

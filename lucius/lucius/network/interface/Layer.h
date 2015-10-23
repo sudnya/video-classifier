@@ -47,10 +47,10 @@ public:
     virtual void initialize() = 0;
 
 public:
-    void runForward(MatrixVector& activations) const;
+    void runForward(MatrixVector& activations);
     Matrix runReverse(MatrixVector& gradients,
         MatrixVector& activations,
-        const Matrix& deltas) const;
+        const Matrix& deltas);
 
 public:
     virtual       MatrixVector& weights()       = 0;
@@ -115,12 +115,19 @@ public:
     const WeightCostFunction* getWeightCostFunction() const;
 
 public:
+    /*! \brief Indicate that the layer is being trained or not. */
+    void setIsTraining(bool training);
+
+    /*! \brief Query whether or not the network is being trained. */
+    bool isTraining() const;
+
+public:
     std::string shapeString() const;
 
 protected:
-    virtual void runForwardImplementation(MatrixVector& m) const = 0;
+    virtual void runForwardImplementation(MatrixVector& m) = 0;
     virtual Matrix runReverseImplementation(MatrixVector& gradients,
-        MatrixVector& activations, const Matrix& deltas) const = 0;
+        MatrixVector& activations, const Matrix& deltas) = 0;
 
 protected:
     /*! \brief Save the layer to the tar file and header. */
@@ -132,6 +139,9 @@ private:
     std::unique_ptr<ActivationFunction>     _activationFunction;
     std::unique_ptr<ActivationCostFunction> _activationCostFunction;
     std::unique_ptr<WeightCostFunction>     _weightCostFunction;
+
+private:
+    bool _isTraining;
 
 };
 

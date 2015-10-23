@@ -134,14 +134,14 @@ static Matrix unfoldTime(const Matrix& result, const Dimension& inputSize)
     return reshape(result, {layerSize, miniBatch, timesteps});
 }
 
-void FeedForwardLayer::runForwardImplementation(MatrixVector& activations) const
+void FeedForwardLayer::runForwardImplementation(MatrixVector& activations)
 {
     auto m = foldTime(activations.back());
 
     if(util::isLogEnabled("FeedForwardLayer"))
     {
-        util::log("FeedForwardLayer") << " Running forward propagation of matrix " << m.shapeString()
-            << " through layer: " << _weights.shapeString() << "\n";
+        util::log("FeedForwardLayer") << " Running forward propagation of matrix "
+            << m.shapeString() << " through layer: " << _weights.shapeString() << "\n";
     }
 
     if(util::isLogEnabled("FeedForwardLayer::Detail"))
@@ -152,10 +152,11 @@ void FeedForwardLayer::runForwardImplementation(MatrixVector& activations) const
     }
     else
     {
-        util::log("FeedForwardLayer") << "  input shape: " << activations.back().shapeString() << "\n";
+        util::log("FeedForwardLayer") << "  input shape: "
+            << activations.back().shapeString() << "\n";
     }
 
-    auto unbiasedOutput = gemm(1.0, Matrix(_weights), false, 1.0, m, false);
+    auto unbiasedOutput = gemm(Matrix(_weights), false, 1.0, m, false);
 
     auto output = broadcast(unbiasedOutput, _bias, {}, matrix::Add());
 
@@ -184,7 +185,7 @@ void FeedForwardLayer::runForwardImplementation(MatrixVector& activations) const
 
 matrix::Matrix FeedForwardLayer::runReverseImplementation(MatrixVector& gradients,
     MatrixVector& activations,
-    const Matrix& differenceWithTime) const
+    const Matrix& differenceWithTime)
 {
     auto outputActivations = foldTime(activations.back());
     activations.pop_back();
@@ -234,7 +235,7 @@ matrix::Matrix FeedForwardLayer::runReverseImplementation(MatrixVector& gradient
     // compute gradient for the weights
     auto samples = activations.back().size()[1];
 
-    auto weightGradient = gemm(1.0, Matrix(deltas), false, 1.0 / samples, inputActivations, true);
+    auto weightGradient = gemm(Matrix(deltas), false, 1.0 / samples, inputActivations, true);
 
     // add in the weight cost function term
     if(getWeightCostFunction() != nullptr)

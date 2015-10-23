@@ -153,7 +153,7 @@ unsigned compare(const Matrix& output, const Matrix& reference)
     return bitsThatMatch;
 }
 
-float classify(const network::NeuralNetwork& ann, unsigned iterations, std::default_random_engine& generator)
+float classify(network::NeuralNetwork& ann, unsigned iterations, std::default_random_engine& generator)
 {
     float accuracy = 0.0f;
     unsigned correctBits = 0;
