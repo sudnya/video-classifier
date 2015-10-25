@@ -24,7 +24,8 @@ namespace optimizer
 
 
 NesterovAcceleratedGradientSolver::NesterovAcceleratedGradientSolver()
-: _runningExponentialCostSum(0.0), _learningRate(0.0), _momentum(0.0), _annealingRate(0.0), _maxGradNorm(0.0), _iterations(1)
+: _runningExponentialCostSum(0.0), _iterationsSoFar(0), _learningRate(0.0), _momentum(0.0),
+  _annealingRate(0.0), _maxGradNorm(0.0), _iterations(1)
 {
     _learningRate = util::KnobDatabase::getKnobValue<double>(
         "NesterovAcceleratedGradient::LearningRate", 1.0e-4);
@@ -65,7 +66,7 @@ double NesterovAcceleratedGradientSolver::solve(MatrixVector& inputs,
     assert(!inputs.empty());
 
     double futurePointCost = 0.0;
-    for (size_t i = 0; i < _iterations; ++i) {
+    for (size_t i = 0; i < _iterations; ++i, ++_iterationsSoFar) {
         // detect cold start
         bool coldStart = !_velocity;
 
@@ -73,6 +74,7 @@ double NesterovAcceleratedGradientSolver::solve(MatrixVector& inputs,
         {
             _velocity.reset(new MatrixVector(inputs.sizes(), inputs.front().precision()));
             matrix::zeros(*_velocity);
+            _iterationsSoFar = 0;
         }
 
         // evaluate at future point
@@ -102,7 +104,11 @@ double NesterovAcceleratedGradientSolver::solve(MatrixVector& inputs,
         }
         else
         {
-            _runningExponentialCostSum = 0.99 * _runningExponentialCostSum + 0.01 * futurePointCost;
+            size_t samples = std::min(_iterationsSoFar, static_cast<size_t>(100));
+            double ratio = (1.0 / samples);
+
+            _runningExponentialCostSum = (1.0 - ratio) * _runningExponentialCostSum +
+                ratio * futurePointCost;
         }
 
         reportProgress(futurePointCost, _runningExponentialCostSum, gradNorm, scale);

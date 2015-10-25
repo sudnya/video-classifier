@@ -20,8 +20,8 @@
 #include <lucius/network/interface/NeuralNetwork.h>
 #include <lucius/network/interface/FeedForwardLayer.h>
 #include <lucius/network/interface/ConvolutionalLayer.h>
+#include <lucius/network/interface/BatchNormalizationLayer.h>
 #include <lucius/network/interface/CostFunctionFactory.h>
-
 #include <lucius/network/interface/ActivationFunctionFactory.h>
 
 #include <lucius/video/interface/Image.h>
@@ -41,6 +41,8 @@ typedef lucius::video::Image Image;
 typedef lucius::network::NeuralNetwork NeuralNetwork;
 typedef lucius::network::FeedForwardLayer FeedForwardLayer;
 typedef lucius::network::ConvolutionalLayer ConvolutionalLayer;
+typedef lucius::network::BatchNormalizationLayer BatchNormalizationLayer;
+typedef lucius::network::ActivationFunctionFactory ActivationFunctionFactory;
 typedef lucius::video::ImageVector ImageVector;
 typedef lucius::matrix::Matrix Matrix;
 typedef lucius::matrix::Dimension Dimension;
@@ -59,6 +61,7 @@ public:
 
     size_t layerSize;
     size_t layers;
+    bool   useBatchNormalization;
 
     size_t factor;
 
@@ -79,7 +82,7 @@ public:
 };
 
 static Dimension addConvolutionalLayer(NeuralNetwork& classifier,
-    const Dimension& inputSize, size_t filters)
+    const Dimension& inputSize, size_t filters, bool useBatchNormalization)
 {
     // conv 3-64 layer
     classifier.addLayer(std::make_unique<ConvolutionalLayer>(
@@ -87,15 +90,26 @@ static Dimension addConvolutionalLayer(NeuralNetwork& classifier,
         Dimension(3, 3, inputSize[2], filters),
         Dimension(1, 1), Dimension(1, 1)));
 
-    return classifier.back()->getOutputSize();
+    auto size = classifier.back()->getOutputSize();
+
+    // batch norm
+    if(useBatchNormalization)
+    {
+        classifier.back()->setActivationFunction(
+            ActivationFunctionFactory::create("NullActivationFunction"));
+        classifier.addLayer(std::make_unique<BatchNormalizationLayer>(size));
+    }
+
+    return size;
 }
 
-static Dimension addPoolingLayer(NeuralNetwork& classifier, const Dimension& stride)
+static Dimension addPoolingLayer(NeuralNetwork& classifier, const Dimension& inputSize,
+    const Dimension& stride, bool useBatchNormalization)
 {
-    size_t filters = classifier.back()->getOutputSize()[2];
+    size_t filters = inputSize[2];
 
-    Dimension poolingSize(classifier.back()->getOutputSize()[0],
-        classifier.back()->getOutputSize()[1] * classifier.back()->getOutputSize()[2],
+    Dimension poolingSize(inputSize[0],
+        inputSize[1] * inputSize[2],
         1, // color channels
         1, // mini batch
         1 // time
@@ -107,12 +121,22 @@ static Dimension addPoolingLayer(NeuralNetwork& classifier, const Dimension& str
         Dimension(stride[0], stride[1], 1, 1),
         stride, Dimension(0, 0)));
 
-    return Dimension(classifier.back()->getOutputSize()[0],
+    auto size = Dimension(classifier.back()->getOutputSize()[0],
         classifier.back()->getOutputSize()[1] / filters,
         filters, // color channels
         1, // mini batch
         1 // time
         );
+
+    // batch norm
+    if(useBatchNormalization)
+    {
+        classifier.back()->setActivationFunction(
+            ActivationFunctionFactory::create("NullActivationFunction"));
+        classifier.addLayer(std::make_unique<BatchNormalizationLayer>(size));
+    }
+
+    return size;
 }
 
 static void addClassifier(Model& model, const Parameters& parameters)
@@ -122,30 +146,56 @@ static void addClassifier(Model& model, const Parameters& parameters)
 
     Dimension inputSize(parameters.xPixels, parameters.yPixels, parameters.colors, 1, 1);
 
-    inputSize = addConvolutionalLayer(classifier, inputSize, 64);
+    inputSize = addConvolutionalLayer(classifier, inputSize, 64, parameters.useBatchNormalization);
 
-    inputSize = addPoolingLayer(classifier, {2, 2});
+    inputSize = addPoolingLayer(classifier, inputSize, {2, 2}, parameters.useBatchNormalization);
 
-    inputSize = addConvolutionalLayer(classifier, inputSize, 128 / parameters.factor);
-    inputSize = addPoolingLayer(classifier, {2, 2});
+    inputSize = addConvolutionalLayer(classifier, inputSize, 128 / parameters.factor,
+        parameters.useBatchNormalization);
+    inputSize = addPoolingLayer(classifier, inputSize, {2, 2}, parameters.useBatchNormalization);
 
-    inputSize = addConvolutionalLayer(classifier, inputSize, 256 / parameters.factor);
-    inputSize = addConvolutionalLayer(classifier, inputSize, 256 / parameters.factor);
-    inputSize = addPoolingLayer(classifier, {2, 2});
+    inputSize = addConvolutionalLayer(classifier, inputSize, 256 / parameters.factor,
+        parameters.useBatchNormalization);
+    inputSize = addConvolutionalLayer(classifier, inputSize, 256 / parameters.factor,
+        parameters.useBatchNormalization);
+    inputSize = addPoolingLayer(classifier, inputSize, {2, 2}, parameters.useBatchNormalization);
 
-    inputSize = addConvolutionalLayer(classifier, inputSize, 512 / parameters.factor);
-    inputSize = addConvolutionalLayer(classifier, inputSize, 512 / parameters.factor);
-    inputSize = addPoolingLayer(classifier, {2, 2});
+    /*
 
-    inputSize = addConvolutionalLayer(classifier, inputSize, 512 / parameters.factor);
-    inputSize = addConvolutionalLayer(classifier, inputSize, 512 / parameters.factor);
-    inputSize = addPoolingLayer(classifier, {2, 2});
+    inputSize = addConvolutionalLayer(classifier, inputSize, 512 / parameters.factor,
+        parameters.useBatchNormalization);
+    inputSize = addConvolutionalLayer(classifier, inputSize, 512 / parameters.factor,
+        parameters.useBatchNormalization);
+    inputSize = addPoolingLayer(classifier, inputSize, {2, 2});
+
+    inputSize = addConvolutionalLayer(classifier, inputSize, 512 / parameters.factor,
+        parameters.useBatchNormalization);
+    inputSize = addConvolutionalLayer(classifier, inputSize, 512 / parameters.factor,
+        parameters.useBatchNormalization);
+    inputSize = addPoolingLayer(classifier, inputSize, {2, 2});
+
+    */
 
     // connect the network
     classifier.addLayer(std::make_unique<FeedForwardLayer>(classifier.back()->getOutputCount(),
         parameters.layerSize));
+
+    if(parameters.useBatchNormalization)
+    {
+        classifier.back()->setActivationFunction(
+            ActivationFunctionFactory::create("NullActivationFunction"));
+        classifier.addLayer(std::make_unique<BatchNormalizationLayer>(parameters.layerSize));
+    }
+
     classifier.addLayer(std::make_unique<FeedForwardLayer>(classifier.back()->getOutputCount(),
         parameters.layerSize));
+
+    if(parameters.useBatchNormalization)
+    {
+        classifier.back()->setActivationFunction(
+            ActivationFunctionFactory::create("NullActivationFunction"));
+        classifier.addLayer(std::make_unique<BatchNormalizationLayer>(parameters.layerSize));
+    }
 
     SampleDatabase inputDatabase(parameters.inputPath);
     inputDatabase.load();
@@ -327,6 +377,8 @@ int main(int argc, char** argv)
         "The learning rate to use in SGD.");
     parser.parse("", "--momentum", parameters.momentum, 0.99,
         "The momentum to use in SGD.");
+    parser.parse("", "--batch-normalization", parameters.useBatchNormalization, false,
+        "Use batch normalization layers after convolutional layers.");
 
     parser.parse("-f", "--reduction-factor", parameters.factor, 1,
         "Reduce the network output sizes by this factor.");

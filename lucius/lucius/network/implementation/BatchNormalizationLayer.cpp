@@ -7,6 +7,8 @@
 // Lucius Includes
 #include <lucius/network/interface/BatchNormalizationLayer.h>
 
+#include <lucius/network/interface/ActivationFunction.h>
+
 #include <lucius/matrix/interface/Matrix.h>
 #include <lucius/matrix/interface/MatrixVector.h>
 #include <lucius/matrix/interface/MatrixOperations.h>
@@ -35,22 +37,30 @@ BatchNormalizationLayer::BatchNormalizationLayer()
 }
 
 BatchNormalizationLayer::BatchNormalizationLayer(size_t inputs)
-: BatchNormalizationLayer(inputs, matrix::Precision::getDefaultPrecision())
+: BatchNormalizationLayer({inputs, 1, 1})
 {
 
 }
 
-BatchNormalizationLayer::BatchNormalizationLayer(size_t inputs,
+BatchNormalizationLayer::BatchNormalizationLayer(const Dimension& size)
+: BatchNormalizationLayer(size, matrix::Precision::getDefaultPrecision())
+{
+
+}
+
+BatchNormalizationLayer::BatchNormalizationLayer(const Dimension& size,
     const matrix::Precision& precision)
-: _parameters(new MatrixVector({Matrix({inputs}, precision), Matrix({inputs}, precision)})),
+: _parameters(new MatrixVector({Matrix({size[0]}, precision), Matrix({size[0]}, precision)})),
   _gamma((*_parameters)[0]), _beta((*_parameters)[1]),
-  _internal_parameters(new MatrixVector({Matrix({inputs}, precision),
-    Matrix({inputs}, precision)})),
+  _internal_parameters(new MatrixVector({Matrix({size[0]}, precision),
+    Matrix({size[0]}, precision)})),
   _means((*_internal_parameters)[0]), _variances((*_internal_parameters)[1]),
-  _samples(0)
+  _samples(0),
+  _inputSize(std::make_unique<matrix::Dimension>(size))
 {
 
 }
+
 BatchNormalizationLayer::~BatchNormalizationLayer()
 {
 
@@ -61,7 +71,8 @@ BatchNormalizationLayer::BatchNormalizationLayer(const BatchNormalizationLayer& 
   _gamma((*_parameters)[0]), _beta((*_parameters)[1]),
   _internal_parameters(std::make_unique<MatrixVector>(*l._internal_parameters)),
   _means((*_internal_parameters)[0]), _variances((*_internal_parameters)[1]),
-  _samples(l._samples)
+  _samples(l._samples),
+  _inputSize(std::make_unique<matrix::Dimension>(*l._inputSize))
 {
 
 }
@@ -74,8 +85,10 @@ BatchNormalizationLayer& BatchNormalizationLayer::operator=(const BatchNormaliza
     }
 
     _parameters = std::move(std::make_unique<MatrixVector>(*l._parameters));
+    _inputSize  = std::move(std::make_unique<matrix::Dimension>(*l._inputSize));
+
     _internal_parameters = std::move(std::make_unique<MatrixVector>(*l._internal_parameters));
-    _samples = l._samples;
+    _samples             = l._samples;
 
     return *this;
 }
@@ -93,25 +106,21 @@ void BatchNormalizationLayer::initialize()
 
 static Matrix foldTime(const Matrix& input)
 {
-    assert(input.size().size() < 4);
+    auto size = input.size();
 
-    if(input.size().size() == 3)
+    size_t batch = 1;
+
+    for(size_t i = 1; i < size.size(); ++i)
     {
-        auto size = input.size();
-        size_t timesteps = size.back();
-
-        size.pop_back();
-
-        size.back() *= timesteps;
-
-        return reshape(input, size);
+        batch *= size[i];
     }
 
-    return input;
+    return reshape(input, {size[0], batch});
 }
 
 static Matrix unfoldTime(const Matrix& result, const Dimension& inputSize)
 {
+    /*
     if(inputSize.size() <= 2)
     {
         return result;
@@ -122,8 +131,9 @@ static Matrix unfoldTime(const Matrix& result, const Dimension& inputSize)
     size_t layerSize = result.size()[0];
     size_t miniBatch = inputSize[1];
     size_t timesteps = inputSize[2];
+    */
 
-    return reshape(result, {layerSize, miniBatch, timesteps});
+    return reshape(result, inputSize);
 }
 
 static Matrix computeMeans(const Matrix& activations)
@@ -250,8 +260,8 @@ void BatchNormalizationLayer::runForwardImplementation(MatrixVector& activations
             << _beta.debugString();
     }
 
-    auto outputActivations = unfoldTime(scaleAndShift(normalizedActivations, _gamma, _beta),
-        activations.back().size());
+    auto outputActivations = unfoldTime(getActivationFunction()->apply(
+        scaleAndShift(normalizedActivations, _gamma, _beta)), activations.back().size());
 
     if(util::isLogEnabled("BatchNormalizationLayer::Detail"))
     {
@@ -276,7 +286,8 @@ Matrix BatchNormalizationLayer::runReverseImplementation(MatrixVector& gradients
 
     // Get the input activations and deltas
     auto inputActivations = foldTime(activations.back());
-    auto deltas = foldTime(deltasWithTime);
+    auto deltas = apply(getActivationFunction()->applyDerivative(outputActivations),
+        foldTime(deltasWithTime), matrix::Multiply());
 
     // Get sizes
     size_t miniBatchSize = outputActivations.size()[1];
@@ -421,37 +432,37 @@ double BatchNormalizationLayer::computeWeightCost() const
 
 Dimension BatchNormalizationLayer::getInputSize() const
 {
-    return {getInputCount(), 1, 1};
+    return *_inputSize;
 }
 
 Dimension BatchNormalizationLayer::getOutputSize() const
 {
-    return {getOutputCount(), 1, 1};
+    return getInputSize();
 }
 
 size_t BatchNormalizationLayer::getInputCount() const
 {
-    return _gamma.elements();
+    return getInputSize().product();
 }
 
 size_t BatchNormalizationLayer::getOutputCount() const
 {
-    return _gamma.elements();
+    return getInputCount();
 }
 
 size_t BatchNormalizationLayer::totalNeurons() const
 {
-    return getInputCount();
+    return _gamma.elements();
 }
 
 size_t BatchNormalizationLayer::totalConnections() const
 {
-    return getInputCount();
+    return totalNeurons();
 }
 
 size_t BatchNormalizationLayer::getFloatingPointOperationCount() const
 {
-    return 2 * getInputCount();
+    return 2 * totalConnections();
 }
 
 void BatchNormalizationLayer::save(util::OutputTarArchive& archive,
@@ -461,8 +472,9 @@ void BatchNormalizationLayer::save(util::OutputTarArchive& archive,
     properties["beta"]  = properties.path() + "." + properties.key() + ".beta.npy";
     properties["means"] = properties.path() + "." + properties.key() + ".means.npy";
 
-    properties["variances"] = properties.path() + "." + properties.key() + ".variances.npy";
-    properties["samples"] = _samples;
+    properties["variances"]  = properties.path() + "." + properties.key() + ".variances.npy";
+    properties["samples"]    = _samples;
+    properties["input-size"] = _inputSize->toString();
 
     saveToArchive(archive, properties["gamma"], _gamma);
     saveToArchive(archive, properties["beta"],  _beta);
@@ -478,6 +490,8 @@ void BatchNormalizationLayer::load(util::InputTarArchive& archive,
 {
     _gamma = matrix::loadFromArchive(archive, properties["gamma"]);
     _beta  = matrix::loadFromArchive(archive, properties["beta"]);
+
+    *_inputSize = Dimension::fromString(properties["input-size"]);
 
     _means = matrix::loadFromArchive(archive, properties["means"]);
     _variances = matrix::loadFromArchive(archive, properties["variances"]);

@@ -12,9 +12,6 @@
 // Standard Library Includes
 #include <memory>
 
-// Fordward Declarations
-namespace lucius { namespace matrix { class Precision; } }
-
 namespace lucius
 {
 namespace network
@@ -26,7 +23,8 @@ class BatchNormalizationLayer : public Layer
 public:
     BatchNormalizationLayer();
     BatchNormalizationLayer(size_t inputs);
-    BatchNormalizationLayer(size_t inputs, const matrix::Precision&);
+    BatchNormalizationLayer(const Dimension& size);
+    BatchNormalizationLayer(const Dimension& size, const matrix::Precision&);
     virtual ~BatchNormalizationLayer();
 
 public:
@@ -94,6 +92,9 @@ private:
 
 private:
     size_t _samples;
+
+private:
+    std::unique_ptr<matrix::Dimension> _inputSize;
 
 };
 

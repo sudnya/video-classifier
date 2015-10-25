@@ -34,7 +34,9 @@ public:
 
 private:
     std::unique_ptr<MatrixVector> _velocity;
+
     double _runningExponentialCostSum;
+    size_t _iterationsSoFar;
 
 private:
     double  _learningRate;
