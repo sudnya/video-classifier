@@ -160,21 +160,17 @@ static void addClassifier(Model& model, const Parameters& parameters)
         parameters.useBatchNormalization);
     inputSize = addPoolingLayer(classifier, inputSize, {2, 2}, parameters.useBatchNormalization);
 
-    /*
+    inputSize = addConvolutionalLayer(classifier, inputSize, 512 / parameters.factor,
+        parameters.useBatchNormalization);
+    inputSize = addConvolutionalLayer(classifier, inputSize, 512 / parameters.factor,
+        parameters.useBatchNormalization);
+    inputSize = addPoolingLayer(classifier, inputSize, {2, 2}, parameters.useBatchNormalization);
 
     inputSize = addConvolutionalLayer(classifier, inputSize, 512 / parameters.factor,
         parameters.useBatchNormalization);
     inputSize = addConvolutionalLayer(classifier, inputSize, 512 / parameters.factor,
         parameters.useBatchNormalization);
-    inputSize = addPoolingLayer(classifier, inputSize, {2, 2});
-
-    inputSize = addConvolutionalLayer(classifier, inputSize, 512 / parameters.factor,
-        parameters.useBatchNormalization);
-    inputSize = addConvolutionalLayer(classifier, inputSize, 512 / parameters.factor,
-        parameters.useBatchNormalization);
-    inputSize = addPoolingLayer(classifier, inputSize, {2, 2});
-
-    */
+    inputSize = addPoolingLayer(classifier, inputSize, {2, 2}, parameters.useBatchNormalization);
 
     // connect the network
     classifier.addLayer(std::make_unique<FeedForwardLayer>(classifier.back()->getOutputCount(),

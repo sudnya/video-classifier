@@ -46,6 +46,8 @@ LearnerEngine::ResultVector LearnerEngine::runOnBatch(Matrix&& input, Matrix&& r
 
     auto network = getAggregateNetwork();
 
+    network->setIsTraining(true);
+
     network->train(std::move(input), std::move(reference));
 
     restoreAggregateNetwork();
