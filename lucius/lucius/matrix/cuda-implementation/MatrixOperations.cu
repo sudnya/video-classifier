@@ -637,6 +637,35 @@ public:
 
 };
 
+template <typename NativeType, typename ActualOperation>
+class BroadcastOneToTwoLambda
+{
+public:
+    CUDA_DECORATOR void operator()(parallel::ThreadGroup threadGroup) const
+    {
+        for(size_t i = threadGroup.id(); i < elements; i += threadGroup.size())
+        {
+            auto fullDimension = linearToDimension(i, resultView.size());
+            auto reducedDimension = Dimension(fullDimension[0]);
+
+            resultView(fullDimension) = nativeOperation(leftView(fullDimension),
+                rightView(reducedDimension));
+        }
+    }
+
+public:
+    MatrixView<NativeType>      resultView;
+    ConstMatrixView<NativeType> leftView;
+    ConstMatrixView<NativeType> rightView;
+
+public:
+    size_t elements;
+
+public:
+    ActualOperation nativeOperation;
+
+};
+
 template <typename ActualOperation, typename ActualPrecision>
 void broadcast(Matrix& result, const Matrix& left, const Matrix& right, const Dimension& d,
     const Operation& op, const std::tuple<ActualPrecision>& p)
@@ -657,10 +686,20 @@ void broadcast(Matrix& result, const Matrix& left, const Matrix& right, const Di
     ConstMatrixView<NativeType> leftView(left);
     ConstMatrixView<NativeType> rightView(right);
 
-    auto lambda = BroadcastLambda<NativeType, ActualOperation>{resultView, leftView,
-        rightView, elements, nativeOperation, dimension};
+    if(left.size().size() == 2 && dimension.size() == 1 && dimension[0] == 0)
+    {
+        auto lambda = BroadcastOneToTwoLambda<NativeType, ActualOperation>{resultView, leftView,
+            rightView, elements, nativeOperation};
 
-    parallel::multiBulkSynchronousParallel(lambda);
+        parallel::multiBulkSynchronousParallel(lambda);
+    }
+    else
+    {
+        auto lambda = BroadcastLambda<NativeType, ActualOperation>{resultView, leftView,
+            rightView, elements, nativeOperation, dimension};
+
+        parallel::multiBulkSynchronousParallel(lambda);
+    }
 }
 
 template <typename ActualOperation, typename PossiblePrecisions>
