@@ -66,9 +66,12 @@ static NeuralNetwork createBatchNormalizationNetwork(
 
     for(size_t layer = 0; layer < layerCount; ++layer)
     {
-        network.addLayer(std::make_unique<FeedForwardLayer>(layerSize, layerSize, DoublePrecision()));
-        network.back()->setActivationFunction(ActivationFunctionFactory::create("NullActivationFunction"));
-        network.addLayer(std::make_unique<BatchNormalizationLayer>(layerSize, DoublePrecision()));
+        network.addLayer(std::make_unique<FeedForwardLayer>(
+            layerSize, layerSize, DoublePrecision()));
+        network.back()->setActivationFunction(
+            ActivationFunctionFactory::create("NullActivationFunction"));
+        network.addLayer(std::make_unique<BatchNormalizationLayer>(
+            matrix::Dimension(layerSize, 1, 1), DoublePrecision()));
     }
 
     network.initialize();
