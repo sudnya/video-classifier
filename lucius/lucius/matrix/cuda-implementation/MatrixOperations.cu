@@ -432,10 +432,12 @@ public:
             auto resultIndex = linearToDimension(i, resultView.size());
 
             // find the start of the input slice
-            auto inputBegin = selectNamedDimensions(dimensions, resultIndex, zeros(inputView.size()));
+            auto inputBegin = selectNamedDimensions(dimensions, resultIndex,
+                zeros(inputView.size()));
 
             // find the end of the input slice
-            auto inputEnd = selectNamedDimensions(dimensions, resultIndex + ones(resultView.size()), inputView.size());
+            auto inputEnd = selectNamedDimensions(dimensions,
+                resultIndex + ones(resultView.size()), inputView.size());
 
             auto inputSlice = slice(inputView, inputBegin, inputEnd);
 
@@ -512,7 +514,8 @@ void reduce(Matrix& result, const Matrix& input, const Dimension& unsortedDimens
 }
 
 template <typename ActualOperation, typename PossiblePrecisions>
-void reduce(Matrix& result, const Matrix& input, const Dimension& dimensions, const Operation& op, const PossiblePrecisions& possiblePrecisions)
+void reduce(Matrix& result, const Matrix& input, const Dimension& dimensions, const Operation& op,
+    const PossiblePrecisions& possiblePrecisions)
 {
     typedef typename std::tuple_element<0, PossiblePrecisions>::type PossiblePrecisionType;
 
@@ -528,14 +531,16 @@ void reduce(Matrix& result, const Matrix& input, const Dimension& dimensions, co
 }
 
 template <typename PossibleOperation>
-void reduce(Matrix& result, const Matrix& input, const Dimension& dimensions, const Operation& op, const std::tuple<PossibleOperation>& p)
+void reduce(Matrix& result, const Matrix& input, const Dimension& dimensions, const Operation& op,
+    const std::tuple<PossibleOperation>& p)
 {
     assert(PossibleOperation() == op);
     reduce<PossibleOperation>(result, input, dimensions, op, AllPrecisions());
 }
 
 template <typename PossibleOperations>
-void reduce(Matrix& result, const Matrix& input, const Dimension& dimensions, const Operation& op, const PossibleOperations& possibleOperations)
+void reduce(Matrix& result, const Matrix& input, const Dimension& dimensions, const Operation& op,
+    const PossibleOperations& possibleOperations)
 {
     typedef typename std::tuple_element<0, PossibleOperations>::type PossibleOperationType;
     if(op == PossibleOperationType())
@@ -639,43 +644,6 @@ public:
 
 };
 
-template <typename NativeType, typename ActualOperation>
-class BroadcastOneToTwoLambda
-{
-public:
-    CUDA_DECORATOR void operator()(parallel::ThreadGroup threadGroup) const
-    {
-        for(size_t i = threadGroup.id(); i < firstDimensionElements; i += threadGroup.size())
-        {
-            const NativeType  rightElement = rightBase[i];
-            const NativeType* leftStart = leftBase + i;
-            const NativeType* leftEnd   = leftBase +
-                firstDimensionElements * secondDimensionElements;
-
-            NativeType* result = resultBase + i;
-
-            for(const NativeType* left = leftStart; left < leftEnd;
-                left += firstDimensionElements, result += firstDimensionElements)
-            {
-                *result = nativeOperation(*left, rightElement);
-            }
-        }
-    }
-
-public:
-    NativeType*       resultBase;
-    const NativeType* leftBase;
-    const NativeType* rightBase;
-
-public:
-    size_t firstDimensionElements;
-    size_t secondDimensionElements;
-
-public:
-    ActualOperation nativeOperation;
-
-};
-
 template <typename ActualOperation, typename ActualPrecision>
 void broadcast(Matrix& result, const Matrix& left, const Matrix& right, const Dimension& d,
     const Operation& op, const std::tuple<ActualPrecision>& p)
@@ -696,25 +664,10 @@ void broadcast(Matrix& result, const Matrix& left, const Matrix& right, const Di
     ConstMatrixView<NativeType> leftView(left);
     ConstMatrixView<NativeType> rightView(right);
 
-    if(left.size().size() == 2 && dimension.size() == 1 && dimension[0] == 0 &&
-        left.isContiguous() && right.isContiguous() && result.isContiguous())
-    {
-        auto resultBase = static_cast<NativeType*>(result.data());
-        auto leftBase   = static_cast<const NativeType*>(left.data());
-        auto rightBase  = static_cast<const NativeType*>(right.data());
+    auto lambda = BroadcastLambda<NativeType, ActualOperation>{resultView, leftView,
+        rightView, elements, nativeOperation, dimension};
 
-        auto lambda = BroadcastOneToTwoLambda<NativeType, ActualOperation>{resultBase, leftBase,
-            rightBase, left.size()[0], left.size()[1], nativeOperation};
-
-        parallel::multiBulkSynchronousParallel(lambda);
-    }
-    else
-    {
-        auto lambda = BroadcastLambda<NativeType, ActualOperation>{resultView, leftView,
-            rightView, elements, nativeOperation, dimension};
-
-        parallel::multiBulkSynchronousParallel(lambda);
-    }
+    parallel::multiBulkSynchronousParallel(lambda);
 }
 
 template <typename ActualOperation, typename PossiblePrecisions>
