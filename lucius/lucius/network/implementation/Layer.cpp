@@ -216,8 +216,8 @@ std::string Layer::shapeString() const
     std::stringstream stream;
 
     stream << "(" << getTypeName() << " type, "
-        << getInputCount()
-        << " inputs, " << getOutputCount() << " outputs)";
+        << getInputSize().toString()
+        << " inputs, " << getOutputSize().toString() << " outputs)";
 
     return stream.str();
 }
