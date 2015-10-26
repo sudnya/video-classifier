@@ -476,7 +476,8 @@ public:
 };
 
 template <typename ActualOperation, typename ActualPrecision>
-void reduce(Matrix& result, const Matrix& input, const Dimension& unsortedDimensions, const Operation& op, const std::tuple<ActualPrecision>& p)
+void reduce(Matrix& result, const Matrix& input, const Dimension& unsortedDimensions,
+    const Operation& op, const std::tuple<ActualPrecision>& p)
 {
     typedef typename ActualPrecision::type NativeType;
 
@@ -502,7 +503,8 @@ void reduce(Matrix& result, const Matrix& input, const Dimension& unsortedDimens
         MatrixView<NativeType>      resultView(result);
         ConstMatrixView<NativeType> inputView(input);
 
-        auto lambda = GenericReduceLambda<NativeType, ActualOperation>{resultView, inputView, elements, nativeOperation, dimensions};
+        auto lambda = GenericReduceLambda<NativeType, ActualOperation>{resultView,
+            inputView, elements, nativeOperation, dimensions};
 
         parallel::multiBulkSynchronousParallel(lambda);
     }
@@ -643,23 +645,31 @@ class BroadcastOneToTwoLambda
 public:
     CUDA_DECORATOR void operator()(parallel::ThreadGroup threadGroup) const
     {
-        for(size_t i = threadGroup.id(); i < elements; i += threadGroup.size())
+        for(size_t i = threadGroup.id(); i < firstDimensionElements; i += threadGroup.size())
         {
-            auto fullDimension = linearToDimension(i, resultView.size());
-            auto reducedDimension = Dimension(fullDimension[0]);
+            const NativeType  rightElement = rightBase[i];
+            const NativeType* leftStart = leftBase + i;
+            const NativeType* leftEnd   = leftBase +
+                firstDimensionElements * secondDimensionElements;
 
-            resultView(fullDimension) = nativeOperation(leftView(fullDimension),
-                rightView(reducedDimension));
+            NativeType* result = resultBase + i;
+
+            for(const NativeType* left = leftStart; left < leftEnd;
+                left += firstDimensionElements, result += firstDimensionElements)
+            {
+                *result = nativeOperation(*left, rightElement);
+            }
         }
     }
 
 public:
-    MatrixView<NativeType>      resultView;
-    ConstMatrixView<NativeType> leftView;
-    ConstMatrixView<NativeType> rightView;
+    NativeType*       resultBase;
+    const NativeType* leftBase;
+    const NativeType* rightBase;
 
 public:
-    size_t elements;
+    size_t firstDimensionElements;
+    size_t secondDimensionElements;
 
 public:
     ActualOperation nativeOperation;
@@ -686,10 +696,15 @@ void broadcast(Matrix& result, const Matrix& left, const Matrix& right, const Di
     ConstMatrixView<NativeType> leftView(left);
     ConstMatrixView<NativeType> rightView(right);
 
-    if(left.size().size() == 2 && dimension.size() == 1 && dimension[0] == 0)
+    if(left.size().size() == 2 && dimension.size() == 1 && dimension[0] == 0 &&
+        left.isContiguous() && right.isContiguous() && result.isContiguous())
     {
-        auto lambda = BroadcastOneToTwoLambda<NativeType, ActualOperation>{resultView, leftView,
-            rightView, elements, nativeOperation};
+        auto resultBase = static_cast<NativeType*>(result.data());
+        auto leftBase   = static_cast<const NativeType*>(left.data());
+        auto rightBase  = static_cast<const NativeType*>(right.data());
+
+        auto lambda = BroadcastOneToTwoLambda<NativeType, ActualOperation>{resultBase, leftBase,
+            rightBase, left.size()[0], left.size()[1], nativeOperation};
 
         parallel::multiBulkSynchronousParallel(lambda);
     }
