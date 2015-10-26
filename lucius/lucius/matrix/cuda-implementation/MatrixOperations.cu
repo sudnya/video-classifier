@@ -570,14 +570,15 @@ namespace detail
 
 static Dimension fillOutDimension(const Dimension& d, const Dimension& leftSize, const Dimension& rightSize)
 {
-    if (d.size() != 0)
+    if(d.size() != 0)
     {
         return d;
     }
+
     Dimension retVal;
-    for (auto i = leftSize.begin(), j = rightSize.begin(); i != leftSize.end(); ++i)
+    for(auto i = leftSize.begin(), j = rightSize.begin(); i != leftSize.end(); ++i)
     {
-        if ((j != rightSize.end()) && (*i == *j))
+        if((j != rightSize.end()) && (*i == *j))
         {
             ++j;
             continue;
@@ -589,6 +590,21 @@ static Dimension fillOutDimension(const Dimension& d, const Dimension& leftSize,
     return retVal;
 }
 
+static Dimension invert(const Dimension& original, const Dimension& removed)
+{
+    Dimension result;
+
+    for(size_t i = 0; i < original.size(); ++i)
+    {
+        if(!isContained(removed, i))
+        {
+            result.push_back(i);
+        }
+    }
+
+    return result;
+}
+
 template <typename NativeType, typename ActualOperation>
 class BroadcastLambda
 {
@@ -598,9 +614,10 @@ public:
         for(size_t i = threadGroup.id(); i < elements; i += threadGroup.size())
         {
             auto fullDimension    = linearToDimension(i, resultView.size());
-            auto reducedDimension = removeDimensions(fullDimension, dimension);
+            auto reducedDimension = selectDimensions(fullDimension, dimension);
 
-            resultView(fullDimension) = nativeOperation(leftView(fullDimension), rightView(reducedDimension));
+            resultView(fullDimension) = nativeOperation(leftView(fullDimension),
+                rightView(reducedDimension));
         }
     }
 
@@ -621,10 +638,10 @@ public:
 };
 
 template <typename ActualOperation, typename ActualPrecision>
-void broadcast(Matrix& result, const Matrix& left, const Matrix& right, const Dimension& d, const Operation& op,
-    const std::tuple<ActualPrecision>& p)
+void broadcast(Matrix& result, const Matrix& left, const Matrix& right, const Dimension& d,
+    const Operation& op, const std::tuple<ActualPrecision>& p)
 {
-    auto dimension = fillOutDimension(d, left.size(), right.size());
+    auto dimension = invert(left.size(), fillOutDimension(d, left.size(), right.size()));
     typedef typename ActualPrecision::type NativeType;
 
     assert(ActualPrecision()  == result.precision());
@@ -640,14 +657,15 @@ void broadcast(Matrix& result, const Matrix& left, const Matrix& right, const Di
     ConstMatrixView<NativeType> leftView(left);
     ConstMatrixView<NativeType> rightView(right);
 
-    auto lambda = BroadcastLambda<NativeType, ActualOperation>{resultView, leftView, rightView, elements, nativeOperation, dimension};
+    auto lambda = BroadcastLambda<NativeType, ActualOperation>{resultView, leftView,
+        rightView, elements, nativeOperation, dimension};
 
     parallel::multiBulkSynchronousParallel(lambda);
 }
 
 template <typename ActualOperation, typename PossiblePrecisions>
-void broadcast(Matrix& result, const Matrix& left, const Matrix& right, const Dimension& d, const Operation& op,
-    const PossiblePrecisions& possiblePrecisions)
+void broadcast(Matrix& result, const Matrix& left, const Matrix& right, const Dimension& d,
+    const Operation& op, const PossiblePrecisions& possiblePrecisions)
 {
     typedef typename std::tuple_element<0, PossiblePrecisions>::type PossiblePrecisionType;
     if(result.precision() == PossiblePrecisionType())

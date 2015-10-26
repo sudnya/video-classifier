@@ -63,18 +63,11 @@ CUDA_DECORATOR static bool isContained(const Dimension& set, size_t element)
     return false;
 }
 
-CUDA_DECORATOR Dimension removeDimensions(const Dimension& base, const Dimension& toRemove)
+CUDA_DECORATOR Dimension removeDimensions(const Dimension& base, const Dimension& removed)
 {
-    if(toRemove.size() == 0)
+    if(removed.size() == 0)
     {
         return Dimension({1});
-    }
-
-    Dimension removed;
-
-    for(auto i : toRemove)
-    {
-        removed.push_back(i);
     }
 
     Dimension result;
@@ -85,6 +78,18 @@ CUDA_DECORATOR Dimension removeDimensions(const Dimension& base, const Dimension
         {
             result.push_back(base[i]);
         }
+    }
+
+    return result;
+}
+
+CUDA_DECORATOR Dimension selectDimensions(const Dimension& base, const Dimension& selected)
+{
+    Dimension result;
+
+    for(auto i : selected)
+    {
+        result.push_back(base[i]);
     }
 
     return result;

@@ -15,6 +15,7 @@ CUDA_DECORATOR inline Dimension linearStride(const Dimension& );
 CUDA_DECORATOR inline Dimension zeros(const Dimension& );
 CUDA_DECORATOR inline Dimension ones(const Dimension& );
 CUDA_DECORATOR inline Dimension removeDimensions(const Dimension& base, const Dimension& toRemove);
+CUDA_DECORATOR inline Dimension selectDimensions(const Dimension& base, const Dimension& selected);
 CUDA_DECORATOR inline Dimension intersection(const Dimension& base, const Dimension& toRemove);
 CUDA_DECORATOR inline size_t dotProduct(const Dimension& left, const Dimension& right);
 CUDA_DECORATOR inline Dimension linearToDimension(size_t linearIndex, const Dimension& size);
