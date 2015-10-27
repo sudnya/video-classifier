@@ -27,6 +27,19 @@ public:
 
 };
 
+CUDA_DECORATOR inline ThreadGroup partitionThreadGroup(ThreadGroup g, size_t subgroupSize);
+CUDA_DECORATOR inline ThreadGroup partitionThreadGroupAtLevel(ThreadGroup g, size_t level);
+
+CUDA_DECORATOR inline ThreadGroup getRelativeGroup(ThreadGroup inner, ThreadGroup outer);
+
+CUDA_DECORATOR inline void barrier(ThreadGroup g);
+
+template<typename T>
+CUDA_DECORATOR inline T gather(ThreadGroup g, T value, size_t index);
+
+template<typename T, typename Function>
+CUDA_DECORATOR inline T reduce(ThreadGroup g, T value, Function f);
+
 }
 }
 

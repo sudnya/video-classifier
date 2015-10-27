@@ -35,7 +35,8 @@ void launchCudaKernel(FunctionType function)
 
     int multiprocessorCount = 0;
 
-    checkCudaErrors(cudaDeviceGetAttribute(&multiprocessorCount, cudaDevAttrMultiProcessorCount, 0));
+    checkCudaErrors(cudaDeviceGetAttribute(&multiprocessorCount,
+        cudaDevAttrMultiProcessorCount, 0));
 
     checkCudaErrors(cudaOccupancyMaxActiveBlocksPerMultiprocessor(
         &ctasPerSM, kernelLauncher<FunctionType>, threads, 0));

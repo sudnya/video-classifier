@@ -427,7 +427,10 @@ class GenericReduceLambda
 public:
     CUDA_DECORATOR void operator()(parallel::ThreadGroup threadGroup) const
     {
-        for(size_t i = threadGroup.id(); i < elements; i += threadGroup.size())
+        auto innerGroup    = parallel::partitionThreadGroupAtLevel(threadGroup, 1);
+        auto relativeGroup = parallel::getRelativeGroup(innerGroup, threadGroup);
+
+        for(size_t i = relativeGroup.id(); i < elements; i += relativeGroup.size())
         {
             auto resultIndex = linearToDimension(i, resultView.size());
 
@@ -445,19 +448,47 @@ public:
             size_t sliceSize = inputSlice.elements();
 
             // iterate over i linearly from 0 to size
-            auto resultValue = inputSlice(zeros(inputSlice.size()));
+            NativeType resultValue;
 
-            for(size_t inputLinearIndex = 1; inputLinearIndex < sliceSize; ++inputLinearIndex)
+            if(innerGroup.size() <= sliceSize)
             {
-                // get index for i in the input's space
-                auto inputIndex = linearToDimension(inputLinearIndex, inputSlice.size());
+                auto inputIndex = linearToDimension(innerGroup.id(), inputSlice.size());
 
-                // apply operator to resultValue, input[index]
-                resultValue = nativeOperation(resultValue, inputSlice(inputIndex));
+                resultValue = inputSlice(inputIndex);
+
+                for(size_t inputLinearIndex = innerGroup.size() + innerGroup.id();
+                    inputLinearIndex < sliceSize; inputLinearIndex += innerGroup.size())
+                {
+                    // get index for i in the input's space
+                    auto inputIndex = linearToDimension(inputLinearIndex, inputSlice.size());
+
+                    // apply operator to resultValue, input[index]
+                    resultValue = nativeOperation(resultValue, inputSlice(inputIndex));
+                }
+
+                resultValue = reduce(innerGroup, resultValue, nativeOperation);
+            }
+            else if(innerGroup.id() == 0)
+            {
+                auto inputIndex = linearToDimension(0, inputSlice.size());
+
+                resultValue = inputSlice(inputIndex);
+
+                for(size_t inputLinearIndex = 1; inputLinearIndex < sliceSize; ++inputLinearIndex)
+                {
+                    // get index for i in the input's space
+                    auto inputIndex = linearToDimension(inputLinearIndex, inputSlice.size());
+
+                    // apply operator to resultValue, input[index]
+                    resultValue = nativeOperation(resultValue, inputSlice(inputIndex));
+                }
             }
 
             // save the result
-            resultView(resultIndex) = resultValue;
+            if(innerGroup.id() == 0)
+            {
+                resultView(resultIndex) = resultValue;
+            }
         }
 
     }
@@ -496,7 +527,7 @@ void reduce(Matrix& result, const Matrix& input, const Dimension& unsortedDimens
     auto nativeOperation = static_cast<const ActualOperation&>(op);
 
     // Reduce down to a single element
-    if(elements == 1)
+    if(elements == 1 && input.isContiguous())
     {
         reduceAllDimensions(result, input, nativeOperation, ActualPrecision());
     }
