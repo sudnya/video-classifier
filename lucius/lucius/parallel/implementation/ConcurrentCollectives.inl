@@ -45,7 +45,7 @@ CUDA_DECORATOR inline ThreadGroup partitionThreadGroupAtLevel(ThreadGroup g, siz
     }
     else if(level == 2)
     {
-        return partitionThreadGroup(g, 128);
+        return partitionThreadGroup(g, 256);
     }
 
     return g;
@@ -62,7 +62,7 @@ CUDA_DECORATOR inline void barrier(ThreadGroup g)
     {
         return;
     }
-    else if(g.size() <= 128)
+    else if(g.size() <= 256)
     {
         #ifdef __CUDA_ARCH__
         __syncthreads();
@@ -85,15 +85,15 @@ CUDA_DECORATOR inline T gather(ThreadGroup g, T value, size_t index)
     {
         return __shfl(value, index, g.size());
     }
-    else if(g.size() <= 128)
+    else if(g.size() <= 256)
     {
         T result = value;
         #ifdef __CUDA_ARCH__
-        __shared__ T data[128];
+        __shared__ T data[256];
         data[g.id()] = value;
         barrier(g);
 
-        if(index < 128)
+        if(index < 256)
         {
             result = data[index];
         }

@@ -427,7 +427,7 @@ class GenericReduceLambda
 public:
     CUDA_DECORATOR void operator()(parallel::ThreadGroup threadGroup) const
     {
-        auto innerGroup    = parallel::partitionThreadGroupAtLevel(threadGroup, 1);
+        auto innerGroup    = parallel::partitionThreadGroupAtLevel(threadGroup, 2);
         auto relativeGroup = parallel::getRelativeGroup(innerGroup, threadGroup);
 
         for(size_t i = relativeGroup.id(); i < elements; i += relativeGroup.size())
