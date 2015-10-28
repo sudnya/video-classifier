@@ -37,15 +37,15 @@ CUDA_DECORATOR inline ThreadGroup partitionThreadGroupAtLevel(ThreadGroup g, siz
 {
     if(level == 0)
     {
-        return partitionThreadGroup(g, 1);
+        return partitionThreadGroup(g, GroupLevelSize<0>::size());
     }
     else if(level == 1)
     {
-        return partitionThreadGroup(g, 32);
+        return partitionThreadGroup(g, GroupLevelSize<1>::size());
     }
     else if(level == 2)
     {
-        return partitionThreadGroup(g, 256);
+        return partitionThreadGroup(g, GroupLevelSize<2>::size());
     }
 
     return g;
@@ -58,11 +58,11 @@ CUDA_DECORATOR inline ThreadGroup getRelativeGroup(ThreadGroup inner, ThreadGrou
 
 CUDA_DECORATOR inline void barrier(ThreadGroup g)
 {
-    if(g.size() <= 32)
+    if(g.size() <= GroupLevelSize<1>::size())
     {
         return;
     }
-    else if(g.size() <= 256)
+    else if(g.size() <= GroupLevelSize<2>::size())
     {
         #ifdef __CUDA_ARCH__
         __syncthreads();
@@ -77,23 +77,23 @@ CUDA_DECORATOR inline void barrier(ThreadGroup g)
 template<typename T>
 CUDA_DECORATOR inline T gather(ThreadGroup g, T value, size_t index)
 {
-    if(g.size() == 0)
+    if(g.size() == GroupLevelSize<0>::size())
     {
         return value;
     }
-    else if(g.size() <= 32)
+    else if(g.size() <= GroupLevelSize<1>::size())
     {
         return __shfl(value, index, g.size());
     }
-    else if(g.size() <= 256)
+    else if(g.size() <= GroupLevelSize<2>::size())
     {
         T result = value;
         #ifdef __CUDA_ARCH__
-        __shared__ T data[256];
+        __shared__ T data[GroupLevelSize<2>::size()];
         data[g.id()] = value;
         barrier(g);
 
-        if(index < 256)
+        if(index < GroupLevelSize<2>::size())
         {
             result = data[index];
         }

@@ -27,6 +27,17 @@ public:
 
 };
 
+template<size_t level>
+class GroupLevelSize
+{
+public:
+    CUDA_DECORATOR static constexpr size_t size()
+    {
+        return level == 0 ? 1  :
+               ((level == 1) ? 32 : 512);
+    }
+};
+
 CUDA_DECORATOR inline ThreadGroup partitionThreadGroup(ThreadGroup g, size_t subgroupSize);
 CUDA_DECORATOR inline ThreadGroup partitionThreadGroupAtLevel(ThreadGroup g, size_t level);
 

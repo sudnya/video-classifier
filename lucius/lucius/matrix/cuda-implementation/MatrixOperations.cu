@@ -8,6 +8,7 @@
 #include <lucius/matrix/interface/Operation.h>
 
 #include <lucius/parallel/interface/MultiBulkSynchronousParallel.h>
+#include <lucius/parallel/interface/SharedMemoryAllocator.h>
 
 #include <lucius/util/interface/Metaprogramming.h>
 
@@ -422,6 +423,156 @@ void reduceAllDimensions(Matrix& result, const Matrix& input,
 }
 
 template<typename NativeType, typename ActualOperation>
+class ReduceFirstDimensionLambda
+{
+public:
+    CUDA_DECORATOR void operator()(parallel::ThreadGroup threadGroup) const
+    {
+        auto innerGroup    = parallel::partitionThreadGroupAtLevel(threadGroup, 2);
+        auto relativeGroup = parallel::getRelativeGroup(innerGroup, threadGroup);
+
+        size_t rows = inputElements / columns;
+
+        for(size_t column = relativeGroup.id(); column < columns; column += relativeGroup.size())
+        {
+            size_t row      = innerGroup.id();
+            size_t position = column * rows + row;
+
+            if(innerGroup.size() <= rows)
+            {
+                NativeType value = rawInput[position];
+
+                for(size_t row = 1; row < rows; row += innerGroup.size(),
+                    position += innerGroup.size())
+                {
+                    value = nativeOperation(value, rawInput[position]);
+                }
+
+                value = reduce(innerGroup, value, nativeOperation);
+
+                if(innerGroup.id() == 0)
+                {
+                    rawResult[column] = value;
+                }
+            }
+            else if (innerGroup.id() == 0)
+            {
+                NativeType value = rawInput[position];
+
+                for(size_t row = 1; row < rows; ++row, ++position)
+                {
+                    value = nativeOperation(value, rawInput[position]);
+                }
+
+                rawResult[column] = value;
+            }
+        }
+    }
+
+public:
+          NativeType* rawResult;
+    const NativeType* rawInput;
+
+public:
+    size_t columns;
+    size_t inputElements;
+
+public:
+    ActualOperation nativeOperation;
+
+};
+
+template <typename ActualOperation, typename ActualPrecision>
+void reduceFirstDimension(Matrix& result, const Matrix& input,
+    const ActualOperation& nativeOperation, const ActualPrecision& p)
+{
+    typedef typename ActualPrecision::type NativeType;
+
+    NativeType*       rawResult = static_cast<NativeType*>(result.data());
+    const NativeType* rawInput  = static_cast<const NativeType*>(input.data());
+
+    auto lambda = ReduceFirstDimensionLambda<NativeType, ActualOperation>{rawResult, rawInput,
+        result.elements(), input.elements(), nativeOperation};
+
+    parallel::multiBulkSynchronousParallel(lambda);
+}
+
+template<typename NativeType, typename ActualOperation>
+class ReduceSecondDimensionLambda
+{
+public:
+    CUDA_DECORATOR void operator()(parallel::ThreadGroup threadGroup) const
+    {
+        auto warp        = partitionThreadGroupAtLevel(threadGroup, 1);
+        auto cta         = partitionThreadGroupAtLevel(threadGroup, 2);
+        auto ctaInKernel = getRelativeGroup(cta, threadGroup);
+        auto warpInCta   = getRelativeGroup(warp, cta);
+
+        auto* memory = parallel::SharedMemoryAllocator<NativeType,
+            parallel::GroupLevelSize<2>::size()>::allocate();
+
+        size_t start = ctaInKernel.id() * warp.size();
+
+        for(size_t startingRow = start; startingRow < elements;
+            startingRow += warp.size() * ctaInKernel.size())
+        {
+            NativeType value = rawInput[startingRow];
+
+            size_t startingColumnPosition = elements * warpInCta.id();
+
+            for(size_t position = startingColumnPosition + startingRow;
+                position < inputElements; position += elements)
+            {
+                value = nativeOperation(value, rawInput[position]);
+            }
+
+            memory[cta.id()] = value;
+            barrier(cta);
+
+            if(warpInCta.id() == 0)
+            {
+                for(size_t sharedPosition = warp.id() + warp.size(), warpCounter = 1;
+                    warpCounter < warpInCta.size(); ++warpCounter, sharedPosition += warp.size())
+                {
+                    value = nativeOperation(value, memory[sharedPosition]);
+                }
+
+                rawResult[startingRow] = value;
+            }
+
+            barrier(cta);
+        }
+    }
+
+public:
+          NativeType* rawResult;
+    const NativeType* rawInput;
+
+public:
+    size_t elements;
+    size_t inputElements;
+
+public:
+    ActualOperation nativeOperation;
+
+};
+
+template <typename ActualOperation, typename ActualPrecision>
+void reduceSecondDimension(Matrix& result, const Matrix& input,
+    const ActualOperation& nativeOperation, const ActualPrecision& p)
+{
+    typedef typename ActualPrecision::type NativeType;
+
+    NativeType*       rawResult = static_cast<NativeType*>(result.data());
+    const NativeType* rawInput  = static_cast<const NativeType*>(input.data());
+
+    auto lambda = ReduceSecondDimensionLambda<NativeType, ActualOperation>{rawResult, rawInput,
+        result.elements(), input.elements(), nativeOperation};
+
+    parallel::multiBulkSynchronousParallel(lambda);
+}
+
+template<typename NativeType, typename ActualOperation>
 class GenericReduceLambda
 {
 public:
@@ -527,9 +678,19 @@ void reduce(Matrix& result, const Matrix& input, const Dimension& unsortedDimens
     auto nativeOperation = static_cast<const ActualOperation&>(op);
 
     // Reduce down to a single element
-    if(elements == 1 && input.isContiguous())
+    if(elements == 1 && input.isContiguous() && result.isContiguous())
     {
         reduceAllDimensions(result, input, nativeOperation, ActualPrecision());
+    }
+    else if(input.size().size() == 2 && dimensions.size() == 1 && dimensions[0] == 0
+        && input.isContiguous() && result.isContiguous())
+    {
+        reduceFirstDimension(result, input, nativeOperation, ActualPrecision());
+    }
+    else if(input.size().size() == 2 && dimensions.size() == 1 && dimensions[0] == 1
+        && input.isContiguous() && result.isContiguous())
+    {
+        reduceSecondDimension(result, input, nativeOperation, ActualPrecision());
     }
     else
     {

@@ -31,7 +31,7 @@ template<typename FunctionType>
 void launchCudaKernel(FunctionType function)
 {
     int ctasPerSM = 4;
-    int threads   = 256;
+    int threads   = 512;
 
     int multiprocessorCount = 0;
 

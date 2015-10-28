@@ -120,19 +120,6 @@ static Matrix foldTime(const Matrix& input)
 
 static Matrix unfoldTime(const Matrix& result, const Dimension& inputSize)
 {
-    /*
-    if(inputSize.size() <= 2)
-    {
-        return result;
-    }
-
-    assert(inputSize.size() == 3);
-
-    size_t layerSize = result.size()[0];
-    size_t miniBatch = inputSize[1];
-    size_t timesteps = inputSize[2];
-    */
-
     return reshape(result, inputSize);
 }
 
