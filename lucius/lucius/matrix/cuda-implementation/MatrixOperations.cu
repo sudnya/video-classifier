@@ -693,23 +693,42 @@ void reduce(Matrix& result, const Matrix& input, const Dimension& unsortedDimens
 
     auto nativeOperation = static_cast<const ActualOperation&>(op);
 
-    // Reduce down to a single element
-    if(elements == 1 && input.isContiguous() && result.isContiguous())
+    // try to simplify the operation to a 2d reduction
+    auto reshapedInput  = input;
+    auto reshapedResult = result;
+
+    if(elements > 1 && input.isContiguous() && result.isContiguous() &&
+        isContiguous(removeDimensions(input.size(), dimensions)))
     {
-        reduceAllDimensions(result, input, nativeOperation, ActualPrecision());
+        size_t reducedElements = selectDimensions(input.size(), dimensions).product();
+
+        auto newInputSize = dimensions[0] == 0 ?
+            Dimension(reducedElements, elements) : Dimension(elements, reducedElements);
+
+        reshapedInput  = reshape(input,  newInputSize);
+        reshapedResult = reshape(result, {result.elements()} );
+
+        dimensions = dimensions[0] == 0 ? Dimension(0) : Dimension(1);
     }
-    else if(input.size().size() == 2 && dimensions.size() == 1 && dimensions[0] == 0
-        && input.isContiguous() && result.isContiguous())
+
+    // special case reduce down to a single element, and 2d reductions
+    if(elements == 1 && reshapedInput.isContiguous() && result.isContiguous())
     {
-        reduceFirstDimension(result, input, nativeOperation, ActualPrecision());
+        reduceAllDimensions(result, reshapedInput, nativeOperation, ActualPrecision());
     }
-    else if(input.size().size() == 2 && dimensions.size() == 1 && dimensions[0] == 1
-        && input.isContiguous() && result.isContiguous())
+    else if(reshapedInput.size().size() == 2 && dimensions.size() == 1 && dimensions[0] == 0
+        && reshapedInput.isContiguous() && result.isContiguous())
     {
-        reduceSecondDimension(result, input, nativeOperation, ActualPrecision());
+        reduceFirstDimension(result, reshapedInput, nativeOperation, ActualPrecision());
+    }
+    else if(reshapedInput.size().size() == 2 && dimensions.size() == 1 && dimensions[0] == 1
+        && reshapedInput.isContiguous() && result.isContiguous())
+    {
+        reduceSecondDimension(result, reshapedInput, nativeOperation, ActualPrecision());
     }
     else
     {
+        // handle other types of reductions (note that this is much slower)
         MatrixView<NativeType>      resultView(result);
         ConstMatrixView<NativeType> inputView(input);
 

@@ -166,6 +166,26 @@ CUDA_DECORATOR Dimension selectNamedDimensions(const Dimension& selectedDimensio
     return result;
 }
 
+CUDA_DECORATOR bool isContiguous(const Dimension& dimensions)
+{
+    if(dimensions.size() == 0)
+    {
+        return true;
+    }
+
+    size_t next = dimensions[0] + 1;
+
+    for(size_t i = 1; i < dimensions.size(); ++i, ++next)
+    {
+        if(dimensions[i] != next)
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 CUDA_DECORATOR static size_t getOffset(const Dimension& stride, const Dimension& position)
 {
     size_t offset = 0;
