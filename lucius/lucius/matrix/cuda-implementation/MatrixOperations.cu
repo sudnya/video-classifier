@@ -698,33 +698,34 @@ void reduce(Matrix& result, const Matrix& input, const Dimension& unsortedDimens
     auto reshapedResult = result;
 
     if(elements > 1 && input.isContiguous() && result.isContiguous() &&
-        isContiguous(removeDimensions(input.size(), dimensions)))
+        isContiguous(dimensions) &&
+        (dimensions.front() == 0 || dimensions.back() == (input.size().size() - 1)))
     {
         size_t reducedElements = selectDimensions(input.size(), dimensions).product();
 
-        auto newInputSize = dimensions[0] == 0 ?
+        auto newInputSize = dimensions.front() == 0 ?
             Dimension(reducedElements, elements) : Dimension(elements, reducedElements);
 
         reshapedInput  = reshape(input,  newInputSize);
         reshapedResult = reshape(result, {result.elements()} );
 
-        dimensions = dimensions[0] == 0 ? Dimension(0) : Dimension(1);
+        dimensions = dimensions.front() == 0 ? Dimension(0) : Dimension(1);
     }
 
     // special case reduce down to a single element, and 2d reductions
-    if(elements == 1 && reshapedInput.isContiguous() && result.isContiguous())
+    if(elements == 1 && reshapedInput.isContiguous() && reshapedResult.isContiguous())
     {
-        reduceAllDimensions(result, reshapedInput, nativeOperation, ActualPrecision());
+        reduceAllDimensions(reshapedResult, reshapedInput, nativeOperation, ActualPrecision());
     }
     else if(reshapedInput.size().size() == 2 && dimensions.size() == 1 && dimensions[0] == 0
-        && reshapedInput.isContiguous() && result.isContiguous())
+        && reshapedInput.isContiguous() && reshapedResult.isContiguous())
     {
-        reduceFirstDimension(result, reshapedInput, nativeOperation, ActualPrecision());
+        reduceFirstDimension(reshapedResult, reshapedInput, nativeOperation, ActualPrecision());
     }
     else if(reshapedInput.size().size() == 2 && dimensions.size() == 1 && dimensions[0] == 1
-        && reshapedInput.isContiguous() && result.isContiguous())
+        && reshapedInput.isContiguous() && reshapedResult.isContiguous())
     {
-        reduceSecondDimension(result, reshapedInput, nativeOperation, ActualPrecision());
+        reduceSecondDimension(reshapedResult, reshapedInput, nativeOperation, ActualPrecision());
     }
     else
     {
