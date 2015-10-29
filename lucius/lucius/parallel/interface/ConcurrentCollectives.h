@@ -33,8 +33,12 @@ class GroupLevelSize
 public:
     CUDA_DECORATOR static constexpr size_t size()
     {
+        #ifdef __CUDA_ARCH__
         return level == 0 ? 1  :
                ((level == 1) ? 32 : 512);
+        #else
+        return 1;
+        #endif
     }
 };
 

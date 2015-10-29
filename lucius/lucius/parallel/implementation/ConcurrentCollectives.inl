@@ -70,7 +70,7 @@ CUDA_DECORATOR inline void barrier(ThreadGroup g)
         return;
     }
 
-    assert(false && "Not implemented.");
+    //assert(false && "Not implemented.");
 
 }
 
@@ -83,7 +83,9 @@ CUDA_DECORATOR inline T gather(ThreadGroup g, T value, size_t index)
     }
     else if(g.size() <= GroupLevelSize<1>::size())
     {
+        #ifdef __CUDA_ARCH__
         return __shfl(value, index, g.size());
+        #endif
     }
     else if(g.size() <= GroupLevelSize<2>::size())
     {
@@ -104,7 +106,7 @@ CUDA_DECORATOR inline T gather(ThreadGroup g, T value, size_t index)
         return result;
     }
 
-    assert(false && "Not implemented.");
+    //assert(false && "Not implemented.");
 
     return value;
 }

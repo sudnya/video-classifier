@@ -435,14 +435,15 @@ public:
 
         for(size_t column = relativeGroup.id(); column < columns; column += relativeGroup.size())
         {
-            size_t row      = innerGroup.id();
-            size_t position = column * rows + row;
+            size_t row         = innerGroup.id();
+            size_t position    = column * rows + row;
+            size_t endPosition = column * (rows + 1);
 
             if(innerGroup.size() <= rows)
             {
                 NativeType value = rawInput[position];
 
-                for(size_t row = 1; row < rows; row += innerGroup.size(),
+                for(position += innerGroup.size(); position < endPosition;
                     position += innerGroup.size())
                 {
                     value = nativeOperation(value, rawInput[position]);
@@ -458,6 +459,7 @@ public:
             else if (innerGroup.id() == 0)
             {
                 NativeType value = rawInput[position];
+                ++position;
 
                 for(size_t row = 1; row < rows; ++row, ++position)
                 {
@@ -513,31 +515,45 @@ public:
 
         size_t start = ctaInKernel.id() * warp.size();
 
-        for(size_t startingRow = start; startingRow < elements;
+        for(size_t startingRow = start; startingRow < rows;
             startingRow += warp.size() * ctaInKernel.size())
         {
-            NativeType value = rawInput[startingRow];
+            size_t row = startingRow + warp.id();
 
-            size_t startingColumnPosition = elements * warpInCta.id();
+            size_t startingColumnPosition = rows * warpInCta.id();
+            size_t columnStep = rows * warpInCta.size();
+            size_t startingPosition = startingColumnPosition + row;
+            size_t position = startingPosition;
 
-            for(size_t position = startingColumnPosition + startingRow;
-                position < inputElements; position += elements)
+            NativeType value = 0;
+
+            if(row < rows && position < inputElements)
             {
-                value = nativeOperation(value, rawInput[position]);
+                value = rawInput[position];
+
+                for(position += columnStep; position < inputElements; position += columnStep)
+                {
+                    value = nativeOperation(value, rawInput[position]);
+                }
             }
 
             memory[cta.id()] = value;
             barrier(cta);
 
-            if(warpInCta.id() == 0)
+            if(warpInCta.id() == 0 && row < rows)
             {
-                for(size_t sharedPosition = warp.id() + warp.size(), warpCounter = 1;
-                    warpCounter < warpInCta.size(); ++warpCounter, sharedPosition += warp.size())
+                for(size_t sharedPosition = warp.id() + warp.size(), warpCounter = 1,
+                    position = row + rows;
+                    warpCounter < warpInCta.size() && position < inputElements;
+                    ++warpCounter, position += rows, sharedPosition += warp.size())
                 {
                     value = nativeOperation(value, memory[sharedPosition]);
                 }
 
-                rawResult[startingRow] = value;
+                if (startingPosition < inputElements)
+                {
+                    rawResult[row] = value;
+                }
             }
 
             barrier(cta);
@@ -549,7 +565,7 @@ public:
     const NativeType* rawInput;
 
 public:
-    size_t elements;
+    size_t rows;
     size_t inputElements;
 
 public:
