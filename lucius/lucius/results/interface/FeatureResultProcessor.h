@@ -1,7 +1,7 @@
-/*	\file   FeatureResultProcessor.h
-	\date   Saturday August 10, 2014
-	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The header file for the FeatureResultProcessor class.
+/*    \file   FeatureResultProcessor.h
+    \date   Saturday August 10, 2014
+    \author Gregory Diamos <solusstultus@gmail.com>
+    \brief  The header file for the FeatureResultProcessor class.
 */
 
 #pragma once
@@ -18,15 +18,15 @@ namespace results
 class FeatureResultProcessor : public ResultProcessor
 {
 public:
-	virtual ~FeatureResultProcessor();
+    virtual ~FeatureResultProcessor();
 
 public:
-	/*! \brief Process a batch of results */
-	virtual void process(const ResultVector& );
+    /*! \brief Process a batch of results */
+    virtual void process(const ResultVector& );
 
 public:
-	/*! \brief Return a description of the results. */
-	virtual std::string toString() const;
+    /*! \brief Return a description of the results. */
+    virtual std::string toString() const;
 
 };
 

@@ -1,0 +1,51 @@
+#!/bin/bash
+
+SCRIPT_DIRECTORY="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+CUDA_DEVICES="0"
+
+INPUT_TRAINING_DATASET="/mnt/Data/summer2015/imperative-speech/training/database.txt"
+INPUT_VALIDATION_DATASET="/mnt/Data/summer2015/imperative-speech/validation/database.txt"
+LOGS="NesterovAcceleratedGradientSolver,BenchmarkImperativeSpeech,InputAudioDataProducer,LabelMatchResultProcessor"
+
+LAYER_SIZE="128"
+SAMPLING_RATE=8000
+FRAME_DURATION=160
+RECURRENT_LAYERS="1"
+FORWARD_LAYERS="4"
+MINI_BATCH_SIZE="8"
+EPOCHS="20"
+LEARNING_RATE="0.00001"
+MOMENTUM="0.99"
+NOISE_RATE_LOWER="0.0"
+NOISE_RATE_UPPER="0.001"
+ANNEALING_RATE="1.01"
+RESUME_FROM=""
+
+EXPERIMENT_NAME="$SAMPLING_RATE-freq-$FRAME_DURATION-frame-$RECURRENT_LAYERS-rec-$FORWARD_LAYERS-forw-$LAYER_SIZE-size-$MINI_BATCH_SIZE-batch-$LEARNING_RATE-lr-$MOMENTUM-mom-$NOISE_RATE_LOWER-$NOISE_RATE_UPPER-noise-$ANNEALING_RATE-anneal"
+
+EXPERIMENT_DIRECTORY="$SCRIPT_DIRECTORY/$EXPERIMENT_NAME"
+LOG_FILE="$EXPERIMENT_DIRECTORY/log"
+MODEL_FILE="$EXPERIMENT_DIRECTORY/model.tar"
+VALIDATION_ERROR_FILE="$EXPERIMENT_DIRECTORY/validation-error.csv"
+
+mkdir -p $EXPERIMENT_DIRECTORY
+
+export CUDA_VISIBLE_DEVICES=$CUDA_DEVICES
+
+COMMAND="benchmark-imperative-speech -l $LAYER_SIZE -e $EPOCHS -b $MINI_BATCH_SIZE -f $FORWARD_LAYERS \
+         --momentum $MOMENTUM --learning-rate $LEARNING_RATE -r $RECURRENT_LAYERS --sampling-rate $SAMPLING_RATE \
+         -i $INPUT_TRAINING_DATASET -t $INPUT_VALIDATION_DATASET -L $LOGS --log-file $LOG_FILE \
+         -o $MODEL_FILE --report-path $VALIDATION_ERROR_FILE --frame-duration $FRAME_DURATION \
+         --noise-rate-lower $NOISE_RATE_LOWER --noise-rate-upper $NOISE_RATE_UPPER \
+         --annealing-rate $ANNEALING_RATE"
+
+if [[ -n $RESUME_FROM ]]
+then
+    COMMAND="$COMMAND -m $RESUME_FROM"
+fi
+
+echo $COMMAND
+
+$COMMAND
+

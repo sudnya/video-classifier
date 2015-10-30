@@ -31,7 +31,7 @@ void CudaRuntimeLibrary::load()
 
 bool CudaRuntimeLibrary::loaded()
 {
-	load();
+    load();
 
     return _interface.loaded();
 
@@ -216,7 +216,11 @@ void CudaRuntimeLibrary::Interface::load()
 {
     if(_failed)  return;
     if(loaded()) return;
-    if(!util::KnobDatabase::getKnobValue("Cuda::Enable", 1)) return;
+    if(!util::KnobDatabase::getKnobValue("Cuda::Enable", 1))
+    {
+        _failed = true;
+        return;
+    }
 
     #ifdef __APPLE__
     const char* libraryName = "libcudart.dylib";

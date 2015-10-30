@@ -52,7 +52,7 @@ FeedForwardLayer::FeedForwardLayer(size_t inputs, size_t outputs)
 
 FeedForwardLayer::FeedForwardLayer(size_t inputs, size_t outputs, const matrix::Precision& precision)
 : _parameters(new MatrixVector({Matrix({outputs, inputs}, precision), Matrix({outputs}, precision)})),
- _weights((*_parameters)[0]), _bias((*_parameters)[1])
+  _weights((*_parameters)[0]), _bias((*_parameters)[1])
 {
 
 }
@@ -134,14 +134,14 @@ static Matrix unfoldTime(const Matrix& result, const Dimension& inputSize)
     return reshape(result, {layerSize, miniBatch, timesteps});
 }
 
-void FeedForwardLayer::runForwardImplementation(MatrixVector& activations) const
+void FeedForwardLayer::runForwardImplementation(MatrixVector& activations)
 {
     auto m = foldTime(activations.back());
 
     if(util::isLogEnabled("FeedForwardLayer"))
     {
-        util::log("FeedForwardLayer") << " Running forward propagation of matrix " << m.shapeString()
-            << " through layer: " << _weights.shapeString() << "\n";
+        util::log("FeedForwardLayer") << " Running forward propagation of matrix "
+            << m.shapeString() << " through layer: " << _weights.shapeString() << "\n";
     }
 
     if(util::isLogEnabled("FeedForwardLayer::Detail"))
@@ -152,7 +152,8 @@ void FeedForwardLayer::runForwardImplementation(MatrixVector& activations) const
     }
     else
     {
-        util::log("FeedForwardLayer") << "  input shape: " << activations.back().shapeString() << "\n";
+        util::log("FeedForwardLayer") << "  input shape: "
+            << activations.back().shapeString() << "\n";
     }
 
     auto unbiasedOutput = gemm(Matrix(_weights), false, 1.0, m, false);
@@ -184,7 +185,7 @@ void FeedForwardLayer::runForwardImplementation(MatrixVector& activations) const
 
 matrix::Matrix FeedForwardLayer::runReverseImplementation(MatrixVector& gradients,
     MatrixVector& activations,
-    const Matrix& differenceWithTime) const
+    const Matrix& differenceWithTime)
 {
     auto outputActivations = foldTime(activations.back());
     activations.pop_back();
@@ -388,7 +389,7 @@ std::unique_ptr<Layer> FeedForwardLayer::clone() const
 
 std::unique_ptr<Layer> FeedForwardLayer::mirror() const
 {
-    return std::make_unique<FeedForwardLayer>(getInputCount(), getOutputCount(), precision());
+    return std::make_unique<FeedForwardLayer>(getOutputCount(), getInputCount(), precision());
 }
 
 std::string FeedForwardLayer::getTypeName() const

@@ -1,8 +1,8 @@
 
 /*! \brief  MoreThuenteLineSearch.h
-	\date   August 23, 2014
-	\author Gregory Diamos <solustultus@gmail.com>
-	\brief  The header file for the MoreThuenteLineSearch class.
+    \date   August 23, 2014
+    \author Gregory Diamos <solustultus@gmail.com>
+    \brief  The header file for the MoreThuenteLineSearch class.
 */
 
 #pragma once
@@ -22,24 +22,24 @@ namespace optimizer
 class MoreThuenteLineSearch : public LineSearch
 {
 public:
-	MoreThuenteLineSearch();
+    MoreThuenteLineSearch();
 
 public:
-	virtual void search(
-		const CostAndGradientFunction& costFunction,
-		MatrixVector& inputs, double& cost,
-		MatrixVector& gradient,
-		const MatrixVector& direction,
-		double step, const MatrixVector& previousInputs,
-		const MatrixVector& previousGradients);
+    virtual void search(
+        const CostAndGradientFunction& costFunction,
+        MatrixVector& inputs, double& cost,
+        MatrixVector& gradient,
+        const MatrixVector& direction,
+        double step, const MatrixVector& previousInputs,
+        const MatrixVector& previousGradients);
 
 private:
-	double _xTolerance;
-	double _gTolerance;
-	double _fTolerance;
-	double _maxStep;
-	double _minStep;
-	size_t _maxLineSearch;
+    double _xTolerance;
+    double _gTolerance;
+    double _fTolerance;
+    double _maxStep;
+    double _minStep;
+    size_t _maxLineSearch;
 
 };
 

@@ -1,7 +1,7 @@
 /*! \file   test-lucius-visualization.cpp
-	\author Gregory Diamos <solusstultus@gmail.com>
-	\date   Tuesday November 19, 2013
-	\brief  A unit test for neural network visualization.
+    \author Gregory Diamos <solusstultus@gmail.com>
+    \date   Tuesday November 19, 2013
+    \brief  A unit test for neural network visualization.
 */
 
 // Lucius Includes
@@ -26,278 +26,278 @@ typedef lucius::matrix::Matrix Matrix;
 typedef lucius::visualization::NeuronVisualizer NeuronVisualizer;
 
 static NeuralNetwork createNeuralNetwork(size_t xPixels, size_t yPixels,
-	size_t colors, std::default_random_engine& engine)
+    size_t colors, std::default_random_engine& engine)
 {
-	NeuralNetwork network;
+    NeuralNetwork network;
 
-	// 5x5 convolutional layer
-	network.addLayer(FeedForwardLayer(xPixels, yPixels * colors, yPixels * colors));
+    // 5x5 convolutional layer
+    network.addLayer(FeedForwardLayer(xPixels, yPixels * colors, yPixels * colors));
 
-	// 2x2 pooling layer
-	//network.addLayer(Layer(1, xPixels, xPixels));
+    // 2x2 pooling layer
+    //network.addLayer(Layer(1, xPixels, xPixels));
 
-	// final prediction layer
-	network.addLayer(FeedForwardLayer(1, network.getOutputCount(), 1));
+    // final prediction layer
+    network.addLayer(FeedForwardLayer(1, network.getOutputCount(), 1));
 
-	network.initializeRandomly(engine);
+    network.initializeRandomly(engine);
 
-	return network;
+    return network;
 }
 
 static Image generateRandomImage(size_t xPixels, size_t yPixels, size_t colors,
-	std::default_random_engine& engine)
+    std::default_random_engine& engine)
 {
-	Image image(xPixels, yPixels, colors, 1);
-	
-	std::uniform_real_distribution<float> distribution(-1.0f, 1.0f);
+    Image image(xPixels, yPixels, colors, 1);
+    
+    std::uniform_real_distribution<float> distribution(-1.0f, 1.0f);
 
-	for(size_t y = 0; y != yPixels; ++y)
-	{
-		for(size_t x = 0; x != xPixels; ++x)
-		{
-			for(size_t c = 0; c != colors; ++c)
-			{
-				float value = distribution(engine);
+    for(size_t y = 0; y != yPixels; ++y)
+    {
+        for(size_t x = 0; x != xPixels; ++x)
+        {
+            for(size_t c = 0; c != colors; ++c)
+            {
+                float value = distribution(engine);
 
-				image.setStandardizedComponentAt(x, y, c, value);
-			}
-		}
-	}
-	
-	return image;
+                image.setStandardizedComponentAt(x, y, c, value);
+            }
+        }
+    }
+    
+    return image;
 }
 
 static Image addRandomNoiseToImage(const Image& image, float noiseMagnitude,
-	std::default_random_engine& engine)
+    std::default_random_engine& engine)
 {
-	Image copy = image;
+    Image copy = image;
 
-	size_t xPixels = image.x();
-	size_t yPixels = image.y();
-	size_t colors  = image.colorComponents();
+    size_t xPixels = image.x();
+    size_t yPixels = image.y();
+    size_t colors  = image.colorComponents();
 
-	std::uniform_real_distribution<float> distribution(-noiseMagnitude, noiseMagnitude);
-				
-	for(size_t y = 0; y != yPixels; ++y)
-	{
-		for(size_t x = 0; x != xPixels; ++x)
-		{
-			for(size_t c = 0; c != colors; ++c)
-			{
-				float value = distribution(engine) + image.getStandardizedComponentAt(x, y, c);
+    std::uniform_real_distribution<float> distribution(-noiseMagnitude, noiseMagnitude);
+                
+    for(size_t y = 0; y != yPixels; ++y)
+    {
+        for(size_t x = 0; x != xPixels; ++x)
+        {
+            for(size_t c = 0; c != colors; ++c)
+            {
+                float value = distribution(engine) + image.getStandardizedComponentAt(x, y, c);
 
-				if(value < -1.0f)
-				{
-					value = -1.0f;
-				}
+                if(value < -1.0f)
+                {
+                    value = -1.0f;
+                }
 
-				if(value > 1.0f)
-				{
-					value = 1.0f;
-				}
+                if(value > 1.0f)
+                {
+                    value = 1.0f;
+                }
 
-				copy.setStandardizedComponentAt(x, y, c, value);
-			}
-		}
-	}
-	
-	return copy;
+                copy.setStandardizedComponentAt(x, y, c, value);
+            }
+        }
+    }
+    
+    return copy;
 }
 
 static ImageVector generateBatch(const Image& image, float noiseMagnitude,
-	size_t batchSize, std::default_random_engine& engine)
+    size_t batchSize, std::default_random_engine& engine)
 {
-	ImageVector images;
+    ImageVector images;
 
-	std::bernoulli_distribution distribution(0.5f);
+    std::bernoulli_distribution distribution(0.5f);
 
-	for(size_t i = 0; i != batchSize; ++i)
-	{
-		bool generateRandom = distribution(engine);
+    for(size_t i = 0; i != batchSize; ++i)
+    {
+        bool generateRandom = distribution(engine);
 
-		if(generateRandom)
-		{
-			images.push_back(generateRandomImage(
-				image.y(), image.x(), image.colorComponents(), engine));
-		}
-		else
-		{
-			images.push_back(addRandomNoiseToImage(image,
-				noiseMagnitude, engine));
-		}
-	}
-	
-	return images;
+        if(generateRandom)
+        {
+            images.push_back(generateRandomImage(
+                image.y(), image.x(), image.colorComponents(), engine));
+        }
+        else
+        {
+            images.push_back(addRandomNoiseToImage(image,
+                noiseMagnitude, engine));
+        }
+    }
+    
+    return images;
 }
 
 static Matrix generateReference(const ImageVector& images)
 {
-	Matrix reference(images.size(), 1);
-	
-	for(size_t i = 0; i < images.size(); ++i)
-	{
-		reference(i, 0) = images[i].label() == "reference" ? 1.0f : 0.0f;
-	
-		//std::cout << "reference: " << reference(i, 0) << "\n";
-	}
-	
-	return reference;
+    Matrix reference(images.size(), 1);
+    
+    for(size_t i = 0; i < images.size(); ++i)
+    {
+        reference(i, 0) = images[i].label() == "reference" ? 1.0f : 0.0f;
+    
+        //std::cout << "reference: " << reference(i, 0) << "\n";
+    }
+    
+    return reference;
 }
 
 static void trainNetwork(NeuralNetwork& neuralNetwork, const Image& image,
-	float noiseMagnitude, size_t iterations, size_t batchSize,
-	std::default_random_engine& engine)
+    float noiseMagnitude, size_t iterations, size_t batchSize,
+    std::default_random_engine& engine)
 {
-	lucius::util::log("TestVisualization") << "Training the network.\n";
-	for(size_t i = 0; i != iterations; ++i)
-	{
-		lucius::util::log("TestVisualization") << " Iteration " << i << " out of "
-			<< iterations << "\n";
-		ImageVector batch = generateBatch(image, noiseMagnitude,
-			batchSize, engine);
-		
-		Matrix input = batch.convertToStandardizedMatrix(
-			neuralNetwork.getInputCount(),
-			neuralNetwork.getInputBlockingFactor(), image.colorComponents());
-		
-		Matrix reference = generateReference(batch);
-		
-		lucius::util::log("TestVisualization") << "  Input:     " << input.toString();
-		lucius::util::log("TestVisualization") << "  Reference: " << reference.toString();
-		
-		neuralNetwork.train(input, reference);
-	}
+    lucius::util::log("TestVisualization") << "Training the network.\n";
+    for(size_t i = 0; i != iterations; ++i)
+    {
+        lucius::util::log("TestVisualization") << " Iteration " << i << " out of "
+            << iterations << "\n";
+        ImageVector batch = generateBatch(image, noiseMagnitude,
+            batchSize, engine);
+        
+        Matrix input = batch.convertToStandardizedMatrix(
+            neuralNetwork.getInputCount(),
+            neuralNetwork.getInputBlockingFactor(), image.colorComponents());
+        
+        Matrix reference = generateReference(batch);
+        
+        lucius::util::log("TestVisualization") << "  Input:     " << input.toString();
+        lucius::util::log("TestVisualization") << "  Reference: " << reference.toString();
+        
+        neuralNetwork.train(input, reference);
+    }
 }
 
 static float testNetwork(NeuralNetwork& neuralNetwork, const Image& image,
-	float noiseMagnitude, size_t iterations, size_t batchSize,
-	std::default_random_engine& engine)
+    float noiseMagnitude, size_t iterations, size_t batchSize,
+    std::default_random_engine& engine)
 {
-	float accuracy = 0.0f;
+    float accuracy = 0.0f;
 
-	iterations = std::max(iterations, 1UL);
+    iterations = std::max(iterations, 1UL);
 
-	lucius::util::log("TestVisualization") << "Testing the accuracy of the trained network.\n";
+    lucius::util::log("TestVisualization") << "Testing the accuracy of the trained network.\n";
 
-	for(size_t i = 0; i != iterations; ++i)
-	{
-		lucius::util::log("TestVisualization") << " Iteration " << i << " out of "
-			<< iterations << "\n";
-		
-		ImageVector batch = generateBatch(image, noiseMagnitude,
-			batchSize, engine);
-		
-		Matrix input = batch.convertToStandardizedMatrix(
-			neuralNetwork.getInputCount(),
-			neuralNetwork.getInputBlockingFactor(), image.colorComponents());
-		
-		Matrix reference = generateReference(batch);
-		
-		lucius::util::log("TestVisualization") << "  Input:     " << input.toString();
-		lucius::util::log("TestVisualization") << "  Reference: " << reference.toString();
-		
-		accuracy += neuralNetwork.computeAccuracy(input, reference);
-	}
-	
-	return accuracy * 100.0f / iterations;
+    for(size_t i = 0; i != iterations; ++i)
+    {
+        lucius::util::log("TestVisualization") << " Iteration " << i << " out of "
+            << iterations << "\n";
+        
+        ImageVector batch = generateBatch(image, noiseMagnitude,
+            batchSize, engine);
+        
+        Matrix input = batch.convertToStandardizedMatrix(
+            neuralNetwork.getInputCount(),
+            neuralNetwork.getInputBlockingFactor(), image.colorComponents());
+        
+        Matrix reference = generateReference(batch);
+        
+        lucius::util::log("TestVisualization") << "  Input:     " << input.toString();
+        lucius::util::log("TestVisualization") << "  Reference: " << reference.toString();
+        
+        accuracy += neuralNetwork.computeAccuracy(input, reference);
+    }
+    
+    return accuracy * 100.0f / iterations;
 }
 
 static std::string rename(const std::string& name)
 {
-	return lucius::util::stripExtension(name) + "-reference" +
-		lucius::util::getExtension(name);
+    return lucius::util::stripExtension(name) + "-reference" +
+        lucius::util::getExtension(name);
 }
 
 static float visualizeNetwork(NeuralNetwork& neuralNetwork, const Image& referenceImage,
-	const std::string& outputPath)
+    const std::string& outputPath)
 {
-	// save the downsampled reference
-	Image reference = referenceImage;
-	
-	reference.setPath(rename(outputPath));
-	reference.save();
+    // save the downsampled reference
+    Image reference = referenceImage;
+    
+    reference.setPath(rename(outputPath));
+    reference.save();
 
-	NeuronVisualizer visualizer(&neuralNetwork);
-	
-	Image image = referenceImage;
-	
-	image.setPath(outputPath);
-	
-	visualizer.visualizeNeuron(image, 0);
+    NeuronVisualizer visualizer(&neuralNetwork);
+    
+    Image image = referenceImage;
+    
+    image.setPath(outputPath);
+    
+    visualizer.visualizeNeuron(image, 0);
 
-	lucius::util::log("TestVisualization") << "Reference response: "
-		<< neuralNetwork.runInputs(referenceImage.convertToStandardizedMatrix(
-			neuralNetwork.getInputCount(),
-			neuralNetwork.getInputBlockingFactor(), image.colorComponents())).toString();
-	lucius::util::log("TestVisualization") << "Visualized response: "
-		<< neuralNetwork.runInputs(image.convertToStandardizedMatrix(
-			neuralNetwork.getInputCount(),
-			neuralNetwork.getInputBlockingFactor(), image.colorComponents())).toString();
-	
-	image.save();
+    lucius::util::log("TestVisualization") << "Reference response: "
+        << neuralNetwork.runInputs(referenceImage.convertToStandardizedMatrix(
+            neuralNetwork.getInputCount(),
+            neuralNetwork.getInputBlockingFactor(), image.colorComponents())).toString();
+    lucius::util::log("TestVisualization") << "Visualized response: "
+        << neuralNetwork.runInputs(image.convertToStandardizedMatrix(
+            neuralNetwork.getInputCount(),
+            neuralNetwork.getInputBlockingFactor(), image.colorComponents())).toString();
+    
+    image.save();
 
-	return 0.0f;
+    return 0.0f;
 }
 
 static void runTest(const std::string& imagePath, float noiseMagnitude,
-	size_t iterations, size_t batchSize, bool seedWithTime,
-	size_t xPixels, size_t yPixels,
-	size_t colors, const std::string& outputPath)
+    size_t iterations, size_t batchSize, bool seedWithTime,
+    size_t xPixels, size_t yPixels,
+    size_t colors, const std::string& outputPath)
 {
-	std::default_random_engine randomNumberGenerator;
+    std::default_random_engine randomNumberGenerator;
 
-	if(seedWithTime)
-	{
-		randomNumberGenerator.seed(std::time(nullptr));
-	}
+    if(seedWithTime)
+    {
+        randomNumberGenerator.seed(std::time(nullptr));
+    }
 
-	// create network
-	/// one convolutional layer
-	/// one output layer
+    // create network
+    /// one convolutional layer
+    /// one output layer
 
-	auto neuralNetwork = createNeuralNetwork(xPixels, yPixels, colors,
-		randomNumberGenerator);
+    auto neuralNetwork = createNeuralNetwork(xPixels, yPixels, colors,
+        randomNumberGenerator);
 
-	// load image
-	// create random image
-	Image image(imagePath, "reference");
-	image.load();
+    // load image
+    // create random image
+    Image image(imagePath, "reference");
+    image.load();
 
-	image = image.downsample(xPixels, yPixels, colors);
+    image = image.downsample(xPixels, yPixels, colors);
 
-	// iterate
-	/// select default or random image
-	/// add noise to image
-	/// train
-	trainNetwork(neuralNetwork, image, noiseMagnitude, iterations,
-		batchSize, randomNumberGenerator);
+    // iterate
+    /// select default or random image
+    /// add noise to image
+    /// train
+    trainNetwork(neuralNetwork, image, noiseMagnitude, iterations,
+        batchSize, randomNumberGenerator);
 
-	// test the network's predition ability
-	float accuracy = testNetwork(neuralNetwork, image, noiseMagnitude, iterations,
-		batchSize, randomNumberGenerator);
+    // test the network's predition ability
+    float accuracy = testNetwork(neuralNetwork, image, noiseMagnitude, iterations,
+        batchSize, randomNumberGenerator);
 
-	std::cout << "Test accuracy was " << accuracy << "%\n";
+    std::cout << "Test accuracy was " << accuracy << "%\n";
 
-	if(accuracy < 95.0)
-	{
-		std::cout << "Test Failed! Accuracy is too low.\n";
-	}
-	
-	// visualize the output
-	float visualizationAccuracy = visualizeNetwork(neuralNetwork, image,
-		outputPath);
-	
-	std::cout << "Visualization accuracy was " << visualizationAccuracy << "%\n";
+    if(accuracy < 95.0)
+    {
+        std::cout << "Test Failed! Accuracy is too low.\n";
+    }
+    
+    // visualize the output
+    float visualizationAccuracy = visualizeNetwork(neuralNetwork, image,
+        outputPath);
+    
+    std::cout << "Visualization accuracy was " << visualizationAccuracy << "%\n";
 }
 
 static void enableSpecificLogs(const std::string& modules)
 {
-	auto individualModules = lucius::util::split(modules, ",");
-	
-	for(auto& module : individualModules)
-	{
-		lucius::util::enableLog(module);
-	}
+    auto individualModules = lucius::util::split(modules, ",");
+    
+    for(auto& module : individualModules)
+    {
+        lucius::util::enableLog(module);
+    }
 }
 
 int main(int argc, char** argv)
@@ -307,15 +307,15 @@ int main(int argc, char** argv)
     bool verbose = false;
     bool seed = false;
     std::string loggingEnabledModules;
-	size_t xPixels = 0;
-	size_t yPixels = 0;
-	size_t colors  = 0;
-	size_t iterations = 0;
-	size_t batchSize = 0;
-	float noiseMagnitude = 0.0f;
-	
-	std::string image;
-	std::string outputPath;
+    size_t xPixels = 0;
+    size_t yPixels = 0;
+    size_t colors  = 0;
+    size_t iterations = 0;
+    size_t batchSize = 0;
+    float noiseMagnitude = 0.0f;
+    
+    std::string image;
+    std::string outputPath;
 
     parser.description("A test for lucius neural network visualization.");
 
@@ -330,35 +330,35 @@ int main(int argc, char** argv)
     parser.parse("-n", "--noise-magnitude", noiseMagnitude, 0.05f,
         "The magnitude of noise to add to the image (0.0f - 1.0f).");
     parser.parse("-L", "--log-module", loggingEnabledModules, "",
-		"Print out log messages during execution for specified modules "
-		"(comma-separated list of modules, e.g. NeuralNetwork, Layer, ...).");
+        "Print out log messages during execution for specified modules "
+        "(comma-separated list of modules, e.g. NeuralNetwork, Layer, ...).");
     parser.parse("-s", "--seed", seed, false, "Seed with time.");
     parser.parse("-x", "--x-pixels", xPixels, 16,
         "The number of X pixels to consider from the input image.");
-	parser.parse("-y", "--y-pixels", yPixels, 16,
-		"The number of Y pixels to consider from the input image");
-	parser.parse("-c", "--colors", colors, 3,
-		"The number of color components (e.g. RGB) to consider from the input image");
+    parser.parse("-y", "--y-pixels", yPixels, 16,
+        "The number of Y pixels to consider from the input image");
+    parser.parse("-c", "--colors", colors, 3,
+        "The number of color components (e.g. RGB) to consider from the input image");
     parser.parse("-v", "--verbose", verbose, false,
         "Print out log messages during execution");
 
-	parser.parse();
+    parser.parse();
 
     if(verbose)
-	{
-		lucius::util::enableAllLogs();
-	}
-	else
-	{
-		enableSpecificLogs(loggingEnabledModules);
-	}
+    {
+        lucius::util::enableAllLogs();
+    }
+    else
+    {
+        enableSpecificLogs(loggingEnabledModules);
+    }
     
     lucius::util::log("TestVisualization") << "Test begins\n";
     
     try
     {
         runTest(image, noiseMagnitude, iterations,
-			batchSize, seed, xPixels, yPixels, colors, outputPath);
+            batchSize, seed, xPixels, yPixels, colors, outputPath);
     }
     catch(const std::exception& e)
     {

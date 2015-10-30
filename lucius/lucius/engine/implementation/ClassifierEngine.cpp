@@ -109,6 +109,8 @@ ClassifierEngine::ResultVector ClassifierEngine::runOnBatch(Matrix&& input, Matr
 {
     auto network = getAggregateNetwork();
 
+    network->setIsTraining(false);
+
     auto result = network->runInputs(std::move(input));
 
     restoreAggregateNetwork();

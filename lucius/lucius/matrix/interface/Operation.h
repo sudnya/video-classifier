@@ -51,6 +51,7 @@ public:
         Fill,
         Square,
         SquareAndScale,
+        Inverse,
         Nop,
         NopDerivative
     };
@@ -192,7 +193,7 @@ public:
 
     CUDA_DECORATOR float operator()(const float& l) const
     {
-        return powf(l, _value);
+        return powf(l, static_cast<float>(_value));
     }
 
 public:
@@ -665,6 +666,23 @@ private:
 
 };
 
+class Inverse : public Operation
+{
+public:
+    CUDA_DECORATOR Inverse() : Operation(Operation::Inverse)
+    {
+
+    }
+
+public:
+    template<typename T>
+    CUDA_DECORATOR T operator()(const T& r) const
+    {
+        return T(1.0) / r;
+    }
+
+};
+
 class Nop : public Operation
 {
 public:
@@ -701,14 +719,16 @@ public:
 
 typedef std::tuple<Add, Subtract, Multiply, Divide, Log, Exp, Pow, Abs, Sqrt, RectifiedLinear,
                    RectifiedLinearDerivative, Sigmoid, SigmoidDerivative, Negate, Maximum,
-                   Minimum, Equal, LessThan, NotEqual, Fill, Square, SquareAndScale, Nop, NopDerivative> AllOperations;
+                   Minimum, Equal, LessThan, NotEqual, Fill, Square, SquareAndScale, Inverse,
+                    Nop, NopDerivative> AllOperations;
 
 typedef std::tuple<Add, Subtract, Multiply, Divide, Maximum, Minimum,
                    Equal, LessThan, NotEqual> AllBinaryOperations;
 
 typedef std::tuple<Add, Subtract, Multiply, Divide, Log, Exp, Pow, Abs, Sqrt, RectifiedLinear,
                    RectifiedLinearDerivative, Sigmoid, SigmoidDerivative, Negate, Maximum,
-                   Minimum, Equal, LessThan, NotEqual, Fill, Square, SquareAndScale, Nop, NopDerivative> AllUnaryOperations;
+                   Minimum, Equal, LessThan, NotEqual, Fill, Square, SquareAndScale, Inverse,
+                   Nop, NopDerivative> AllUnaryOperations;
 
 }
 }

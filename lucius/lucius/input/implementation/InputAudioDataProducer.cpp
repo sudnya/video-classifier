@@ -22,6 +22,7 @@
 // Standard Library Includes
 #include <random>
 #include <fstream>
+#include <algorithm>
 
 namespace lucius
 {
@@ -39,7 +40,7 @@ public:
         const std::string& audioDatabaseFilename)
     : _producer(producer), _databaseFilename(audioDatabaseFilename), _initialized(false),
       _remainingSamples(0), _nextSample(0), _nextNoiseSample(0), _totalTimestepsPerUtterance(0),
-      _audioTimesteps(0)
+      _audioTimesteps(0), _noiseRateLower(0.0), _noiseRateUpper(0.0)
     {
 
     }
@@ -71,6 +72,11 @@ public:
             "InputAudioDataProducer::TotalTimestepsPerUtterance", 512);
         _audioTimesteps             = util::KnobDatabase::getKnobValue(
             "InputAudioDataProducer::AudioTimesteps", 64);
+
+        _noiseRateLower = util::KnobDatabase::getKnobValue(
+            "InputAudioDataProducer::NoiseRateLower", 0.0);
+        _noiseRateUpper = util::KnobDatabase::getKnobValue(
+            "InputAudioDataProducer::NoiseRateUpper", 0.2);
 
         _parseAudioDatabase();
 
@@ -166,7 +172,7 @@ private:
             _downsampleToMatchFrequencies(audio, noise);
 
             //_scaleRandomly(audio, 1.0);
-            //_scaleRandomly(noise, 1.0);
+            _scaleRandomly(noise, _noiseRateLower, _noiseRateUpper);
 
             auto selectedTimesteps = ((_generator() % _audioTimesteps) + _audioTimesteps) / 2;
 
@@ -290,9 +296,11 @@ private:
         audio = audio.sample(frequency);
     }
 
-    void _scaleRandomly(Audio& audio, double factor)
+    void _scaleRandomly(Audio& audio, double lower, double upper)
     {
-        double scale = factor * (((_generator() % 10000) + 5000) / 10000.0);
+        std::uniform_real_distribution<double> distribution(lower, upper);
+
+        double scale = distribution(_generator);
 
         for(size_t sample = 0; sample != audio.size(); ++sample)
         {
@@ -374,6 +382,10 @@ private:
 private:
     size_t _totalTimestepsPerUtterance;
     size_t _audioTimesteps;
+
+private:
+    double _noiseRateLower;
+    double _noiseRateUpper;
 
 };
 

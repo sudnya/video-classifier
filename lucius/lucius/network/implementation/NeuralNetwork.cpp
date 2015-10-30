@@ -57,7 +57,7 @@ void NeuralNetwork::initialize()
 }
 
 double NeuralNetwork::getCostAndGradient(MatrixVector& gradient, const Matrix& input,
-    const Matrix& reference) const
+    const Matrix& reference)
 {
     MatrixVector activations;
 
@@ -118,11 +118,12 @@ double NeuralNetwork::getCostAndGradient(MatrixVector& gradient, const Matrix& i
             << costFunctionResult.shapeString() << "\n";
     }
 
+
     return weightCost + reduce(costFunctionResult, {}, matrix::Add())[0];
 }
 
 double NeuralNetwork::getInputCostAndGradient(Matrix& gradient,
-    const Matrix& input, const Matrix& reference) const
+    const Matrix& input, const Matrix& reference)
 {
     MatrixVector activations;
 
@@ -162,7 +163,7 @@ double NeuralNetwork::getInputCostAndGradient(Matrix& gradient,
     return weightCost + reduce(costFunctionResult, {}, matrix::Add())[0];
 }
 
-double NeuralNetwork::getCost(const Matrix& input, const Matrix& reference) const
+double NeuralNetwork::getCost(const Matrix& input, const Matrix& reference)
 {
     auto result = runInputs(input);
 
@@ -177,7 +178,7 @@ double NeuralNetwork::getCost(const Matrix& input, const Matrix& reference) cons
         reduce(getCostFunction()->computeCost(result, reference), {}, matrix::Add())[0];
 }
 
-NeuralNetwork::Matrix NeuralNetwork::runInputs(const Matrix& m) const
+NeuralNetwork::Matrix NeuralNetwork::runInputs(const Matrix& m)
 {
     MatrixVector activations;
 
@@ -440,6 +441,14 @@ void NeuralNetwork::load(util::InputTarArchive& archive, const util::PropertyTre
     }
 
     util::log("NeuralNetwork") << "Loaded " << shapeString();
+}
+
+void NeuralNetwork::setIsTraining(bool isTraining)
+{
+    for(auto& layer : *this)
+    {
+        layer->setIsTraining(isTraining);
+    }
 }
 
 std::string NeuralNetwork::shapeString() const

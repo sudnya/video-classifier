@@ -1,7 +1,7 @@
-/*	\file   Camera.h
-	\date   Sunday August 11, 2015
-	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The header file for the Camera class.
+/*    \file   Camera.h
+    \date   Sunday August 11, 2015
+    \author Gregory Diamos <solusstultus@gmail.com>
+    \brief  The header file for the Camera class.
 */
 
 #pragma once
@@ -35,8 +35,8 @@ public:
     Camera& operator=(const Camera&) = delete;
 
 private:
-	std::unique_ptr<VideoLibrary> _library;
-	std::unique_ptr<VideoStream>  _stream;
+    std::unique_ptr<VideoLibrary> _library;
+    std::unique_ptr<VideoStream>  _stream;
 
 };
 

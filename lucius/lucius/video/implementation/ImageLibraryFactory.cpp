@@ -1,7 +1,7 @@
-/*	\file   ImageLibraryFactory.cpp
-	\date   Thursday August 15, 2013
-	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The source file for the ImageLibraryFactory class.
+/*    \file   ImageLibraryFactory.cpp
+    \date   Thursday August 15, 2013
+    \author Gregory Diamos <solusstultus@gmail.com>
+    \brief  The source file for the ImageLibraryFactory class.
 */
 
 // Lucius Includes
@@ -16,21 +16,21 @@ namespace video
 
 ImageLibrary* ImageLibraryFactory::create(const std::string& name)
 {
-	if(name == "OpenCVImageLibrary")
-	{
-		return new OpenCVImageLibrary;
-	}
+    if(name == "OpenCVImageLibrary")
+    {
+        return new OpenCVImageLibrary;
+    }
 
-	return nullptr;
+    return nullptr;
 }
 
 ImageLibraryFactory::ImageLibraryVector ImageLibraryFactory::createAll()
 {
-	ImageLibraryVector libraries;
-	
-	libraries.push_back(create("OpenCVImageLibrary"));
+    ImageLibraryVector libraries;
+    
+    libraries.push_back(create("OpenCVImageLibrary"));
 
-	return libraries;
+    return libraries;
 }
 
 }

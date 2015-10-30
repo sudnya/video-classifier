@@ -1,7 +1,7 @@
-/*	\file   NullResultProcessor.cpp
-	\date   Saturday August 10, 2014
-	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The source file for the NullResultProcessor class.
+/*    \file   NullResultProcessor.cpp
+    \date   Saturday August 10, 2014
+    \author Gregory Diamos <solusstultus@gmail.com>
+    \brief  The source file for the NullResultProcessor class.
 */
 
 // Lucius Includes
@@ -27,8 +27,8 @@ void NullResultProcessor::process(const ResultVector& )
 
 std::string NullResultProcessor::toString() const
 {
-	// TODO:
-	assertM(false, "Not implemented.");
+    // TODO:
+    assertM(false, "Not implemented.");
 }
 
 }

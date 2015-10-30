@@ -1,7 +1,7 @@
-/*	\file   VideoDisplayResultProcessor.cpp
-	\date   Saturday August 10, 2015
-	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The source file for the VideoDisplayResultProcessor class.
+/*    \file   VideoDisplayResultProcessor.cpp
+    \date   Saturday August 10, 2015
+    \author Gregory Diamos <solusstultus@gmail.com>
+    \brief  The source file for the VideoDisplayResultProcessor class.
 */
 
 #include <lucius/results/interface/VideoDisplayResultProcessor.h>

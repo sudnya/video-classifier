@@ -1,7 +1,7 @@
-/*	\file   LibavcodecLibrary.h
-	\date   August 15, 2015
-	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The header file for the LibavcodecLibrary class.
+/*    \file   LibavcodecLibrary.h
+    \date   August 15, 2015
+    \author Gregory Diamos <solusstultus@gmail.com>
+    \brief  The header file for the LibavcodecLibrary class.
 */
 
 #pragma once
@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <cstddef>
 #include <string>
+#include <vector>
 
 namespace lucius
 {
@@ -294,11 +295,11 @@ public:
         enum AVSampleFormat sample_fmt;  ///< sample format
         int frame_size;
         int frame_number;
-        int	block_align;
+        int    block_align;
 
-        int	cutoff;
+        int    cutoff;
 
-        int	request_channels;
+        int    request_channels;
 
         uint64_t channel_layout;
     };
@@ -414,6 +415,20 @@ public:
         enum AVPictureType pict_type;
         AVRational sample_aspect_ratio;
         int64_t pts;
+        int64_t pkt_pts;
+        int64_t pkt_dts;
+        int coded_picture_number;
+        int display_picture_number;
+        int quality;
+        void* opaque;
+        uint64_t error[AV_NUM_DATA_POINTERS];
+        int repeat_pict;
+        int interlaced_frame;
+        int top_field_first;
+        int palette_has_changed;
+        int64_t reordered_opaque;
+        int sample_rate;
+        uint64_t channel_layout;
     };
 
     class AVInputFormat;
@@ -515,8 +530,8 @@ public:
     };
 
 public:
-	static void load();
-	static bool loaded();
+    static void load();
+    static bool loaded();
 
 public:
     static std::string getErrorCode(int32_t status);
@@ -548,7 +563,7 @@ public:
     static AVCodec* avcodec_find_encoder_by_name(const char*);
 
 public:
-	static void av_init_packet(AVPacket* packet);
+    static void av_init_packet(AVPacket* packet);
     static AVCodecContext* avcodec_alloc_context3(AVCodec* codec);
     static int avcodec_open2(AVCodecContext* avctx, const AVCodec* codec, AVDictionary** options);
     static AVFrame* av_frame_alloc();
@@ -635,11 +650,11 @@ public:
     static void av_frame_free(AVFrame** frame);
 
 private:
-	static void _check();
+    static void _check();
 
 private:
-	class Interface
-	{
+    class Interface
+    {
     public:
         void (*avcodec_register_all)();
         void (*av_register_all)();
@@ -648,8 +663,8 @@ private:
         AVCodec* (*avcodec_find_decoder_by_name)(const char*);
         AVCodec* (*avcodec_find_encoder_by_name)(const char*);
 
-	public:
-	    void (*av_init_packet)(AVPacket* packet);
+    public:
+        void (*av_init_packet)(AVPacket* packet);
 
         AVCodecContext* (*avcodec_alloc_context3)(AVCodec* codec);
         int (*avcodec_open2)(AVCodecContext* avctx, const AVCodec* codec, AVDictionary** options);
@@ -736,26 +751,31 @@ private:
         int  (*avcodec_close)(AVCodecContext* avctx);
         void (*av_frame_free)(AVFrame** frame);
 
-	public:
-		/*! \brief The constructor zeros out all of the pointers */
-		Interface();
+    public:
+        /*! \brief The constructor zeros out all of the pointers */
+        Interface();
 
-		/*! \brief The destructor closes dlls */
-		~Interface();
-		/*! \brief Load the library */
-		void load();
-		/*! \brief Has the library been loaded? */
-		bool loaded() const;
-		/*! \brief unloads the library */
-		void unload();
+        /*! \brief The destructor closes dlls */
+        ~Interface();
+        /*! \brief Load the library */
+        void load();
+        /*! \brief Has the library been loaded? */
+        bool loaded() const;
+        /*! \brief unloads the library */
+        void unload();
 
-	private:
+    private:
+        typedef std::vector<std::string> StringVector;
 
-		void* _library;
-	};
+    private:
+        void _tryLink(void*& function, const StringVector& possibleFunctions);
+
+    private:
+        void* _library;
+    };
 
 private:
-	static Interface _interface;
+    static Interface _interface;
 
 };
 

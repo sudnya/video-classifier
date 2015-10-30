@@ -15,22 +15,22 @@ namespace parallel
 
 void parallelFor(const std::function<void(parallel::ThreadGroup g)>& function)
 {
-	typedef std::list<std::thread> ThreadList;
+    typedef std::list<std::thread> ThreadList;
 
-	size_t threadCount = std::thread::hardware_concurrency();
+    size_t threadCount = std::thread::hardware_concurrency();
 
-	ThreadList threads;
+    ThreadList threads;
 
-	for(size_t i = 0; i < threadCount; ++i)
-	{
-		threads.emplace_back(std::thread(function, ThreadGroup(threadCount, i)));
-	}
+    for(size_t i = 0; i < threadCount; ++i)
+    {
+        threads.emplace_back(std::thread(function, ThreadGroup(threadCount, i)));
+    }
 
-	// barrier threads
-	for(auto& thread : threads)
-	{
-		thread.join();
-	}
+    // barrier threads
+    for(auto& thread : threads)
+    {
+        thread.join();
+    }
 
     synchronize();
 }

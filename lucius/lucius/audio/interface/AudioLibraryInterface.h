@@ -1,7 +1,7 @@
-/*	\file   AudioLibraryInterface.h
-	\date   Thursday August 15, 2015
-	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The header file for the AudioLibraryInterface class.
+/*    \file   AudioLibraryInterface.h
+    \date   Thursday August 15, 2015
+    \author Gregory Diamos <solusstultus@gmail.com>
+    \brief  The header file for the AudioLibraryInterface class.
 */
 
 #pragma once
@@ -22,13 +22,13 @@ namespace audio
 class AudioLibraryInterface
 {
 public:
-	class Header
-	{
-	public:
-		Header(size_t _samples, size_t _bytesPerSample, size_t _samplingRate);
+    class Header
+    {
+    public:
+        Header(size_t _samples, size_t _bytesPerSample, size_t _samplingRate);
         Header();
 
-	public:
+    public:
         size_t samples;
         size_t bytesPerSample;
         size_t samplingRate;
@@ -38,7 +38,7 @@ public:
     };
 
 public:
-	typedef std::vector<uint8_t> DataVector;
+    typedef std::vector<uint8_t> DataVector;
 
 public:
     class HeaderAndData
@@ -49,13 +49,13 @@ public:
     };
 
 public:
-	static bool isAudioTypeSupported(const std::string& extension);
+    static bool isAudioTypeSupported(const std::string& extension);
 
 public:
-	static HeaderAndData loadAudio(std::istream& path, const std::string& format);
+    static HeaderAndData loadAudio(std::istream& path, const std::string& format);
 
 public:
-	static void saveAudio(std::ostream& path, const std::string& format,
+    static void saveAudio(std::ostream& path, const std::string& format,
         const Header& header, const DataVector& data);
 
 };

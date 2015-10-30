@@ -32,7 +32,8 @@ namespace network
 Layer::Layer()
 : _activationFunction(ActivationFunctionFactory::create()),
   _activationCostFunction(ActivationCostFunctionFactory::create()),
-  _weightCostFunction(WeightCostFunctionFactory::create())
+  _weightCostFunction(WeightCostFunctionFactory::create()),
+  _isTraining(true)
 {
 
 }
@@ -44,8 +45,11 @@ Layer::~Layer()
 
 Layer::Layer(const Layer& l)
 : _activationFunction(l.getActivationFunction()->clone()),
-  _activationCostFunction(l.getActivationCostFunction() == nullptr ? nullptr : l.getActivationCostFunction()->clone()),
-  _weightCostFunction(l.getWeightCostFunction() == nullptr ? nullptr : l.getWeightCostFunction()->clone())
+  _activationCostFunction(l.getActivationCostFunction() == nullptr ?
+    nullptr : l.getActivationCostFunction()->clone()),
+  _weightCostFunction(l.getWeightCostFunction() == nullptr ?
+    nullptr : l.getWeightCostFunction()->clone()),
+  _isTraining(l.isTraining())
 {
 
 }
@@ -58,8 +62,11 @@ Layer& Layer::operator=(const Layer& l)
     }
 
     setActivationFunction(l.getActivationFunction()->clone());
-    setActivationCostFunction(l.getActivationCostFunction() == nullptr ? nullptr : l.getActivationCostFunction()->clone());
-    setWeightCostFunction(l.getWeightCostFunction() == nullptr ? nullptr : l.getWeightCostFunction()->clone());
+    setActivationCostFunction(l.getActivationCostFunction() == nullptr ?
+        nullptr : l.getActivationCostFunction()->clone());
+    setWeightCostFunction(l.getWeightCostFunction() == nullptr ?
+        nullptr : l.getWeightCostFunction()->clone());
+    setIsTraining(l.isTraining());
 
     return *this;
 }
@@ -117,7 +124,7 @@ static matrix::Matrix reshapeActivations(const matrix::Matrix& m, matrix::Dimens
     return reshape(m, newShape);
 }
 
-void Layer::runForward(MatrixVector& activations) const
+void Layer::runForward(MatrixVector& activations)
 {
     if(compareSize(activations.back().size(), getInputSize()))
     {
@@ -137,7 +144,7 @@ void Layer::runForward(MatrixVector& activations) const
 
 matrix::Matrix Layer::runReverse(MatrixVector& gradients,
     MatrixVector& activations,
-    const Matrix& deltas) const
+    const Matrix& deltas)
 {
     if(compareCount(activations.back().size(), getOutputSize(), getOutputCount()))
     {
@@ -194,13 +201,23 @@ const WeightCostFunction* Layer::getWeightCostFunction() const
     return _weightCostFunction.get();
 }
 
+void Layer::setIsTraining(bool training)
+{
+    _isTraining = training;
+}
+
+bool Layer::isTraining() const
+{
+    return _isTraining;
+}
+
 std::string Layer::shapeString() const
 {
     std::stringstream stream;
 
     stream << "(" << getTypeName() << " type, "
-        << getInputCount()
-        << " inputs, " << getOutputCount() << " outputs)";
+        << getInputSize().toString()
+        << " inputs, " << getOutputSize().toString() << " outputs)";
 
     return stream.str();
 }
@@ -229,6 +246,8 @@ void Layer::loadLayer(util::InputTarArchive& archive, const util::PropertyTree& 
         properties["activation-cost-function"]));
     setWeightCostFunction(WeightCostFunctionFactory::create(
         properties["weight-cost-function"]));
+
+    _isTraining = false;
 }
 
 }

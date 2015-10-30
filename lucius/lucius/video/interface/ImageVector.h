@@ -1,7 +1,7 @@
-/*	\file   ImageVector.h
-	\date   Sunday August 11, 2013
-	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The header file for the Vector class.
+/*    \file   ImageVector.h
+    \date   Sunday August 11, 2013
+    \author Gregory Diamos <solusstultus@gmail.com>
+    \brief  The header file for the Vector class.
 */
 
 #pragma once
@@ -26,51 +26,51 @@ namespace video
 class ImageVector
 {
 public:
-	typedef std::vector<Image>              BaseImageVector;
-	typedef BaseImageVector::iterator       iterator;
-	typedef BaseImageVector::const_iterator const_iterator;
+    typedef std::vector<Image>              BaseImageVector;
+    typedef BaseImageVector::iterator       iterator;
+    typedef BaseImageVector::const_iterator const_iterator;
 
-	typedef matrix::Matrix Matrix;
-
-public:
-	ImageVector();
-	~ImageVector();
+    typedef matrix::Matrix Matrix;
 
 public:
-	iterator       begin();
-	const_iterator begin() const;
-
-	iterator       end();
-	const_iterator end() const;
+    ImageVector();
+    ~ImageVector();
 
 public:
-	      Image& operator[](size_t index);
-	const Image& operator[](size_t index) const;
+    iterator       begin();
+    const_iterator begin() const;
+
+    iterator       end();
+    const_iterator end() const;
 
 public:
-	      Image& back();
-	const Image& back() const;
+          Image& operator[](size_t index);
+    const Image& operator[](size_t index) const;
 
 public:
-	size_t size()  const;
-	bool   empty() const;
+          Image& back();
+    const Image& back() const;
 
 public:
-	void clear();
+    size_t size()  const;
+    bool   empty() const;
 
 public:
-	void push_back(const Image& image);
+    void clear();
 
 public:
-	Matrix getDownsampledFeatureMatrix(size_t xTileSize, size_t yTileSize, size_t colors) const;
-	Matrix getRandomCropFeatureMatrix(size_t xTileSize, size_t yTileSize, size_t colors,
+    void push_back(const Image& image);
+
+public:
+    Matrix getDownsampledFeatureMatrix(size_t xTileSize, size_t yTileSize, size_t colors) const;
+    Matrix getRandomCropFeatureMatrix(size_t xTileSize, size_t yTileSize, size_t colors,
         std::default_random_engine& engine, double cropWindowRatio) const;
-	Matrix getCropFeatureMatrix(size_t xTileSize, size_t yTileSize, size_t colors,
+    Matrix getCropFeatureMatrix(size_t xTileSize, size_t yTileSize, size_t colors,
         double cropWindowRatio) const;
     Matrix getReference(const util::StringVector& labels) const;
 
 private:
-	BaseImageVector _images;
+    BaseImageVector _images;
 
 };
 

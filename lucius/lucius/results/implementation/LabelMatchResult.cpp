@@ -1,7 +1,7 @@
-/*	\file   LabelMatchResult.cpp
-	\date   Saturday August 10, 2014
-	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The source file for the LabelMatchResult class.
+/*    \file   LabelMatchResult.cpp
+    \date   Saturday August 10, 2014
+    \author Gregory Diamos <solusstultus@gmail.com>
+    \brief  The source file for the LabelMatchResult class.
 */
 
 #include <lucius/results/interface/LabelMatchResult.h>

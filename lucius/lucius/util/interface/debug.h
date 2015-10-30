@@ -1,11 +1,11 @@
 
-/*!	\file debug.h
+/*!    \file debug.h
 *
-*	\brief Header file for common debug macros
+*    \brief Header file for common debug macros
 *
-*	\author Gregory Diamos
+*    \author Gregory Diamos
 *
-*	\date : Sunday November 16, 2008
+*    \date : Sunday November 16, 2008
 *
 */
 
@@ -25,129 +25,129 @@ namespace lucius
 
 namespace util
 {
-	/*! \brief Global report timer */
-	extern Timer _ReportTimer;
+    /*! \brief Global report timer */
+    extern Timer _ReportTimer;
 
-	/*! \brief Return a string representing the current system time */
-	extern std::string _debugTime();
+    /*! \brief Return a string representing the current system time */
+    extern std::string _debugTime();
 
-	/*! \brief Return a formatted line number and file name. */
-	extern std::string _debugFile( const std::string& file, unsigned int line );
+    /*! \brief Return a formatted line number and file name. */
+    extern std::string _debugFile( const std::string& file, unsigned int line );
 
-	/*! \brief Convert an iterable range to a string
+    /*! \brief Convert an iterable range to a string
 
-		T must implement the concept of a forward iterator and the object being
-			pointed to must be able to be accepted by operator<<
+        T must implement the concept of a forward iterator and the object being
+            pointed to must be able to be accepted by operator<<
 
-		\param begin Iterator to the start of the range
-		\param end Iterator to the end of the range
-		\param space The string used as a space
+        \param begin Iterator to the start of the range
+        \param end Iterator to the end of the range
+        \param space The string used as a space
 
-		\return A string representation of the specified range.
-	*/
-	template < typename T > std::string toString( T begin, T end,
-		std::string space = " ", unsigned int limit = 80 )
-	{
-		std::stringstream stream;
+        \return A string representation of the specified range.
+    */
+    template < typename T > std::string toString( T begin, T end,
+        std::string space = " ", unsigned int limit = 80 )
+    {
+        std::stringstream stream;
 
-		if( begin != end )
-		{
-			stream << *begin;
-			++begin;
-		}
+        if( begin != end )
+        {
+            stream << *begin;
+            ++begin;
+        }
 
-		for( T iterator = begin; iterator != end; ++iterator )
-		{
-			stream << space;
-			stream << *iterator;
-			if( stream.str().size() > limit )
-			{
-				break;
-			}
-		}
+        for( T iterator = begin; iterator != end; ++iterator )
+        {
+            stream << space;
+            stream << *iterator;
+            if( stream.str().size() > limit )
+            {
+                break;
+            }
+        }
 
-		return stream.str();
-	}
+        return stream.str();
+    }
 
-	/*! \brief Convert an iterable range to a string using a formatting functor
+    /*! \brief Convert an iterable range to a string using a formatting functor
 
-		T must implement the concept of a forward iterator and the object being
-			pointed to must be able to be accepted
-			by operator<< format( object )
+        T must implement the concept of a forward iterator and the object being
+            pointed to must be able to be accepted
+            by operator<< format( object )
 
-		\param begin Iterator to the start of the range
-		\param end Iterator to the end of the range
-		\param space The string used as a space
+        \param begin Iterator to the start of the range
+        \param end Iterator to the end of the range
+        \param space The string used as a space
 
-		\return A string representation of the specified range.
+        \return A string representation of the specified range.
 
-	*/
-	template < typename T, typename Format > std::string toFormattedString(
-		T begin, T end, Format format, std::string space = " ",
-		unsigned int limit = 80 )
-	{
-		std::stringstream stream;
+    */
+    template < typename T, typename Format > std::string toFormattedString(
+        T begin, T end, Format format, std::string space = " ",
+        unsigned int limit = 80 )
+    {
+        std::stringstream stream;
 
-		if( begin != end )
-		{
-			stream << format( begin );
-			++begin;
-		}
+        if( begin != end )
+        {
+            stream << format( begin );
+            ++begin;
+        }
 
-		for( T iterator = begin; iterator != end; ++iterator )
-		{
-			stream << space;
-			stream << format( iterator );
-			if( stream.str().size() > limit )
-			{
-				break;
-			}
-		}
+        for( T iterator = begin; iterator != end; ++iterator )
+        {
+            stream << space;
+            stream << format( iterator );
+            if( stream.str().size() > limit )
+            {
+                break;
+            }
+        }
 
-		return stream.str();
-	}
+        return stream.str();
+    }
 
-	/*!
-		\brief Strip the front of a file
-	*/
-	template< char delimiter >
-	std::string stripReportPath( const std::string& string )
-	{
-		size_t found = string.find_last_of(delimiter);
-		std::string result = string.substr(found+1);
-		return result;
-	}
+    /*!
+        \brief Strip the front of a file
+    */
+    template< char delimiter >
+    std::string stripReportPath( const std::string& string )
+    {
+        size_t found = string.find_last_of(delimiter);
+        std::string result = string.substr(found+1);
+        return result;
+    }
 
-	struct NullStream : std::ostream { NullStream() : std::ios(0), std::ostream(0) { } };
+    struct NullStream : std::ostream { NullStream() : std::ios(0), std::ostream(0) { } };
 
-	/*! \brief Return the stream with the current name */
-	extern std::ostream& _getStream(const std::string& name);
+    /*! \brief Return the stream with the current name */
+    extern std::ostream& _getStream(const std::string& name);
 
-	#if 0
-	extern NullStream nullstream;
+    #if 0
+    extern NullStream nullstream;
 
-	inline std::ostream& log(const std::string& path)
-	{
-			return nullstream;
-	}
-	#else
-	inline std::ostream& log(const std::string& path)
-	{
-			return _getStream(path);
-	}
-	#endif
+    inline std::ostream& log(const std::string& path)
+    {
+            return nullstream;
+    }
+    #else
+    inline std::ostream& log(const std::string& path)
+    {
+            return _getStream(path);
+    }
+    #endif
 
-	extern bool isLogEnabled(const std::string& logName);
+    extern bool isLogEnabled(const std::string& logName);
 
 
-	extern void enableAllLogs();
-	extern void enableLog(const std::string& logName);
+    extern void enableAllLogs();
+    extern void enableLog(const std::string& logName);
 
-	/* Enable a comma sepearated list of logs */
-	extern void enableSpecificLogs(const std::string& modules);
+    /* Enable a comma sepearated list of logs */
+    extern void enableSpecificLogs(const std::string& modules);
 
-	/* Set the log file name. */
-	extern void setLogFile(const std::string& name);
+    /* Set the log file name. */
+    extern void setLogFile(const std::string& name);
 
 }
 
@@ -157,23 +157,23 @@ namespace util
 template <typename T>
 lucius::util::NullStream & operator<<(lucius::util::NullStream & s, T const &)
 {
-	return s;
+    return s;
 }
 
 // Swallow manipulator templates
 inline lucius::util::NullStream & operator<<(lucius::util::NullStream & s,
-	std::ostream &(std::ostream&))
+    std::ostream &(std::ostream&))
 {
-	return s;
+    return s;
 }
 
 /*!
 
-	\def REPORT_ERROR_LEVEL
+    \def REPORT_ERROR_LEVEL
 
-	\brief The threshold to print out the debugging message.
+    \brief The threshold to print out the debugging message.
 
-	If the debugging error levels is less than this, it will not be printed out.
+    If the debugging error levels is less than this, it will not be printed out.
 
 */
 
@@ -182,71 +182,71 @@ inline lucius::util::NullStream & operator<<(lucius::util::NullStream & s,
 #endif
 
 /*!
-	\def reportE(x,y)
-	\brief a MACRO that prints a string to stdio if DEBUG is defined and x is
-	greater than REPORT_ERROR_LEVEL, or exits the program if the error level
-	is greater than EXIT_ERROR_LEVEL.
+    \def reportE(x,y)
+    \brief a MACRO that prints a string to stdio if DEBUG is defined and x is
+    greater than REPORT_ERROR_LEVEL, or exits the program if the error level
+    is greater than EXIT_ERROR_LEVEL.
 
-	If MPI_DEBUG is defined, it appends the rank to the beginning of the error
-	message.
+    If MPI_DEBUG is defined, it appends the rank to the beginning of the error
+    message.
 
-	\param x The error level
-	\param y The message to print.  You can use the << operators to send
-		multiple arguments
+    \param x The error level
+    \param y The message to print.  You can use the << operators to send
+        multiple arguments
 */
 
 #ifndef NDEBUG
-	#define reportE(x, y) \
-		if(REPORT_BASE >= REPORT_ERROR_LEVEL && (x) >= REPORT_ERROR_LEVEL)\
-		{ \
-			{\
-			std::cout << "(" << lucius::util::_debugTime() << ") " \
-				<< lucius::util::_debugFile( __FILE__, __LINE__ ) \
-				<< " " << y << "\n";\
-			}\
-		 \
-		}
+    #define reportE(x, y) \
+        if(REPORT_BASE >= REPORT_ERROR_LEVEL && (x) >= REPORT_ERROR_LEVEL)\
+        { \
+            {\
+            std::cout << "(" << lucius::util::_debugTime() << ") " \
+                << lucius::util::_debugFile( __FILE__, __LINE__ ) \
+                << " " << y << "\n";\
+            }\
+         \
+        }
 #else
-	#define reportE(x, y)
+    #define reportE(x, y)
 #endif
 
 /*!
-	\def report(a)
-	\brief a MACRO that prints a string to stdio if DEBUG is defined
-	\param a a string
+    \def report(a)
+    \brief a MACRO that prints a string to stdio if DEBUG is defined
+    \param a a string
 */
 
 #ifndef NDEBUG
-	#define report(y) \
-		if(REPORT_BASE >= REPORT_ERROR_LEVEL)\
-		{ \
-			{\
-			std::cout << "(" << lucius::util::_debugTime() << ") " \
-				<< lucius::util::_debugFile( __FILE__, __LINE__ ) \
-					<< " " << y << "\n";\
-			}\
-		 \
-		}
+    #define report(y) \
+        if(REPORT_BASE >= REPORT_ERROR_LEVEL)\
+        { \
+            {\
+            std::cout << "(" << lucius::util::_debugTime() << ") " \
+                << lucius::util::_debugFile( __FILE__, __LINE__ ) \
+                    << " " << y << "\n";\
+            }\
+         \
+        }
 #else
-	#define report(y)
+    #define report(y)
 #endif
 
 /*! \brief An assertion with a message */
 #ifndef NDEBUG
 
-	#define assertM(x,y) \
-		if(!(x))\
-		{ \
-			{\
-			std::cout << "(" << lucius::util::_debugTime() << ") " \
-				<< lucius::util::_debugFile( __FILE__, __LINE__ ) \
-					<< " Assertion message: " << y << "\n";\
-			}\
-			assert(x);\
-		 \
-		}
+    #define assertM(x,y) \
+        if(!(x))\
+        { \
+            {\
+            std::cout << "(" << lucius::util::_debugTime() << ") " \
+                << lucius::util::_debugFile( __FILE__, __LINE__ ) \
+                    << " Assertion message: " << y << "\n";\
+            }\
+            assert(x);\
+         \
+        }
 #else
-	#define assertM(x,y)
+    #define assertM(x,y)
 #endif
 
 #endif

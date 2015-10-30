@@ -51,8 +51,10 @@ RecurrentLayer::RecurrentLayer(size_t size, size_t batchSize)
 }
 
 RecurrentLayer::RecurrentLayer(size_t size, size_t batchSize, const matrix::Precision& precision)
-: _parameters(new MatrixVector({Matrix({size, size}, precision), Matrix({size}, precision), Matrix({size, size}, precision)})),
-  _forwardWeights((*_parameters)[0]), _bias((*_parameters)[1]), _recurrentWeights((*_parameters)[2]), _expectedBatchSize(batchSize)
+: _parameters(new MatrixVector({Matrix({size, size}, precision),
+    Matrix({size}, precision), Matrix({size, size}, precision)})),
+  _forwardWeights((*_parameters)[0]), _bias((*_parameters)[1]),
+  _recurrentWeights((*_parameters)[2]), _expectedBatchSize(batchSize)
 {
 
 }
@@ -127,7 +129,7 @@ static matrix::Matrix unfoldTimeAndBatch(const Matrix& input, size_t batchSize)
     return reshape(input, {activationCount, miniBatch, timesteps});
 }
 
-void RecurrentLayer::runForwardImplementation(MatrixVector& activations) const
+void RecurrentLayer::runForwardImplementation(MatrixVector& activations)
 {
     auto inputActivations = unfoldTimeAndBatch(activations.back(), _expectedBatchSize);
 
@@ -181,7 +183,7 @@ void RecurrentLayer::runForwardImplementation(MatrixVector& activations) const
 
 Matrix RecurrentLayer::runReverseImplementation(MatrixVector& gradients,
     MatrixVector& activations,
-    const Matrix& foldedDeltas) const
+    const Matrix& foldedDeltas)
 {
     auto deltas = unfoldTimeAndBatch(foldedDeltas, _expectedBatchSize);
 
@@ -342,7 +344,8 @@ const matrix::Precision& RecurrentLayer::precision() const
 
 double RecurrentLayer::computeWeightCost() const
 {
-    return getWeightCostFunction()->getCost(_forwardWeights) + getWeightCostFunction()->getCost(_recurrentWeights);
+    return getWeightCostFunction()->getCost(_forwardWeights) +
+        getWeightCostFunction()->getCost(_recurrentWeights);
 }
 
 Dimension RecurrentLayer::getInputSize() const

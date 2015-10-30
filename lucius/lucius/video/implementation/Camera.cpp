@@ -1,7 +1,7 @@
-/*	\file   Camera.cpp
-	\date   Sunday August 11, 2015
-	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The source file for the Camera class.
+/*    \file   Camera.cpp
+    \date   Sunday August 11, 2015
+    \author Gregory Diamos <solusstultus@gmail.com>
+    \brief  The source file for the Camera class.
 */
 
 // Lucius Includes

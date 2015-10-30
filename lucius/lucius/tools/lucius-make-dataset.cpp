@@ -1,7 +1,7 @@
-/*	\file   lucius-make-dataset.cpp
-	\date   Saturday August 10, 2015
-	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  A tool for splitting a dataset into training/validation sets.
+/*    \file   lucius-make-dataset.cpp
+    \date   Saturday August 10, 2015
+    \author Gregory Diamos <solusstultus@gmail.com>
+    \brief  A tool for splitting a dataset into training/validation sets.
 */
 
 // Lucius Includes
@@ -126,65 +126,65 @@ static void splitDatabase(const std::string& outputPath, const std::string& inpu
 
 static void enableSpecificLogs(const std::string& modules)
 {
-	auto individualModules = util::split(modules, ",");
+    auto individualModules = util::split(modules, ",");
 
-	for(auto& module : individualModules)
-	{
-		util::enableLog(module);
-	}
+    for(auto& module : individualModules)
+    {
+        util::enableLog(module);
+    }
 }
 
 }
 
 int main(int argc, char** argv)
 {
-	lucius::util::ArgumentParser parser(argc, argv);
+    lucius::util::ArgumentParser parser(argc, argv);
 
-	std::string inputFileName;
-	std::string outputPath;
+    std::string inputFileName;
+    std::string outputPath;
     size_t validationSamples;
 
-	std::string loggingEnabledModules;
+    std::string loggingEnabledModules;
 
-	bool verbose = false;
+    bool verbose = false;
 
-	parser.description("A tool for splitting a dataset into training/validation sets.");
+    parser.description("A tool for splitting a dataset into training/validation sets.");
 
-	parser.parse("-i", "--input",  inputFileName,
-		"", "The input database path.");
-	parser.parse("-o", "--output",  outputPath,
-		"", "The output path to store generated files "
-			"(the training/validation datasets).");
-	parser.parse("-S", "--validation-samples",  validationSamples,
-		1000, "The number of samples to withold for validation.");
+    parser.parse("-i", "--input",  inputFileName,
+        "", "The input database path.");
+    parser.parse("-o", "--output",  outputPath,
+        "", "The output path to store generated files "
+            "(the training/validation datasets).");
+    parser.parse("-S", "--validation-samples",  validationSamples,
+        1000, "The number of samples to withold for validation.");
 
-	parser.parse("-v", "--verbose", verbose, false,
-		"Print out log messages during execution");
-	parser.parse("-L", "--log-module", loggingEnabledModules, "",
-		"Print out log messages during execution for specified modules "
-		"(comma-separated list of modules, e.g. NeuralNetwork, Layer, ...).");
-	parser.parse();
+    parser.parse("-v", "--verbose", verbose, false,
+        "Print out log messages during execution");
+    parser.parse("-L", "--log-module", loggingEnabledModules, "",
+        "Print out log messages during execution for specified modules "
+        "(comma-separated list of modules, e.g. NeuralNetwork, Layer, ...).");
+    parser.parse();
 
-	if(verbose)
-	{
-		lucius::util::enableAllLogs();
-	}
-	else
-	{
-		lucius::enableSpecificLogs(loggingEnabledModules);
-	}
+    if(verbose)
+    {
+        lucius::util::enableAllLogs();
+    }
+    else
+    {
+        lucius::enableSpecificLogs(loggingEnabledModules);
+    }
 
-	try
-	{
+    try
+    {
         lucius::splitDatabase(outputPath, inputFileName, validationSamples);
-	}
-	catch(const std::exception& e)
-	{
-		std::cout << "Lucius Data Set Creation Failed:\n";
-		std::cout << "Message: " << e.what() << "\n\n";
-	}
+    }
+    catch(const std::exception& e)
+    {
+        std::cout << "Lucius Data Set Creation Failed:\n";
+        std::cout << "Message: " << e.what() << "\n\n";
+    }
 
-	return 0;
+    return 0;
 
 }
 

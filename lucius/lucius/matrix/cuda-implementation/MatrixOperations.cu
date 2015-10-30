@@ -8,6 +8,7 @@
 #include <lucius/matrix/interface/Operation.h>
 
 #include <lucius/parallel/interface/MultiBulkSynchronousParallel.h>
+#include <lucius/parallel/interface/SharedMemoryAllocator.h>
 
 #include <lucius/util/interface/Metaprogramming.h>
 
@@ -422,20 +423,191 @@ void reduceAllDimensions(Matrix& result, const Matrix& input,
 }
 
 template<typename NativeType, typename ActualOperation>
+class ReduceFirstDimensionLambda
+{
+public:
+    CUDA_DECORATOR void operator()(parallel::ThreadGroup threadGroup) const
+    {
+        auto innerGroup    = parallel::partitionThreadGroupAtLevel(threadGroup, 2);
+        auto relativeGroup = parallel::getRelativeGroup(innerGroup, threadGroup);
+
+        size_t rows = inputElements / columns;
+
+        for(size_t column = relativeGroup.id(); column < columns; column += relativeGroup.size())
+        {
+            size_t row         = innerGroup.id();
+            size_t position    = column * rows + row;
+            size_t endPosition = column * (rows + 1);
+
+            if(innerGroup.size() <= rows)
+            {
+                NativeType value = rawInput[position];
+
+                for(position += innerGroup.size(); position < endPosition;
+                    position += innerGroup.size())
+                {
+                    value = nativeOperation(value, rawInput[position]);
+                }
+
+                value = reduce(innerGroup, value, nativeOperation);
+
+                if(innerGroup.id() == 0)
+                {
+                    rawResult[column] = value;
+                }
+            }
+            else if (innerGroup.id() == 0)
+            {
+                NativeType value = rawInput[position];
+                ++position;
+
+                for(size_t row = 1; row < rows; ++row, ++position)
+                {
+                    value = nativeOperation(value, rawInput[position]);
+                }
+
+                rawResult[column] = value;
+            }
+        }
+    }
+
+public:
+          NativeType* rawResult;
+    const NativeType* rawInput;
+
+public:
+    size_t columns;
+    size_t inputElements;
+
+public:
+    ActualOperation nativeOperation;
+
+};
+
+template <typename ActualOperation, typename ActualPrecision>
+void reduceFirstDimension(Matrix& result, const Matrix& input,
+    const ActualOperation& nativeOperation, const ActualPrecision& p)
+{
+    typedef typename ActualPrecision::type NativeType;
+
+    NativeType*       rawResult = static_cast<NativeType*>(result.data());
+    const NativeType* rawInput  = static_cast<const NativeType*>(input.data());
+
+    auto lambda = ReduceFirstDimensionLambda<NativeType, ActualOperation>{rawResult, rawInput,
+        result.elements(), input.elements(), nativeOperation};
+
+    parallel::multiBulkSynchronousParallel(lambda);
+}
+
+template<typename NativeType, typename ActualOperation>
+class ReduceSecondDimensionLambda
+{
+public:
+    CUDA_DECORATOR void operator()(parallel::ThreadGroup threadGroup) const
+    {
+        auto warp        = partitionThreadGroupAtLevel(threadGroup, 1);
+        auto cta         = partitionThreadGroupAtLevel(threadGroup, 2);
+        auto ctaInKernel = getRelativeGroup(cta, threadGroup);
+        auto warpInCta   = getRelativeGroup(warp, cta);
+
+        auto* memory = parallel::SharedMemoryAllocator<NativeType,
+            parallel::GroupLevelSize<2>::size()>::allocate();
+
+        size_t start = ctaInKernel.id() * warp.size();
+
+        for(size_t startingRow = start; startingRow < rows;
+            startingRow += warp.size() * ctaInKernel.size())
+        {
+            size_t row = startingRow + warp.id();
+
+            size_t startingColumnPosition = rows * warpInCta.id();
+            size_t columnStep = rows * warpInCta.size();
+            size_t startingPosition = startingColumnPosition + row;
+            size_t position = startingPosition;
+
+            NativeType value = 0;
+
+            if(row < rows && position < inputElements)
+            {
+                value = rawInput[position];
+
+                for(position += columnStep; position < inputElements; position += columnStep)
+                {
+                    value = nativeOperation(value, rawInput[position]);
+                }
+            }
+
+            memory[cta.id()] = value;
+            barrier(cta);
+
+            if(warpInCta.id() == 0 && row < rows)
+            {
+                for(size_t sharedPosition = warp.id() + warp.size(), warpCounter = 1,
+                    position = row + rows;
+                    warpCounter < warpInCta.size() && position < inputElements;
+                    ++warpCounter, position += rows, sharedPosition += warp.size())
+                {
+                    value = nativeOperation(value, memory[sharedPosition]);
+                }
+
+                if (startingPosition < inputElements)
+                {
+                    rawResult[row] = value;
+                }
+            }
+
+            barrier(cta);
+        }
+    }
+
+public:
+          NativeType* rawResult;
+    const NativeType* rawInput;
+
+public:
+    size_t rows;
+    size_t inputElements;
+
+public:
+    ActualOperation nativeOperation;
+
+};
+
+template <typename ActualOperation, typename ActualPrecision>
+void reduceSecondDimension(Matrix& result, const Matrix& input,
+    const ActualOperation& nativeOperation, const ActualPrecision& p)
+{
+    typedef typename ActualPrecision::type NativeType;
+
+    NativeType*       rawResult = static_cast<NativeType*>(result.data());
+    const NativeType* rawInput  = static_cast<const NativeType*>(input.data());
+
+    auto lambda = ReduceSecondDimensionLambda<NativeType, ActualOperation>{rawResult, rawInput,
+        result.elements(), input.elements(), nativeOperation};
+
+    parallel::multiBulkSynchronousParallel(lambda);
+}
+
+template<typename NativeType, typename ActualOperation>
 class GenericReduceLambda
 {
 public:
     CUDA_DECORATOR void operator()(parallel::ThreadGroup threadGroup) const
     {
-        for(size_t i = threadGroup.id(); i < elements; i += threadGroup.size())
+        auto innerGroup    = parallel::partitionThreadGroupAtLevel(threadGroup, 2);
+        auto relativeGroup = parallel::getRelativeGroup(innerGroup, threadGroup);
+
+        for(size_t i = relativeGroup.id(); i < elements; i += relativeGroup.size())
         {
             auto resultIndex = linearToDimension(i, resultView.size());
 
             // find the start of the input slice
-            auto inputBegin = selectNamedDimensions(dimensions, resultIndex, zeros(inputView.size()));
+            auto inputBegin = selectNamedDimensions(dimensions, resultIndex,
+                zeros(inputView.size()));
 
             // find the end of the input slice
-            auto inputEnd = selectNamedDimensions(dimensions, resultIndex + ones(resultView.size()), inputView.size());
+            auto inputEnd = selectNamedDimensions(dimensions,
+                resultIndex + ones(resultView.size()), inputView.size());
 
             auto inputSlice = slice(inputView, inputBegin, inputEnd);
 
@@ -443,19 +615,47 @@ public:
             size_t sliceSize = inputSlice.elements();
 
             // iterate over i linearly from 0 to size
-            auto resultValue = inputSlice(zeros(inputSlice.size()));
+            NativeType resultValue;
 
-            for(size_t inputLinearIndex = 1; inputLinearIndex < sliceSize; ++inputLinearIndex)
+            if(innerGroup.size() <= sliceSize)
             {
-                // get index for i in the input's space
-                auto inputIndex = linearToDimension(inputLinearIndex, inputSlice.size());
+                auto inputIndex = linearToDimension(innerGroup.id(), inputSlice.size());
 
-                // apply operator to resultValue, input[index]
-                resultValue = nativeOperation(resultValue, inputSlice(inputIndex));
+                resultValue = inputSlice(inputIndex);
+
+                for(size_t inputLinearIndex = innerGroup.size() + innerGroup.id();
+                    inputLinearIndex < sliceSize; inputLinearIndex += innerGroup.size())
+                {
+                    // get index for i in the input's space
+                    auto inputIndex = linearToDimension(inputLinearIndex, inputSlice.size());
+
+                    // apply operator to resultValue, input[index]
+                    resultValue = nativeOperation(resultValue, inputSlice(inputIndex));
+                }
+
+                resultValue = reduce(innerGroup, resultValue, nativeOperation);
+            }
+            else if(innerGroup.id() == 0)
+            {
+                auto inputIndex = linearToDimension(0, inputSlice.size());
+
+                resultValue = inputSlice(inputIndex);
+
+                for(size_t inputLinearIndex = 1; inputLinearIndex < sliceSize; ++inputLinearIndex)
+                {
+                    // get index for i in the input's space
+                    auto inputIndex = linearToDimension(inputLinearIndex, inputSlice.size());
+
+                    // apply operator to resultValue, input[index]
+                    resultValue = nativeOperation(resultValue, inputSlice(inputIndex));
+                }
             }
 
             // save the result
-            resultView(resultIndex) = resultValue;
+            if(innerGroup.id() == 0)
+            {
+                resultView(resultIndex) = resultValue;
+            }
         }
 
     }
@@ -476,7 +676,8 @@ public:
 };
 
 template <typename ActualOperation, typename ActualPrecision>
-void reduce(Matrix& result, const Matrix& input, const Dimension& unsortedDimensions, const Operation& op, const std::tuple<ActualPrecision>& p)
+void reduce(Matrix& result, const Matrix& input, const Dimension& unsortedDimensions,
+    const Operation& op, const std::tuple<ActualPrecision>& p)
 {
     typedef typename ActualPrecision::type NativeType;
 
@@ -492,17 +693,48 @@ void reduce(Matrix& result, const Matrix& input, const Dimension& unsortedDimens
 
     auto nativeOperation = static_cast<const ActualOperation&>(op);
 
-    // Reduce down to a single element
-    if(elements == 1)
+    // try to simplify the operation to a 2d reduction
+    auto reshapedInput  = input;
+    auto reshapedResult = result;
+
+    if(elements > 1 && input.isContiguous() && result.isContiguous() &&
+        isContiguous(dimensions) &&
+        (dimensions.front() == 0 || dimensions.back() == (input.size().size() - 1)))
     {
-        reduceAllDimensions(result, input, nativeOperation, ActualPrecision());
+        size_t reducedElements = selectDimensions(input.size(), dimensions).product();
+
+        auto newInputSize = dimensions.front() == 0 ?
+            Dimension(reducedElements, elements) : Dimension(elements, reducedElements);
+
+        reshapedInput  = reshape(input,  newInputSize);
+        reshapedResult = reshape(result, {result.elements()} );
+
+        dimensions = dimensions.front() == 0 ? Dimension(0) : Dimension(1);
+    }
+
+    // special case reduce down to a single element, and 2d reductions
+    if(elements == 1 && reshapedInput.isContiguous() && reshapedResult.isContiguous())
+    {
+        reduceAllDimensions(reshapedResult, reshapedInput, nativeOperation, ActualPrecision());
+    }
+    else if(reshapedInput.size().size() == 2 && dimensions.size() == 1 && dimensions[0] == 0
+        && reshapedInput.isContiguous() && reshapedResult.isContiguous())
+    {
+        reduceFirstDimension(reshapedResult, reshapedInput, nativeOperation, ActualPrecision());
+    }
+    else if(reshapedInput.size().size() == 2 && dimensions.size() == 1 && dimensions[0] == 1
+        && reshapedInput.isContiguous() && reshapedResult.isContiguous())
+    {
+        reduceSecondDimension(reshapedResult, reshapedInput, nativeOperation, ActualPrecision());
     }
     else
     {
+        // handle other types of reductions (note that this is much slower)
         MatrixView<NativeType>      resultView(result);
         ConstMatrixView<NativeType> inputView(input);
 
-        auto lambda = GenericReduceLambda<NativeType, ActualOperation>{resultView, inputView, elements, nativeOperation, dimensions};
+        auto lambda = GenericReduceLambda<NativeType, ActualOperation>{resultView,
+            inputView, elements, nativeOperation, dimensions};
 
         parallel::multiBulkSynchronousParallel(lambda);
     }
@@ -510,7 +742,8 @@ void reduce(Matrix& result, const Matrix& input, const Dimension& unsortedDimens
 }
 
 template <typename ActualOperation, typename PossiblePrecisions>
-void reduce(Matrix& result, const Matrix& input, const Dimension& dimensions, const Operation& op, const PossiblePrecisions& possiblePrecisions)
+void reduce(Matrix& result, const Matrix& input, const Dimension& dimensions, const Operation& op,
+    const PossiblePrecisions& possiblePrecisions)
 {
     typedef typename std::tuple_element<0, PossiblePrecisions>::type PossiblePrecisionType;
 
@@ -526,14 +759,16 @@ void reduce(Matrix& result, const Matrix& input, const Dimension& dimensions, co
 }
 
 template <typename PossibleOperation>
-void reduce(Matrix& result, const Matrix& input, const Dimension& dimensions, const Operation& op, const std::tuple<PossibleOperation>& p)
+void reduce(Matrix& result, const Matrix& input, const Dimension& dimensions, const Operation& op,
+    const std::tuple<PossibleOperation>& p)
 {
     assert(PossibleOperation() == op);
     reduce<PossibleOperation>(result, input, dimensions, op, AllPrecisions());
 }
 
 template <typename PossibleOperations>
-void reduce(Matrix& result, const Matrix& input, const Dimension& dimensions, const Operation& op, const PossibleOperations& possibleOperations)
+void reduce(Matrix& result, const Matrix& input, const Dimension& dimensions, const Operation& op,
+    const PossibleOperations& possibleOperations)
 {
     typedef typename std::tuple_element<0, PossibleOperations>::type PossibleOperationType;
     if(op == PossibleOperationType())
@@ -570,14 +805,15 @@ namespace detail
 
 static Dimension fillOutDimension(const Dimension& d, const Dimension& leftSize, const Dimension& rightSize)
 {
-    if (d.size() != 0)
+    if(d.size() != 0)
     {
         return d;
     }
+
     Dimension retVal;
-    for (auto i = leftSize.begin(), j = rightSize.begin(); i != leftSize.end(); ++i)
+    for(auto i = leftSize.begin(), j = rightSize.begin(); i != leftSize.end(); ++i)
     {
-        if ((j != rightSize.end()) && (*i == *j))
+        if((j != rightSize.end()) && (*i == *j))
         {
             ++j;
             continue;
@@ -589,6 +825,21 @@ static Dimension fillOutDimension(const Dimension& d, const Dimension& leftSize,
     return retVal;
 }
 
+static Dimension invert(const Dimension& original, const Dimension& removed)
+{
+    Dimension result;
+
+    for(size_t i = 0; i < original.size(); ++i)
+    {
+        if(!isContained(removed, i))
+        {
+            result.push_back(i);
+        }
+    }
+
+    return result;
+}
+
 template <typename NativeType, typename ActualOperation>
 class BroadcastLambda
 {
@@ -598,9 +849,10 @@ public:
         for(size_t i = threadGroup.id(); i < elements; i += threadGroup.size())
         {
             auto fullDimension    = linearToDimension(i, resultView.size());
-            auto reducedDimension = removeDimensions(fullDimension, dimension);
+            auto reducedDimension = selectDimensions(fullDimension, dimension);
 
-            resultView(fullDimension) = nativeOperation(leftView(fullDimension), rightView(reducedDimension));
+            resultView(fullDimension) = nativeOperation(leftView(fullDimension),
+                rightView(reducedDimension));
         }
     }
 
@@ -621,10 +873,10 @@ public:
 };
 
 template <typename ActualOperation, typename ActualPrecision>
-void broadcast(Matrix& result, const Matrix& left, const Matrix& right, const Dimension& d, const Operation& op,
-    const std::tuple<ActualPrecision>& p)
+void broadcast(Matrix& result, const Matrix& left, const Matrix& right, const Dimension& d,
+    const Operation& op, const std::tuple<ActualPrecision>& p)
 {
-    auto dimension = fillOutDimension(d, left.size(), right.size());
+    auto dimension = invert(left.size(), fillOutDimension(d, left.size(), right.size()));
     typedef typename ActualPrecision::type NativeType;
 
     assert(ActualPrecision()  == result.precision());
@@ -640,14 +892,15 @@ void broadcast(Matrix& result, const Matrix& left, const Matrix& right, const Di
     ConstMatrixView<NativeType> leftView(left);
     ConstMatrixView<NativeType> rightView(right);
 
-    auto lambda = BroadcastLambda<NativeType, ActualOperation>{resultView, leftView, rightView, elements, nativeOperation, dimension};
+    auto lambda = BroadcastLambda<NativeType, ActualOperation>{resultView, leftView,
+        rightView, elements, nativeOperation, dimension};
 
     parallel::multiBulkSynchronousParallel(lambda);
 }
 
 template <typename ActualOperation, typename PossiblePrecisions>
-void broadcast(Matrix& result, const Matrix& left, const Matrix& right, const Dimension& d, const Operation& op,
-    const PossiblePrecisions& possiblePrecisions)
+void broadcast(Matrix& result, const Matrix& left, const Matrix& right, const Dimension& d,
+    const Operation& op, const PossiblePrecisions& possiblePrecisions)
 {
     typedef typename std::tuple_element<0, PossiblePrecisions>::type PossiblePrecisionType;
     if(result.precision() == PossiblePrecisionType())

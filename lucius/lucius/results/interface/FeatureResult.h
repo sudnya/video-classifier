@@ -1,7 +1,7 @@
-/*	\file   FeatureResult.h
-	\date   Saturday August 10, 2014
-	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The header file for the FeatureResult class.
+/*    \file   FeatureResult.h
+    \date   Saturday August 10, 2014
+    \author Gregory Diamos <solusstultus@gmail.com>
+    \brief  The header file for the FeatureResult class.
 */
 
 #pragma once
@@ -25,14 +25,14 @@ namespace results
 class FeatureResult : public Result
 {
 public:
-	typedef matrix::Matrix Matrix;
+    typedef matrix::Matrix Matrix;
 
 public:
-	FeatureResult(Matrix&&);
-	~FeatureResult();
-	
+    FeatureResult(Matrix&&);
+    ~FeatureResult();
+    
 public:
-	std::unique_ptr<Matrix> features;
+    std::unique_ptr<Matrix> features;
 
 };
 

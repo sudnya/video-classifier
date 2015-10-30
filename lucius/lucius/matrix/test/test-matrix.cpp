@@ -333,13 +333,13 @@ bool test2dReduce()
 
     if(computed != c)
     {
-        std::cout << " Matrix 2D Reduction 0th Dimension Test Failed:\n";
+        std::cout << " Matrix 2D Reduction 2nd Dimension Test Failed:\n";
         std::cout << "  result matrix " << computed.toString();
         std::cout << "  does not match reference matrix " << c.toString();
     }
     else
     {
-        std::cout << " Matrix 2D Reduction 0th Dimension Test Passed\n";
+        std::cout << " Matrix 2D Reduction 2nd Dimension Test Passed\n";
     }
 
     return computed == c;

@@ -1,4 +1,4 @@
-/*    \file   WeightRegularizationCostFunction.h
+/*  \file   WeightRegularizationCostFunction.h
     \date   November 19, 2014
     \author Gregory Diamos <solusstultus@gmail.com>
     \brief  The header file for the WeightCostFunction class.

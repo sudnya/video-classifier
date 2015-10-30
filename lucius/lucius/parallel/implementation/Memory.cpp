@@ -24,7 +24,7 @@ void* malloc(size_t size)
     }
     else
     {
-	    return std::malloc(size);
+        return std::malloc(size);
     }
 }
 
@@ -37,7 +37,7 @@ void free(void* address)
         #else
         return CudaRuntimeLibrary::cudaFree(address);
         #endif
-	}
+    }
     else
     {
         std::free(address);

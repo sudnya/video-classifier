@@ -8,6 +8,7 @@
 #include <lucius/network/interface/NeuralNetwork.h>
 #include <lucius/network/interface/FeedForwardLayer.h>
 #include <lucius/network/interface/RecurrentLayer.h>
+#include <lucius/network/interface/BatchNormalizationLayer.h>
 #include <lucius/network/interface/ConvolutionalLayer.h>
 #include <lucius/network/interface/CostFunctionFactory.h>
 #include <lucius/network/interface/ActivationFunctionFactory.h>
@@ -38,12 +39,10 @@ namespace lucius
 namespace network
 {
 
-typedef network::FeedForwardLayer FeedForwardLayer;
 typedef matrix::Matrix Matrix;
 typedef matrix::Dimension Dimension;
 typedef matrix::MatrixVector MatrixVector;
 typedef matrix::DoublePrecision DoublePrecision;
-typedef network::NeuralNetwork NeuralNetwork;
 
 static NeuralNetwork createFeedForwardFullyConnectedNetwork(
     size_t layerSize, size_t layerCount)
@@ -53,6 +52,26 @@ static NeuralNetwork createFeedForwardFullyConnectedNetwork(
     for(size_t layer = 0; layer < layerCount; ++layer)
     {
         network.addLayer(std::make_unique<FeedForwardLayer>(layerSize, layerSize, DoublePrecision()));
+    }
+
+    network.initialize();
+
+    return network;
+}
+
+static NeuralNetwork createBatchNormalizationNetwork(
+    size_t layerSize, size_t layerCount)
+{
+    NeuralNetwork network;
+
+    for(size_t layer = 0; layer < layerCount; ++layer)
+    {
+        network.addLayer(std::make_unique<FeedForwardLayer>(
+            layerSize, layerSize, DoublePrecision()));
+        network.back()->setActivationFunction(
+            ActivationFunctionFactory::create("NullActivationFunction"));
+        network.addLayer(std::make_unique<BatchNormalizationLayer>(
+            matrix::Dimension(layerSize, 1, 1), DoublePrecision()));
     }
 
     network.initialize();
@@ -145,6 +164,15 @@ static Matrix generateInputWithTimeSeries(NeuralNetwork& network, size_t timeste
     return matrix::rand(size, DoublePrecision());
 }
 
+static Matrix generateInputWithBatchSize(NeuralNetwork& network, size_t batchSize)
+{
+    auto size = network.getInputSize();
+
+    size[1] = batchSize;
+
+    return matrix::rand(size, DoublePrecision());
+}
+
 static Matrix generateOneHotReference(NeuralNetwork& network)
 {
     Matrix result = zeros(network.getOutputSize(), DoublePrecision());
@@ -166,6 +194,15 @@ static Matrix generateReferenceWithTimeSeries(NeuralNetwork& network, size_t tim
     auto size = network.getOutputSize();
 
     size.back() = timesteps;
+
+    return matrix::rand(size, DoublePrecision());
+}
+
+static Matrix generateReferenceWithBatchSize(NeuralNetwork& network, size_t batchSize)
+{
+    auto size = network.getOutputSize();
+
+    size[1] = batchSize;
 
     return matrix::rand(size, DoublePrecision());
 }
@@ -253,6 +290,14 @@ static bool gradientCheck(NeuralNetwork& network)
     return gradientCheck(network, input, reference);
 }
 
+static bool gradientCheckWithBatchSize(NeuralNetwork& network, size_t batchSize)
+{
+    auto input     = generateInputWithBatchSize(network, batchSize);
+    auto reference = generateReferenceWithBatchSize(network, batchSize);
+
+    return gradientCheck(network, input, reference);
+}
+
 static bool gradientCheckOneHot(NeuralNetwork& network)
 {
     auto input     = generateInput(network);
@@ -291,6 +336,34 @@ static bool runTestFeedForwardFullyConnected(size_t layerSize, size_t layerCount
     else
     {
         std::cout << "Feed Forward Fully Connected Network Test Failed\n";
+
+        return false;
+    }
+}
+
+static bool runTestBatchNormalizationNetwork(size_t layerSize, size_t layerCount,
+    size_t batchSize, bool seed)
+{
+    if(seed)
+    {
+        matrix::srand(std::time(0));
+    }
+    else
+    {
+        matrix::srand(377);
+    }
+
+    auto network = createBatchNormalizationNetwork(layerSize, layerCount);
+
+    if(gradientCheckWithBatchSize(network, batchSize))
+    {
+        std::cout << "Batch Normalization Network Test Passed\n";
+
+        return true;
+    }
+    else
+    {
+        std::cout << "Batch Normalization Network Test Failed\n";
 
         return false;
     }
@@ -404,9 +477,17 @@ static bool runTestRecurrent(size_t layerSize, size_t layerCount, size_t timeste
     }
 }
 
-static void runTest(size_t layerSize, size_t layerCount, size_t timesteps, bool seed)
+static void runTest(size_t layerSize, size_t layerCount, size_t batchSize,
+    size_t timesteps, bool seed)
 {
     bool result = true;
+
+    result &= runTestBatchNormalizationNetwork(layerSize, layerCount, batchSize, seed);
+
+    if(!result)
+    {
+        return;
+    }
 
     result &= runTestFeedForwardFullyConnected(layerSize, layerCount, seed);
 
@@ -454,6 +535,7 @@ int main(int argc, char** argv)
     size_t layerSize  = 0;
     size_t layerCount = 0;
     size_t timesteps  = 0;
+    size_t batchSize  = 10;
 
     parser.description("The lucius neural network gradient check.");
 
@@ -463,6 +545,8 @@ int main(int argc, char** argv)
         "The number of layers.");
     parser.parse("-t", "--timesteps", timesteps, 10,
         "The number of timesteps for recurrent layers.");
+    parser.parse("-b", "--batch-size", batchSize, 10,
+        "The number of samples in a minibatch.");
 
     parser.parse("-L", "--log-module", loggingEnabledModules, "",
         "Print out log messages during execution for specified modules "
@@ -487,7 +571,7 @@ int main(int argc, char** argv)
 
     try
     {
-        lucius::network::runTest(layerSize, layerCount, timesteps, seed);
+        lucius::network::runTest(layerSize, layerCount, batchSize, timesteps, seed);
     }
     catch(const std::exception& e)
     {

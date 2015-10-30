@@ -1,7 +1,7 @@
-/*	\file   GeneralNondifferentiableSolverFactory.h
-	\date   Saturday August 10, 2013
-	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The header file for the GeneralNondifferentiableSolverFactory class.
+/*    \file   GeneralNondifferentiableSolverFactory.h
+    \date   Saturday August 10, 2013
+    \author Gregory Diamos <solusstultus@gmail.com>
+    \brief  The header file for the GeneralNondifferentiableSolverFactory class.
 */
 
 #pragma once
@@ -12,7 +12,7 @@
 // Forward Declarations
 namespace lucius
 {
-	namespace optimizer { class GeneralNondifferentiableSolver; }
+    namespace optimizer { class GeneralNondifferentiableSolver; }
 }
 
 namespace lucius
@@ -25,7 +25,7 @@ namespace optimizer
 class GeneralNondifferentiableSolverFactory
 {
 public:
-	static GeneralNondifferentiableSolver* create(const std::string& name);
+    static GeneralNondifferentiableSolver* create(const std::string& name);
 
 };
 

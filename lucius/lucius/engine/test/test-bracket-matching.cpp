@@ -200,12 +200,19 @@ static void addClassifier(Model& model, const Parameters& parameters)
     // connect the network
     for(size_t layer = 2; layer < parameters.forwardLayers; ++layer)
     {
+        classifier.addLayer(LayerFactory::create("BatchNormalizationLayer",
+            std::make_tuple("Size", parameters.layerSize)));
+
         classifier.addLayer(LayerFactory::create("FeedForwardLayer",
             std::make_tuple("InputSize", parameters.layerSize)));
     }
 
     for(size_t layer = 0; layer != parameters.recurrentLayers; ++layer)
     {
+
+
+        classifier.addLayer(LayerFactory::create("BatchNormalizationLayer",
+            std::make_tuple("Size", parameters.layerSize)));
         classifier.addLayer(LayerFactory::create("RecurrentLayer",
             std::make_tuple("Size",      parameters.layerSize),
             std::make_tuple("BatchSize", parameters.batchSize)));
@@ -322,7 +329,7 @@ static void runTest(const Parameters& parameters)
 
 static void setupSolverParameters()
 {
-    lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::LearningRate", "1.0e-2");
+    lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::LearningRate", "1.0e-3");
     lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::Momentum", "0.9");
     lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::AnnealingRate", "1.00001");
     lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::MaxGradNorm", "10.0");

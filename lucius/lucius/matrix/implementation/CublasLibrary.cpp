@@ -274,7 +274,7 @@ void CublasLibrary::Interface::load()
 {
     if(_failed)  return;
     if(loaded()) return;
-	if(!parallel::isCudaEnabled()) return;
+    if(!parallel::isCudaEnabled()) return;
 
     #ifdef __APPLE__
     const char* libraryName = "libcublas.dylib";

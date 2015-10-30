@@ -1,7 +1,7 @@
 /*! \file   ResultProcessorFactory.h
-	\date   Sunday January 11, 2015
-	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The header file for the ResultProcessorfactor class.
+    \date   Sunday January 11, 2015
+    \author Gregory Diamos <solusstultus@gmail.com>
+    \brief  The header file for the ResultProcessorfactor class.
 */
 
 #pragma once
@@ -23,11 +23,11 @@ namespace results
 class ResultProcessorFactory
 {
 public:
-	/*! \brief Create a new instance of the named processor. */
-	static ResultProcessor* create(const std::string& );
-	
-	/*! \brief Create a new instance of the default processor. */
-	static ResultProcessor* create();
+    /*! \brief Create a new instance of the named processor. */
+    static ResultProcessor* create(const std::string& );
+    
+    /*! \brief Create a new instance of the default processor. */
+    static ResultProcessor* create();
 
 };
 

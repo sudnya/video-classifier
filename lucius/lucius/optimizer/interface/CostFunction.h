@@ -1,7 +1,7 @@
 /*! \file:   CostFunction.h
-	\author: Gregory Diamos <gregory.diamos@gatech.edu>
-	\date:   Tuesday January 21, 2014
-	\brief   The header file for the CostFunction class.
+    \author: Gregory Diamos <gregory.diamos@gatech.edu>
+    \date:   Tuesday January 21, 2014
+    \brief   The header file for the CostFunction class.
 */
 
 #pragma once
@@ -19,18 +19,18 @@ namespace optimizer
 class CostFunction
 {
 public:
-	typedef matrix::Matrix Matrix;
+    typedef matrix::Matrix Matrix;
 
 public:
-	CostFunction(float initialCost, float costReductionFactor = 0.2f);
-	virtual ~CostFunction();
+    CostFunction(float initialCost, float costReductionFactor = 0.2f);
+    virtual ~CostFunction();
 
 public:
-	virtual float computeCost(const Matrix& inputs) const = 0;
+    virtual float computeCost(const Matrix& inputs) const = 0;
 
 public:
-	float initialCost;
-	float costReductionFactor;
+    float initialCost;
+    float costReductionFactor;
 
 };
 

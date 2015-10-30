@@ -9,6 +9,7 @@
 
 #include <lucius/matrix/interface/Matrix.h>
 #include <lucius/matrix/interface/MatrixOperations.h>
+#include <lucius/matrix/interface/CopyOperations.h>
 #include <lucius/matrix/interface/Operation.h>
 
 namespace lucius
@@ -27,7 +28,7 @@ NullActivationFunction::~NullActivationFunction()
 
 Matrix NullActivationFunction::apply(const Matrix& activations) const
 {
-    return activations;
+    return copy(activations);
 }
 
 Matrix NullActivationFunction::applyDerivative(const Matrix& activations) const

@@ -70,7 +70,8 @@ static Dimension computeBiasSize(const matrix::Dimension& inputSize,
 }
 
 ConvolutionalLayer::ConvolutionalLayer(const matrix::Dimension& inputSize,
-    const matrix::Dimension& size, const matrix::Dimension& stride, const matrix::Dimension& padding, const matrix::Precision& precision)
+    const matrix::Dimension& size, const matrix::Dimension& stride,
+    const matrix::Dimension& padding, const matrix::Precision& precision)
 : _parameters(std::make_unique<MatrixVector>(
     MatrixVector({Matrix(size, precision),
     Matrix(computeBiasSize(inputSize, size, stride, padding), precision)}))),
@@ -113,7 +114,8 @@ void ConvolutionalLayer::initialize()
 {
     double e = util::KnobDatabase::getKnobValue("Layer::RandomInitializationEpsilon", 6);
 
-    double epsilon = std::sqrt((e) / ((_weights.size()[0])*(_weights.size()[1])*(_weights.size()[2]) + getOutputSize()[2] + 1));
+    double epsilon = std::sqrt((e) /
+        ((_weights.size()[0])*(_weights.size()[1])*(_weights.size()[2]) + getOutputSize()[2] + 1));
 
     // generate uniform random values between [0, 1]
     matrix::rand(_weights);
@@ -128,7 +130,7 @@ void ConvolutionalLayer::initialize()
     apply(_bias, _bias, matrix::Fill(0.0));
 }
 
-void ConvolutionalLayer::runForwardImplementation(MatrixVector& activations) const
+void ConvolutionalLayer::runForwardImplementation(MatrixVector& activations)
 {
     auto m = activations.back();
 
@@ -175,7 +177,7 @@ void ConvolutionalLayer::runForwardImplementation(MatrixVector& activations) con
 
 Matrix ConvolutionalLayer::runReverseImplementation(MatrixVector& gradients,
     MatrixVector& activations,
-    const Matrix& difference) const
+    const Matrix& difference)
 {
     auto outputActivations = activations.back();
     activations.pop_back();

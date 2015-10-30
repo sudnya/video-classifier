@@ -1,7 +1,7 @@
-/*	\file   Result.h
-	\date   Saturday August 10, 2014
-	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The header file for the Result class.
+/*    \file   Result.h
+    \date   Saturday August 10, 2014
+    \author Gregory Diamos <solusstultus@gmail.com>
+    \brief  The header file for the Result class.
 */
 
 #pragma once
@@ -16,7 +16,7 @@ namespace results
 class Result
 {
 public:
-	virtual ~Result();
+    virtual ~Result();
 
 };
 

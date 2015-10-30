@@ -1,7 +1,7 @@
 /*! \file   Solver.h
-	\author Gregory Diamos <gregory.diamos@gmail.com>
-	\date   Saturday March 8, 2014
-	\brief  The header file for the Solver class.
+    \author Gregory Diamos <gregory.diamos@gmail.com>
+    \date   Saturday March 8, 2014
+    \brief  The header file for the Solver class.
 */
 
 #pragma once
@@ -23,22 +23,22 @@ namespace optimizer
 class Solver
 {
 public:
-	Solver();
-	virtual ~Solver();
+    Solver();
+    virtual ~Solver();
 
 public:
-	virtual void addConstraint(const Constraint& constraint);
+    virtual void addConstraint(const Constraint& constraint);
 
 public:
-	Solver(const Solver&) = delete;
-	Solver& operator=(const Solver&) = delete;
+    Solver(const Solver&) = delete;
+    Solver& operator=(const Solver&) = delete;
 
 protected:
-	typedef std::vector<Constraint*> ConstraintVector;
+    typedef std::vector<Constraint*> ConstraintVector;
 
 protected:
-	ConstraintVector _constraints;
-	
+    ConstraintVector _constraints;
+    
 };
 
 }

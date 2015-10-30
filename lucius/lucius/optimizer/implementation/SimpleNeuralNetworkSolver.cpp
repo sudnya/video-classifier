@@ -101,7 +101,8 @@ public:
 
         if(util::isLogEnabled("SimpleNeuralNetworkSolver::Detail"))
         {
-            util::log("SimpleNeuralNetworkSolver::Detail") << " new gradient is : " << gradient[1].toString();
+            util::log("SimpleNeuralNetworkSolver::Detail") << " new gradient is : "
+                << gradient[1].toString();
         }
 
         util::log("SimpleNeuralNetworkSolver::Detail") << " new cost is : " << newCost << "\n";
@@ -127,7 +128,8 @@ static MatrixVector getWeights(NeuralNetwork* network)
     return weights;
 }
 
-static double differentiableSolver(NeuralNetwork* network, const Matrix* input, const Matrix* reference, GeneralDifferentiableSolver* solver)
+static double differentiableSolver(NeuralNetwork* network, const Matrix* input,
+    const Matrix* reference, GeneralDifferentiableSolver* solver)
 {
     util::log("SimpleNeuralNetworkSolver") << "  starting general solver\n";
     double newCost = std::numeric_limits<double>::infinity();

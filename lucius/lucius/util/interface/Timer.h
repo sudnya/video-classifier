@@ -1,10 +1,10 @@
-/*!	\file Timer.h
+/*!    \file Timer.h
 *
-*	\brief Header file for the Timer class
+*    \brief Header file for the Timer class
 *
-*	\author Gregory Diamos
+*    \author Gregory Diamos
 *
-*	\date : 9/27/2007
+*    \date : 9/27/2007
 *
 */
 
@@ -15,7 +15,7 @@
 #include <string>
 
 /*!
-	\brief a namespace for hydrazine classes and functions
+    \brief a namespace for hydrazine classes and functions
 */
 namespace lucius
 {
@@ -23,11 +23,11 @@ namespace lucius
 namespace util
 {
 
-	class Timer : public LowLevelTimer
-	{
-		public:	
-			std::string toString() const;
-	};
+    class Timer : public LowLevelTimer
+    {
+        public:    
+            std::string toString() const;
+    };
 
 }
 

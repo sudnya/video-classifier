@@ -70,6 +70,8 @@ UnsupervisedLearnerEngine::ResultVector UnsupervisedLearnerEngine::runOnBatch(Ma
 
         auto network = _formAugmentedNetwork(counter, counterEnd);
 
+        network.setIsTraining(true);
+
         network.train(layerInput, inputReference);
 
         if(counter + _layersPerIteration < totalLayers)

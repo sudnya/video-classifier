@@ -1,7 +1,7 @@
-/*	\file   LinearSolver.cpp
-	\date   Sunday August 11, 2013
-	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The source file for the LinearSolver class.
+/*    \file   LinearSolver.cpp
+    \date   Sunday August 11, 2013
+    \author Gregory Diamos <solusstultus@gmail.com>
+    \brief  The source file for the LinearSolver class.
 */
 
 // Lucius Includes

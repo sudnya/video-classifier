@@ -1,7 +1,7 @@
-/*	\file   paths.h
-	\date   Thursday August 15, 2013
-	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  Function headers for common path manipulations.
+/*    \file   paths.h
+    \date   Thursday August 15, 2013
+    \author Gregory Diamos <solusstultus@gmail.com>
+    \brief  Function headers for common path manipulations.
 */
 
 #pragma once
@@ -28,7 +28,7 @@ std::string getDirectory(const std::string& path);
 std::string getFile(const std::string& path);
 
 std::string getRelativePath(const std::string& baseDirectory,
-	const std::string& path);
+    const std::string& path);
 
 std::string joinPaths(const std::string& left, const std::string& right);
 

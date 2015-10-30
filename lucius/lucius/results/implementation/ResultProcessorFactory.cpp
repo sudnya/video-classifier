@@ -1,7 +1,7 @@
 /*! \file   ResultProcessorFactory.cpp
-	\date   Sunday January 11, 2015
-	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The source file for the ResultProcessorfactor class.
+    \date   Sunday January 11, 2015
+    \author Gregory Diamos <solusstultus@gmail.com>
+    \brief  The source file for the ResultProcessorfactor class.
 */
 
 // Lucius Includes
@@ -21,33 +21,33 @@ namespace results
 
 ResultProcessor* ResultProcessorFactory::create(const std::string& name)
 {
-	if(name == "NullResultProcessor")
-	{
-		return new NullResultProcessor;
-	}
-	else if(name == "LabelResultProcessor")
-	{
-		return new LabelResultProcessor;
-	}
-	else if(name == "LabelMatchResultProcessor")
-	{
-		return new LabelMatchResultProcessor;
-	}
-	else if(name == "FeatureResultProcessor")
-	{
-		return new FeatureResultProcessor;
-	}
-	else if(name == "VideoDisplayResultProcessor")
-	{
-		return new VideoDisplayResultProcessor;
-	}
+    if(name == "NullResultProcessor")
+    {
+        return new NullResultProcessor;
+    }
+    else if(name == "LabelResultProcessor")
+    {
+        return new LabelResultProcessor;
+    }
+    else if(name == "LabelMatchResultProcessor")
+    {
+        return new LabelMatchResultProcessor;
+    }
+    else if(name == "FeatureResultProcessor")
+    {
+        return new FeatureResultProcessor;
+    }
+    else if(name == "VideoDisplayResultProcessor")
+    {
+        return new VideoDisplayResultProcessor;
+    }
 
-	return nullptr;
+    return nullptr;
 }
 
 ResultProcessor* ResultProcessorFactory::create()
 {
-	return create("NullResultProcessor");
+    return create("NullResultProcessor");
 }
 
 }

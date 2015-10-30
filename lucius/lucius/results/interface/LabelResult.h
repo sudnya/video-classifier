@@ -1,7 +1,7 @@
-/*	\file   LabelResult.h
-	\date   Saturday August 10, 2014
-	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The header file for the LabelResult class.
+/*    \file   LabelResult.h
+    \date   Saturday August 10, 2014
+    \author Gregory Diamos <solusstultus@gmail.com>
+    \brief  The header file for the LabelResult class.
 */
 
 #pragma once
@@ -22,10 +22,10 @@ namespace results
 class LabelResult : public Result
 {
 public:
-	LabelResult(const std::string&);
-	
+    LabelResult(const std::string&);
+    
 public:
-	std::string label;
+    std::string label;
 
 };
 

@@ -1,7 +1,7 @@
 /*! \file   test-image.cpp
-	\author Gregory Diamos <solusstultus@gmail.com>
-	\date   Tuesday November 19, 2013
-	\brief  A unit test for images.
+    \author Gregory Diamos <solusstultus@gmail.com>
+    \date   Tuesday November 19, 2013
+    \brief  A unit test for images.
 */
 
 // Lucius Includes

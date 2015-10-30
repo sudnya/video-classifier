@@ -8,6 +8,7 @@
 #include <lucius/audio/interface/LibavcodecLibrary.h>
 
 #include <lucius/util/interface/Casts.h>
+#include <lucius/util/interface/string.h>
 
 // Standard Library Includes
 #include <stdexcept>
@@ -424,6 +425,12 @@ void LibavcodecLibrary::av_codec_set_pkt_timebase(AVCodecContext* avctx, AVRatio
 {
     _check();
 
+    if(_interface.av_codec_set_pkt_timebase == nullptr)
+    {
+        //avctx->pkt_timebase = val;
+        return;
+    }
+
     return (*_interface.av_codec_set_pkt_timebase)(avctx, val);
 }
 
@@ -495,9 +502,14 @@ int LibavcodecLibrary::av_opt_show2(void* obj, void* av_log_obj, int req_flags, 
     return (*_interface.av_opt_show2)(obj, av_log_obj, req_flags, rej_flags);
 }
 
-void LibavcodecLibrary::av_frame_set_channel_layout(AVFrame *frame, int64_t val)
+void LibavcodecLibrary::av_frame_set_channel_layout(AVFrame* frame, int64_t val)
 {
     _check();
+
+    if(_interface.av_frame_set_channel_layout == nullptr)
+    {
+        frame->channel_layout = val;
+    }
 
     return (*_interface.av_frame_set_channel_layout)(frame, val);
 }
@@ -706,28 +718,19 @@ void LibavcodecLibrary::Interface::load()
     DynLink(av_init_packet);
     DynLink(avcodec_alloc_context3);
     DynLink(avcodec_open2);
-    DynLink(av_frame_alloc);
     DynLink(avcodec_decode_audio4);
     DynLink(av_samples_get_buffer_size);
 
     DynLink(avcodec_fill_audio_frame);
     DynLink(avcodec_encode_audio2);
 
-    DynLink(av_codec_set_pkt_timebase);
-
     DynLink(av_opt_get_int);
     DynLink(av_opt_get);
-    DynLink(av_opt_get_sample_fmt);
-    DynLink(av_opt_get_channel_layout);
 
     DynLink(av_opt_set);
     DynLink(av_opt_set_int);
-    DynLink(av_opt_set_sample_fmt);
-    DynLink(av_opt_set_channel_layout);
 
     DynLink(av_opt_show2);
-
-    DynLink(av_frame_set_channel_layout);
 
     DynLink(av_get_channel_layout_nb_channels);
 
@@ -755,9 +758,19 @@ void LibavcodecLibrary::Interface::load()
     DynLink(av_free);
     DynLink(av_free_packet);
     DynLink(avcodec_close);
-    DynLink(av_frame_free);
 
     #undef DynLink
+
+    _tryLink(reinterpret_cast<void*&>(av_frame_alloc), {"av_frame_alloc", "avcodec_alloc_frame"});
+    _tryLink(reinterpret_cast<void*&>(av_frame_free),  {"av_frame_free",  "av_free"});
+
+    // Optionally supported functions
+    util::bit_cast(av_frame_set_channel_layout, dlsym(_library, "av_frame_set_channel_layout"));
+    util::bit_cast(av_codec_set_pkt_timebase, dlsym(_library, "av_codec_set_pkt_timebase"));
+    util::bit_cast(av_opt_get_sample_fmt, dlsym(_library, "av_opt_get_sample_fmt"));
+    util::bit_cast(av_opt_get_channel_layout, dlsym(_library, "av_opt_get_channel_layout"));
+    util::bit_cast(av_opt_set_sample_fmt, dlsym(_library, "av_opt_set_sample_fmt"));
+    util::bit_cast(av_opt_set_channel_layout, dlsym(_library, "av_opt_set_channel_layout"));
 
     (*avcodec_register_all)();
     (*av_register_all)();
@@ -776,6 +789,22 @@ void LibavcodecLibrary::Interface::unload()
 
     dlclose(_library);
     _library = nullptr;
+}
+
+void LibavcodecLibrary::Interface::_tryLink(void*& function, const StringVector& names)
+{
+    for(auto& name : names)
+    {
+        util::bit_cast(function, dlsym(_library, name.c_str()));
+
+        if(function != nullptr)
+        {
+            return;
+        }
+    }
+
+    throw std::runtime_error("Failed to load function with any of these names {'" +
+        util::join(names, ", ") + "'} from dynamic library.");
 }
 
 LibavcodecLibrary::Interface LibavcodecLibrary::_interface;

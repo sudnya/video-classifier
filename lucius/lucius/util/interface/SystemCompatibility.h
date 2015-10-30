@@ -1,8 +1,8 @@
 /*! \file SystemCompatibility.h
-	\date Monday August 2, 2010
-	\author Gregory Diamos <gregory.diamos@gatech.edu>
-	\brief The header file for hacked code required to assist windows 
-		compilaiton
+    \date Monday August 2, 2010
+    \author Gregory Diamos <gregory.diamos@gatech.edu>
+    \brief The header file for hacked code required to assist windows 
+        compilaiton
 */
 
 #pragma once

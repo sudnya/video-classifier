@@ -1,7 +1,7 @@
-/*	\file   ResultVector.cpp
-	\date   Saturday August 10, 2014
-	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The source file for the ResultVector class.
+/*    \file   ResultVector.cpp
+    \date   Saturday August 10, 2014
+    \author Gregory Diamos <solusstultus@gmail.com>
+    \brief  The source file for the ResultVector class.
 */
 
 // Lucius Includes
@@ -21,32 +21,32 @@ ResultVector::ResultVector()
 
 ResultVector::~ResultVector()
 {
-	clear();
+    clear();
 }
 
 void ResultVector::push_back(Result* r)
 {
-	_results.push_back(r);
+    _results.push_back(r);
 }
 
 ResultVector::iterator ResultVector::begin()
 {
-	return _results.begin();
+    return _results.begin();
 }
 
 ResultVector::const_iterator ResultVector::begin() const
 {
-	return _results.begin();
+    return _results.begin();
 }
 
 ResultVector::iterator ResultVector::end()
 {
-	return _results.end();
+    return _results.end();
 }
 
 ResultVector::const_iterator ResultVector::end() const
 {
-	return _results.end();
+    return _results.end();
 }
 
 ResultVector::value_type& ResultVector::back()
@@ -71,20 +71,20 @@ const ResultVector::value_type& ResultVector::front() const
 
 size_t ResultVector::size() const
 {
-	return _results.size();
+    return _results.size();
 }
 
 bool ResultVector::empty() const
 {
-	return _results.empty();
+    return _results.empty();
 }
 
 void ResultVector::clear()
 {
-	for(auto result : *this)
-	{
-		delete result;
-	}
+    for(auto result : *this)
+    {
+        delete result;
+    }
 }
 
 }

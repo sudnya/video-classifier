@@ -7,7 +7,7 @@
 #include <lucius/matrix/interface/MatrixView.h>
 #include <lucius/matrix/interface/Matrix.h>
 #include <lucius/matrix/interface/MatrixTransformations.h>
- 
+
 #include <lucius/parallel/interface/MultiBulkSynchronousParallel.h>
 
 #include <lucius/util/interface/Metaprogramming.h>
@@ -30,7 +30,8 @@ size_t computeOutputSize(size_t inputSize, size_t filterSize, size_t stride, siz
 
 }
 
-Dimension forwardConvolutionOutputSize(const Dimension& inputSize, const Dimension& filterSize, const Dimension& filterStride, const Dimension& padding)
+Dimension forwardConvolutionOutputSize(const Dimension& inputSize, const Dimension& filterSize,
+    const Dimension& filterStride, const Dimension& padding)
 {
     Dimension outputSize(
             computeOutputSize(inputSize[0], filterSize[0], filterStride[0], padding[0]),

@@ -1,7 +1,7 @@
 /*! \file   math.h
-	\author Gregory Diamos <gregory.diamos@gmail.com>
-	\date   Friday March 15, 2014
-	\brief  The header file for the library of math utility functions.
+    \author Gregory Diamos <gregory.diamos@gmail.com>
+    \date   Friday March 15, 2014
+    \brief  The header file for the library of math utility functions.
 */
 
 #pragma once

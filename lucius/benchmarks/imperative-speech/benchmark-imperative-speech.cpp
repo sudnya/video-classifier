@@ -62,6 +62,10 @@ public:
 
     double learningRate;
     double momentum;
+    double annealingRate;
+
+    double noiseRateLower;
+    double noiseRateUpper;
 
     size_t maximumSamples;
 
@@ -133,7 +137,7 @@ static void setSampleStatistics(Model& model, const Parameters& parameters)
 
     engine->setModel(&model);
     engine->setBatchSize(128);
-    engine->setMaximumSamplesToRun(128);
+    engine->setMaximumSamplesToRun(1024);
 
     // read from database and use model to train
     engine->runOnDatabaseFile(parameters.inputPath);
@@ -222,7 +226,12 @@ static void setupSolverParameters(const Parameters& parameters)
         parameters.learningRate);
     lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::Momentum",
         parameters.momentum);
-    lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::AnnealingRate", "1.0001");
+    lucius::util::KnobDatabase::setKnob("InputAudioDataProducer::NoiseRateLower",
+        parameters.noiseRateLower);
+    lucius::util::KnobDatabase::setKnob("InputAudioDataProducer::NoiseRateUpper",
+        parameters.noiseRateUpper);
+    lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::AnnealingRate",
+        parameters.annealingRate);
     lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::MaxGradNorm",   "100.0");
     lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::IterationsPerBatch", "1");
     lucius::util::KnobDatabase::setKnob("GeneralDifferentiableSolver::Type",
@@ -236,6 +245,7 @@ int main(int argc, char** argv)
     Parameters parameters;
 
     std::string loggingEnabledModules;
+    std::string logFile;
     bool verbose = false;
 
     parser.description("A test for lucius recurrent network speech recognition performance.");
@@ -259,7 +269,9 @@ int main(int argc, char** argv)
         "The number of sample to use for each iteration.");
     parser.parse("", "--learning-rate", parameters.learningRate, 1.0e-5,
         "The learning rate for gradient descent.");
-    parser.parse("", "--momentum", parameters.momentum, 0.9,
+    parser.parse("", "--momentum", parameters.momentum, 0.99,
+        "The momentum for gradient descent.");
+    parser.parse("", "--annealing-rate", parameters.annealingRate, 1.0001,
         "The momentum for gradient descent.");
 
     parser.parse("-L", "--log-module", loggingEnabledModules, "",
@@ -278,10 +290,17 @@ int main(int argc, char** argv)
     parser.parse("", "--frame-duration", parameters.frameDuration, 160,
         "The number of input samples per frame.");
 
+    parser.parse("", "--noise-rate-lower",  parameters.noiseRateLower, 0.0,
+        "The minimum magnitude to scale noise by.");
+    parser.parse("", "--noise-rate-upper", parameters.noiseRateUpper, 0.2,
+        "The maximum magnitude to scale noise by.");
+
     parser.parse("-f", "--forward-layers", parameters.forwardLayers, 4,
         "The number of feed forward layers.");
     parser.parse("-r", "--recurrent-layers", parameters.recurrentLayers, 1,
         "The number of recurrent layers.");
+    parser.parse("", "--log-file", logFile, "",
+        "Save output to this logfile instead of std::cout.");
 
     parser.parse("-v", "--verbose", verbose, false,
         "Print out log messages during execution");
@@ -289,6 +308,11 @@ int main(int argc, char** argv)
     parser.parse();
 
     setupSolverParameters(parameters);
+
+    if(!logFile.empty())
+    {
+        lucius::util::setLogFile(logFile);
+    }
 
     if(verbose)
     {

@@ -1,7 +1,7 @@
-/*	\file   ResultProcessor.h
-	\date   Saturday August 10, 2014
-	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The header file for the ResultProcessor class.
+/*    \file   ResultProcessor.h
+    \date   Saturday August 10, 2014
+    \author Gregory Diamos <solusstultus@gmail.com>
+    \brief  The header file for the ResultProcessor class.
 */
 
 #pragma once
@@ -23,18 +23,18 @@ namespace results
 class ResultProcessor
 {
 public:
-	virtual ~ResultProcessor();
+    virtual ~ResultProcessor();
 
 public:
-	/*! \brief Process a batch of results */
-	virtual void process(const ResultVector& ) = 0;
+    /*! \brief Process a batch of results */
+    virtual void process(const ResultVector& ) = 0;
 
 public:
-	/*! \brief Return a description of the results. */
-	virtual std::string toString() const = 0;
+    /*! \brief Return a description of the results. */
+    virtual std::string toString() const = 0;
 
 public:
-	virtual void setOutputFilename(const std::string& filename);
+    virtual void setOutputFilename(const std::string& filename);
 
 };
 

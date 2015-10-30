@@ -1,7 +1,7 @@
 /*! \brief  LineSearch.h
-	\date   August 23, 2014
-	\author Gregory Diamos <solustultus@gmail.com>
-	\brief  The header file for the LineSearch class.
+    \date   August 23, 2014
+    \author Gregory Diamos <solustultus@gmail.com>
+    \brief  The header file for the LineSearch class.
 */
 
 #pragma once
@@ -21,20 +21,20 @@ namespace optimizer
 class LineSearch
 {
 public:
-	typedef matrix::Matrix       Matrix;
-	typedef matrix::MatrixVector MatrixVector;
+    typedef matrix::Matrix       Matrix;
+    typedef matrix::MatrixVector MatrixVector;
 
 public:
-	virtual ~LineSearch();
+    virtual ~LineSearch();
 
 public:
-	virtual void search(
-		const CostAndGradientFunction& costFunction,
-		MatrixVector& inputs, double& cost,
-		MatrixVector& gradient,
-		const MatrixVector& direction,
-		double step, const MatrixVector& previousInputs,
-		const MatrixVector& previousGradients) = 0;
+    virtual void search(
+        const CostAndGradientFunction& costFunction,
+        MatrixVector& inputs, double& cost,
+        MatrixVector& gradient,
+        const MatrixVector& direction,
+        double step, const MatrixVector& previousInputs,
+        const MatrixVector& previousGradients) = 0;
 
 };
 

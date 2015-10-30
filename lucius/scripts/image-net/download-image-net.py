@@ -373,7 +373,8 @@ def main():
     else:
         selectedTermIds, classes = selectTerms(int(options.terms))
 
-    print 'Selected', str(len(selectedTermIds)), 'terms, each with', options.maximum_images_per_term, 'images'
+    print 'Selected', str(len(selectedTermIds)), 'terms, each with',
+        options.maximum_images_per_term, 'images'
 
     socket.setdefaulttimeout(10.0)
 

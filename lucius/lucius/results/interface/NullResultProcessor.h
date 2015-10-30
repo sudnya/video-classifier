@@ -1,7 +1,7 @@
-/*	\file   NullResultProcessor.h
-	\date   Saturday August 10, 2014
-	\author Gregory Diamos <solusstultus@gmail.com>
-	\brief  The header file for the NullResultProcessor class.
+/*    \file   NullResultProcessor.h
+    \date   Saturday August 10, 2014
+    \author Gregory Diamos <solusstultus@gmail.com>
+    \brief  The header file for the NullResultProcessor class.
 */
 
 #pragma once
@@ -18,15 +18,15 @@ namespace results
 class NullResultProcessor : public ResultProcessor
 {
 public:
-	virtual ~NullResultProcessor();
+    virtual ~NullResultProcessor();
 
 public:
-	/*! \brief Process a batch of results */
-	virtual void process(const ResultVector& );
+    /*! \brief Process a batch of results */
+    virtual void process(const ResultVector& );
 
 public:
-	/*! \brief Return a description of the results. */
-	virtual std::string toString() const;
+    /*! \brief Return a description of the results. */
+    virtual std::string toString() const;
 
 };
 

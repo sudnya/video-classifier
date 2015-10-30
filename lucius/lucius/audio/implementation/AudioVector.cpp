@@ -11,6 +11,9 @@
 
 #include <lucius/util/interface/debug.h>
 
+// Standard Library Includes
+#include <limits>
+
 namespace lucius
 {
 
