@@ -402,7 +402,7 @@ void CudnnLibrary::Interface::load()
 
 bool CudnnLibrary::Interface::loaded() const
 {
-    return !_failed && (_library != nullptr) && (_handle != nullptr);
+    return !_failed && (_library != nullptr);
 }
 
 void CudnnLibrary::Interface::unload()

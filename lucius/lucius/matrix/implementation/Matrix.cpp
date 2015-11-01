@@ -158,7 +158,7 @@ bool Matrix::isLeadingDimensionContiguous() const
     return stride()[0] == 1;
 }
 
-static std::string toString2D(const Matrix& m)
+static std::string toString2D(const Matrix& m, size_t limit)
 {
     size_t rows = 1;
 
@@ -180,8 +180,8 @@ static std::string toString2D(const Matrix& m)
 
     stream << "[ ";
 
-    size_t maxRows    = 10;
-    size_t maxColumns = 10;
+    size_t maxRows    = limit;
+    size_t maxColumns = limit;
 
     size_t finalRow = std::min(matrix.size()[0], maxRows);
 
@@ -202,11 +202,11 @@ static std::string toString2D(const Matrix& m)
     return stream.str();
 }
 
-static std::string toString(const Matrix& matrix)
+static std::string toString(const Matrix& matrix, size_t limit)
 {
     if(matrix.size().size() <= 2)
     {
-        return toString2D(matrix);
+        return toString2D(matrix, limit);
     }
 
     size_t lastDimension = matrix.size().back();
@@ -229,7 +229,7 @@ static std::string toString(const Matrix& matrix)
 
         newSize.pop_back();
 
-        stream << toString(reshape(slice(matrix, start, end), newSize));
+        stream << toString(reshape(slice(matrix, start, end), newSize), limit);
 
         stream << ",\n";
     }
@@ -241,12 +241,12 @@ static std::string toString(const Matrix& matrix)
 
 std::string Matrix::toString() const
 {
-    return shapeString() + "\n" + matrix::toString(*this) + "\n";
+    return shapeString() + "\n" + matrix::toString(*this, 100) + "\n";
 }
 
 std::string Matrix::debugString() const
 {
-    return toString();
+    return shapeString() + "\n" + matrix::toString(*this, 10) + "\n";
 }
 
 std::string Matrix::shapeString() const
