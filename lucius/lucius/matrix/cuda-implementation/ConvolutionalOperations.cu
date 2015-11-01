@@ -6,6 +6,7 @@
 #include <lucius/matrix/interface/BlasOperations.h>
 #include <lucius/matrix/interface/MatrixView.h>
 #include <lucius/matrix/interface/Matrix.h>
+#include <lucius/matrix/interface/Allocation.h>
 #include <lucius/matrix/interface/MatrixOperations.h>
 #include <lucius/matrix/interface/MatrixTransformations.h>
 
@@ -13,6 +14,7 @@
 
 #include <lucius/util/interface/Metaprogramming.h>
 #include <lucius/util/interface/debug.h>
+#include <lucius/util/interface/memory.h>
 
 // Standard Library Includes
 #include <vector>
@@ -204,7 +206,7 @@ public:
             _algorithm,
             &bytes);
 
-        _data.resize(bytes);
+        _data = std::make_unique<Allocation>(bytes);
     }
 
 public:
@@ -215,20 +217,19 @@ public:
 
     void* data()
     {
-        return _data.data();
+        return _data->data();
     }
 
     size_t size() const
     {
-        return _data.size();
+        return _data->size();
     }
 
 private:
     CudnnLibrary::cudnnConvolutionFwdAlgo_t _algorithm;
 
 private:
-    std::vector<uint8_t> _data;
-
+    std::unique_ptr<Allocation> _data;
 };
 
 template<typename NativeType>
