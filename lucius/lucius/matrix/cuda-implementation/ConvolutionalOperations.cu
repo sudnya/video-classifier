@@ -189,8 +189,8 @@ public:
             filter.descriptor(),
             convolutionDescriptor,
             result.descriptor(),
-            CudnnLibrary::CUDNN_CONVOLUTION_FWD_NO_WORKSPACE, // TODO: make this a knob
-            //CudnnLibrary::CUDNN_CONVOLUTION_FWD_PREFER_FASTEST, // TODO: make this a knob
+            //CudnnLibrary::CUDNN_CONVOLUTION_FWD_NO_WORKSPACE, // TODO: make this a knob
+            CudnnLibrary::CUDNN_CONVOLUTION_FWD_PREFER_FASTEST, // TODO: make this a knob
             0,
             &_algorithm);
 
