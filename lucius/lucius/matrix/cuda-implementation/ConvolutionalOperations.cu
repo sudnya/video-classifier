@@ -191,7 +191,6 @@ public:
             filter.descriptor(),
             convolutionDescriptor,
             result.descriptor(),
-            //CudnnLibrary::CUDNN_CONVOLUTION_FWD_NO_WORKSPACE, // TODO: make this a knob
             CudnnLibrary::CUDNN_CONVOLUTION_FWD_PREFER_FASTEST, // TODO: make this a knob
             0,
             &_algorithm);
@@ -522,7 +521,8 @@ void scatterForwardConvolutionResultOverPrecisions(Matrix& result, const Matrix&
 
     size_t elements = miniBatches * featureMaps * height * width;
 
-    auto lambda = ForwardReshapeResultLambda<NativeType>{resultView, inputView, elements, width, height, featureMaps};
+    auto lambda = ForwardReshapeResultLambda<NativeType>{resultView, inputView, elements,
+        width, height, featureMaps};
 
     parallel::multiBulkSynchronousParallel(lambda);
 }
@@ -535,7 +535,8 @@ void scatterForwardConvolutionResultOverPrecisions(Matrix& result, const Matrix&
 
     if(input.precision() == PossiblePrecisionType())
     {
-        return scatterForwardConvolutionResultOverPrecisions(result, input, std::tuple<PossiblePrecisionType>());
+        return scatterForwardConvolutionResultOverPrecisions(result,
+            input, std::tuple<PossiblePrecisionType>());
     }
     else
     {
