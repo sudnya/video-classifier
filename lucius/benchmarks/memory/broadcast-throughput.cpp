@@ -7,6 +7,7 @@
 // Lucious Includes
 #include <lucius/matrix/interface/Matrix.h>
 #include <lucius/matrix/interface/MatrixOperations.h>
+#include <lucius/matrix/interface/Operation.h>
 
 #include <lucius/util/interface/ArgumentParser.h>
 #include <lucius/util/interface/Timer.h>
@@ -38,7 +39,7 @@ static void runTest(const Parameters& parameters)
     // warm-up
     broadcast(result, left, right, {1}, lucius::matrix::Subtract());
 
-    util::Timer timer;
+    lucius::util::Timer timer;
 
     timer.start();
 
@@ -49,7 +50,7 @@ static void runTest(const Parameters& parameters)
 
     timer.stop();
 
-    double bytes = left.precision().size() * left.elements();
+    double bytes = 3 * left.precision().size() * left.elements();
     double rate = bytes / (timer.seconds() * 1.0e9);
 
     std::cout << "Throughput is " << rate << " GB/s\n";
@@ -81,8 +82,6 @@ int main(int argc, char** argv)
         "Print out log messages during execution");
 
     parser.parse();
-
-    setupSolverParameters(parameters);
 
     if(verbose)
     {

@@ -868,6 +868,7 @@ public:
             for(int row = innerGroup.id(); row < rows; row += innerGroup.size(),
                 offset += innerGroup.size())
             {
+                //std::printf("thread (%d, %d) handling (%d, %d)\n", threadGroup.id(), threadGroup.size(), row, column);
                 rawResult[offset] = nativeOperation(rawLeft[offset], rawRight[row]);
             }
         }
