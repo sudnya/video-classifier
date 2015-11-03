@@ -828,11 +828,12 @@ public:
 
             if(rows >= innerGroup.size())
             {
+                size_t globalOffset = relativeGroup.id() * rows;
+
                 for(size_t column = relativeGroup.id(); column < columns;
-                    column += relativeGroup.size())
+                    column += relativeGroup.size(), globalOffset += rows * relativeGroup.size())
                 {
-                    size_t offset = column * rows;
-                    offset += innerGroup.id();
+                    size_t offset = globalOffset + innerGroup.id();
 
                     for(size_t row = innerGroup.id(); row < rows; row += innerGroup.size(),
                         offset += innerGroup.size())
