@@ -858,14 +858,14 @@ public:
         auto innerGroup    = parallel::partitionThreadGroupAtLevel(threadGroup, 1);
         auto relativeGroup = parallel::getRelativeGroup(innerGroup, threadGroup);
 
-        size_t globalOffset = relativeGroup.id() * rows;
+        int globalOffset = relativeGroup.id() * rows;
 
-        for(size_t column = relativeGroup.id(); column < columns;
+        for(int column = relativeGroup.id(); column < columns;
             column += relativeGroup.size(), globalOffset += rows * relativeGroup.size())
         {
-            size_t offset = globalOffset + innerGroup.id();
+            int offset = globalOffset + innerGroup.id();
 
-            for(size_t row = innerGroup.id(); row < rows; row += innerGroup.size(),
+            for(int row = innerGroup.id(); row < rows; row += innerGroup.size(),
                 offset += innerGroup.size())
             {
                 rawResult[offset] = nativeOperation(rawLeft[offset], rawRight[row]);
@@ -879,8 +879,8 @@ public:
     const NativeType* rawRight;
 
 public:
-    size_t rows;
-    size_t columns;
+    int rows;
+    int columns;
 
 public:
     ActualOperation nativeOperation;
@@ -898,10 +898,11 @@ void broadcastFirstOfTwoDimensions(Matrix& result, const Matrix& left, const Mat
     size_t rows    = left.size()[0];
     size_t columns = left.size()[1];
 
-    if(rows < columns && rows >= 32)
+    if(rows < columns && rows >= 32 &&
+        (rows <= std::numeric_limits<int>::max() && columns <= std::numeric_limits<int>::max()))
     {
-        auto lambda = BroadcastFirstOfTwoDimensionsWarpStrideLambda<NativeType, ActualOperation>{rawResult,
-            rawLeft, rawRight, rows, columns, op};
+        auto lambda = BroadcastFirstOfTwoDimensionsWarpStrideLambda<NativeType, ActualOperation>{
+            rawResult, rawLeft, rawRight, static_cast<int>(rows), static_cast<int>(columns), op};
 
         parallel::multiBulkSynchronousParallel(lambda);
     }
