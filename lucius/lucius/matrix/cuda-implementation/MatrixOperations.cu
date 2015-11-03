@@ -811,11 +811,15 @@ public:
     {
         if(rows > columns)
         {
-            for(size_t row = threadGroup.id(); row < rows; row += threadGroup.size())
+            auto innerGroup    = parallel::partitionThreadGroupAtLevel(threadGroup, 1);
+            auto relativeGroup = parallel::getRelativeGroup(innerGroup, threadGroup);
+
+            for(size_t row = relativeGroup.id(); row < rows; row += relativeGroup.size())
             {
                 size_t offset = row;
 
-                for(size_t column = 0; column < columns; ++column, offset += rows)
+                for(size_t column = innerGroup.id(); column < columns; column += innerGroup.size(),
+                    offset += rows * innerGroup.size())
                 {
                     rawResult[offset] = nativeOperation(rawLeft[offset], rawRight[row]);
                 }
