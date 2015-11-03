@@ -809,17 +809,13 @@ class BroadcastFirstOfTwoDimensionsLambda
 public:
     CUDA_DECORATOR void operator()(parallel::ThreadGroup threadGroup) const
     {
-        auto innerGroup    = parallel::partitionThreadGroupAtLevel(threadGroup, 1);
-        auto relativeGroup = parallel::getRelativeGroup(innerGroup, threadGroup);
-
         if(rows > columns)
         {
-            for(size_t row = innerGroup.id(); row < rows; row += innerGroup.size())
+            for(size_t row = threadGroup.id(); row < rows; row += threadGroup.size())
             {
                 size_t offset = row;
 
-                for(size_t column = relativeGroup.id(); column < columns;
-                    column += relativeGroup.size(), offset += rows * relativeGroup.size())
+                for(size_t column = 0; column < columns; ++column, offset += rows)
                 {
                     rawResult[offset] = nativeOperation(rawLeft[offset], rawRight[row]);
                 }
@@ -827,6 +823,9 @@ public:
         }
         else
         {
+            auto innerGroup    = parallel::partitionThreadGroupAtLevel(threadGroup, 1);
+            auto relativeGroup = parallel::getRelativeGroup(innerGroup, threadGroup);
+
             for(size_t column = relativeGroup.id(); column < columns;
                 column += relativeGroup.size())
             {
