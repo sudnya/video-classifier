@@ -823,14 +823,36 @@ public:
         }
         else
         {
-            for(size_t column = threadGroup.id(); column < columns; column += threadGroup.size())
-            {
-                size_t offset = column * rows;
+            auto innerGroup    = parallel::partitionThreadGroupAtLevel(threadGroup, 1);
+            auto relativeGroup = parallel::getRelativeGroup(innerGroup, threadGroup);
 
-                for(size_t row = 0; row < rows; ++row, ++offset)
+            if(rows >= innerGroup.size())
+            {
+                for(size_t column = relativeGroup.id(); column < columns;
+                    column += relativeGroup.size())
                 {
-                    rawResult[offset] = nativeOperation(rawLeft[offset], rawRight[row]);
+                    size_t offset = column * rows;
+
+                    for(size_t row = innerGroup.id(); row < rows; row += innerGroup.size(),
+                        offset += innerGroup.size())
+                    {
+                        rawResult[offset] = nativeOperation(rawLeft[offset], rawRight[row]);
+                    }
                 }
+            }
+            else
+            {
+                for(size_t column = threadGroup.id(); column < columns;
+                    column += threadGroup.size())
+                {
+                    size_t offset = column * rows;
+
+                    for(size_t row = 0; row < rows; ++row, ++offset)
+                    {
+                        rawResult[offset] = nativeOperation(rawLeft[offset], rawRight[row]);
+                    }
+                }
+
             }
         }
     }
