@@ -1363,7 +1363,7 @@ void genericReverseConvolutionGradients(Matrix& gradients, const Matrix& input, 
 void reverseConvolutionGradients(Matrix& gradients, const Matrix& inputs, const Matrix& deltas,
     const Dimension& stride, const Dimension& padding, double a)
 {
-    if(CudnnLibrary::loaded())
+    if(false)//CudnnLibrary::loaded())
     {
         CudnnLibrary::cudnnConvolutionDescriptor_t convolutionDescriptor;
 
