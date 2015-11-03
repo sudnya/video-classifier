@@ -832,6 +832,7 @@ public:
                     column += relativeGroup.size())
                 {
                     size_t offset = column * rows;
+                    offset += innerGroup.id();
 
                     for(size_t row = innerGroup.id(); row < rows; row += innerGroup.size(),
                         offset += innerGroup.size())
