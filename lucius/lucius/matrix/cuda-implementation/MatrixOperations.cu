@@ -823,38 +823,52 @@ public:
         }
         else
         {
-            auto innerGroup    = parallel::partitionThreadGroupAtLevel(threadGroup, 1);
-            auto relativeGroup = parallel::getRelativeGroup(innerGroup, threadGroup);
-
-            if(rows >= innerGroup.size())
+            for(size_t column = threadGroup.id(); column < columns; column += threadGroup.size())
             {
-                size_t globalOffset = relativeGroup.id() * rows;
+                size_t offset = column * rows;
 
-                for(size_t column = relativeGroup.id(); column < columns;
-                    column += relativeGroup.size(), globalOffset += rows * relativeGroup.size())
+                for(size_t row = 0; row < rows; ++row, ++offset)
                 {
-                    size_t offset = globalOffset + innerGroup.id();
-
-                    for(size_t row = innerGroup.id(); row < rows; row += innerGroup.size(),
-                        offset += innerGroup.size())
-                    {
-                        rawResult[offset] = nativeOperation(rawLeft[offset], rawRight[row]);
-                    }
+                    rawResult[offset] = nativeOperation(rawLeft[offset], rawRight[row]);
                 }
             }
-            else
+        }
+    }
+
+public:
+    NativeType*       rawResult;
+    const NativeType* rawLeft;
+    const NativeType* rawRight;
+
+public:
+    size_t rows;
+    size_t columns;
+
+public:
+    ActualOperation nativeOperation;
+
+};
+
+template <typename NativeType, typename ActualOperation>
+class BroadcastFirstOfTwoDimensionsWarpStrideLambda
+{
+public:
+    CUDA_DECORATOR void operator()(parallel::ThreadGroup threadGroup) const
+    {
+        auto innerGroup    = parallel::partitionThreadGroupAtLevel(threadGroup, 1);
+        auto relativeGroup = parallel::getRelativeGroup(innerGroup, threadGroup);
+
+        size_t globalOffset = relativeGroup.id() * rows;
+
+        for(size_t column = relativeGroup.id(); column < columns;
+            column += relativeGroup.size(), globalOffset += rows * relativeGroup.size())
+        {
+            size_t offset = globalOffset + innerGroup.id();
+
+            for(size_t row = innerGroup.id(); row < rows; row += innerGroup.size(),
+                offset += innerGroup.size())
             {
-                for(size_t column = threadGroup.id(); column < columns;
-                    column += threadGroup.size())
-                {
-                    size_t offset = column * rows;
-
-                    for(size_t row = 0; row < rows; ++row, ++offset)
-                    {
-                        rawResult[offset] = nativeOperation(rawLeft[offset], rawRight[row]);
-                    }
-                }
-
+                rawResult[offset] = nativeOperation(rawLeft[offset], rawRight[row]);
             }
         }
     }
@@ -881,10 +895,23 @@ void broadcastFirstOfTwoDimensions(Matrix& result, const Matrix& left, const Mat
     const NativeType* rawLeft   = static_cast<const NativeType*>(left.data());
     const NativeType* rawRight  = static_cast<const NativeType*>(right.data());
 
-    auto lambda = BroadcastFirstOfTwoDimensionsLambda<NativeType, ActualOperation>{rawResult,
-        rawLeft, rawRight, left.size()[0], left.size()[1], op};
+    size_t rows    = left.size()[0];
+    size_t columns = left.size()[1];
 
-    parallel::multiBulkSynchronousParallel(lambda);
+    if(rows < columns && rows >= 32)
+    {
+        auto lambda = BroadcastFirstOfTwoDimensionsWarpStrideLambda<NativeType, ActualOperation>{rawResult,
+            rawLeft, rawRight, rows, columns, op};
+
+        parallel::multiBulkSynchronousParallel(lambda);
+    }
+    else
+    {
+        auto lambda = BroadcastFirstOfTwoDimensionsLambda<NativeType, ActualOperation>{rawResult,
+            rawLeft, rawRight, rows, columns, op};
+
+        parallel::multiBulkSynchronousParallel(lambda);
+    }
 }
 
 template <typename NativeType, typename ActualOperation>
