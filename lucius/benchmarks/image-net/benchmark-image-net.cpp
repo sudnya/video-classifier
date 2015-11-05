@@ -128,13 +128,16 @@ static Dimension addPoolingLayer(NeuralNetwork& classifier, const Dimension& inp
         1 // time
         );
 
+    classifier.back()->setActivationFunction(
+        ActivationFunctionFactory::create("NullActivationFunction"));
+
     // batch norm
+    /*
     if(useBatchNormalization)
     {
-        classifier.back()->setActivationFunction(
-            ActivationFunctionFactory::create("NullActivationFunction"));
         classifier.addLayer(std::make_unique<BatchNormalizationLayer>(size));
     }
+    */
 
     return size;
 }

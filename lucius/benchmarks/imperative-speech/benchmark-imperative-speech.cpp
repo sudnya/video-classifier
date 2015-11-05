@@ -19,6 +19,7 @@
 #include <lucius/network/interface/LayerFactory.h>
 #include <lucius/network/interface/Layer.h>
 #include <lucius/network/interface/CostFunctionFactory.h>
+#include <lucius/network/interface/ActivationFunctionFactory.h>
 
 #include <lucius/matrix/interface/RandomOperations.h>
 #include <lucius/matrix/interface/Matrix.h>
@@ -39,6 +40,7 @@ typedef lucius::engine::Engine Engine;
 typedef lucius::engine::EngineFactory EngineFactory;
 typedef lucius::engine::EngineObserverFactory EngineObserverFactory;
 typedef lucius::results::LabelMatchResultProcessor LabelMatchResultProcessor;
+typedef lucius::network::ActivationFunctionFactory ActivationFunctionFactory;
 
 class Parameters
 {
@@ -67,6 +69,8 @@ public:
     double noiseRateLower;
     double noiseRateUpper;
 
+    bool useBatchNormalization;
+
     size_t maximumSamples;
 
     bool seed;
@@ -77,6 +81,17 @@ public:
 
     }
 };
+
+static void addBatchNormalization(NeuralNetwork& classifier, const Parameters& parameters)
+{
+    if(parameters.useBatchNormalization)
+    {
+        classifier.back()->setActivationFunction(
+            ActivationFunctionFactory::create("NullActivationFunction"));
+        classifier.addLayer(LayerFactory::create("BatchNormalizationLayer",
+            std::make_tuple("Size", parameters.layerSize)));
+    }
+}
 
 static void addClassifier(Model& model, const Parameters& parameters)
 {
@@ -89,6 +104,7 @@ static void addClassifier(Model& model, const Parameters& parameters)
 
     for(size_t forwardLayer = 2; forwardLayer < parameters.forwardLayers; ++forwardLayer)
     {
+        addBatchNormalization(classifier, parameters);
         classifier.addLayer(LayerFactory::create("FeedForwardLayer",
             std::make_tuple("InputSize",  parameters.layerSize),
             std::make_tuple("OutputSize", parameters.layerSize)));
@@ -96,10 +112,13 @@ static void addClassifier(Model& model, const Parameters& parameters)
 
     for(size_t recurrentLayer = 0; recurrentLayer < parameters.recurrentLayers; ++recurrentLayer)
     {
+        addBatchNormalization(classifier, parameters);
         classifier.addLayer(LayerFactory::create("RecurrentLayer",
             std::make_tuple("Size",      parameters.layerSize),
             std::make_tuple("BatchSize", parameters.batchSize)));
     }
+
+    addBatchNormalization(classifier, parameters);
 
     // The last layer maps input features to predictions
     classifier.addLayer(LayerFactory::create("FeedForwardLayer",
@@ -273,6 +292,8 @@ int main(int argc, char** argv)
         "The momentum for gradient descent.");
     parser.parse("", "--annealing-rate", parameters.annealingRate, 1.0001,
         "The momentum for gradient descent.");
+    parser.parse("", "--batch-normalization", parameters.useBatchNormalization, false,
+        "Use batch normalization layers before nonlinearities.");
 
     parser.parse("-L", "--log-module", loggingEnabledModules, "",
         "Print out log messages during execution for specified modules "
