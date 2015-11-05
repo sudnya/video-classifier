@@ -2,7 +2,7 @@
 
 SCRIPT_DIRECTORY="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-CUDA_DEVICES="0"
+CUDA_DEVICES="1"
 INPUT_TRAINING_DATASET="/data/1tb-ssd/image-net-50-2000/training/database.txt"
 INPUT_VALIDATION_DATASET="/data/1tb-ssd/image-net-50-2000/validation/database.txt"
 LOGS="NesterovAcceleratedGradientSolver,BenchmarkImageNet,LabelMatchResultProcessor,InputVisualDataProducer"
@@ -11,15 +11,16 @@ INPUT_WIDTH="128"
 INPUT_HEIGHT="128"
 INPUT_COLORS="3"
 LAYERS="13"
-MINI_BATCH_SIZE="128"
+MINI_BATCH_SIZE="64"
 LAYER_OUTPUT_REDUCTION_FACTOR="1"
 BATCH_NORMALIZATION=1
 EPOCHS="20"
 LEARNING_RATE="0.001"
+ANNEALING_RATE="1.0001"
 MOMENTUM="0.9"
 RESUME_FROM=""
 
-EXPERIMENT_NAME="benchmark-image-net-$BATCH_NORMALIZATION-bn-$INPUT_WIDTH-width-$INPUT_HEIGHT-height-$INPUT_COLORS-colors-$LAYER_SIZE-layer-size-$LAYERS-layers-$MINI_BATCH_SIZE-mini-batch-$LEARNING_RATE-learning-rate-$MOMENTUM-momentum-$LAYER_OUTPUT_REDUCTION_FACTOR-reduction-factor"
+EXPERIMENT_NAME="benchmark-image-net-$BATCH_NORMALIZATION-bn-$INPUT_WIDTH-width-$INPUT_HEIGHT-height-$INPUT_COLORS-colors-$LAYER_SIZE-layer-size-$LAYERS-layers-$MINI_BATCH_SIZE-mini-batch-$LEARNING_RATE-learning-rate-$MOMENTUM-momentum-$LAYER_OUTPUT_REDUCTION_FACTOR-reduction-factor-$ANNEALING_RATE-anneal"
 
 EXPERIMENT_DIRECTORY="$SCRIPT_DIRECTORY/$EXPERIMENT_NAME"
 LOG_FILE="$EXPERIMENT_DIRECTORY/log"
@@ -33,7 +34,7 @@ export CUDA_VISIBLE_DEVICES=$CUDA_DEVICES
 COMMAND="benchmark-imagenet -l $LAYER_SIZE -e $EPOCHS -b $MINI_BATCH_SIZE -f $LAYER_OUTPUT_REDUCTION_FACTOR \
          --momentum $MOMENTUM --learning-rate $LEARNING_RATE -c $INPUT_COLORS -x $INPUT_WIDTH -y $INPUT_HEIGHT \
          -i $INPUT_TRAINING_DATASET -t $INPUT_VALIDATION_DATASET -L $LOGS --log-file $LOG_FILE \
-         -o $MODEL_FILE -r $VALIDATION_ERROR_FILE --batch-normalization $BATCH_NORMALIZATION"
+         -o $MODEL_FILE -r $VALIDATION_ERROR_FILE --batch-normalization $BATCH_NORMALIZATION --annealing-rate $ANNEALING_RATE"
 
 if [[ -n $RESUME_FROM ]]
 then
