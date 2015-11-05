@@ -69,6 +69,7 @@ public:
     size_t batchSize;
     double learningRate;
     double momentum;
+    double annealingRate;
 
     std::string modelPath;
     std::string inputPath;
@@ -334,7 +335,8 @@ static void setupSolverParameters(const Parameters& parameters)
         parameters.learningRate);
     lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::Momentum",
         parameters.momentum);
-    lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::AnnealingRate", "1.00000");
+    lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::AnnealingRate",
+        parameters.annealingRate);
     lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::MaxGradNorm", "100.0");
     lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::IterationsPerBatch", "1");
     lucius::util::KnobDatabase::setKnob("GeneralDifferentiableSolver::Type",
@@ -376,6 +378,8 @@ int main(int argc, char** argv)
         "The learning rate to use in SGD.");
     parser.parse("", "--momentum", parameters.momentum, 0.99,
         "The momentum to use in SGD.");
+    parser.parse("", "--annealing-rate", parameters.annealingRate, 1.0001,
+        "The momentum for gradient descent.");
     parser.parse("", "--batch-normalization", parameters.useBatchNormalization, false,
         "Use batch normalization layers after convolutional layers.");
 
