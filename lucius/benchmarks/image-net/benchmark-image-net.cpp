@@ -180,7 +180,7 @@ static void addClassifier(Model& model, const Parameters& parameters)
     classifier.addLayer(std::make_unique<FeedForwardLayer>(classifier.back()->getOutputCount(),
         parameters.layerSize));
 
-    if(parameters.useBatchNormalization)
+    if(false)//parameters.useBatchNormalization)
     {
         classifier.back()->setActivationFunction(
             ActivationFunctionFactory::create("NullActivationFunction"));
@@ -190,7 +190,7 @@ static void addClassifier(Model& model, const Parameters& parameters)
     classifier.addLayer(std::make_unique<FeedForwardLayer>(classifier.back()->getOutputCount(),
         parameters.layerSize));
 
-    if(parameters.useBatchNormalization)
+    if(false)//parameters.useBatchNormalization)
     {
         classifier.back()->setActivationFunction(
             ActivationFunctionFactory::create("NullActivationFunction"));
@@ -204,6 +204,8 @@ static void addClassifier(Model& model, const Parameters& parameters)
 
     classifier.addLayer(std::make_unique<FeedForwardLayer>(
         classifier.back()->getOutputCount(), labels.size()));
+    classifier.back()->setActivationFunction(
+        ActivationFunctionFactory::create("NullActivationFunction"));
 
     size_t index = 0;
 
