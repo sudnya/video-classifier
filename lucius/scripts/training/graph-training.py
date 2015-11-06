@@ -8,7 +8,8 @@ matplotlib.use('Agg')
 from matplotlib import pyplot
 
 class ExperimentData:
-    def __init__(self):
+    def __init__(self, name):
+        self.name            = name
         self.trainingError   = None
         self.validationError = None
 
@@ -50,14 +51,23 @@ def loadTrainingErrorFromLogFile(path):
 def loadValidationError(path):
     return None
 
+def getExperimentName(path):
+    head, tail = os.path.split(path)
+
+    if len(tail) == 0:
+        return head
+
+    return tail
+
 def loadLogFile(path):
     logPath        = os.path.join(path, 'log')
     validationPath = os.path.join(path, 'validation-error.csv')
+    name           = getExperimentName(path)
 
     if not os.path.exists(logPath):
         raise ValueError("The path" + logPath + " does not exist.")
 
-    experimentData = ExperimentData()
+    experimentData = ExperimentData(name)
 
     experimentData.trainingError = loadTrainingErrorFromLogFile(logPath)
 
@@ -65,6 +75,47 @@ def loadLogFile(path):
         experimentData.validationError = loadValidationError(validationPath)
 
     return experimentData
+
+def formatNameForLabel(name):
+    characters = 95
+    limit = min(len(name), characters)
+
+    result = name[0:limit]
+
+    for i in range(characters, len(name), characters):
+        limit = min(len(name), i+characters)
+        result += "\n" + name[i:limit]
+
+    return result
+
+def isExperimentPath(path):
+    logPath = os.path.join(path, 'log')
+
+    if not os.path.exists(logPath):
+        return False
+
+    return True
+
+def discoverInputs(inputs):
+    if len(inputs) != 1:
+        return inputs
+
+    path = inputs[0]
+
+    if isExperimentPath(path):
+        return inputs
+
+    # try one level
+    contents = os.listdir(path)
+
+    results = []
+
+    for possibleExperiment in contents:
+        experimentPath = os.path.join(path, possibleExperiment)
+        if isExperimentPath(experimentPath):
+            results.append(experimentPath)
+
+    return results
 
 class Visualizer:
     def __init__(self, arguments):
@@ -80,13 +131,25 @@ class Visualizer:
         self.savePlots(plots)
 
     def loadExperiments(self):
+        self.inputs = discoverInputs(self.inputs)
         return [loadLogFile(filename) for filename in self.inputs]
 
     def plotExperiments(self, experiments):
         figure, axes = pyplot.subplots()
 
         for experiment in experiments:
-            axes.plot(range(len(experiment.trainingError)), experiment.trainingError)
+            experimentLabel = formatNameForLabel(experiment.name)
+            axes.plot(range(len(experiment.trainingError)), experiment.trainingError,
+                label=experimentLabel)
+
+        percent = min(0.7 * len(experiments), .7)
+
+        box = axes.get_position()
+        axes.set_position([box.x0, box.y0 + box.height * percent,
+                 box.width, box.height * (1.0 - percent)])
+
+        axes.legend(bbox_to_anchor=(0.0, -.5*percent, 1, 0), loc='upper center',
+            ncol=1, mode="expand", borderaxespad=0., fontsize='x-small')
 
         return (figure, axes)
 
