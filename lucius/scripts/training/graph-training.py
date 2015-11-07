@@ -13,6 +13,10 @@ class ExperimentData:
         self.trainingError   = None
         self.validationError = None
 
+    def resize(self, maximumIterations):
+        if len(self.trainingError) > maximumIterations:
+            self.trainingError = self.trainingError[0:maximumIterations]
+
 def parseCost(line):
     position = line.find("running cost sum")
     if position == -1:
@@ -121,14 +125,23 @@ class Visualizer:
     def __init__(self, arguments):
         self.inputs = arguments["input_file"]
         self.output = arguments["output_file"]
+        self.maximumIterations = int(arguments["maximum_iterations"])
 
     def run(self):
         if len(self.inputs) == 0:
             raise ValueError("No input files specified.")
 
         experiments = self.loadExperiments()
+
+        self.formatExperiments(experiments)
+
         plots = self.plotExperiments(experiments)
         self.savePlots(plots)
+
+    def formatExperiments(self, experiments):
+        if self.maximumIterations != 0:
+            for experiment in experiments:
+                experiment.resize(self.maximumIterations)
 
     def loadExperiments(self):
         self.inputs = discoverInputs(self.inputs)
@@ -142,7 +155,7 @@ class Visualizer:
             axes.plot(range(len(experiment.trainingError)), experiment.trainingError,
                 label=experimentLabel)
 
-        percent = min(0.7 * len(experiments), .7)
+        percent = min(0.07 * len(experiments), .7)
 
         box = axes.get_position()
         axes.set_position([box.x0, box.y0 + box.height * percent,
@@ -176,6 +189,8 @@ def main():
         help = "An input training experiment directory with log files.")
     parser.add_argument("-o", "--output-file", default = "/mnt/www/files/training-error.png",
         help = "The output file path for the figure (.png, .pdf, etc).")
+    parser.add_argument("-m", "--maximum-iterations", default = 0,
+        help = "The maximum number of iterations to draw.")
 
     arguments = parser.parse_args()
 
