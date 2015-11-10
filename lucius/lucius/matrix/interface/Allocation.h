@@ -28,6 +28,9 @@ public:
           pointer data();
     const_pointer data() const;
 
+public:
+    size_t size() const;
+
 private:
     Allocation(const Allocation&) = delete;
     Allocation& operator=(const Allocation&) = delete;

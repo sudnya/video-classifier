@@ -36,6 +36,11 @@ Allocation::const_pointer Allocation::data() const
     return _begin;
 }
 
+size_t Allocation::size() const
+{
+    return _end - _begin;
+}
+
 }
 }
 

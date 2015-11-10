@@ -94,7 +94,7 @@ void* CudaRuntimeLibrary::cudaMallocManaged(size_t bytes)
     if(status != cudaSuccess)
     {
         throw std::runtime_error("Cuda malloc managed failed: " +
-            cudaGetErrorString(status));
+            cudaGetErrorString(status) + " : for request of " + std::to_string(bytes));
     }
 
     //util::log("CudaRuntimeLibrary") << " CUDA allocated memory (address: "

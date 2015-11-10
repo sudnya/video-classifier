@@ -76,6 +76,8 @@ public:
 
 public:
     virtual size_t getFloatingPointOperationCount() const = 0;
+    virtual size_t getParameterMemory() const;
+    virtual size_t getActivationMemory() const = 0;
 
 public:
     /*! \brief Save the layer to the tar file and header. */
@@ -123,6 +125,7 @@ public:
 
 public:
     std::string shapeString() const;
+    std::string resourceString() const;
 
 protected:
     virtual void runForwardImplementation(MatrixVector& m) = 0;

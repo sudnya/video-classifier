@@ -69,6 +69,7 @@ public:
     size_t batchSize;
     double learningRate;
     double momentum;
+    double annealingRate;
 
     std::string modelPath;
     std::string inputPath;
@@ -128,11 +129,12 @@ static Dimension addPoolingLayer(NeuralNetwork& classifier, const Dimension& inp
         1 // time
         );
 
+    classifier.back()->setActivationFunction(
+        ActivationFunctionFactory::create("NullActivationFunction"));
+
     // batch norm
     if(useBatchNormalization)
     {
-        classifier.back()->setActivationFunction(
-            ActivationFunctionFactory::create("NullActivationFunction"));
         classifier.addLayer(std::make_unique<BatchNormalizationLayer>(size));
     }
 
@@ -235,7 +237,7 @@ static void setSampleStatistics(Model& model, const Parameters& parameters)
         lucius::engine::EngineFactory::create("SampleStatisticsEngine"));
 
     engine->setModel(&model);
-    engine->setBatchSize(128);
+    engine->setBatchSize(parameters.batchSize);
     engine->setMaximumSamplesToRun(1024UL);
 
     // read from database and use model to train
@@ -266,7 +268,7 @@ static double testNetwork(Model& model, const Parameters& parameters)
 {
     std::unique_ptr<Engine> engine(lucius::engine::EngineFactory::create("ClassifierEngine"));
 
-    engine->setBatchSize(128);
+    engine->setBatchSize(parameters.batchSize);
     engine->setModel(&model);
     engine->setStandardizeInput(true);
     engine->setMaximumSamplesToRun(std::max(1024UL, parameters.maximumSamples/10));
@@ -331,7 +333,8 @@ static void setupSolverParameters(const Parameters& parameters)
         parameters.learningRate);
     lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::Momentum",
         parameters.momentum);
-    lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::AnnealingRate", "1.00000");
+    lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::AnnealingRate",
+        parameters.annealingRate);
     lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::MaxGradNorm", "100.0");
     lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::IterationsPerBatch", "1");
     lucius::util::KnobDatabase::setKnob("GeneralDifferentiableSolver::Type",
@@ -373,6 +376,8 @@ int main(int argc, char** argv)
         "The learning rate to use in SGD.");
     parser.parse("", "--momentum", parameters.momentum, 0.99,
         "The momentum to use in SGD.");
+    parser.parse("", "--annealing-rate", parameters.annealingRate, 1.0001,
+        "The momentum for gradient descent.");
     parser.parse("", "--batch-normalization", parameters.useBatchNormalization, false,
         "Use batch normalization layers after convolutional layers.");
 

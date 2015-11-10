@@ -128,7 +128,8 @@ static NeuralNetwork createConvolutionalNetwork(size_t layerSize, size_t layerCo
 
     for(size_t layer = 0; layer < layerCount; ++layer)
     {
-        network.addLayer(std::make_unique<ConvolutionalLayer>(inputSize, filterSize, filterStride, padding, DoublePrecision()));
+        network.addLayer(std::make_unique<ConvolutionalLayer>(inputSize, filterSize,
+            filterStride, padding, DoublePrecision()));
     }
 
     network.initialize();
@@ -224,7 +225,7 @@ static double getDifference(double difference, double total)
 
 static bool gradientCheck(NeuralNetwork& network, const Matrix& input, const Matrix& reference)
 {
-    const double epsilon = 1.0e-6;
+    const double epsilon = 1.0e-5;
 
     double total = 0.0;
     double difference = 0.0;
@@ -482,6 +483,13 @@ static void runTest(size_t layerSize, size_t layerCount, size_t batchSize,
 {
     bool result = true;
 
+    result &= runTestConvolutional(layerSize, layerCount, seed);
+
+    if(!result)
+    {
+        return;
+    }
+
     result &= runTestBatchNormalizationNetwork(layerSize, layerCount, batchSize, seed);
 
     if(!result)
@@ -504,13 +512,6 @@ static void runTest(size_t layerSize, size_t layerCount, size_t batchSize,
     }
 
     result &= runTestFeedForwardFullyConnectedSoftmax(layerSize, layerCount, seed);
-
-    if(!result)
-    {
-        return;
-    }
-
-    result &= runTestConvolutional(layerSize, layerCount, seed);
 
     if(!result)
     {

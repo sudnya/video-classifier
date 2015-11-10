@@ -61,12 +61,7 @@ static Dimension computeBiasSize(const matrix::Dimension& inputSize,
 {
     auto outputSize = forwardConvolutionOutputSize(inputSize, size, stride, padding);
 
-    while(outputSize.size() > 3)
-    {
-        outputSize.pop_back();
-    }
-
-    return outputSize;
+    return Dimension({outputSize[2]});
 }
 
 ConvolutionalLayer::ConvolutionalLayer(const matrix::Dimension& inputSize,
@@ -150,7 +145,7 @@ void ConvolutionalLayer::runForwardImplementation(MatrixVector& activations)
 
     auto unbiasedOutput = matrix::forwardConvolution(m, _weights, *_filterStride, *_inputPadding);
 
-    auto output = broadcast(unbiasedOutput, _bias, {}, matrix::Add());
+    auto output = broadcast(unbiasedOutput, _bias, {0, 1, 3, 4}, matrix::Add());
 
     if(util::isLogEnabled("ConvolutionalLayer::Detail"))
     {
@@ -258,7 +253,7 @@ Matrix ConvolutionalLayer::runReverseImplementation(MatrixVector& gradients,
     }
 
     // compute gradient for the bias
-    auto biasGradient = reduce(apply(deltas, matrix::Divide(samples)), {3, 4}, matrix::Add());
+    auto biasGradient = reduce(apply(deltas, matrix::Divide(samples)), {0, 1, 3, 4}, matrix::Add());
 
     if(util::isLogEnabled("ConvolutionalLayer"))
     {
@@ -294,12 +289,14 @@ Matrix ConvolutionalLayer::runReverseImplementation(MatrixVector& gradients,
 
     if(util::isLogEnabled("ConvolutionalLayer"))
     {
-        util::log("ConvolutionalLayer") << "  previous layer deltas shape: " << previousLayerDeltas.shapeString() << "\n";
+        util::log("ConvolutionalLayer") << "  previous layer deltas shape: "
+            << previousLayerDeltas.shapeString() << "\n";
     }
 
     if(util::isLogEnabled("ConvolutionalLayer::Detail"))
     {
-        util::log("ConvolutionalLayer::Detail") << "  previous layer deltas: " << previousLayerDeltas.debugString();
+        util::log("ConvolutionalLayer::Detail") << "  previous layer deltas: "
+            << previousLayerDeltas.debugString();
     }
 
     return previousLayerDeltas;
@@ -332,7 +329,8 @@ Dimension ConvolutionalLayer::getInputSize() const
 
 Dimension ConvolutionalLayer::getOutputSize() const
 {
-    return forwardConvolutionOutputSize(*_inputSize, _weights.size(), *_filterStride, *_inputPadding);
+    return forwardConvolutionOutputSize(*_inputSize, _weights.size(),
+        *_filterStride, *_inputPadding);
 }
 
 size_t ConvolutionalLayer::getInputCount() const
@@ -361,7 +359,15 @@ size_t ConvolutionalLayer::totalConnections() const
 
 size_t ConvolutionalLayer::getFloatingPointOperationCount() const
 {
-    return 2 * totalConnections();
+    size_t filterOps = _weights.size()[0] * _weights.size()[1] * _weights.size()[3];
+
+    return 2 * getInputSize().product() * filterOps / _filterStride->product() +
+        _bias.elements();
+}
+
+size_t ConvolutionalLayer::getActivationMemory() const
+{
+    return precision().size() * getOutputSize().product();
 }
 
 void ConvolutionalLayer::save(util::OutputTarArchive& archive, util::PropertyTree& properties) const

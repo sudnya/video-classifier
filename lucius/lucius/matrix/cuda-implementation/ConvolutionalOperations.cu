@@ -6,11 +6,15 @@
 #include <lucius/matrix/interface/BlasOperations.h>
 #include <lucius/matrix/interface/MatrixView.h>
 #include <lucius/matrix/interface/Matrix.h>
+#include <lucius/matrix/interface/Allocation.h>
+#include <lucius/matrix/interface/MatrixOperations.h>
 #include <lucius/matrix/interface/MatrixTransformations.h>
 
 #include <lucius/parallel/interface/MultiBulkSynchronousParallel.h>
 
 #include <lucius/util/interface/Metaprogramming.h>
+#include <lucius/util/interface/debug.h>
+#include <lucius/util/interface/memory.h>
 
 // Standard Library Includes
 #include <vector>
@@ -90,11 +94,6 @@ public:
     }
 
 public:
-    const void* data() const
-    {
-        return _filter.data();
-    }
-
     void* data()
     {
         return _filter.data();
@@ -142,12 +141,6 @@ public:
     {
         return _tensor.data();
     }
-
-    const void* data() const
-    {
-        return _tensor.data();
-    }
-
 
 private:
     CudnnLibrary::cudnnTensorDescriptor_t _descriptor;
@@ -212,7 +205,7 @@ public:
             _algorithm,
             &bytes);
 
-        _data.resize(bytes);
+        _data = std::make_unique<Allocation>(bytes);
     }
 
 public:
@@ -223,20 +216,19 @@ public:
 
     void* data()
     {
-        return _data.data();
+        return _data->data();
     }
 
     size_t size() const
     {
-        return _data.size();
+        return _data->size();
     }
 
 private:
     CudnnLibrary::cudnnConvolutionFwdAlgo_t _algorithm;
 
 private:
-    std::vector<uint8_t> _data;
-
+    std::unique_ptr<Allocation> _data;
 };
 
 template<typename NativeType>
@@ -262,7 +254,7 @@ public:
 
             if(inputRow < padWidth || (inputRow >= (padWidth + w)))
             {
-                resultView({row, column}) = 0.0;
+                resultView(Dimension(row, column)) = 0.0;
                 continue;
             }
 
@@ -270,13 +262,14 @@ public:
 
             if(inputColumn < padHeight || (inputColumn >= (padHeight + h)))
             {
-                resultView({row, column}) = 0.0;
+                resultView(Dimension(row, column)) = 0.0;
                 continue;
             }
 
             inputColumn -= padHeight;
 
-            resultView({row, column}) = inputView({inputRow, inputColumn, featureMap, miniBatch});
+            resultView(Dimension(row, column)) =
+                inputView(Dimension(inputRow, inputColumn, featureMap, miniBatch));
         }
     }
 
@@ -313,7 +306,8 @@ public:
 };
 
 template<typename PrecisionType>
-Matrix gatherForwardConvolutionInputOverPrecisions(const Matrix& input, const Matrix& filter, const Dimension& filterStride, const Dimension& padding,
+Matrix gatherForwardConvolutionInputOverPrecisions(const Matrix& input, const Matrix& filter,
+    const Dimension& filterStride, const Dimension& padding,
     const std::tuple<PrecisionType>& )
 {
     assert(input.precision() == PrecisionType());
@@ -346,7 +340,8 @@ Matrix gatherForwardConvolutionInputOverPrecisions(const Matrix& input, const Ma
 
     size_t elements = rows * columns;
 
-    auto lambda = ForwardReshapeInputLambda<NativeType>{resultView, inputView, elements, rows, w, h, q, p, s, r, v, u, padWidth, padHeight};
+    auto lambda = ForwardReshapeInputLambda<NativeType>{resultView, inputView, elements,
+        rows, w, h, q, p, s, r, v, u, padWidth, padHeight};
 
     parallel::multiBulkSynchronousParallel(lambda);
 
@@ -354,25 +349,29 @@ Matrix gatherForwardConvolutionInputOverPrecisions(const Matrix& input, const Ma
 }
 
 template<typename PossiblePrecisions>
-Matrix gatherForwardConvolutionInputOverPrecisions(const Matrix& input, const Matrix& filter, const Dimension& stride, const Dimension& padding,
+Matrix gatherForwardConvolutionInputOverPrecisions(const Matrix& input, const Matrix& filter,
+    const Dimension& stride, const Dimension& padding,
     const PossiblePrecisions& possiblePrecisions)
 {
     typedef typename std::tuple_element<0, PossiblePrecisions>::type PossiblePrecisionType;
 
     if(input.precision() == PossiblePrecisionType())
     {
-        return gatherForwardConvolutionInputOverPrecisions(input, filter, stride, padding, std::tuple<PossiblePrecisionType>());
+        return gatherForwardConvolutionInputOverPrecisions(input, filter, stride,
+            padding, std::tuple<PossiblePrecisionType>());
     }
     else
     {
         typedef typename util::RemoveFirstType<PossiblePrecisions>::type RemainingPrecisions;
 
-        return gatherForwardConvolutionInputOverPrecisions(input, filter, stride, padding, RemainingPrecisions());
+        return gatherForwardConvolutionInputOverPrecisions(input, filter, stride,
+            padding, RemainingPrecisions());
     }
 
 }
 
-Matrix gatherForwardConvolutionInput(const Matrix& input, const Matrix& filter, const Dimension& stride, const Dimension& padding)
+Matrix gatherForwardConvolutionInput(const Matrix& input, const Matrix& filter,
+    const Dimension& stride, const Dimension& padding)
 {
     return gatherForwardConvolutionInputOverPrecisions(input, filter, stride, padding, AllPrecisions());
 }
@@ -396,7 +395,8 @@ public:
             size_t s = filterTile / filterR;
             size_t r = filterTile % filterR;
 
-            resultView({row, column}) = filterView({filterR - r - 1, filterS - s - 1, c, k});
+            resultView(Dimension(row, column)) =
+                filterView(Dimension(filterR - r - 1, filterS - s - 1, c, k));
         }
     }
 
@@ -437,7 +437,8 @@ Matrix gatherForwardConvolutionFilterOverPrecisions(const Matrix& filter,
 
     size_t elements = rows * columns;
 
-    auto lambda = ForwardReshapeFilterLambda<NativeType>{resultView, filterView, elements, rows, filterR, filterS};
+    auto lambda = ForwardReshapeFilterLambda<NativeType>{resultView, filterView,
+        elements, rows, filterR, filterS};
 
     parallel::multiBulkSynchronousParallel(lambda);
 
@@ -483,7 +484,7 @@ public:
             size_t row    = featureMap;
             size_t column = w + h * width + miniBatch * width * height;
 
-            resultView({w, h, featureMap, miniBatch}) = inputView({row, column});
+            resultView(Dimension(w, h, featureMap, miniBatch)) = inputView(Dimension(row, column));
         }
     }
 
@@ -520,7 +521,8 @@ void scatterForwardConvolutionResultOverPrecisions(Matrix& result, const Matrix&
 
     size_t elements = miniBatches * featureMaps * height * width;
 
-    auto lambda = ForwardReshapeResultLambda<NativeType>{resultView, inputView, elements, width, height, featureMaps};
+    auto lambda = ForwardReshapeResultLambda<NativeType>{resultView, inputView, elements,
+        width, height, featureMaps};
 
     parallel::multiBulkSynchronousParallel(lambda);
 }
@@ -533,7 +535,8 @@ void scatterForwardConvolutionResultOverPrecisions(Matrix& result, const Matrix&
 
     if(input.precision() == PossiblePrecisionType())
     {
-        return scatterForwardConvolutionResultOverPrecisions(result, input, std::tuple<PossiblePrecisionType>());
+        return scatterForwardConvolutionResultOverPrecisions(result,
+            input, std::tuple<PossiblePrecisionType>());
     }
     else
     {
@@ -567,7 +570,8 @@ Matrix foldTime(const Matrix& input)
     return input;
 }
 
-void genericForwardConvolution(Matrix& result, const Matrix& input, const Matrix& filter, const Dimension& stride, const Dimension& padding)
+void genericForwardConvolution(Matrix& result, const Matrix& input, const Matrix& filter,
+    const Dimension& stride, const Dimension& padding)
 {
     auto inputFoldedTime  = foldTime(input);
     auto resultFoldedTime = foldTime(result);
@@ -582,7 +586,8 @@ void genericForwardConvolution(Matrix& result, const Matrix& input, const Matrix
 
 }
 
-void forwardConvolution(Matrix& result, const Matrix& input, const Matrix& filter, const Dimension& stride, const Dimension& padding)
+void forwardConvolution(Matrix& result, const Matrix& input, const Matrix& filter,
+    const Dimension& stride, const Dimension& padding)
 {
     if(CudnnLibrary::loaded())
     {
@@ -591,10 +596,10 @@ void forwardConvolution(Matrix& result, const Matrix& input, const Matrix& filte
         CudnnLibrary::cudnnCreateConvolutionDescriptor(&convolutionDescriptor);
 
         CudnnLibrary::cudnnSetConvolution2dDescriptor(convolutionDescriptor,
-            padding[0],                // zero-padding height
-            padding[1],                // zero-padding width
-            stride[0],        // vertical filter stride
-            stride[1],        // horizontal filter stride
+            padding[1],                // zero-padding height
+            padding[0],                // zero-padding width
+            stride[1],        // vertical filter stride
+            stride[0],        // horizontal filter stride
             1,                // upscale the input in x-direction
             1,                // upscale the input in y-direction
             CudnnLibrary::CUDNN_CONVOLUTION // convolution mode
@@ -605,9 +610,10 @@ void forwardConvolution(Matrix& result, const Matrix& input, const Matrix& filte
         CudnnTensorDescriptor resultDescriptor(result);
 
         CudnnScalar alpha(1.0, input.precision());
-        CudnnScalar beta( 1.0, input.precision());
+        CudnnScalar beta( 0.0, input.precision());
 
-        CudnnForwardWorkspace workspace(inputDescriptor, filterDescriptor, convolutionDescriptor, resultDescriptor);
+        CudnnForwardWorkspace workspace(inputDescriptor, filterDescriptor,
+            convolutionDescriptor, resultDescriptor);
 
         CudnnLibrary::cudnnConvolutionForward(
             alpha.data(),                      //alpha,
@@ -631,7 +637,8 @@ void forwardConvolution(Matrix& result, const Matrix& input, const Matrix& filte
     }
 }
 
-Matrix forwardConvolution(const Matrix& input, const Matrix& filter, const Dimension& stride, const Dimension& padding)
+Matrix forwardConvolution(const Matrix& input, const Matrix& filter, const Dimension& stride,
+    const Dimension& padding)
 {
     auto resultSize = forwardConvolutionOutputSize(input.size(), filter.size(), stride, padding);
 
@@ -664,6 +671,7 @@ public:
 
             size_t miniBatch   = (column / (inputW * inputH));
             size_t featureMap  = (row    / (filterW * filterH));
+
             size_t tileOffset  = (row    % (filterW * filterH));
             size_t tileRow     = tileOffset % filterW;
             size_t tileColumn  = tileOffset / filterW;
@@ -719,7 +727,8 @@ public:
                 continue;
             }
 
-            resultView({row, column}) = deltasView({deltaRow, deltaColumn, featureMap, miniBatch});
+            resultView(Dimension(row, column)) =
+                deltasView(Dimension(deltaRow, deltaColumn, featureMap, miniBatch));
         }
     }
 
@@ -756,8 +765,9 @@ public:
 };
 
 template<typename PrecisionType>
-Matrix gatherReverseConvolutionDeltasInput(const Matrix& deltas, const Matrix& filter, const Dimension& filterStride,
-    const Dimension& padding, const Dimension& inputSize, const PrecisionType& )
+Matrix gatherReverseConvolutionDeltasInput(const Matrix& deltas, const Matrix& filter,
+    const Dimension& filterStride, const Dimension& padding, const Dimension& inputSize,
+    const PrecisionType& )
 {
     typedef typename PrecisionType::type NativeType;
 
@@ -785,15 +795,18 @@ Matrix gatherReverseConvolutionDeltasInput(const Matrix& deltas, const Matrix& f
 
     Matrix result({rows, columns}, deltas.precision());
 
+    zeros(result);
+
+    size_t elements = rows * columns;
+
     typedef typename PrecisionType::type NativeType;
 
     MatrixView<NativeType>      resultView(result);
     ConstMatrixView<NativeType> deltasView(deltas);
 
-    size_t elements = rows * columns;
-
     auto lambda = ReverseReshapeDeltasInputLambda<NativeType>{resultView, deltasView,
-        elements, rows, deltaW, deltaH, strideW, strideH, inputW, inputH, filterW, filterH, padWidth, padHeight};
+        elements, rows, deltaW, deltaH, strideW, strideH, inputW, inputH, filterW,
+        filterH, padWidth, padHeight};
 
     parallel::multiBulkSynchronousParallel(lambda);
 
@@ -819,7 +832,7 @@ public:
             size_t s = filterTile / filterR;
             size_t r = filterTile % filterR;
 
-            resultView({row, column}) = filterView({r, s, k, c});
+            resultView(Dimension(row, column)) = filterView(Dimension(r, s, k, c));
         }
     }
 
@@ -859,7 +872,8 @@ Matrix gatherReverseConvolutionDeltasFilter(const Matrix& filter, const Precisio
 
     size_t elements = rows * columns;
 
-    auto lambda = ReverseDeltasFilterLambda<NativeType>{resultView, filterView, elements, rows, filterR, filterS};
+    auto lambda = ReverseDeltasFilterLambda<NativeType>{resultView, filterView, elements,
+        rows, filterR, filterS};
 
     parallel::multiBulkSynchronousParallel(lambda);
 
@@ -882,7 +896,7 @@ public:
             size_t row    = featureMap;
             size_t column = w + h * width + miniBatch * width * height;
 
-            resultView({w, h, featureMap, miniBatch}) = inputView({row, column});
+            resultView(Dimension(w, h, featureMap, miniBatch)) = inputView(Dimension(row, column));
         }
     }
 
@@ -901,7 +915,8 @@ public:
 };
 
 template<typename PrecisionType>
-void scatterReverseConvolutionDeltasResult(Matrix& result, const Matrix& input, const PrecisionType& )
+void scatterReverseConvolutionDeltasResult(Matrix& result, const Matrix& input,
+    const PrecisionType& )
 {
     assert(input.precision() == PrecisionType());
 
@@ -917,7 +932,8 @@ void scatterReverseConvolutionDeltasResult(Matrix& result, const Matrix& input, 
 
     size_t elements = miniBatches * featureMaps * height * width;
 
-    auto lambda = ReverseDeltasReshapeResult<NativeType>{resultView, inputView, elements, width, height, featureMaps};
+    auto lambda = ReverseDeltasReshapeResult<NativeType>{resultView, inputView, elements,
+        width, height, featureMaps};
 
     parallel::multiBulkSynchronousParallel(lambda);
 
@@ -925,7 +941,8 @@ void scatterReverseConvolutionDeltasResult(Matrix& result, const Matrix& input, 
 
 template<typename PrecisionType>
 void genericReverseConvolutionDeltasOverPrecisions(Matrix& resultDeltas, const Matrix& filter,
-    const Dimension& stride, const Matrix& deltas, const Dimension& padding, const std::tuple<PrecisionType>& )
+    const Dimension& stride, const Matrix& deltas, const Dimension& padding,
+    const std::tuple<PrecisionType>& )
 {
     assert(filter.precision()       == PrecisionType());
     assert(deltas.precision()       == PrecisionType());
@@ -935,41 +952,54 @@ void genericReverseConvolutionDeltasOverPrecisions(Matrix& resultDeltas, const M
     auto resultDeltasFoldedTime = foldTime(resultDeltas);
 
     // flip the filter
-    auto reshapedInputDeltas = gatherReverseConvolutionDeltasInput(deltasFoldedTime, filter, stride, padding, resultDeltas.size(), PrecisionType());
+    auto reshapedInputDeltas = gatherReverseConvolutionDeltasInput(deltasFoldedTime, filter,
+        stride, padding, resultDeltas.size(), PrecisionType());
     auto reshapedFilter      = gatherReverseConvolutionDeltasFilter(filter, PrecisionType());
+
+
+    util::log("ConvolutionalOperations") << "           input deltas: " << deltasFoldedTime.toString();
+    util::log("ConvolutionalOperations") << "  reshaped input deltas: " << reshapedInputDeltas.toString();
+
 
     auto reshapedResultDeltas = gemm(reshapedFilter, reshapedInputDeltas);
 
     // then multiply like forward convolution
-    scatterReverseConvolutionDeltasResult(resultDeltasFoldedTime, reshapedResultDeltas, PrecisionType());
+    scatterReverseConvolutionDeltasResult(resultDeltasFoldedTime, reshapedResultDeltas,
+        PrecisionType());
 }
 
 template<typename PossiblePrecisions>
 void genericReverseConvolutionDeltasOverPrecisions(Matrix& resultDeltas, const Matrix& filter,
-    const Dimension& stride, const Matrix& deltas, const Dimension& padding, const PossiblePrecisions& possiblePrecisions)
+    const Dimension& stride, const Matrix& deltas, const Dimension& padding,
+    const PossiblePrecisions& possiblePrecisions)
 {
     typedef typename std::tuple_element<0, PossiblePrecisions>::type PossiblePrecisionType;
 
     if(deltas.precision() == PossiblePrecisionType())
     {
-        return genericReverseConvolutionDeltasOverPrecisions(resultDeltas, filter, stride, deltas, padding, std::tuple<PossiblePrecisionType>());
+        return genericReverseConvolutionDeltasOverPrecisions(resultDeltas, filter, stride,
+            deltas, padding, std::tuple<PossiblePrecisionType>());
     }
     else
     {
         typedef typename util::RemoveFirstType<PossiblePrecisions>::type RemainingPrecisions;
 
-        return genericReverseConvolutionDeltasOverPrecisions(resultDeltas, filter, stride, deltas, padding, RemainingPrecisions());
+        return genericReverseConvolutionDeltasOverPrecisions(resultDeltas, filter,
+            stride, deltas, padding, RemainingPrecisions());
     }
 }
 
-void genericReverseConvolutionDeltas(Matrix& resultDeltas, const Matrix& filter, const Dimension& stride, const Matrix& deltas, const Dimension& padding)
+void genericReverseConvolutionDeltas(Matrix& resultDeltas, const Matrix& filter,
+    const Dimension& stride, const Matrix& deltas, const Dimension& padding)
 {
-    genericReverseConvolutionDeltasOverPrecisions(resultDeltas, filter, stride, deltas, padding, AllPrecisions());
+    genericReverseConvolutionDeltasOverPrecisions(resultDeltas, filter, stride,
+        deltas, padding, AllPrecisions());
 }
 
 }
 
-void reverseConvolutionDeltas(Matrix& resultDeltas, const Matrix& filter, const Dimension& stride, const Matrix& deltas, const Dimension& padding)
+void reverseConvolutionDeltas(Matrix& resultDeltas, const Matrix& filter,
+    const Dimension& stride, const Matrix& deltas, const Dimension& padding)
 {
     if(CudnnLibrary::loaded())
     {
@@ -978,10 +1008,10 @@ void reverseConvolutionDeltas(Matrix& resultDeltas, const Matrix& filter, const 
         CudnnLibrary::cudnnCreateConvolutionDescriptor(&convolutionDescriptor);
 
         CudnnLibrary::cudnnSetConvolution2dDescriptor(convolutionDescriptor,
-            padding[0],                // zero-padding height
-            padding[1],                // zero-padding width
-            stride[0],        // vertical filter stride
-            stride[1],        // horizontal filter stride
+            padding[1],       // zero-padding height
+            padding[0],       // zero-padding width
+            stride[1],        // vertical filter stride
+            stride[0],        // horizontal filter stride
             1,                // upscale the input in x-direction
             1,                // upscale the input in y-direction
             CudnnLibrary::CUDNN_CONVOLUTION // convolution mode
@@ -992,7 +1022,7 @@ void reverseConvolutionDeltas(Matrix& resultDeltas, const Matrix& filter, const 
         CudnnTensorDescriptor resultDescriptor(resultDeltas);
 
         CudnnScalar alpha(1.0, deltas.precision());
-        CudnnScalar beta( 1.0, deltas.precision());
+        CudnnScalar beta( 0.0, deltas.precision());
 
         CudnnLibrary::cudnnConvolutionBackwardData(
             alpha.data(),
@@ -1057,7 +1087,8 @@ public:
 
             inputColumn -= padHeight;
 
-            resultView({row, column}) = inputView({inputRow, inputColumn, inputFeatureMap, miniBatch});
+            resultView(Dimension(row, column)) =
+                inputView(Dimension(inputRow, inputColumn, inputFeatureMap, miniBatch));
         }
     }
 
@@ -1164,7 +1195,7 @@ public:
             size_t w = filterTile % outputW;
             size_t h = filterTile / outputW;
 
-            resultView({row, column}) = deltasView({w, h, k, n});
+            resultView(Dimension(row, column)) = deltasView(Dimension(w, h, k, n));
 
         }
     }
@@ -1207,7 +1238,8 @@ Matrix gatherReverseConvolutionGradientsDeltas(const Matrix& deltas, const Preci
 
     size_t elements = rows * columns;
 
-    auto lambda = ReverseGradientsReshapeDeltas<NativeType>{resultView, deltasView, elements, rows, outputW, outputH};
+    auto lambda = ReverseGradientsReshapeDeltas<NativeType>{resultView,
+        deltasView, elements, rows, outputW, outputH};
 
     parallel::multiBulkSynchronousParallel(lambda);
 
@@ -1231,7 +1263,8 @@ public:
             size_t inputMap  = (column / (filterW * filterH));
             size_t outputMap = row;
 
-            gradientsView({filterW - w - 1, filterH - h - 1, inputMap, outputMap}) = reshapedGradientsView({row, column});
+            gradientsView(Dimension(filterW - w - 1, filterH - h - 1, inputMap, outputMap)) =
+                reshapedGradientsView(Dimension(row, column));
         }
     }
 
@@ -1328,7 +1361,8 @@ void genericReverseConvolutionGradients(Matrix& gradients, const Matrix& input, 
 
 }
 
-void reverseConvolutionGradients(Matrix& gradients, const Matrix& inputs, const Matrix& deltas, const Dimension& stride, const Dimension& padding, double a)
+void reverseConvolutionGradients(Matrix& gradients, const Matrix& inputs, const Matrix& deltas,
+    const Dimension& stride, const Dimension& padding, double a)
 {
     if(CudnnLibrary::loaded())
     {
@@ -1337,10 +1371,10 @@ void reverseConvolutionGradients(Matrix& gradients, const Matrix& inputs, const 
         CudnnLibrary::cudnnCreateConvolutionDescriptor(&convolutionDescriptor);
 
         CudnnLibrary::cudnnSetConvolution2dDescriptor(convolutionDescriptor,
-            padding[0],       // zero-padding height
-            padding[1],       // zero-padding width
-            stride[0],        // vertical filter stride
-            stride[1],        // horizontal filter stride
+            padding[1],       // zero-padding height
+            padding[0],       // zero-padding width
+            stride[1],        // vertical filter stride
+            stride[0],        // horizontal filter stride
             1,                // upscale the input in x-direction
             1,                // upscale the input in y-direction
             CudnnLibrary::CUDNN_CONVOLUTION // convolution mode
@@ -1351,7 +1385,7 @@ void reverseConvolutionGradients(Matrix& gradients, const Matrix& inputs, const 
         CudnnTensorDescriptor deltasDescriptor(deltas);
 
         CudnnScalar alpha(a,   deltas.precision());
-        CudnnScalar beta( 1.0, deltas.precision());
+        CudnnScalar beta( 0.0, deltas.precision());
 
         CudnnLibrary::cudnnConvolutionBackwardFilter(
             alpha.data(),
@@ -1372,7 +1406,8 @@ void reverseConvolutionGradients(Matrix& gradients, const Matrix& inputs, const 
     }
 }
 
-void reverseConvolutionGradients(Matrix& gradients, const Matrix& inputs, const Matrix& deltas, const Dimension& stride, const Dimension& padding)
+void reverseConvolutionGradients(Matrix& gradients, const Matrix& inputs, const Matrix& deltas,
+    const Dimension& stride, const Dimension& padding)
 {
     return reverseConvolutionGradients(gradients, inputs, deltas, stride, padding, 1.0);
 }

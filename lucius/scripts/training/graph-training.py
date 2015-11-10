@@ -8,9 +8,32 @@ matplotlib.use('Agg')
 from matplotlib import pyplot
 
 class ExperimentData:
-    def __init__(self):
+    def __init__(self, name):
+        self.name            = name
         self.trainingError   = None
         self.validationError = None
+
+    def resize(self, maximumIterations):
+        if len(self.trainingError) > maximumIterations:
+            self.trainingError = self.trainingError[0:maximumIterations]
+
+class ExperimentGroup:
+    def __init__(self, name):
+        self.name        = name
+        self.experiments = []
+
+    def addExperiment(self, experiment):
+        self.experiments.append(experiment)
+
+    def size(self):
+        return len(self.experiments)
+
+    def getExperiments(self):
+        return self.experiments
+
+    def empty(self):
+        return self.size() == 0
+
 
 def parseCost(line):
     position = line.find("running cost sum")
@@ -50,14 +73,31 @@ def loadTrainingErrorFromLogFile(path):
 def loadValidationError(path):
     return None
 
-def loadLogFile(path):
+def getExperimentName(path):
+    head, tail = os.path.split(path)
+
+    if len(tail) == 0:
+        return head
+
+    return tail
+
+def getGroupName(path):
+    name = getExperimentName(path)
+
+    if name == '.':
+        name = 'training_error'
+
+    return name
+
+def loadExperiment(path):
     logPath        = os.path.join(path, 'log')
     validationPath = os.path.join(path, 'validation-error.csv')
+    name           = getExperimentName(path)
 
     if not os.path.exists(logPath):
         raise ValueError("The path" + logPath + " does not exist.")
 
-    experimentData = ExperimentData()
+    experimentData = ExperimentData(name)
 
     experimentData.trainingError = loadTrainingErrorFromLogFile(logPath)
 
@@ -66,43 +106,134 @@ def loadLogFile(path):
 
     return experimentData
 
+
+def formatNameForLabel(name):
+    characters = 95
+    limit = min(len(name), characters)
+
+    result = name[0:limit]
+
+    for i in range(characters, len(name), characters):
+        limit = min(len(name), i+characters)
+        result += "\n" + name[i:limit]
+
+    return result
+
+def isExperimentPath(path):
+    logPath = os.path.join(path, 'log')
+
+    if not os.path.exists(logPath):
+        return False
+
+    return True
+
+def discoverGroups(inputs):
+    if len(inputs) > 1:
+        groups = []
+        for input in inputs:
+            groups += discoverGroups([input])
+        return groups
+
+    path = inputs[0]
+
+    if isExperimentPath(path):
+        return [ExperimentGroup(path)]
+
+    groups = []
+
+    # find groups
+    for root, directories, files in os.walk(path):
+        name = getGroupName(root)
+        group = ExperimentGroup(name)
+
+        for directory in directories:
+            directoryPath = os.path.join(root, directory)
+
+            if isExperimentPath(directoryPath):
+                group.addExperiment(loadExperiment(directoryPath))
+
+        if not group.empty():
+            groups.append(group)
+
+    return groups
+
+def getYLimit(experiments):
+    limit = 0
+
+    for experiment in experiments:
+        limit = max(limit, max(experiment.trainingError))
+
+    return [0, limit]
+
 class Visualizer:
     def __init__(self, arguments):
         self.inputs = arguments["input_file"]
         self.output = arguments["output_file"]
+        self.maximumIterations = int(arguments["maximum_iterations"])
 
     def run(self):
         if len(self.inputs) == 0:
             raise ValueError("No input files specified.")
 
-        experiments = self.loadExperiments()
-        plots = self.plotExperiments(experiments)
+        experimentGroups = self.loadExperiments()
+
+        self.formatExperiments(experimentGroups)
+
+        plots = self.plotExperiments(experimentGroups)
         self.savePlots(plots)
 
+    def formatExperiments(self, experiments):
+        if self.maximumIterations != 0:
+            for experiment in experiments:
+                experiment.resize(self.maximumIterations)
+
     def loadExperiments(self):
-        return [loadLogFile(filename) for filename in self.inputs]
+        return discoverGroups(self.inputs)
 
-    def plotExperiments(self, experiments):
-        figure, axes = pyplot.subplots()
+    def plotExperiments(self, experimentGroups):
+        plots = []
 
-        for experiment in experiments:
-            axes.plot(range(len(experiment.trainingError)), experiment.trainingError)
+        for group in experimentGroups:
 
-        return (figure, axes)
+            figure, axes = pyplot.subplots()
+
+            for experiment in group.getExperiments():
+                experimentLabel = formatNameForLabel(experiment.name)
+                axes.plot(range(len(experiment.trainingError)), experiment.trainingError,
+                    label=experimentLabel)
+
+            percent = max(0.1, min(0.07 * group.size(), .7))
+
+            box = axes.get_position()
+            axes.set_position([box.x0, box.y0 + box.height * percent,
+                     box.width, box.height * (1.0 - percent)])
+
+            axes.set_ylim(getYLimit(group.getExperiments()))
+
+            axes.legend(bbox_to_anchor=(0.0, -.5*percent, 1, 0), loc='upper center',
+                ncol=1, mode="expand", borderaxespad=0., fontsize='x-small')
+
+            axes.minorticks_on()
+
+            axes.yaxis.grid(b=True, which='major', linestyle='-')
+            axes.yaxis.grid(b=True, which='minor', linestyle='--')
+
+            plots.append((group, figure, axes))
+
+        return plots
 
     def savePlots(self, plots):
-        figure, axes = plots
+        for group, figure, axes in plots:
 
-        pyplot.figure(figure.number)
+            pyplot.figure(figure.number)
 
-        output = self.output
+            output = self.output
 
-        if len(output) == 0:
-            output = os.path.join(self.inputs[0], "training-error.png")
+            path = os.path.join(output, group.name)
 
-        print "saving training error at " + output
+            print "saving training error at " + path
 
-        pyplot.savefig(output)
+            pyplot.savefig(path)
 
 # MAIN
 def main():
@@ -111,8 +242,10 @@ def main():
 
     parser.add_argument("-i", "--input-file", default = [], action="append",
         help = "An input training experiment directory with log files.")
-    parser.add_argument("-o", "--output-file", default = "/mnt/www/files/training-error.png",
+    parser.add_argument("-o", "--output-file", default = "/mnt/www/files/experiments/",
         help = "The output file path for the figure (.png, .pdf, etc).")
+    parser.add_argument("-m", "--maximum-iterations", default = 0,
+        help = "The maximum number of iterations to draw.")
 
     arguments = parser.parse_args()
 

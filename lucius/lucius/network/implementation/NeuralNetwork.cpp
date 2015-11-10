@@ -462,7 +462,8 @@ std::string NeuralNetwork::shapeString() const
     {
         size_t index = &layer - &*begin();
 
-        stream << " Layer " << index << ": " << layer->shapeString() << "\n";
+        stream << " Layer " << index << ": " << layer->shapeString() << " "
+            << layer->resourceString() << "\n";
     }
 
     return stream.str();

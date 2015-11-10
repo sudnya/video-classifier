@@ -452,6 +452,11 @@ size_t BatchNormalizationLayer::getFloatingPointOperationCount() const
     return 2 * totalConnections();
 }
 
+size_t BatchNormalizationLayer::getActivationMemory() const
+{
+    return precision().size() * getOutputCount();
+}
+
 void BatchNormalizationLayer::save(util::OutputTarArchive& archive,
     util::PropertyTree& properties) const
 {

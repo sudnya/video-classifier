@@ -437,7 +437,7 @@ public:
         {
             size_t row         = innerGroup.id();
             size_t position    = column * rows + row;
-            size_t endPosition = column * (rows + 1);
+            size_t endPosition = (column + 1) * rows;
 
             if(innerGroup.size() <= rows)
             {
@@ -456,7 +456,7 @@ public:
                     rawResult[column] = value;
                 }
             }
-            else if (innerGroup.id() == 0)
+            else if(innerGroup.id() == 0)
             {
                 NativeType value = rawInput[position];
                 ++position;
@@ -803,7 +803,181 @@ Matrix reduce(const Matrix& input, const Dimension& dimensions, const Operation&
 namespace detail
 {
 
-static Dimension fillOutDimension(const Dimension& d, const Dimension& leftSize, const Dimension& rightSize)
+template <typename NativeType, typename ActualOperation>
+class BroadcastFirstOfTwoDimensionsLambda
+{
+public:
+    CUDA_DECORATOR void operator()(parallel::ThreadGroup threadGroup) const
+    {
+        if(rows > columns)
+        {
+            for(size_t row = threadGroup.id(); row < rows; row += threadGroup.size())
+            {
+                size_t offset = row;
+
+                for(size_t column = 0; column < columns; ++column, offset += rows)
+                {
+                    rawResult[offset] = nativeOperation(rawLeft[offset], rawRight[row]);
+                }
+            }
+        }
+        else
+        {
+            for(size_t column = threadGroup.id(); column < columns; column += threadGroup.size())
+            {
+                size_t offset = column * rows;
+
+                for(size_t row = 0; row < rows; ++row, ++offset)
+                {
+                    rawResult[offset] = nativeOperation(rawLeft[offset], rawRight[row]);
+                }
+            }
+        }
+    }
+
+public:
+    NativeType*       rawResult;
+    const NativeType* rawLeft;
+    const NativeType* rawRight;
+
+public:
+    size_t rows;
+    size_t columns;
+
+public:
+    ActualOperation nativeOperation;
+
+};
+
+template <typename NativeType, typename ActualOperation>
+class BroadcastFirstOfTwoDimensionsWarpStrideLambda
+{
+public:
+    CUDA_DECORATOR void operator()(parallel::ThreadGroup threadGroup) const
+    {
+        auto innerGroup    = parallel::partitionThreadGroupAtLevel(threadGroup, 1);
+        auto relativeGroup = parallel::getRelativeGroup(innerGroup, threadGroup);
+
+        int globalOffset = relativeGroup.id() * rows;
+
+        for(int column = relativeGroup.id(); column < columns;
+            column += relativeGroup.size(), globalOffset += rows * relativeGroup.size())
+        {
+            int offset = globalOffset + innerGroup.id();
+
+            for(int row = innerGroup.id(); row < rows; row += innerGroup.size(),
+                offset += innerGroup.size())
+            {
+                //std::printf("thread (%d, %d) handling (%d, %d)\n", threadGroup.id(), threadGroup.size(), row, column);
+                rawResult[offset] = nativeOperation(rawLeft[offset], rawRight[row]);
+            }
+        }
+    }
+
+public:
+    NativeType*       rawResult;
+    const NativeType* rawLeft;
+    const NativeType* rawRight;
+
+public:
+    int rows;
+    int columns;
+
+public:
+    ActualOperation nativeOperation;
+
+};
+
+template <typename ActualOperation, typename NativeType>
+void broadcastFirstOfTwoDimensions(Matrix& result, const Matrix& left, const Matrix& right,
+    const ActualOperation& op)
+{
+          NativeType* rawResult = static_cast<NativeType*>(result.data());
+    const NativeType* rawLeft   = static_cast<const NativeType*>(left.data());
+    const NativeType* rawRight  = static_cast<const NativeType*>(right.data());
+
+    size_t rows    = left.size()[0];
+    size_t columns = left.size()[1];
+
+    if(rows < columns && rows >= 32 &&
+        (rows <= std::numeric_limits<int>::max() && columns <= std::numeric_limits<int>::max()))
+    {
+        auto lambda = BroadcastFirstOfTwoDimensionsWarpStrideLambda<NativeType, ActualOperation>{
+            rawResult, rawLeft, rawRight, static_cast<int>(rows), static_cast<int>(columns), op};
+
+        parallel::multiBulkSynchronousParallel(lambda);
+    }
+    else
+    {
+        auto lambda = BroadcastFirstOfTwoDimensionsLambda<NativeType, ActualOperation>{rawResult,
+            rawLeft, rawRight, rows, columns, op};
+
+        parallel::multiBulkSynchronousParallel(lambda);
+    }
+}
+
+template <typename NativeType, typename ActualOperation>
+class BroadcastSecondOfTwoDimensionsLambda
+{
+public:
+    CUDA_DECORATOR void operator()(parallel::ThreadGroup threadGroup) const
+    {
+        if(rows > columns)
+        {
+            for(size_t row = threadGroup.id(); row < rows; row += threadGroup.size())
+            {
+                size_t offset = row;
+
+                for(size_t column = 0; column < columns; ++column, offset += rows)
+                {
+                    rawResult[offset] = nativeOperation(rawLeft[offset], rawRight[column]);
+                }
+            }
+        }
+        else
+        {
+            for(size_t column = threadGroup.id(); column < columns; column += threadGroup.size())
+            {
+                size_t offset = column * rows;
+
+                for(size_t row = 0; row < rows; ++row, ++offset)
+                {
+                    rawResult[offset] = nativeOperation(rawLeft[offset], rawRight[column]);
+                }
+            }
+        }
+    }
+
+public:
+    NativeType*       rawResult;
+    const NativeType* rawLeft;
+    const NativeType* rawRight;
+
+public:
+    size_t rows;
+    size_t columns;
+
+public:
+    ActualOperation nativeOperation;
+
+};
+
+template <typename ActualOperation, typename NativeType>
+void broadcastSecondOfTwoDimensions(Matrix& result, const Matrix& left, const Matrix& right,
+    const ActualOperation& op)
+{
+          NativeType* rawResult = static_cast<NativeType*>(result.data());
+    const NativeType* rawLeft   = static_cast<const NativeType*>(left.data());
+    const NativeType* rawRight  = static_cast<const NativeType*>(right.data());
+
+    auto lambda = BroadcastSecondOfTwoDimensionsLambda<NativeType, ActualOperation>{rawResult,
+        rawLeft, rawRight, left.size()[0], left.size()[1], op};
+
+    parallel::multiBulkSynchronousParallel(lambda);
+}
+
+static Dimension fillOutDimension(const Dimension& d, const Dimension& leftSize,
+    const Dimension& rightSize)
 {
     if(d.size() != 0)
     {
@@ -872,6 +1046,39 @@ public:
 
 };
 
+static bool isNotInnerDimension(const Dimension& size, const Dimension& dimension)
+{
+    assert(dimension.front() < size.size());
+
+    bool leftOkay = true;
+
+    // everything preceding it is one
+    for(size_t i = 0; i < dimension.front(); ++i)
+    {
+        if(size[i] != 1)
+        {
+            leftOkay = false;
+            break;
+        }
+    }
+
+    if(leftOkay)
+    {
+        return true;
+    }
+
+    // everything after it is one
+    for(size_t i = dimension.front() + 1; i < size.size(); ++i)
+    {
+        if(size[i] != 1)
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 template <typename ActualOperation, typename ActualPrecision>
 void broadcast(Matrix& result, const Matrix& left, const Matrix& right, const Dimension& d,
     const Operation& op, const std::tuple<ActualPrecision>& p)
@@ -884,18 +1091,82 @@ void broadcast(Matrix& result, const Matrix& left, const Matrix& right, const Di
     assert(result.precision() == right.precision());
     assert(result.size()      == left.size());
 
-    size_t elements = result.elements();
-
     auto nativeOperation = static_cast<const ActualOperation&>(op);
 
-    MatrixView<NativeType>      resultView(result);
-    ConstMatrixView<NativeType> leftView(left);
-    ConstMatrixView<NativeType> rightView(right);
+    // try to simplify the operation to a 2d broadcast
+    auto reshapedLeft   = left;
+    auto reshapedRight  = right;
+    auto reshapedResult = result;
 
-    auto lambda = BroadcastLambda<NativeType, ActualOperation>{resultView, leftView,
-        rightView, elements, nativeOperation, dimension};
+    if(left.isContiguous() && result.isContiguous() && right.isContiguous() &&
+        dimension.size() == 1 && isNotInnerDimension(result.size(), dimension))
+    {
+        Dimension leftDimension({1, 1});
+        bool isLeft = true;
 
-    parallel::multiBulkSynchronousParallel(lambda);
+        for(size_t i = 0; i < dimension.front(); ++i)
+        {
+            if(left.size()[i] != 1)
+            {
+                isLeft = false;
+                break;
+            }
+        }
+
+        if(isLeft)
+        {
+            for(size_t i = 0; i <= dimension.front(); ++i)
+            {
+                leftDimension[0] *= left.size()[i];
+            }
+
+            leftDimension[1] = left.size().product() / leftDimension[0];
+
+            reshapedRight = reshape(right, leftDimension[0]);
+
+            dimension.front() = 0;
+        }
+        else
+        {
+            for(size_t i = dimension.front(); i < left.size().size(); ++i)
+            {
+                leftDimension[1] *= left.size()[i];
+            }
+
+            leftDimension[0] = left.size().product() / leftDimension[1];
+
+            reshapedRight = reshape(right, leftDimension[1]);
+
+            dimension.front() = 1;
+        }
+
+        reshapedLeft   = reshape(left,   leftDimension);
+        reshapedResult = reshape(result, leftDimension);
+
+        if(isLeft)
+        {
+            broadcastFirstOfTwoDimensions<ActualOperation, NativeType>(reshapedResult,
+                reshapedLeft, reshapedRight, nativeOperation);
+        }
+        else
+        {
+            broadcastSecondOfTwoDimensions<ActualOperation, NativeType>(reshapedResult,
+                reshapedLeft, reshapedRight, nativeOperation);
+        }
+    }
+    else
+    {
+        size_t elements = reshapedResult.elements();
+
+        MatrixView<NativeType>      resultView(reshapedResult);
+        ConstMatrixView<NativeType> leftView(reshapedLeft);
+        ConstMatrixView<NativeType> rightView(reshapedRight);
+
+        auto lambda = BroadcastLambda<NativeType, ActualOperation>{resultView, leftView,
+            rightView, elements, nativeOperation, dimension};
+
+        parallel::multiBulkSynchronousParallel(lambda);
+    }
 }
 
 template <typename ActualOperation, typename PossiblePrecisions>
@@ -915,16 +1186,16 @@ void broadcast(Matrix& result, const Matrix& left, const Matrix& right, const Di
 }
 
 template <typename PossibleOperation>
-void broadcast(Matrix& result, const Matrix& left, const Matrix& right, const Dimension& d, const Operation& op,
-    const std::tuple<PossibleOperation>& p)
+void broadcast(Matrix& result, const Matrix& left, const Matrix& right, const Dimension& d,
+    const Operation& op, const std::tuple<PossibleOperation>& p)
 {
     assert(PossibleOperation() == op);
     broadcast<PossibleOperation>(result, left, right, d, op, AllPrecisions());
 }
 
 template <typename PossibleOperations>
-void broadcast(Matrix& result, const Matrix& left, const Matrix& right, const Dimension& d, const Operation& op,
-    const PossibleOperations& possibleOperations)
+void broadcast(Matrix& result, const Matrix& left, const Matrix& right, const Dimension& d,
+    const Operation& op, const PossibleOperations& possibleOperations)
 {
     typedef typename std::tuple_element<0, PossibleOperations>::type PossibleOperationType;
     if(op == PossibleOperationType())

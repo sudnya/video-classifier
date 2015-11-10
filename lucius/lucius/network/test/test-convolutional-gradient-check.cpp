@@ -104,7 +104,7 @@ static double getDifference(double difference, double total)
 
 static bool gradientCheck(NeuralNetwork& network, const Matrix& input, const Matrix& reference)
 {
-    const double epsilon = 1.0e-6;
+    const double epsilon = 1.0e-5;
 
     double total = 0.0;
     double difference = 0.0;

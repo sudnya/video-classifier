@@ -15,23 +15,23 @@ namespace parallel
 class ThreadGroup
 {
 public:
-    CUDA_DECORATOR inline ThreadGroup(size_t size, size_t id);
+    CUDA_DECORATOR inline ThreadGroup(int size, int id);
 
 public:
-    CUDA_DECORATOR inline size_t size() const;
-    CUDA_DECORATOR inline size_t id()   const;
+    CUDA_DECORATOR inline int size() const;
+    CUDA_DECORATOR inline int id()   const;
 
 public:
-    size_t _size;
-    size_t _id;
+    int _size;
+    int _id;
 
 };
 
-template<size_t level>
+template<int level>
 class GroupLevelSize
 {
 public:
-    CUDA_DECORATOR static constexpr size_t size()
+    CUDA_DECORATOR static constexpr int size()
     {
         #ifdef __CUDA_ARCH__
         return level == 0 ? 1  :
@@ -42,15 +42,15 @@ public:
     }
 };
 
-CUDA_DECORATOR inline ThreadGroup partitionThreadGroup(ThreadGroup g, size_t subgroupSize);
-CUDA_DECORATOR inline ThreadGroup partitionThreadGroupAtLevel(ThreadGroup g, size_t level);
+CUDA_DECORATOR inline ThreadGroup partitionThreadGroup(ThreadGroup g, int subgroupSize);
+CUDA_DECORATOR inline ThreadGroup partitionThreadGroupAtLevel(ThreadGroup g, int level);
 
 CUDA_DECORATOR inline ThreadGroup getRelativeGroup(ThreadGroup inner, ThreadGroup outer);
 
 CUDA_DECORATOR inline void barrier(ThreadGroup g);
 
 template<typename T>
-CUDA_DECORATOR inline T gather(ThreadGroup g, T value, size_t index);
+CUDA_DECORATOR inline T gather(ThreadGroup g, T value, int index);
 
 template<typename T, typename Function>
 CUDA_DECORATOR inline T reduce(ThreadGroup g, T value, Function f);

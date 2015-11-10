@@ -64,6 +64,7 @@ public:
 
 public:
     virtual size_t getFloatingPointOperationCount() const;
+    virtual size_t getActivationMemory() const;
 
 public:
     virtual void save(util::OutputTarArchive& archive, util::PropertyTree& properties) const;
