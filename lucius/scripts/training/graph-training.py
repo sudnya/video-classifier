@@ -82,7 +82,12 @@ def getExperimentName(path):
     return tail
 
 def getGroupName(path):
-    return getExperimentName(path)
+    name = getExperimentName(path)
+
+    if name == '.':
+        name = 'training_error'
+
+    return name
 
 def loadExperiment(path):
     logPath        = os.path.join(path, 'log')
@@ -207,6 +212,11 @@ class Visualizer:
 
             axes.legend(bbox_to_anchor=(0.0, -.5*percent, 1, 0), loc='upper center',
                 ncol=1, mode="expand", borderaxespad=0., fontsize='x-small')
+
+            axes.minorticks_on()
+
+            axes.yaxis.grid(b=True, which='major', linestyle='-')
+            axes.yaxis.grid(b=True, which='minor', linestyle='--')
 
             plots.append((group, figure, axes))
 
