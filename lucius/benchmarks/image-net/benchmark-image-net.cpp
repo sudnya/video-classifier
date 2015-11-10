@@ -237,7 +237,7 @@ static void setSampleStatistics(Model& model, const Parameters& parameters)
         lucius::engine::EngineFactory::create("SampleStatisticsEngine"));
 
     engine->setModel(&model);
-    engine->setBatchSize(128);
+    engine->setBatchSize(parameters.batchSize);
     engine->setMaximumSamplesToRun(1024UL);
 
     // read from database and use model to train
@@ -268,7 +268,7 @@ static double testNetwork(Model& model, const Parameters& parameters)
 {
     std::unique_ptr<Engine> engine(lucius::engine::EngineFactory::create("ClassifierEngine"));
 
-    engine->setBatchSize(128);
+    engine->setBatchSize(parameters.batchSize);
     engine->setModel(&model);
     engine->setStandardizeInput(true);
     engine->setMaximumSamplesToRun(std::max(1024UL, parameters.maximumSamples/10));
