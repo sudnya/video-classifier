@@ -156,6 +156,18 @@ matrix::Matrix Layer::runReverse(MatrixVector& gradients,
         reshapeActivations(deltas, getOutputSize()));
 }
 
+size_t Layer::getParameterMemory() const
+{
+    size_t memory = 0;
+
+    for(auto& weight : weights())
+    {
+        memory += precision().size() * weight.elements();
+    }
+
+    return memory;
+}
+
 void Layer::setActivationFunction(ActivationFunction* f)
 {
     _activationFunction.reset(f);
@@ -218,6 +230,17 @@ std::string Layer::shapeString() const
     stream << "(" << getTypeName() << " type, "
         << getInputSize().toString()
         << " inputs, " << getOutputSize().toString() << " outputs)";
+
+    return stream.str();
+}
+
+std::string Layer::resourceString() const
+{
+    std::stringstream stream;
+
+    stream << "(" << (getFloatingPointOperationCount() / 1.0e9) << " GFLOPS, "
+        << (getParameterMemory() / 1.0e6)
+        << " MB parameters, " << (getActivationMemory() / 1.0e6) << " MB activations)";
 
     return stream.str();
 }

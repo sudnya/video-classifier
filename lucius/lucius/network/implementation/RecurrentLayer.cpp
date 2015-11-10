@@ -383,6 +383,11 @@ size_t RecurrentLayer::getFloatingPointOperationCount() const
     return 2 * totalConnections();
 }
 
+size_t RecurrentLayer::getActivationMemory() const
+{
+    return getOutputCount() * precision().size();
+}
+
 void RecurrentLayer::save(util::OutputTarArchive& archive, util::PropertyTree& properties) const
 {
     properties["forward-weights"]   = properties.path() + "." + properties.key() + ".forward-weights.npy";

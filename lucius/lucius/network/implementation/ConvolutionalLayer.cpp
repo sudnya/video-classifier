@@ -294,12 +294,14 @@ Matrix ConvolutionalLayer::runReverseImplementation(MatrixVector& gradients,
 
     if(util::isLogEnabled("ConvolutionalLayer"))
     {
-        util::log("ConvolutionalLayer") << "  previous layer deltas shape: " << previousLayerDeltas.shapeString() << "\n";
+        util::log("ConvolutionalLayer") << "  previous layer deltas shape: "
+            << previousLayerDeltas.shapeString() << "\n";
     }
 
     if(util::isLogEnabled("ConvolutionalLayer::Detail"))
     {
-        util::log("ConvolutionalLayer::Detail") << "  previous layer deltas: " << previousLayerDeltas.debugString();
+        util::log("ConvolutionalLayer::Detail") << "  previous layer deltas: "
+            << previousLayerDeltas.debugString();
     }
 
     return previousLayerDeltas;
@@ -332,7 +334,8 @@ Dimension ConvolutionalLayer::getInputSize() const
 
 Dimension ConvolutionalLayer::getOutputSize() const
 {
-    return forwardConvolutionOutputSize(*_inputSize, _weights.size(), *_filterStride, *_inputPadding);
+    return forwardConvolutionOutputSize(*_inputSize, _weights.size(),
+        *_filterStride, *_inputPadding);
 }
 
 size_t ConvolutionalLayer::getInputCount() const
@@ -361,7 +364,13 @@ size_t ConvolutionalLayer::totalConnections() const
 
 size_t ConvolutionalLayer::getFloatingPointOperationCount() const
 {
-    return 2 * totalConnections();
+    return getInputSize().product() * _weights.elements() / _filterStride->product() +
+        _bias.elements();
+}
+
+size_t ConvolutionalLayer::getActivationMemory() const
+{
+    return precision().size() * getOutputSize().product();
 }
 
 void ConvolutionalLayer::save(util::OutputTarArchive& archive, util::PropertyTree& properties) const

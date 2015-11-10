@@ -363,6 +363,11 @@ size_t FeedForwardLayer::getFloatingPointOperationCount() const
     return 2 * totalConnections();
 }
 
+size_t FeedForwardLayer::getActivationMemory() const
+{
+    return precision().size() * getOutputCount();
+}
+
 void FeedForwardLayer::save(util::OutputTarArchive& archive, util::PropertyTree& properties) const
 {
     properties["weights"] = properties.path() + "." + properties.key() + ".weights.npy";
