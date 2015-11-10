@@ -34,6 +34,10 @@ class ExperimentGroup:
     def empty(self):
         return self.size() == 0
 
+    def resize(self, size):
+        for experiment in self.getExperiments():
+            experiment.resize(size)
+
 
 def parseCost(line):
     position = line.find("running cost sum")
