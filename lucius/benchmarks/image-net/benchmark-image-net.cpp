@@ -173,7 +173,7 @@ static void addClassifier(Model& model, const Parameters& parameters)
     inputSize = addConvolutionalLayer(classifier, inputSize, 512 / parameters.factor,
         parameters.useBatchNormalization);
     inputSize = addPoolingLayer(classifier, inputSize, {2, 2}, parameters.useBatchNormalization);
-
+/*
     // connect the network
     classifier.addLayer(std::make_unique<FeedForwardLayer>(classifier.back()->getOutputCount(),
         parameters.layerSize));
@@ -194,7 +194,7 @@ static void addClassifier(Model& model, const Parameters& parameters)
             ActivationFunctionFactory::create("NullActivationFunction"));
         classifier.addLayer(std::make_unique<BatchNormalizationLayer>(parameters.layerSize));
     }
-
+*/
     SampleDatabase inputDatabase(parameters.inputPath);
     inputDatabase.load();
 
