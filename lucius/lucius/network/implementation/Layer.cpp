@@ -239,9 +239,9 @@ std::string Layer::resourceString() const
 {
     std::stringstream stream;
 
-    stream << "(" << util::flopsString(getFloatingPointOperationCount()) << " GFLOPS, "
+    stream << "(" << util::flopsString(getFloatingPointOperationCount()) << ", "
         << util::byteString(getActivationMemory())
-        << " MB activations, " << util::byteString(getParameterMemory()) << " MB parameters)";
+        << " activations, " << util::byteString(getParameterMemory()) << " parameters)";
 
     return stream.str();
 }

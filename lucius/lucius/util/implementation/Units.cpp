@@ -30,7 +30,7 @@ static void getStandardUnitValueAndExtension(double& value, std::string& extensi
     else if(value < 1.0e9)
     {
         value /= 1.0e6;
-        extension = "K";
+        extension = "M";
     }
     else if(value < 1.0e12)
     {
