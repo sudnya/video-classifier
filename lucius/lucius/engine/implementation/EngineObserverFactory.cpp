@@ -38,8 +38,9 @@ std::unique_ptr<EngineObserver> EngineObserverFactory::create(const std::string&
     {
         auto inputPath  = parameters.get<std::string>("InputPath",  "");
         auto outputPath = parameters.get<std::string>("OutputPath", "");
+        auto batchSize  = parameters.get<size_t>("BatchSize", 1);
 
-        return std::make_unique<ValidationErrorObserver>(inputPath, outputPath);
+        return std::make_unique<ValidationErrorObserver>(inputPath, outputPath, batchSize);
     }
 
     return nullptr;

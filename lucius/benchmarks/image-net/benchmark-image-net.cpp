@@ -258,7 +258,8 @@ static void trainNetwork(Model& model, const Parameters& parameters)
         std::make_tuple("Path", parameters.outputPath)));
     engine->addObserver(EngineObserverFactory::create("ValidationErrorObserver",
         std::make_tuple("InputPath", parameters.testPath),
-        std::make_tuple("OutputPath", parameters.validationReportPath)));
+        std::make_tuple("OutputPath", parameters.validationReportPath),
+        std::make_tuple("BatchSize", parameters.batchSize)));
 
     // read from database and use model to train
     engine->runOnDatabaseFile(parameters.inputPath);

@@ -108,6 +108,8 @@ public:
 
 public:
     size_t getFloatingPointOperationCount() const;
+    size_t getActivationMemory() const;
+    size_t getParameterMemory() const;
 
 public:
     /*! \brief Train the network on the specified input and reference. */
@@ -116,8 +118,8 @@ public:
 public:
     typedef std::vector<LayerPointer> LayerVector;
 
-    typedef LayerVector::reverse_iterator        reverse_iterator;
-    typedef LayerVector::iterator                iterator;
+    typedef LayerVector::reverse_iterator       reverse_iterator;
+    typedef LayerVector::iterator               iterator;
     typedef LayerVector::const_iterator         const_iterator;
     typedef LayerVector::const_reverse_iterator const_reverse_iterator;
 

@@ -23,7 +23,8 @@ namespace engine
 class ValidationErrorObserver : public EngineObserver
 {
 public:
-    ValidationErrorObserver(const std::string& validationSetPath, const std::string& outputPath);
+    ValidationErrorObserver(const std::string& validationSetPath, const std::string& outputPath,
+        size_t batchSize);
     virtual ~ValidationErrorObserver();
 
 public:
@@ -36,6 +37,9 @@ private:
 private:
     std::string _validationSetPath;
     std::string _outputPath;
+
+private:
+    size_t _batchSize;
 };
 
 }

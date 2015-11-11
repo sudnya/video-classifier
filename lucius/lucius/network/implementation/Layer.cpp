@@ -19,6 +19,7 @@
 #include <lucius/matrix/interface/MatrixTransformations.h>
 
 #include <lucius/util/interface/PropertyTree.h>
+#include <lucius/util/interface/Units.h>
 
 // Standard Library Includes
 #include <sstream>
@@ -238,9 +239,9 @@ std::string Layer::resourceString() const
 {
     std::stringstream stream;
 
-    stream << "(" << (getFloatingPointOperationCount() / 1.0e9) << " GFLOPS, "
-        << (getParameterMemory() / 1.0e6)
-        << " MB parameters, " << (getActivationMemory() / 1.0e6) << " MB activations)";
+    stream << "(" << util::flopsString(getFloatingPointOperationCount()) << " GFLOPS, "
+        << util::byteString(getActivationMemory())
+        << " MB activations, " << util::byteString(getParameterMemory()) << " MB parameters)";
 
     return stream.str();
 }

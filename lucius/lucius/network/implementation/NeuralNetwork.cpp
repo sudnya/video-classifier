@@ -19,6 +19,7 @@
 
 #include <lucius/util/interface/Knobs.h>
 #include <lucius/util/interface/debug.h>
+#include <lucius/util/interface/Units.h>
 #include <lucius/util/interface/PropertyTree.h>
 
 // Standard Library Includes
@@ -324,6 +325,30 @@ size_t NeuralNetwork::getFloatingPointOperationCount() const
     return flops;
 }
 
+size_t NeuralNetwork::getParameterMemory() const
+{
+    size_t bytes = 0;
+
+    for(auto& layer : *this)
+    {
+        bytes += layer->getParameterMemory();
+    }
+
+    return bytes;
+}
+
+size_t NeuralNetwork::getActivationMemory() const
+{
+    size_t bytes = 0;
+
+    for(auto& layer : *this)
+    {
+        bytes += layer->getActivationMemory();
+    }
+
+    return bytes;
+}
+
 void NeuralNetwork::train(const Matrix& input, const Matrix& reference)
 {
     getSolver()->setInput(&input);
@@ -465,6 +490,10 @@ std::string NeuralNetwork::shapeString() const
         stream << " Layer " << index << ": " << layer->shapeString() << " "
             << layer->resourceString() << "\n";
     }
+
+    stream << "Performance Requirement (" << util::flopsString(getFloatingPointOperationCount())
+        << ", " << util::byteString(getActivationMemory()) << " activations, "
+        << util::byteString(getParameterMemory()) << " parameters)\n";
 
     return stream.str();
 }

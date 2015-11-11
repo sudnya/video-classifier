@@ -22,8 +22,8 @@ namespace engine
 {
 
 ValidationErrorObserver::ValidationErrorObserver(
-    const std::string& validationSetPath, const std::string& outputPath)
-: _validationSetPath(validationSetPath), _outputPath(outputPath)
+    const std::string& validationSetPath, const std::string& outputPath, size_t batchSize)
+: _validationSetPath(validationSetPath), _outputPath(outputPath), _batchSize(batchSize)
 {
 
 }
@@ -37,10 +37,10 @@ void ValidationErrorObserver::epochCompleted(Engine& runningEngine)
 {
     std::unique_ptr<Engine> engine(lucius::engine::EngineFactory::create("ClassifierEngine"));
 
-    engine->setBatchSize(128);
+    engine->setBatchSize(_batchSize);
     engine->setModel(runningEngine.getModel());
     engine->setStandardizeInput(true);
-    engine->setMaximumSamplesToRun(128);
+    engine->setMaximumSamplesToRun(1024);
 
     // read from database and use model to test
     engine->runOnDatabaseFile(_validationSetPath);
