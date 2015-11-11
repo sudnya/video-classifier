@@ -449,7 +449,7 @@ size_t BatchNormalizationLayer::totalConnections() const
 
 size_t BatchNormalizationLayer::getFloatingPointOperationCount() const
 {
-    return 2 * totalConnections();
+    return 2 * getInputCount();
 }
 
 size_t BatchNormalizationLayer::getActivationMemory() const
