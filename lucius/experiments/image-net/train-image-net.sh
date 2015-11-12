@@ -2,7 +2,7 @@
 
 SCRIPT_DIRECTORY="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-CUDA_DEVICES="1"
+CUDA_DEVICES="0"
 INPUT_TRAINING_DATASET="/data/1tb-ssd/image-net-50-2000/training/database.txt"
 INPUT_VALIDATION_DATASET="/data/1tb-ssd/image-net-50-2000/validation/database.txt"
 LOGS="NesterovAcceleratedGradientSolver,BenchmarkImageNet,LabelMatchResultProcessor,InputVisualDataProducer"
@@ -11,7 +11,7 @@ INPUT_WIDTH="224"
 INPUT_HEIGHT="224"
 INPUT_COLORS="3"
 LAYERS="13"
-MINI_BATCH_SIZE="8"
+MINI_BATCH_SIZE="64"
 LAYER_OUTPUT_REDUCTION_FACTOR="1"
 BATCH_NORMALIZATION=1
 EPOCHS="80"

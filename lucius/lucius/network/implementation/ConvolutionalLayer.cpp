@@ -121,8 +121,8 @@ void ConvolutionalLayer::initialize()
     // scale, the range is now [-epsilon, epsilon]
     apply(_weights, _weights, matrix::Multiply(2.0 * epsilon));
 
-    // assign bias to 0.0
-    apply(_bias, _bias, matrix::Fill(0.0));
+    // assign bias to 0.2
+    apply(_bias, _bias, matrix::Fill(0.2));
 }
 
 void ConvolutionalLayer::runForwardImplementation(MatrixVector& activations)
