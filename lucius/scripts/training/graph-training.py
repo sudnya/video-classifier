@@ -174,6 +174,7 @@ class Visualizer:
         self.inputs = arguments["input_file"]
         self.output = arguments["output_file"]
         self.maximumIterations = int(arguments["maximum_iterations"])
+        self.autoScale = arguments["scale"]
 
     def run(self):
         if len(self.inputs) == 0:
@@ -212,7 +213,8 @@ class Visualizer:
             axes.set_position([box.x0, box.y0 + box.height * percent,
                      box.width, box.height * (1.0 - percent)])
 
-            axes.set_ylim(getYLimit(group.getExperiments()))
+            if not self.autoScale:
+                axes.set_ylim(getYLimit(group.getExperiments()))
 
             axes.legend(bbox_to_anchor=(0.0, -.5*percent, 1, 0), loc='upper center',
                 ncol=1, mode="expand", borderaxespad=0., fontsize='x-small')
@@ -250,6 +252,8 @@ def main():
         help = "The output file path for the figure (.png, .pdf, etc).")
     parser.add_argument("-m", "--maximum-iterations", default = 0,
         help = "The maximum number of iterations to draw.")
+    parser.add_argument("--scale", default = False, action="store_true",
+        help = "Choose the y scale automatically.")
 
     arguments = parser.parse_args()
 
