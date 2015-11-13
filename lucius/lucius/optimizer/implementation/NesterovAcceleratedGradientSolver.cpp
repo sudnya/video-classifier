@@ -78,25 +78,29 @@ double NesterovAcceleratedGradientSolver::solve(MatrixVector& inputs,
         }
 
         // evaluate at future point
-        auto futureInputs = apply(apply(*_velocity, matrix::Multiply(_momentum)), inputs, matrix::Add());
+        auto futureInputs = apply(apply(*_velocity, matrix::Multiply(_momentum)),
+            inputs, matrix::Add());
 
         MatrixVector futurePointDerivative;
 
         futurePointCost = callback.computeCostAndGradient(futurePointDerivative, futureInputs);
 
-        double gradNorm = std::sqrt(matrix::dotProduct(futurePointDerivative, futurePointDerivative));
+        double gradNorm = std::sqrt(matrix::dotProduct(futurePointDerivative,
+            futurePointDerivative));
 
         // possibly clip the gradient
-        double scale = gradNorm > _maxGradNorm ? -(_learningRate * _maxGradNorm) / gradNorm : -_learningRate;
+        double scale = gradNorm > _maxGradNorm ?
+            -(_learningRate * _maxGradNorm) / gradNorm :
+            -_learningRate;
 
         // Update parameters
-        apply(inputs, futureInputs, apply(futurePointDerivative, matrix::Multiply(scale)), matrix::Add());
+        apply(inputs, futureInputs, apply(futurePointDerivative,
+            matrix::Multiply(scale)), matrix::Add());
 
         // Update velocity
         auto multipliedMom = apply(*_velocity, matrix::Multiply(_momentum));
         auto scaledFpd = apply(futurePointDerivative, matrix::Multiply(scale));
         apply(*_velocity, multipliedMom, scaledFpd, matrix::Add());
-        //apply(*_velocity, apply(*_velocity, matrix::Multiply(_momentum)), apply(futurePointDerivative, matrix::Multiply(scale)), matrix::Add());
 
         if(coldStart)
         {
