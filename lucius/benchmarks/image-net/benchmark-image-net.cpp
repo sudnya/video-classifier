@@ -173,7 +173,8 @@ static void addClassifier(Model& model, const Parameters& parameters)
 
     if(parameters.layers > 5)
     {
-        inputSize = addPoolingLayer(classifier, inputSize, {2, 2}, parameters.useBatchNormalization);
+        inputSize = addPoolingLayer(classifier, inputSize, {2, 2},
+            parameters.useBatchNormalization);
     }
 
     for(size_t layer = 8; layer < parameters.layers; ++layer)
@@ -183,7 +184,8 @@ static void addClassifier(Model& model, const Parameters& parameters)
 
         if(layer + 1 == parameters.layers || ((layer - 8) % 2 == 1))
         {
-            inputSize = addPoolingLayer(classifier, inputSize, {2, 2}, parameters.useBatchNormalization);
+            inputSize = addPoolingLayer(classifier, inputSize, {2, 2},
+                parameters.useBatchNormalization);
         }
     }
 

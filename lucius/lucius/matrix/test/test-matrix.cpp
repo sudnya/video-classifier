@@ -1359,6 +1359,78 @@ bool test2dConvolutionGradient()
     return reference == computed;
 }
 
+/*
+    Test 2D reduce get positions.
+
+    [ 5 4 8  13 ] reduce-max(2, 2) = [ 1 0 0 1 ]
+    [ 1 0 9  12 ]                    [ 0 0 0 0 ]
+    [ 2 6 10 14 ]                    [ 0 0 0 0 ]
+    [ 7 3 11 15 ]                    [ 1 0 0 1 ]
+
+*/
+bool test2dReduceGetPositions()
+{
+    int n = 1;
+    int c = 1;
+    int h = 4;
+    int w = 4;
+
+    Matrix input(w, h, c, n);
+
+    input(0, 0, 0, 0) = 5;
+    input(1, 0, 0, 0) = 1;
+    input(2, 0, 0, 0) = 2;
+    input(3, 0, 0, 0) = 7;
+    input(0, 1, 0, 0) = 4;
+    input(1, 1, 0, 0) = 0;
+    input(2, 1, 0, 0) = 6;
+    input(3, 1, 0, 0) = 3;
+    input(0, 2, 0, 0) = 8;
+    input(1, 2, 0, 0) = 9;
+    input(2, 2, 0, 0) = 10;
+    input(3, 2, 0, 0) = 11;
+    input(0, 3, 0, 0) = 13;
+    input(1, 3, 0, 0) = 12;
+    input(2, 3, 0, 0) = 14;
+    input(3, 3, 0, 0) = 15;
+
+    Matrix reference(w, h, n, c);
+
+    reference(0, 0, 0, 0) = 1;
+    reference(1, 0, 0, 0) = 0;
+    reference(2, 0, 0, 0) = 0;
+    reference(3, 0, 0, 0) = 0;
+    reference(0, 1, 0, 0) = 0;
+    reference(1, 1, 0, 0) = 1;
+    reference(2, 1, 0, 0) = 0;
+    reference(3, 1, 0, 0) = 0;
+    reference(0, 2, 0, 0) = 0;
+    reference(1, 2, 0, 0) = 0;
+    reference(2, 2, 0, 0) = 1;
+    reference(3, 2, 0, 0) = 0;
+    reference(0, 3, 0, 0) = 0;
+    reference(1, 3, 0, 0) = 0;
+    reference(2, 3, 0, 0) = 0;
+    reference(3, 3, 0, 0) = 1;
+
+    Matrix computed(reference.size(), reference.precision());
+
+    reduceGetPositions(computed, input, {2, 2}, matrix::Max());
+
+    if(reference != computed)
+    {
+        std::cout << " Matrix 2D Reduce Get Positions Test Failed:\n";
+        std::cout << "  result matrix " << computed.toString();
+        std::cout << "  does not match reference matrix " << reference.toString();
+    }
+    else
+    {
+        std::cout << " Matrix 2D Reduce Get Positions Test Passed\n";
+    }
+
+    return reference == computed;
+}
+
 int main(int argc, char** argv)
 {
     //lucius::util::enableAllLogs();
@@ -1395,6 +1467,11 @@ int main(int argc, char** argv)
     passed &= test2dStridedBackwardConvolution();
     passed &= test1dConvolutionGradient();
     passed &= test2dConvolutionGradient();
+
+    passed &= test2dReduceGetPositions();
+
+    passed &= testForwardMaxPooling();
+    passed &= testBackwardMaxPooling();
 
     if(not passed)
     {

@@ -86,7 +86,8 @@ static bool compareSize(matrix::Dimension inputSize, matrix::Dimension expectedS
     return inputSize == expectedSize;
 }
 
-static bool compareCount(matrix::Dimension inputSize, matrix::Dimension expectedSize, size_t inputCount)
+static bool compareCount(matrix::Dimension inputSize,
+    matrix::Dimension expectedSize, size_t inputCount)
 {
     size_t product = 1;
 
@@ -147,6 +148,8 @@ matrix::Matrix Layer::runReverse(MatrixVector& gradients,
     MatrixVector& activations,
     const Matrix& deltas)
 {
+    assert(isTraining());
+
     if(compareCount(activations.back().size(), getOutputSize(), getOutputCount()))
     {
         activations.back() = reshapeActivations(activations.back(), getOutputSize());

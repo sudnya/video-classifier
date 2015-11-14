@@ -52,6 +52,7 @@ public:
         Square,
         SquareAndScale,
         Inverse,
+        CopyRight,
         Nop,
         NopDerivative
     };
@@ -683,6 +684,23 @@ public:
 
 };
 
+class CopyRight : public Operation
+{
+public:
+    CUDA_DECORATOR CopyRight() : Operation(Operation::CopyRight)
+    {
+
+    }
+
+public:
+    template<typename T>
+    CUDA_DECORATOR T operator()(const T& l, const T& r) const
+    {
+        return r;
+    }
+
+};
+
 class Nop : public Operation
 {
 public:
@@ -723,7 +741,7 @@ typedef std::tuple<Add, Subtract, Multiply, Divide, Log, Exp, Pow, Abs, Sqrt, Re
                     Nop, NopDerivative> AllOperations;
 
 typedef std::tuple<Add, Subtract, Multiply, Divide, Maximum, Minimum,
-                   Equal, LessThan, NotEqual> AllBinaryOperations;
+                   Equal, LessThan, NotEqual, CopyRight> AllBinaryOperations;
 
 typedef std::tuple<Add, Subtract, Multiply, Divide, Log, Exp, Pow, Abs, Sqrt, RectifiedLinear,
                    RectifiedLinearDerivative, Sigmoid, SigmoidDerivative, Negate, Maximum,

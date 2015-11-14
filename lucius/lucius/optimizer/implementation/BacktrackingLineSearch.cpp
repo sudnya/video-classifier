@@ -138,7 +138,8 @@ void BacktrackingLineSearch::search(
         step = step * width;
     }
 
-    util::log("BacktrackingLineSearch") << " Updated (step size " << (step) << ", cost " << cost << ", iteration " << iteration << ")\n";
+    util::log("BacktrackingLineSearch") << " Updated (step size " << (step) << ", cost "
+        << cost << ", iteration " << iteration << ")\n";
 }
 
 }
