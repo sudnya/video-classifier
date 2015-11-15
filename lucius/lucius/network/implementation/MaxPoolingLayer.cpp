@@ -12,6 +12,7 @@
 #include <lucius/matrix/interface/Matrix.h>
 #include <lucius/matrix/interface/MatrixVector.h>
 #include <lucius/matrix/interface/MatrixOperations.h>
+#include <lucius/matrix/interface/Operation.h>
 #include <lucius/matrix/interface/FileOperations.h>
 #include <lucius/matrix/interface/PoolingOperations.h>
 #include <lucius/matrix/interface/MatrixTransformations.h>
@@ -66,7 +67,7 @@ MaxPoolingLayer& MaxPoolingLayer::operator=(const MaxPoolingLayer& l)
         return *this;
     }
 
-    _filterSize  = std::move(std::make_unique<matrix::Dimension>(*l._inputSize));
+    _filterSize  = std::move(std::make_unique<matrix::Dimension>(*l._filterSize));
 
     return *this;
 }
@@ -110,7 +111,7 @@ void MaxPoolingLayer::runForwardImplementation(MatrixVector& activations)
     }
 
     auto outputActivations = unfoldTime(getActivationFunction()->apply(
-        forwardMaxPooling(activations, *_filterSize)), activations.back().size());
+        forwardMaxPooling(inputActivations, *_filterSize)), activations.back().size());
 
     if(util::isLogEnabled("MaxPoolingLayer::Detail"))
     {
@@ -137,24 +138,29 @@ Matrix MaxPoolingLayer::runReverseImplementation(MatrixVector& gradients,
         foldTime(deltasWithTime), matrix::Multiply());
 
     auto inputDeltas = backwardMaxPooling(inputActivations, outputActivations,
-        deltas, *_filterShape);
+        deltas, *_filterSize);
 
     return unfoldTime(inputDeltas, deltasWithTime.size());
 }
 
 MatrixVector& MaxPoolingLayer::weights()
 {
-    return *_parameters;
+    static MatrixVector w;
+    return w;
 }
 
 const MatrixVector& MaxPoolingLayer::weights() const
 {
-    return *_parameters;
+    static MatrixVector w;
+
+    return w;
 }
 
 const matrix::Precision& MaxPoolingLayer::precision() const
 {
-    return _gamma.precision();
+    static matrix::Precision p;
+
+    return p;
 }
 
 double MaxPoolingLayer::computeWeightCost() const
@@ -164,7 +170,7 @@ double MaxPoolingLayer::computeWeightCost() const
 
 Dimension MaxPoolingLayer::getInputSize() const
 {
-    return *_inputSize;
+    return {(*_filterSize)[0], (*_filterSize)[1], 1, 1};
 }
 
 Dimension MaxPoolingLayer::getOutputSize() const
@@ -184,7 +190,7 @@ size_t MaxPoolingLayer::getOutputCount() const
 
 size_t MaxPoolingLayer::totalNeurons() const
 {
-    return _gamma.elements();
+    return 0;
 }
 
 size_t MaxPoolingLayer::totalConnections() const

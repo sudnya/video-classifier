@@ -415,7 +415,7 @@ void forwardConvolution(Matrix& result, const Matrix& input, const Matrix& filte
 {
     if(CudnnLibrary::loaded())
     {
-        CudnnLibrary::cudnnConvolutionDescriptor_t convolutionDescriptor;
+        cudnnConvolutionDescriptor_t convolutionDescriptor;
 
         CudnnLibrary::cudnnCreateConvolutionDescriptor(&convolutionDescriptor);
 
@@ -446,7 +446,7 @@ void forwardConvolution(Matrix& result, const Matrix& input, const Matrix& filte
             filterDescriptor.descriptor(),     // filterDesc,
             filterDescriptor.data(),           //*filterData,
             convolutionDescriptor,             // convDesc,
-            workspace.algorithm(),             // algo,
+            static_cast<CudnnLibrary::cudnnConvolutionFwdAlgo_t>(workspace.algorithm()), // algo,
             workspace.data(),                  //*workSpace,
             workspace.size(),                  // workSpaceSizeInBytes,
             beta.data(),                       //*beta,
@@ -827,7 +827,7 @@ void reverseConvolutionDeltas(Matrix& resultDeltas, const Matrix& filter,
 {
     if(CudnnLibrary::loaded())
     {
-        CudnnLibrary::cudnnConvolutionDescriptor_t convolutionDescriptor;
+        cudnnConvolutionDescriptor_t convolutionDescriptor;
 
         CudnnLibrary::cudnnCreateConvolutionDescriptor(&convolutionDescriptor);
 
@@ -1190,7 +1190,7 @@ void reverseConvolutionGradients(Matrix& gradients, const Matrix& inputs, const 
 {
     if(CudnnLibrary::loaded())
     {
-        CudnnLibrary::cudnnConvolutionDescriptor_t convolutionDescriptor;
+        cudnnConvolutionDescriptor_t convolutionDescriptor;
 
         CudnnLibrary::cudnnCreateConvolutionDescriptor(&convolutionDescriptor);
 
