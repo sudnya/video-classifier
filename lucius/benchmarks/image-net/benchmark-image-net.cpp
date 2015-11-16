@@ -115,6 +115,7 @@ static Dimension addPoolingLayer(NeuralNetwork& classifier, const Dimension& inp
 
     auto size = classifier.back()->getOutputSize();
 
+    /*
     classifier.back()->setActivationFunction(
         ActivationFunctionFactory::create("NullActivationFunction"));
 
@@ -123,7 +124,7 @@ static Dimension addPoolingLayer(NeuralNetwork& classifier, const Dimension& inp
     {
         classifier.addLayer(std::make_unique<BatchNormalizationLayer>(size));
     }
-
+    */
     return size;
 }
 
