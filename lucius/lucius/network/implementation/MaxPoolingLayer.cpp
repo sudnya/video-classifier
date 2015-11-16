@@ -83,28 +83,9 @@ void MaxPoolingLayer::initialize()
 
 }
 
-static Matrix foldTime(const Matrix& input)
-{
-    auto size = input.size();
-
-    size_t batch = 1;
-
-    for(size_t i = 1; i < size.size(); ++i)
-    {
-        batch *= size[i];
-    }
-
-    return reshape(input, {size[0], batch});
-}
-
-static Matrix unfoldTime(const Matrix& result, const Dimension& inputSize)
-{
-    return reshape(result, inputSize);
-}
-
 void MaxPoolingLayer::runForwardImplementation(MatrixVector& activations)
 {
-    auto inputActivations = reshape(foldTime(activations.back()), getInputSize());
+    auto inputActivations = activations.back();
 
     util::log("MaxPoolingLayer") << " Running forward propagation of matrix "
         << inputActivations.shapeString() << " through max pooling: "
@@ -116,8 +97,8 @@ void MaxPoolingLayer::runForwardImplementation(MatrixVector& activations)
             << inputActivations.debugString();
     }
 
-    auto outputActivations = unfoldTime(getActivationFunction()->apply(
-        forwardMaxPooling(inputActivations, *_filterSize)), activations.back().size());
+    auto outputActivations = getActivationFunction()->apply(
+        forwardMaxPooling(inputActivations, *_filterSize));
 
     if(util::isLogEnabled("MaxPoolingLayer::Detail"))
     {
@@ -133,20 +114,20 @@ Matrix MaxPoolingLayer::runReverseImplementation(MatrixVector& gradients,
     const Matrix& deltasWithTime)
 {
     // Get the output activations
-    auto outputActivations = reshape(foldTime(activations.back()), getOutputSize());
+    auto outputActivations = activations.back();
 
     // deallocate memory for the output activations
     activations.pop_back();
 
     // Get the input activations and deltas
-    auto inputActivations = reshape(foldTime(activations.back()), getInputSize());
+    auto inputActivations = activations.back();
     auto deltas = apply(getActivationFunction()->applyDerivative(outputActivations),
-        reshape(foldTime(deltasWithTime), getOutputSize()), matrix::Multiply());
+        deltasWithTime, matrix::Multiply());
 
     auto inputDeltas = backwardMaxPooling(inputActivations, outputActivations,
         deltas, *_filterSize);
 
-    return unfoldTime(inputDeltas, deltasWithTime.size());
+    return inputDeltas;
 }
 
 MatrixVector& MaxPoolingLayer::weights()
