@@ -58,6 +58,8 @@ static void cudnnForwardMaxPooling(Matrix& result,
 
 static Dimension getForwardMaxPoolingSize(const Dimension& inputSize, const Dimension& poolingSize)
 {
+    auto resultSize = inputSize;
+
     if(CudnnLibrary::loaded())
     {
         int n = 0;
@@ -78,17 +80,19 @@ static Dimension getForwardMaxPoolingSize(const Dimension& inputSize, const Dime
             &h,
             &w);
 
-        return Dimension(w, h, c, n);
+        resultSize[0] = w;
+        resultSize[1] = h;
+        resultSize[2] = c;
+        resultSize[3] = n;
     }
     else
     {
-        auto resultSize = inputSize;
-
         resultSize[0] /= poolingSize[0];
         resultSize[1] /= poolingSize[1];
 
-        return resultSize;
     }
+
+    return resultSize;
 }
 
 Matrix forwardMaxPooling(const Matrix& input, const Dimension& poolingSize)
