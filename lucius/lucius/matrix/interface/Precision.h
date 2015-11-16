@@ -2,6 +2,8 @@
 
 // Standard Library Includes
 #include <tuple>
+#include <memory>
+#include <string>
 
 namespace lucius
 {
@@ -28,6 +30,12 @@ public:
 
 public:
     size_t size() const;
+
+public:
+    std::string toString() const;
+
+public:
+    static std::unique_ptr<Precision> fromString(const std::string& name);
 
 public:
     bool operator==(const Precision&) const;

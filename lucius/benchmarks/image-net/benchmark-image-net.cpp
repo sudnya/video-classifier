@@ -20,6 +20,7 @@
 #include <lucius/network/interface/NeuralNetwork.h>
 #include <lucius/network/interface/FeedForwardLayer.h>
 #include <lucius/network/interface/ConvolutionalLayer.h>
+#include <lucius/network/interface/MaxPoolingLayer.h>
 #include <lucius/network/interface/BatchNormalizationLayer.h>
 #include <lucius/network/interface/CostFunctionFactory.h>
 #include <lucius/network/interface/ActivationFunctionFactory.h>
@@ -41,6 +42,7 @@ typedef lucius::video::Image Image;
 typedef lucius::network::NeuralNetwork NeuralNetwork;
 typedef lucius::network::FeedForwardLayer FeedForwardLayer;
 typedef lucius::network::ConvolutionalLayer ConvolutionalLayer;
+typedef lucius::network::MaxPoolingLayer MaxPoolingLayer;
 typedef lucius::network::BatchNormalizationLayer BatchNormalizationLayer;
 typedef lucius::network::ActivationFunctionFactory ActivationFunctionFactory;
 typedef lucius::video::ImageVector ImageVector;
@@ -108,27 +110,10 @@ static Dimension addConvolutionalLayer(NeuralNetwork& classifier,
 static Dimension addPoolingLayer(NeuralNetwork& classifier, const Dimension& inputSize,
     const Dimension& stride, bool useBatchNormalization)
 {
-    size_t filters = inputSize[2];
+    // max pooling layer
+    classifier.addLayer(std::make_unique<MaxPoolingLayer>(inputSize, stride));
 
-    Dimension poolingSize(inputSize[0],
-        inputSize[1] * inputSize[2],
-        1, // color channels
-        1, // mini batch
-        1 // time
-        );
-
-    // mean pooling layer
-    classifier.addLayer(std::make_unique<ConvolutionalLayer>(
-        poolingSize,
-        Dimension(stride[0], stride[1], 1, 1),
-        stride, Dimension(0, 0)));
-
-    auto size = Dimension(classifier.back()->getOutputSize()[0],
-        classifier.back()->getOutputSize()[1] / filters,
-        filters, // color channels
-        1, // mini batch
-        1 // time
-        );
+    auto size = classifier.back()->getOutputSize();
 
     classifier.back()->setActivationFunction(
         ActivationFunctionFactory::create("NullActivationFunction"));

@@ -22,8 +22,9 @@ class MaxPoolingLayer : public Layer
 {
 public:
     MaxPoolingLayer();
-    MaxPoolingLayer(const Dimension& size);
-    MaxPoolingLayer(const Dimension& size, const matrix::Precision&);
+    MaxPoolingLayer(const Dimension& inputSize, const Dimension& filterSize);
+    MaxPoolingLayer(const Dimension& inputSize, const Dimension& filterSize,
+        const matrix::Precision&);
     virtual ~MaxPoolingLayer();
 
 public:
@@ -77,7 +78,9 @@ public:
     virtual std::string getTypeName() const;
 
 private:
+    std::unique_ptr<matrix::Dimension> _inputSize;
     std::unique_ptr<matrix::Dimension> _filterSize;
+    std::unique_ptr<matrix::Precision> _precision;
 
 };
 

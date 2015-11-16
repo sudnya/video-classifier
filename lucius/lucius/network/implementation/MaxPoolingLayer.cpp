@@ -31,20 +31,22 @@ typedef matrix::Dimension    Dimension;
 typedef matrix::MatrixVector MatrixVector;
 
 MaxPoolingLayer::MaxPoolingLayer()
-: MaxPoolingLayer({1, 1})
+: MaxPoolingLayer({1, 1, 1, 1}, {1, 1})
 {
 
 }
 
-MaxPoolingLayer::MaxPoolingLayer(const Dimension& size)
-: MaxPoolingLayer(size, matrix::Precision::getDefaultPrecision())
+MaxPoolingLayer::MaxPoolingLayer(const Dimension& inputSize, const Dimension& filterSize)
+: MaxPoolingLayer(inputSize, filterSize, matrix::Precision::getDefaultPrecision())
 {
 
 }
 
-MaxPoolingLayer::MaxPoolingLayer(const Dimension& size,
+MaxPoolingLayer::MaxPoolingLayer(const Dimension& inputSize, const Dimension& filterSize,
     const matrix::Precision& precision)
-: _filterSize(std::make_unique<matrix::Dimension>(size))
+: _inputSize(std::make_unique<matrix::Dimension>(inputSize)),
+  _filterSize(std::make_unique<matrix::Dimension>(filterSize)),
+  _precision(std::make_unique<matrix::Precision>(precision))
 {
 
 }
@@ -55,7 +57,9 @@ MaxPoolingLayer::~MaxPoolingLayer()
 }
 
 MaxPoolingLayer::MaxPoolingLayer(const MaxPoolingLayer& l)
-: _filterSize(std::make_unique<matrix::Dimension>(*l._filterSize))
+: _inputSize(std::make_unique<matrix::Dimension>(*l._inputSize)),
+  _filterSize(std::make_unique<matrix::Dimension>(*l._filterSize)),
+  _precision(std::make_unique<matrix::Precision>(*l._precision))
 {
 
 }
@@ -67,7 +71,9 @@ MaxPoolingLayer& MaxPoolingLayer::operator=(const MaxPoolingLayer& l)
         return *this;
     }
 
-    _filterSize  = std::move(std::make_unique<matrix::Dimension>(*l._filterSize));
+    _inputSize  = std::move(std::make_unique<matrix::Dimension>(*l._inputSize));
+    _filterSize = std::move(std::make_unique<matrix::Dimension>(*l._filterSize));
+    _precision  = std::move(std::make_unique<matrix::Precision>(*l._precision));
 
     return *this;
 }
@@ -158,9 +164,7 @@ const MatrixVector& MaxPoolingLayer::weights() const
 
 const matrix::Precision& MaxPoolingLayer::precision() const
 {
-    static matrix::Precision p;
-
-    return p;
+    return *_precision;
 }
 
 double MaxPoolingLayer::computeWeightCost() const
@@ -170,12 +174,17 @@ double MaxPoolingLayer::computeWeightCost() const
 
 Dimension MaxPoolingLayer::getInputSize() const
 {
-    return {(*_filterSize)[0], (*_filterSize)[1], 1, 1};
+    return *_inputSize;
 }
 
 Dimension MaxPoolingLayer::getOutputSize() const
 {
-    return getInputSize();
+    auto size = getInputSize();
+
+    size[0] /= (*_filterSize)[0];
+    size[1] /= (*_filterSize)[1];
+
+    return size;
 }
 
 size_t MaxPoolingLayer::getInputCount() const
@@ -185,7 +194,7 @@ size_t MaxPoolingLayer::getInputCount() const
 
 size_t MaxPoolingLayer::getOutputCount() const
 {
-    return getInputCount();
+    return getOutputSize().product();
 }
 
 size_t MaxPoolingLayer::totalNeurons() const
@@ -212,6 +221,8 @@ void MaxPoolingLayer::save(util::OutputTarArchive& archive,
     util::PropertyTree& properties) const
 {
     properties["filter-size"] = _filterSize->toString();
+    properties["input-size"]  = _inputSize->toString();
+    properties["precision"]   = _precision->toString();
 
     saveLayer(archive, properties);
 }
@@ -220,6 +231,8 @@ void MaxPoolingLayer::load(util::InputTarArchive& archive,
     const util::PropertyTree& properties)
 {
     *_filterSize = Dimension::fromString(properties["filter-size"]);
+    *_inputSize  = Dimension::fromString(properties["input-size"]);
+    _precision   = std::move(matrix::Precision::fromString(properties["precision"]));
 
     loadLayer(archive, properties);
 }
