@@ -97,8 +97,8 @@ void MaxPoolingLayer::runForwardImplementation(MatrixVector& activations)
             << inputActivations.debugString();
     }
 
-    auto outputActivations = getActivationFunction()->apply(
-        forwardMaxPooling(inputActivations, *_filterSize));
+    auto outputActivations = reshape(getActivationFunction()->apply(
+        forwardMaxPooling(inputActivations, *_filterSize)), getOutputSize());
 
     if(util::isLogEnabled("MaxPoolingLayer::Detail"))
     {
