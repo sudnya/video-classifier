@@ -76,7 +76,20 @@ CudnnTensorDescriptor::CudnnTensorDescriptor(const Matrix& tensor)
         _tensor->size()[1],        // height of input section
         _tensor->size()[0]         // width of input section
     );
+}
 
+CudnnTensorDescriptor::CudnnTensorDescriptor(const Dimension& size)
+{
+    CudnnLibrary::cudnnCreateTensorDescriptor(&_descriptor);
+
+    CudnnLibrary::cudnnSetTensor4dDescriptor(_descriptor,
+        CudnnLibrary::CUDNN_TENSOR_NCHW,
+        CudnnLibrary::CUDNN_DATA_FLOAT, // image data type
+        size[3],        // number of inputs (batch size)
+        size[2],        // number of input feature maps
+        size[1],        // height of input section
+        size[0]         // width of input section
+    );
 }
 
 CudnnTensorDescriptor::~CudnnTensorDescriptor()

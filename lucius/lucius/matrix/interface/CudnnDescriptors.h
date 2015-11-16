@@ -51,6 +51,7 @@ class CudnnTensorDescriptor
 {
 public:
     CudnnTensorDescriptor(const Matrix& tensor);
+    CudnnTensorDescriptor(const Dimension& size);
     ~CudnnTensorDescriptor();
 
 public:
