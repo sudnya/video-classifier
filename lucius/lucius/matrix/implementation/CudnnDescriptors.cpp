@@ -107,6 +107,11 @@ void* CudnnTensorDescriptor::data()
     return _tensor->data();
 }
 
+size_t CudnnTensorDescriptor::bytes() const
+{
+    return _tensor->elements() * _tensor->precision().size();
+}
+
 CudnnScalar::CudnnScalar(double value, const Precision& p)
 : _doubleValue(value), _floatValue(value), _precision(std::make_unique<Precision>(p))
 {
@@ -141,8 +146,8 @@ CudnnForwardWorkspace::CudnnForwardWorkspace(const CudnnTensorDescriptor& source
         filter.descriptor(),
         convolutionDescriptor,
         result.descriptor(),
-        CudnnLibrary::CUDNN_CONVOLUTION_FWD_PREFER_FASTEST, // TODO: make this a knob
-        0,
+        CudnnLibrary::CUDNN_CONVOLUTION_FWD_SPECIFY_WORKSPACE_LIMIT, // TODO: make this a knob
+        source.bytes(),
         &algorithm);
 
     _algorithm = algorithm;

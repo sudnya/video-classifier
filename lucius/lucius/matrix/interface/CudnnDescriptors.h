@@ -57,6 +57,7 @@ public:
 public:
     cudnnTensorDescriptor_t descriptor() const;
     void* data();
+    size_t bytes() const;
 
 private:
     cudnnTensorDescriptor_t _descriptor;
