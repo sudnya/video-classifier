@@ -104,7 +104,7 @@ static Matrix unfoldTime(const Matrix& result, const Dimension& inputSize)
 
 void MaxPoolingLayer::runForwardImplementation(MatrixVector& activations)
 {
-    auto inputActivations = foldTime(activations.back());
+    auto inputActivations = reshape(foldTime(activations.back()), getInputSize());
 
     util::log("MaxPoolingLayer") << " Running forward propagation of matrix "
         << inputActivations.shapeString() << " through max pooling: "
@@ -133,15 +133,15 @@ Matrix MaxPoolingLayer::runReverseImplementation(MatrixVector& gradients,
     const Matrix& deltasWithTime)
 {
     // Get the output activations
-    auto outputActivations = foldTime(activations.back());
+    auto outputActivations = reshape(foldTime(activations.back()), getOutputSize());
 
     // deallocate memory for the output activations
     activations.pop_back();
 
     // Get the input activations and deltas
-    auto inputActivations = foldTime(activations.back());
+    auto inputActivations = reshape(foldTime(activations.back()), getInputSize());
     auto deltas = apply(getActivationFunction()->applyDerivative(outputActivations),
-        foldTime(deltasWithTime), matrix::Multiply());
+        reshape(foldTime(deltasWithTime), getOutputSize()), matrix::Multiply());
 
     auto inputDeltas = backwardMaxPooling(inputActivations, outputActivations,
         deltas, *_filterSize);
