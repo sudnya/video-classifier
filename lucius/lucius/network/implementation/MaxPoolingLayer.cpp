@@ -83,6 +83,18 @@ void MaxPoolingLayer::initialize()
 
 }
 
+static Matrix setupShape(const Matrix& output, const Dimension& outputSize)
+{
+    Dimension size = output.size();
+
+    while(size.size() < outputSize.size())
+    {
+        size.push_back(1);
+    }
+
+    return reshape(output, size);
+}
+
 void MaxPoolingLayer::runForwardImplementation(MatrixVector& activations)
 {
     auto inputActivations = activations.back();
@@ -97,7 +109,7 @@ void MaxPoolingLayer::runForwardImplementation(MatrixVector& activations)
             << inputActivations.debugString();
     }
 
-    auto outputActivations = reshape(getActivationFunction()->apply(
+    auto outputActivations = setupShape(getActivationFunction()->apply(
         forwardMaxPooling(inputActivations, *_filterSize)), getOutputSize());
 
     if(util::isLogEnabled("MaxPoolingLayer::Detail"))
