@@ -7,6 +7,21 @@ matplotlib.use('Agg')
 
 from matplotlib import pyplot
 
+def lower_bound(array, value):
+    index = 0
+
+    for i in range(len(array)):
+        if array[i] > value:
+            break
+
+        index = i
+
+        if array[i] == value:
+            break
+
+    return index
+
+
 class ExperimentData:
     def __init__(self, name):
         self.name                 = name
@@ -16,8 +31,52 @@ class ExperimentData:
         self.validationIterations = None
 
     def resize(self, maximumIterations):
+        maximumIterations = lower_bound(self.trainingIterations, maximumIterations)
+
+        print maximumIterations, len(self.trainingIterations), self.trainingIterations[0:10]
+
         if len(self.trainingError) > maximumIterations:
             self.trainingError = self.trainingError[0:maximumIterations]
+        if len(self.trainingIterations) > maximumIterations:
+            self.trainingIterations = self.trainingIterations[0:maximumIterations]
+
+    def setTrainingError(self, data):
+        self.trainingError, self.trainingIterations = data
+
+        self.normalizeTrainingError()
+
+
+    def normalizeTrainingError(self):
+
+        if len(self.trainingError) > len(self.trainingIterations):
+            self.trainingError = self.trainingError[0:len(self.trainingIterations)]
+
+        if len(self.trainingIterations) > len(self.trainingError):
+            self.trainingIterations = self.trainingIterations[0:len(self.trainingError)]
+
+        if len(self.trainingIterations) == 0:
+            return
+
+        epochLength = self.trainingIterations[0]
+
+        previousSampleCount = self.trainingIterations[0]
+        increment = 0
+        maxvalue = 0
+
+        self.trainingIterations[0] = 0
+
+        for i in range(1, len(self.trainingIterations)):
+            sampleCount = self.trainingIterations[i]
+
+            if sampleCount > previousSampleCount:
+                increment += epochLength
+                epochLength = sampleCount
+
+            previousSampleCount = sampleCount
+
+            samplesSoFar = epochLength - sampleCount
+            self.trainingIterations[i] = samplesSoFar + increment
+
 
 class ExperimentGroup:
     def __init__(self, name):
@@ -39,12 +98,6 @@ class ExperimentGroup:
     def resize(self, size):
         for experiment in self.getExperiments():
             experiment.resize(size)
-
-    def setTrainingErrror(self, data):
-        self.trainingErrror, self.trainingIterations = data
-
-        if len(self.trainingError) > len(self.trainingIterations):
-            self.trainingError = self.trainingError[0:trainingIterations]
 
 
 
@@ -102,8 +155,15 @@ def loadTrainingErrorFromLogFile(path):
             if cost != None:
                 data.append(cost)
 
-            if iterations != None:
-                iterations.append(iteration)
+            if iteration != None:
+                if len(data) == 0:
+                    if len(iterations) == 0:
+                        iterations.append(iteration)
+                    iterations[0] = iteration
+                else:
+                    iterations.append(iteration)
+
+    #print path, data[0:10], iterations[0:10]
 
     return data, iterations
 
@@ -198,7 +258,8 @@ def getYLimit(experiments):
     limit = 0
 
     for experiment in experiments:
-        limit = max(limit, max(experiment.trainingError))
+        if len(experiment.trainingError) > 0:
+            limit = max(limit, max(experiment.trainingError))
 
     return [0, limit]
 
@@ -237,7 +298,7 @@ class Visualizer:
 
             for experiment in group.getExperiments():
                 experimentLabel = formatNameForLabel(experiment.name)
-                axes.plot(experiment.trainingErrorIterations, experiment.trainingError,
+                axes.plot(experiment.trainingIterations, experiment.trainingError,
                     label=experimentLabel)
 
             percent = max(0.1, min(0.07 * group.size(), .7))
