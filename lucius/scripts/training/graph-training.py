@@ -40,6 +40,13 @@ class ExperimentGroup:
         for experiment in self.getExperiments():
             experiment.resize(size)
 
+    def setTrainingErrror(self, data):
+        self.trainingErrror, self.trainingIterations = data
+
+        if len(self.trainingError) > len(self.trainingIterations):
+            self.trainingError = self.trainingError[0:trainingIterations]
+
+
 
 def parseCost(line):
     position = line.find("running cost sum")
@@ -57,6 +64,27 @@ def parseCost(line):
 
     try:
         result = float(resultString)
+    except ValueError:
+        return None
+
+    return result
+
+def parseIteration(line):
+    position = line.find(" image frames, ")
+    if position == -1:
+        return None
+
+    remainder = line[position + len(" image frames, "):]
+
+    if len(remainder) == 0:
+        return None
+
+    words = remainder.split()
+
+    resultString = words[0].strip()
+
+    try:
+        result = int(resultString)
     except ValueError:
         return None
 
@@ -108,8 +136,7 @@ def loadExperiment(path):
 
     experimentData = ExperimentData(name)
 
-    experimentData.trainingError,experimentData.trainingErrorIterations = \
-        loadTrainingErrorFromLogFile(logPath)
+    experimentData.setTrainingError(loadTrainingErrorFromLogFile(logPath))
 
     if os.path.exists(validationPath):
         experimentData.validationError = loadValidationError(validationPath)
