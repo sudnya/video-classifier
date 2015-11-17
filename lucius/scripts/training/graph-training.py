@@ -9,9 +9,11 @@ from matplotlib import pyplot
 
 class ExperimentData:
     def __init__(self, name):
-        self.name            = name
-        self.trainingError   = None
-        self.validationError = None
+        self.name                 = name
+        self.trainingError        = None
+        self.trainingIterations   = None
+        self.validationError      = None
+        self.validationIterations = None
 
     def resize(self, maximumIterations):
         if len(self.trainingError) > maximumIterations:
@@ -62,17 +64,20 @@ def parseCost(line):
 
 
 def loadTrainingErrorFromLogFile(path):
-    data = []
+    data       = []
+    iterations = []
     with open(path, 'r') as log:
         for line in log:
-            cost = parseCost(line)
+            cost      = parseCost(line)
+            iteration = parseIteration(line)
 
-            if cost == None:
-                continue
+            if cost != None:
+                data.append(cost)
 
-            data.append(cost)
+            if iterations != None:
+                iterations.append(iteration)
 
-    return data
+    return data, iterations
 
 def loadValidationError(path):
     return None
@@ -103,7 +108,8 @@ def loadExperiment(path):
 
     experimentData = ExperimentData(name)
 
-    experimentData.trainingError = loadTrainingErrorFromLogFile(logPath)
+    experimentData.trainingError,experimentData.trainingErrorIterations = \
+        loadTrainingErrorFromLogFile(logPath)
 
     if os.path.exists(validationPath):
         experimentData.validationError = loadValidationError(validationPath)
@@ -204,7 +210,7 @@ class Visualizer:
 
             for experiment in group.getExperiments():
                 experimentLabel = formatNameForLabel(experiment.name)
-                axes.plot(range(len(experiment.trainingError)), experiment.trainingError,
+                axes.plot(experiment.trainingErrorIterations, experiment.trainingError,
                     label=experimentLabel)
 
             percent = max(0.1, min(0.07 * group.size(), .7))
