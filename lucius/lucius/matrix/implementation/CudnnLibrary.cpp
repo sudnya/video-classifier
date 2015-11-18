@@ -180,11 +180,91 @@ void CudnnLibrary::cudnnDestroyConvolutionDescriptor(cudnnConvolutionDescriptor_
 
     if(status != CUDNN_STATUS_SUCCESS)
     {
-        throw std::runtime_error("cudnnDestroyConvolutionDescriptor failed: " + _interface.getErrorString(status));
+        throw std::runtime_error("cudnnDestroyConvolutionDescriptor failed: " +
+            _interface.getErrorString(status));
     }
 
 }
 
+void CudnnLibrary::cudnnCreatePoolingDescriptor(cudnnPoolingDescriptor_t* poolingDesc)
+{
+    _check();
+
+    auto status = (*_interface.cudnnCreatePoolingDescriptor)(poolingDesc);
+
+    if(status != CUDNN_STATUS_SUCCESS)
+    {
+        throw std::runtime_error("cudnnCreatePoolingDescriptor failed: " +
+            _interface.getErrorString(status));
+    }
+}
+
+void CudnnLibrary::cudnnSetPooling2dDescriptor(cudnnPoolingDescriptor_t poolingDesc,
+                                                    cudnnPoolingMode_t mode,
+                                                    int windowHeight,
+                                                    int windowWidth,
+                                                    int verticalPadding,
+                                                    int horizontalPadding,
+                                                    int verticalStride,
+                                                    int horizontalStride
+                                               )
+{
+    _check();
+
+    auto status = (*_interface.cudnnSetPooling2dDescriptor)(
+        poolingDesc,
+        mode,
+        windowHeight,
+        windowWidth,
+        verticalPadding,
+        horizontalPadding,
+        verticalStride,
+        horizontalStride
+        );
+
+    if(status != CUDNN_STATUS_SUCCESS)
+    {
+        throw std::runtime_error("cudnnSetPooling2dDescriptor failed: " +
+            _interface.getErrorString(status));
+    }
+}
+
+void CudnnLibrary::cudnnDestroyPoolingDescriptor(cudnnPoolingDescriptor_t poolingDesc)
+{
+    _check();
+
+    auto status = (*_interface.cudnnDestroyPoolingDescriptor)(poolingDesc);
+
+    if(status != CUDNN_STATUS_SUCCESS)
+    {
+        throw std::runtime_error("cudnnDestroyPoolingDescriptor failed: " +
+            _interface.getErrorString(status));
+    }
+}
+
+void CudnnLibrary::cudnnGetPooling2dForwardOutputDim(const cudnnPoolingDescriptor_t poolingDesc,
+                                             const cudnnTensorDescriptor_t inputTensorDesc,
+                                             int* outN,
+                                             int* outC,
+                                             int* outH,
+                                             int* outW)
+{
+    _check();
+
+    auto status = (*_interface.cudnnGetPooling2dForwardOutputDim)(poolingDesc,
+        inputTensorDesc,
+        outN,
+        outC,
+        outH,
+        outW);
+
+    if(status != CUDNN_STATUS_SUCCESS)
+    {
+        throw std::runtime_error("cudnnGetPooling2dForwardOutputDim failed: " +
+            _interface.getErrorString(status));
+    }
+
+}
 
 void CudnnLibrary::cudnnGetConvolutionForwardAlgorithm(const cudnnTensorDescriptor_t      srcDesc,
                                             const cudnnFilterDescriptor_t      filterDesc,
@@ -196,17 +276,19 @@ void CudnnLibrary::cudnnGetConvolutionForwardAlgorithm(const cudnnTensorDescript
 {
     _check();
 
-    auto status = (*_interface.cudnnGetConvolutionForwardAlgorithm)(_interface.getHandle(), srcDesc, filterDesc, convDesc,
+    auto status = (*_interface.cudnnGetConvolutionForwardAlgorithm)(_interface.getHandle(),
+        srcDesc, filterDesc, convDesc,
         destDesc, preference, memoryLimitInbytes, algo);
 
     if(status != CUDNN_STATUS_SUCCESS)
     {
-        throw std::runtime_error("cudnnGetConvolutionForwardAlgorithm failed: " + _interface.getErrorString(status));
+        throw std::runtime_error("cudnnGetConvolutionForwardAlgorithm failed: " +
+            _interface.getErrorString(status));
     }
 
 }
 
-void CudnnLibrary::cudnnGetConvolutionForwardWorkspaceSize(const cudnnTensorDescriptor_t      srcDesc,
+void CudnnLibrary::cudnnGetConvolutionForwardWorkspaceSize(const cudnnTensorDescriptor_t srcDesc,
                                                 const cudnnFilterDescriptor_t      filterDesc,
                                                 const cudnnConvolutionDescriptor_t convDesc,
                                                 const cudnnTensorDescriptor_t      destDesc,
@@ -220,13 +302,14 @@ void CudnnLibrary::cudnnGetConvolutionForwardWorkspaceSize(const cudnnTensorDesc
 
     if(status != CUDNN_STATUS_SUCCESS)
     {
-        throw std::runtime_error("cudnnGetConvolutionForwardWorkspaceSize failed: " + _interface.getErrorString(status));
+        throw std::runtime_error("cudnnGetConvolutionForwardWorkspaceSize failed: " +
+            _interface.getErrorString(status));
     }
 
 }
 
 
-void CudnnLibrary::cudnnConvolutionForward(const void*                        alpha,
+void CudnnLibrary::cudnnConvolutionForward(const void* alpha,
                                 const cudnnTensorDescriptor_t      srcDesc,
                                 const void*                        srcData,
                                 const cudnnFilterDescriptor_t      filterDesc,
@@ -247,7 +330,8 @@ void CudnnLibrary::cudnnConvolutionForward(const void*                        al
 
     if(status != CUDNN_STATUS_SUCCESS)
     {
-        throw std::runtime_error("cudnnConvolutionForward failed: " + _interface.getErrorString(status));
+        throw std::runtime_error("cudnnConvolutionForward failed: " +
+            _interface.getErrorString(status));
     }
 }
 
@@ -291,7 +375,67 @@ void CudnnLibrary::cudnnConvolutionBackwardFilter(const void*      alpha,
 
     if(status != CUDNN_STATUS_SUCCESS)
     {
-        throw std::runtime_error("cudnnConvolutionBackwardData failed: " + _interface.getErrorString(status));
+        throw std::runtime_error("cudnnConvolutionBackwardData failed: " +
+            _interface.getErrorString(status));
+    }
+}
+
+void CudnnLibrary::cudnnPoolingForward(const cudnnPoolingDescriptor_t   poolingDesc,
+                                       const void*                      alpha,
+                                       const cudnnTensorDescriptor_t    srcDesc,
+                                       const void*                      srcData,
+                                       const void*                      beta,
+                                       const cudnnTensorDescriptor_t    destDesc,
+                                       void*                            destData
+                                             )
+{
+    _check();
+
+    auto status = (*_interface.cudnnPoolingForward)(_interface.getHandle(),
+        poolingDesc,
+        alpha, srcDesc, srcData,
+        beta, destDesc, destData);
+
+    if(status != CUDNN_STATUS_SUCCESS)
+    {
+        throw std::runtime_error("cudnnPoolingForward failed: " +
+            _interface.getErrorString(status));
+    }
+}
+
+void CudnnLibrary::cudnnPoolingBackward(const cudnnPoolingDescriptor_t  poolingDesc,
+                                        const void*                     alpha,
+                                        const cudnnTensorDescriptor_t   srcDesc,
+                                        const void*                     srcData,
+                                        const cudnnTensorDescriptor_t   srcDiffDesc,
+                                        const void*                     srcDiffData,
+                                        const cudnnTensorDescriptor_t   destDesc,
+                                        const void*                     destData,
+                                        const void*                     beta,
+                                        const cudnnTensorDescriptor_t   destDiffDesc,
+                                        void*                           destDiffData
+                                              )
+{
+    _check();
+
+    auto status = (*_interface.cudnnPoolingBackward)(_interface.getHandle(),
+        poolingDesc,
+        alpha,
+        srcDesc,
+        srcData,
+        srcDiffDesc,
+        srcDiffData,
+        destDesc,
+        destData,
+        beta,
+        destDiffDesc,
+        destDiffData
+        );
+
+    if(status != CUDNN_STATUS_SUCCESS)
+    {
+        throw std::runtime_error("cudnnPoolingBackward failed: " +
+            _interface.getErrorString(status));
     }
 }
 
@@ -373,6 +517,11 @@ void CudnnLibrary::Interface::load()
         DynLink(cudnnSetConvolution2dDescriptor);
         DynLink(cudnnDestroyConvolutionDescriptor);
 
+        DynLink(cudnnCreatePoolingDescriptor);
+        DynLink(cudnnSetPooling2dDescriptor);
+        DynLink(cudnnDestroyPoolingDescriptor);
+        DynLink(cudnnGetPooling2dForwardOutputDim);
+
         DynLink(cudnnGetConvolutionForwardAlgorithm);
         DynLink(cudnnGetConvolutionForwardWorkspaceSize);
         DynLink(cudnnConvolutionForward);
@@ -380,6 +529,9 @@ void CudnnLibrary::Interface::load()
         DynLink(cudnnConvolutionBackwardData);
 
         DynLink(cudnnConvolutionBackwardFilter);
+
+        DynLink(cudnnPoolingForward);
+        DynLink(cudnnPoolingBackward);
 
         #undef DynLink
 

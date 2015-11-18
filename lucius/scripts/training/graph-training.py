@@ -7,15 +7,76 @@ matplotlib.use('Agg')
 
 from matplotlib import pyplot
 
+def lower_bound(array, value):
+    index = 0
+
+    for i in range(len(array)):
+        if array[i] > value:
+            break
+
+        index = i
+
+        if array[i] == value:
+            break
+
+    return index
+
+
 class ExperimentData:
     def __init__(self, name):
-        self.name            = name
-        self.trainingError   = None
-        self.validationError = None
+        self.name                 = name
+        self.trainingError        = None
+        self.trainingIterations   = None
+        self.validationError      = None
+        self.validationIterations = None
 
     def resize(self, maximumIterations):
+        maximumIterations = lower_bound(self.trainingIterations, maximumIterations)
+
+        print maximumIterations, len(self.trainingIterations), self.trainingIterations[0:10]
+
         if len(self.trainingError) > maximumIterations:
             self.trainingError = self.trainingError[0:maximumIterations]
+        if len(self.trainingIterations) > maximumIterations:
+            self.trainingIterations = self.trainingIterations[0:maximumIterations]
+
+    def setTrainingError(self, data):
+        self.trainingError, self.trainingIterations = data
+
+        self.normalizeTrainingError()
+
+
+    def normalizeTrainingError(self):
+
+        if len(self.trainingError) > len(self.trainingIterations):
+            self.trainingError = self.trainingError[0:len(self.trainingIterations)]
+
+        if len(self.trainingIterations) > len(self.trainingError):
+            self.trainingIterations = self.trainingIterations[0:len(self.trainingError)]
+
+        if len(self.trainingIterations) == 0:
+            return
+
+        epochLength = self.trainingIterations[0]
+
+        previousSampleCount = self.trainingIterations[0]
+        increment = 0
+        maxvalue = 0
+
+        self.trainingIterations[0] = 0
+
+        for i in range(1, len(self.trainingIterations)):
+            sampleCount = self.trainingIterations[i]
+
+            if sampleCount > previousSampleCount:
+                increment += epochLength
+                epochLength = sampleCount
+
+            previousSampleCount = sampleCount
+
+            samplesSoFar = epochLength - sampleCount
+            self.trainingIterations[i] = samplesSoFar + increment
+
 
 class ExperimentGroup:
     def __init__(self, name):
@@ -39,6 +100,7 @@ class ExperimentGroup:
             experiment.resize(size)
 
 
+
 def parseCost(line):
     position = line.find("running cost sum")
     if position == -1:
@@ -60,19 +122,50 @@ def parseCost(line):
 
     return result
 
+def parseIteration(line):
+    position = line.find(" image frames, ")
+    if position == -1:
+        return None
+
+    remainder = line[position + len(" image frames, "):]
+
+    if len(remainder) == 0:
+        return None
+
+    words = remainder.split()
+
+    resultString = words[0].strip()
+
+    try:
+        result = int(resultString)
+    except ValueError:
+        return None
+
+    return result
+
 
 def loadTrainingErrorFromLogFile(path):
-    data = []
+    data       = []
+    iterations = []
     with open(path, 'r') as log:
         for line in log:
-            cost = parseCost(line)
+            cost      = parseCost(line)
+            iteration = parseIteration(line)
 
-            if cost == None:
-                continue
+            if cost != None:
+                data.append(cost)
 
-            data.append(cost)
+            if iteration != None:
+                if len(data) == 0:
+                    if len(iterations) == 0:
+                        iterations.append(iteration)
+                    iterations[0] = iteration
+                else:
+                    iterations.append(iteration)
 
-    return data
+    #print path, data[0:10], iterations[0:10]
+
+    return data, iterations
 
 def loadValidationError(path):
     return None
@@ -103,7 +196,7 @@ def loadExperiment(path):
 
     experimentData = ExperimentData(name)
 
-    experimentData.trainingError = loadTrainingErrorFromLogFile(logPath)
+    experimentData.setTrainingError(loadTrainingErrorFromLogFile(logPath))
 
     if os.path.exists(validationPath):
         experimentData.validationError = loadValidationError(validationPath)
@@ -165,7 +258,8 @@ def getYLimit(experiments):
     limit = 0
 
     for experiment in experiments:
-        limit = max(limit, max(experiment.trainingError))
+        if len(experiment.trainingError) > 0:
+            limit = max(limit, max(experiment.trainingError))
 
     return [0, limit]
 
@@ -204,7 +298,7 @@ class Visualizer:
 
             for experiment in group.getExperiments():
                 experimentLabel = formatNameForLabel(experiment.name)
-                axes.plot(range(len(experiment.trainingError)), experiment.trainingError,
+                axes.plot(experiment.trainingIterations, experiment.trainingError,
                     label=experimentLabel)
 
             percent = max(0.1, min(0.07 * group.size(), .7))

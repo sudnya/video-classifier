@@ -11,6 +11,7 @@
 #include <lucius/network/interface/RecurrentLayer.h>
 #include <lucius/network/interface/ConvolutionalLayer.h>
 #include <lucius/network/interface/BatchNormalizationLayer.h>
+#include <lucius/network/interface/MaxPoolingLayer.h>
 
 #include <lucius/matrix/interface/Dimension.h>
 
@@ -73,6 +74,20 @@ std::unique_ptr<Layer> LayerFactory::create(const std::string& name, const Param
         size_t size = parameters.get("Size", 1);
 
         return std::make_unique<BatchNormalizationLayer>(size);
+    }
+    else if ("MaxPoolingLayer" == name)
+    {
+        size_t inputWidth  = parameters.get("InputWidth",  1);
+        size_t inputHeight = parameters.get("InputHeight", 1);
+        size_t inputColors = parameters.get("InputColors", 1);
+        size_t inputBatch  = parameters.get("BatchSize",   1);
+
+        size_t width  = parameters.get("FilterWidth", 1);
+        size_t height = parameters.get("FilterHeight", 1);
+
+        return std::make_unique<MaxPoolingLayer>(
+            matrix::Dimension({inputWidth, inputHeight, inputColors, inputBatch}),
+            matrix::Dimension({width, height}));
     }
 
     return nullptr;

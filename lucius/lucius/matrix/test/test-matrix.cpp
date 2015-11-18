@@ -10,6 +10,7 @@
 #include <lucius/matrix/interface/MatrixOperations.h>
 #include <lucius/matrix/interface/RandomOperations.h>
 #include <lucius/matrix/interface/FileOperations.h>
+#include <lucius/matrix/interface/PoolingOperations.h>
 #include <lucius/matrix/interface/ConvolutionalOperations.h>
 #include <lucius/matrix/interface/MatrixTransformations.h>
 #include <lucius/matrix/interface/Operation.h>
@@ -1359,6 +1360,242 @@ bool test2dConvolutionGradient()
     return reference == computed;
 }
 
+/*
+    Test 2D reduce get positions.
+
+    [ [ 5 4 ] [ 2 6 ] [ 8 13 ] [ 10 14 ] ] = [ [ 1 0 ] [ 0 0 ] [ 0 1 ] [ 0 0 ] ]
+    [ [ 1 0 ] [ 7 3 ] [ 9 12 ] [ 11 15 ] ]   [ [ 0 0 ] [ 1 0 ] [ 0 0 ] [ 0 1 ] ]
+
+*/
+bool test2dReduceGetPositions()
+{
+    int n = 1;
+    int c = 4;
+    int h = 2;
+    int w = 2;
+
+    Matrix input(w, h, c, n);
+
+    input(0, 0, 0, 0) = 5;
+    input(1, 0, 0, 0) = 1;
+    input(0, 1, 0, 0) = 4;
+    input(1, 1, 0, 0) = 0;
+
+    input(0, 0, 1, 0) = 2;
+    input(1, 0, 1, 0) = 7;
+    input(0, 1, 1, 0) = 6;
+    input(1, 1, 1, 0) = 3;
+
+    input(0, 0, 2, 0) = 8;
+    input(1, 0, 2, 0) = 9;
+    input(0, 1, 2, 0) = 13;
+    input(1, 1, 2, 0) = 12;
+
+    input(0, 0, 3, 0) = 10;
+    input(1, 0, 3, 0) = 11;
+    input(0, 1, 3, 0) = 14;
+    input(1, 1, 3, 0) = 15;
+
+    Matrix reference(w, h, c, n);
+
+    reference(0, 0, 0, 0) = 1;
+    reference(1, 0, 0, 0) = 0;
+    reference(0, 1, 0, 0) = 0;
+    reference(1, 1, 0, 0) = 0;
+
+    reference(0, 0, 1, 0) = 0;
+    reference(1, 0, 1, 0) = 1;
+    reference(0, 1, 1, 0) = 0;
+    reference(1, 1, 1, 0) = 0;
+
+    reference(0, 0, 2, 0) = 0;
+    reference(1, 0, 2, 0) = 0;
+    reference(0, 1, 2, 0) = 1;
+    reference(1, 1, 2, 0) = 0;
+
+    reference(0, 0, 3, 0) = 0;
+    reference(1, 0, 3, 0) = 0;
+    reference(0, 1, 3, 0) = 0;
+    reference(1, 1, 3, 0) = 1;
+
+    Matrix computed(reference.size(), reference.precision());
+
+    reduceGetPositions(computed, input, {0, 1}, lucius::matrix::Maximum());
+
+    if(reference != computed)
+    {
+        std::cout << " Matrix 2D Reduce Get Positions Test Failed:\n";
+        std::cout << "  result matrix " << computed.toString();
+        std::cout << "  does not match reference matrix " << reference.toString();
+    }
+    else
+    {
+        std::cout << " Matrix 2D Reduce Get Positions Test Passed\n";
+    }
+
+    return reference == computed;
+}
+
+/*
+    Test forward max pooling 2d.
+
+    [ 5 4 8  13 ] max-pool(2, 2) = [ 5 13 ]
+    [ 1 0 9  12 ]                  [ 7 15 ]
+    [ 2 6 10 14 ]
+    [ 7 3 11 15 ]
+
+*/
+bool testForwardMaxPooling()
+{
+    int n = 1;
+    int c = 1;
+    int h = 4;
+    int w = 4;
+
+    Matrix input(w, h, c, n);
+
+    input(0, 0, 0, 0) = 5;
+    input(1, 0, 0, 0) = 1;
+    input(2, 0, 0, 0) = 2;
+    input(3, 0, 0, 0) = 7;
+
+    input(0, 1, 0, 0) = 4;
+    input(1, 1, 0, 0) = 0;
+    input(2, 1, 0, 0) = 6;
+    input(3, 1, 0, 0) = 3;
+
+    input(0, 2, 0, 0) = 8;
+    input(1, 2, 0, 0) = 9;
+    input(2, 2, 0, 0) = 10;
+    input(3, 2, 0, 0) = 11;
+
+    input(0, 3, 0, 0) = 13;
+    input(1, 3, 0, 0) = 12;
+    input(2, 3, 0, 0) = 14;
+    input(3, 3, 0, 0) = 15;
+
+    Matrix reference(w/2, h/2, c, n);
+
+    reference(0, 0, 0, 0) = 5;
+    reference(1, 0, 0, 0) = 7;
+    reference(0, 1, 0, 0) = 13;
+    reference(1, 1, 0, 0) = 15;
+
+    Matrix computed(reference.size(), reference.precision());
+
+    forwardMaxPooling(computed, input, {2, 2});
+
+    if(reference != computed)
+    {
+        std::cout << " Matrix 2D Max Pooling Test Failed:\n";
+        std::cout << "  result matrix " << computed.toString();
+        std::cout << "  does not match reference matrix " << reference.toString();
+    }
+    else
+    {
+        std::cout << " Matrix 2D Max Pooling Test Passed\n";
+    }
+
+    return reference == computed;
+}
+
+/*
+    Test backward max pooling 2d.
+
+    [ 5 4 8  13 ] max-pool(2, 2) = [ 5 13 ]
+    [ 1 0 9  12 ]                  [ 7 15 ]
+    [ 2 6 10 14 ]
+    [ 7 3 11 15 ]
+
+    deltas [ 1 3 ] = [ 1 0 0 3 ]
+           [ 2 4 ]   [ 0 0 0 0 ]
+                     [ 0 0 0 0 ]
+                     [ 2 0 0 4 ]
+
+*/
+bool testBackwardMaxPooling()
+{
+    int n = 1;
+    int c = 1;
+    int h = 4;
+    int w = 4;
+
+    Matrix input(w, h, c, n);
+
+    input(0, 0, 0, 0) = 5;
+    input(1, 0, 0, 0) = 1;
+    input(2, 0, 0, 0) = 2;
+    input(3, 0, 0, 0) = 7;
+
+    input(0, 1, 0, 0) = 4;
+    input(1, 1, 0, 0) = 0;
+    input(2, 1, 0, 0) = 6;
+    input(3, 1, 0, 0) = 3;
+
+    input(0, 2, 0, 0) = 8;
+    input(1, 2, 0, 0) = 9;
+    input(2, 2, 0, 0) = 10;
+    input(3, 2, 0, 0) = 11;
+
+    input(0, 3, 0, 0) = 13;
+    input(1, 3, 0, 0) = 12;
+    input(2, 3, 0, 0) = 14;
+    input(3, 3, 0, 0) = 15;
+
+    Matrix output(w/2, h/2, c, n);
+
+    output(0, 0, 0, 0) = 5;
+    output(1, 0, 0, 0) = 7;
+    output(0, 1, 0, 0) = 13;
+    output(1, 1, 0, 0) = 15;
+
+    Matrix deltas(w/2, h/2, c, n);
+
+    deltas(0, 0, 0, 0) = 1;
+    deltas(1, 0, 0, 0) = 2;
+    deltas(0, 1, 0, 0) = 3;
+    deltas(1, 1, 0, 0) = 4;
+
+    Matrix reference(w, h, c, n);
+
+    reference(0, 0, 0, 0) = 1;
+    reference(1, 0, 0, 0) = 0;
+    reference(2, 0, 0, 0) = 0;
+    reference(3, 0, 0, 0) = 2;
+
+    reference(0, 1, 0, 0) = 0;
+    reference(1, 1, 0, 0) = 0;
+    reference(2, 1, 0, 0) = 0;
+    reference(3, 1, 0, 0) = 0;
+
+    reference(0, 2, 0, 0) = 0;
+    reference(1, 2, 0, 0) = 0;
+    reference(2, 2, 0, 0) = 0;
+    reference(3, 2, 0, 0) = 0;
+
+    reference(0, 3, 0, 0) = 3;
+    reference(1, 3, 0, 0) = 0;
+    reference(2, 3, 0, 0) = 0;
+    reference(3, 3, 0, 0) = 4;
+
+    Matrix computed(reference.size(), reference.precision());
+
+    backwardMaxPooling(computed, input, output, deltas, {2, 2});
+
+    if(reference != computed)
+    {
+        std::cout << " Matrix 2D Backward Max Pooling Test Failed:\n";
+        std::cout << "  result matrix " << computed.toString();
+        std::cout << "  does not match reference matrix " << reference.toString();
+    }
+    else
+    {
+        std::cout << " Matrix 2D Backward Max Pooling Test Passed\n";
+    }
+
+    return reference == computed;
+}
+
 int main(int argc, char** argv)
 {
     //lucius::util::enableAllLogs();
@@ -1395,6 +1632,11 @@ int main(int argc, char** argv)
     passed &= test2dStridedBackwardConvolution();
     passed &= test1dConvolutionGradient();
     passed &= test2dConvolutionGradient();
+
+    passed &= test2dReduceGetPositions();
+
+    passed &= testForwardMaxPooling();
+    passed &= testBackwardMaxPooling();
 
     if(not passed)
     {

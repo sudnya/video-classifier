@@ -52,8 +52,11 @@ public:
         Square,
         SquareAndScale,
         Inverse,
+        CopyRight,
         Nop,
-        NopDerivative
+        NopDerivative,
+        Pool2DGather,
+        Pool2DGatherInverse
     };
 
 public:
@@ -683,6 +686,23 @@ public:
 
 };
 
+class CopyRight : public Operation
+{
+public:
+    CUDA_DECORATOR CopyRight() : Operation(Operation::CopyRight)
+    {
+
+    }
+
+public:
+    template<typename T>
+    CUDA_DECORATOR T operator()(const T& l, const T& r) const
+    {
+        return r;
+    }
+
+};
+
 class Nop : public Operation
 {
 public:
@@ -717,18 +737,115 @@ public:
 
 };
 
+class Pool2DGather : public Operation
+{
+public:
+    CUDA_DECORATOR Pool2DGather()
+    : Operation(Operation::Pool2DGather)
+    {}
+
+    CUDA_DECORATOR Pool2DGather(size_t w, size_t h, size_t inputW, size_t inputH)
+    : Operation(Operation::Pool2DGather),
+      width(w), height(h), inputWidth(inputW), inputHeight(inputH)
+    {
+
+    }
+
+public:
+    CUDA_DECORATOR size_t operator()(size_t outputPosition) const
+    {
+        size_t outputTilesW = inputWidth / width;
+
+        size_t inputOffset = outputPosition % (inputWidth * inputHeight);
+        size_t inputBase   = outputPosition - inputOffset;
+
+        size_t outputTile = inputOffset / (width * height);
+        size_t tileOffset = inputOffset % (width * height);
+
+        size_t outputTileW = outputTile % outputTilesW;
+        size_t outputTileH = outputTile / outputTilesW;
+
+        size_t outputTileWOffset = tileOffset % width;
+        size_t outputTileHOffset = tileOffset / width;
+
+        size_t outputOffset = (outputTileW * width + outputTileWOffset) +
+            (outputTileH * height + outputTileHOffset) * inputWidth;
+
+        return outputOffset + inputBase;
+    }
+
+public:
+    size_t width;
+    size_t height;
+
+    size_t inputWidth;
+    size_t inputHeight;
+
+};
+
+class Pool2DGatherInverse : public Operation
+{
+public:
+    CUDA_DECORATOR Pool2DGatherInverse()
+    : Operation(Operation::Pool2DGatherInverse)
+    {}
+
+    CUDA_DECORATOR Pool2DGatherInverse(size_t w, size_t h, size_t inputW, size_t inputH)
+    : Operation(Operation::Pool2DGatherInverse),
+      width(w), height(h), inputWidth(inputW), inputHeight(inputH)
+    {
+
+    }
+
+public:
+    CUDA_DECORATOR size_t operator()(size_t outputPosition) const
+    {
+        size_t inputOffset = outputPosition % (inputWidth * inputHeight);
+        size_t inputBase   = outputPosition - inputOffset;
+
+        size_t tileSize = width * height;
+
+        size_t inputW = inputOffset % inputWidth;
+        size_t inputH = inputOffset / inputWidth;
+
+        size_t tileW = inputW / width;
+        size_t tileWOffset = inputW % width;
+
+        size_t tileH = inputH / height;
+        size_t tileHOffset = inputH % height;
+
+        size_t inputWidthInTiles = inputWidth / width;
+
+        size_t tileId = tileW + tileH * inputWidthInTiles;
+
+        size_t tileOffset = tileWOffset + tileHOffset * width;
+
+        return inputBase + tileId * tileSize + tileOffset;
+    }
+
+public:
+    size_t width;
+    size_t height;
+
+    size_t inputWidth;
+    size_t inputHeight;
+
+};
+
 typedef std::tuple<Add, Subtract, Multiply, Divide, Log, Exp, Pow, Abs, Sqrt, RectifiedLinear,
                    RectifiedLinearDerivative, Sigmoid, SigmoidDerivative, Negate, Maximum,
                    Minimum, Equal, LessThan, NotEqual, Fill, Square, SquareAndScale, Inverse,
                     Nop, NopDerivative> AllOperations;
 
 typedef std::tuple<Add, Subtract, Multiply, Divide, Maximum, Minimum,
-                   Equal, LessThan, NotEqual> AllBinaryOperations;
+                   Equal, LessThan, NotEqual, CopyRight> AllBinaryOperations;
 
 typedef std::tuple<Add, Subtract, Multiply, Divide, Log, Exp, Pow, Abs, Sqrt, RectifiedLinear,
                    RectifiedLinearDerivative, Sigmoid, SigmoidDerivative, Negate, Maximum,
                    Minimum, Equal, LessThan, NotEqual, Fill, Square, SquareAndScale, Inverse,
                    Nop, NopDerivative> AllUnaryOperations;
+
+typedef std::tuple<Pool2DGather, Pool2DGatherInverse> AllGatherOperations;
 
 }
 }

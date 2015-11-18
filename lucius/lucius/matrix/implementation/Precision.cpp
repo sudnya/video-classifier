@@ -3,6 +3,7 @@
 #include <lucius/matrix/interface/Precision.h>
 
 #include <lucius/util/interface/debug.h>
+#include <lucius/util/interface/memory.h>
 #include <lucius/util/interface/Knobs.h>
 
 namespace lucius
@@ -64,6 +65,37 @@ Precision Precision::getDefaultPrecision()
     }
 
     return DoublePrecision();
+}
+
+
+std::string Precision::toString() const
+{
+    switch(type())
+    {
+    case Half: return "HalfPrecision";
+    case Single: return "SinglePrecision";
+    case Double: return "DoublePrecision";
+    default:
+        return "Invalid";
+    }
+}
+
+std::unique_ptr<Precision> Precision::fromString(const std::string& name)
+{
+    if(name == "HalfPrecision")
+    {
+        return std::unique_ptr<Precision>(new HalfPrecision());
+    }
+    else if(name == "SinglePrecision")
+    {
+        return std::unique_ptr<Precision>(new SinglePrecision());
+    }
+    else if(name == "DoublePrecision")
+    {
+        return std::unique_ptr<Precision>(new DoublePrecision());
+    }
+
+    return std::unique_ptr<Precision>(nullptr);
 }
 
 HalfPrecision::HalfPrecision()

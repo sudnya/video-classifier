@@ -9,6 +9,7 @@
 #include <lucius/matrix/interface/Allocation.h>
 #include <lucius/matrix/interface/MatrixOperations.h>
 #include <lucius/matrix/interface/MatrixTransformations.h>
+#include <lucius/matrix/interface/CudnnDescriptors.h>
 
 #include <lucius/parallel/interface/MultiBulkSynchronousParallel.h>
 
@@ -53,183 +54,6 @@ Dimension forwardConvolutionOutputSize(const Dimension& inputSize, const Dimensi
 
 namespace
 {
-
-CudnnLibrary::cudnnDataType_t getCudnnDataType(const Precision& precision)
-{
-    if(precision == DoublePrecision())
-    {
-        return CudnnLibrary::CUDNN_DATA_DOUBLE;
-    }
-
-    assert(precision == SinglePrecision());
-
-    return CudnnLibrary::CUDNN_DATA_FLOAT;
-}
-
-class CudnnFilterDescriptor
-{
-public:
-    CudnnFilterDescriptor(const Matrix& filter)
-    : _filter(filter)
-    {
-        CudnnLibrary::cudnnCreateFilterDescriptor(&_descriptor);
-
-        CudnnLibrary::cudnnSetFilter4dDescriptor(_descriptor,
-            getCudnnDataType(filter.precision()),
-            filter.size()[3],
-            filter.size()[2],
-            filter.size()[1],
-            filter.size()[0]);
-    }
-
-    ~CudnnFilterDescriptor()
-    {
-        CudnnLibrary::cudnnDestroyFilterDescriptor(_descriptor);
-    }
-
-public:
-    CudnnLibrary::cudnnFilterDescriptor_t descriptor() const
-    {
-        return _descriptor;
-    }
-
-public:
-    void* data()
-    {
-        return _filter.data();
-    }
-
-private:
-    CudnnLibrary::cudnnFilterDescriptor_t _descriptor;
-
-private:
-    Matrix _filter;
-
-};
-
-class CudnnTensorDescriptor
-{
-public:
-    CudnnTensorDescriptor(const Matrix& tensor)
-    : _tensor(tensor)
-    {
-        CudnnLibrary::cudnnCreateTensorDescriptor(&_descriptor);
-
-        CudnnLibrary::cudnnSetTensor4dDescriptor(_descriptor,
-            CudnnLibrary::CUDNN_TENSOR_NCHW,
-            getCudnnDataType(tensor.precision()), // image data type
-            _tensor.size()[3],        // number of inputs (batch size)
-            _tensor.size()[2],        // number of input feature maps
-            _tensor.size()[1],        // height of input section
-            _tensor.size()[0]         // width of input section
-        );
-
-    }
-
-    ~CudnnTensorDescriptor()
-    {
-        CudnnLibrary::cudnnDestroyTensorDescriptor(_descriptor);
-    }
-
-public:
-    CudnnLibrary::cudnnTensorDescriptor_t descriptor() const
-    {
-        return _descriptor;
-    }
-
-    void* data()
-    {
-        return _tensor.data();
-    }
-
-private:
-    CudnnLibrary::cudnnTensorDescriptor_t _descriptor;
-
-private:
-    Matrix _tensor;
-
-};
-
-class CudnnScalar
-{
-public:
-    CudnnScalar(double value, const Precision& p)
-    : _doubleValue(value), _floatValue(value), _precision(p)
-    {
-
-    }
-
-    void* data()
-    {
-        if(_precision == SinglePrecision())
-        {
-            return &_floatValue;
-        }
-        else
-        {
-            return &_doubleValue;
-        }
-    }
-
-private:
-    double _doubleValue;
-    float  _floatValue;
-
-private:
-    Precision _precision;
-
-};
-
-class CudnnForwardWorkspace
-{
-public:
-    CudnnForwardWorkspace(const CudnnTensorDescriptor& source, const CudnnFilterDescriptor& filter,
-        CudnnLibrary::cudnnConvolutionDescriptor_t convolutionDescriptor, const CudnnTensorDescriptor& result)
-    {
-        CudnnLibrary::cudnnGetConvolutionForwardAlgorithm(
-            source.descriptor(),
-            filter.descriptor(),
-            convolutionDescriptor,
-            result.descriptor(),
-            CudnnLibrary::CUDNN_CONVOLUTION_FWD_PREFER_FASTEST, // TODO: make this a knob
-            0,
-            &_algorithm);
-
-        size_t bytes = 0;
-
-        CudnnLibrary::cudnnGetConvolutionForwardWorkspaceSize(
-            source.descriptor(),
-            filter.descriptor(),
-            convolutionDescriptor,
-            result.descriptor(),
-            _algorithm,
-            &bytes);
-
-        _data = std::make_unique<Allocation>(bytes);
-    }
-
-public:
-    CudnnLibrary::cudnnConvolutionFwdAlgo_t algorithm()
-    {
-        return _algorithm;
-    }
-
-    void* data()
-    {
-        return _data->data();
-    }
-
-    size_t size() const
-    {
-        return _data->size();
-    }
-
-private:
-    CudnnLibrary::cudnnConvolutionFwdAlgo_t _algorithm;
-
-private:
-    std::unique_ptr<Allocation> _data;
-};
 
 template<typename NativeType>
 class ForwardReshapeInputLambda
@@ -591,7 +415,7 @@ void forwardConvolution(Matrix& result, const Matrix& input, const Matrix& filte
 {
     if(CudnnLibrary::loaded())
     {
-        CudnnLibrary::cudnnConvolutionDescriptor_t convolutionDescriptor;
+        cudnnConvolutionDescriptor_t convolutionDescriptor;
 
         CudnnLibrary::cudnnCreateConvolutionDescriptor(&convolutionDescriptor);
 
@@ -622,7 +446,7 @@ void forwardConvolution(Matrix& result, const Matrix& input, const Matrix& filte
             filterDescriptor.descriptor(),     // filterDesc,
             filterDescriptor.data(),           //*filterData,
             convolutionDescriptor,             // convDesc,
-            workspace.algorithm(),             // algo,
+            static_cast<CudnnLibrary::cudnnConvolutionFwdAlgo_t>(workspace.algorithm()), // algo,
             workspace.data(),                  //*workSpace,
             workspace.size(),                  // workSpaceSizeInBytes,
             beta.data(),                       //*beta,
@@ -1003,7 +827,7 @@ void reverseConvolutionDeltas(Matrix& resultDeltas, const Matrix& filter,
 {
     if(CudnnLibrary::loaded())
     {
-        CudnnLibrary::cudnnConvolutionDescriptor_t convolutionDescriptor;
+        cudnnConvolutionDescriptor_t convolutionDescriptor;
 
         CudnnLibrary::cudnnCreateConvolutionDescriptor(&convolutionDescriptor);
 
@@ -1366,7 +1190,7 @@ void reverseConvolutionGradients(Matrix& gradients, const Matrix& inputs, const 
 {
     if(CudnnLibrary::loaded())
     {
-        CudnnLibrary::cudnnConvolutionDescriptor_t convolutionDescriptor;
+        cudnnConvolutionDescriptor_t convolutionDescriptor;
 
         CudnnLibrary::cudnnCreateConvolutionDescriptor(&convolutionDescriptor);
 

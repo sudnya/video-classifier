@@ -10,6 +10,12 @@
 #include <cstddef>
 #include <string>
 
+// Forward Declarations
+typedef struct cudnnTensorStruct*        cudnnTensorDescriptor_t;
+typedef struct cudnnConvolutionStruct*   cudnnConvolutionDescriptor_t;
+typedef struct cudnnPoolingStruct*       cudnnPoolingDescriptor_t;
+typedef struct cudnnFilterStruct*        cudnnFilterDescriptor_t;
+
 namespace lucius
 {
 
@@ -34,12 +40,6 @@ public:
         CUDNN_STATUS_NOT_SUPPORTED    = 9,
         CUDNN_STATUS_LICENSE_ERROR    = 10
     } cudnnStatus_t;
-
-    /* Data structures to represent Image/Filter and the Neural Network Layer */
-    typedef struct cudnnTensorStruct*        cudnnTensorDescriptor_t;
-    typedef struct cudnnConvolutionStruct*   cudnnConvolutionDescriptor_t;
-    typedef struct cudnnPoolingStruct*       cudnnPoolingDescriptor_t;
-    typedef struct cudnnFilterStruct*        cudnnFilterDescriptor_t;
 
     /* CUDNN data type */
     typedef enum
@@ -76,6 +76,12 @@ public:
         CUDNN_CONVOLUTION_FWD_ALGO_DIRECT                = 3
     } cudnnConvolutionFwdAlgo_t;
 
+    typedef enum
+    {
+        CUDNN_POOLING_MAX     = 0,
+        CUDNN_POOLING_AVERAGE_COUNT_INCLUDE_PADDING = 1,
+        CUDNN_POOLING_AVERAGE_COUNT_EXCLUDE_PADDING = 2
+    } cudnnPoolingMode_t;
 
 public:
     static void load();
@@ -130,6 +136,29 @@ public:
 
     static void cudnnDestroyConvolutionDescriptor(cudnnConvolutionDescriptor_t convDesc);
 
+public:
+    static void cudnnCreatePoolingDescriptor(cudnnPoolingDescriptor_t* poolingDesc);
+
+    static void cudnnSetPooling2dDescriptor(cudnnPoolingDescriptor_t poolingDesc,
+                                                        cudnnPoolingMode_t mode,
+                                                        int windowHeight,
+                                                        int windowWidth,
+                                                        int verticalPadding,
+                                                        int horizontalPadding,
+                                                        int verticalStride,
+                                                        int horizontalStride
+                                                   );
+
+    static void cudnnDestroyPoolingDescriptor(cudnnPoolingDescriptor_t poolingDesc);
+
+    static void cudnnGetPooling2dForwardOutputDim(const cudnnPoolingDescriptor_t poolingDesc,
+                                                 const cudnnTensorDescriptor_t inputTensorDesc,
+                                                 int* outN,
+                                                 int* outC,
+                                                 int* outH,
+                                                 int* outW);
+
+
 
 public:
     static void cudnnGetConvolutionForwardAlgorithm(const cudnnTensorDescriptor_t      srcDesc,
@@ -182,6 +211,31 @@ public:
                                                const void*                         beta,
                                                const cudnnFilterDescriptor_t       gradDesc,
                                                void*                               gradData);
+
+public:
+    static void cudnnPoolingForward(
+                                                    const cudnnPoolingDescriptor_t   poolingDesc,
+                                                    const void*                      alpha,
+                                                    const cudnnTensorDescriptor_t    srcDesc,
+                                                    const void*                      srcData,
+                                                    const void*                      beta,
+                                                    const cudnnTensorDescriptor_t    destDesc,
+                                                    void*                            destData
+                                                 );
+
+    static void cudnnPoolingBackward(
+                                                    const cudnnPoolingDescriptor_t  poolingDesc,
+                                                    const void*                     alpha,
+                                                    const cudnnTensorDescriptor_t   srcDesc,
+                                                    const void*                     srcData,
+                                                    const cudnnTensorDescriptor_t   srcDiffDesc,
+                                                    const void*                     srcDiffData,
+                                                    const cudnnTensorDescriptor_t   destDesc,
+                                                    const void*                     destData,
+                                                    const void*                     beta,
+                                                    const cudnnTensorDescriptor_t   destDiffDesc,
+                                                    void*                           destDiffData
+                                                  );
 
 private:
     static void _check();
@@ -247,6 +301,28 @@ private:
 
         cudnnStatus_t (*cudnnDestroyConvolutionDescriptor)(cudnnConvolutionDescriptor_t convDesc);
 
+    public:
+        cudnnStatus_t (*cudnnCreatePoolingDescriptor)(cudnnPoolingDescriptor_t* poolingDesc);
+
+        cudnnStatus_t (*cudnnSetPooling2dDescriptor)(cudnnPoolingDescriptor_t poolingDesc,
+                                                            cudnnPoolingMode_t mode,
+                                                            int windowHeight,
+                                                            int windowWidth,
+                                                            int verticalPadding,
+                                                            int horizontalPadding,
+                                                            int verticalStride,
+                                                            int horizontalStride
+                                                       );
+
+        cudnnStatus_t (*cudnnDestroyPoolingDescriptor)(cudnnPoolingDescriptor_t poolingDesc);
+
+        cudnnStatus_t (*cudnnGetPooling2dForwardOutputDim)(const cudnnPoolingDescriptor_t poolingDesc,
+                                                 const cudnnTensorDescriptor_t inputTensorDesc,
+                                                 int* outN,
+                                                 int* outC,
+                                                 int* outH,
+                                                 int* outW);
+
 
     public:
         cudnnStatus_t (*cudnnGetConvolutionForwardAlgorithm)(cudnnHandle_t                      handle,
@@ -302,6 +378,31 @@ private:
                                                  const void*                         beta,
                                                  const cudnnFilterDescriptor_t       gradDesc,
                                                  void*                               gradData);
+
+    public:
+        cudnnStatus_t (*cudnnPoolingForward)(cudnnHandle_t handle,
+                                                    const cudnnPoolingDescriptor_t   poolingDesc,
+                                                    const void*                      alpha,
+                                                    const cudnnTensorDescriptor_t    srcDesc,
+                                                    const void*                      srcData,
+                                                    const void*                      beta,
+                                                    const cudnnTensorDescriptor_t    destDesc,
+                                                    void*                            destData
+                                                 );
+
+        cudnnStatus_t (*cudnnPoolingBackward)(cudnnHandle_t  handle,
+                                                    const cudnnPoolingDescriptor_t  poolingDesc,
+                                                    const void*                     alpha,
+                                                    const cudnnTensorDescriptor_t   srcDesc,
+                                                    const void*                     srcData,
+                                                    const cudnnTensorDescriptor_t   srcDiffDesc,
+                                                    const void*                     srcDiffData,
+                                                    const cudnnTensorDescriptor_t   destDesc,
+                                                    const void*                     destData,
+                                                    const void*                     beta,
+                                                    const cudnnTensorDescriptor_t   destDiffDesc,
+                                                    void*                           destDiffData
+                                                  );
 
     public:
         /*! \brief The constructor zeros out all of the pointers */

@@ -209,11 +209,34 @@ def updateSampleDatabase(destinationDirectory, term):
 
     databaseFile.write(getDirectoryForTerm(term) + ", " + getDirectoryForTerm(term) + "\n")
 
+def getAlreadyDownloadedFilesFromMetadata(destinationDirectory):
+    existing = set()
+
+    metadataPath = os.path.join(destinationDirectory, "metadata.csv")
+
+    if not os.path.exists(metadataPath):
+        return existing
+
+    with open(metaDataPath, 'r') as metadata:
+        for line in metadata:
+            elements = [element.strip() for element in line.split(',')]
+
+            if len(elements) != 3:
+                continue
+
+            path, url, category = elements[0], elements[1], elements[2]
+
+            existing.add(url)
+
+    return existing
+
 
 def downloadImagesForTerms(selectedTermIds, classes, options):
 
     destinationDirectory = options.output_path
     imageCount = 0
+
+    downloadedAlready = getAlreadyDownloadedFilesFromMetadata(destinationDirectory)
 
     for term in selectedTermIds:
 
@@ -230,8 +253,19 @@ def downloadImagesForTerms(selectedTermIds, classes, options):
 
         remainingImages = int(options.maximum_images) - imageCount
 
-        imageUrls = [UrlRequest(destinationDirectory, termName, url, i) for
-            (i, url) in enumerate(getImageUrlsForTermAndSubclasses(term, classes, remainingImages))]
+        possibleUrls = getImageUrlsForTermAndSubclasses(term, classes, remainingImages)
+
+        urls = []
+
+        for url in possibleUrls:
+            if url in downloadedAlready:
+               continue
+
+            urls.append(url)
+            downloadedAlready.add(url)
+
+        imageUrls = [UrlRequest(destinationDirectory, termName, url, i)
+            for (i, url) in enumerate(urls)]
 
         if len(imageUrls) > remainingImages:
             imageUrls = imageUrls[:remainingImages]
