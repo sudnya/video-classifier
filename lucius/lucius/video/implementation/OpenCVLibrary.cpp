@@ -181,7 +181,7 @@ void OpenCVLibrary::Interface::load()
     if(loaded()) return;
 
     #ifdef __APPLE__
-    const char* libraryName = "libopencv_legacy.dylib";
+    const char* libraryName = "libopencv_highgui.dylib";
     #else
     const char* libraryName = "libopencv_legacy.so";
     #endif
