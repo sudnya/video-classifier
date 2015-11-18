@@ -118,7 +118,8 @@ def formDirectoryName(base, termName, imageId):
 def writeMetadata(path, termName, url, imageId):
     metadataFile = open(path, 'a')
 
-    metadataFile.write(formImagePath('.', termName, imageId) + ", " + url.strip() + ", " + getDirectoryForTerm(termName) + "\n")
+    metadataFile.write(formImagePath('.', termName, imageId) + ", " + url.strip() + ", " +
+        getDirectoryForTerm(termName) + "\n")
 
 def createDirectories(path):
     directory = os.path.dirname(path)
@@ -132,6 +133,16 @@ def updateMetadata(destinationDirectory, termName, url, imageId):
     createDirectories(metadataPath)
 
     writeMetadata(metadataPath, termName, url, imageId)
+
+def updateFailedList(destinationDirectory, url):
+    failedListPath = os.path.join(destinationDirectory, "failed.csv")
+
+    createDirectories(failedListPath)
+
+    failedList = open(failedListPath, 'a')
+
+    failedList.write(url + '\n')
+
 
 def cleanDestination(path):
     if os.path.isfile(path):
@@ -240,6 +251,25 @@ def getAlreadyDownloadedFilesFromMetadata(destinationDirectory):
 
     return existing
 
+def getAlreadyFailedFiles(destinationDirectory):
+    existing = set()
+
+    failedListPath = os.path.join(destinationDirectory, "failed.csv")
+
+    if not os.path.exists(failedListPath):
+        return existing
+
+    with open(failedListPath, 'r') as failedList:
+        for line in failedList:
+            url = line.strip()
+
+            if len(url) == 0:
+                continue
+
+            existing.add(url)
+
+    return existing
+
 
 def downloadImagesForTerms(selectedTermIds, classes, options):
 
@@ -247,8 +277,10 @@ def downloadImagesForTerms(selectedTermIds, classes, options):
     imageCount = 0
 
     downloadedAlready = getAlreadyDownloadedFilesFromMetadata(destinationDirectory)
+    failedAlready = getAlreadyFailedFiles(destinationDirectory)
 
     print 'Already downloaded ' + str(len(downloadedAlready))
+    print 'Already failed ' + str(len(failedAlready))
 
     random.seed()
     random.shuffle(selectedTermIds)
@@ -275,6 +307,9 @@ def downloadImagesForTerms(selectedTermIds, classes, options):
         for url in possibleUrls:
             if url in downloadedAlready:
                continue
+
+            if url in alreadyFailed and not options.retry_failed
+                continue
 
             urls.append(url)
             downloadedAlready.add(url)
@@ -314,6 +349,7 @@ def downloadImagesForTerms(selectedTermIds, classes, options):
 
         for request in imageUrls:
             if not request.result:
+                updateFailedList(destinationDirectory, request.file_url)
                 continue
 
             successes += 1
@@ -415,6 +451,7 @@ def main():
     parser.add_option("-c", "--clean", default=False, action="store_true")
     parser.add_option("-a", "--all_terms", default=False, action="store_true")
     parser.add_option("-i", "--maximum_images_per_term", default=10000000)
+    parser.add_option("-r", "--retry_failed", default=False, action="store_true")
 
     (options, arguments) = parser.parse_args()
 
