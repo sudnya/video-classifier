@@ -267,6 +267,10 @@ class Visualizer:
     def __init__(self, arguments):
         self.inputs = arguments["input_file"]
         self.output = arguments["output_file"]
+
+        if not os.path.exists(self.output):
+            self.output = self.inputs[0]
+
         self.maximumIterations = int(arguments["maximum_iterations"])
         self.autoScale = arguments["scale"]
 
