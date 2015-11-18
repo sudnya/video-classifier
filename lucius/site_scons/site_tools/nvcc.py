@@ -47,7 +47,7 @@ def get_cuda_paths(cuda_path = None):
     if base_path == None:
         base_path = find_file(paths, ('lib/lib%s' + get_library_extension()) % lib)
     if base_path == None:
-      raise ValueError, "Error: I can't find cuda, specify its location using cuda_path=<path>."
+        base_path = "/usr/local/cuda"
     bin_path = os.path.join(base_path, 'bin')
     lib_path = os.path.join(base_path, 'lib')
     inc_path = os.path.join(base_path, 'include')
@@ -120,10 +120,23 @@ def add_nvcc_flags(env):
   env.AppendUnique(NVCCFLAGS = '-std=c++11')
   env.AppendUnique(NVCCFLAGS = '-Xcompiler=-Wno-unused-function')
 
+def cuda_exists(env):
+    return os.path.exists(env['cuda_path'])
+
+def generate_dummy(env):
+  bld = SCons.Builder.Builder(action = SCons.Defaults.Copy('$TARGET', '$SOURCE'),
+                  suffix = '.cpp',
+                  src_suffix = '.cu')
+  env['BUILDERS']['CUDASharedObject'] = bld
+
 def generate(env):
   """
   Add Builders and construction variables for CUDA compilers to an Environment.
   """
+
+  if not cuda_exists(env):
+    generate_dummy(env)
+    return
 
   # create a builder that makes PTX files from .cu files
   ptx_builder = SCons.Builder.Builder(action = '$NVCC -ptx $NVCCFLAGS $_NVCCWRAPCFLAGS $NVCCWRAPCCFLAGS $_NVCCCOMCOM $SOURCES -o $TARGET',

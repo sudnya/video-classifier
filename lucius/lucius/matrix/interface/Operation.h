@@ -8,6 +8,7 @@
 
 // Lucius Includes
 #include <lucius/parallel/interface/cuda.h>
+#include <lucius/parallel/interface/ScalarOperations.h>
 
 // Standard Library Includes
 #include <cmath>
@@ -412,13 +413,13 @@ public:
     template<typename T>
     CUDA_DECORATOR T operator()(const T& l, const T& r) const
     {
-        return max(l, r);
+        return parallel::max(l, r);
     }
 
     template<typename T>
     CUDA_DECORATOR T operator()(const T& r) const
     {
-        return max(T(_value), r);
+        return parallel::max(T(_value), r);
     }
 
 private:
@@ -443,13 +444,13 @@ public:
     template<typename T>
     CUDA_DECORATOR T operator()(const T& l, const T& r) const
     {
-        return min(l, r);
+        return parallel::min(l, r);
     }
 
     template<typename T>
     CUDA_DECORATOR T operator()(const T& r) const
     {
-        return min(T(_value), r);
+        return parallel::min(T(_value), r);
     }
 
 private:

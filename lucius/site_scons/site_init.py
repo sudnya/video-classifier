@@ -145,11 +145,17 @@ def getLINKFLAGS(mode, LINK):
 
     return result
 
-def getExtraLibs():
+def cuda_exists(env):
+    return os.path.exists(env['cuda_path'])
+
+def getExtraLibs(env):
     if os.name == 'nt':
         return []
     else:
-        return ['cudart']
+        if cuda_exists(env):
+            return ['cudart']
+        else:
+            return []
 
 def importEnvironment():
     env = {  }
@@ -211,7 +217,8 @@ def BuildEnvironment():
         '"install")', 0))
 
     # add a variable to handle cuda install path
-    vars.Add(PathVariable('cuda_path', 'Cuda toolkit install path', '/usr/local/cuda'))
+    vars.Add(PathVariable('cuda_path', 'Cuda toolkit install path', '/usr/local/cuda',
+        PathVariable.PathAccept))
 
     # add a variable to handle cuda architecture
     vars.Add(EnumVariable('cuda_arch', 'Cuda architecture', 'sm_30',
@@ -252,7 +259,7 @@ def BuildEnvironment():
         env.AppendUnique(CPPPATH = getLibCXXPaths()[0])
 
     # set extra libs
-    env.Replace(EXTRA_LIBS=getExtraLibs())
+    env.Replace(EXTRA_LIBS=getExtraLibs(env))
 
     # set the build path
     env.Replace(BUILD_ROOT = str(env.Dir('.').abspath))

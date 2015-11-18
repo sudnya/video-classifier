@@ -30,7 +30,9 @@ directories = ['lucius/audio', 'lucius/driver', 'lucius/util', 'lucius/engine',
     'lucius/database', 'lucius/input', 'lucius/results']
 
 source_directories = [os.path.join(i, 'implementation') for i in directories]
+
 cuda_source_directories = [os.path.join(i, 'cuda-implementation') for i in directories]
+
 extensions = ['*.cpp']
 
 sources = []

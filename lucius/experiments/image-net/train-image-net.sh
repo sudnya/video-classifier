@@ -2,23 +2,23 @@
 
 SCRIPT_DIRECTORY="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-CUDA_DEVICES="1"
-INPUT_TRAINING_DATASET="/data/1tb-ssd/image-net-50-2000/training/database.txt"
-INPUT_VALIDATION_DATASET="/data/1tb-ssd/image-net-50-2000/validation/database.txt"
+CUDA_DEVICES="0"
+INPUT_TRAINING_DATASET="/Users/gregdiamos/temp/mnist/train/database.txt"
+INPUT_VALIDATION_DATASET="/Users/gregdiamos/temp/mnist/test/database.txt"
 LOGS="NesterovAcceleratedGradientSolver,BenchmarkImageNet,LabelMatchResultProcessor,InputVisualDataProducer"
-LAYER_SIZE="1024"
-INPUT_WIDTH="128"
-INPUT_HEIGHT="128"
-INPUT_COLORS="3"
-LAYERS="11"
-MINI_BATCH_SIZE="8"
-LAYER_OUTPUT_REDUCTION_FACTOR="1"
-BATCH_NORMALIZATION=1
+LAYER_SIZE="128"
+INPUT_WIDTH="32"
+INPUT_HEIGHT="32"
+INPUT_COLORS="1"
+LAYERS="8"
+MINI_BATCH_SIZE="1"
+LAYER_OUTPUT_REDUCTION_FACTOR="4"
+BATCH_NORMALIZATION=0
 FORWARD_BATCH_NORMALIZATION=0
 EPOCHS="80"
-LEARNING_RATE="1.0e-5"
+LEARNING_RATE="1.0e-4"
 ANNEALING_RATE="1.000001"
-MOMENTUM="0.99"
+MOMENTUM="0.9"
 RESUME_FROM=""
 
 
