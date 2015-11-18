@@ -143,6 +143,8 @@ def updateFailedList(destinationDirectory, url):
 
     failedList.write(url + '\n')
 
+    print 'updating failed list with ' + url
+
 
 def cleanDestination(path):
     if os.path.isfile(path):
@@ -308,7 +310,7 @@ def downloadImagesForTerms(selectedTermIds, classes, options):
             if url in downloadedAlready:
                continue
 
-            if url in alreadyFailed and not options.retry_failed
+            if url in failedAlready and not options.retry_failed:
                 continue
 
             urls.append(url)
@@ -326,7 +328,7 @@ def downloadImagesForTerms(selectedTermIds, classes, options):
             imageUrls = imageUrls[:remainingImages]
 
         print '  found ' + str(len(imageUrls)) + " images (skipped " + \
-            str(len(possibleUrls) - len(urls)) + " already downloaded)"
+            str(len(possibleUrls) - len(urls)) + " already downloaded or failed)"
 
         threadCount = 3
 
