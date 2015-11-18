@@ -135,8 +135,11 @@ static void addClassifier(Model& model, const Parameters& parameters)
 
     Dimension inputSize(parameters.xPixels, parameters.yPixels, parameters.colors, 1, 1);
 
-    inputSize = addConvolutionalLayer(classifier, inputSize, 64, parameters.useBatchNormalization);
-    inputSize = addPoolingLayer(classifier, inputSize, {2, 2}, parameters.useBatchNormalization);
+    if(parameters.layers > 3)
+    {
+        inputSize = addConvolutionalLayer(classifier, inputSize, 64, parameters.useBatchNormalization);
+        inputSize = addPoolingLayer(classifier, inputSize, {2, 2}, parameters.useBatchNormalization);
+    }
 
     if(parameters.layers > 4)
     {
@@ -176,9 +179,9 @@ static void addClassifier(Model& model, const Parameters& parameters)
     }
 
     // connect the network
-    if(parameters.layers > 2)
+    if(parameters.layers > 1)
     {
-        classifier.addLayer(std::make_unique<FeedForwardLayer>(classifier.back()->getOutputCount(),
+        classifier.addLayer(std::make_unique<FeedForwardLayer>(inputSize.product(),
             parameters.layerSize));
 
         if(parameters.useFeedForwardBatchNormalization)
@@ -189,7 +192,7 @@ static void addClassifier(Model& model, const Parameters& parameters)
         }
     }
 
-    if(parameters.layers > 3)
+    if(parameters.layers > 2)
     {
         classifier.addLayer(std::make_unique<FeedForwardLayer>(classifier.back()->getOutputCount(),
             parameters.layerSize));

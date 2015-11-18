@@ -270,7 +270,8 @@ def downloadImagesForTerms(selectedTermIds, classes, options):
         if len(imageUrls) > remainingImages:
             imageUrls = imageUrls[:remainingImages]
 
-        print '  found ' + str(len(imageUrls)) + " images"
+        print '  found ' + str(len(imageUrls)) + " images (skipped " + \
+            str(len(possibleUrls) - len(urls)) + " already downloaded)"
 
         threadCount = 3
 
