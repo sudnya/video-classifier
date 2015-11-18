@@ -11,6 +11,7 @@ import socket
 import imghdr
 import Queue
 from threading import Thread
+import random
 
 import urlparse
 
@@ -65,7 +66,7 @@ def getImageUrlsForTerm(term):
 
     for url in possibleUrls:
         if isUrl(url):
-            urls.append(url)
+            urls.append(url.strip())
 
     return urls
 
@@ -102,13 +103,22 @@ def getImageUrlsForTermAndSubclasses(term, classes, remainingImages):
 def getDirectoryForTerm(termName):
     return re.sub('[^\w\-_\. ]', '-', termName.split(',')[0].strip()).replace(' ', '-')
 
-def formDirectoryName(base, termName, imageId):
+def formImagePath(base, termName, imageId):
     return os.path.join(base, getDirectoryForTerm(termName), str(imageId) + ".jpg")
+
+def formDirectoryName(base, termName, imageId):
+    path = formImagePath(base, termName, imageId)
+
+    while os.path.exists(path):
+        imageId += 1
+        path = formImagePath(base, termName, imageId)
+
+    return path, imageId
 
 def writeMetadata(path, termName, url, imageId):
     metadataFile = open(path, 'a')
 
-    metadataFile.write(formDirectoryName('.', termName, imageId) + ", " + url.strip() + ", " + getDirectoryForTerm(termName) + "\n")
+    metadataFile.write(formImagePath('.', termName, imageId) + ", " + url.strip() + ", " + getDirectoryForTerm(termName) + "\n")
 
 def createDirectories(path):
     directory = os.path.dirname(path)
@@ -175,7 +185,7 @@ def downloadImage(path, url):
 class UrlRequest:
     def __init__(self, destinationDirectory, term, url, i):
         self.index = i
-        self.save_path = formDirectoryName(destinationDirectory, getDirectoryForTerm(term), i)
+        self.save_path, self.index = formDirectoryName(destinationDirectory, getDirectoryForTerm(term), i)
         self.file_url = url
         self.result = False
 
@@ -217,7 +227,7 @@ def getAlreadyDownloadedFilesFromMetadata(destinationDirectory):
     if not os.path.exists(metadataPath):
         return existing
 
-    with open(metaDataPath, 'r') as metadata:
+    with open(metadataPath, 'r') as metadata:
         for line in metadata:
             elements = [element.strip() for element in line.split(',')]
 
@@ -237,6 +247,11 @@ def downloadImagesForTerms(selectedTermIds, classes, options):
     imageCount = 0
 
     downloadedAlready = getAlreadyDownloadedFilesFromMetadata(destinationDirectory)
+
+    print 'Already downloaded ' + str(len(downloadedAlready))
+
+    random.seed()
+    random.shuffle(selectedTermIds)
 
     for term in selectedTermIds:
 
@@ -264,8 +279,13 @@ def downloadImagesForTerms(selectedTermIds, classes, options):
             urls.append(url)
             downloadedAlready.add(url)
 
-        imageUrls = [UrlRequest(destinationDirectory, termName, url, i)
-            for (i, url) in enumerate(urls)]
+        imageUrls = []
+        index = 0
+
+        for url in urls:
+            request = UrlRequest(destinationDirectory, termName, url, index)
+            index = request.index + 1
+            imageUrls.append(request)
 
         if len(imageUrls) > remainingImages:
             imageUrls = imageUrls[:remainingImages]
@@ -408,7 +428,7 @@ def main():
     else:
         selectedTermIds, classes = selectTerms(int(options.terms))
 
-    print 'Selected', str(len(selectedTermIds)), 'terms, each with',
+    print 'Selected', str(len(selectedTermIds)), 'terms, each with', \
         options.maximum_images_per_term, 'images'
 
     socket.setdefaulttimeout(10.0)
