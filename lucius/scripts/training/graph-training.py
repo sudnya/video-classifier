@@ -28,7 +28,7 @@ class ExperimentData:
         self.trainingError        = None
         self.trainingIterations   = None
         self.validationError      = None
-        self.validationIterations = None
+        self.epochs               = None
 
     def resize(self, maximumIterations):
         maximumIterations = lower_bound(self.trainingIterations, maximumIterations)
@@ -45,6 +45,20 @@ class ExperimentData:
 
         self.normalizeTrainingError()
 
+    def setValidationError(self, data):
+        self.validationError = data
+
+        self.normalizeValidationError()
+
+    def hasValidationError(self):
+        if self.epochs == None or self.validationError == None:
+            return False
+
+
+        if len(self.epochs) == 0 or len(self.validationError) == 0:
+            return False
+
+        return True
 
     def normalizeTrainingError(self):
 
@@ -62,6 +76,7 @@ class ExperimentData:
         previousSampleCount = self.trainingIterations[0]
         increment = 0
         maxvalue = 0
+        self.epochs = []
 
         self.trainingIterations[0] = 0
 
@@ -71,11 +86,39 @@ class ExperimentData:
             if sampleCount > previousSampleCount:
                 increment += epochLength
                 epochLength = sampleCount
+                self.epochs.append(increment)
 
             previousSampleCount = sampleCount
 
             samplesSoFar = epochLength - sampleCount
             self.trainingIterations[i] = samplesSoFar + increment
+
+    def normalizeValidationError(self):
+        maxEpochLength = 0
+        previousIterations = 0
+
+        for iterations in self.epochs:
+            maxEpochLength = max(maxEpochLength, iterations - previousIterations)
+            previousIterations = iterations
+
+        epochs = []
+        previousIterations = 0
+
+        for iterations in self.epochs:
+            epochLength = iterations - previousIterations
+
+            if epochLength > (maxEpochLength / 2):
+                epochs.append(iterations)
+
+            previousIterations = iterations
+
+        self.epochs = epochs
+
+        if len(self.validationError) > len(self.epochs):
+            self.validationError = self.validationError[0:len(self.epochs)]
+
+        if len(self.epochs) > len(self.validationError):
+            self.epochs = self.epochs[0:len(self.validationError)]
 
 
 class ExperimentGroup:
@@ -98,8 +141,6 @@ class ExperimentGroup:
     def resize(self, size):
         for experiment in self.getExperiments():
             experiment.resize(size)
-
-
 
 def parseCost(line):
     position = line.find("running cost sum")
@@ -168,7 +209,21 @@ def loadTrainingErrorFromLogFile(path):
     return data, iterations
 
 def loadValidationError(path):
-    return None
+    error = []
+
+    with open(path, 'r') as errorFile:
+        for line in errorFile:
+            elements = line.split(',')
+
+            for element in elements:
+                try:
+                    result = float(element.strip())
+                except ValueError:
+                    continue
+
+                error.append(result)
+
+    return error
 
 def getExperimentName(path):
     head, tail = os.path.split(path)
@@ -199,7 +254,7 @@ def loadExperiment(path):
     experimentData.setTrainingError(loadTrainingErrorFromLogFile(logPath))
 
     if os.path.exists(validationPath):
-        experimentData.validationError = loadValidationError(validationPath)
+        experimentData.setValidationError(loadValidationError(validationPath))
 
     return experimentData
 
@@ -304,6 +359,10 @@ class Visualizer:
                 experimentLabel = formatNameForLabel(experiment.name)
                 axes.plot(experiment.trainingIterations, experiment.trainingError,
                     label=experimentLabel)
+                if experiment.hasValidationError():
+                    print experiment.epochs, experiment.validationError
+                    axes.plot(experiment.epochs, experiment.validationError, linestyle='--', marker='o',
+                        label=(experimentLabel + '-val'))
 
             percent = max(0.1, min(0.07 * group.size(), .7))
 
