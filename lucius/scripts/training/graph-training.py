@@ -33,7 +33,7 @@ class ExperimentData:
     def resize(self, maximumIterations):
         maximumIterations = lower_bound(self.trainingIterations, maximumIterations)
 
-        print maximumIterations, len(self.trainingIterations), self.trainingIterations[0:10]
+        #print maximumIterations, len(self.trainingIterations), self.trainingIterations[0:10]
 
         if len(self.trainingError) > maximumIterations:
             self.trainingError = self.trainingError[0:maximumIterations]
@@ -360,7 +360,7 @@ class Visualizer:
                 axes.plot(experiment.trainingIterations, experiment.trainingError,
                     label=experimentLabel)
                 if experiment.hasValidationError():
-                    print experiment.epochs, experiment.validationError
+                    #print experiment.epochs, experiment.validationError
                     axes.plot(experiment.epochs, experiment.validationError, linestyle='--', marker='o',
                         label=(experimentLabel + '-val'))
 

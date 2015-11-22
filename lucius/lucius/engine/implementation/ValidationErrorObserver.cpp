@@ -49,7 +49,7 @@ void ValidationErrorObserver::epochCompleted(Engine& runningEngine)
     auto resultProcessor = static_cast<results::LabelMatchResultProcessor*>(
         engine->getResultProcessor());
 
-    _accuracy.push_back(resultProcessor->getAccuracy());
+    _accuracy.push_back(resultProcessor->getCost());
 
     // write the output
     std::ofstream output(_outputPath);

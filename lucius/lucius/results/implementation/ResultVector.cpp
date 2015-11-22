@@ -24,6 +24,24 @@ ResultVector::~ResultVector()
     clear();
 }
 
+ResultVector::ResultVector(ResultVector&& v)
+: _results(std::move(v._results))
+{
+
+}
+
+ResultVector& ResultVector::operator=(ResultVector&& v)
+{
+    if(this == &v)
+    {
+        return *this;
+    }
+
+    _results = std::move(v._results);
+
+    return *this;
+}
+
 void ResultVector::push_back(Result* r)
 {
     _results.push_back(r);

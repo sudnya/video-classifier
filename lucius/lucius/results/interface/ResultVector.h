@@ -35,8 +35,8 @@ public:
     ~ResultVector();
 
 public:
-    ResultVector(const ResultVector&);
-    ResultVector& operator=(const ResultVector&);
+    ResultVector(ResultVector&&);
+    ResultVector& operator=(ResultVector&&);
 
 public:
     void push_back(Result*);

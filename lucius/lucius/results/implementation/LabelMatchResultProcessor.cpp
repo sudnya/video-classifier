@@ -7,6 +7,7 @@
 // Lucius Includes
 #include <lucius/results/interface/LabelMatchResultProcessor.h>
 #include <lucius/results/interface/LabelMatchResult.h>
+#include <lucius/results/interface/CostResult.h>
 #include <lucius/results/interface/ResultVector.h>
 
 #include <lucius/util/interface/debug.h>
@@ -22,7 +23,7 @@ namespace results
 {
 
 LabelMatchResultProcessor::LabelMatchResultProcessor()
-: _matches(0), _total(0)
+: _matches(0), _total(0), _cost(0.0)
 {
 
 }
@@ -46,6 +47,13 @@ void LabelMatchResultProcessor::process(const ResultVector& results)
         // skip results other than label match
         if(matchResult == nullptr)
         {
+            auto costResult = dynamic_cast<CostResult*>(result);
+
+            _cost += costResult->cost;
+
+            util::log("LabelMatchResultProcessor::Detail") << " cost '"
+                << costResult->cost << "'\n";
+
             continue;
         }
 
@@ -70,9 +78,14 @@ std::string LabelMatchResultProcessor::toString() const
     return stream.str();
 }
 
-float LabelMatchResultProcessor::getAccuracy() const
+double LabelMatchResultProcessor::getAccuracy() const
 {
-    return (_matches * 100.0f) / _total;
+    return (_matches * 100.0) / _total;
+}
+
+double LabelMatchResultProcessor::getCost() const
+{
+    return _cost / _total;
 }
 
 }
