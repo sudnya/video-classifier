@@ -116,12 +116,15 @@ void Engine::runOnDataProducer(InputDataProducer& producer)
         {
             auto dataAndReference = std::move(producer.pop());
 
+            size_t batchSize = dataAndReference.first.size()[
+                dataAndReference.first.size().size() - 2];
+
             auto results = runOnBatch(std::move(dataAndReference.first),
                 std::move(dataAndReference.second));
 
             _resultProcessor->process(std::move(results));
 
-            ++_iteration;
+            _iteration += batchSize;
         }
 
         for(auto& observer : _observers)

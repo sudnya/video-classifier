@@ -266,7 +266,7 @@ static void trainNetwork(Model& model, const Parameters& parameters)
     engine->setBatchSize(parameters.batchSize);
     engine->setStandardizeInput(true);
     engine->setMaximumSamplesToRun(parameters.maximumSamples);
-    engine->setResultProcessor(ResultProcessorFactory::create("CostResultProcessor",
+    engine->setResultProcessor(ResultProcessorFactory::create("CostLoggingResultProcessor",
         std::make_tuple("OutputPath", parameters.trainingReportPath)));
     engine->addObserver(EngineObserverFactory::create("ModelCheckpointer",
         std::make_tuple("Path", parameters.outputPath)));

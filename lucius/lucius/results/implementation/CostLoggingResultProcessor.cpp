@@ -67,7 +67,7 @@ std::string CostLoggingResultProcessor::toString() const
         }
         else
         {
-            stream << ",\n";
+            stream << "\n";
         }
 
         stream << costAndIteration.first << ", " << costAndIteration.second;

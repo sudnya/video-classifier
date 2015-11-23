@@ -40,7 +40,7 @@ void ValidationErrorObserver::epochCompleted(Engine& runningEngine)
     engine->setBatchSize(_batchSize);
     engine->setModel(runningEngine.getModel());
     engine->setStandardizeInput(true);
-    engine->setMaximumSamplesToRun(1024);
+    engine->setMaximumSamplesToRun(100000);
 
     // read from database and use model to test
     engine->runOnDatabaseFile(_validationSetPath);
