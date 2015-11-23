@@ -10,6 +10,7 @@
 #include <lucius/network/interface/NeuralNetwork.h>
 
 #include <lucius/results/interface/ResultVector.h>
+#include <lucius/results/interface/CostResult.h>
 
 #include <lucius/matrix/interface/Matrix.h>
 
@@ -48,11 +49,15 @@ LearnerEngine::ResultVector LearnerEngine::runOnBatch(Matrix&& input, Matrix&& r
 
     network->setIsTraining(true);
 
-    network->train(std::move(input), std::move(reference));
+    double cost = network->train(std::move(input), std::move(reference));
 
     restoreAggregateNetwork();
 
-    return ResultVector();
+    ResultVector results;
+
+    results.push_back(new results::CostResult(cost, getIteration()));
+
+    return results;
 }
 
 bool LearnerEngine::requiresLabeledData() const

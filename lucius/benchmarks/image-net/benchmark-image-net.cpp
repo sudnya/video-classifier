@@ -14,7 +14,7 @@
 
 #include <lucius/database/interface/SampleDatabase.h>
 
-#include <lucius/results/interface/ResultProcessor.h>
+#include <lucius/results/interface/ResultProcessorFactory.h>
 #include <lucius/results/interface/LabelMatchResultProcessor.h>
 
 #include <lucius/network/interface/NeuralNetwork.h>
@@ -52,6 +52,7 @@ typedef lucius::model::Model Model;
 typedef lucius::engine::Engine Engine;
 typedef lucius::engine::EngineObserverFactory EngineObserverFactory;
 typedef lucius::database::SampleDatabase SampleDatabase;
+typedef lucius::results::ResultProcessorFactory ResultProcessorFactory;
 typedef lucius::results::LabelMatchResultProcessor LabelMatchResultProcessor;
 
 class Parameters
@@ -79,6 +80,7 @@ public:
     std::string testPath;
     std::string outputPath;
     std::string validationReportPath;
+    std::string trainingReportPath;
 
     size_t maximumSamples;
     bool seed;
@@ -264,6 +266,8 @@ static void trainNetwork(Model& model, const Parameters& parameters)
     engine->setBatchSize(parameters.batchSize);
     engine->setStandardizeInput(true);
     engine->setMaximumSamplesToRun(parameters.maximumSamples);
+    engine->setResultProcessor(ResultProcessorFactory::create("CostResultProcessor",
+        std::make_tuple("OutputPath", parameters.trainingReportPath)));
     engine->addObserver(EngineObserverFactory::create("ModelCheckpointer",
         std::make_tuple("Path", parameters.outputPath)));
     engine->addObserver(EngineObserverFactory::create("ValidationErrorObserver",
@@ -376,6 +380,8 @@ int main(int argc, char** argv)
         "models/image-net.tar", "The path to save the model.");
     parser.parse("-r", "--report-path", parameters.validationReportPath,
         "models/image-net-validation.csv", "The path to save validation results.");
+    parser.parse("", "--training-report-path", parameters.trainingReportPath,
+        "models/image-net-training.csv", "The path to save training results.");
     parser.parse("-m", "--model-path", parameters.modelPath,
         "", "The path to restore a previously saved model from.");
 

@@ -155,12 +155,12 @@ static double differentiableSolver(NeuralNetwork* network, const Matrix* input,
 }
 
 
-void SimpleNeuralNetworkSolver::solve()
+double SimpleNeuralNetworkSolver::solve()
 {
     util::log("SimpleNeuralNetworkSolver") << "Solve\n";
     util::log("SimpleNeuralNetworkSolver")
         << " no need for tiling, solving entire network at once.\n";
-    differentiableSolver(_network, _input, _reference, _solver.get());
+    return differentiableSolver(_network, _input, _reference, _solver.get());
 }
 
 NeuralNetworkSolver* SimpleNeuralNetworkSolver::clone() const

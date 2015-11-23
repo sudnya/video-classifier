@@ -13,8 +13,8 @@ namespace lucius
 namespace results
 {
 
-CostResult::CostResult(double cost)
-: cost(cost)
+CostResult::CostResult(double cost, size_t iteration)
+: cost(cost), iteration(iteration)
 {
 
 

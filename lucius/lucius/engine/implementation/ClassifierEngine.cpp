@@ -80,8 +80,8 @@ util::StringVector convertActivationsToLabels(matrix::Matrix&& activations,
     return labels;
 }
 
-results::ResultVector compareWithReference(double cost, const util::StringVector& labels,
-    const util::StringVector& references)
+results::ResultVector compareWithReference(double cost, size_t iteration,
+    const util::StringVector& labels, const util::StringVector& references)
 {
     results::ResultVector result;
 
@@ -91,7 +91,7 @@ results::ResultVector compareWithReference(double cost, const util::StringVector
         result.push_back(new results::LabelMatchResult(*label, *reference));
     }
 
-    result.push_back(new results::CostResult(cost));
+    result.push_back(new results::CostResult(cost, iteration));
 
     return result;
 }
@@ -124,7 +124,7 @@ ClassifierEngine::ResultVector ClassifierEngine::runOnBatch(Matrix&& input, Matr
     {
         auto cost = network->getCost(input, reference);
 
-        results = std::move(compareWithReference(cost * labels.size(), labels,
+        results = std::move(compareWithReference(cost * labels.size(), getIteration(), labels,
             convertActivationsToLabels(std::move(reference), *getModel())));
     }
     else

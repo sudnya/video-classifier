@@ -22,10 +22,11 @@ namespace results
 class CostResult : public Result
 {
 public:
-    CostResult(double cost);
+    CostResult(double cost, size_t iteration);
 
 public:
     double cost;
+    size_t iteration;
 };
 
 }

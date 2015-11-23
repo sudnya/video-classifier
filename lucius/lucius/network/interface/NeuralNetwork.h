@@ -112,8 +112,8 @@ public:
     size_t getParameterMemory() const;
 
 public:
-    /*! \brief Train the network on the specified input and reference. */
-    void train(const Matrix& input, const Matrix& reference);
+    /*! \brief Train the network on the specified input and reference, return the cost. */
+    double train(const Matrix& input, const Matrix& reference);
 
 public:
     typedef std::vector<LayerPointer> LayerVector;

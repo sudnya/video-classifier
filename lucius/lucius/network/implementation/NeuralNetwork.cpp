@@ -349,13 +349,13 @@ size_t NeuralNetwork::getActivationMemory() const
     return bytes;
 }
 
-void NeuralNetwork::train(const Matrix& input, const Matrix& reference)
+double NeuralNetwork::train(const Matrix& input, const Matrix& reference)
 {
     getSolver()->setInput(&input);
     getSolver()->setReference(&reference);
     getSolver()->setNetwork(this);
 
-    getSolver()->solve();
+    return getSolver()->solve();
 }
 
 NeuralNetwork::iterator NeuralNetwork::begin()
