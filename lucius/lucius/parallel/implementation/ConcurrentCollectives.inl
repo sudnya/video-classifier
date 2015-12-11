@@ -18,12 +18,12 @@ CUDA_DECORATOR inline ThreadGroup::ThreadGroup(uint32_t size, uint32_t id)
 
 }
 
-CUDA_DECORATOR inline int ThreadGroup::size() const
+CUDA_DECORATOR inline uint32_t ThreadGroup::size() const
 {
 	return _size;
 }
 
-CUDA_DECORATOR inline int ThreadGroup::id() const
+CUDA_DECORATOR inline uint32_t ThreadGroup::id() const
 {
 	return _id;
 }
