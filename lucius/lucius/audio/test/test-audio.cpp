@@ -27,7 +27,7 @@ static lucius::audio::Audio generateSimpleTone()
     return sample;
 }
 
-static void testGenericLossless(const std::string& format)
+static bool testGenericLossless(const std::string& format)
 {
     auto simpleTone = generateSimpleTone();
 
@@ -74,8 +74,19 @@ static void testGenericLossless(const std::string& format)
 
 static void runTest()
 {
-    testGenericLossless(".flac");
-    testGenericLossless(".wav");
+    bool result = true;
+
+    result &= testGenericLossless(".flac");
+    result &= testGenericLossless(".wav");
+
+    if(result)
+    {
+        std::cout << "Test Passed\n";
+    }
+    else
+    {
+        std::cout << "Test Failed\n";
+    }
 }
 
 int main(int argc, char** argv)
