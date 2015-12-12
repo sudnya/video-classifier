@@ -66,6 +66,7 @@ public:
     double momentum;
     double annealingRate;
 
+    size_t timesteps;
     double noiseRateLower;
     double noiseRateUpper;
 
@@ -98,9 +99,19 @@ static void addClassifier(Model& model, const Parameters& parameters)
     NeuralNetwork classifier;
 
     // The first layer processes all of the samples in a frame
-    classifier.addLayer(LayerFactory::create("FeedForwardLayer",
-        std::make_tuple("InputSize",  parameters.frameDuration),
-        std::make_tuple("OutputSize", parameters.layerSize)));
+    classifier.addLayer(LayerFactory::create("ConvolutionalLayer",
+        std::make_tuple("InputWidth",    parameters.frameDuration),
+        std::make_tuple("InputHeight",   parameters.timesteps    ),
+        std::make_tuple("InputColors",   1                       ),
+        std::make_tuple("BatchSize",     parameters.batchSize    ),
+        std::make_tuple("FilterWidth",   parameters.frameDuration),
+        std::make_tuple("FilterHeight",  3                       ),
+        std::make_tuple("FilterInputs",  1                       ),
+        std::make_tuple("FilterOutputs", parameters.layerSize    ),
+        std::make_tuple("StrideWidth",   parameters.frameDuration),
+        std::make_tuple("StrideHeight",  1                       ),
+        std::make_tuple("PaddingWidth",  0                       ),
+        std::make_tuple("PaddingHeight", 1                       )));
 
     for(size_t forwardLayer = 2; forwardLayer < parameters.forwardLayers; ++forwardLayer)
     {
@@ -249,6 +260,8 @@ static void setupSolverParameters(const Parameters& parameters)
         parameters.noiseRateLower);
     lucius::util::KnobDatabase::setKnob("InputAudioDataProducer::NoiseRateUpper",
         parameters.noiseRateUpper);
+    lucius::util::KnobDatabase::setKnob("InputAudioDataProducer::TotalTimestepsPerUtterance",
+        parameters.timesteps);
     lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::AnnealingRate",
         parameters.annealingRate);
     lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::MaxGradNorm",   "100.0");
@@ -315,6 +328,8 @@ int main(int argc, char** argv)
         "The minimum magnitude to scale noise by.");
     parser.parse("", "--noise-rate-upper", parameters.noiseRateUpper, 0.2,
         "The maximum magnitude to scale noise by.");
+    parser.parse("", "--timesteps", parameters.timesteps, 64,
+        "The number of timesteps to train on.");
 
     parser.parse("-f", "--forward-layers", parameters.forwardLayers, 4,
         "The number of feed forward layers.");
