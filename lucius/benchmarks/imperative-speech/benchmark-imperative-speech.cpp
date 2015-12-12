@@ -13,6 +13,7 @@
 #include <lucius/model/interface/Model.h>
 
 #include <lucius/results/interface/ResultProcessor.h>
+#include <lucius/results/interface/ResultProcessorFactory.h>
 #include <lucius/results/interface/LabelMatchResultProcessor.h>
 
 #include <lucius/network/interface/NeuralNetwork.h>
@@ -40,6 +41,7 @@ typedef lucius::engine::Engine Engine;
 typedef lucius::engine::EngineFactory EngineFactory;
 typedef lucius::engine::EngineObserverFactory EngineObserverFactory;
 typedef lucius::results::LabelMatchResultProcessor LabelMatchResultProcessor;
+typedef lucius::results::ResultProcessorFactory ResultProcessorFactory;
 typedef lucius::network::ActivationFunctionFactory ActivationFunctionFactory;
 
 class Parameters
@@ -50,6 +52,7 @@ public:
     std::string testPath;
     std::string outputPath;
     std::string validationReportPath;
+    std::string trainingReportPath;
 
 public:
     size_t layerSize;
@@ -184,6 +187,8 @@ static void trainNetwork(Model& model, const Parameters& parameters)
     engine->setBatchSize(parameters.batchSize);
     engine->setStandardizeInput(true);
     engine->setMaximumSamplesToRun(parameters.maximumSamples);
+    engine->setResultProcessor(ResultProcessorFactory::create("CostLoggingResultProcessor",
+        std::make_tuple("OutputPath", parameters.trainingReportPath)));
     engine->addObserver(EngineObserverFactory::create("ModelCheckpointer",
         std::make_tuple("Path", parameters.outputPath)));
     engine->addObserver(EngineObserverFactory::create("ValidationErrorObserver",
@@ -292,6 +297,8 @@ int main(int argc, char** argv)
         "models/imperative-speech.tar", "The path to save the model.");
     parser.parse("-r", "--report-path", parameters.validationReportPath,
         "models/imperative-speech-validation.csv", "The path to save validation results.");
+    parser.parse("", "--training-report-path", parameters.trainingReportPath,
+        "models/image-net-training.csv", "The path to save training results.");
     parser.parse("-m", "--model-path", parameters.modelPath,
         "", "The path to restore a previously saved model from.");
 

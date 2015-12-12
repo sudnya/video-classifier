@@ -66,10 +66,12 @@ static bool testGenericLossless(const std::string& format)
             }
         }
 
-        return;
+        return false;
     }
 
     std::cout << " Test " << format << " Passed\n";
+
+    return true;
 }
 
 static void runTest()
