@@ -50,7 +50,8 @@ ConvolutionalLayer::~ConvolutionalLayer()
 }
 
 ConvolutionalLayer::ConvolutionalLayer(const matrix::Dimension& inputSize,
-    const matrix::Dimension& size, const matrix::Dimension& stride, const matrix::Dimension& padding)
+    const matrix::Dimension& size, const matrix::Dimension& stride,
+    const matrix::Dimension& padding)
 : ConvolutionalLayer(inputSize, size, stride, padding, matrix::Precision::getDefaultPrecision())
 {
 
@@ -413,6 +414,16 @@ std::unique_ptr<Layer> ConvolutionalLayer::mirror() const
 std::string ConvolutionalLayer::getTypeName() const
 {
     return "ConvolutionalLayer";
+}
+
+matrix::Dimension ConvolutionalLayer::getFilterStride() const
+{
+    return *_filterStride;
+}
+
+matrix::Dimension ConvolutionalLayer::getInputPadding() const
+{
+    return *_inputPadding;
 }
 
 }

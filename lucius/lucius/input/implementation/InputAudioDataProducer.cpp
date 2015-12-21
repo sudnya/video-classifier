@@ -80,7 +80,7 @@ public:
 
         _parseAudioDatabase();
 
-        // Determine how many images to cache
+        // Determine how many audio samples to cache
         size_t samplesToCache = util::KnobDatabase::getKnobValue(
             "InputAudioDataProducer::CacheSize", 16);
 

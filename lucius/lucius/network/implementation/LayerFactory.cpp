@@ -10,6 +10,7 @@
 #include <lucius/network/interface/FeedForwardLayer.h>
 #include <lucius/network/interface/RecurrentLayer.h>
 #include <lucius/network/interface/ConvolutionalLayer.h>
+#include <lucius/network/interface/AudioConvolutionalLayer.h>
 #include <lucius/network/interface/BatchNormalizationLayer.h>
 #include <lucius/network/interface/MaxPoolingLayer.h>
 
@@ -45,6 +46,31 @@ std::unique_ptr<Layer> LayerFactory::create(const std::string& name, const Param
         return std::make_unique<RecurrentLayer>(size, batchSize);
     }
     else if("ConvolutionalLayer" == name)
+    {
+        size_t inputSamples   = parameters.get("InputSamples",   1);
+        size_t inputTimesteps = parameters.get("InputTimesteps", 1);
+        size_t inputChannels  = parameters.get("InputChannels",  1);
+        size_t inputBatch     = parameters.get("BatchSize",      1);
+
+        size_t filterSamples   = parameters.get("FilterSamples",   1);
+        size_t filterTimesteps = parameters.get("FilterTimesteps", 1);
+        size_t filterInputs    = parameters.get("FilterInputs",    1);
+        size_t filterOutputs   = parameters.get("FilterOutputs",   1);
+
+        size_t strideSamples   = parameters.get("StrideSamples",   1);
+        size_t strideTimesteps = parameters.get("StrideTimesteps", 1);
+
+        size_t paddingSamples   = parameters.get("PaddingSamples",   0);
+        size_t paddingTimesteps = parameters.get("PaddingTimesteps", 0);
+
+        return std::make_unique<AudioConvolutionalLayer>(
+            matrix::Dimension({inputSamples,   inputTimesteps,  inputChannels,  inputBatch, 1}),
+            matrix::Dimension({filterSamples,  filterTimesteps, filterInputs,   filterOutputs}),
+            matrix::Dimension({strideSamples,  strideTimesteps}),
+            matrix::Dimension({paddingSamples, paddingTimesteps})
+        );
+    }
+    else if("AudioConvolutionalLayer" == name)
     {
         size_t inputWidth  = parameters.get("InputWidth",  1);
         size_t inputHeight = parameters.get("InputHeight", 1);

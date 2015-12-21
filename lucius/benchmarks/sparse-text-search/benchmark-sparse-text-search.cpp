@@ -1,4 +1,4 @@
-/*! \file   benchmark-imperative-speech.cpp
+/*! \file   benchmark-sparse-text-search.cpp
     \date   Tuesday June 2, 2015
     \author Gregory Diamos <gregory.diamos@gmail.com>
     \brief  A benchmark for recurrent neural network imperative speech detection.
@@ -380,6 +380,7 @@ int main(int argc, char** argv)
 
     return 0;
 }
+
 
 
 

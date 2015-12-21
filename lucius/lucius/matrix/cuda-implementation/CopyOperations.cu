@@ -306,6 +306,20 @@ Matrix gather(const Matrix& input, const Operation& op)
     return result;
 }
 
+void permuteDimensions(Matrix& result, const Matrix& input, const Dimension& newOrder)
+{
+    gather(result, input, PermuteDimensionGather(input.stride(), result.size(), newOrder));
+}
+
+Matrix permuteDimensions(const Matrix& input, const Dimension& newOrder)
+{
+    Matrix result(selectDimensions(input.size(), newOrder), input.precision());
+
+    permuteDimensions(result, input, newOrder);
+
+    return result;
+}
+
 }
 }
 

@@ -41,6 +41,8 @@ public:
     CUDA_DECORATOR inline void pop_back();
     CUDA_DECORATOR inline void pop_back(size_t );
 
+    CUDA_DECORATOR inline void resize(size_t );
+
 public:
     CUDA_DECORATOR inline size_t size() const;
     CUDA_DECORATOR inline bool empty() const;
