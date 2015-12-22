@@ -15,6 +15,7 @@
 #include <lucius/network/interface/MaxPoolingLayer.h>
 
 #include <lucius/matrix/interface/Dimension.h>
+#include <lucius/matrix/interface/Precision.h>
 
 #include <lucius/util/interface/memory.h>
 
@@ -36,16 +37,22 @@ std::unique_ptr<Layer> LayerFactory::create(const std::string& name, const Param
         size_t inputSize  = parameters.get("InputSize",  1);
         size_t outputSize = parameters.get("OutputSize", inputSize);
 
-        return std::make_unique<FeedForwardLayer>(inputSize, outputSize);
+        auto precision = *matrix::Precision::fromString(parameters.get("Precision",
+            matrix::Precision::getDefaultPrecision().toString()));
+
+        return std::make_unique<FeedForwardLayer>(inputSize, outputSize, precision);
     }
     else if("RecurrentLayer" == name)
     {
         size_t size      = parameters.get("Size",      1);
         size_t batchSize = parameters.get("BatchSize", 1);
 
-        return std::make_unique<RecurrentLayer>(size, batchSize);
+        auto precision = *matrix::Precision::fromString(parameters.get("Precision",
+            matrix::Precision::getDefaultPrecision().toString()));
+
+        return std::make_unique<RecurrentLayer>(size, batchSize, precision);
     }
-    else if("ConvolutionalLayer" == name)
+    else if("AudioConvolutionalLayer" == name)
     {
         size_t inputSamples   = parameters.get("InputSamples",   1);
         size_t inputTimesteps = parameters.get("InputTimesteps", 1);
@@ -63,14 +70,18 @@ std::unique_ptr<Layer> LayerFactory::create(const std::string& name, const Param
         size_t paddingSamples   = parameters.get("PaddingSamples",   0);
         size_t paddingTimesteps = parameters.get("PaddingTimesteps", 0);
 
+        auto precision = *matrix::Precision::fromString(parameters.get("Precision",
+            matrix::Precision::getDefaultPrecision().toString()));
+
         return std::make_unique<AudioConvolutionalLayer>(
             matrix::Dimension({inputSamples,   inputTimesteps,  inputChannels,  inputBatch, 1}),
             matrix::Dimension({filterSamples,  filterTimesteps, filterInputs,   filterOutputs}),
             matrix::Dimension({strideSamples,  strideTimesteps}),
-            matrix::Dimension({paddingSamples, paddingTimesteps})
+            matrix::Dimension({paddingSamples, paddingTimesteps}),
+            precision
         );
     }
-    else if("AudioConvolutionalLayer" == name)
+    else if("ConvolutionalLayer" == name)
     {
         size_t inputWidth  = parameters.get("InputWidth",  1);
         size_t inputHeight = parameters.get("InputHeight", 1);
@@ -88,18 +99,25 @@ std::unique_ptr<Layer> LayerFactory::create(const std::string& name, const Param
         size_t paddingWidth  = parameters.get("PaddingWidth",  0);
         size_t paddingHeight = parameters.get("PaddingHeight", 0);
 
+        auto precision = *matrix::Precision::fromString(parameters.get("Precision",
+            matrix::Precision::getDefaultPrecision().toString()));
+
         return std::make_unique<ConvolutionalLayer>(
             matrix::Dimension(inputWidth,  inputHeight,  inputColors,  inputBatch, 1),
             matrix::Dimension({filterWidth, filterHeight, filterInputs, filterOutputs}),
             matrix::Dimension({strideWidth, strideHeight}),
-            matrix::Dimension({paddingWidth, paddingHeight})
+            matrix::Dimension({paddingWidth, paddingHeight}),
+            precision
         );
     }
     else if ("BatchNormalizationLayer" == name)
     {
         size_t size = parameters.get("Size", 1);
 
-        return std::make_unique<BatchNormalizationLayer>(size);
+        auto precision = *matrix::Precision::fromString(parameters.get("Precision",
+            matrix::Precision::getDefaultPrecision().toString()));
+
+        return std::make_unique<BatchNormalizationLayer>(size, precision);
     }
     else if ("MaxPoolingLayer" == name)
     {
@@ -111,9 +129,12 @@ std::unique_ptr<Layer> LayerFactory::create(const std::string& name, const Param
         size_t width  = parameters.get("FilterWidth", 1);
         size_t height = parameters.get("FilterHeight", 1);
 
+        auto precision = *matrix::Precision::fromString(parameters.get("Precision",
+            matrix::Precision::getDefaultPrecision().toString()));
+
         return std::make_unique<MaxPoolingLayer>(
             matrix::Dimension({inputWidth, inputHeight, inputColors, inputBatch}),
-            matrix::Dimension({width, height}));
+            matrix::Dimension({width, height}), precision);
     }
 
     return nullptr;

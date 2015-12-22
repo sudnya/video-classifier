@@ -17,6 +17,7 @@
 #include <lucius/matrix/interface/CopyOperations.h>
 
 #include <lucius/util/interface/memory.h>
+#include <lucius/util/interface/debug.h>
 
 namespace lucius
 {
@@ -102,6 +103,17 @@ void AudioConvolutionalLayer::runForwardImplementation(MatrixVector& activations
     _layer->runForwardImplementation(storage);
 
     activations.push_back(permuteDimensionsBackward(storage.back()));
+
+    if(util::isLogEnabled("AudioConvolutionalLayer::Detail"))
+    {
+        util::log("AudioConvolutionalLayer::Detail") << "  activation: "
+            << activations.back().debugString();
+    }
+    else
+    {
+        util::log("AudioConvolutionalLayer") << "  activation: "
+            << activations.back().shapeString() << "\n";
+    }
 }
 
 Matrix AudioConvolutionalLayer::runReverseImplementation(MatrixVector& gradients,
@@ -112,7 +124,9 @@ Matrix AudioConvolutionalLayer::runReverseImplementation(MatrixVector& gradients
     activations[activations.size() - 2] =
         permuteDimensionsForward(activations[activations.size() - 2]);
 
-    auto resultDeltas = _layer->runReverseImplementation(gradients, activations, deltas);
+    auto inputDeltas = permuteDimensionsForward(deltas);
+
+    auto resultDeltas = _layer->runReverseImplementation(gradients, activations, inputDeltas);
 
     activations.back() = permuteDimensionsBackward(activations.back());
 
