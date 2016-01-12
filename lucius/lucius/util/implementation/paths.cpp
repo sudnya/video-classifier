@@ -234,6 +234,17 @@ size_t getFileSize(std::istream& stream)
     return length;
 }
 
+std::string getFileData(std::istream& stream)
+{
+    size_t size = getFileSize(stream);
+
+    std::string result(size, ' ');
+
+    stream.read(const_cast<char*>(result.data()), size);
+
+    return result;
+}
+
 void copyFile(const std::string& outputPath, const std::string& inputPath)
 {
     std::ifstream input(inputPath, std::ios::binary);

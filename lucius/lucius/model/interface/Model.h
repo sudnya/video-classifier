@@ -1,4 +1,4 @@
-/*    \file   Model.h
+/*  \file   Model.h
     \date   Saturday August 10, 2013
     \author Gregory Diamos <solusstultus@gmail.com>
     \brief  The header file for the Model class.

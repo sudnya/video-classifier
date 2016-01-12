@@ -25,7 +25,7 @@ env['path_to_root_dir'] = os.path.abspath(lucius_path_to_root_dir)
 
 # find all source files in the source tree
 directories = ['lucius/audio', 'lucius/driver', 'lucius/util', 'lucius/engine',
-    'lucius/matrix', 'lucius/model', 'lucius/network',
+    'lucius/matrix', 'lucius/model', 'lucius/network', 'lucius/configuration',
     'lucius/optimizer', 'lucius/parallel', 'lucius/video', 'lucius/visualization',
     'lucius/database', 'lucius/input', 'lucius/results']
 

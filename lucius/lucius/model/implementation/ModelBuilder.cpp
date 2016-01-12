@@ -1,4 +1,4 @@
-/*    \file   ModelBuilder.cpp
+/*  \file   ModelBuilder.cpp
     \date   Saturday August 10, 2013
     \author Gregory Diamos <solusstultus@gmail.com>
     \brief  The source file for the ModelBuilder class.
@@ -13,6 +13,7 @@
 #include <lucius/network/interface/NeuralNetwork.h>
 
 #include <lucius/util/interface/Knobs.h>
+#include <lucius/util/interface/memory.h>
 #include <lucius/util/interface/debug.h>
 
 namespace lucius
@@ -28,22 +29,22 @@ typedef lucius::matrix::Matrix Matrix;
 static void initializeModelFromSpecification(Model* model, const std::string& specification)
 {
     ModelSpecification modelSpecification;
-    
+
     modelSpecification.parseSpecification(specification);
-    
+
     modelSpecification.initializeModel(*model);
 }
 
 static void buildConvolutionalFastModel(Model* model, size_t outputs)
 {
     auto specification = BuiltInSpecifications::getConvolutionalFastModelSpecification(outputs);
-    
+
     initializeModelFromSpecification(model, specification);
 }
 
-Model* ModelBuilder::create(const std::string& path)
+std::unique_ptr<Model> ModelBuilder::create(const std::string& path)
 {
-    auto model = new Model(path);
+    auto model = std::make_unique<Model>(path);
 
     size_t x      = util::KnobDatabase::getKnobValue("ModelBuilder::ResolutionX",     32);
     size_t y      = util::KnobDatabase::getKnobValue("ModelBuilder::ResolutionY",     32);
@@ -53,16 +54,17 @@ Model* ModelBuilder::create(const std::string& path)
     model->setAttribute("ResolutionY",     y     );
     model->setAttribute("ColorComponents", colors);
 
-    size_t classifierOutputSize = util::KnobDatabase::getKnobValue("Classifier::NeuralNetwork::Outputs", 1);
+    size_t classifierOutputSize = util::KnobDatabase::getKnobValue(
+        "Classifier::NeuralNetwork::Outputs", 1);
 
     // (FastModel, ConvolutionalCPUModel, ConvolutionalGPUModel)
-    auto modelType = util::KnobDatabase::getKnobValue("ModelType", "ConvolutionalFastModel"); 
+    auto modelType = util::KnobDatabase::getKnobValue("ModelType", "ConvolutionalFastModel");
 
     util::log("ModelBuilder") << "Creating ...\n";
 
     if(modelType == "ConvolutionalFastModel")
     {
-        buildConvolutionalFastModel(model, classifierOutputSize);
+        buildConvolutionalFastModel(model.get(), classifierOutputSize);
     }
     else
     {
@@ -72,12 +74,13 @@ Model* ModelBuilder::create(const std::string& path)
     return model;
 }
 
-Model* ModelBuilder::create(const std::string& path, const std::string& specification)
+std::unique_ptr<Model> ModelBuilder::create(const std::string& path,
+    const std::string& specification)
 {
-    auto model = new Model(path);
-    
-    initializeModelFromSpecification(model, specification);
-        
+    auto model = std::make_unique<Model>(path);
+
+    initializeModelFromSpecification(model.get(), specification);
+
     return model;
 }
 

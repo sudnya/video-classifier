@@ -6,9 +6,15 @@
 
 // Lucius Includes
 #include <lucius/util/interface/PropertyTree.h>
+#include <lucius/util/interface/memory.h>
+#include <lucius/util/interface/string.h>
 
 // Standard Library Includes
 #include <cassert>
+#include <list>
+#include <set>
+
+#include <iostream>
 
 namespace lucius
 {
@@ -79,6 +85,13 @@ public:
         return const_cast<PropertyTree&>(*existingChild);
     }
 
+    bool exists(const std::string& value)
+    {
+        auto existingChild = children.find(PropertyTree(value));
+
+        return existingChild != children.end();
+    }
+
 private:
     void _fixPaths(PropertyTreeImplementation& node)
     {
@@ -105,7 +118,11 @@ private:
     }
 
 public:
-    PropertyTree::TreeSet children;
+    typedef std::set<PropertyTree>  TreeSet;
+    typedef std::list<PropertyTree> TreeList;
+
+    TreeSet  children;
+    TreeList childrenList;
 
 public:
     std::string path;
@@ -145,7 +162,6 @@ PropertyTree::PropertyTree(PropertyTree&& tree)
 PropertyTree& PropertyTree::operator=(const std::string& v)
 {
     _implementation->createValue();
-
     _implementation->setValue(PropertyTree(v));
 
     return *this;
@@ -164,6 +180,31 @@ PropertyTree& PropertyTree::operator=(PropertyTree&& tree)
     _implementation = std::move(tree._implementation);
 
     return *this;
+}
+
+PropertyTree& PropertyTree::get(const std::string& field)
+{
+    return (*this)[field];
+}
+
+const PropertyTree& PropertyTree::get(const std::string& field) const
+{
+    return (*this)[field];
+}
+
+PropertyTree& PropertyTree::get()
+{
+    return get(key());
+}
+
+const PropertyTree& PropertyTree::get() const
+{
+    return get(key());
+}
+
+bool PropertyTree::exists(const std::string& key) const
+{
+    return _implementation->exists(key);
 }
 
 std::string& PropertyTree::key()
@@ -195,12 +236,38 @@ PropertyTree::operator std::string() const
 
 PropertyTree& PropertyTree::operator[](const std::string& key)
 {
-    return _implementation->createAndGetValue(key);
+    auto* base = this;
+    auto components = split(key, ".");
+
+    if(components.size() > 1)
+    {
+        auto end = --components.end();
+
+        for(auto component = components.begin(); component != end; ++component)
+        {
+            base = &(*base)[*component];
+        }
+    }
+
+    return _implementation->createAndGetValue(components.back());
 }
 
 const PropertyTree& PropertyTree::operator[](const std::string& key) const
 {
-    return _implementation->getValue(key);
+    auto* base = this;
+    auto components = split(key, ".");
+
+    if(components.size() > 1)
+    {
+        auto end = --components.end();
+
+        for(auto component = components.begin(); component != end; ++component)
+        {
+            base = &(*base)[*component];
+        }
+    }
+
+    return _implementation->getValue(components.back());
 }
 
 void PropertyTree::add(const PropertyTree& tree)
@@ -208,34 +275,53 @@ void PropertyTree::add(const PropertyTree& tree)
     _implementation->children.emplace(tree);
 }
 
+void PropertyTree::addListElement(const PropertyTree& child)
+{
+    assert(_implementation->children.empty());
+
+    _implementation->childrenList.push_back(child);
+}
+
 PropertyTree::iterator PropertyTree::begin()
 {
-    return _implementation->children.begin();
+    return iterator(*this, Begin());
 }
 
 PropertyTree::const_iterator PropertyTree::begin() const
 {
-    return _implementation->children.begin();
+    return const_iterator(*this, Begin());
 }
 
 PropertyTree::iterator PropertyTree::end()
 {
-    return _implementation->children.end();
+    return iterator(*this, End());
 }
 
 PropertyTree::const_iterator PropertyTree::end() const
 {
-    return _implementation->children.end();
+    return const_iterator(*this, End());
 }
 
 bool PropertyTree::empty() const
 {
-    return _implementation->children.empty();
+    return _implementation->children.empty() && _implementation->childrenList.empty();
 }
 
 size_t PropertyTree::size() const
 {
-    return _implementation->children.size();
+    if(isList())
+    {
+        return _implementation->childrenList.size();
+    }
+    else
+    {
+        return _implementation->children.size();
+    }
+}
+
+bool PropertyTree::isList() const
+{
+    return !_implementation->childrenList.empty();
 }
 
 bool PropertyTree::operator<(const PropertyTree& right) const
@@ -251,7 +337,23 @@ static void saveJson(const PropertyTree& tree, std::ostream& json)
         return;
     }
 
-    if(tree.size() == 1)
+    if(tree.isList())
+    {
+        json << "[ ";
+
+        bool first = true;
+
+        for(auto& child : tree)
+        {
+            if(!first) json << ", ";
+
+            first = false;
+            saveJson(child, json);
+        }
+
+        json << " ]";
+    }
+    else if(tree.size() == 1)
     {
         if(!tree.key().empty())
         {
@@ -342,7 +444,7 @@ static bool isToken(char c)
 
 static bool isFixedSizeToken(char c)
 {
-    return c == '\"' || c == '{' || c == '}' || c == ',' || c == ':';
+    return c == '\"' || c == '{' || c == '}' || c == ',' || c == ':' || c == '[' || c == ']';
 }
 
 static std::string getNextToken(std::istream& json)
@@ -404,6 +506,18 @@ static void parseOpenBrace(std::istream& json)
     }
 
     throw std::runtime_error("Expecting a '{'.");
+}
+
+static void parseOpenBracket(std::istream& json)
+{
+    auto token = getNextToken(json);
+
+    if(token == "[")
+    {
+        return;
+    }
+
+    throw std::runtime_error("Expecting a '['.");
 }
 
 static void parseQuote(std::istream& json)
@@ -497,6 +611,28 @@ static void parseJsonObjectBody(PropertyTree& result, std::istream& json)
     }
 }
 
+static void parseJsonArrayBody(PropertyTree& result, std::istream& json)
+{
+    while(true)
+    {
+        PropertyTree child;
+
+        parseKey(child, json);
+
+        result.addListElement(child);
+
+        auto comma = peekToken(json);
+
+        if(comma == ",")
+        {
+            getNextToken(json);
+            continue;
+        }
+
+        break;
+    }
+}
+
 static void parseCloseBrace(std::istream& json)
 {
     auto token = getNextToken(json);
@@ -509,17 +645,357 @@ static void parseCloseBrace(std::istream& json)
     throw std::runtime_error("Expecting a '}'.");
 }
 
+static void parseCloseBracket(std::istream& json)
+{
+    auto token = getNextToken(json);
+
+    if(token == "]")
+    {
+        return;
+    }
+
+    throw std::runtime_error("Expecting a ']'.");
+}
+
+static bool nextTokenIsOpenBracket(std::istream& json)
+{
+    return peekToken(json) == "[";
+}
+
 PropertyTree PropertyTree::loadJson(std::istream& json)
 {
     PropertyTree result;
 
-    parseOpenBrace(json);
+    if(nextTokenIsOpenBracket(json))
+    {
+        parseOpenBracket(json);
 
-    parseJsonObjectBody(result, json);
+        parseJsonArrayBody(result, json);
 
-    parseCloseBrace(json);
+        parseCloseBracket(json);
+    }
+    else
+    {
+        parseOpenBrace(json);
+
+        parseJsonObjectBody(result, json);
+
+        parseCloseBrace(json);
+    }
 
     return result;
+}
+
+class IteratorImplementation
+{
+public:
+    IteratorImplementation()
+    : isList(false)
+    {
+
+    }
+
+    IteratorImplementation(PropertyTree& tree, PropertyTree::Begin)
+    : isList(tree.isList()),
+      list(tree._implementation->childrenList.begin()),
+      set(tree._implementation->children.begin())
+    {
+
+    }
+
+    IteratorImplementation(PropertyTree& tree, PropertyTree::End)
+    : isList(!tree._implementation->childrenList.empty()),
+      list(tree._implementation->childrenList.end()),
+      set(tree._implementation->children.end())
+    {
+
+    }
+
+public:
+    bool isList;
+    PropertyTreeImplementation::TreeList::iterator list;
+    PropertyTreeImplementation::TreeSet::iterator set;
+};
+
+class ConstIteratorImplementation
+{
+public:
+    ConstIteratorImplementation()
+    : isList(false)
+    {
+
+    }
+
+    ConstIteratorImplementation(const IteratorImplementation& it)
+    : isList(it.isList), list(it.list), set(it.set)
+    {
+
+    }
+
+    ConstIteratorImplementation(const PropertyTree& tree, PropertyTree::Begin)
+    : isList(tree.isList()),
+      list(tree._implementation->childrenList.begin()),
+      set(tree._implementation->children.begin())
+    {
+
+    }
+
+    ConstIteratorImplementation(const PropertyTree& tree, PropertyTree::End)
+    : isList(!tree._implementation->childrenList.empty()),
+      list(tree._implementation->childrenList.end()),
+      set(tree._implementation->children.end())
+    {
+
+    }
+
+public:
+    bool isList;
+    PropertyTreeImplementation::TreeList::const_iterator list;
+    PropertyTreeImplementation::TreeSet::const_iterator set;
+};
+
+PropertyTree::iterator::iterator()
+: _implementation(std::make_unique<IteratorImplementation>())
+{
+
+}
+
+PropertyTree::iterator::iterator(PropertyTree& tree, PropertyTree::Begin begin)
+: _implementation(std::make_unique<IteratorImplementation>(tree, begin))
+{
+
+}
+
+PropertyTree::iterator::iterator(PropertyTree& tree, PropertyTree::End end)
+: _implementation(std::make_unique<IteratorImplementation>(tree, end))
+{
+
+}
+
+PropertyTree::iterator::iterator(const iterator& it)
+: _implementation(std::make_unique<IteratorImplementation>(*it._implementation))
+{
+
+}
+
+PropertyTree::iterator::~iterator() = default;
+
+PropertyTree::iterator& PropertyTree::iterator::operator=(const iterator& it)
+{
+    *_implementation = *it._implementation;
+
+    return *this;
+}
+
+PropertyTree::iterator& PropertyTree::iterator::operator++()
+{
+    if(_isList())
+    {
+        ++_implementation->list;
+    }
+    else
+    {
+        ++_implementation->set;
+    }
+
+    return *this;
+}
+
+const PropertyTree& PropertyTree::iterator::operator*() const
+{
+    if(_isList())
+    {
+        return *_implementation->list;
+    }
+
+    return *_implementation->set;
+}
+
+const PropertyTree* PropertyTree::iterator::operator->() const
+{
+    if(_isList())
+    {
+        return &*_implementation->list;
+    }
+
+    return &*_implementation->set;
+}
+
+bool PropertyTree::iterator::operator==(const iterator& it)
+{
+    if(it._isList() != _isList())
+    {
+        return false;
+    }
+
+    if(_isList())
+    {
+        return _implementation->list == it._implementation->list;
+    }
+
+    return _implementation->set == it._implementation->set;
+}
+
+bool PropertyTree::iterator::operator==(const const_iterator& it)
+{
+    if(it._isList() != _isList())
+    {
+        return false;
+    }
+
+    if(_isList())
+    {
+        return _implementation->list == it._implementation->list;
+    }
+
+    return _implementation->set == it._implementation->set;
+}
+
+bool PropertyTree::iterator::operator!=(const iterator& it)
+{
+    return !(*this == it);
+}
+
+bool PropertyTree::iterator::operator!=(const const_iterator& it)
+{
+    return !(*this == it);
+}
+
+bool PropertyTree::iterator::_isList() const
+{
+    return _implementation->isList;
+}
+
+PropertyTree::const_iterator::const_iterator()
+: _implementation(std::make_unique<ConstIteratorImplementation>())
+{
+
+}
+
+PropertyTree::const_iterator::const_iterator(const PropertyTree& tree, PropertyTree::Begin begin)
+: _implementation(std::make_unique<ConstIteratorImplementation>(tree, begin))
+{
+
+}
+
+PropertyTree::const_iterator::const_iterator(const PropertyTree& tree, PropertyTree::End end)
+: _implementation(std::make_unique<ConstIteratorImplementation>(tree, end))
+{
+
+}
+
+PropertyTree::const_iterator::const_iterator(const iterator& it)
+: _implementation(std::make_unique<ConstIteratorImplementation>(*it._implementation))
+{
+
+}
+
+PropertyTree::const_iterator::const_iterator(const const_iterator& it)
+: _implementation(std::make_unique<ConstIteratorImplementation>(*it._implementation))
+{
+
+}
+
+PropertyTree::const_iterator::~const_iterator() = default;
+
+PropertyTree::const_iterator& PropertyTree::const_iterator::operator=(const const_iterator& it)
+{
+    if(this == &it)
+    {
+        return *this;
+    }
+
+    *_implementation = *it._implementation;
+
+    return *this;
+}
+
+PropertyTree::const_iterator& PropertyTree::const_iterator::operator=(const iterator& it)
+{
+    _implementation->isList = it._implementation->isList;
+    _implementation->list   = it._implementation->list;
+    _implementation->set    = it._implementation->set;
+
+    return *this;
+}
+
+PropertyTree::const_iterator& PropertyTree::const_iterator::operator++()
+{
+    if(_isList())
+    {
+        ++_implementation->list;
+    }
+    else
+    {
+        ++_implementation->set;
+    }
+
+    return *this;
+}
+
+const PropertyTree& PropertyTree::const_iterator::operator*() const
+{
+    if(_isList())
+    {
+        return *_implementation->list;
+    }
+
+    return *_implementation->set;
+}
+
+const PropertyTree* PropertyTree::const_iterator::operator->() const
+{
+    if(_isList())
+    {
+        return &*_implementation->list;
+    }
+
+    return &*_implementation->set;
+}
+
+bool PropertyTree::const_iterator::operator==(const iterator& it)
+{
+    if(it._isList() != _isList())
+    {
+        return false;
+    }
+
+    if(_isList())
+    {
+        return _implementation->list == it._implementation->list;
+    }
+
+    return _implementation->set == it._implementation->set;
+}
+
+bool PropertyTree::const_iterator::operator==(const const_iterator& it)
+{
+    if(it._isList() != _isList())
+    {
+        return false;
+    }
+
+    if(_isList())
+    {
+        return _implementation->list == it._implementation->list;
+    }
+
+    return _implementation->set == it._implementation->set;
+}
+
+bool PropertyTree::const_iterator::operator!=(const iterator& it)
+{
+    return !(*this == it);
+}
+
+bool PropertyTree::const_iterator::operator!=(const const_iterator& it)
+{
+    return !(*this == it);
+}
+
+bool PropertyTree::const_iterator::_isList() const
+{
+    return _implementation->isList;
 }
 
 }

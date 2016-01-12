@@ -8,6 +8,7 @@
 
 // Standard Library Includes
 #include <string>
+#include <memory>
 
 // Forward Declarations
 namespace lucius { namespace model { class Model; } }
@@ -23,12 +24,13 @@ class ModelBuilder
 {
 public:
     /*! \brief Create a new model at the specified path */
-    Model* create(const std::string& path);
+    static std::unique_ptr<Model> create(const std::string& path);
 
 public:
     /*! \brief Create a new model at the specified path using the
         specified topology. */
-    Model* create(const std::string& path, const std::string& specificationPath);
+    static std::unique_ptr<Model> create(const std::string& path,
+        const std::string& specificationPath);
 
 };
 

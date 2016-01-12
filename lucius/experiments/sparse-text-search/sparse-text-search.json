@@ -1,0 +1,94 @@
+{
+    "name" : "sparse-text-search-$tag",
+
+    "optimization" :
+    {
+        "type" : "NesterovAcceleratedGradientSolver",
+
+        "batch-size"      : "64",
+        "maximum-samples" : "1e9",
+
+        "epochs" : "20",
+
+        "parameters" :
+        {
+            "NesterovAcceleratedGradient::LearningRate"       : "1.0e-4",
+            "NesterovAcceleratedGradient::Momentum"           : "0.99",
+            "NesterovAcceleratedGradient::AnnealingRate"      : "1.0001",
+            "NesterovAcceleratedGradient::MaxGradNorm"        : "100.0",
+            "NesterovAcceleratedGradient::IterationsPerBatch" : "1"
+        }
+    },
+
+    "model" :
+    {
+        "engine" : "InputOutputLearnerEngine",
+
+        "layer-types" :
+        {
+            "recursive-search" :
+            {
+                "type" : "RecursiveRNNSearch",
+                "input-connection"  : "output",
+                "output-connection" : "output",
+                "size"              : "1024",
+                "radix"             : "4"
+            }
+        }
+
+        "networks" :
+        {
+            "Classifier" : {
+
+                "layers" :
+                [
+                    "recursive-search"
+                ]
+            }
+        },
+
+        "cost-function" :
+        {
+            "name" : "Softmax"
+        }
+    },
+
+    "attributes" :
+    {
+        "InputOutputLearnerEngine::TimestepDecay"       : "1.1",
+        "InputTextDataProducer::InputMinimumCorruption" : "0.0",
+        "InputTextDataProducer::InputMaximumCorruption" : "0.1"
+    },
+
+    "dataset" :
+    {
+        "training-dataset-path"   : "/data/4tb/sparse-text-search/training/database.txt",
+        "validation-dataset-path" : "/data/4tb/sparse-text-search/validation/database.txt",
+
+        "required-accuracy" : "90.0"
+    },
+
+    "checkpointing" :
+    {
+        "base-directory" : "$name"
+    },
+
+    "logging" :
+    {
+        "enabled-loggers" :
+        [
+            "NesterovAcceleratedGradientSolver",
+            "BenchmarkImageNet",
+            "LabelMatchResultProcessor",
+            "InputVisualDataProducer"
+        ]
+    },
+
+    "system" :
+    {
+        "use-cuda"    : "1",
+        "cuda-device" : "0",
+        "precision"   : "SinglePrecision"
+    }
+
+}

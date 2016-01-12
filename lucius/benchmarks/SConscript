@@ -20,6 +20,9 @@ programs.append(env.Program('benchmark-imagenet', \
 programs.append(env.Program('benchmark-imperative-speech', \
     ['imperative-speech/benchmark-imperative-speech.cpp'], LIBS=lucius_libs))
 
+programs.append(env.Program('benchmark-sparse-text-search', \
+    ['sparse-text-search/benchmark-sparse-text-search.cpp'], LIBS=lucius_libs))
+
 programs.append(env.Program('benchmark-broadcast-throughput', \
     ['memory/broadcast-throughput.cpp'], LIBS=lucius_libs))
 

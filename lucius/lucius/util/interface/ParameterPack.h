@@ -50,6 +50,13 @@ public:
         return value;
     }
 
+public:
+    template <typename T>
+    void insert(const std::string& name, const T& value)
+    {
+        _parameters.insert(std::make_pair(name, _toString(value)));
+    }
+
 private:
     template <typename T, typename... Args>
     void _fill(std::tuple<std::string, T> t, Args... args)
