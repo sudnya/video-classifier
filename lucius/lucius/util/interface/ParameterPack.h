@@ -57,6 +57,24 @@ public:
         _parameters.insert(std::make_pair(name, _toString(value)));
     }
 
+public:
+    std::string toString() const
+    {
+        std::stringstream stream;
+
+        bool first = true;
+
+        for(auto& parameter : _parameters)
+        {
+            if(!first) stream << ", ";
+            first = false;
+
+            stream << parameter.first << " : " << parameter.second;
+        }
+
+        return stream.str();
+    }
+
 private:
     template <typename T, typename... Args>
     void _fill(std::tuple<std::string, T> t, Args... args)

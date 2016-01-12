@@ -37,7 +37,7 @@ public:
     void initializeModel(Model& model);
 
 private:
-    std::unique_ptr<util::PropertyTree> _specification;
+    util::PropertyTree _specification;
 };
 
 
@@ -71,7 +71,7 @@ void ModelSpecificationImplementation::parseSpecification(const std::string& spe
 {
     std::stringstream jsonStream(specification);
 
-    *_specification = util::PropertyTree::loadJson(jsonStream);
+    _specification = util::PropertyTree::loadJson(jsonStream);
 }
 
 static void checkSections(const util::PropertyTree& specification)
@@ -94,6 +94,11 @@ static void checkSections(const util::PropertyTree& specification)
 
 static void loadModelAttributes(Model& model, const util::PropertyTree& specification)
 {
+    if(!specification.exists("model-attributes"))
+    {
+        return;
+    }
+
     auto attributes = specification.get("model-attributes");
 
     for(auto& attribute : attributes)
@@ -121,7 +126,15 @@ static void loadNetwork(Model& model, const util::PropertyTree& network, const T
             throw std::runtime_error("Unknown layer type name '" + layerName + "'.");
         }
 
-        neuralNetwork.addLayer(network::LayerFactory::create(layerName, layerType->second));
+        auto createdLayer = network::LayerFactory::create(layerName, layerType->second);
+
+        if(!createdLayer)
+        {
+            throw std::runtime_error("Failed to create layer type name '" + layerName +
+                "' with parameters '" + layerType->second.toString() + "'");
+        }
+
+        neuralNetwork.addLayer(std::move(createdLayer));
     }
 
     neuralNetwork.initialize();
@@ -136,11 +149,9 @@ static void loadType(TypeMap& types, const util::PropertyTree& type)
         throw std::runtime_error("Duplicate layer type name '" + type.key() + "'.");
     }
 
-    auto attributes = type.get();
-
     util::ParameterPack pack;
 
-    for(auto& property : attributes)
+    for(auto& property : type)
     {
         pack.insert(property.key(), property.value());
     }
@@ -187,11 +198,11 @@ void ModelSpecificationImplementation::initializeModel(Model& model)
 {
     model.clear();
 
-    checkSections(*_specification);
+    checkSections(_specification);
 
-    loadModelAttributes(model, *_specification);
-    loadNetworks(model, *_specification);
-    loadCostFunction(model, *_specification);
+    loadModelAttributes(model, _specification);
+    loadNetworks(model, _specification);
+    loadCostFunction(model, _specification);
 }
 
 }

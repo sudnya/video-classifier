@@ -20,7 +20,7 @@ class PropertyTreeImplementation;
 class IteratorImplementation;
 class ConstIteratorImplementation;
 
-/*! \brief A simple tree of dynamically typed properties, similar to JSON. */
+/*! \brief A simple tree of dynamically typed properties, compatible with JSON. */
 class PropertyTree
 {
 public:
@@ -52,6 +52,9 @@ public:
 
     template<typename T>
     T get(const std::string& field, const T& defaultValue) const;
+
+public:
+    void setKey(const std::string& value);
 
 public:
     template<typename T>

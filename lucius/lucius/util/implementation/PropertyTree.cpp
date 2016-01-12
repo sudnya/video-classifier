@@ -199,7 +199,14 @@ PropertyTree& PropertyTree::get()
 
 const PropertyTree& PropertyTree::get() const
 {
-    return get(key());
+    assert(size() == 1);
+
+    return *begin();
+}
+
+void PropertyTree::setKey(const std::string& value)
+{
+    _implementation->key = value;
 }
 
 bool PropertyTree::exists(const std::string& key) const
@@ -339,7 +346,7 @@ static void saveJson(const PropertyTree& tree, std::ostream& json)
 
     if(tree.isList())
     {
-        json << "[ ";
+        json << "\"" << tree.key() << "\" : [ ";
 
         bool first = true;
 
@@ -566,9 +573,19 @@ static void parseValue(PropertyTree& result, std::istream& json)
     {
         auto value = PropertyTree::loadJson(json);
 
-        for(auto& child : value)
+        if(value.isList())
         {
-            result.add(child);
+            for(auto& child : value)
+            {
+                result.addListElement(child);
+            }
+        }
+        else
+        {
+            for(auto& child : value)
+            {
+                result.add(child);
+            }
         }
     }
 }

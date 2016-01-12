@@ -53,7 +53,7 @@ static void createNewModel(const std::string& modelFileName,
 
     if(modelSpecificationPath.empty())
     {
-        model = std::move(model::ModelBuilder::create(modelFileName));
+        throw std::runtime_error("Missing model specification.");
     }
     else
     {

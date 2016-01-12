@@ -23,10 +23,6 @@ namespace model
 class ModelBuilder
 {
 public:
-    /*! \brief Create a new model at the specified path */
-    static std::unique_ptr<Model> create(const std::string& path);
-
-public:
     /*! \brief Create a new model at the specified path using the
         specified topology. */
     static std::unique_ptr<Model> create(const std::string& path,

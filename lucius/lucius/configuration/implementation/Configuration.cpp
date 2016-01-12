@@ -163,7 +163,11 @@ std::string Configuration::getModelSavePath() const
 
 std::string Configuration::getModelSpecification() const
 {
-    return (*_properties)["model"]["networks"].jsonString();
+    auto model = (*_properties)["model"];
+
+    model.setKey("");
+
+    return model.jsonString();
 }
 
 Configuration::AttributeList Configuration::getAllAttributes() const
