@@ -112,8 +112,16 @@ void RecurrentLayer::initialize()
 static matrix::Matrix unfoldTimeAndBatch(const Matrix& input, size_t batchSize)
 {
     size_t activationCount = input.size()[0];
-    size_t miniBatch       = 1;
-    size_t timesteps       = 1;
+
+    size_t limit = input.size().size() - 2;
+
+    for(size_t i = 1; i < limit; ++i)
+    {
+        activationCount *= input.size()[i];
+    }
+
+    size_t miniBatch = 1;
+    size_t timesteps = 1;
 
     if(input.size().size() == 2)
     {
@@ -122,8 +130,8 @@ static matrix::Matrix unfoldTimeAndBatch(const Matrix& input, size_t batchSize)
     }
     else
     {
-        miniBatch = input.size()[1];
-        timesteps = input.size()[2];
+        miniBatch = input.size()[input.size().size() - 2];
+        timesteps = input.size()[input.size().size() - 1];
     }
 
     return reshape(input, {activationCount, miniBatch, timesteps});
@@ -248,9 +256,11 @@ Matrix RecurrentLayer::runReverseImplementation(MatrixVector& gradients,
     auto forwardOutputActivations = activations.back();
     activations.pop_back();
 
-    size_t activationCount = activations.back().size()[0];
-    size_t miniBatch       = activations.back().size()[1];
-    size_t timesteps       = activations.back().size()[2];
+    auto unfoldedInputActivations = unfoldTimeAndBatch(activations.back(), _expectedBatchSize);
+
+    size_t activationCount = unfoldedInputActivations.size()[0];
+    size_t miniBatch       = unfoldedInputActivations.size()[1];
+    size_t timesteps       = unfoldedInputActivations.size()[2];
 
     auto forwardInputActivations = reshape(activations.back(), {activationCount, miniBatch * timesteps});
 

@@ -153,7 +153,7 @@ std::string Configuration::getLoggingEnabledModules() const
 {
     std::stringstream modules;
 
-    if(_properties->exists("logging.enabled-loggers"))
+    if(!_properties->exists("logging.enabled-loggers"))
     {
         return modules.str();
     }
@@ -173,6 +173,11 @@ std::string Configuration::getLoggingEnabledModules() const
 
 std::string Configuration::getLogPath() const
 {
+    if(!_properties->exists("checkpointing.use-log-file"))
+    {
+        return "";
+    }
+
     return _properties->get<std::string>("checkpointing.log-path",
         _properties->get<std::string>("checkpointing.base-directory") + "/log");
 }

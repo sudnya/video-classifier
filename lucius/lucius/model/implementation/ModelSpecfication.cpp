@@ -143,11 +143,11 @@ matrix::Dimension computeInputSize(const util::PropertyTree& network)
 
 static void appendInputSize(util::ParameterPack& parameters, const matrix::Dimension& inputSize)
 {
-    parameters.insert("InputSizeHeight", inputSize[0]);
+    parameters.insert("InputSizeWidth", inputSize[0]);
 
     if(inputSize.size() > 3)
     {
-        parameters.insert("InputSizeWidth", inputSize[1]);
+        parameters.insert("InputSizeHeight", inputSize[1]);
     }
 
     if(inputSize.size() > 4)
@@ -162,7 +162,7 @@ static void appendInputSize(util::ParameterPack& parameters, const matrix::Dimen
 
     if(inputSize.size() > 2)
     {
-        parameters.insert("InputSizeTimsteps", inputSize[inputSize.size()-1]);
+        parameters.insert("InputSizeTimesteps", inputSize[inputSize.size()-1]);
     }
 }
 

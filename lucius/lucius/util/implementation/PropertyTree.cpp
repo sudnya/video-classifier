@@ -211,7 +211,25 @@ void PropertyTree::setKey(const std::string& value)
 
 bool PropertyTree::exists(const std::string& key) const
 {
-    return _implementation->exists(key);
+    auto* base = this;
+    auto components = split(key, ".");
+
+    if(components.size() > 1)
+    {
+        auto end = --components.end();
+
+        for(auto component = components.begin(); component != end; ++component)
+        {
+            if(!base->exists(*component))
+            {
+                return false;
+            }
+
+            base = &(*base)[*component];
+        }
+    }
+
+    return base->_implementation->exists(components.back());
 }
 
 std::string& PropertyTree::key()

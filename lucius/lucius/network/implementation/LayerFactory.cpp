@@ -32,10 +32,10 @@ std::unique_ptr<Layer> LayerFactory::create(const std::string& name)
 
 std::unique_ptr<Layer> LayerFactory::create(const std::string& name, const ParameterPack& parameters)
 {
-    size_t inputSizeHeight    = parameters.get("InputSizeHeight",    1);
-    size_t inputSizeWidth     = parameters.get("InputSizeWidth",     1);
-    size_t inputSizeChannels  = parameters.get("InputSizeChannels",  1);
-    size_t inputSizeBatch     = parameters.get("InputSizeBatch",     1);
+    size_t inputSizeHeight    = parameters.get("InputSizeHeight",   1);
+    size_t inputSizeWidth     = parameters.get("InputSizeWidth",    1);
+    size_t inputSizeChannels  = parameters.get("InputSizeChannels", 1);
+    size_t inputSizeBatch     = parameters.get("InputSizeBatch",    1);
 
     size_t inputSizeAggregate = parameters.get("InputSizeAggregate",
         inputSizeHeight * inputSizeWidth * inputSizeChannels);
@@ -62,8 +62,8 @@ std::unique_ptr<Layer> LayerFactory::create(const std::string& name, const Param
     }
     else if("AudioConvolutionalLayer" == name)
     {
-        size_t inputSamples   = parameters.get("InputSamples",   inputSizeHeight);
-        size_t inputTimesteps = parameters.get("InputTimesteps", inputSizeWidth);
+        size_t inputSamples   = parameters.get("InputSamples",   inputSizeWidth);
+        size_t inputTimesteps = parameters.get("InputTimesteps", inputSizeHeight);
         size_t inputChannels  = parameters.get("InputChannels",  inputSizeChannels);
         size_t inputBatch     = parameters.get("BatchSize",      inputSizeBatch);
 
