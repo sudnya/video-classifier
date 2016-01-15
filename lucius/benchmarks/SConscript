@@ -14,14 +14,8 @@ lucius_libs = env['LUCIUS_LIBS']
 
 programs = []
 
-programs.append(env.Program('benchmark-imagenet', \
-    ['image-net/benchmark-image-net.cpp'], LIBS=lucius_libs))
-
-programs.append(env.Program('benchmark-imperative-speech', \
-    ['imperative-speech/benchmark-imperative-speech.cpp'], LIBS=lucius_libs))
-
-programs.append(env.Program('benchmark-sparse-text-search', \
-    ['sparse-text-search/benchmark-sparse-text-search.cpp'], LIBS=lucius_libs))
+programs.append(env.Program('lucius-benchmark-dataset', \
+    ['benchmark-dataset/lucius-benchmark-dataset.cpp'], LIBS=lucius_libs))
 
 programs.append(env.Program('benchmark-broadcast-throughput', \
     ['memory/broadcast-throughput.cpp'], LIBS=lucius_libs))
