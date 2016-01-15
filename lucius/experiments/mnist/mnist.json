@@ -1,18 +1,19 @@
 {
-    "name" : "mnist-$tag",
+    "name" : "mnist",
 
     "optimization" :
     {
         "type" : "NesterovAcceleratedGradientSolver",
 
-        "batch-size"      : "64",
-        "maximum-samples" : "1e9",
+        "batch-size"              : "64",
+        "maximum-samples"         : "1.0e9",
+        "standardization-samples" : "1024",
 
         "epochs" : "20",
 
         "parameters" :
         {
-            "NesterovAcceleratedGradient::LearningRate"       : "1.0e-2",
+            "NesterovAcceleratedGradient::LearningRate"       : "1.0e-3",
             "NesterovAcceleratedGradient::Momentum"           : "0.9",
             "NesterovAcceleratedGradient::AnnealingRate"      : "1.000001",
             "NesterovAcceleratedGradient::MaxGradNorm"        : "100.0",
@@ -28,37 +29,51 @@
         {
             "conv1" :
             {
-                "type"            : "ConvolutionalLayer",
-                "filter-height"   : "3",
-                "filter-width"    : "3",
-                "filter-outputs"  : "64"
+                "Type"          : "ConvolutionalLayer",
+                "FilterHeight"  : "3",
+                "FilterWidth"   : "3",
+                "FilterOutputs" : "8",
+                "PaddingHeight" : "1",
+                "PaddingWidth"  : "1"
             },
-            "pool" :
+            "pooling" :
             {
-                "type" : "MaxPoolingLayer"
+                "Type" : "MaxPoolingLayer",
+                "FilterWidth"  : "2",
+                "FilterHeight" : "2"
             },
             "conv2" :
             {
-                "type"            : "ConvolutionalLayer",
-                "filter-height"   : "3",
-                "filter-width"    : "3",
-                "filter-outputs"  : "128"
+                "Type"          : "ConvolutionalLayer",
+                "FilterWidth"   : "3",
+                "FilterHeight"  : "3",
+                "FilterOutputs" : "16",
+                "PaddingHeight" : "1",
+                "PaddingWidth"  : "1"
+
             },
             "conv3" :
             {
-                "type"            : "ConvolutionalLayer",
-                "filter-height"   : "3",
-                "filter-width"    : "3",
-                "filter-outputs"  : "256"
+                "Type"          : "ConvolutionalLayer",
+                "FilterWidth"   : "3",
+                "FilterHeight"  : "3",
+                "FilterOutputs" : "32",
+                "PaddingHeight" : "1",
+                "PaddingWidth"  : "1"
+
             },
             "fully-connected":
             {
-                "type" : "FullyConnectedLayer",
-                "size" : "1024"
+                "Type"       : "FeedForwardLayer",
+                "OutputSize" : "1024"
+            },
+            "output":
+            {
+                "Type" : "FeedForwardLayer"
             },
             "batch-norm" :
             {
-                "type" : "BatchNormalizationLayer"
+                "Type" : "BatchNormalizationLayer"
             }
         },
 
@@ -79,14 +94,15 @@
                     "conv3",
                     "batch-norm",
                     "fully-connected",
-                    "batch-norm"
+                    "batch-norm",
+                    "output"
                 ]
             }
         },
 
         "cost-function" :
         {
-            "name" : "Softmax"
+            "name" : "SoftmaxCostFunction"
         },
 
         "model-attributes" :
@@ -94,26 +110,29 @@
             "ResolutionX"     : "28",
             "ResolutionY"     : "28",
             "ColorComponents" : "3"
-        }
+        },
+
+        "infer-outputs-from" : "/Users/gregorydiamos/temp/mnist/test/database.txt"
+
     },
 
     "attributes" :
     {
         "InputVisualDataProducer::CropImagesRandomly" : "1",
         "InputVisualDataProducer::CropWindowRatio"    : "0.15"
-    }
+    },
 
     "dataset" :
     {
-        "training-dataset-path"   : "/Users/gregdiamos/temp/mnist/train/database.txt",
-        "validation-dataset-path" : "/Users/gregdiamos/temp/mnist/test/database.txt",
+        "training-dataset-path"   : "/Users/gregorydiamos/temp/mnist/train/database.txt",
+        "validation-dataset-path" : "/Users/gregorydiamos/temp/mnist/test/database.txt",
 
         "required-accuracy" : "90.0"
     },
 
     "checkpointing" :
     {
-        "base-directory" : "$name"
+        "base-directory" : "mnist"
     },
 
     "logging" :
@@ -121,7 +140,7 @@
         "enabled-loggers" :
         [
             "NesterovAcceleratedGradientSolver",
-            "BenchmarkImageNet",
+            "BenchmarkDataset",
             "LabelMatchResultProcessor",
             "InputVisualDataProducer"
         ]
@@ -129,7 +148,7 @@
 
     "system" :
     {
-        "use-cuda"    : "1",
+        "use-cuda"    : "0",
         "cuda-device" : "0",
         "precision"   : "SinglePrecision"
     }

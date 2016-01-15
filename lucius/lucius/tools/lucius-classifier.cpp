@@ -59,8 +59,9 @@ static void createNewModel(const std::string& modelFileName,
     {
         auto specification = loadFile(modelSpecificationPath);
 
-        model = std::move(model::ModelBuilder::create(modelFileName, specification));
+        model = std::move(model::ModelBuilder::create(specification));
 
+        model->setPath(modelFileName);
     }
 
     model->save();

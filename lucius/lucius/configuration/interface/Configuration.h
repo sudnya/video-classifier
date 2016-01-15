@@ -46,6 +46,7 @@ public:
 public:
     size_t getBatchSize() const;
     size_t getMaximumSamples() const;
+    size_t getMaximumStandardizationSamples() const;
     size_t getEpochs() const;
 
 public:
@@ -60,6 +61,10 @@ public:
     std::string getOutputPath() const;
 
 public:
+    std::string getLogPath() const;
+    std::string getLoggingEnabledModules() const;
+
+public:
     std::string getTrainingReportPath() const;
     std::string getValidationReportPath() const;
 
@@ -69,6 +74,11 @@ public:
 
 public:
     AttributeList getAllAttributes() const;
+
+public:
+    bool isCudaEnabled() const;
+    std::string getCudaDevice() const;
+    std::string getPrecision() const;
 
 public:
     static Configuration create(const std::string& path);

@@ -203,6 +203,11 @@ bool isDirectory(const std::string& path)
 
 void makeDirectory(const std::string& path)
 {
+    if(path.empty())
+    {
+        return;
+    }
+
     if(isDirectory(path))
     {
         return;

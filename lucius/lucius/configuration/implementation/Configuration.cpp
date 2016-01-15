@@ -83,7 +83,12 @@ size_t Configuration::getMaximumSamples() const
             "Configuration must include an optimization.maximum-samples field.");
     }
 
-    return (*_properties)["optimization"].get<size_t>("maximum-samples");
+    return (*_properties)["optimization"].get<double>("maximum-samples");
+}
+
+size_t Configuration::getMaximumStandardizationSamples() const
+{
+    return _properties->get<double>("optimization.standardization-samples", 1024.0);
 }
 
 size_t Configuration::getEpochs() const
@@ -108,7 +113,7 @@ double Configuration::getRequiredAccuracy() const
         throw std::runtime_error("Configuration must include a dataset.required-accuracy field.");
     }
 
-    return (*_properties)["dataset"].get<size_t>("required-accuracy");
+    return (*_properties)["dataset"].get<double>("required-accuracy");
 }
 
 std::string Configuration::getTrainingPath() const
@@ -141,7 +146,35 @@ std::string Configuration::getOutputPath() const
             "checkpointing.base-directory field.");
     }
 
-    return _properties->get<std::string>("checkpointing.base-directory");
+    return _properties->get<std::string>("checkpointing.base-directory") + "/model.tar";
+}
+
+std::string Configuration::getLoggingEnabledModules() const
+{
+    std::stringstream modules;
+
+    if(_properties->exists("logging.enabled-loggers"))
+    {
+        return modules.str();
+    }
+
+    bool first = true;
+
+    for(auto& log : _properties->get("logging.enabled-loggers"))
+    {
+        if(!first) modules << ",";
+        first = false;
+
+        modules << log.key();
+    }
+
+    return modules.str();
+}
+
+std::string Configuration::getLogPath() const
+{
+    return _properties->get<std::string>("checkpointing.log-path",
+        _properties->get<std::string>("checkpointing.base-directory") + "/log");
 }
 
 std::string Configuration::getTrainingReportPath() const
@@ -158,7 +191,7 @@ std::string Configuration::getValidationReportPath() const
 
 std::string Configuration::getModelSavePath() const
 {
-    return (*_properties)["checkpointing"].get<std::string>("base-directory");
+    return (*_properties)["checkpointing"].get<std::string>("base-directory") + "/model.tar";
 }
 
 std::string Configuration::getModelSpecification() const
@@ -180,6 +213,21 @@ Configuration::AttributeList Configuration::getAllAttributes() const
     }
 
     return attributes;
+}
+
+bool Configuration::isCudaEnabled() const
+{
+    return _properties->get<bool>("system.use-cuda");
+}
+
+std::string Configuration::getCudaDevice() const
+{
+    return _properties->get("system.cuda-device");
+}
+
+std::string Configuration::getPrecision() const
+{
+    return _properties->get("system.precision");
 }
 
 Configuration Configuration::create(const std::string& path)

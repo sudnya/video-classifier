@@ -27,6 +27,7 @@
 
 #include <lucius/util/interface/ArgumentParser.h>
 #include <lucius/util/interface/Knobs.h>
+#include <lucius/util/interface/paths.h>
 
 // Type definitions
 typedef lucius::model::Model Model;
@@ -59,7 +60,7 @@ static void setSampleStatistics(Model& model, const Configuration& config)
 
     engine->setModel(&model);
     engine->setBatchSize(config.getBatchSize());
-    engine->setMaximumSamplesToRun(config.getMaximumSamples());
+    engine->setMaximumSamplesToRun(config.getMaximumStandardizationSamples());
 
     // read from database and use model to train
     engine->runOnDatabaseFile(config.getTrainingPath());
@@ -127,10 +128,28 @@ static void setupSolverParameters(const Configuration& config)
     }
 }
 
+static void setupReportParameters(const Configuration& config)
+{
+    lucius::util::setLogFile(config.getLogPath());
+
+    lucius::util::enableSpecificLogs(config.getLoggingEnabledModules());
+}
+
+static void setupSystemParameters(const Configuration& config)
+{
+    lucius::util::KnobDatabase::setKnob("Cuda::Enable", config.isCudaEnabled());
+    lucius::util::KnobDatabase::setKnob("Cuda::Device", config.getCudaDevice());
+    lucius::util::KnobDatabase::setKnob("Matrix::DefaultPrecision", config.getPrecision());
+}
+
 static void runTest(const Parameters& parameters)
 {
     auto config = Configuration::create(parameters.configPath);
 
+    lucius::util::makeDirectory(config.getOutputPath());
+
+    setupSystemParameters(config);
+    setupReportParameters(config);
     setupSolverParameters(config);
 
     if(config.getShouldSeed())
@@ -142,7 +161,7 @@ static void runTest(const Parameters& parameters)
         lucius::matrix::srand(377);
     }
 
-    auto model = ModelBuilder::create(config.getModelSavePath(), config.getModelSpecification());
+    auto model = ModelBuilder::create(config.getModelSpecification());
 
     lucius::util::log("BenchmarkDataset") << "Classifier Architecture "
         << model->getNeuralNetwork("Classifier").shapeString() << "\n";
@@ -180,8 +199,6 @@ int main(int argc, char** argv)
     parser.parse("-i", "--input-path", parameters.configPath,
         "", "The path to the training configuration file.");
 
-    parser.parse("", "--log-file", logFile, "",
-        "Save output to this logfile instead of std::cout.");
     parser.parse("-L", "--log-module", loggingEnabledModules, "",
         "Print out log messages during execution for specified modules "
         "(comma-separated list of modules, e.g. NeuralNetwork, Layer, ...).");
@@ -191,18 +208,9 @@ int main(int argc, char** argv)
 
     parser.parse();
 
-    if(!logFile.empty())
-    {
-        lucius::util::setLogFile(logFile);
-    }
-
     if(verbose)
     {
         lucius::util::enableAllLogs();
-    }
-    else
-    {
-        lucius::util::enableSpecificLogs(loggingEnabledModules);
     }
 
     lucius::util::log("BenchmarkDataset") << "Benchmark begins\n";

@@ -246,6 +246,8 @@ ImageVector::Matrix ImageVector::getCropFeatureMatrix(size_t xTileSize, size_t y
 
 ImageVector::Matrix ImageVector::getReference(const util::StringVector& labels) const
 {
+    assert(!labels.empty());
+
     Matrix reference(matrix::Dimension({labels.size(), size(), 1}));
 
     util::log("ImageVector") << "Generating reference image:\n";

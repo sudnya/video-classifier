@@ -256,7 +256,7 @@ PropertyTree& PropertyTree::operator[](const std::string& key)
         }
     }
 
-    return _implementation->createAndGetValue(components.back());
+    return base->_implementation->createAndGetValue(components.back());
 }
 
 const PropertyTree& PropertyTree::operator[](const std::string& key) const
@@ -274,7 +274,7 @@ const PropertyTree& PropertyTree::operator[](const std::string& key) const
         }
     }
 
-    return _implementation->getValue(components.back());
+    return base->_implementation->getValue(components.back());
 }
 
 void PropertyTree::add(const PropertyTree& tree)

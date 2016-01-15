@@ -32,9 +32,17 @@ std::unique_ptr<Layer> LayerFactory::create(const std::string& name)
 
 std::unique_ptr<Layer> LayerFactory::create(const std::string& name, const ParameterPack& parameters)
 {
+    size_t inputSizeHeight    = parameters.get("InputSizeHeight",    1);
+    size_t inputSizeWidth     = parameters.get("InputSizeWidth",     1);
+    size_t inputSizeChannels  = parameters.get("InputSizeChannels",  1);
+    size_t inputSizeBatch     = parameters.get("InputSizeBatch",     1);
+
+    size_t inputSizeAggregate = parameters.get("InputSizeAggregate",
+        inputSizeHeight * inputSizeWidth * inputSizeChannels);
+
     if("FeedForwardLayer" == name)
     {
-        size_t inputSize  = parameters.get("InputSize",  1);
+        size_t inputSize  = parameters.get("InputSize",  inputSizeAggregate);
         size_t outputSize = parameters.get("OutputSize", inputSize);
 
         auto precision = *matrix::Precision::fromString(parameters.get("Precision",
@@ -44,7 +52,7 @@ std::unique_ptr<Layer> LayerFactory::create(const std::string& name, const Param
     }
     else if("RecurrentLayer" == name)
     {
-        size_t size      = parameters.get("Size",      1);
+        size_t size      = parameters.get("Size",      inputSizeAggregate);
         size_t batchSize = parameters.get("BatchSize", 1);
 
         auto precision = *matrix::Precision::fromString(parameters.get("Precision",
@@ -54,14 +62,14 @@ std::unique_ptr<Layer> LayerFactory::create(const std::string& name, const Param
     }
     else if("AudioConvolutionalLayer" == name)
     {
-        size_t inputSamples   = parameters.get("InputSamples",   1);
-        size_t inputTimesteps = parameters.get("InputTimesteps", 1);
-        size_t inputChannels  = parameters.get("InputChannels",  1);
-        size_t inputBatch     = parameters.get("BatchSize",      1);
+        size_t inputSamples   = parameters.get("InputSamples",   inputSizeHeight);
+        size_t inputTimesteps = parameters.get("InputTimesteps", inputSizeWidth);
+        size_t inputChannels  = parameters.get("InputChannels",  inputSizeChannels);
+        size_t inputBatch     = parameters.get("BatchSize",      inputSizeBatch);
 
         size_t filterSamples   = parameters.get("FilterSamples",   1);
         size_t filterTimesteps = parameters.get("FilterTimesteps", 1);
-        size_t filterInputs    = parameters.get("FilterInputs",    1);
+        size_t filterInputs    = parameters.get("FilterInputs",    inputChannels);
         size_t filterOutputs   = parameters.get("FilterOutputs",   1);
 
         size_t strideSamples   = parameters.get("StrideSamples",   1);
@@ -83,14 +91,14 @@ std::unique_ptr<Layer> LayerFactory::create(const std::string& name, const Param
     }
     else if("ConvolutionalLayer" == name)
     {
-        size_t inputWidth  = parameters.get("InputWidth",  1);
-        size_t inputHeight = parameters.get("InputHeight", 1);
-        size_t inputColors = parameters.get("InputColors", 1);
-        size_t inputBatch  = parameters.get("BatchSize",   1);
+        size_t inputWidth  = parameters.get("InputWidth",  inputSizeWidth);
+        size_t inputHeight = parameters.get("InputHeight", inputSizeHeight);
+        size_t inputColors = parameters.get("InputColors", inputSizeChannels);
+        size_t inputBatch  = parameters.get("BatchSize",   inputSizeBatch);
 
         size_t filterWidth   = parameters.get("FilterWidth",   1);
         size_t filterHeight  = parameters.get("FilterHeight",  1);
-        size_t filterInputs  = parameters.get("FilterInputs",  1);
+        size_t filterInputs  = parameters.get("FilterInputs",  inputColors);
         size_t filterOutputs = parameters.get("FilterOutputs", 1);
 
         size_t strideWidth  = parameters.get("StrideWidth",  1);
@@ -112,19 +120,23 @@ std::unique_ptr<Layer> LayerFactory::create(const std::string& name, const Param
     }
     else if ("BatchNormalizationLayer" == name)
     {
-        size_t size = parameters.get("Size", 1);
+        size_t inputWidth  = parameters.get("InputWidth",  inputSizeWidth);
+        size_t inputHeight = parameters.get("InputHeight", inputSizeHeight);
+        size_t inputColors = parameters.get("InputColors", inputSizeChannels);
+        size_t inputBatch  = parameters.get("BatchSize",   inputSizeBatch);
 
         auto precision = *matrix::Precision::fromString(parameters.get("Precision",
             matrix::Precision::getDefaultPrecision().toString()));
 
-        return std::make_unique<BatchNormalizationLayer>(size, precision);
+        return std::make_unique<BatchNormalizationLayer>(
+            matrix::Dimension({inputWidth, inputHeight, inputColors, inputBatch, 1}), precision);
     }
     else if ("MaxPoolingLayer" == name)
     {
-        size_t inputWidth  = parameters.get("InputWidth",  1);
-        size_t inputHeight = parameters.get("InputHeight", 1);
-        size_t inputColors = parameters.get("InputColors", 1);
-        size_t inputBatch  = parameters.get("BatchSize",   1);
+        size_t inputWidth  = parameters.get("InputWidth",  inputSizeWidth);
+        size_t inputHeight = parameters.get("InputHeight", inputSizeHeight);
+        size_t inputColors = parameters.get("InputColors", inputSizeChannels);
+        size_t inputBatch  = parameters.get("BatchSize",   inputSizeBatch);
 
         size_t width  = parameters.get("FilterWidth", 1);
         size_t height = parameters.get("FilterHeight", 1);
@@ -133,7 +145,7 @@ std::unique_ptr<Layer> LayerFactory::create(const std::string& name, const Param
             matrix::Precision::getDefaultPrecision().toString()));
 
         return std::make_unique<MaxPoolingLayer>(
-            matrix::Dimension({inputWidth, inputHeight, inputColors, inputBatch}),
+            matrix::Dimension({inputWidth, inputHeight, inputColors, inputBatch, 1}),
             matrix::Dimension({width, height}), precision);
     }
 

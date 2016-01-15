@@ -15,6 +15,8 @@
 
 #include <lucius/matrix/interface/Dimension.h>
 
+#include <lucius/database/interface/SampleDatabase.h>
+
 #include <lucius/util/interface/PropertyTree.h>
 #include <lucius/util/interface/ParameterPack.h>
 
@@ -109,11 +111,94 @@ static void loadModelAttributes(Model& model, const util::PropertyTree& specific
 
 typedef std::map<std::string, util::ParameterPack> TypeMap;
 
-static void loadNetwork(Model& model, const util::PropertyTree& network, const TypeMap& types)
+matrix::Dimension computeInputSize(const util::PropertyTree& network)
+{
+    auto attributes = network.get("model-attributes");
+
+    matrix::Dimension result;
+
+    if(attributes.exists("ResolutionX"))
+    {
+        result.push_back(attributes.get<size_t>("ResolutionY"));
+        result.push_back(attributes.get<size_t>("ResolutionX"));
+        result.push_back(attributes.get<size_t>("ColorComponents"));
+        result.push_back(1);
+        result.push_back(1);
+    }
+    else if(attributes.exists("FrameDuration"))
+    {
+        result.push_back(attributes.get<size_t>("FrameDuration"));
+        result.push_back(1);
+        result.push_back(1);
+        result.push_back(1);
+        result.push_back(1);
+    }
+    else
+    {
+        throw std::runtime_error("Unknown input data type.");
+    }
+
+    return result;
+}
+
+static void appendInputSize(util::ParameterPack& parameters, const matrix::Dimension& inputSize)
+{
+    parameters.insert("InputSizeHeight", inputSize[0]);
+
+    if(inputSize.size() > 3)
+    {
+        parameters.insert("InputSizeWidth", inputSize[1]);
+    }
+
+    if(inputSize.size() > 4)
+    {
+        parameters.insert("InputSizeChannels", inputSize[2]);
+    }
+
+    if(inputSize.size() > 1)
+    {
+        parameters.insert("InputSizeBatch",    inputSize[inputSize.size()-2]);
+    }
+
+    if(inputSize.size() > 2)
+    {
+        parameters.insert("InputSizeTimsteps", inputSize[inputSize.size()-1]);
+    }
+}
+
+static void setupOutputLayerParameters(model::Model& model,
+    util::ParameterPack& layerParameters, const util::PropertyTree& specification)
+{
+    if(!specification.exists("infer-outputs-from"))
+    {
+        return;
+    }
+
+    auto datasetPath = specification.get<std::string>("infer-outputs-from");
+
+    database::SampleDatabase inputDatabase(datasetPath);
+    inputDatabase.load();
+
+    auto labels = inputDatabase.getAllPossibleLabels();
+
+    size_t index = 0;
+
+    for(auto& label : labels)
+    {
+        model.setOutputLabel(index++, label);
+    }
+
+    layerParameters.insert("OutputSize", labels.size());
+}
+
+static void loadNetwork(Model& model, const util::PropertyTree& network,
+    const util::PropertyTree& specification, const TypeMap& types)
 {
     network::NeuralNetwork neuralNetwork;
 
     auto layers = network.get("layers");
+
+    auto inputSize = computeInputSize(specification);
 
     for(auto& layer : layers)
     {
@@ -126,7 +211,20 @@ static void loadNetwork(Model& model, const util::PropertyTree& network, const T
             throw std::runtime_error("Unknown layer type name '" + layerName + "'.");
         }
 
-        auto createdLayer = network::LayerFactory::create(layerName, layerType->second);
+        auto layerParameters = layerType->second;
+
+        appendInputSize(layerParameters, inputSize);
+
+        bool isLastLayer = neuralNetwork.size() == (layers.size() - 1);
+
+        if(isLastLayer)
+        {
+            setupOutputLayerParameters(model, layerParameters, specification);
+        }
+
+        auto layerTypeName = layerType->second.get<std::string>("Type");
+
+        auto createdLayer = network::LayerFactory::create(layerTypeName, layerParameters);
 
         if(!createdLayer)
         {
@@ -135,6 +233,8 @@ static void loadNetwork(Model& model, const util::PropertyTree& network, const T
         }
 
         neuralNetwork.addLayer(std::move(createdLayer));
+
+        inputSize = neuralNetwork.getOutputSize();
     }
 
     neuralNetwork.initialize();
@@ -181,7 +281,7 @@ static void loadNetworks(Model& model, const util::PropertyTree& specification)
 
     for(auto& network : networks)
     {
-        loadNetwork(model, network, types);
+        loadNetwork(model, network, specification, types);
     }
 }
 
@@ -191,13 +291,18 @@ static void loadCostFunction(Model& model, const util::PropertyTree& specificati
 
     auto& network = model.getNeuralNetwork("Classifier");
 
-    network.setCostFunction(network::CostFunctionFactory::create(name));
+    auto costFunction = network::CostFunctionFactory::create(name);
+
+    if(costFunction == nullptr)
+    {
+        throw std::runtime_error("Failed to create neural network cost function '" + name + "'.");
+    }
+
+    network.setCostFunction(costFunction);
 }
 
 void ModelSpecificationImplementation::initializeModel(Model& model)
 {
-    model.clear();
-
     checkSections(_specification);
 
     loadModelAttributes(model, _specification);

@@ -259,7 +259,8 @@ void CudaRuntimeLibrary::Interface::load()
 
         #undef DynLink
 
-        CudaRuntimeLibrary::cudaSetDevice(0);
+        CudaRuntimeLibrary::cudaSetDevice(
+            util::KnobDatabase::getKnobValue<int>("Cuda::Device", 0));
 
         util::log("CudaRuntimeLibrary") << " Loaded library '" << libraryName
             << "' successfully\n";

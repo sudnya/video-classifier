@@ -63,6 +63,9 @@ public:
     size_t getOutputCount() const;
 
 public:
+    void setPath(const std::string& path);
+
+public:
     void load(const std::string& path);
 
 public:

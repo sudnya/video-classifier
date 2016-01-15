@@ -28,10 +28,9 @@ static void initializeModelFromSpecification(Model* model, const std::string& sp
     modelSpecification.initializeModel(*model);
 }
 
-std::unique_ptr<Model> ModelBuilder::create(const std::string& path,
-    const std::string& specification)
+std::unique_ptr<Model> ModelBuilder::create(const std::string& specification)
 {
-    auto model = std::make_unique<Model>(path);
+    auto model = std::make_unique<Model>();
 
     initializeModelFromSpecification(model.get(), specification);
 
