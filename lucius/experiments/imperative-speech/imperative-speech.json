@@ -1,18 +1,19 @@
 {
-    "name" : "imperative-speech-$tag",
+    "name" : "imperative-speech",
 
     "optimization" :
     {
         "type" : "NesterovAcceleratedGradientSolver",
 
-        "batch-size"      : "64",
+        "batch-size"      : "8",
         "maximum-samples" : "1e9",
+        "standardization-samples" : "1024",
 
         "epochs" : "20",
 
         "parameters" :
         {
-            "NesterovAcceleratedGradient::LearningRate"       : "8.0e-4",
+            "NesterovAcceleratedGradient::LearningRate"       : "1.0e-4",
             "NesterovAcceleratedGradient::Momentum"           : "0.99",
             "NesterovAcceleratedGradient::AnnealingRate"      : "1.000001",
             "NesterovAcceleratedGradient::MaxGradNorm"        : "100.0",
@@ -22,28 +23,32 @@
 
     "model" :
     {
-        "engine" : "SupervisedLearnerEngine",
+        "engine" : "LearnerEngine",
 
         "layer-types" :
         {
             "recurrent" :
             {
-                "type" : "RecurrentLayer",
-                "size" : "128"
+                "Type" : "RecurrentLayer",
+                "Size" : "128"
             },
             "input-convolution":
             {
-                "type"              : "AudioConvolutionalLayer",
-                "filter-samples"    : "160",
-                "filter-timesteps"  : "3",
-                "filter-outputs"    : "128",
-                "padding-samples"   : "0",
-                "padding-timesteps" : "1"
+                "Type"              : "AudioConvolutionalLayer",
+                "FilterSamples"    : "160",
+                "FilterTimesteps"  : "3",
+                "FilterOutputs"    : "128",
+                "PaddingSamples"   : "0",
+                "PaddingTimesteps" : "1"
 
+            },
+            "output":
+            {
+                "Type" : "FeedForwardLayer"
             },
             "batch-norm" :
             {
-                "type" : "BatchNormalizationLayer"
+                "Type" : "BatchNormalizationLayer"
             }
         },
 
@@ -61,41 +66,45 @@
                     "batch-norm",
                     "recurrent",
                     "batch-norm",
-                    "recurrent"
+                    "recurrent",
+                    "output"
                 ]
             }
         },
 
         "cost-function" :
         {
-            "name" : "Softmax"
+            "name" : "SoftmaxCostFunction"
         },
 
         "model-attributes" :
         {
             "SamplingRate"  : "8000",
             "FrameDuration" : "160"
-        }
+        },
+
+        "infer-outputs-from" : "/Users/gregorydiamos/temp/imperative-speech-2-hours/development/database.txt"
     },
 
     "attributes" :
     {
         "InputAudioDataProducer::NoiseRateLower" : "0.0",
         "InputAudioDataProducer::NoiseRateUpper" : "0.1",
-        "InputAudioDataProducer::TotalTimestepsPerUtterance" : "512"
+        "InputAudioDataProducer::TotalTimestepsPerUtterance" : "512",
+        "InputAudioDataProducer::AudioTimesteps" : "64"
     },
 
     "dataset" :
     {
-        "training-dataset-path"   : "/data/1tb-ssd/imperative-speech/train/database.txt",
-        "validation-dataset-path" : "/data/1tb-ssd/imperative-speech/test/database.txt",
+        "training-dataset-path"   : "/Users/gregorydiamos/temp/imperative-speech-2-hours/training/database.txt",
+        "validation-dataset-path" : "/Users/gregorydiamos/temp/imperative-speech-2-hours/development/database.txt",
 
         "required-accuracy" : "99.0"
     },
 
     "checkpointing" :
     {
-        "base-directory" : "$name"
+        "base-directory" : "imperative-speech"
     },
 
     "logging" :
@@ -111,7 +120,7 @@
 
     "system" :
     {
-        "use-cuda"    : "1",
+        "use-cuda"    : "0",
         "cuda-device" : "0",
         "precision"   : "SinglePrecision"
     }
