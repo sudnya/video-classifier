@@ -78,6 +78,11 @@ double NeuralNetwork::getCostAndGradient(MatrixVector& gradient, const Matrix& i
 
     gradient.resize(weightMatrices);
 
+    if(!empty())
+    {
+        front()->setShouldComputeDeltas(false);
+    }
+
     auto costFunctionResult = getCostFunction()->computeCost(activations.back(), reference);
 
     auto activation = activations.rbegin();
@@ -136,6 +141,11 @@ double NeuralNetwork::getInputCostAndGradient(Matrix& gradient,
             << std::distance(begin(), layer) << "\n";
 
         (*layer)->runForward(activations);
+    }
+
+    if(!empty())
+    {
+        front()->setShouldComputeDeltas(true);
     }
 
     auto costFunctionResult = getCostFunction()->computeCost(activations.back(), reference);

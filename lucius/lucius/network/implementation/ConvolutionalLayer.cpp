@@ -273,7 +273,11 @@ Matrix ConvolutionalLayer::runReverseImplementation(MatrixVector& gradients,
     // compute deltas for previous layer
     Matrix deltasPropagatedReverse(inputActivations.size(), inputActivations.precision());
 
-    reverseConvolutionDeltas(deltasPropagatedReverse, _weights, *_filterStride, deltas, *_inputPadding);
+    if(getShouldComputeDeltas())
+    {
+        reverseConvolutionDeltas(deltasPropagatedReverse, _weights,
+            *_filterStride, deltas, *_inputPadding);
+    }
 
     Matrix previousLayerDeltas;
 

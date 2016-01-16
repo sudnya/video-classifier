@@ -34,7 +34,8 @@ Layer::Layer()
 : _activationFunction(ActivationFunctionFactory::create()),
   _activationCostFunction(ActivationCostFunctionFactory::create()),
   _weightCostFunction(WeightCostFunctionFactory::create()),
-  _isTraining(true)
+  _isTraining(true),
+  _shouldComputeDeltas(true)
 {
 
 }
@@ -50,7 +51,8 @@ Layer::Layer(const Layer& l)
     nullptr : l.getActivationCostFunction()->clone()),
   _weightCostFunction(l.getWeightCostFunction() == nullptr ?
     nullptr : l.getWeightCostFunction()->clone()),
-  _isTraining(l.isTraining())
+  _isTraining(l.isTraining()),
+  _shouldComputeDeltas(l.getShouldComputeDeltas())
 {
 
 }
@@ -68,6 +70,7 @@ Layer& Layer::operator=(const Layer& l)
     setWeightCostFunction(l.getWeightCostFunction() == nullptr ?
         nullptr : l.getWeightCostFunction()->clone());
     setIsTraining(l.isTraining());
+    setShouldComputeDeltas(l.getShouldComputeDeltas());
 
     return *this;
 }
@@ -225,6 +228,16 @@ void Layer::setIsTraining(bool training)
 bool Layer::isTraining() const
 {
     return _isTraining;
+}
+
+void Layer::setShouldComputeDeltas(bool shouldComputeDeltas)
+{
+    _shouldComputeDeltas = shouldComputeDeltas;
+}
+
+bool Layer::getShouldComputeDeltas() const
+{
+    return _shouldComputeDeltas;
 }
 
 std::string Layer::shapeString() const

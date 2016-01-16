@@ -39,6 +39,9 @@ public:
     virtual void initialize();
 
 public:
+    virtual void setShouldComputeDeltas(bool shouldComputeDeltas);
+
+public:
     virtual void runForwardImplementation(MatrixVector& activations);
     virtual Matrix runReverseImplementation(MatrixVector& gradients,
         MatrixVector& activations,

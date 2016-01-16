@@ -124,6 +124,13 @@ public:
     bool isTraining() const;
 
 public:
+    /*! \brief Indicate whether or not the layer should compute deltas. */
+    virtual void setShouldComputeDeltas(bool shouldComputeDeltas);
+
+    /*! \brief Query whether or not the layer should compute deltas. */
+    bool getShouldComputeDeltas() const;
+
+public:
     std::string shapeString() const;
     std::string resourceString() const;
 
@@ -145,6 +152,7 @@ private:
 
 private:
     bool _isTraining;
+    bool _shouldComputeDeltas;
 
 };
 

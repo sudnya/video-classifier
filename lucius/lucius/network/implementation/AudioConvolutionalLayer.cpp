@@ -79,6 +79,11 @@ void AudioConvolutionalLayer::initialize()
     _layer->initialize();
 }
 
+void AudioConvolutionalLayer::setShouldComputeDeltas(bool shouldComputeDeltas)
+{
+    _layer->setShouldComputeDeltas(shouldComputeDeltas);
+}
+
 static Matrix permuteDimensionsForward(Matrix matrix)
 {
     return permuteDimensions(matrix, {0, 4, 1, 2, 3});
