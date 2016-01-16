@@ -1,5 +1,5 @@
 {
-    "name" : "sparse-text-search-$tag",
+    "name" : "sparse-text-search",
 
     "optimization" :
     {
@@ -28,11 +28,11 @@
         {
             "recursive-search" :
             {
-                "type" : "RecursiveRNNSearch",
-                "input-connection"  : "output",
-                "output-connection" : "output",
-                "size"              : "1024",
-                "radix"             : "4"
+                "Type"             : "RecursiveRNNSearch",
+                "InputConnection"  : "output",
+                "OutputConnection" : "output",
+                "Size"             : "1024",
+                "Radix"            : "4"
             }
         },
 
@@ -49,7 +49,7 @@
 
         "cost-function" :
         {
-            "name" : "Softmax"
+            "name" : "SoftmaxCostFunction"
         }
     },
 
@@ -70,7 +70,7 @@
 
     "checkpointing" :
     {
-        "base-directory" : "$name"
+        "base-directory" : "sparse-text-search"
     },
 
     "logging" :
@@ -78,7 +78,7 @@
         "enabled-loggers" :
         [
             "NesterovAcceleratedGradientSolver",
-            "BenchmarkImageNet",
+            "BenchmarkDataset",
             "LabelMatchResultProcessor",
             "InputVisualDataProducer"
         ]

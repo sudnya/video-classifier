@@ -81,7 +81,7 @@ static void trainNetwork(Model& model, const Configuration& config)
     engine->setResultProcessor(ResultProcessorFactory::create("CostLoggingResultProcessor",
         std::make_tuple("OutputPath", config.getTrainingReportPath())));
     engine->addObserver(EngineObserverFactory::create("ModelCheckpointer",
-        std::make_tuple("Path", config.getOutputPath())));
+        std::make_tuple("Path", config.getModelSavePath())));
     engine->addObserver(EngineObserverFactory::create("ValidationErrorObserver",
         std::make_tuple("InputPath", config.getValidationPath()),
         std::make_tuple("OutputPath", config.getValidationReportPath())));

@@ -104,6 +104,7 @@
 
     "checkpointing" :
     {
+        "use-log-file" : "1",
         "base-directory" : "imperative-speech"
     },
 

@@ -146,7 +146,7 @@ std::string Configuration::getOutputPath() const
             "checkpointing.base-directory field.");
     }
 
-    return _properties->get<std::string>("checkpointing.base-directory") + "/model.tar";
+    return _properties->get<std::string>("checkpointing.base-directory");
 }
 
 std::string Configuration::getLoggingEnabledModules() const
