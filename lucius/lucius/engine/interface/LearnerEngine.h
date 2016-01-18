@@ -1,4 +1,4 @@
-/*    \file   LearnerEngine.h
+/*  \file   LearnerEngine.h
     \date   Sunday August 11, 2013
     \author Gregory Diamos <solusstultus@gmail.com>
     \brief  The header file for the LearnerEngine class.
@@ -8,9 +8,6 @@
 
 // Lucius Includes
 #include <lucius/engine/interface/Engine.h>
-
-// Forward Declarations
-namespace lucius { namespace engine { class Learner; } }
 
 namespace lucius
 {

@@ -1,3 +1,4 @@
+#! /usr/local/bin/python
 
 import os
 from argparse import ArgumentParser
@@ -116,6 +117,14 @@ class ExperimentGroup:
 
         return False
 
+    def getSimpleName(self):
+        base, extension = os.path.split(self.name)
+
+        if len(extension) == 0:
+            return base
+        else:
+            return extension
+
 def loadTrainingErrorFromLogFile(path):
     data       = []
     iterations = []
@@ -185,6 +194,8 @@ def getGroupName(path):
     return name
 
 def loadExperiment(path):
+    print 'loading experiment from "' + path + '"'
+
     trainingPath   = os.path.join(path, 'training-error.csv')
     validationPath = os.path.join(path, 'validation-error.csv')
     name           = getExperimentName(path)
@@ -232,7 +243,9 @@ def discoverGroups(inputs):
     path = inputs[0]
 
     if isExperimentPath(path):
-        return [ExperimentGroup(path)]
+        group = ExperimentGroup(path)
+        group.addExperiment(loadExperiment(path))
+        return [group]
 
     groups = []
 
@@ -301,13 +314,17 @@ class Visualizer:
         return plots
 
     def plotTrainingError(self, group):
-        return self.plotGroupData(group.name + '-training', group, True)
+        if group.empty():
+            print "Group " + group.name + " is empty"
+            return (None, None, None, None)
+
+        return self.plotGroupData(group.getSimpleName() + '-training', group, True)
 
     def plotValidationError(self, group):
         if not group.hasAnyValidationError():
             return (None, None, None, None)
 
-        return self.plotGroupData(group.name + '-validation', group, False)
+        return self.plotGroupData(group.getSimpleName() + '-validation', group, False)
 
     def plotGroupData(self, name, group, useTraining):
         figure, axes = pyplot.subplots()
@@ -344,6 +361,9 @@ class Visualizer:
 
 
     def savePlots(self, plots):
+        if plots == None:
+            return
+
         for name, group, figure, axes in plots:
 
             if name == None:
@@ -355,7 +375,7 @@ class Visualizer:
 
             path = os.path.join(output, name)
 
-            print "saving training error at " + path + '.png'
+            print "saving plot " + name + " at " + path + '.png'
 
             pyplot.savefig(path)
 

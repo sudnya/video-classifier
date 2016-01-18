@@ -26,23 +26,80 @@
 
         "layer-types" :
         {
-            "recursive-search" :
+            "input-search" :
             {
-                "Type"             : "RecursiveRNNSearch",
-                "InputConnection"  : "output",
-                "OutputConnection" : "output",
-                "Size"             : "1024",
-                "Radix"            : "4"
+                "Type"       : "SparseSearchLayer",
+                "Connection" : "Input",
+                "Size"       : "128",
+                "Radix"      : "32",
+                "Selections" : "4"
+            },
+            "output-search" :
+            {
+                "Type"       : "SparseSearchLayer",
+                "Connection" : "Output",
+                "Size"       : "128",
+                "Radix"      : "32",
+                "Selections" : "4"
+            },
+            "recurrent" :
+            {
+                "Type" : "RecurrentLayer",
+                "Size" : "128"
+            },
+            "output-update" :
+            {
+                "Type"       : "SparseUpdateLayer",
+                "Size"       : "128",
+                "Radix"      : "32",
+                "Selections" : "4"
+            },
+            "search-module" :
+            {
+                "Type"       : "Subgraph",
+                "Submodules" :
+                {
+                    "input-search-0" :
+                    {
+                        "Type" : "input-search",
+                        "ForwardConnections" : ["output-search-0"]
+                    },
+                    "output-search-0" :
+                    {
+                        "Type" : "output-search",
+                        "ForwardConnections" : ["rnn-stack-0"]
+                    },
+                    "rnn-stack-0" :
+                    {
+                        "Type" : "rnn-stack",
+                        "ForwardConnections" : ["output-update-0"]
+                    },
+                    "output-update-0" :
+                    {
+                        "Type" : "output-update",
+                        "TimeConnections" : ["input-search-0", "output-search-0"]
+                    }
+                }
+            },
+            "rnn-stack" :
+            {
+                "Type" : "Subgraph",
+                "Submodules" :
+                [
+                    "recurrent",
+                    "recurrent",
+                    "recurrent"
+                ]
             }
         },
 
         "networks" :
         {
-            "Classifier" : {
-
+            "Classifier" :
+            {
                 "layers" :
                 [
-                    "recursive-search"
+                    "search-module"
                 ]
             }
         },
@@ -64,8 +121,7 @@
     {
         "training-dataset-path"   : "/data/4tb/sparse-text-search/training/database.txt",
         "validation-dataset-path" : "/data/4tb/sparse-text-search/validation/database.txt",
-
-        "required-accuracy" : "90.0"
+        "required-accuracy"       : "90.0"
     },
 
     "checkpointing" :
@@ -86,7 +142,7 @@
 
     "system" :
     {
-        "use-cuda"    : "1",
+        "use-cuda"    : "0",
         "cuda-device" : "0",
         "precision"   : "SinglePrecision"
     }

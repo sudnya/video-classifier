@@ -164,12 +164,21 @@ static void runTest(const Parameters& parameters)
         lucius::matrix::srand(377);
     }
 
-    auto model = ModelBuilder::create(config.getModelSpecification());
+    std::unique_ptr<Model> model;
+
+    if(lucius::util::isFile(config.getModelSavePath()))
+    {
+        model = std::make_unique<Model>(config.getModelSavePath());
+        model->load();
+    }
+    else
+    {
+        model = std::move(ModelBuilder::create(config.getModelSpecification()));
+        setSampleStatistics(*model, config);
+    }
 
     lucius::util::log("BenchmarkDataset") << "Classifier Architecture "
         << model->getNeuralNetwork("Classifier").shapeString() << "\n";
-
-    setSampleStatistics(*model, config);
 
     trainNetwork(*model, config);
 
