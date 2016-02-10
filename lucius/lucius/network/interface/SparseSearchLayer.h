@@ -1,7 +1,7 @@
-/*  \file   AudioConvolutionalLayer.h
+/*  \file   SparseSearchLayer.h
     \author Gregory Diamos
-    \date   Dec 24, 2014
-    \brief  The interface for the AudioConvolutionalLayer class.
+    \date   January 20, 2016
+    \brief  The interface file for the SparseSearchLayer class.
 */
 
 #pragma once
@@ -9,43 +9,33 @@
 // Lucius Includes
 #include <lucius/network/interface/Layer.h>
 
-// Forward Declarations
-namespace lucius { namespace network { class ConvolutionalLayer; } }
-
 namespace lucius
 {
 namespace network
 {
 
-/* \brief An implementation of a generic recurrent layer. */
-class AudioConvolutionalLayer : public Layer
+/* \brief A layer that searches over an input in response to a command, generating an output. */
+class SparseSearchLayer : public Layer
 {
 public:
-    AudioConvolutionalLayer();
-    virtual ~AudioConvolutionalLayer();
+    SparseSearchLayer();
+    SparseSearchLayer(size_t size);
+    SparseSearchLayer(size_t size, const matrix::Precision&);
+    virtual ~SparseSearchLayer();
 
 public:
-    AudioConvolutionalLayer(const matrix::Dimension& inputSize, const matrix::Dimension& filterSize,
-        const matrix::Dimension& filterStride, const matrix::Dimension& inputPadding);
-    AudioConvolutionalLayer(const matrix::Dimension& inputSize, const matrix::Dimension& filterSize,
-        const matrix::Dimension& filterStride, const matrix::Dimension& inputPadding,
-        const matrix::Precision&);
-
-public:
-    AudioConvolutionalLayer(const AudioConvolutionalLayer& );
-    AudioConvolutionalLayer& operator=(const AudioConvolutionalLayer&);
+    SparseSearchLayer(const SparseSearchLayer& );
+    SparseSearchLayer& operator=(const SparseSearchLayer&);
 
 public:
     virtual void initialize();
 
 public:
-    virtual void setShouldComputeDeltas(bool shouldComputeDeltas);
-
-public:
     virtual void runForwardImplementation(MatrixVector& outputActivations,
         const MatrixVector& inputActivations);
     virtual Matrix runReverseImplementation(MatrixVector& gradients,
-        MatrixVector& inputDeltas, const Matrix& outputDeltas);
+        MatrixVector& inputDeltas,
+        const Matrix& outputDeltas);
 
 public:
     virtual       MatrixVector& weights();
@@ -85,10 +75,16 @@ public:
     virtual std::string getTypeName() const;
 
 private:
-    std::unique_ptr<ConvolutionalLayer> _layer;
+    std::unique_ptr<MatrixVector> _parameters;
+
+private:
+    Matrix& _forwardWeights;
+    Matrix& _bias;
+
+private:
+    Matrix& _recurrentWeights;
 
 };
-
 }
 
 }

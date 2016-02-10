@@ -99,15 +99,16 @@ static Dimension permuteDimensionsBackward(Dimension dimension)
     return selectDimensions(dimension, {0, 2, 3, 4, 1});
 }
 
-void AudioConvolutionalLayer::runForwardImplementation(MatrixVector& activations)
+void AudioConvolutionalLayer::runForwardImplementation(MatrixVector& outputActivations,
+    const MatrixVector& inputActivations)
 {
     MatrixVector storage;
 
-    storage.push_back(permuteDimensionsForward(activations.back()));
+    storage.push_back(permuteDimensionsForward(inputActivations.back()));
 
-    _layer->runForwardImplementation(storage);
+    _layer->runForwardImplementation(outputActivations, storage);
 
-    activations.push_back(permuteDimensionsBackward(storage.back()));
+    activations.push_back(permuteDimensionsBackward(outputActivations.back()));
 
     if(util::isLogEnabled("AudioConvolutionalLayer::Detail"))
     {
@@ -122,20 +123,18 @@ void AudioConvolutionalLayer::runForwardImplementation(MatrixVector& activations
 }
 
 Matrix AudioConvolutionalLayer::runReverseImplementation(MatrixVector& gradients,
-    MatrixVector& activations,
-    const Matrix& deltas)
+    MatrixVector& inputDeltas,
+    const MatrixVector& outputDeltas)
 {
-    activations.back() = permuteDimensionsForward(activations.back());
-    activations[activations.size() - 2] =
-        permuteDimensionsForward(activations[activations.size() - 2]);
+    assert(outputDeltas.size() == 1);
 
-    auto inputDeltas = permuteDimensionsForward(deltas);
+    MatrixVector outputDeltasStorage;
 
-    auto resultDeltas = _layer->runReverseImplementation(gradients, activations, inputDeltas);
+    outputDeltasStorage.push_back(permuteDimensionsForward(outputDeltas.front()));
 
-    activations.back() = permuteDimensionsBackward(activations.back());
+    _layer->runReverseImplementation(gradients, inputDeltas, outputDeltasStorage);
 
-    return permuteDimensionsBackward(resultDeltas);
+    inputDeltas.front() = permuteDimensionsBackward(inputDeltas.front());
 }
 
 MatrixVector& AudioConvolutionalLayer::weights()

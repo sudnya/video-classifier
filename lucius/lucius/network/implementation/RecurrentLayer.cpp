@@ -89,9 +89,16 @@ RecurrentLayer& RecurrentLayer::operator=(const RecurrentLayer& l)
 
 void RecurrentLayer::initialize()
 {
+    /* Glorot
     double e = util::KnobDatabase::getKnobValue("Layer::RandomInitializationEpsilon", 6);
 
     double epsilon = std::sqrt((e) / (getInputCount() + getOutputCount() + 1));
+    */
+
+    // He
+    double e = util::KnobDatabase::getKnobValue("Layer::RandomInitializationEpsilon", 1);
+
+    double epsilon = std::sqrt((e) / (getInputCount() * 2));
 
     // generate uniform random values between [0, 1]
     matrix::rand(_forwardWeights);
@@ -137,20 +144,26 @@ static matrix::Matrix unfoldTimeAndBatch(const Matrix& input, size_t batchSize)
     return reshape(input, {activationCount, miniBatch, timesteps});
 }
 
-void RecurrentLayer::runForwardImplementation(MatrixVector& activations)
+void RecurrentLayer::runForwardImplementation(MatrixVector& outputActivationsVector,
+    const MatrixVector& inputActivationsVector)
 {
-    auto inputActivations = unfoldTimeAndBatch(activations.back(), _expectedBatchSize);
+    assert(inputActivationsVector.size() == 1);
+
+    auto inputActivations = unfoldTimeAndBatch(inputActivationsVector.back(), _expectedBatchSize);
 
     if(util::isLogEnabled("RecurrentLayer"))
     {
-        util::log("RecurrentLayer") << " Running forward propagation through layer: " << _forwardWeights.shapeString() << "\n";
+        util::log("RecurrentLayer") << " Running forward propagation through layer: "
+            << _forwardWeights.shapeString() << "\n";
     }
 
     if(util::isLogEnabled("RecurrentLayer::Detail"))
     {
         util::log("RecurrentLayer::Detail") << "  input: " << inputActivations.debugString();
-        util::log("RecurrentLayer::Detail") << "  forward-weights: " << _forwardWeights.debugString();
-        util::log("RecurrentLayer::Detail") << "  recurrent-weights: " << _recurrentWeights.debugString();
+        util::log("RecurrentLayer::Detail") << "  forward-weights: "
+            << _forwardWeights.debugString();
+        util::log("RecurrentLayer::Detail") << "  recurrent-weights: "
+            << _recurrentWeights.debugString();
         util::log("RecurrentLayer::Detail") << "  bias:  " << _bias.debugString();
     }
 
@@ -158,24 +171,29 @@ void RecurrentLayer::runForwardImplementation(MatrixVector& activations)
     size_t miniBatch       = inputActivations.size()[1];
     size_t timesteps       = inputActivations.size()[2];
 
-    auto unbiasedOutput = gemm(Matrix(_forwardWeights), false, 1.0, reshape(inputActivations, {activationCount, miniBatch * timesteps}), false);
+    auto unbiasedOutput = gemm(Matrix(_forwardWeights), false, 1.0, reshape(inputActivations,
+        {activationCount, miniBatch * timesteps}), false);
 
     auto activation = broadcast(unbiasedOutput, _bias, {}, matrix::Add());
 
-    activations.push_back(copy(activation));
+    saveMatrix("inputActivations",  inputActivations);
+    saveMatrix("forwardOutputActivations", copy(activation));
 
     if(util::isLogEnabled("RecurrentLayer::Detail"))
     {
-        util::log("RecurrentLayer::Detail") << "  before-recurrent activation: " << activation.debugString();
+        util::log("RecurrentLayer::Detail") << "  before-recurrent activation: "
+            << activation.debugString();
     }
     else
     {
-        util::log("RecurrentLayer") << "  before-recurrent activation: " << activation.shapeString() << "\n";
+        util::log("RecurrentLayer") << "  before-recurrent activation: "
+            << activation.shapeString() << "\n";
     }
 
     activation = reshape(activation, {activationCount, miniBatch, timesteps});
 
-    forwardRecurrentActivations(activation, _recurrentWeights, matrix::RECURRENT_FORWARD_TIME, getActivationFunction()->getOperation());
+    forwardRecurrentActivations(activation, _recurrentWeights,
+        matrix::RECURRENT_FORWARD_TIME, getActivationFunction()->getOperation());
 
     if(util::isLogEnabled("RecurrentLayer::Detail"))
     {
@@ -186,19 +204,23 @@ void RecurrentLayer::runForwardImplementation(MatrixVector& activations)
         util::log("RecurrentLayer") << "  activation: " << activation.shapeString() << "\n";
     }
 
-    activations.push_back(activation);
+    saveMatrix("outputActivations", activation);
+
+    outputActivationsVector.push_back(std::move(activation));
 }
 
 Matrix RecurrentLayer::runReverseImplementation(MatrixVector& gradients,
-    MatrixVector& activations,
-    const Matrix& foldedDeltas)
+    MatrixVector& inputDeltas,
+    const MatrixVector& outputDeltas)
 {
-    auto deltas = unfoldTimeAndBatch(foldedDeltas, _expectedBatchSize);
+    assert(outputDeltas.size() == 1);
+
+    auto deltas = unfoldTimeAndBatch(outputDeltas.back(), _expectedBatchSize);
 
     if(util::isLogEnabled("RecurrentLayer"))
     {
-        util::log("RecurrentLayer") << " Running reverse propagation on matrix (" << deltas.shapeString()
-            << ") through layer with dimensions ("
+        util::log("RecurrentLayer") << " Running reverse propagation on matrix ("
+            << deltas.shapeString() << ") through layer with dimensions ("
             << getInputCount() << " inputs, " << getOutputCount() << " outputs).\n";
         util::log("RecurrentLayer") << "  layer: " << _forwardWeights.shapeString() << "\n";
     }
@@ -214,83 +236,95 @@ Matrix RecurrentLayer::runReverseImplementation(MatrixVector& gradients,
     }
 
     // Compute deltas for intermediate time steps and the feed forward activations
-    auto outputActivations = unfoldTimeAndBatch(activations.back(), _expectedBatchSize);
-    activations.pop_back();
+    auto outputActivations = loadMatrix("outputActivations");
 
-    auto forwardDeltas = reverseRecurrentDeltas(Matrix(deltas), _recurrentWeights, outputActivations, matrix::RECURRENT_FORWARD_TIME,
+    auto forwardDeltas = reverseRecurrentDeltas(Matrix(deltas), _recurrentWeights,
+        outputActivations, matrix::RECURRENT_FORWARD_TIME,
         getActivationFunction()->getDerivativeOperation());
 
     // Compute recurrent weight gradients
     if(util::isLogEnabled("RecurrentLayer"))
     {
-        util::log("RecurrentLayer") << "  forward deltas size: " << forwardDeltas.shapeString() << "\n";
+        util::log("RecurrentLayer") << "  forward deltas size: "
+            << forwardDeltas.shapeString() << "\n";
     }
 
     if(util::isLogEnabled("RecurrentLayer::Detail"))
     {
-        util::log("RecurrentLayer::Detail") << "  forward deltas: " << forwardDeltas.debugString();
+        util::log("RecurrentLayer::Detail") << "  forward deltas: "
+            << forwardDeltas.debugString();
     }
 
     if(util::isLogEnabled("RecurrentLayer"))
     {
-        util::log("RecurrentLayer") << "  output size: " << outputActivations.shapeString() << "\n";
+        util::log("RecurrentLayer") << "  output size: "
+            << outputActivations.shapeString() << "\n";
     }
 
     if(util::isLogEnabled("RecurrentLayer::Detail"))
     {
-        util::log("RecurrentLayer::Detail") << "  output: " << outputActivations.debugString();
+        util::log("RecurrentLayer::Detail") << "  output: "
+            << outputActivations.debugString();
     }
 
-    auto recurrentWeightGradients = reverseRecurrentGradients(outputActivations, forwardDeltas, matrix::RECURRENT_FORWARD_TIME);
+    auto recurrentWeightGradients = reverseRecurrentGradients(outputActivations,
+        forwardDeltas, matrix::RECURRENT_FORWARD_TIME);
 
     if(util::isLogEnabled("RecurrentLayer"))
     {
-        util::log("RecurrentLayer") << "  recurrent weight grad shape: " << recurrentWeightGradients.shapeString() << "\n";
+        util::log("RecurrentLayer") << "  recurrent weight grad shape: "
+            << recurrentWeightGradients.shapeString() << "\n";
     }
 
     if(util::isLogEnabled("RecurrentLayer::Detail"))
     {
-        util::log("RecurrentLayer::Detail") << "  recurrent weight grad: " << recurrentWeightGradients.debugString();
+        util::log("RecurrentLayer::Detail") << "  recurrent weight grad: "
+            << recurrentWeightGradients.debugString();
     }
 
-    auto forwardOutputActivations = activations.back();
-    activations.pop_back();
+    auto forwardOutputActivations = loadMatrix("forwardOutputActivations");
 
-    auto unfoldedInputActivations = unfoldTimeAndBatch(activations.back(), _expectedBatchSize);
+    auto unfoldedInputActivations = loadMatrix("inputActivations");
 
     size_t activationCount = unfoldedInputActivations.size()[0];
     size_t miniBatch       = unfoldedInputActivations.size()[1];
     size_t timesteps       = unfoldedInputActivations.size()[2];
 
-    auto forwardInputActivations = reshape(activations.back(), {activationCount, miniBatch * timesteps});
+    auto forwardInputActivations = reshape(activations.back(),
+        {activationCount, miniBatch * timesteps});
 
     forwardDeltas = reshape(forwardDeltas, {activationCount, miniBatch * timesteps});
 
     // compute gradient for the forward weights
     auto samples = miniBatch;
 
-    auto weightGradient = gemm(Matrix(forwardDeltas), false, 1.0 / samples, forwardInputActivations, true);
+    auto weightGradient = gemm(Matrix(forwardDeltas), false, 1.0 / samples,
+        forwardInputActivations, true);
 
     // add in the weight cost function term
     if(getWeightCostFunction() != nullptr)
     {
-        apply(weightGradient, weightGradient, getWeightCostFunction()->getGradient(_forwardWeights), matrix::Add());
+        apply(weightGradient, weightGradient,
+            getWeightCostFunction()->getGradient(_forwardWeights), matrix::Add());
     }
 
     gradients.push_back(std::move(weightGradient));
 
     if(util::isLogEnabled("RecurrentLayer"))
     {
-        util::log("RecurrentLayer") << "  forward weight grad shape: " << weightGradient.shapeString() << "\n";
+        util::log("RecurrentLayer") << "  forward weight grad shape: "
+            << weightGradient.shapeString() << "\n";
     }
 
     if(util::isLogEnabled("RecurrentLayer::Detail"))
     {
-        util::log("RecurrentLayer::Detail") << "  forward weight grad: " << weightGradient.debugString();
+        util::log("RecurrentLayer::Detail") << "  forward weight grad: "
+            << weightGradient.debugString();
     }
 
     // compute gradient for the bias
-    auto biasGradient = reduce(apply(forwardDeltas, matrix::Divide(samples)), {1}, matrix::Add());
+    auto biasGradient = reduce(apply(forwardDeltas, matrix::Divide(samples)),
+        {1}, matrix::Add());
 
     if(util::isLogEnabled("RecurrentLayer"))
     {
@@ -315,9 +349,11 @@ Matrix RecurrentLayer::runReverseImplementation(MatrixVector& gradients,
 
     if(getActivationCostFunction() != nullptr)
     {
-        auto activationCostFunctionGradient = getActivationCostFunction()->getGradient(forwardOutputActivations);
+        auto activationCostFunctionGradient =
+            getActivationCostFunction()->getGradient(forwardOutputActivations);
 
-        apply(previousLayerDeltas, deltasPropagatedReverse, activationCostFunctionGradient, matrix::Multiply());
+        apply(previousLayerDeltas, deltasPropagatedReverse,
+            activationCostFunctionGradient, matrix::Multiply());
     }
     else
     {
@@ -326,7 +362,8 @@ Matrix RecurrentLayer::runReverseImplementation(MatrixVector& gradients,
 
     if(util::isLogEnabled("RecurrentLayer"))
     {
-        util::log("RecurrentLayer") << "  output shape: " << previousLayerDeltas.shapeString() << "\n";
+        util::log("RecurrentLayer") << "  output shape: "
+            << previousLayerDeltas.shapeString() << "\n";
     }
 
     if(util::isLogEnabled("RecurrentLayer::Detail"))
@@ -400,9 +437,12 @@ size_t RecurrentLayer::getActivationMemory() const
 
 void RecurrentLayer::save(util::OutputTarArchive& archive, util::PropertyTree& properties) const
 {
-    properties["forward-weights"]   = properties.path() + "." + properties.key() + ".forward-weights.npy";
-    properties["recurrent-weights"] = properties.path() + "." + properties.key() + ".recurrent-weights.npy";
-    properties["bias"]              = properties.path() + "." + properties.key() + ".bias.npy";
+    properties["forward-weights"] =
+        properties.path() + "." + properties.key() + ".forward-weights.npy";
+    properties["recurrent-weights"] =
+        properties.path() + "." + properties.key() + ".recurrent-weights.npy";
+
+    properties["bias"] = properties.path() + "." + properties.key() + ".bias.npy";
 
     properties["batch-size"] = std::to_string(_expectedBatchSize);
 

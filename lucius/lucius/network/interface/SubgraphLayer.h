@@ -1,7 +1,7 @@
-/*  \file   AudioConvolutionalLayer.h
+/*  \file   SubgraphLayer.h
     \author Gregory Diamos
-    \date   Dec 24, 2014
-    \brief  The interface for the AudioConvolutionalLayer class.
+    \date   January 20, 2016
+    \brief  The interface file for the SubgraphLayer class.
 */
 
 #pragma once
@@ -10,42 +10,33 @@
 #include <lucius/network/interface/Layer.h>
 
 // Forward Declarations
-namespace lucius { namespace network { class ConvolutionalLayer; } }
+namespace lucius { namespace network { class SubgraphLayerImplementation; } }
 
 namespace lucius
 {
 namespace network
 {
 
-/* \brief An implementation of a generic recurrent layer. */
-class AudioConvolutionalLayer : public Layer
+/* \brief A layer containing an arbitrary subgraph of other layers. */
+class SubgraphLayer : public Layer
 {
 public:
-    AudioConvolutionalLayer();
-    virtual ~AudioConvolutionalLayer();
+    SubgraphLayer();
+    virtual ~SubgraphLayer();
 
 public:
-    AudioConvolutionalLayer(const matrix::Dimension& inputSize, const matrix::Dimension& filterSize,
-        const matrix::Dimension& filterStride, const matrix::Dimension& inputPadding);
-    AudioConvolutionalLayer(const matrix::Dimension& inputSize, const matrix::Dimension& filterSize,
-        const matrix::Dimension& filterStride, const matrix::Dimension& inputPadding,
-        const matrix::Precision&);
-
-public:
-    AudioConvolutionalLayer(const AudioConvolutionalLayer& );
-    AudioConvolutionalLayer& operator=(const AudioConvolutionalLayer&);
+    SubgraphLayer(const SubgraphLayer& );
+    SubgraphLayer& operator=(const SubgraphLayer&);
 
 public:
     virtual void initialize();
 
 public:
-    virtual void setShouldComputeDeltas(bool shouldComputeDeltas);
-
-public:
     virtual void runForwardImplementation(MatrixVector& outputActivations,
         const MatrixVector& inputActivations);
-    virtual Matrix runReverseImplementation(MatrixVector& gradients,
-        MatrixVector& inputDeltas, const Matrix& outputDeltas);
+    virtual void runReverseImplementation(MatrixVector& gradients,
+        MatrixVector& inputDeltas,
+        const MatrixVector& outputDeltas);
 
 public:
     virtual       MatrixVector& weights();
@@ -66,7 +57,7 @@ public:
     virtual size_t getOutputCount() const;
 
 public:
-    virtual size_t totalNeurons()      const;
+    virtual size_t totalNeurons()     const;
     virtual size_t totalConnections() const;
 
 public:
@@ -84,16 +75,18 @@ public:
 public:
     virtual std::string getTypeName() const;
 
-private:
-    std::unique_ptr<ConvolutionalLayer> _layer;
+public:
+    void addLayer(const std::string& layerName, std::unique_ptr<Layer>&& layer);
 
+    void addForwardConnection(const std::string& source, const std::string& destination);
+    void addTimeConnection(const std::string& source, const std::string& destination);
+
+    void prepareSubgraphForEvaluation();
+
+private:
+    std::unique_ptr<SubgraphLayerImplementation> _implementation;
 };
 
 }
-
 }
-
-
-
-
 

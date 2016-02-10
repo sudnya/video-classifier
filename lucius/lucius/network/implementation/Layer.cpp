@@ -35,7 +35,8 @@ Layer::Layer()
   _activationCostFunction(ActivationCostFunctionFactory::create()),
   _weightCostFunction(WeightCostFunctionFactory::create()),
   _isTraining(true),
-  _shouldComputeDeltas(true)
+  _shouldComputeDeltas(true),
+  _supportsMultipleInputAndOuputs(false)
 {
 
 }
@@ -51,8 +52,9 @@ Layer::Layer(const Layer& l)
     nullptr : l.getActivationCostFunction()->clone()),
   _weightCostFunction(l.getWeightCostFunction() == nullptr ?
     nullptr : l.getWeightCostFunction()->clone()),
-  _isTraining(l.isTraining()),
-  _shouldComputeDeltas(l.getShouldComputeDeltas())
+  _isTraining(l.getIsTraining()),
+  _shouldComputeDeltas(l.getShouldComputeDeltas()),
+  _supportsMultipleInputsAndOutputs(l.getSupportsMultipleInputsAndOutputs())
 {
 
 }
@@ -69,8 +71,9 @@ Layer& Layer::operator=(const Layer& l)
         nullptr : l.getActivationCostFunction()->clone());
     setWeightCostFunction(l.getWeightCostFunction() == nullptr ?
         nullptr : l.getWeightCostFunction()->clone());
-    setIsTraining(l.isTraining());
+    setIsTraining(l.getIsTraining());
     setShouldComputeDeltas(l.getShouldComputeDeltas());
+    setSupportsMultipleInputsAndOutputs(l.getSupportsMultipleInputsAndOutputs());
 
     return *this;
 }
@@ -129,38 +132,54 @@ static matrix::Matrix reshapeActivations(const matrix::Matrix& m, matrix::Dimens
     return reshape(m, newShape);
 }
 
-void Layer::runForward(MatrixVector& activations)
+void Layer::runForward(MatrixVector& outputActivations, const MatrixVector& inputActivations)
 {
-    if(compareSize(activations.back().size(), getInputSize()))
+    MatrixVector reshapedInputActivations;
+
+    for(auto& activation : inputActivations)
     {
-        return runForwardImplementation(activations);
+        if(compareSize(activation.size(), getInputSize()))
+        {
+            reshapedInputActivations.push_back(activation);
+        }
+        else
+        {
+            if(compareCount(activation.size(), getInputSize(), getInputCount()))
+            {
+                reshapedInputActivations.push_back(reshapeActivations(activation, getInputSize()));
+            }
+            else
+            {
+                throw std::runtime_error("Input activation matrix size " +
+                    activations.back().size().toString() +
+                    " is not compatible with layer, expecting " +
+                    getInputSize().toString());
+            }
+        }
     }
 
-    if(compareCount(activations.back().size(), getInputSize(), getInputCount()))
-    {
-        activations.back() = reshapeActivations(activations.back(), getInputSize());
-
-        return runForwardImplementation(activations);
-    }
-
-    throw std::runtime_error("Input activation matrix size " + activations.back().size().toString() +
-        " is not compatible with layer, expecting " + getInputSize().toString());
+    return runForwardImplementation(outputActivations, reshapedInputActivations);
 }
 
-matrix::Matrix Layer::runReverse(MatrixVector& gradients,
-    MatrixVector& activations,
-    const Matrix& deltas)
+void Layer::runReverse(MatrixVector& gradients,
+    MatrixVector& inputDeltas,
+    const MatrixVector& outputDeltas)
 {
     assert(isTraining());
 
-    if(compareCount(activations.back().size(), getOutputSize(), getOutputCount()))
+    MatrixVector reshapedOutputDeltas;
+
+    for(auto& outputDelta : outputDeltas)
     {
-        activations.back() = reshapeActivations(activations.back(), getOutputSize());
+        reshapedOutputDeltas.push_back(reshapeActivations(outputDelta, getOutputSize()));
     }
 
-    return runReverseImplementation(gradients,
-        activations,
-        reshapeActivations(deltas, getOutputSize()));
+    runReverseImplementation(gradients, inputDeltas, outputDeltas);
+}
+
+void Layer::clearReversePropagationData()
+{
+    _matrixCache.clear();
 }
 
 size_t Layer::getParameterMemory() const
@@ -230,6 +249,11 @@ bool Layer::isTraining() const
     return _isTraining;
 }
 
+bool Layer::getSupportsMultipleInputsAndOutputs() const
+{
+    return _supportsMultipleInputsAndOutputs;
+}
+
 void Layer::setShouldComputeDeltas(bool shouldComputeDeltas)
 {
     _shouldComputeDeltas = shouldComputeDeltas;
@@ -288,6 +312,23 @@ void Layer::loadLayer(util::InputTarArchive& archive, const util::PropertyTree& 
         properties["weight-cost-function"]));
 
     _isTraining = false;
+}
+
+void Layer::saveMatrix(const std::string& name, const Matrix& data)
+{
+    _matrixCache[name] = std::make_unique<Matrix>(data);
+}
+
+Matrix Layer::loadMatrix(const std::string& name)
+{
+    assert(_matrixCache.count(name) != 0);
+
+    return *_matrixCache[name];
+}
+
+void Layer::setSupportsMultipleInputsAndOutputs(bool supportMultipleIOs)
+{
+    _supportsMultipleInputsAndOutputs = supportsMultipleIOs;
 }
 
 }

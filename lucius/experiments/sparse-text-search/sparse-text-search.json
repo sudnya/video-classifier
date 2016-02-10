@@ -56,7 +56,7 @@
             },
             "search-module" :
             {
-                "Type"       : "Subgraph",
+                "Type"       : "SubgraphLayer",
                 "Submodules" :
                 {
                     "input-search-0" :
@@ -83,7 +83,7 @@
             },
             "rnn-stack" :
             {
-                "Type" : "Subgraph",
+                "Type" : "SubgraphLayer",
                 "Submodules" :
                 [
                     "recurrent",

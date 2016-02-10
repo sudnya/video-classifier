@@ -1,7 +1,7 @@
 /*  \file   ConvolutionalLayer.cpp
     \author Gregory Diamos
-     \date   Dec 24, 2014
-     \brief  The source for the ConvolutionalLayer class.
+    \date   Dec 24, 2014
+    \brief  The source for the ConvolutionalLayer class.
 */
 
 // Lucius Includes
@@ -108,10 +108,19 @@ ConvolutionalLayer& ConvolutionalLayer::operator=(const ConvolutionalLayer& l)
 
 void ConvolutionalLayer::initialize()
 {
+    /* Glorot
     double e = util::KnobDatabase::getKnobValue("Layer::RandomInitializationEpsilon", 6);
 
     double epsilon = std::sqrt(e) /
-        std::sqrt((_weights.size()[0])*(_weights.size()[1])*(_weights.size()[2]) + (_weights.size()[3]));
+        std::sqrt((_weights.size()[0])*(_weights.size()[1])*(_weights.size()[2]) +
+        (_weights.size()[3]));
+    */
+
+    // He
+    double e = util::KnobDatabase::getKnobValue("Layer::RandomInitializationEpsilon", 1);
+
+    double epsilon = std::sqrt((e) /
+        ((_weights.size()[0])*(_weights.size()[1])*(_weights.size()[2]) * 2));
 
     // generate uniform random values between [0, 1]
     matrix::rand(_weights);
@@ -126,15 +135,19 @@ void ConvolutionalLayer::initialize()
     apply(_bias, _bias, matrix::Fill(0.0));
 }
 
-void ConvolutionalLayer::runForwardImplementation(MatrixVector& activations)
+void ConvolutionalLayer::runForwardImplementation(MatrixVector& outputActivations,
+    const MatrixVector& inputActivations)
 {
-    auto m = activations.back();
+    assert(inputActivations.size() == 1);
+
+    auto m = inputActivations.back();
 
     if(util::isLogEnabled("ConvolutionalLayer"))
     {
-        util::log("ConvolutionalLayer") << " Running forward propagation of matrix " << m.shapeString()
-            << " through layer: (size " << _weights.shapeString()
-            << ") (stride " << _filterStride->toString() << ") (padding " << _inputPadding->toString() << ")\n";
+        util::log("ConvolutionalLayer") << " Running forward propagation of matrix "
+            << m.shapeString() << " through layer: (size " << _weights.shapeString()
+            << ") (stride " << _filterStride->toString() << ") (padding "
+            << _inputPadding->toString() << ")\n";
     }
 
     if(util::isLogEnabled("ConvolutionalLayer::Detail"))
@@ -168,17 +181,15 @@ void ConvolutionalLayer::runForwardImplementation(MatrixVector& activations)
         util::log("ConvolutionalLayer") << "  activation: " << activation.shapeString() << "\n";
     }
 
-    activations.push_back(std::move(activation));
+    outputActivations.push_back(std::move(activation));
 }
 
 Matrix ConvolutionalLayer::runReverseImplementation(MatrixVector& gradients,
-    MatrixVector& activations,
-    const Matrix& difference)
+    MatrixVector& inputDeltas,
+    const MatrixVector& outputDeltas)
 {
-    auto outputActivations = activations.back();
-    activations.pop_back();
-
-    auto inputActivations = activations.back();
+    auto outputActivations = loadMatrix("outputActivations");
+    auto inputActivations  = loadMatrix("inputActivations");
 
     if(util::isLogEnabled("ConvolutionalLayer"))
     {
@@ -190,7 +201,8 @@ Matrix ConvolutionalLayer::runReverseImplementation(MatrixVector& gradients,
 
     if(util::isLogEnabled("ConvolutionalLayer"))
     {
-        util::log("ConvolutionalLayer") << "  difference size: " << difference.shapeString() << "\n";
+        util::log("ConvolutionalLayer") << "  difference size: "
+            << difference.shapeString() << "\n";
     }
 
     if(util::isLogEnabled("ConvolutionalLayer::Detail"))
@@ -200,26 +212,31 @@ Matrix ConvolutionalLayer::runReverseImplementation(MatrixVector& gradients,
 
     if(util::isLogEnabled("ConvolutionalLayer"))
     {
-        util::log("ConvolutionalLayer") << "  output activations size: " << outputActivations.shapeString() << "\n";
+        util::log("ConvolutionalLayer") << "  output activations size: "
+            << outputActivations.shapeString() << "\n";
     }
 
     if(util::isLogEnabled("ConvolutionalLayer::Detail"))
     {
-        util::log("ConvolutionalLayer::Detail") << "  output activations: " << outputActivations.debugString();
+        util::log("ConvolutionalLayer::Detail") << "  output activations: "
+            << outputActivations.debugString();
     }
 
     if(util::isLogEnabled("ConvolutionalLayer"))
     {
-        util::log("ConvolutionalLayer") << "  input activations size: " << inputActivations.shapeString() << "\n";
+        util::log("ConvolutionalLayer") << "  input activations size: "
+            << inputActivations.shapeString() << "\n";
     }
 
     if(util::isLogEnabled("ConvolutionalLayer::Detail"))
     {
-        util::log("ConvolutionalLayer::Detail") << "  input activations: " << inputActivations.debugString();
+        util::log("ConvolutionalLayer::Detail") << "  input activations: "
+            << inputActivations.debugString();
     }
 
     // finish computing the deltas
-    auto deltas = apply(getActivationFunction()->applyDerivative(outputActivations), difference, matrix::Multiply());
+    auto deltas = apply(getActivationFunction()->applyDerivative(outputActivations),
+        difference, matrix::Multiply());
 
     size_t samples = deltas.size()[3];
 
@@ -233,37 +250,44 @@ Matrix ConvolutionalLayer::runReverseImplementation(MatrixVector& gradients,
     // compute gradient for the weights
     Matrix weightGradient(_weights.size(), _weights.precision());
 
-    reverseConvolutionGradients(weightGradient, inputActivations, deltas, *_filterStride, *_inputPadding, 1.0 / samples);
+    reverseConvolutionGradients(weightGradient, inputActivations, deltas,
+        *_filterStride, *_inputPadding, 1.0 / samples);
 
     // add in the weight cost function term
     if(getWeightCostFunction() != nullptr)
     {
-        apply(weightGradient, weightGradient, getWeightCostFunction()->getGradient(_weights), matrix::Add());
+        apply(weightGradient, weightGradient,
+            getWeightCostFunction()->getGradient(_weights), matrix::Add());
     }
 
     gradients.push_back(std::move(weightGradient));
 
     if(util::isLogEnabled("ConvolutionalLayer"))
     {
-        util::log("ConvolutionalLayer") << "  weight grad shape: " << weightGradient.shapeString() << "\n";
+        util::log("ConvolutionalLayer") << "  weight grad shape: "
+            << weightGradient.shapeString() << "\n";
     }
 
     if(util::isLogEnabled("ConvolutionalLayer::Detail"))
     {
-        util::log("ConvolutionalLayer::Detail") << "  weight grad: " << weightGradient.debugString();
+        util::log("ConvolutionalLayer::Detail") << "  weight grad: "
+            << weightGradient.debugString();
     }
 
     // compute gradient for the bias
-    auto biasGradient = reduce(apply(deltas, matrix::Divide(samples)), {0, 1, 3, 4}, matrix::Add());
+    auto biasGradient = reduce(apply(deltas, matrix::Divide(samples)),
+        {0, 1, 3, 4}, matrix::Add());
 
     if(util::isLogEnabled("ConvolutionalLayer"))
     {
-        util::log("ConvolutionalLayer") << "  bias grad shape: " << biasGradient.shapeString() << "\n";
+        util::log("ConvolutionalLayer") << "  bias grad shape: "
+            << biasGradient.shapeString() << "\n";
     }
 
     if(util::isLogEnabled("ConvolutionalLayer::Detail"))
     {
-        util::log("ConvolutionalLayer::Detail") << "  bias grad: " << biasGradient.debugString();
+        util::log("ConvolutionalLayer::Detail") << "  bias grad: "
+            << biasGradient.debugString();
     }
 
     assert(biasGradient.size() == _bias.size());
@@ -283,9 +307,11 @@ Matrix ConvolutionalLayer::runReverseImplementation(MatrixVector& gradients,
 
     if(getActivationCostFunction() != nullptr)
     {
-        auto activationCostFunctionGradient = getActivationCostFunction()->getGradient(outputActivations);
+        auto activationCostFunctionGradient =
+            getActivationCostFunction()->getGradient(outputActivations);
 
-        apply(previousLayerDeltas, deltasPropagatedReverse, activationCostFunctionGradient, matrix::Multiply());
+        apply(previousLayerDeltas, deltasPropagatedReverse,
+            activationCostFunctionGradient, matrix::Multiply());
     }
     else
     {
@@ -304,7 +330,7 @@ Matrix ConvolutionalLayer::runReverseImplementation(MatrixVector& gradients,
             << previousLayerDeltas.debugString();
     }
 
-    return previousLayerDeltas;
+    inputDeltas.push_back(std::move(previousLayerDeltas));
 }
 
 MatrixVector& ConvolutionalLayer::weights()
