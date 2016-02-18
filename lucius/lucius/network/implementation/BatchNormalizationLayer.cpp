@@ -503,11 +503,6 @@ std::unique_ptr<Layer> BatchNormalizationLayer::clone() const
     return std::make_unique<BatchNormalizationLayer>(*this);
 }
 
-std::unique_ptr<Layer> BatchNormalizationLayer::mirror() const
-{
-    return clone();
-}
-
 std::string BatchNormalizationLayer::getTypeName() const
 {
     return "BatchNormalizationLayer";

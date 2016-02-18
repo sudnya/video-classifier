@@ -32,7 +32,7 @@ public:
 
 public:
     virtual void runForwardImplementation(MatrixVector& activations);
-    virtual Matrix runReverseImplementation(MatrixVector& gradients,
+    virtual void runReverseImplementation(MatrixVector& gradients,
         MatrixVector& activations, const Matrix& deltas);
 
 public:
@@ -67,7 +67,6 @@ public:
 
 public:
     virtual std::unique_ptr<Layer> clone() const;
-    virtual std::unique_ptr<Layer> mirror() const;
 
 public:
     virtual std::string getTypeName() const;

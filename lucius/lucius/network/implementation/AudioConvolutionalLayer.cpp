@@ -214,14 +214,6 @@ std::unique_ptr<Layer> AudioConvolutionalLayer::clone() const
     return std::unique_ptr<Layer>(new AudioConvolutionalLayer(*this));
 }
 
-std::unique_ptr<Layer> AudioConvolutionalLayer::mirror() const
-{
-    return std::make_unique<AudioConvolutionalLayer>(_layer->getInputSize(),
-        matrix::Dimension(weights()[0].size()[0], weights()[0].size()[1],
-            weights()[0].size()[3], weights()[0].size()[2]),
-        _layer->getFilterStride(), _layer->getInputPadding(), precision());
-}
-
 std::string AudioConvolutionalLayer::getTypeName() const
 {
     return "AudioConvolutionalLayer";

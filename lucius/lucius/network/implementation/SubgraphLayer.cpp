@@ -624,39 +624,6 @@ std::unique_ptr<Layer> SubgraphLayer::clone() const
     return std::make_unique<SubgraphLayer>(*this);
 }
 
-std::unique_ptr<Layer> SubgraphLayer::mirror() const
-{
-    auto subgraph = std::make_unique<SubgraphLayer>();
-
-    if(empty())
-    {
-        return subgraph;
-    }
-
-    for(auto layer = _implementation->layerNames.begin();
-        layer != --_implementation->layerNames.end(); ++layer)
-    {
-        subgraph->addLayer(*layer, _implementation->getLayer(*layer));
-    }
-
-    subgraph->addLayer(_implemenation->layerNames().back(),
-        _implementation->getLayer(*_implemenation->layerNames().back())->mirror());
-
-    for(auto& connection : _implementation->forwardConnections)
-    {
-        subgraph->addForwardConnection(connection.source, connection.destination);
-    }
-
-    for(auto& connection : _implementation->timeConnections)
-    {
-        subgraph->addTimeConnection(connection.source, connection.destination);
-    }
-
-    subgraph->prepareSubgraphForEvaluation();
-
-    return subgraph;
-}
-
 std::string SubgraphLayer::getTypeName() const
 {
     return "SubgraphLayer";

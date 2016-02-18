@@ -469,11 +469,6 @@ std::unique_ptr<Layer> RecurrentLayer::clone() const
     return std::make_unique<RecurrentLayer>(*this);
 }
 
-std::unique_ptr<Layer> RecurrentLayer::mirror() const
-{
-    return clone();
-}
-
 std::string RecurrentLayer::getTypeName() const
 {
     return "RecurrentLayer";

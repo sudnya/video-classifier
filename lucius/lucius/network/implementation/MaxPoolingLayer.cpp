@@ -239,11 +239,6 @@ std::unique_ptr<Layer> MaxPoolingLayer::clone() const
     return std::make_unique<MaxPoolingLayer>(*this);
 }
 
-std::unique_ptr<Layer> MaxPoolingLayer::mirror() const
-{
-    return clone();
-}
-
 std::string MaxPoolingLayer::getTypeName() const
 {
     return "MaxPoolingLayer";

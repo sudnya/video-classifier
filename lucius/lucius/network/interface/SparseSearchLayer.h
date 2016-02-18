@@ -9,6 +9,9 @@
 // Lucius Includes
 #include <lucius/network/interface/Layer.h>
 
+// Forward Declarations
+namespace lucius { namespace engine { class InputOutputLearnerEngine; } }
+
 namespace lucius
 {
 namespace network
@@ -19,8 +22,9 @@ class SparseSearchLayer : public Layer
 {
 public:
     SparseSearchLayer();
-    SparseSearchLayer(size_t size);
-    SparseSearchLayer(size_t size, const matrix::Precision&);
+    SparseSearchLayer(size_t size, size_t depth, size_t radix, size_t selections);
+    SparseSearchLayer(size_t size, size_t depth, size_t radix, size_t selections,
+        const matrix::Precision&);
     virtual ~SparseSearchLayer();
 
 public:
@@ -33,9 +37,9 @@ public:
 public:
     virtual void runForwardImplementation(MatrixVector& outputActivations,
         const MatrixVector& inputActivations);
-    virtual Matrix runReverseImplementation(MatrixVector& gradients,
+    virtual void runReverseImplementation(MatrixVector& gradients,
         MatrixVector& inputDeltas,
-        const Matrix& outputDeltas);
+        const MatrixVector& outputDeltas);
 
 public:
     virtual       MatrixVector& weights();
@@ -69,20 +73,22 @@ public:
 
 public:
     virtual std::unique_ptr<Layer> clone() const;
-    virtual std::unique_ptr<Layer> mirror() const;
 
 public:
     virtual std::string getTypeName() const;
 
 private:
-    std::unique_ptr<MatrixVector> _parameters;
+    std::unique_ptr<SubgraphLayer> _selectUnit;
+    std::unique_ptr<SubgraphLayer> _processUnit;
 
 private:
-    Matrix& _forwardWeights;
-    Matrix& _bias;
+    InputOutputLearnerEngine* _engine;
 
 private:
-    Matrix& _recurrentWeights;
+    size_t _depth;
+    size_t _size;
+    size_t _radix;
+    size_t _selections;
 
 };
 }

@@ -413,11 +413,6 @@ std::unique_ptr<Layer> FeedForwardLayer::clone() const
     return std::make_unique<FeedForwardLayer>(*this);
 }
 
-std::unique_ptr<Layer> FeedForwardLayer::mirror() const
-{
-    return std::make_unique<FeedForwardLayer>(getOutputCount(), getInputCount(), precision());
-}
-
 std::string FeedForwardLayer::getTypeName() const
 {
     return "FeedForwardLayer";

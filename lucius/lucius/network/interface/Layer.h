@@ -8,6 +8,7 @@
 // Standard Library Includes
 #include <random>
 #include <set>
+#include <map>
 #include <memory>
 
 // Forward Declarations
@@ -92,7 +93,6 @@ public:
 
 public:
     virtual std::unique_ptr<Layer> clone() const = 0;
-    virtual std::unique_ptr<Layer> mirror() const = 0;
 
 public:
     virtual std::string getTypeName() const = 0;
