@@ -9,6 +9,9 @@
 // Lucius Includes
 #include <lucius/engine/interface/Engine.h>
 
+// Forward Declarations
+namespace lucius { namespace matrix { class Dimension; } }
+
 namespace lucius
 {
 

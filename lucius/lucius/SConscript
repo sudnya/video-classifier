@@ -70,6 +70,9 @@ programs.append(env.Program('test-gradient', \
 programs.append(env.Program('test-convolutional-gradient', \
     ['network/test/test-convolutional-gradient-check.cpp'], LIBS=lucius_libs))
 
+programs.append(env.Program('test-subgraph', \
+    ['network/test/test-subgraph.cpp'], LIBS=lucius_libs))
+
 programs.append(env.Program('test-linear-regression', \
     ['network/test/test-linear-regression.cpp'], LIBS=lucius_libs))
 

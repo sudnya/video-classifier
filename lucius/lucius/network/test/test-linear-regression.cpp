@@ -538,7 +538,8 @@ matrix::Matrix standardize(const matrix::Matrix& input)
 
     auto inputMeanSubtracted = broadcast(input, means, {1}, matrix::Subtract());
 
-    auto stddevs = apply(reduce(apply(inputMeanSubtracted, matrix::SquareAndScale(1.0 / input.size()[1])), {1}, matrix::Add()), matrix::Sqrt());
+    auto stddevs = apply(reduce(apply(inputMeanSubtracted,
+        matrix::SquareAndScale(1.0 / input.size()[1])), {1}, matrix::Add()), matrix::Sqrt());
 
     std::cout << stddevs.toString();
 
