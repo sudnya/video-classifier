@@ -7,6 +7,8 @@
 // Lucius Includes
 #include <lucius/network/interface/SubgraphLayer.h>
 
+#include <lucius/network/interface/LayerFactory.h>
+
 #include <lucius/matrix/interface/MatrixVector.h>
 #include <lucius/matrix/interface/MatrixOperations.h>
 #include <lucius/matrix/interface/MatrixTransformations.h>
@@ -64,6 +66,29 @@ public:
     typedef std::map<std::string, NodeList::iterator> NameToLayerMap;
     typedef std::set<std::pair<std::string, std::string>> ConnectionSet;
     typedef std::set<std::string> NodeSet;
+
+public:
+    SubgraphLayerImplementation() = default;
+
+    SubgraphLayerImplementation(const SubgraphLayerImplementation& i)
+    {
+
+        _copy(i);
+    }
+
+    SubgraphLayerImplementation& operator=(const SubgraphLayerImplementation& i)
+    {
+        if(this == &i)
+        {
+            return *this;
+        }
+
+        clear();
+
+        _copy(i);
+
+        return *this;
+    }
 
 public:
     NodeList       layers;
@@ -402,6 +427,42 @@ public:
     }
 
 public:
+    void addLayer(const std::string& layerName, std::unique_ptr<Layer>&& layer)
+    {
+        assert(layerNames.count(layerName) == 0);
+
+        auto layerIterator = layers.insert(layers.end(), Node(layerName, std::move(layer)));
+
+        layerNames.insert(std::make_pair(layerName, layerIterator));
+
+        weights.push_back(layerIterator->layer->weights());
+    }
+
+    void addForwardConnection(const std::string& node, const std::string& successor)
+    {
+        auto currentNode   = layerNames.find(node);
+        auto successorNode = layerNames.find(successor);
+
+        assert(currentNode   != layerNames.end());
+        assert(successorNode != layerNames.end());
+
+        currentNode->second->forwardSuccessors.push_back(successorNode->second);
+        successorNode->second->forwardPredecessors.push_back(currentNode->second);
+    }
+
+    void addTimeConnection(const std::string& node, const std::string& successor)
+    {
+        auto currentNode   = layerNames.find(node);
+        auto successorNode = layerNames.find(successor);
+
+        assert(currentNode   != layerNames.end());
+        assert(successorNode != layerNames.end());
+
+        currentNode->second->timeSuccessors.push_back(successorNode->second);
+        successorNode->second->timePredecessors.push_back(currentNode->second);
+    }
+
+public:
     bool doAnyTimeConnectionsExist() const
     {
         for(auto& layer : layers)
@@ -413,6 +474,47 @@ public:
         }
 
         return false;
+    }
+
+public:
+    std::unique_ptr<Layer>& getLayer(const std::string& name)
+    {
+        auto layer = layerNames.find(name);
+
+        assert(layer != layerNames.end());
+
+        return layer->second->layer;
+    }
+
+public:
+    void clear()
+    {
+        layers.clear();
+        layerNames.clear();
+
+        weights.clear();
+    }
+
+private:
+    void _copy(const SubgraphLayerImplementation& i)
+    {
+        for(auto& node : i.layers)
+        {
+            addLayer(node.name, node.layer->clone());
+        }
+
+        for(auto& node : i.layers)
+        {
+            for(auto& successor : node.forwardSuccessors)
+            {
+                addForwardConnection(node.name, successor->name);
+            }
+
+            for(auto& successor : node.timeSuccessors)
+            {
+                addTimeConnection(node.name, successor->name);
+            }
+        }
     }
 
 private:
@@ -623,29 +725,28 @@ void SubgraphLayer::save(util::OutputTarArchive& archive, util::PropertyTree& pr
 {
     auto& sublayers = properties["sublayers"];
 
-    for(auto& layerName : _implementation->layerNames)
-    {
-        auto& layerPropertyies = sublayers[layerName];
+    auto& forwardConnections = properties["forward-connections"];
+    auto& timeConnections    = properties["time-connections"];
 
-        auto& layer = _implementation->getLayer(layerName);
+    for(auto& node : _implementation->layers)
+    {
+        auto& layerProperties = sublayers[node.name];
+
+        auto& layer = node.layer;
 
         layerProperties["type"] = layer->getTypeName();
 
         layer->save(archive, layerProperties);
-    }
 
-    auto& forwardConnections = properties["forward-connections"];
+        for(auto& successor : node.forwardSuccessors)
+        {
+            forwardConnections[node.name] = successor->name;
+        }
 
-    for(auto& connection : _implementation->forwardConnections)
-    {
-        forwardConnections[connection.first] = connection.second;
-    }
-
-    auto& timeConnections = properties["time-connections"];
-
-    for(auto& connection : _implementation->timeConnections)
-    {
-        timeConnections[connection.first] = connection.second;
+        for(auto& successor : node.timeSuccessors)
+        {
+            timeConnections[node.name] = successor->name;
+        }
     }
 
     saveLayer(archive, properties);
@@ -695,28 +796,17 @@ std::string SubgraphLayer::getTypeName() const
 
 void SubgraphLayer::addLayer(const std::string& layerName, std::unique_ptr<Layer>&& layer)
 {
-    assert(_implementation->layerNames.count(layerName) == 0);
-
-    auto layerIterator = _implementation->layers.insert(
-        _implementation->layers.end(), Node(layerName, std::move(layer)));
-
-    _implementation->layerNames.insert(std::make_pair(layerName, layerIterator));
+    _implementation->addLayer(layerName, std::move(layer));
 }
 
 void SubgraphLayer::addForwardConnection(const std::string& source, const std::string& destination)
 {
-    assert(_implementation->layerNames.count(source)      != 0);
-    assert(_implementation->layerNames.count(destination) != 0);
-
-    _implementation->forwardConnections.insert(std::make_pair(source, destination));
+    _implementation->addForwardConnection(source, destination);
 }
 
 void SubgraphLayer::addTimeConnection(const std::string& source, const std::string& destination)
 {
-    assert(_implementation->layerNames.count(source)      != 0);
-    assert(_implementation->layerNames.count(destination) != 0);
-
-    _implementation->timeConnections.insert(std::make_pair(source, destination));
+    _implementation->addTimeConnection(source, destination);
 }
 
 void SubgraphLayer::prepareSubgraphForEvaluation()
