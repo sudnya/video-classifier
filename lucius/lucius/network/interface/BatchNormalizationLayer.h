@@ -39,7 +39,7 @@ public:
         const MatrixVector& inputActivations);
     virtual void runReverseImplementation(MatrixVector& gradients,
         MatrixVector& inputDeltas,
-        const Matrix& outputDeltas);
+        const MatrixVector& outputDeltas);
 
 public:
     virtual       MatrixVector& weights();

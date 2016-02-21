@@ -195,7 +195,7 @@ static Matrix scaleAndShift(const Matrix& activations, const Matrix& gamma, cons
         beta, {1}, matrix::Add());
 }
 
-void BatchNormalizationLayer::runForwardImplementation(MatrixVector& outputActivationsVector
+void BatchNormalizationLayer::runForwardImplementation(MatrixVector& outputActivationsVector,
     const MatrixVector& inputActivationsVector)
 {
     assert(inputActivationsVector.size() == 1);
@@ -217,7 +217,7 @@ void BatchNormalizationLayer::runForwardImplementation(MatrixVector& outputActiv
     Matrix means;
     Matrix variances;
 
-    if(isTraining())
+    if(getIsTraining())
     {
         updateMeansAndVariances(means, variances, _means,
             _variances, inputActivations, _samples);
@@ -253,7 +253,8 @@ void BatchNormalizationLayer::runForwardImplementation(MatrixVector& outputActiv
     }
 
     auto outputActivations = unfoldTime(getActivationFunction()->apply(
-        scaleAndShift(normalizedActivations, _gamma, _beta)), activations.back().size());
+        scaleAndShift(normalizedActivations, _gamma, _beta)),
+        inputActivationsVector.front().size());
 
     saveMatrix("outputActivations", outputActivations);
 
@@ -266,11 +267,11 @@ void BatchNormalizationLayer::runForwardImplementation(MatrixVector& outputActiv
     outputActivationsVector.push_back(std::move(outputActivations));
 }
 
-Matrix BatchNormalizationLayer::runReverseImplementation(MatrixVector& gradients,
+void BatchNormalizationLayer::runReverseImplementation(MatrixVector& gradients,
     MatrixVector& inputDeltasVector,
     const MatrixVector& outputDeltas)
 {
-    assert(isTraining());
+    assert(getIsTraining());
     assert(outputDeltas.size() == 1);
 
     // Get the output activations

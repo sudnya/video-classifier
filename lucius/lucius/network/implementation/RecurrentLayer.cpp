@@ -209,7 +209,7 @@ void RecurrentLayer::runForwardImplementation(MatrixVector& outputActivationsVec
     outputActivationsVector.push_back(std::move(activation));
 }
 
-Matrix RecurrentLayer::runReverseImplementation(MatrixVector& gradients,
+void RecurrentLayer::runReverseImplementation(MatrixVector& gradients,
     MatrixVector& inputDeltas,
     const MatrixVector& outputDeltas)
 {
@@ -290,7 +290,7 @@ Matrix RecurrentLayer::runReverseImplementation(MatrixVector& gradients,
     size_t miniBatch       = unfoldedInputActivations.size()[1];
     size_t timesteps       = unfoldedInputActivations.size()[2];
 
-    auto forwardInputActivations = reshape(activations.back(),
+    auto forwardInputActivations = reshape(unfoldedInputActivations,
         {activationCount, miniBatch * timesteps});
 
     forwardDeltas = reshape(forwardDeltas, {activationCount, miniBatch * timesteps});
@@ -371,7 +371,7 @@ Matrix RecurrentLayer::runReverseImplementation(MatrixVector& gradients,
         util::log("RecurrentLayer::Detail") << "  output: " << previousLayerDeltas.debugString();
     }
 
-    return reshape(previousLayerDeltas, {getInputCount(), miniBatch, timesteps});
+    inputDeltas.push_back(reshape(previousLayerDeltas, {getInputCount(), miniBatch, timesteps}));
 }
 
 MatrixVector& RecurrentLayer::weights()

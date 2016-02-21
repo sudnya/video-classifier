@@ -35,9 +35,10 @@ public:
     virtual void initialize();
 
 public:
-    virtual void runForwardImplementation(MatrixVector& activations);
+    virtual void runForwardImplementation(MatrixVector& outputActivations,
+        const MatrixVector& inputActivations);
     virtual void runReverseImplementation(MatrixVector& gradients,
-        MatrixVector& activations,
+        MatrixVector& outputDeltas,
         const MatrixVector& deltas);
 
 public:

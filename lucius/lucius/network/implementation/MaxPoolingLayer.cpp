@@ -95,8 +95,8 @@ static Matrix setupShape(const Matrix& output, const Dimension& outputSize)
     return reshape(output, size);
 }
 
-void MaxPoolingLayer::runForwardImplementation(const MatrixVector& outputActivationsVector,
-    MatrixVector& inputActivationsVector)
+void MaxPoolingLayer::runForwardImplementation(MatrixVector& outputActivationsVector,
+    const MatrixVector& inputActivationsVector)
 {
     assert(inputActivationsVector.size() == 1);
 

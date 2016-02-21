@@ -167,7 +167,7 @@ void FeedForwardLayer::runForwardImplementation(MatrixVector& outputActivations,
     else
     {
         util::log("FeedForwardLayer") << "  input shape: "
-            << activations.back().shapeString() << "\n";
+            << inputActivations.back().shapeString() << "\n";
     }
 
     auto unbiasedOutput = gemm(Matrix(_weights), false, 1.0, inputActivation, false);
@@ -183,8 +183,8 @@ void FeedForwardLayer::runForwardImplementation(MatrixVector& outputActivations,
         util::log("FeedForwardLayer") << "  output shape: " << output.shapeString() << "\n";
     }
 
-    outputActivation = unfoldTime(getActivationFunction()->apply(output),
-        inputActivation.front().size());
+    auto outputActivation = unfoldTime(getActivationFunction()->apply(output),
+        inputActivation.size());
 
     saveMatrix("outputActivation", outputActivation);
 
@@ -202,7 +202,7 @@ void FeedForwardLayer::runForwardImplementation(MatrixVector& outputActivations,
     outputActivations.push_back(outputActivation);
 }
 
-matrix::Matrix FeedForwardLayer::runReverseImplementation(MatrixVector& gradients,
+void FeedForwardLayer::runReverseImplementation(MatrixVector& gradients,
     MatrixVector& inputDeltas,
     const MatrixVector& outputDeltas)
 {
@@ -254,7 +254,7 @@ matrix::Matrix FeedForwardLayer::runReverseImplementation(MatrixVector& gradient
     }
 
     // compute gradient for the weights
-    auto samples = activations.back().size()[1];
+    auto samples = outputActivation.size()[1];
 
     auto weightGradient = gemm(Matrix(deltas), false, 1.0 / samples, inputActivation, true);
 

@@ -7,10 +7,38 @@
 // Lucius Includes
 #include <lucius/network/interface/SparseSearchLayer.h>
 
+#include <lucius/network/interface/SubgraphLayer.h>
+#include <lucius/network/interface/LayerFactory.h>
+
+#include <lucius/engine/interface/InputOutputLearnerEngine.h>
+
+#include <lucius/matrix/interface/Precision.h>
+#include <lucius/matrix/interface/Dimension.h>
+#include <lucius/matrix/interface/MatrixVector.h>
+
+#include <lucius/matrix/interface/DimensionTransformations.h>
+#include <lucius/matrix/interface/MatrixOperations.h>
+#include <lucius/matrix/interface/CopyOperations.h>
+#include <lucius/matrix/interface/Operation.h>
+#include <lucius/matrix/interface/MatrixTransformations.h>
+
+#include <lucius/util/interface/memory.h>
+#include <lucius/util/interface/debug.h>
+#include <lucius/util/interface/PropertyTree.h>
+
+// Standard Library Includes
+#include <sstream>
+
 namespace lucius
 {
 namespace network
 {
+
+typedef matrix::MatrixVector MatrixVector;
+typedef matrix::Matrix       Matrix;
+typedef matrix::Dimension    Dimension;
+
+typedef engine::InputOutputLearnerEngine InputOutputLearnerEngine;
 
 SparseSearchLayer::SparseSearchLayer()
 : SparseSearchLayer(0, 0, 0, 0)
@@ -43,11 +71,73 @@ static std::unique_ptr<SubgraphLayer> createSelectUnit(size_t depth, size_t size
 
         layerName << "select" << i;
 
-        layer.addLayer(layerName.str(), LayerFactor::create("FeedForwardLayer",
-            {{"InputSize", inputSize}, {"OutputSize", outputSize}}));
+        layer->addLayer(layerName.str(), LayerFactory::create("FeedForwardLayer",
+            util::ParameterPack(std::make_tuple("InputSize", inputSize),
+            std::make_tuple("OutputSize", outputSize))));
     }
 
     return layer;
+}
+
+static size_t computeProcessedSize(size_t size, size_t selections)
+{
+    assertM(false, "Not implemented.");
+
+    return 0;
+}
+
+static size_t computeGeneratedSize(size_t size, size_t radix, size_t selections)
+{
+    assertM(false, "Not implemented.");
+
+    return 0;
+}
+
+static size_t computeProcessedTimeSize(size_t size)
+{
+    return size / 3;
+}
+
+static size_t computeSelectToProcessSize(size_t size)
+{
+    assertM(false, "Not implemented.");
+
+    return 0;
+}
+
+static size_t computeSelectInputSize(size_t size)
+{
+    assertM(false, "Not implemented.");
+
+    return 0;
+}
+
+static size_t computeProcessInputSize(size_t size)
+{
+    assertM(false, "Not implemented.");
+
+    return 0;
+}
+
+static size_t computeSelectCommandSize(size_t size)
+{
+    assertM(false, "Not implemented.");
+
+    return 0;
+}
+
+static size_t computeUnitSize(size_t radix, size_t size)
+{
+    assertM(false, "Not implemented.");
+
+    return 0;
+}
+
+static size_t computeUnitCount(size_t radix, size_t size)
+{
+    assertM(false, "Not implemented.");
+
+    return 0;
 }
 
 static std::unique_ptr<SubgraphLayer> createProcessUnit(size_t depth, size_t size, size_t radix,
@@ -79,8 +169,9 @@ static std::unique_ptr<SubgraphLayer> createProcessUnit(size_t depth, size_t siz
 
         layerName << "process" << i;
 
-        layer.addLayer(layerName.str(), LayerFactor::create("FeedForwardLayer",
-            {{"InputSize", inputSize}, {"OutputSize", outputSize}}));
+        layer->addLayer(layerName.str(), LayerFactory::create("FeedForwardLayer",
+            util::ParameterPack(std::make_tuple("InputSize", inputSize),
+            std::make_tuple("OutputSize", outputSize))));
     }
 
     return layer;
@@ -103,10 +194,21 @@ SparseSearchLayer::~SparseSearchLayer()
 
 }
 
+static std::unique_ptr<SubgraphLayer> convert(std::unique_ptr<Layer>&& layer)
+{
+    auto* result = dynamic_cast<SubgraphLayer*>(layer.get());
+
+    assert(result != nullptr);
+
+    layer.release();
+
+    return std::unique_ptr<SubgraphLayer>(result);
+}
+
 SparseSearchLayer::SparseSearchLayer(const SparseSearchLayer& l)
 : Layer(l),
-  _selectUnit(l._selectUnit->clone()),
-  _processUnit(l._processUnit->clone()),
+  _selectUnit(convert(l._selectUnit->clone())),
+  _processUnit(convert(l._processUnit->clone())),
   _depth(l._depth),
   _size(l._size),
   _radix(l._radix),
@@ -124,8 +226,8 @@ SparseSearchLayer& SparseSearchLayer::operator=(const SparseSearchLayer& l)
         return *this;
     }
 
-    _selectUnit  = std::move(l._selectUnit->clone());
-    _processUnit = std::move(l._processUnit->clone());
+    _selectUnit  = std::move(convert(l._selectUnit->clone()));
+    _processUnit = std::move(convert(l._processUnit->clone()));
 
     _depth      = l._depth;
     _size       = l._size;
@@ -144,10 +246,10 @@ void SparseSearchLayer::initialize()
 static MatrixVector runSelectForward(SubgraphLayer& layer,
     const MatrixVector& inputActivations, size_t size)
 {
-    auto extendedSize = inputActivation.size();
+    auto extendedSize = inputActivations.front().size();
     extendedSize[0]   = computeSelectInputSize(size);
 
-    Matrix extendedInput(extendedSize, inputActivatiobs.back().precision());
+    Matrix extendedInput(extendedSize, inputActivations.back().precision());
 
     auto begin  = zeros(extendedSize);
     auto middle = Dimension(computeSelectCommandSize(size), extendedSize[1], extendedSize[2]);
@@ -174,22 +276,87 @@ static MatrixVector runSelectForward(SubgraphLayer& layer,
     }
 
     MatrixVector result;
+    MatrixVector extendedInputActivations;
 
-    layer.runForwardImplementation(result, inputActivation);
+    extendedInputActivations.push_back(extendedInput);
+
+    layer.runForwardImplementation(result, extendedInputActivations);
 
     return result;
 }
 
-static MatrixVector runRecursionForward(SparseSearchLayer& layer, InputOutputEngine& engine,
+class RecursionState
+{
+public:
+    RecursionState(SubgraphLayer& selectUnit, SubgraphLayer& processUnit,
+        InputOutputLearnerEngine& engine, size_t size, size_t radix)
+    : selectUnit(selectUnit),
+      processUnit(processUnit),
+      engine(engine),
+      size(size),
+      radix(radix)
+    {
+
+    }
+
+public:
+    SubgraphLayer& selectUnit;
+    SubgraphLayer& processUnit;
+
+    InputOutputLearnerEngine& engine;
+
+    size_t size;
+    size_t radix;
+
+public:
+    size_t segmentSize;
+    size_t selectedSegment;
+};
+
+typedef std::vector<size_t> SegmentList;
+
+static SegmentList computeSelectedSegments(const RecursionState& recursionState,
+    const MatrixVector& selectResult)
+{
+    SegmentList result;
+
+    assertM(false, "Not implemented.");
+
+    return result;
+}
+
+static bool isLastRecursionLevel(const RecursionState& recursionState,
+    const InputOutputLearnerEngine& engine)
+{
+    assertM(false, "Not implemented.");
+
+    return true;
+}
+
+static size_t reduceSegmentSize(size_t originalSegmentSize)
+{
+    assertM(false, "Not implemented.");
+
+    return 0;
+}
+
+static void runForward(MatrixVector& outputActivations,
+    RecursionState& recursionState,
+    const MatrixVector& inputActivations);
+
+static MatrixVector runRecursionForward(RecursionState& recursionState,
     const MatrixVector& selectResult)
 {
     // select based on the select unit's output
-    auto selectedSegments = computeSelectedSegments(layer, selectResult);
+    auto selectedSegments = computeSelectedSegments(recursionState, selectResult);
 
-    if(isLastRecursionLevel(layer, engine))
+    if(isLastRecursionLevel(recursionState, recursionState.engine))
     {
+        size_t unitSize = computeUnitSize(recursionState.radix, recursionState.size);
+
         // read data directly from the engine
-        Matrix resultData({radix * unitSize, 1, 1}, selectResult.front().precision());
+        Matrix resultData({recursionState.radix * unitSize, 1, 1},
+            selectResult.front().precision());
 
         size_t index = 0;
         for(auto& selectedSegment : selectedSegments)
@@ -197,7 +364,8 @@ static MatrixVector runRecursionForward(SparseSearchLayer& layer, InputOutputEng
             auto resultSlice = slice(resultData, {index * unitSize, 0, 0},
                 {(index + 1) * unitSize, 1, 1});
 
-            auto loadedData = engine.getSlice({selectedSegment}, {selectedSegment + unitSize});
+            auto loadedData = recursionState.engine.getSlice(
+                {selectedSegment}, {selectedSegment + unitSize});
 
             copy(resultSlice, loadedData);
 
@@ -212,49 +380,63 @@ static MatrixVector runRecursionForward(SparseSearchLayer& layer, InputOutputEng
     }
     else
     {
-        size_t originalSegmentSize = layer.getSegmentSize()
+        size_t originalSegmentSize = recursionState.segmentSize;
         size_t newSegmentSize      = reduceSegmentSize(originalSegmentSize);
 
-        layer.setSegmentSize(newSegmentSize);
+        recursionState.segmentSize = newSegmentSize;
 
         MatrixVector result;
 
         // recurse on the selected elements
         for(auto& selectedSegment : selectedSegments)
         {
-            layer.setSegment(selectedSegment);
+            recursionState.selectedSegment = selectedSegment;
 
-            layer.runForwardImplementation(resultSlice, selectResult);
+            MatrixVector input;
+
+            runForward(result, recursionState, input);
         }
 
-        layer.setSegmentSize(originalSegmentSize);
+        recursionState.segmentSize = originalSegmentSize;
 
         return result;
     }
 }
 
-static MatrixVector runRouterForward(const MatrixVector& selectResult,
-    const MatrixVector& dataForSelectedUnits)
+static Matrix sliceOutSelections(const Matrix& selectResult)
+{
+    Matrix result;
+
+    assertM(false, "Not implemented.");
+
+    return result;
+}
+
+static MatrixVector runRouterForward(const MatrixVector& selectResults,
+    const MatrixVector& dataForSelectedUnits, size_t radix, size_t size)
 {
     auto data         = dataForSelectedUnits.front();
-    auto selectResult = sliceOutSelections(selectResult.front());
+    auto selectResult = sliceOutSelections(selectResults.front());
+
+    size_t unitSize = computeUnitSize(radix, size);
+    size_t units    = computeUnitCount(radix, size);
 
     auto reshapedData = reshape(data, {unitSize, units, 1, 1});
 
     MatrixVector result;
 
-    result.push_back(broadcast(matrix::Multiply(), selectResult, reshapedData));
+    result.push_back(broadcast(selectResult, reshapedData, {}, matrix::Multiply()));
 
     return result;
 }
 
-static MatrixVector runProcessForward(SungraphLayer& layer, const MatrixVector& selectResult,
-    const MatrixVector& generatedData, const MatrixVector& inputActivations)
+static MatrixVector runProcessForward(SubgraphLayer& layer, const MatrixVector& selectResult,
+    const MatrixVector& generatedData, const MatrixVector& inputActivations, size_t size)
 {
-    auto extendedSize = inputActivation.size();
+    auto extendedSize = inputActivations.front().size();
     extendedSize[0]   = computeProcessInputSize(size);
 
-    Matrix extendedInput(extendedSize, inputActivatiobs.back().precision());
+    Matrix extendedInput(extendedSize, inputActivations.front().precision());
 
     auto begin  = zeros(extendedSize);
     auto middle = Dimension(computeSelectCommandSize(size), extendedSize[1], extendedSize[2]);
@@ -281,31 +463,51 @@ static MatrixVector runProcessForward(SungraphLayer& layer, const MatrixVector& 
     }
 
     MatrixVector result;
+    MatrixVector extendedInputActivations;
 
-    layer.runForward(result, inputActivation);
+    extendedInputActivations.push_back(extendedInput);
+
+    layer.runForward(result, extendedInputActivations);
 
     return result;
+}
+
+static void runForward(MatrixVector& outputActivations,
+    RecursionState& recursionState,
+    const MatrixVector& inputActivations)
+{
+    // Evaluate the select unit
+    auto selectResult = runSelectForward(recursionState.selectUnit, inputActivations,
+        recursionState.size);
+
+    // Recurse based on the selected units
+    auto dataForSelectedUnits = runRecursionForward(recursionState, selectResult);
+
+    // Evaluate the router unit
+    auto generatedData = runRouterForward(selectResult, dataForSelectedUnits,
+        recursionState.radix, recursionState.size);
+
+    // Evaluate the process unit
+    auto processedData = runProcessForward(recursionState.processUnit, selectResult, generatedData,
+        inputActivations, recursionState.size);
+
+    outputActivations.push_back(std::move(processedData));
 }
 
 void SparseSearchLayer::runForwardImplementation(MatrixVector& outputActivations,
     const MatrixVector& inputActivations)
 {
-    // Evaluate the select unit
-    auto selectResult = runSelectForward(*_selectUnit, inputActivations, _size);
+    RecursionState recursionState(*_selectUnit, *_processUnit, *_engine, _radix, _size);
 
-    // Recurse based on the selected units
-    auto dataForSelectedUnits = runRecursionForward(*this, *_engine, selectResult);
-
-    // Evaluate the router unit
-    auto generatedData = runRouterForward(selectResult, dataForSelectedUnits);
-
-    // Evaluate the process unit
-    auto processedData = runProcessForward(*_processUnit, selectResult, generatedData);
-
-    outputActivations.push_back(std::move(processedData));
+    network::runForward(outputActivations, recursionState, inputActivations);
 }
 
-static MatrixVector runProcessReverse(SubgrahLayer& layer,
+static void packOutputDeltas(MatrixVector& packedOutputDeltas, const MatrixVector& outputDeltas)
+{
+    assertM(false, "Not implemented.");
+}
+
+static MatrixVector runProcessReverse(SubgraphLayer& layer,
     MatrixVector& gradients, const MatrixVector& outputDeltas)
 {
     MatrixVector generatedDataDeltas;
@@ -313,7 +515,7 @@ static MatrixVector runProcessReverse(SubgrahLayer& layer,
 
     packOutputDeltas(packedOutputDeltas, outputDeltas);
 
-    layer.runReverse(gradients, generatedDataDeltas, packedOutputDelta);
+    layer.runReverse(gradients, generatedDataDeltas, packedOutputDeltas);
 
     return generatedDataDeltas;
 }
@@ -338,18 +540,28 @@ static MatrixVector runSelectReverse(MatrixVector& gradients, const MatrixVector
     return result;
 }
 
-Matrix SparseSearchLayer::runReverseImplementation(MatrixVector& gradients,
+static MatrixVector runRouterReverse(MatrixVector& gradients,
+    const MatrixVector& generatedDataDeltas)
+{
+    assertM(false, "Not Implemented");
+
+    MatrixVector result;
+
+    return result;
+}
+
+void SparseSearchLayer::runReverseImplementation(MatrixVector& gradients,
     MatrixVector& inputDeltas,
-    const Matrix& outputDeltas)
+    const MatrixVector& outputDeltas)
 {
     // Evaluate the process unit
     auto generatedDataDeltas = runProcessReverse(*_processUnit, gradients, outputDeltas);
 
     // Evaluate the router unit
-    auto selectedAndGeneratedDelats = runRouterReverse(gradients, generatedDataDeltas);
+    auto selectedAndGeneratedDeltas = runRouterReverse(gradients, generatedDataDeltas);
 
     // Unwind the recursion
-    auto selectDeltas = runRecursionReverse(this, gradients, generatedDataDeltas);
+    auto selectDeltas = runRecursionReverse(*this, gradients, generatedDataDeltas);
 
     // Evaluate the select unit
     auto selectInputDeltas = runSelectReverse(gradients, generatedDataDeltas,
@@ -360,12 +572,12 @@ Matrix SparseSearchLayer::runReverseImplementation(MatrixVector& gradients,
 
 MatrixVector& SparseSearchLayer::weights()
 {
-    return _parameters;
+    return *_parameters;
 }
 
 const MatrixVector& SparseSearchLayer::weights() const
 {
-    return _parameters;
+    return *_parameters;
 }
 
 const matrix::Precision& SparseSearchLayer::precision() const
@@ -380,12 +592,12 @@ double SparseSearchLayer::computeWeightCost() const
 
 Dimension SparseSearchLayer::getInputSize() const
 {
-    return {computeCommandSize(_size), 1, 1};
+    return {computeSelectCommandSize(_size), 1, 1};
 }
 
 Dimension SparseSearchLayer::getOutputSize() const
 {
-    return {computeProcessedSize(_size, _selected), 1, 1};
+    return {computeProcessedSize(_size, _radix), 1, 1};
 }
 
 size_t SparseSearchLayer::getInputCount() const
@@ -416,7 +628,7 @@ size_t SparseSearchLayer::getFloatingPointOperationCount() const
 
 size_t SparseSearchLayer::getActivationMemory() const
 {
-    return _selectUnit->activationMemory() + _processUnit->activationMemory();
+    return _selectUnit->getActivationMemory() + _processUnit->getActivationMemory();
 }
 
 void SparseSearchLayer::save(util::OutputTarArchive& archive, util::PropertyTree& properties) const
@@ -447,17 +659,17 @@ void SparseSearchLayer::load(util::InputTarArchive& archive, const util::Propert
 
     _processUnit->load(archive, processUnit);
 
-    _size       = properties["size"];
-    _depth      = properties["depth"];
-    _radix      = properties["radix"];
-    _selections = properties["selections"];
+    _size       = properties.get<size_t>("size");
+    _depth      = properties.get<size_t>("depth");
+    _radix      = properties.get<size_t>("radix");
+    _selections = properties.get<size_t>("selections");
 
     loadLayer(archive, properties);
 }
 
 std::unique_ptr<Layer> SparseSearchLayer::clone() const
 {
-    return std::make_unique<Layer>(new SparseSearchLayer(*this));
+    return std::unique_ptr<Layer>(new SparseSearchLayer(*this));
 }
 
 std::string SparseSearchLayer::getTypeName() const

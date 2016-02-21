@@ -19,6 +19,9 @@ namespace engine
 class InputOutputLearnerEngine : public Engine
 {
 public:
+    typedef matrix::Dimension Dimension;
+
+public:
     InputOutputLearnerEngine();
     virtual ~InputOutputLearnerEngine();
 
@@ -37,6 +40,12 @@ public:
     Dimension getOutputDimensions() const;
     /*! \brief A callback function to get a slice of the output over the specified range. */
     Matrix getOutputSlice(Dimension begin, Dimension end) const;
+
+public:
+    /*! \brief A callback function to get the dimensions of the current batch. */
+    Dimension getDimensions() const;
+    /*! \brief A callback function to get a slice of the over the specified range. */
+    Matrix getSlice(Dimension begin, Dimension end) const;
 
 private:
     virtual ResultVector runOnBatch(Matrix&& input, Matrix&& reference);

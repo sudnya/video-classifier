@@ -108,21 +108,21 @@ void AudioConvolutionalLayer::runForwardImplementation(MatrixVector& outputActiv
 
     _layer->runForwardImplementation(outputActivations, storage);
 
-    activations.push_back(permuteDimensionsBackward(outputActivations.back()));
+    outputActivations.push_back(permuteDimensionsBackward(outputActivations.back()));
 
     if(util::isLogEnabled("AudioConvolutionalLayer::Detail"))
     {
         util::log("AudioConvolutionalLayer::Detail") << "  activation: "
-            << activations.back().debugString();
+            << outputActivations.back().debugString();
     }
     else
     {
         util::log("AudioConvolutionalLayer") << "  activation: "
-            << activations.back().shapeString() << "\n";
+            << outputActivations.back().shapeString() << "\n";
     }
 }
 
-Matrix AudioConvolutionalLayer::runReverseImplementation(MatrixVector& gradients,
+void AudioConvolutionalLayer::runReverseImplementation(MatrixVector& gradients,
     MatrixVector& inputDeltas,
     const MatrixVector& outputDeltas)
 {

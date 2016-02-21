@@ -10,7 +10,8 @@
 #include <lucius/network/interface/Layer.h>
 
 // Forward Declarations
-namespace lucius { namespace engine { class InputOutputLearnerEngine; } }
+namespace lucius { namespace engine  { class InputOutputLearnerEngine; } }
+namespace lucius { namespace network { class SubgraphLayer;            } }
 
 namespace lucius
 {
@@ -81,8 +82,10 @@ private:
     std::unique_ptr<SubgraphLayer> _selectUnit;
     std::unique_ptr<SubgraphLayer> _processUnit;
 
+    std::unique_ptr<MatrixVector> _parameters;
+
 private:
-    InputOutputLearnerEngine* _engine;
+    engine::InputOutputLearnerEngine* _engine;
 
 private:
     size_t _depth;

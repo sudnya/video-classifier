@@ -184,12 +184,16 @@ void ConvolutionalLayer::runForwardImplementation(MatrixVector& outputActivation
     outputActivations.push_back(std::move(activation));
 }
 
-Matrix ConvolutionalLayer::runReverseImplementation(MatrixVector& gradients,
+void ConvolutionalLayer::runReverseImplementation(MatrixVector& gradients,
     MatrixVector& inputDeltas,
     const MatrixVector& outputDeltas)
 {
     auto outputActivations = loadMatrix("outputActivations");
     auto inputActivations  = loadMatrix("inputActivations");
+
+    assert(outputDeltas.size() == 1);
+
+    auto difference = outputDeltas.front();
 
     if(util::isLogEnabled("ConvolutionalLayer"))
     {

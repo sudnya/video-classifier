@@ -4,26 +4,40 @@
     \brief  The interface file for the SubgraphLayer class.
 */
 
-#pragma once
-
 // Lucius Includes
-#include <lucius/network/interface/Layer.h>
+#include <lucius/network/interface/SubgraphLayer.h>
+
+#include <lucius/matrix/interface/MatrixVector.h>
+#include <lucius/matrix/interface/MatrixOperations.h>
+#include <lucius/matrix/interface/MatrixTransformations.h>
+#include <lucius/matrix/interface/CopyOperations.h>
+#include <lucius/matrix/interface/Operation.h>
+#include <lucius/matrix/interface/Dimension.h>
+
+#include <lucius/util/interface/memory.h>
+#include <lucius/util/interface/PropertyTree.h>
+
+// Standard Library Includes
+#include <list>
 
 namespace lucius
 {
 namespace network
 {
 
+typedef matrix::MatrixVector MatrixVector;
+typedef matrix::Dimension Dimension;
+
 class SubgraphLayerImplementation
 {
 public:
-    class Node;
-
-    typedef std::list<Node> NodeList;
-    typedef std::list<Node::iterator> NodePointerList;
 
     class Node
     {
+    public:
+        typedef std::list<Node> NodeList;
+        typedef std::list<NodeList::iterator> NodePointerList;
+
     public:
         Node(const std::string& name, std::unique_ptr<Layer>&& layer)
         : name(name), layer(std::move(layer))
@@ -45,13 +59,29 @@ public:
 
     };
 
-    typedef std::map<std::string, LayerList::iterator> NameToLayerMap;
+    typedef Node::NodeList NodeList;
+    typedef Node::NodePointerList NodePointerList;
+    typedef std::map<std::string, NodeList::iterator> NameToLayerMap;
     typedef std::set<std::pair<std::string, std::string>> ConnectionSet;
     typedef std::set<std::string> NodeSet;
 
 public:
     NodeList       layers;
     NameToLayerMap layerNames;
+
+public:
+    MatrixVector weights;
+
+public:
+    const Layer& front() const
+    {
+        return *layers.front().layer;
+    }
+
+    const Layer& back() const
+    {
+        return *layers.back().layer;
+    }
 
 public:
     void prepareSubgraphForEvaluation()
@@ -78,7 +108,7 @@ public:
             {
                 if(_allPredecessorsVisited(successor, visited))
                 {
-                    frontier.insert(successor);
+                    frontier.push_back(successor);
                 }
             }
         }
@@ -108,12 +138,12 @@ public:
         // Set the input activations for the first layer
         std::map<std::string, MatrixVector> layerToInputActivations;
 
-        layerToInputActivations[layers.front().first] = inputActivations;
+        layerToInputActivations[layers.front().name] = inputActivations;
 
         // Evaluate the layers in order
-        for(auto& nameAndLayer : layers)
+        for(auto& layer : layers)
         {
-            auto& name = nameAndLayer.first;
+            auto& name = layer.name;
 
             // get the inputs
             auto& inputs = layerToInputActivations[name];
@@ -121,15 +151,15 @@ public:
             // run the layer
             MatrixVector localOutputs;
 
-            nameAndLayer.second->runForward(localOutputs, inputs);
+            layer.layer->runForward(localOutputs, inputs);
 
             inputs.clear();
 
-            assert(localOutputs.size() <= nameAndLayer.second->forwardSuccessors.size());
+            assert(localOutputs.size() <= layer.forwardSuccessors.size());
 
             // initial outputs go to successor outputs
             size_t index = 0;
-            for(auto& successor : nameAndLayer.second->forwardSuccessors)
+            for(auto& successor : layer.forwardSuccessors)
             {
                 layerToInputActivations[successor->name].push_back(std::move(localOutputs[index]));
 
@@ -158,16 +188,16 @@ public:
         // Set the input activations for the first timestep
         std::map<std::string, MatrixVector> layerToInputActivations;
 
-        layerToInputActivations[layers.front().first] = inputActivations;
+        layerToInputActivations[layers.front().name] = inputActivations;
 
         // Step through each timestep
         for(size_t timestep = 0; timestep < timesteps; ++timestep)
         {
             // Evaluate layers for this timestep in order
-            for(auto& nameAndLayer : layers)
+            for(auto& node : layers)
             {
-                auto& name  = nameAndLayer.first;
-                auto& layer = nameAndLayer.second;
+                auto& name  = node.name;
+                auto& layer = *node.layer;
 
                 // get the inputs
                 auto& inputs = layerToInputActivations[name];
@@ -175,23 +205,23 @@ public:
                 // run the layer
                 MatrixVector localOutputs;
 
-                layer->runForward(localOutputs, inputs);
+                layer.runForward(localOutputs, inputs);
 
                 inputs.clear();
 
-                assert(localOutputs.size() <= layer->forwardSuccessors.size());
+                assert(localOutputs.size() <= node.forwardSuccessors.size());
 
                 size_t index = 0;
 
                 // handle data sent along forward connections
-                for(auto& successor : layer->forwardSuccessors)
+                for(auto& successor : node.forwardSuccessors)
                 {
                     layerToInputActivations[successor->name].push_back(
                         std::move(localOutputs[index++]));
                 }
 
                 // handle data sent along through-time connections
-                for(auto& successor : layer->timeSuccessors)
+                for(auto& successor : node.timeSuccessors)
                 {
                     layerToInputActivations[successor->name].push_back(
                         std::move(localOutputs[index++]));
@@ -240,13 +270,13 @@ public:
         // Set the output deltas for the last layer
         std::map<std::string, MatrixVector> layerToOutputDeltas;
 
-        layerToOutputDeltas[layers.back().first] = outputDeltas;
+        layerToOutputDeltas[layers.back().name] = outputDeltas;
 
         // Evaluate the layers in reverse order
-        for(auto nameAndLayer = layers.rbegin(); nameAndLayer != layers.rend(); ++nameAndLayer)
+        for(auto node = layers.rbegin(); node != layers.rend(); ++node)
         {
-            auto& name  = nameAndLayer->first;
-            auto& layer = nameAndLayer->second;
+            auto& name  = node->name;
+            auto& layer = *node->layer;
 
             // get the inputs
             auto& deltas = layerToOutputDeltas[name];
@@ -255,15 +285,15 @@ public:
             MatrixVector localInputDeltas;
             MatrixVector localGradients;
 
-            layer->runReverse(gradients, localInputDeltas, deltas);
+            layer.runReverse(gradients, localInputDeltas, deltas);
 
             deltas.clear();
 
-            assert(localInputDeltas.size() <= layer->forwardPredecessors.size());
+            assert(localInputDeltas.size() <=  node->forwardPredecessors.size());
 
             size_t index = 0;
-            for(auto predecessorIterator = layer->forwardPredecessors.rbegin();
-                predecessorIterator != layer->forwardPredecessors.rend(); ++predecessorIterator)
+            for(auto predecessorIterator = node->forwardPredecessors.rbegin();
+                predecessorIterator != node->forwardPredecessors.rend(); ++predecessorIterator)
             {
                 auto& predecessor = *predecessorIterator;
 
@@ -274,7 +304,7 @@ public:
             }
 
             // remaining outputs go to the sublayer outputs
-            for(; index < localOutputs.size(); ++index)
+            for(; index < localInputDeltas.size(); ++index)
             {
                 inputDeltas.push_back(std::move(localInputDeltas[index]));
             }
@@ -285,7 +315,7 @@ public:
     }
 
     void runReverseIterateTimesteps(MatrixVector& gradients, MatrixVector& inputDeltas,
-        const MatrixVector& outputActivations, const MatrixVector& outputDeltas)
+        const MatrixVector& outputDeltas)
     {
         if(layers.empty())
         {
@@ -298,20 +328,18 @@ public:
         // Get the total number of timesteps
         size_t timesteps = outputDeltas.front().size().back();
 
-        layerToOutputDeltas[layers.back().first] = outputDeltas;
+        layerToOutputDeltas[layers.back().name] = outputDeltas;
 
         // step through each timestep
         size_t gradientStart = 0;
 
         for(size_t t = 0; t < timesteps; ++t)
         {
-            size_t timestep = timesteps - t - 1;
-
             // Evaluate the layers in reverse order
-            for(auto nameAndLayer = layers.rbegin(); nameAndLayer != layers.rend(); ++nameAndLayer)
+            for(auto node = layers.rbegin(); node != layers.rend(); ++node)
             {
-                auto& name  = nameAndLayer->first;
-                auto& layer = nameAndLayer->second;
+                auto& name  = node->name;
+                auto& layer = *node->layer;
 
                 // get the inputs
                 auto& deltas = layerToOutputDeltas[name];
@@ -320,15 +348,15 @@ public:
                 MatrixVector localInputDeltas;
                 MatrixVector localGradients;
 
-                layer->runReverse(gradients, localInputDeltas, deltas);
+                layer.runReverse(gradients, localInputDeltas, deltas);
 
                 deltas.clear();
 
-                assert(localInputDeltas.size() <= layer->forwardPredecessors.size());
+                assert(localInputDeltas.size() <= node->forwardPredecessors.size());
 
                 size_t index = 0;
-                for(auto predecessorIterator = layer->forwardPredecessors.rbegin();
-                    predecessorIterator != layer->forwardPredecessors.rend(); ++predecessorIterator)
+                for(auto predecessorIterator = node->forwardPredecessors.rbegin();
+                    predecessorIterator != node->forwardPredecessors.rend(); ++predecessorIterator)
                 {
                     auto& predecessor = *predecessorIterator;
 
@@ -338,8 +366,8 @@ public:
                     ++index;
                 }
 
-                for(auto predecessorIterator = layer->timePredecessors.rbegin();
-                    predecessorIterator != layer->timePredecessors.rend(); ++predecessorIterator)
+                for(auto predecessorIterator = node->timePredecessors.rbegin();
+                    predecessorIterator != node->timePredecessors.rend(); ++predecessorIterator)
                 {
                     auto& predecessor = *predecessorIterator;
 
@@ -350,7 +378,7 @@ public:
                 }
 
                 // remaining outputs go to the sublayer outputs
-                for(; index < localOutputs.size(); ++index)
+                for(; index < localInputDeltas.size(); ++index)
                 {
                     inputDeltas.push_back(std::move(localInputDeltas[index]));
                 }
@@ -373,8 +401,22 @@ public:
         }
     }
 
+public:
+    bool doAnyTimeConnectionsExist() const
+    {
+        for(auto& layer : layers)
+        {
+            if(!layer.timeSuccessors.empty())
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
 private:
-    NodeSet _findReadyLayers()
+    NodePointerList _findReadyLayers()
     {
         NodeSet readyNodes;
 
@@ -383,23 +425,38 @@ private:
             readyNodes.insert(layer.first);
         }
 
-        for(auto& connection : forwardConnection)
+        for(auto& layer : layers)
         {
-            readyNodes.erase(connection.second);
+            for(auto& forwardConnection : layer.forwardSuccessors)
+            {
+                readyNodes.erase(forwardConnection->name);
+            }
         }
 
         // all nodes should not have an in-edge in an acyclic graph
         assert(!readyNodes.empty());
 
-        return readyNodes;
+        NodePointerList readyNodeList;
+
+        for(auto& readyNode : readyNodes)
+        {
+            readyNodeList.push_back(layerNames[readyNode]);
+        }
+
+        return readyNodeList;
     }
 
-    ConnectionSet _getMatchingConnections(const ConnectionSet& connections,
-        const std::string& sourceName)
+    bool _allPredecessorsVisited(const NodeList::iterator node, const NodeSet& visited)
     {
-        auto range = connections.equal_range(sourceName);
+        for(auto& predecessor : node->forwardPredecessors)
+        {
+            if(visited.count(predecessor->name) == 0)
+            {
+                return false;
+            }
+        }
 
-        return ConnectionSet(range.first, range.second);
+        return true;
     }
 };
 
@@ -420,16 +477,18 @@ SubgraphLayer::SubgraphLayer(const SubgraphLayer& l)
 
 }
 
-SubgraphLayer::SubgraphLayer& operator=(const SubgraphLayer& l)
+SubgraphLayer& SubgraphLayer::operator=(const SubgraphLayer& l)
 {
     *_implementation = *l._implementation;
+
+    return *this;
 }
 
 void SubgraphLayer::initialize()
 {
     for(auto& layer : _implementation->layers)
     {
-        layer->initialize();
+        layer.layer->initialize();
     }
 }
 
@@ -437,7 +496,7 @@ void SubgraphLayer::runForwardImplementation(MatrixVector& outputActivations,
     const MatrixVector& inputActivations)
 {
     // if there are no through-timestep connections, do all timesteps in one shot
-    if(_implementation->timeConnections.empty())
+    if(_implementation->doAnyTimeConnectionsExist())
     {
         _implementation->runForwardAllTimesteps(outputActivations, inputActivations);
     }
@@ -450,19 +509,18 @@ void SubgraphLayer::runForwardImplementation(MatrixVector& outputActivations,
 
 void SubgraphLayer::runReverseImplementation(MatrixVector& gradients,
     MatrixVector& inputDeltas,
-    const MatrixVector& outputActivations,
     const MatrixVector& outputDeltas)
 {
     // if there are no through-timestep connections, do all timesteps in one shot
-    if(_implementation->timeConnections.empty())
+    if(_implementation->doAnyTimeConnectionsExist())
     {
         _implementation->runReverseAllTimesteps(gradients, inputDeltas,
-            outputActivations, outputDeltas);
+            outputDeltas);
     }
     else
     {
         _implementation->runReverseIterateTimesteps(gradients, inputDeltas,
-            outputActivations, outputDeltas);
+            outputDeltas);
     }
 }
 
@@ -478,7 +536,7 @@ const MatrixVector& SubgraphLayer::weights() const
 
 const matrix::Precision& SubgraphLayer::precision() const
 {
-    return _implementation->front()->precision();
+    return _implementation->front().precision();
 }
 
 double SubgraphLayer::computeWeightCost() const
@@ -487,37 +545,39 @@ double SubgraphLayer::computeWeightCost() const
 
     for(auto& layer : _implementation->layers)
     {
-        cost += layer->computeWeightCost();
+        cost += layer.layer->computeWeightCost();
     }
+
+    return cost;
 }
 
 Dimension SubgraphLayer::getInputSize() const
 {
-    return _implementation->front()->getInputSize();
+    return _implementation->front().getInputSize();
 }
 
 Dimension SubgraphLayer::getOutputSize() const
 {
-    return _implementation->back()->getOutputSize();
+    return _implementation->back().getOutputSize();
 }
 
 size_t SubgraphLayer::getInputCount() const
 {
-    return _implementation->front()->getInputCount();
+    return _implementation->front().getInputCount();
 }
 
 size_t SubgraphLayer::getOutputCount() const
 {
-    return _implementation->back()->getOutputCount();
+    return _implementation->back().getOutputCount();
 }
 
 size_t SubgraphLayer::totalNeurons() const
 {
     size_t total = 0;
 
-    for(auto& layer : _implementation->layers)
+    for(auto& node : _implementation->layers)
     {
-        total += layer.second->totalNeurons();
+        total += node.layer->totalNeurons();
     }
 
     return total;
@@ -527,29 +587,33 @@ size_t SubgraphLayer::totalConnections() const
 {
     size_t total = 0;
 
-    for(auto& layer : _implementation->layers)
+    for(auto& node : _implementation->layers)
     {
-        total += layer.second->totalConnections();
+        total += node.layer->totalConnections();
     }
+
+    return total;
 }
 
 size_t SubgraphLayer::getFloatingPointOperationCount() const
 {
     size_t total = 0;
 
-    for(auto& layer : _implementation->layers)
+    for(auto& node : _implementation->layers)
     {
-        total += layer.second->getFloatingPointOperationCount();
+        total += node.layer->getFloatingPointOperationCount();
     }
+
+    return total;
 }
 
 size_t SubgraphLayer::getActivationMemory() const
 {
     size_t total = 0;
 
-    for(auto& layer : _implementation->layers)
+    for(auto& node : _implementation->layers)
     {
-        total += layer.second->getActivationMemory();
+        total += node.layer->getActivationMemory();
     }
 
     return total;
@@ -634,23 +698,23 @@ void SubgraphLayer::addLayer(const std::string& layerName, std::unique_ptr<Layer
     assert(_implementation->layerNames.count(layerName) == 0);
 
     auto layerIterator = _implementation->layers.insert(
-        _implementation->layers.end(), std::move(layer));
+        _implementation->layers.end(), Node(layerName, std::move(layer)));
 
     _implementation->layerNames.insert(std::make_pair(layerName, layerIterator));
 }
 
 void SubgraphLayer::addForwardConnection(const std::string& source, const std::string& destination)
 {
-    assert(_impementation->layerNames.count(source)      != 0);
-    assert(_impementation->layerNames.count(destination) != 0);
+    assert(_implementation->layerNames.count(source)      != 0);
+    assert(_implementation->layerNames.count(destination) != 0);
 
     _implementation->forwardConnections.insert(std::make_pair(source, destination));
 }
 
 void SubgraphLayer::addTimeConnection(const std::string& source, const std::string& destination)
 {
-    assert(_impementation->layerNames.count(source)      != 0);
-    assert(_impementation->layerNames.count(destination) != 0);
+    assert(_implementation->layerNames.count(source)      != 0);
+    assert(_implementation->layerNames.count(destination) != 0);
 
     _implementation->timeConnections.insert(std::make_pair(source, destination));
 }

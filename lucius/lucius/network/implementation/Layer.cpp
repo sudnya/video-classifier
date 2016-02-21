@@ -20,6 +20,7 @@
 
 #include <lucius/util/interface/PropertyTree.h>
 #include <lucius/util/interface/Units.h>
+#include <lucius/util/interface/memory.h>
 
 // Standard Library Includes
 #include <sstream>
@@ -36,7 +37,7 @@ Layer::Layer()
   _weightCostFunction(WeightCostFunctionFactory::create()),
   _isTraining(true),
   _shouldComputeDeltas(true),
-  _supportsMultipleInputAndOuputs(false)
+  _supportsMultipleInputsAndOutputs(false)
 {
 
 }
@@ -151,7 +152,7 @@ void Layer::runForward(MatrixVector& outputActivations, const MatrixVector& inpu
             else
             {
                 throw std::runtime_error("Input activation matrix size " +
-                    activations.back().size().toString() +
+                    activation.size().toString() +
                     " is not compatible with layer, expecting " +
                     getInputSize().toString());
             }
@@ -165,7 +166,7 @@ void Layer::runReverse(MatrixVector& gradients,
     MatrixVector& inputDeltas,
     const MatrixVector& outputDeltas)
 {
-    assert(isTraining());
+    assert(getIsTraining());
 
     MatrixVector reshapedOutputDeltas;
 
@@ -244,7 +245,7 @@ void Layer::setIsTraining(bool training)
     _isTraining = training;
 }
 
-bool Layer::isTraining() const
+bool Layer::getIsTraining() const
 {
     return _isTraining;
 }
@@ -319,14 +320,14 @@ void Layer::saveMatrix(const std::string& name, const Matrix& data)
     _matrixCache[name] = std::make_unique<Matrix>(data);
 }
 
-Matrix Layer::loadMatrix(const std::string& name)
+matrix::Matrix Layer::loadMatrix(const std::string& name)
 {
     assert(_matrixCache.count(name) != 0);
 
     return *_matrixCache[name];
 }
 
-void Layer::setSupportsMultipleInputsAndOutputs(bool supportMultipleIOs)
+void Layer::setSupportsMultipleInputsAndOutputs(bool supportsMultipleIOs)
 {
     _supportsMultipleInputsAndOutputs = supportsMultipleIOs;
 }
