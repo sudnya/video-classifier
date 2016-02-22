@@ -312,8 +312,6 @@ public:
 
             deltas.clear();
 
-            assert(localInputDeltas.size() <=  node->forwardPredecessors.size());
-
             size_t index = 0;
             for(auto predecessorIterator = node->forwardPredecessors.rbegin();
                 predecessorIterator != node->forwardPredecessors.rend(); ++predecessorIterator)

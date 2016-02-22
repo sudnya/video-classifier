@@ -344,6 +344,8 @@ static void loadNetwork(Model& model, const util::PropertyTree& network,
         inputSize = neuralNetwork.getOutputSize();
     }
 
+    util::log("ModelSpecification") << " Created network \n" << neuralNetwork.shapeString();
+
     neuralNetwork.initialize();
 
     model.setNeuralNetwork(network.key(), neuralNetwork);

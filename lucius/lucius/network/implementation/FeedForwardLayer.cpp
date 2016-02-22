@@ -183,8 +183,7 @@ void FeedForwardLayer::runForwardImplementation(MatrixVector& outputActivations,
         util::log("FeedForwardLayer") << "  output shape: " << output.shapeString() << "\n";
     }
 
-    auto outputActivation = unfoldTime(getActivationFunction()->apply(output),
-        inputActivation.size());
+    auto outputActivation = getActivationFunction()->apply(output);
 
     saveMatrix("outputActivation", outputActivation);
 
@@ -199,7 +198,8 @@ void FeedForwardLayer::runForwardImplementation(MatrixVector& outputActivations,
             << outputActivation.shapeString() << "\n";
     }
 
-    outputActivations.push_back(outputActivation);
+    outputActivations.push_back(unfoldTime(outputActivation,
+        inputActivations.front().size()));
 }
 
 void FeedForwardLayer::runReverseImplementation(MatrixVector& gradients,

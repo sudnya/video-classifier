@@ -66,6 +66,9 @@ double NeuralNetwork::getCostAndGradient(MatrixVector& gradient, const Matrix& i
 
     size_t weightMatrices = 0;
 
+    util::log("NeuralNetwork") << " Running forward propagation of input "
+        << input.shapeString() << "\n";
+
     for(auto layer = begin(); layer != end(); ++layer)
     {
         util::log("NeuralNetwork") << " Running forward propagation through layer "
@@ -91,6 +94,9 @@ double NeuralNetwork::getCostAndGradient(MatrixVector& gradient, const Matrix& i
 
     auto activation = activations.rbegin();
     auto delta      = getCostFunction()->computeDelta(*activation, reference);
+
+    util::log("NeuralNetwork") << " Running forward propagation of delta "
+        << delta.shapeString() << "\n";
 
     MatrixVector outputDeltas;
 
@@ -213,6 +219,8 @@ double NeuralNetwork::getCost(const Matrix& input, const Matrix& reference)
 NeuralNetwork::Matrix NeuralNetwork::runInputs(const Matrix& m)
 {
     MatrixVector activations;
+
+    activations.push_back(m);
 
     for (auto i = begin(); i != end(); ++i)
     {
