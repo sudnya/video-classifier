@@ -180,8 +180,6 @@ public:
 
             inputs.clear();
 
-            assert(localOutputs.size() <= layer.forwardSuccessors.size());
-
             // initial outputs go to successor outputs
             size_t index = 0;
             for(auto& successor : layer.forwardSuccessors)
@@ -598,7 +596,7 @@ void SubgraphLayer::runForwardImplementation(MatrixVector& outputActivations,
     const MatrixVector& inputActivations)
 {
     // if there are no through-timestep connections, do all timesteps in one shot
-    if(_implementation->doAnyTimeConnectionsExist())
+    if(!_implementation->doAnyTimeConnectionsExist())
     {
         _implementation->runForwardAllTimesteps(outputActivations, inputActivations);
     }
@@ -614,7 +612,7 @@ void SubgraphLayer::runReverseImplementation(MatrixVector& gradients,
     const MatrixVector& outputDeltas)
 {
     // if there are no through-timestep connections, do all timesteps in one shot
-    if(_implementation->doAnyTimeConnectionsExist())
+    if(!_implementation->doAnyTimeConnectionsExist())
     {
         _implementation->runReverseAllTimesteps(gradients, inputDeltas,
             outputDeltas);

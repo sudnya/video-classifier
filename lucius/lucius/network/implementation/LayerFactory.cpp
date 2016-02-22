@@ -13,6 +13,7 @@
 #include <lucius/network/interface/AudioConvolutionalLayer.h>
 #include <lucius/network/interface/BatchNormalizationLayer.h>
 #include <lucius/network/interface/MaxPoolingLayer.h>
+#include <lucius/network/interface/SubgraphLayer.h>
 
 #include <lucius/matrix/interface/Dimension.h>
 #include <lucius/matrix/interface/Precision.h>
@@ -30,7 +31,8 @@ std::unique_ptr<Layer> LayerFactory::create(const std::string& name)
     return create(name, ParameterPack());
 }
 
-std::unique_ptr<Layer> LayerFactory::create(const std::string& name, const ParameterPack& parameters)
+std::unique_ptr<Layer> LayerFactory::create(const std::string& name,
+    const ParameterPack& parameters)
 {
     size_t inputSizeHeight    = parameters.get("InputSizeHeight",   1);
     size_t inputSizeWidth     = parameters.get("InputSizeWidth",    1);
@@ -118,7 +120,7 @@ std::unique_ptr<Layer> LayerFactory::create(const std::string& name, const Param
             precision
         );
     }
-    else if ("BatchNormalizationLayer" == name)
+    else if("BatchNormalizationLayer" == name)
     {
         size_t inputWidth  = parameters.get("InputWidth",  inputSizeWidth);
         size_t inputHeight = parameters.get("InputHeight", inputSizeHeight);
@@ -131,7 +133,7 @@ std::unique_ptr<Layer> LayerFactory::create(const std::string& name, const Param
         return std::make_unique<BatchNormalizationLayer>(
             matrix::Dimension({inputWidth, inputHeight, inputColors, inputBatch, 1}), precision);
     }
-    else if ("MaxPoolingLayer" == name)
+    else if("MaxPoolingLayer" == name)
     {
         size_t inputWidth  = parameters.get("InputWidth",  inputSizeWidth);
         size_t inputHeight = parameters.get("InputHeight", inputSizeHeight);
@@ -147,6 +149,10 @@ std::unique_ptr<Layer> LayerFactory::create(const std::string& name, const Param
         return std::make_unique<MaxPoolingLayer>(
             matrix::Dimension({inputWidth, inputHeight, inputColors, inputBatch, 1}),
             matrix::Dimension({width, height}), precision);
+    }
+    else if("SubgraphLayer" == name)
+    {
+        return std::make_unique<SubgraphLayer>();
     }
 
     return nullptr;
