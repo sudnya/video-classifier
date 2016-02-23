@@ -208,7 +208,7 @@ void FeedForwardLayer::runReverseImplementation(MatrixVector& gradients,
 {
     assert(outputDeltas.size() == 1);
 
-    auto inputActivation  = loadMatrix("inputActivation");
+    auto inputActivation  = loadMatrix("inputActivation" );
     auto outputActivation = loadMatrix("outputActivation");
 
     auto differenceWithTime = outputDeltas.front();
@@ -275,7 +275,8 @@ void FeedForwardLayer::runReverseImplementation(MatrixVector& gradients,
 
     if(util::isLogEnabled("FeedForwardLayer::Detail"))
     {
-        util::log("FeedForwardLayer::Detail") << "  weight grad: " << weightGradient.debugString();
+        util::log("FeedForwardLayer::Detail") << "  weight grad: "
+            << weightGradient.debugString();
     }
 
     // compute gradient for the bias
@@ -289,7 +290,8 @@ void FeedForwardLayer::runReverseImplementation(MatrixVector& gradients,
 
     if(util::isLogEnabled("FeedForwardLayer::Detail"))
     {
-        util::log("FeedForwardLayer::Detail") << "  bias grad: " << biasGradient.debugString();
+        util::log("FeedForwardLayer::Detail") << "  bias grad: "
+            << biasGradient.debugString();
     }
 
     assert(biasGradient.size() == _bias.size());

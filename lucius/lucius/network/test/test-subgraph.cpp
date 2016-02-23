@@ -83,7 +83,7 @@ static NeuralNetwork createSimpleSubgraphNetwork(size_t layerSize)
         "    },\n"
         "    \"cost-function\" :\n"
         "    {\n"
-        "        \"name\" : \"SoftmaxCostFunction\"\n"
+        "        \"name\" : \"SumOfSquaresCostFunction\"\n"
         "    }\n"
         "}\n";
 

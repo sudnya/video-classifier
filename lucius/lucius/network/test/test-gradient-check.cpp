@@ -483,20 +483,6 @@ static void runTest(size_t layerSize, size_t layerCount, size_t batchSize,
 {
     bool result = true;
 
-    result &= runTestConvolutional(layerSize, layerCount, seed);
-
-    if(!result)
-    {
-        return;
-    }
-
-    result &= runTestBatchNormalizationNetwork(layerSize, layerCount, batchSize, seed);
-
-    if(!result)
-    {
-        return;
-    }
-
     result &= runTestFeedForwardFullyConnected(layerSize, layerCount, seed);
 
     if(!result)
@@ -512,6 +498,20 @@ static void runTest(size_t layerSize, size_t layerCount, size_t batchSize,
     }
 
     result &= runTestFeedForwardFullyConnectedSoftmax(layerSize, layerCount, seed);
+
+    if(!result)
+    {
+        return;
+    }
+
+    result &= runTestConvolutional(layerSize, layerCount, seed);
+
+    if(!result)
+    {
+        return;
+    }
+
+    result &= runTestBatchNormalizationNetwork(layerSize, layerCount, batchSize, seed);
 
     if(!result)
     {
