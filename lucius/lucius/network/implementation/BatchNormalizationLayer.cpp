@@ -200,9 +200,9 @@ void BatchNormalizationLayer::runForwardImplementation(MatrixVector& outputActiv
 {
     assert(inputActivationsVector.size() == 1);
 
-    auto inputActivations = foldTime(inputActivationsVector.front());
+    saveMatrix("inputActivations", inputActivationsVector.front());
 
-    saveMatrix("inputActivations", inputActivations);
+    auto inputActivations = foldTime(inputActivationsVector.front());
 
     util::log("BatchNormalizationLayer") << " Running forward propagation of matrix "
         << inputActivations.shapeString() << " through batch normalization: "
@@ -275,10 +275,10 @@ void BatchNormalizationLayer::runReverseImplementation(MatrixVector& gradients,
     assert(outputDeltas.size() == 1);
 
     // Get the output activations
-    auto outputActivations = loadMatrix("outputActivations");
+    auto outputActivations = foldTime(loadMatrix("outputActivations"));
 
     // Get the input activations and deltas
-    auto inputActivations = loadMatrix("inputActivations");
+    auto inputActivations = foldTime(loadMatrix("inputActivations"));
 
     auto deltas = apply(getActivationFunction()->applyDerivative(outputActivations),
         foldTime(outputDeltas.front()), matrix::Multiply());

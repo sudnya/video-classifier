@@ -19,6 +19,7 @@
 #include <lucius/matrix/interface/Operation.h>
 #include <lucius/matrix/interface/MatrixVector.h>
 #include <lucius/matrix/interface/FileOperations.h>
+#include <lucius/matrix/interface/CopyOperations.h>
 
 #include <lucius/util/interface/debug.h>
 #include <lucius/util/interface/Knobs.h>
@@ -174,7 +175,7 @@ void ConvolutionalLayer::runForwardImplementation(MatrixVector& outputActivation
 
     auto activation = getActivationFunction()->apply(output);
 
-    saveMatrix("outputActivation", activation);
+    saveMatrix("outputActivation", copy(activation));
 
     if(util::isLogEnabled("ConvolutionalLayer::Detail"))
     {

@@ -432,7 +432,7 @@ static bool runTestConvolutional(size_t layerSize, size_t layerCount, bool seed)
     }
     else
     {
-        matrix::srand(377);
+        matrix::srand(380);
     }
 
     auto network = createConvolutionalNetwork(layerSize, layerCount);
@@ -459,7 +459,7 @@ static bool runTestRecurrent(size_t layerSize, size_t layerCount, size_t timeste
     }
     else
     {
-        matrix::srand(377);
+        matrix::srand(1456212655);
     }
 
     auto network = createRecurrentNetwork(layerSize, layerCount);
@@ -483,6 +483,20 @@ static void runTest(size_t layerSize, size_t layerCount, size_t batchSize,
 {
     bool result = true;
 
+    result &= runTestConvolutional(layerSize, layerCount, seed);
+
+    if(!result)
+    {
+        return;
+    }
+
+    result &= runTestRecurrent(layerSize, layerCount, timesteps, seed);
+
+    if(!result)
+    {
+        return;
+    }
+
     result &= runTestFeedForwardFullyConnected(layerSize, layerCount, seed);
 
     if(!result)
@@ -504,21 +518,8 @@ static void runTest(size_t layerSize, size_t layerCount, size_t batchSize,
         return;
     }
 
-    result &= runTestConvolutional(layerSize, layerCount, seed);
-
-    if(!result)
-    {
-        return;
-    }
-
     result &= runTestBatchNormalizationNetwork(layerSize, layerCount, batchSize, seed);
 
-    if(!result)
-    {
-        return;
-    }
-
-    result &= runTestRecurrent(layerSize, layerCount, timesteps, seed);
 }
 
 }

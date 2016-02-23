@@ -175,7 +175,7 @@ void Layer::runReverse(MatrixVector& gradients,
         reshapedOutputDeltas.push_back(reshapeActivations(outputDelta, getOutputSize()));
     }
 
-    runReverseImplementation(gradients, inputDeltas, outputDeltas);
+    runReverseImplementation(gradients, inputDeltas, reshapedOutputDeltas);
 }
 
 void Layer::clearReversePropagationData()

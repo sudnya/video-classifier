@@ -108,7 +108,7 @@ void AudioConvolutionalLayer::runForwardImplementation(MatrixVector& outputActiv
 
     _layer->runForwardImplementation(outputActivations, storage);
 
-    outputActivations.push_back(permuteDimensionsBackward(outputActivations.back()));
+    outputActivations.back() = permuteDimensionsBackward(outputActivations.back());
 
     if(util::isLogEnabled("AudioConvolutionalLayer::Detail"))
     {

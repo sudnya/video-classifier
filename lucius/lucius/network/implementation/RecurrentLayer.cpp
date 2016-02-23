@@ -149,6 +149,8 @@ void RecurrentLayer::runForwardImplementation(MatrixVector& outputActivationsVec
 {
     assert(inputActivationsVector.size() == 1);
 
+    saveMatrix("inputActivations", inputActivationsVector.back());
+
     auto inputActivations = unfoldTimeAndBatch(inputActivationsVector.back(), _expectedBatchSize);
 
     if(util::isLogEnabled("RecurrentLayer"))
@@ -176,7 +178,6 @@ void RecurrentLayer::runForwardImplementation(MatrixVector& outputActivationsVec
 
     auto activation = broadcast(unbiasedOutput, _bias, {}, matrix::Add());
 
-    saveMatrix("inputActivations",  inputActivations);
     saveMatrix("forwardOutputActivations", copy(activation));
 
     if(util::isLogEnabled("RecurrentLayer::Detail"))
@@ -236,7 +237,8 @@ void RecurrentLayer::runReverseImplementation(MatrixVector& gradients,
     }
 
     // Compute deltas for intermediate time steps and the feed forward activations
-    auto outputActivations = loadMatrix("outputActivations");
+    auto outputActivations = unfoldTimeAndBatch(loadMatrix("outputActivations"),
+        _expectedBatchSize);
 
     auto forwardDeltas = reverseRecurrentDeltas(Matrix(deltas), _recurrentWeights,
         outputActivations, matrix::RECURRENT_FORWARD_TIME,
