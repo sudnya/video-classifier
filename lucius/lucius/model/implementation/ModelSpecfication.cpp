@@ -283,6 +283,8 @@ static void populateSubgraphLayer(std::unique_ptr<Layer>& layer,
             }
         }
     }
+
+    subgraph.prepareSubgraphForEvaluation();
 }
 
 static void loadNetwork(Model& model, const util::PropertyTree& network,

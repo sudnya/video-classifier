@@ -42,26 +42,62 @@ public:
 
 };
 
+template<typename NativeResultType, typename NativeInputType>
+class NoncontiguousCopyLambda
+{
+public:
+    CUDA_DECORATOR void operator()(parallel::ThreadGroup threadGroup)
+    {
+        for(size_t i = threadGroup.id(), step = threadGroup.size(); i < elements; i += step)
+        {
+            auto dimension      = linearToDimension(i, resultView.size());
+            auto inputDimension = linearToDimension(i,  inputView.size());
+
+            resultView(dimension) = inputView(inputDimension);
+        }
+    }
+
+public:
+    MatrixView<NativeResultType>     resultView;
+    ConstMatrixView<NativeInputType> inputView;
+
+public:
+    size_t elements;
+};
+
 template<typename ResultPrecision, typename InputPrecision>
 void copy(Matrix& result, const Matrix& input)
 {
     typedef typename ResultPrecision::type NativeResultType;
     typedef typename InputPrecision::type  NativeInputType;
 
-    assert(result.isContiguous() && input.isContiguous()); // TODO: Handle complex types
-
     size_t elements = result.elements();
 
-    auto rawResult = static_cast<NativeResultType*>(result.data());
-    auto rawInput  = static_cast<const NativeInputType*>(input.data());
+    if(result.isContiguous() && input.isContiguous())
+    {
+        auto rawResult = static_cast<NativeResultType*>(result.data());
+        auto rawInput  = static_cast<const NativeInputType*>(input.data());
 
-    auto lambda = CopyLambda<NativeResultType, NativeInputType>{rawResult, rawInput, elements};
+        auto lambda = CopyLambda<NativeResultType, NativeInputType>
+            {rawResult, rawInput, elements};
 
-    parallel::multiBulkSynchronousParallel(lambda);
+        parallel::multiBulkSynchronousParallel(lambda);
+    }
+    else
+    {
+        MatrixView<NativeResultType>     resultView(result);
+        ConstMatrixView<NativeInputType> inputView(input);
+
+        auto lambda = NoncontiguousCopyLambda<NativeResultType, NativeInputType>
+            {resultView, inputView, elements};
+
+        parallel::multiBulkSynchronousParallel(lambda);
+    }
 }
 
 template<typename ResultPrecision, typename T>
-void copyOverInputPrecisions(Matrix& result, const Matrix& input, const std::tuple<T>& inputPrecisions)
+void copyOverInputPrecisions(Matrix& result, const Matrix& input,
+    const std::tuple<T>& inputPrecisions)
 {
     typedef T PossibleInputPrecision;
 
@@ -71,7 +107,8 @@ void copyOverInputPrecisions(Matrix& result, const Matrix& input, const std::tup
 }
 
 template<typename ResultPrecision, typename InputPrecisions>
-void copyOverInputPrecisions(Matrix& result, const Matrix& input, const InputPrecisions& inputPrecisions)
+void copyOverInputPrecisions(Matrix& result, const Matrix& input,
+    const InputPrecisions& inputPrecisions)
 {
     typedef typename std::tuple_element<0, InputPrecisions>::type PossibleInputPrecision;
 

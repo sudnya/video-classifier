@@ -57,7 +57,7 @@ MaxPoolingLayer::~MaxPoolingLayer()
 }
 
 MaxPoolingLayer::MaxPoolingLayer(const MaxPoolingLayer& l)
-: _inputSize(std::make_unique<matrix::Dimension>(*l._inputSize)),
+: Layer(l), _inputSize(std::make_unique<matrix::Dimension>(*l._inputSize)),
   _filterSize(std::make_unique<matrix::Dimension>(*l._filterSize)),
   _precision(std::make_unique<matrix::Precision>(*l._precision))
 {
@@ -66,6 +66,8 @@ MaxPoolingLayer::MaxPoolingLayer(const MaxPoolingLayer& l)
 
 MaxPoolingLayer& MaxPoolingLayer::operator=(const MaxPoolingLayer& l)
 {
+    Layer::operator=(l);
+
     if(&l == this)
     {
         return *this;

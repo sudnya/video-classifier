@@ -17,6 +17,7 @@
 #include <lucius/matrix/interface/Dimension.h>
 
 #include <lucius/util/interface/memory.h>
+#include <lucius/util/interface/debug.h>
 #include <lucius/util/interface/PropertyTree.h>
 
 // Standard Library Includes
@@ -28,7 +29,8 @@ namespace network
 {
 
 typedef matrix::MatrixVector MatrixVector;
-typedef matrix::Dimension Dimension;
+typedef matrix::Matrix       Matrix;
+typedef matrix::Dimension    Dimension;
 
 class SubgraphLayerImplementation
 {
@@ -72,7 +74,6 @@ public:
 
     SubgraphLayerImplementation(const SubgraphLayerImplementation& i)
     {
-
         _copy(i);
     }
 
@@ -116,7 +117,6 @@ public:
 
         NodeSet visited;
 
-        // Create the new layer list and name map
         NodePointerList newOrder;
 
         while(!frontier.empty())
@@ -141,14 +141,56 @@ public:
         // if not all nodes were covered, there were cycles
         assert(newOrder.size() == layers.size());
 
-        NodeList newLayerList;
+        // Create the new layer list and name map
+        typedef std::vector<std::pair<std::string, std::string>> ConnectionList;
+
+        ConnectionList forwardConnections;
+        ConnectionList timeConnections;
 
         for(auto& layer : newOrder)
         {
-            newLayerList.push_back(std::move(*layer));
+            for(auto& successor : layer->timeSuccessors)
+            {
+                timeConnections.push_back({layer->name, successor->name});
+            }
+
+            for(auto& successor : layer->forwardSuccessors)
+            {
+                forwardConnections.push_back({layer->name, successor->name});
+            }
+        }
+
+        NodeList       newLayerList;
+        NameToLayerMap newLayerNames;
+
+        weights.clear();
+
+        for(auto& layer : newOrder)
+        {
+            layer->forwardSuccessors.clear();
+            layer->forwardPredecessors.clear();
+
+            layer->timeSuccessors.clear();
+            layer->timePredecessors.clear();
+
+            auto position = newLayerList.insert(newLayerList.end(), std::move(*layer));
+
+            newLayerNames[position->name] = position;
+            weights.push_back(position->layer->weights());
         }
 
         layers = std::move(newLayerList);
+        layerNames = std::move(newLayerNames);
+
+        for(auto& connection : forwardConnections)
+        {
+            addForwardConnection(connection.first, connection.second);
+        }
+
+        for(auto& connection : timeConnections)
+        {
+            addTimeConnection(connection.first, connection.second);
+        }
     }
 
 public:
@@ -173,12 +215,19 @@ public:
             // get the inputs
             auto& inputs = layerToInputActivations[name];
 
+            _formatInputActivationsForLayer(inputs, layer);
+
             // run the layer
             MatrixVector localOutputs;
+
+            util::log("SubgraphLayer") << "Running forward propagation on layer '"
+                << name << "'\n";
 
             layer.layer->runForward(localOutputs, inputs);
 
             inputs.clear();
+
+            _formatOutputActivationsForLayer(localOutputs, layer);
 
             // initial outputs go to successor outputs
             size_t index = 0;
@@ -295,6 +344,8 @@ public:
 
         layerToOutputDeltas[layers.back().name] = outputDeltas;
 
+        MatrixVector reverseGradients;
+
         // Evaluate the layers in reverse order
         for(auto node = layers.rbegin(); node != layers.rend(); ++node)
         {
@@ -304,20 +355,23 @@ public:
             // get the inputs
             auto& deltas = layerToOutputDeltas[name];
 
+            _formatOutputDeltasForLayer(deltas, *node);
+
             // run the layer
             MatrixVector localInputDeltas;
             MatrixVector localGradients;
 
-            layer.runReverse(gradients, localInputDeltas, deltas);
+            util::log("SubgraphLayer") << "Running reverse propagation on layer '"
+                << name << "'\n";
+            layer.runReverse(localGradients, localInputDeltas, deltas);
+
+            _formatInputDeltasForLayer(localInputDeltas, *node);
 
             deltas.clear();
 
             size_t index = 0;
-            for(auto predecessorIterator = node->forwardPredecessors.rbegin();
-                predecessorIterator != node->forwardPredecessors.rend(); ++predecessorIterator)
+            for(auto& predecessor : node->forwardPredecessors)
             {
-                auto& predecessor = *predecessorIterator;
-
                 layerToOutputDeltas[predecessor->name].push_back(
                     std::move(localInputDeltas[index]));
 
@@ -330,9 +384,13 @@ public:
                 inputDeltas.push_back(std::move(localInputDeltas[index]));
             }
 
-            gradients.push_back(std::move(localGradients));
+            std::reverse(localGradients.begin(), localGradients.end());
+            reverseGradients.push_back(std::move(localGradients));
         }
 
+        std::reverse(reverseGradients.begin(), reverseGradients.end());
+
+        gradients.push_back(reverseGradients);
     }
 
     void runReverseIterateTimesteps(MatrixVector& gradients, MatrixVector& inputDeltas,
@@ -492,6 +550,137 @@ public:
     }
 
 private:
+    Matrix _collapseActivations(const Matrix& m)
+    {
+        size_t miniBatch   = m.size()[m.size().size() - 2];
+        size_t timesteps   = m.size()[m.size().size() - 1];
+        size_t activations = m.size().product() / (miniBatch * timesteps);
+
+        return reshape(m, {activations, miniBatch, timesteps});
+    }
+
+    void _formatInputActivationsForLayer(MatrixVector& inputActivations, const Node& node)
+    {
+        if(node.layer->getSupportsMultipleInputsAndOutputs())
+        {
+            return;
+        }
+
+        if(node.forwardPredecessors.size() < 2)
+        {
+            return;
+        }
+
+        auto result = _collapseActivations(inputActivations.front());
+
+        for(size_t i = 1; i < inputActivations.size(); ++i)
+        {
+            result = concatenate(result, _collapseActivations(inputActivations[i]), 0);
+        }
+
+        inputActivations.clear();
+
+        inputActivations.push_back(result);
+    }
+
+    void _formatOutputActivationsForLayer(MatrixVector& outputActivations, const Node& node)
+    {
+        if(node.layer->getSupportsMultipleInputsAndOutputs())
+        {
+            return;
+        }
+
+        if(node.forwardSuccessors.size() < 2)
+        {
+            return;
+        }
+
+        assert(outputActivations.size() == 1);
+
+        auto outputData = _collapseActivations(outputActivations.front());
+
+        // format output data according to successors
+        MatrixVector newOutputActivations;
+
+        size_t currentActivation = 0;
+
+        for(auto& successor : node.forwardSuccessors)
+        {
+            size_t nextActivation = currentActivation + successor->layer->getInputCount();
+
+            newOutputActivations.push_back(slice(outputData, {currentActivation, 0, 0},
+                {nextActivation, outputData.size()[1], outputData.size()[2]}));
+
+            currentActivation = nextActivation;
+        }
+
+        outputActivations = std::move(newOutputActivations);
+    }
+
+private:
+    void _formatOutputDeltasForLayer(MatrixVector& outputDeltas, const Node& node)
+    {
+        if(node.layer->getSupportsMultipleInputsAndOutputs())
+        {
+            return;
+        }
+
+        if(node.forwardSuccessors.size() < 2)
+        {
+            return;
+        }
+
+        auto result = _collapseActivations(outputDeltas.back());
+
+        for(size_t i = 1; i < outputDeltas.size(); ++i)
+        {
+            result = concatenate(result, _collapseActivations(
+                outputDeltas[outputDeltas.size() - i - 1]), 0);
+        }
+
+        outputDeltas.clear();
+
+        outputDeltas.push_back(result);
+    }
+
+    void _formatInputDeltasForLayer(MatrixVector& inputDeltas, const Node& node)
+    {
+        if(node.layer->getSupportsMultipleInputsAndOutputs())
+        {
+            return;
+        }
+
+        if(node.forwardPredecessors.size() < 2)
+        {
+            return;
+        }
+
+        assert(inputDeltas.size() == 1);
+
+        auto inputDeltasData = _collapseActivations(inputDeltas.front());
+
+        // format input deltas according to successors
+        MatrixVector newInputDeltas;
+
+        size_t currentActivation = 0;
+
+        for(auto predecessorIterator = node.forwardPredecessors.rbegin();
+            predecessorIterator != node.forwardPredecessors.rend(); ++predecessorIterator)
+        {
+            auto& predecessor = *predecessorIterator;
+
+            size_t nextActivation = currentActivation + predecessor->layer->getInputCount();
+
+            newInputDeltas.push_back(slice(inputDeltasData, {currentActivation, 0, 0},
+                {nextActivation, inputDeltasData.size()[1], inputDeltasData.size()[2]}));
+
+            currentActivation = nextActivation;
+        }
+
+        inputDeltas = std::move(newInputDeltas);
+    }
+
+private:
     void _copy(const SubgraphLayerImplementation& i)
     {
         for(auto& node : i.layers)
@@ -570,13 +759,15 @@ SubgraphLayer::~SubgraphLayer()
 }
 
 SubgraphLayer::SubgraphLayer(const SubgraphLayer& l)
-: _implementation(std::make_unique<SubgraphLayerImplementation>(*l._implementation))
+: Layer(l), _implementation(std::make_unique<SubgraphLayerImplementation>(*l._implementation))
 {
 
 }
 
 SubgraphLayer& SubgraphLayer::operator=(const SubgraphLayer& l)
 {
+    Layer::operator=(l);
+
     *_implementation = *l._implementation;
 
     return *this;
@@ -792,16 +983,25 @@ std::string SubgraphLayer::getTypeName() const
 
 void SubgraphLayer::addLayer(const std::string& layerName, std::unique_ptr<Layer>&& layer)
 {
+
+    util::log("SubgraphLayer") << "Adding layer '" << layerName <<
+        "' " << layer->shapeString() << "\n";
     _implementation->addLayer(layerName, std::move(layer));
 }
 
 void SubgraphLayer::addForwardConnection(const std::string& source, const std::string& destination)
 {
+    util::log("SubgraphLayer") << "Adding forward connection '" << source <<
+        " -> " << destination << "\n";
+
     _implementation->addForwardConnection(source, destination);
 }
 
 void SubgraphLayer::addTimeConnection(const std::string& source, const std::string& destination)
 {
+    util::log("SubgraphLayer") << "Adding time connection '" << source <<
+        " -> " << destination << "\n";
+
     _implementation->addTimeConnection(source, destination);
 }
 

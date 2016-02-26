@@ -30,6 +30,12 @@ public:
     }
 
 public:
+    bool contains(const std::string& name) const
+    {
+        return _parameters.count(name) != 0;
+    }
+
+public:
     template <typename T>
     T get(const std::string& name) const
     {

@@ -23,11 +23,11 @@ ActivationFunction* ActivationFunctionFactory::create(const std::string& name)
     {
         return new RectifiedLinearActivationFunction;
     }
-    else if (name == "SigmoidActivationFunction")
+    else if(name == "SigmoidActivationFunction")
     {
         return new SigmoidActivationFunction;
     }
-    else if (name == "NullActivationFunction")
+    else if(name == "NullActivationFunction")
     {
         return new NullActivationFunction;
     }

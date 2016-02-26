@@ -95,6 +95,89 @@ static NeuralNetwork createSimpleSubgraphNetwork(size_t layerSize)
     return network;
 }
 
+static NeuralNetwork createSplitJoinSubgraphNetwork(size_t layerSize)
+{
+    std::stringstream specification;
+
+    specification <<
+        "{\n"
+        "    \"layer-types\" :\n"
+        "    {\n"
+        "       \"split-fully-connected\" :\n"
+        "       {\n"
+        "           \"Type\"               : \"FeedForwardLayer\",\n"
+        "           \"ActivationFunction\" : \"SigmoidActivationFunction\",\n"
+        "           \"Precision\"          : \"DoublePrecision\",\n"
+        "           \"InputSize\"          : \"" << layerSize << "\",\n"
+        "           \"OutputSize\"         : \"" << layerSize * 2 << "\"\n"
+        "       },\n"
+        "       \"join-fully-connected\" :\n"
+        "       {\n"
+        "           \"Type\"               : \"FeedForwardLayer\",\n"
+        "           \"ActivationFunction\" : \"SigmoidActivationFunction\",\n"
+        "           \"Precision\"          : \"DoublePrecision\",\n"
+        "           \"InputSize\"          : \"" << layerSize * 2 << "\",\n"
+        "           \"OutputSize\"         : \"" << layerSize << "\"\n"
+        "       },\n"
+        "       \"small-fully-connected\" :\n"
+        "       {\n"
+        "           \"Type\"               : \"FeedForwardLayer\",\n"
+        "           \"ActivationFunction\" : \"SigmoidActivationFunction\",\n"
+        "           \"Precision\"          : \"DoublePrecision\",\n"
+        "           \"InputSize\"          : \"" << layerSize << "\",\n"
+        "           \"OutputSize\"         : \"" << layerSize << "\"\n"
+        "       },\n"
+        "       \"subgraph\" :\n"
+        "       {\n"
+        "           \"Type\" : \"SubgraphLayer\",\n"
+        "           \"Submodules\" : \n"
+        "           {\n"
+        "              \"split\" : \n"
+        "              {\n"
+        "                 \"Type\" : \"split-fully-connected\",\n"
+        "                 \"ForwardConnections\" : [\"left\", \"right\"]\n"
+        "              },\n"
+        "              \"left\" : \n"
+        "              {\n"
+        "                 \"Type\" : \"small-fully-connected\",\n"
+        "                 \"ForwardConnections\" : [\"join\"]\n"
+        "              },\n"
+        "              \"right\" : \n"
+        "              {\n"
+        "                 \"Type\" : \"small-fully-connected\",\n"
+        "                 \"ForwardConnections\" : [\"join\"]\n"
+        "              },\n"
+        "              \"join\" : \n"
+        "              {\n"
+        "                 \"Type\" : \"join-fully-connected\"\n"
+        "              }\n"
+        "           }\n"
+        "       }\n"
+        "    },\n"
+        "    \"networks\" : \n"
+        "    {\n"
+        "       \"Classifier\" :\n"
+        "       {\n"
+        "           \"layers\" :\n"
+        "           [\n"
+        "               \"subgraph\"\n"
+        "           ]\n"
+        "       }\n"
+        "    },\n"
+        "    \"cost-function\" :\n"
+        "    {\n"
+        "        \"name\" : \"SumOfSquaresCostFunction\"\n"
+        "    }\n"
+        "}\n";
+
+
+    auto model = model::ModelBuilder::create(specification.str());
+
+    NeuralNetwork network = model->getNeuralNetwork("Classifier");
+
+    return network;
+}
+
 static Matrix generateInput(NeuralNetwork& network)
 {
     return matrix::rand(network.getInputSize(), DoublePrecision());
@@ -217,10 +300,49 @@ static bool runSimpleSubgraphTest(size_t layerSize, bool seed)
     }
 }
 
+static bool runSplitJoinSubgraphTest(size_t layerSize, bool seed)
+{
+    if(seed)
+    {
+        matrix::srand(std::time(0));
+    }
+    else
+    {
+        matrix::srand(10);
+    }
+
+    auto network = createSplitJoinSubgraphNetwork(layerSize);
+
+    if(gradientCheck(network))
+    {
+        std::cout << "Split Join Subgraph Network Test Passed\n";
+
+        return true;
+    }
+    else
+    {
+        std::cout << "Split Join Subgraph Network Test Failed\n";
+
+        return false;
+    }
+}
+
+static void check(bool passed, const std::string& name)
+{
+    if(!passed)
+    {
+        throw std::runtime_error(name + "Failed");
+    }
+    else
+    {
+        std::cout << name << " Passed\n";
+    }
+}
 
 static void runTest(size_t layerSize, bool seed)
 {
-    runSimpleSubgraphTest(layerSize, seed);
+    check(runSplitJoinSubgraphTest(layerSize, seed), "Split Join Subgraph Test");
+    check(runSimpleSubgraphTest(layerSize, seed), "Simple Subgraph Test");
 }
 
 }

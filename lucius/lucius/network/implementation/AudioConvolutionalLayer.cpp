@@ -69,6 +69,8 @@ AudioConvolutionalLayer::AudioConvolutionalLayer(const AudioConvolutionalLayer& 
 
 AudioConvolutionalLayer& AudioConvolutionalLayer::operator=(const AudioConvolutionalLayer& l)
 {
+    Layer::operator=(l);
+
     *_layer = *l._layer;
 
     return *this;

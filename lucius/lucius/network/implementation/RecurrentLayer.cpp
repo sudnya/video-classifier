@@ -65,7 +65,7 @@ RecurrentLayer::~RecurrentLayer()
 }
 
 RecurrentLayer::RecurrentLayer(const RecurrentLayer& l)
-: _parameters(std::make_unique<MatrixVector>(*l._parameters)),
+: Layer(l), _parameters(std::make_unique<MatrixVector>(*l._parameters)),
  _forwardWeights((*_parameters)[0]),
  _bias((*_parameters)[1]),
  _recurrentWeights((*_parameters)[2]),
@@ -76,6 +76,8 @@ RecurrentLayer::RecurrentLayer(const RecurrentLayer& l)
 
 RecurrentLayer& RecurrentLayer::operator=(const RecurrentLayer& l)
 {
+    Layer::operator=(l);
+
     if(&l == this)
     {
         return *this;

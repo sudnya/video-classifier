@@ -67,7 +67,7 @@ BatchNormalizationLayer::~BatchNormalizationLayer()
 }
 
 BatchNormalizationLayer::BatchNormalizationLayer(const BatchNormalizationLayer& l)
-: _parameters(std::make_unique<MatrixVector>(*l._parameters)),
+: Layer(l), _parameters(std::make_unique<MatrixVector>(*l._parameters)),
   _gamma((*_parameters)[0]), _beta((*_parameters)[1]),
   _internal_parameters(std::make_unique<MatrixVector>(*l._internal_parameters)),
   _means((*_internal_parameters)[0]), _variances((*_internal_parameters)[1]),
@@ -79,6 +79,8 @@ BatchNormalizationLayer::BatchNormalizationLayer(const BatchNormalizationLayer& 
 
 BatchNormalizationLayer& BatchNormalizationLayer::operator=(const BatchNormalizationLayer& l)
 {
+    Layer::operator=(l);
+
     if(&l == this)
     {
         return *this;

@@ -63,7 +63,7 @@ FeedForwardLayer::~FeedForwardLayer()
 }
 
 FeedForwardLayer::FeedForwardLayer(const FeedForwardLayer& l)
-: _parameters(std::make_unique<MatrixVector>(*l._parameters)),
+: Layer(l), _parameters(std::make_unique<MatrixVector>(*l._parameters)),
   _weights((*_parameters)[0]), _bias((*_parameters)[1])
 {
 
@@ -71,6 +71,8 @@ FeedForwardLayer::FeedForwardLayer(const FeedForwardLayer& l)
 
 FeedForwardLayer& FeedForwardLayer::operator=(const FeedForwardLayer& l)
 {
+    Layer::operator=(l);
+
     if(&l == this)
     {
         return *this;

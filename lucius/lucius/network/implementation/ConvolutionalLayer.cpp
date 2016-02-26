@@ -82,7 +82,7 @@ ConvolutionalLayer::ConvolutionalLayer(const matrix::Dimension& inputSize,
 }
 
 ConvolutionalLayer::ConvolutionalLayer(const ConvolutionalLayer& l)
-: _parameters(std::make_unique<MatrixVector>(*l._parameters)),
+: Layer(l), _parameters(std::make_unique<MatrixVector>(*l._parameters)),
   _weights((*_parameters)[0]),
   _bias((*_parameters)[1]),
   _inputSize(std::make_unique<matrix::Dimension>(*l._inputSize)),
@@ -94,6 +94,8 @@ ConvolutionalLayer::ConvolutionalLayer(const ConvolutionalLayer& l)
 
 ConvolutionalLayer& ConvolutionalLayer::operator=(const ConvolutionalLayer& l)
 {
+    Layer::operator=(l);
+
     if(&l == this)
     {
         return *this;

@@ -14,6 +14,7 @@
 #include <lucius/network/interface/BatchNormalizationLayer.h>
 #include <lucius/network/interface/MaxPoolingLayer.h>
 #include <lucius/network/interface/SubgraphLayer.h>
+#include <lucius/network/interface/ActivationFunctionFactory.h>
 
 #include <lucius/matrix/interface/Dimension.h>
 #include <lucius/matrix/interface/Precision.h>
@@ -42,6 +43,8 @@ std::unique_ptr<Layer> LayerFactory::create(const std::string& name,
     size_t inputSizeAggregate = parameters.get("InputSizeAggregate",
         inputSizeHeight * inputSizeWidth * inputSizeChannels);
 
+    std::unique_ptr<Layer> layer;
+
     if("FeedForwardLayer" == name)
     {
         size_t inputSize  = parameters.get("InputSize",  inputSizeAggregate);
@@ -50,7 +53,7 @@ std::unique_ptr<Layer> LayerFactory::create(const std::string& name,
         auto precision = *matrix::Precision::fromString(parameters.get("Precision",
             matrix::Precision::getDefaultPrecision().toString()));
 
-        return std::make_unique<FeedForwardLayer>(inputSize, outputSize, precision);
+        layer = std::make_unique<FeedForwardLayer>(inputSize, outputSize, precision);
     }
     else if("RecurrentLayer" == name)
     {
@@ -60,7 +63,7 @@ std::unique_ptr<Layer> LayerFactory::create(const std::string& name,
         auto precision = *matrix::Precision::fromString(parameters.get("Precision",
             matrix::Precision::getDefaultPrecision().toString()));
 
-        return std::make_unique<RecurrentLayer>(size, batchSize, precision);
+        layer = std::make_unique<RecurrentLayer>(size, batchSize, precision);
     }
     else if("AudioConvolutionalLayer" == name)
     {
@@ -83,7 +86,7 @@ std::unique_ptr<Layer> LayerFactory::create(const std::string& name,
         auto precision = *matrix::Precision::fromString(parameters.get("Precision",
             matrix::Precision::getDefaultPrecision().toString()));
 
-        return std::make_unique<AudioConvolutionalLayer>(
+        layer = std::make_unique<AudioConvolutionalLayer>(
             matrix::Dimension({inputSamples,   inputTimesteps,  inputChannels,  inputBatch, 1}),
             matrix::Dimension({filterSamples,  filterTimesteps, filterInputs,   filterOutputs}),
             matrix::Dimension({strideSamples,  strideTimesteps}),
@@ -112,7 +115,7 @@ std::unique_ptr<Layer> LayerFactory::create(const std::string& name,
         auto precision = *matrix::Precision::fromString(parameters.get("Precision",
             matrix::Precision::getDefaultPrecision().toString()));
 
-        return std::make_unique<ConvolutionalLayer>(
+        layer = std::make_unique<ConvolutionalLayer>(
             matrix::Dimension(inputWidth,  inputHeight,  inputColors,  inputBatch, 1),
             matrix::Dimension({filterWidth, filterHeight, filterInputs, filterOutputs}),
             matrix::Dimension({strideWidth, strideHeight}),
@@ -130,7 +133,7 @@ std::unique_ptr<Layer> LayerFactory::create(const std::string& name,
         auto precision = *matrix::Precision::fromString(parameters.get("Precision",
             matrix::Precision::getDefaultPrecision().toString()));
 
-        return std::make_unique<BatchNormalizationLayer>(
+        layer = std::make_unique<BatchNormalizationLayer>(
             matrix::Dimension({inputWidth, inputHeight, inputColors, inputBatch, 1}), precision);
     }
     else if("MaxPoolingLayer" == name)
@@ -146,16 +149,22 @@ std::unique_ptr<Layer> LayerFactory::create(const std::string& name,
         auto precision = *matrix::Precision::fromString(parameters.get("Precision",
             matrix::Precision::getDefaultPrecision().toString()));
 
-        return std::make_unique<MaxPoolingLayer>(
+        layer = std::make_unique<MaxPoolingLayer>(
             matrix::Dimension({inputWidth, inputHeight, inputColors, inputBatch, 1}),
             matrix::Dimension({width, height}), precision);
     }
     else if("SubgraphLayer" == name)
     {
-        return std::make_unique<SubgraphLayer>();
+        layer = std::make_unique<SubgraphLayer>();
     }
 
-    return nullptr;
+    if(layer && parameters.contains("ActivationFunction"))
+    {
+        layer->setActivationFunction(ActivationFunctionFactory::create(
+            parameters.get<std::string>("ActivationFunction")));
+    }
+
+    return layer;
 }
 
 }
