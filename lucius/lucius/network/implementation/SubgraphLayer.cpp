@@ -43,10 +43,34 @@ public:
         typedef std::list<NodeList::iterator> NodePointerList;
 
     public:
-        Node(const std::string& name, std::unique_ptr<Layer>&& layer)
-        : name(name), layer(std::move(layer))
+        Node(const std::string& name, std::unique_ptr<Layer>&& layer, bool isFirstLayer = false)
+        : name(name), layer(std::move(layer)), isFirstLayer(isFirstLayer)
         {
 
+        }
+
+    public:
+        size_t getInputActivationCount() const
+        {
+            size_t total = layer->getInputCount();
+
+            size_t split = totalPredecessors();
+
+            size_t splitSize = (total + split - 1) / split;
+
+            return splitSize;
+        }
+
+        size_t totalPredecessors() const
+        {
+            size_t predecessors = forwardPredecessors.size() + timePredecessors.size();
+
+            if(isFirstLayer)
+            {
+                predecessors += 1;
+            }
+
+            return predecessors;
         }
 
     public:
@@ -61,6 +85,8 @@ public:
         NodePointerList timeSuccessors;
         NodePointerList timePredecessors;
 
+        bool isFirstLayer;
+
     };
 
     typedef Node::NodeList NodeList;
@@ -68,6 +94,7 @@ public:
     typedef std::map<std::string, NodeList::iterator> NameToLayerMap;
     typedef std::set<std::pair<std::string, std::string>> ConnectionSet;
     typedef std::set<std::string> NodeSet;
+    typedef std::map<std::string, MatrixVector> StringToMatrixMap;
 
 public:
     SubgraphLayerImplementation() = default;
@@ -107,6 +134,25 @@ public:
     const Layer& back() const
     {
         return *layers.back().layer;
+    }
+
+public:
+    Dimension getInputSize() const
+    {
+        return front().getInputSize();
+    }
+
+    Dimension getOutputSize() const
+    {
+        auto backSize = back().getOutputSize();
+
+        size_t splits = layers.back().timeSuccessors.size() + 1;
+
+        size_t splitSize = (backSize[0] + splits - 1) / splits;
+
+        backSize[0] = splitSize;
+
+        return backSize;
     }
 
 public:
@@ -173,6 +219,8 @@ public:
             layer->timeSuccessors.clear();
             layer->timePredecessors.clear();
 
+            layer->isFirstLayer = false;
+
             auto position = newLayerList.insert(newLayerList.end(), std::move(*layer));
 
             newLayerNames[position->name] = position;
@@ -191,6 +239,8 @@ public:
         {
             addTimeConnection(connection.first, connection.second);
         }
+
+        layers.front().isFirstLayer = true;
     }
 
 public:
@@ -257,14 +307,17 @@ public:
         // Get the total number of timesteps
         size_t timesteps = inputActivations.front().size().back();
 
-        // Set the input activations for the first timestep
-        std::map<std::string, MatrixVector> layerToInputActivations;
+        StringToMatrixMap layerToInputActivations;
 
-        layerToInputActivations[layers.front().name] = inputActivations;
+        util::log("SubgraphLayer") << "Running forward propagation through "
+            << timesteps << " timesteps.\n";
 
         // Step through each timestep
         for(size_t timestep = 0; timestep < timesteps; ++timestep)
         {
+            _updateSublayerInputActivationsForTimestep(layerToInputActivations,
+                inputActivations, timestep);
+
             // Evaluate layers for this timestep in order
             for(auto& node : layers)
             {
@@ -274,58 +327,20 @@ public:
                 // get the inputs
                 auto& inputs = layerToInputActivations[name];
 
+                _formatInputActivationsForLayer(inputs, node);
+
                 // run the layer
                 MatrixVector localOutputs;
+
+                util::log("SubgraphLayer") << " Running forward propagation on layer '"
+                    << name << "' on timestep " << timestep << "\n";
 
                 layer.runForward(localOutputs, inputs);
 
                 inputs.clear();
 
-                assert(localOutputs.size() <= node.forwardSuccessors.size());
-
-                size_t index = 0;
-
-                // handle data sent along forward connections
-                for(auto& successor : node.forwardSuccessors)
-                {
-                    layerToInputActivations[successor->name].push_back(
-                        std::move(localOutputs[index++]));
-                }
-
-                // handle data sent along through-time connections
-                for(auto& successor : node.timeSuccessors)
-                {
-                    layerToInputActivations[successor->name].push_back(
-                        std::move(localOutputs[index++]));
-                }
-
-                // outputs go to the sublayer outputs (to be saved for backprop)
-                if(timestep == 0)
-                {
-                    for(size_t i = index; i < localOutputs.size(); ++i)
-                    {
-                        auto size = localOutputs[i].size();
-
-                        size.back() = timesteps;
-
-                        outputActivations.push_back(zeros(size, localOutputs[i].precision()));
-                    }
-                }
-                else
-                {
-                    for(size_t i = index; i < localOutputs.size(); ++i)
-                    {
-                        auto begin = localOutputs[i].size();
-                        auto end   = localOutputs[i].size();
-
-                        begin.back() = timestep;
-                        end.back()   = timestep + 1;
-
-                        auto outputSlice = slice(outputActivations[i - index], begin, end);
-
-                        copy(outputSlice, localOutputs[i]);
-                    }
-                }
+                _routeOutputActivationsForLayerAndTimestep(layerToInputActivations,
+                    outputActivations, localOutputs, node, timestep);
             }
         }
     }
@@ -487,6 +502,11 @@ public:
 
         auto layerIterator = layers.insert(layers.end(), Node(layerName, std::move(layer)));
 
+        if(layers.size() == 1)
+        {
+            layers.front().isFirstLayer = true;
+        }
+
         layerNames.insert(std::make_pair(layerName, layerIterator));
 
         weights.push_back(layerIterator->layer->weights());
@@ -566,7 +586,7 @@ private:
             return;
         }
 
-        if(node.forwardPredecessors.size() < 2)
+        if(node.totalPredecessors() < 2)
         {
             return;
         }
@@ -606,7 +626,7 @@ private:
 
         for(auto& successor : node.forwardSuccessors)
         {
-            size_t nextActivation = currentActivation + successor->layer->getInputCount();
+            size_t nextActivation = currentActivation + successor->getInputActivationCount();
 
             newOutputActivations.push_back(slice(outputData, {currentActivation, 0, 0},
                 {nextActivation, outputData.size()[1], outputData.size()[2]}));
@@ -615,6 +635,174 @@ private:
         }
 
         outputActivations = std::move(newOutputActivations);
+    }
+
+private:
+    Matrix _extractTimestep(const Matrix& matrix, size_t timestep)
+    {
+        auto begin = zeros(matrix.size());
+        auto end   = matrix.size();
+
+        begin.back() = timestep;
+        end.back()   = timestep + 1;
+
+        return slice(matrix, begin, end);
+    }
+
+    void _updateSublayerInputActivationsForTimestep(StringToMatrixMap& layerToInputMap,
+        const MatrixVector& inputActivations, size_t timestep)
+    {
+        auto& firstLayerName = layers.front().name;
+
+        assert(inputActivations.size() == 1);
+
+        auto& firstLayerInputs = layerToInputMap[firstLayerName];
+
+        auto inputsForTimestep = _extractTimestep(inputActivations.front(), timestep);
+
+        if(firstLayerInputs.empty())
+        {
+            firstLayerInputs.push_back(std::move(inputsForTimestep));
+        }
+        else
+        {
+            size_t miniBatch = inputsForTimestep.size()[inputsForTimestep.size().size() - 2];
+
+            assert(!layers.front().timePredecessors.empty());
+
+            size_t splits = layers.front().timePredecessors.size() + 1;
+
+            size_t splitSize = (layers.front().layer->getInputCount() + splits - 1) / splits;
+
+            // handle forward inputs
+            auto inputSlice = slice(inputsForTimestep,
+                {0, 0, 0}, {splitSize, miniBatch, 1});
+
+            MatrixVector newFirstLayerInputs;
+
+            newFirstLayerInputs.push_back(inputSlice);
+
+            // handle time inputs
+            for(size_t predecessorId = 0;
+                (predecessorId < layers.front().timePredecessors.size()) &&
+                (predecessorId < firstLayerInputs.size()); ++predecessorId)
+            {
+                auto existingInput = firstLayerInputs[predecessorId];
+
+                size_t beginActivation = splitSize * predecessorId;
+                size_t endActivation   = std::min(beginActivation + splitSize,
+                    layers.front().layer->getInputCount());
+
+                auto inputSlice = slice(inputsForTimestep,
+                    {beginActivation, 0, 0},
+                    {endActivation, miniBatch, 1});
+
+                auto modifiedInput = apply(Matrix(existingInput), inputSlice, matrix::Add());
+
+                newFirstLayerInputs.push_back(modifiedInput);
+            }
+
+            // handle remaining time inputs
+            for(size_t predecessorId = firstLayerInputs.size();
+                predecessorId < layers.front().timePredecessors.size(); ++predecessorId)
+            {
+                size_t beginActivation = splitSize * predecessorId;
+                size_t endActivation   = std::min(beginActivation + splitSize,
+                    layers.front().layer->getInputCount());
+
+                auto inputSlice = slice(inputsForTimestep,
+                    {beginActivation, 0, 0},
+                    {endActivation, miniBatch, 1});
+
+                newFirstLayerInputs.push_back(inputSlice);
+            }
+
+            firstLayerInputs = std::move(newFirstLayerInputs);
+        }
+    }
+
+    void _routeOutputActivationsForLayerAndTimestep(StringToMatrixMap& layerToInputMap,
+        MatrixVector& outputActivations, const MatrixVector& localOutputActivations,
+        const Node& node, size_t timestep)
+    {
+        if(node.layer->getSupportsMultipleInputsAndOutputs())
+        {
+            return;
+        }
+
+        assert(localOutputActivations.size() == 1);
+
+        auto outputData = _collapseActivations(localOutputActivations.front());
+
+        // format output data according to successors
+        size_t currentActivation = 0;
+
+        for(auto& successor : node.forwardSuccessors)
+        {
+            size_t nextActivation = currentActivation + successor->getInputActivationCount();
+
+            util::log("SubgraphLayer") << " Routing output activations ["
+                << currentActivation << ", " << nextActivation
+                << "] to forward successor '" << successor->name << "'\n";
+
+            auto outputSlice = slice(outputData, {currentActivation, 0, 0},
+                {nextActivation, outputData.size()[1], outputData.size()[2]});
+
+            currentActivation = nextActivation;
+
+            layerToInputMap[successor->name].push_back(outputSlice);
+        }
+
+        for(auto& successor : node.timeSuccessors)
+        {
+            size_t nextActivation = currentActivation + successor->getInputActivationCount();
+
+            util::log("SubgraphLayer") << " Routing output activations ["
+                << currentActivation << ", " << nextActivation
+                << "] to time successor '" << successor->name << "'\n";
+
+            auto outputSlice = slice(outputData, {currentActivation, 0, 0},
+                {nextActivation, outputData.size()[1], outputData.size()[2]});
+
+            currentActivation = nextActivation;
+
+            layerToInputMap[successor->name].push_back(outputSlice);
+        }
+
+        size_t nextActivation = outputData.size().front();
+
+        if(nextActivation > currentActivation)
+        {
+            auto outputSlice = slice(outputData, {currentActivation, 0, 0},
+                {nextActivation, outputData.size()[1], outputData.size()[2]});
+
+            util::log("SubgraphLayer") << " Routing output activations ["
+                << currentActivation << ", " << nextActivation
+                << "] to sublayer output.\n";
+
+            if(timestep == 0)
+            {
+                outputActivations.push_back(outputSlice);
+            }
+            else
+            {
+                // find the correct output activation
+                size_t outputActivationIndex = 0;
+
+                for(; outputActivationIndex < outputActivations.size(); ++outputActivationIndex)
+                {
+                    if(outputActivations[outputActivationIndex].size().back() <= timestep)
+                    {
+                        break;
+                    }
+                }
+
+                assert(outputActivationIndex < outputActivations.size());
+
+                outputActivations[outputActivationIndex] = concatenate(
+                    outputActivations[outputActivationIndex], outputSlice, 2);
+            }
+        }
     }
 
 private:
@@ -842,22 +1030,22 @@ double SubgraphLayer::computeWeightCost() const
 
 Dimension SubgraphLayer::getInputSize() const
 {
-    return _implementation->front().getInputSize();
+    return _implementation->getInputSize();
 }
 
 Dimension SubgraphLayer::getOutputSize() const
 {
-    return _implementation->back().getOutputSize();
+    return _implementation->getOutputSize();
 }
 
 size_t SubgraphLayer::getInputCount() const
 {
-    return _implementation->front().getInputCount();
+    return getInputSize().product();
 }
 
 size_t SubgraphLayer::getOutputCount() const
 {
-    return _implementation->back().getOutputCount();
+    return getOutputSize().product();
 }
 
 size_t SubgraphLayer::totalNeurons() const
@@ -992,7 +1180,7 @@ void SubgraphLayer::addLayer(const std::string& layerName, std::unique_ptr<Layer
 void SubgraphLayer::addForwardConnection(const std::string& source, const std::string& destination)
 {
     util::log("SubgraphLayer") << "Adding forward connection '" << source <<
-        " -> " << destination << "\n";
+        "' -> '" << destination << "'\n";
 
     _implementation->addForwardConnection(source, destination);
 }
@@ -1000,7 +1188,7 @@ void SubgraphLayer::addForwardConnection(const std::string& source, const std::s
 void SubgraphLayer::addTimeConnection(const std::string& source, const std::string& destination)
 {
     util::log("SubgraphLayer") << "Adding time connection '" << source <<
-        " -> " << destination << "\n";
+        "' -> '" << destination << "'\n";
 
     _implementation->addTimeConnection(source, destination);
 }

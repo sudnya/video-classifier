@@ -178,14 +178,75 @@ static NeuralNetwork createSplitJoinSubgraphNetwork(size_t layerSize)
     return network;
 }
 
-static Matrix generateInput(NeuralNetwork& network)
+static NeuralNetwork createSimpleThroughTimeSubgraphNetwork(size_t layerSize)
 {
-    return matrix::rand(network.getInputSize(), DoublePrecision());
+    std::stringstream specification;
+
+    specification <<
+        "{\n"
+        "    \"layer-types\" :\n"
+        "    {\n"
+        "       \"fully-connected\" :\n"
+        "       {\n"
+        "           \"Type\"               : \"FeedForwardLayer\",\n"
+        "           \"ActivationFunction\" : \"SigmoidActivationFunction\",\n"
+        "           \"Precision\"          : \"DoublePrecision\",\n"
+        "           \"InputSize\"          : \"" << 2 * layerSize << "\",\n"
+        "           \"OutputSize\"         : \"" << 2 * layerSize << "\"\n"
+        "       },\n"
+        "       \"subgraph\" :\n"
+        "       {\n"
+        "           \"Type\" : \"SubgraphLayer\",\n"
+        "           \"Submodules\" : \n"
+        "           {\n"
+        "              \"rnn\" : \n"
+        "              {\n"
+        "                 \"Type\" : \"fully-connected\",\n"
+        "                 \"TimeConnections\" : [\"rnn\"]\n"
+        "              }\n"
+        "           }\n"
+        "       }\n"
+        "    },\n"
+        "    \"networks\" : \n"
+        "    {\n"
+        "       \"Classifier\" :\n"
+        "       {\n"
+        "           \"layers\" :\n"
+        "           [\n"
+        "               \"subgraph\"\n"
+        "           ]\n"
+        "       }\n"
+        "    },\n"
+        "    \"cost-function\" :\n"
+        "    {\n"
+        "        \"name\" : \"SumOfSquaresCostFunction\"\n"
+        "    }\n"
+        "}\n";
+
+
+    auto model = model::ModelBuilder::create(specification.str());
+
+    NeuralNetwork network = model->getNeuralNetwork("Classifier");
+
+    return network;
 }
 
-static Matrix generateReference(NeuralNetwork& network)
+static Matrix generateInput(NeuralNetwork& network, size_t timesteps)
 {
-    return matrix::rand(network.getOutputSize(), DoublePrecision());
+    auto size = network.getInputSize();
+
+    size.back() = timesteps;
+
+    return matrix::rand(size, DoublePrecision());
+}
+
+static Matrix generateReference(NeuralNetwork& network, size_t timesteps)
+{
+    auto size = network.getOutputSize();
+
+    size.back() = timesteps;
+
+    return matrix::rand(size, DoublePrecision());
 }
 
 static bool isInRange(float value, float epsilon)
@@ -267,8 +328,16 @@ static bool gradientCheck(NeuralNetwork& network, const Matrix& input, const Mat
 
 static bool gradientCheck(NeuralNetwork& network)
 {
-    auto input     = generateInput(network);
-    auto reference = generateReference(network);
+    auto input     = generateInput(network, 1);
+    auto reference = generateReference(network, 1);
+
+    return gradientCheck(network, input, reference);
+}
+
+static bool gradientCheck(NeuralNetwork& network, size_t timesteps)
+{
+    auto input     = generateInput(network, timesteps);
+    auto reference = generateReference(network, timesteps);
 
     return gradientCheck(network, input, reference);
 }
@@ -326,6 +395,32 @@ static bool runSplitJoinSubgraphTest(size_t layerSize, bool seed)
         return false;
     }
 }
+static bool runSimpleThroughTimeSubgraphTest(size_t layerSize, size_t timesteps, bool seed)
+{
+    if(seed)
+    {
+        matrix::srand(std::time(0));
+    }
+    else
+    {
+        matrix::srand(10);
+    }
+
+    auto network = createSimpleThroughTimeSubgraphNetwork(layerSize);
+
+    if(gradientCheck(network, timesteps))
+    {
+        std::cout << "Split Join Subgraph Network Test Passed\n";
+
+        return true;
+    }
+    else
+    {
+        std::cout << "Split Join Subgraph Network Test Failed\n";
+
+        return false;
+    }
+}
 
 static void check(bool passed, const std::string& name)
 {
@@ -339,10 +434,13 @@ static void check(bool passed, const std::string& name)
     }
 }
 
-static void runTest(size_t layerSize, bool seed)
+static void runTest(size_t layerSize, size_t timesteps, bool seed)
 {
+    check(runSimpleThroughTimeSubgraphTest(layerSize, timesteps, seed),
+        "Simple Through Time Subgraph Test");
+
+    check(runSimpleSubgraphTest(layerSize, seed),    "Simple Subgraph Test");
     check(runSplitJoinSubgraphTest(layerSize, seed), "Split Join Subgraph Test");
-    check(runSimpleSubgraphTest(layerSize, seed), "Simple Subgraph Test");
 }
 
 }
@@ -357,11 +455,13 @@ int main(int argc, char** argv)
     bool seed = false;
     std::string loggingEnabledModules;
 
-    size_t layerSize  = 0;
+    size_t layerSize = 0;
+    size_t timesteps = 0;
 
     parser.description("The lucius neural network gradient check.");
 
     parser.parse("-S", "--layer-size", layerSize, 10, "The number of neurons per layer.");
+    parser.parse("-t", "--timesteps", timesteps, 10, "The number of timesteps to run.");
 
     parser.parse("-L", "--log-module", loggingEnabledModules, "",
         "Print out log messages during execution for specified modules "
@@ -384,7 +484,7 @@ int main(int argc, char** argv)
 
     try
     {
-        lucius::network::runTest(layerSize, seed);
+        lucius::network::runTest(layerSize, timesteps, seed);
     }
     catch(const std::exception& e)
     {

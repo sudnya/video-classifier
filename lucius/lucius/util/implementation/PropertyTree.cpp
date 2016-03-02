@@ -530,7 +530,7 @@ static void parseOpenBrace(std::istream& json)
         return;
     }
 
-    throw std::runtime_error("Expecting a '{'.");
+    throw std::runtime_error("Expecting a '{'., but got a '" + token + "'");
 }
 
 static void parseOpenBracket(std::istream& json)
@@ -542,7 +542,7 @@ static void parseOpenBracket(std::istream& json)
         return;
     }
 
-    throw std::runtime_error("Expecting a '['.");
+    throw std::runtime_error("Expecting a '['., but got a '" + token + "'");
 }
 
 static void parseQuote(std::istream& json)
@@ -554,7 +554,7 @@ static void parseQuote(std::istream& json)
         return;
     }
 
-    throw std::runtime_error("Expecting a '\"'.");
+    throw std::runtime_error("Expecting a '\"'., but got a '" + token + "'");
 }
 
 static void parseKey(PropertyTree& result, std::istream& json)
@@ -617,7 +617,7 @@ static void parseColon(std::istream& json)
         return;
     }
 
-    throw std::runtime_error("Expecting a ':'.");
+    throw std::runtime_error("Expecting a ':'., but got a '" + token + "'");
 }
 
 static void parseJsonObjectBody(PropertyTree& result, std::istream& json)
@@ -677,7 +677,7 @@ static void parseCloseBrace(std::istream& json)
         return;
     }
 
-    throw std::runtime_error("Expecting a '}'.");
+    throw std::runtime_error("Expecting a '}', but got a '" + token + "'.");
 }
 
 static void parseCloseBracket(std::istream& json)
@@ -689,7 +689,7 @@ static void parseCloseBracket(std::istream& json)
         return;
     }
 
-    throw std::runtime_error("Expecting a ']'.");
+    throw std::runtime_error("Expecting a ']', but got a '" + token + "'.");
 }
 
 static bool nextTokenIsOpenBracket(std::istream& json)
