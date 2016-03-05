@@ -178,6 +178,14 @@ void Layer::runReverse(MatrixVector& gradients,
     runReverseImplementation(gradients, inputDeltas, reshapedOutputDeltas);
 }
 
+void Layer::popReversePropagationData()
+{
+    for(auto& entry : _matrixCache)
+    {
+        entry.second.pop_back();
+    }
+}
+
 void Layer::clearReversePropagationData()
 {
     _matrixCache.clear();
@@ -317,14 +325,14 @@ void Layer::loadLayer(util::InputTarArchive& archive, const util::PropertyTree& 
 
 void Layer::saveMatrix(const std::string& name, const Matrix& data)
 {
-    _matrixCache[name] = std::make_unique<Matrix>(data);
+    _matrixCache[name].push_back(data);
 }
 
 matrix::Matrix Layer::loadMatrix(const std::string& name)
 {
     assert(_matrixCache.count(name) != 0);
 
-    return *_matrixCache[name];
+    return _matrixCache[name].back();
 }
 
 void Layer::setSupportsMultipleInputsAndOutputs(bool supportsMultipleIOs)

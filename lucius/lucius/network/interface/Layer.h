@@ -56,6 +56,7 @@ public:
         const MatrixVector& outputDeltas);
 
 public:
+    void popReversePropagationData();
     void clearReversePropagationData();
 
 public:
@@ -173,7 +174,7 @@ private:
     std::unique_ptr<WeightCostFunction>     _weightCostFunction;
 
 private:
-    std::map<std::string, std::unique_ptr<Matrix>> _matrixCache;
+    std::map<std::string, MatrixVector> _matrixCache;
 
 private:
     bool _isTraining;

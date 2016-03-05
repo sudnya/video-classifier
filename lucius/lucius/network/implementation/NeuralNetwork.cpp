@@ -113,6 +113,7 @@ double NeuralNetwork::getCostAndGradient(MatrixVector& gradient, const Matrix& i
             << std::distance(begin(), std::next(layer).base()) << "\n";
 
         (*layer)->runReverse(grad, inputDeltas, outputDeltas);
+        (*layer)->clearReversePropagationData();
 
         outputDeltas = std::move(inputDeltas);
 
@@ -183,6 +184,7 @@ double NeuralNetwork::getInputCostAndGradient(Matrix& gradient,
         MatrixVector inputDeltas;
 
         (*layer)->runReverse(grad, inputDeltas, outputDeltas);
+        (*layer)->clearReversePropagationData();
 
         outputDeltas = std::move(inputDeltas);
     }
@@ -230,7 +232,6 @@ NeuralNetwork::Matrix NeuralNetwork::runInputs(const Matrix& m)
         MatrixVector outputActivations;
 
         (*i)->runForward(outputActivations, activations);
-
         (*i)->clearReversePropagationData();
 
         activations = std::move(outputActivations);

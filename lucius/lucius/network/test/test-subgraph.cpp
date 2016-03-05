@@ -355,18 +355,7 @@ static bool runSimpleSubgraphTest(size_t layerSize, bool seed)
 
     auto network = createSimpleSubgraphNetwork(layerSize);
 
-    if(gradientCheck(network))
-    {
-        std::cout << "Simple Subgraph Network Test Passed\n";
-
-        return true;
-    }
-    else
-    {
-        std::cout << "Simple Subgraph Network Test Failed\n";
-
-        return false;
-    }
+    return gradientCheck(network);
 }
 
 static bool runSplitJoinSubgraphTest(size_t layerSize, bool seed)
@@ -382,18 +371,7 @@ static bool runSplitJoinSubgraphTest(size_t layerSize, bool seed)
 
     auto network = createSplitJoinSubgraphNetwork(layerSize);
 
-    if(gradientCheck(network))
-    {
-        std::cout << "Split Join Subgraph Network Test Passed\n";
-
-        return true;
-    }
-    else
-    {
-        std::cout << "Split Join Subgraph Network Test Failed\n";
-
-        return false;
-    }
+    return gradientCheck(network);
 }
 static bool runSimpleThroughTimeSubgraphTest(size_t layerSize, size_t timesteps, bool seed)
 {
@@ -408,25 +386,14 @@ static bool runSimpleThroughTimeSubgraphTest(size_t layerSize, size_t timesteps,
 
     auto network = createSimpleThroughTimeSubgraphNetwork(layerSize);
 
-    if(gradientCheck(network, timesteps))
-    {
-        std::cout << "Split Join Subgraph Network Test Passed\n";
-
-        return true;
-    }
-    else
-    {
-        std::cout << "Split Join Subgraph Network Test Failed\n";
-
-        return false;
-    }
+    return gradientCheck(network, timesteps);
 }
 
 static void check(bool passed, const std::string& name)
 {
     if(!passed)
     {
-        throw std::runtime_error(name + "Failed");
+        throw std::runtime_error(name + " Failed");
     }
     else
     {

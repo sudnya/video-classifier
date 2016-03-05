@@ -43,8 +43,9 @@ public:
         typedef std::list<NodeList::iterator> NodePointerList;
 
     public:
-        Node(const std::string& name, std::unique_ptr<Layer>&& layer, bool isFirstLayer = false)
-        : name(name), layer(std::move(layer)), isFirstLayer(isFirstLayer)
+        Node(const std::string& name, std::unique_ptr<Layer>&& layer,
+            bool isFirstLayer = false, bool isLastLayer = false)
+        : name(name), layer(std::move(layer)), isFirstLayer(isFirstLayer), isLastLayer(isLastLayer)
         {
 
         }
@@ -55,6 +56,17 @@ public:
             size_t total = layer->getInputCount();
 
             size_t split = totalPredecessors();
+
+            size_t splitSize = (total + split - 1) / split;
+
+            return splitSize;
+        }
+
+        size_t getOutputActivationCount() const
+        {
+            size_t total = layer->getOutputCount();
+
+            size_t split = totalSuccessors();
 
             size_t splitSize = (total + split - 1) / split;
 
@@ -73,6 +85,18 @@ public:
             return predecessors;
         }
 
+        size_t totalSuccessors() const
+        {
+            size_t successors = forwardSuccessors.size() + timeSuccessors.size();
+
+            if(isLastLayer)
+            {
+                successors += 1;
+            }
+
+            return successors;
+        }
+
     public:
         std::string name;
         std::unique_ptr<Layer> layer;
@@ -86,6 +110,7 @@ public:
         NodePointerList timePredecessors;
 
         bool isFirstLayer;
+        bool isLastLayer;
 
     };
 
@@ -220,6 +245,7 @@ public:
             layer->timePredecessors.clear();
 
             layer->isFirstLayer = false;
+            layer->isLastLayer = false;
 
             auto position = newLayerList.insert(newLayerList.end(), std::move(*layer));
 
@@ -241,6 +267,7 @@ public:
         }
 
         layers.front().isFirstLayer = true;
+        layers.back().isLastLayer = true;
     }
 
 public:
@@ -296,56 +323,6 @@ public:
         }
     }
 
-    void runForwardIterateTimesteps(MatrixVector& outputActivations,
-        const MatrixVector& inputActivations)
-    {
-        if(layers.empty())
-        {
-            return;
-        }
-
-        // Get the total number of timesteps
-        size_t timesteps = inputActivations.front().size().back();
-
-        StringToMatrixMap layerToInputActivations;
-
-        util::log("SubgraphLayer") << "Running forward propagation through "
-            << timesteps << " timesteps.\n";
-
-        // Step through each timestep
-        for(size_t timestep = 0; timestep < timesteps; ++timestep)
-        {
-            _updateSublayerInputActivationsForTimestep(layerToInputActivations,
-                inputActivations, timestep);
-
-            // Evaluate layers for this timestep in order
-            for(auto& node : layers)
-            {
-                auto& name  = node.name;
-                auto& layer = *node.layer;
-
-                // get the inputs
-                auto& inputs = layerToInputActivations[name];
-
-                _formatInputActivationsForLayer(inputs, node);
-
-                // run the layer
-                MatrixVector localOutputs;
-
-                util::log("SubgraphLayer") << " Running forward propagation on layer '"
-                    << name << "' on timestep " << timestep << "\n";
-
-                layer.runForward(localOutputs, inputs);
-
-                inputs.clear();
-
-                _routeOutputActivationsForLayerAndTimestep(layerToInputActivations,
-                    outputActivations, localOutputs, node, timestep);
-            }
-        }
-    }
-
-public:
     void runReverseAllTimesteps(MatrixVector& gradients, MatrixVector& inputDeltas,
         const MatrixVector& outputDeltas)
     {
@@ -408,6 +385,55 @@ public:
         gradients.push_back(reverseGradients);
     }
 
+public:
+    void runForwardIterateTimesteps(MatrixVector& outputActivations,
+        const MatrixVector& inputActivations)
+    {
+        if(layers.empty())
+        {
+            return;
+        }
+
+        // Get the total number of timesteps
+        size_t timesteps = inputActivations.front().size().back();
+
+        StringToMatrixMap layerToInputActivations;
+
+        util::log("SubgraphLayer") << "Running forward propagation through "
+            << timesteps << " timesteps.\n";
+
+        // Step through each timestep
+        for(size_t timestep = 0; timestep < timesteps; ++timestep)
+        {
+            _updateSublayerInputActivationsForTimestep(layerToInputActivations,
+                inputActivations, timestep);
+
+            // Evaluate layers for this timestep in order
+            for(auto& node : layers)
+            {
+                auto& name  = node.name;
+                auto& layer = *node.layer;
+
+                // get the inputs
+                auto& inputs = layerToInputActivations[name];
+
+                _formatInputActivationsForLayer(inputs, node);
+
+                // run the layer
+                MatrixVector localOutputs;
+
+                util::log("SubgraphLayer") << " Running forward propagation on layer '"
+                    << name << "' on timestep " << timestep << "\n";
+
+                layer.runForward(localOutputs, inputs);
+
+                inputs.clear();
+
+                _routeOutputActivationsForLayerAndTimestep(layerToInputActivations,
+                    outputActivations, localOutputs, node, timestep);
+            }
+        }
+    }
     void runReverseIterateTimesteps(MatrixVector& gradients, MatrixVector& inputDeltas,
         const MatrixVector& outputDeltas)
     {
@@ -422,77 +448,68 @@ public:
         // Get the total number of timesteps
         size_t timesteps = outputDeltas.front().size().back();
 
-        layerToOutputDeltas[layers.back().name] = outputDeltas;
+        MatrixVector sublayerGradients;
 
         // step through each timestep
-        size_t gradientStart = 0;
-
         for(size_t t = 0; t < timesteps; ++t)
         {
+            size_t timestep = timesteps - t - 1;
+
+            _updateSublayerOutputDeltasForTimestep(layerToOutputDeltas,
+                outputDeltas, timestep);
+
+            if(t == 0)
+            {
+                _zeroPadTimeConnections(layerToOutputDeltas,
+                    outputDeltas.front().size()[outputDeltas.front().size().size()-2],
+                    outputDeltas.front().precision());
+            }
+
+            MatrixVector localGradients;
+
             // Evaluate the layers in reverse order
             for(auto node = layers.rbegin(); node != layers.rend(); ++node)
             {
                 auto& name  = node->name;
                 auto& layer = *node->layer;
 
-                // get the inputs
+                // get the output deltas
                 auto& deltas = layerToOutputDeltas[name];
+
+                _formatOutputDeltasForLayer(deltas, *node);
 
                 // run the layer
                 MatrixVector localInputDeltas;
-                MatrixVector localGradients;
 
-                layer.runReverse(gradients, localInputDeltas, deltas);
+                util::log("SubgraphLayer") << " Running reverse propagation on layer '"
+                    << name << "' on timestep " << timestep << "\n";
+
+                layer.runReverse(localGradients, localInputDeltas, deltas);
+
+                layer.popReversePropagationData();
 
                 deltas.clear();
 
-                assert(localInputDeltas.size() <= node->forwardPredecessors.size());
+                _routeInputDeltasForLayerAndTimestep(layerToOutputDeltas,
+                    inputDeltas, localInputDeltas, *node, t);
+            }
 
-                size_t index = 0;
-                for(auto predecessorIterator = node->forwardPredecessors.rbegin();
-                    predecessorIterator != node->forwardPredecessors.rend(); ++predecessorIterator)
+            // accumulate into the gradients
+            if(t == 0)
+            {
+                sublayerGradients.push_back(std::move(localGradients));
+            }
+            else
+            {
+                for(size_t i = 0; i < localGradients.size(); ++i)
                 {
-                    auto& predecessor = *predecessorIterator;
-
-                    layerToOutputDeltas[predecessor->name].push_back(
-                        std::move(localInputDeltas[index]));
-
-                    ++index;
-                }
-
-                for(auto predecessorIterator = node->timePredecessors.rbegin();
-                    predecessorIterator != node->timePredecessors.rend(); ++predecessorIterator)
-                {
-                    auto& predecessor = *predecessorIterator;
-
-                    layerToOutputDeltas[predecessor->name].push_back(
-                        std::move(localInputDeltas[index]));
-
-                    ++index;
-                }
-
-                // remaining outputs go to the sublayer outputs
-                for(; index < localInputDeltas.size(); ++index)
-                {
-                    inputDeltas.push_back(std::move(localInputDeltas[index]));
-                }
-
-                // accumulate into the gradients
-                if(t == 0)
-                {
-                    gradientStart = gradients.size();
-                    gradients.push_back(std::move(localGradients));
-                }
-                else
-                {
-                    for(size_t i = 0; i < localGradients.size(); ++i)
-                    {
-                        apply(gradients[i + gradientStart], gradients[i + gradientStart],
-                            localGradients[i], matrix::Add());
-                    }
+                    apply(sublayerGradients[i], sublayerGradients[i],
+                        localGradients[i], matrix::Add());
                 }
             }
         }
+
+        gradients.push_back(sublayerGradients);
     }
 
 public:
@@ -500,12 +517,19 @@ public:
     {
         assert(layerNames.count(layerName) == 0);
 
+        if(!layers.empty())
+        {
+            layers.back().isLastLayer = false;
+        }
+
         auto layerIterator = layers.insert(layers.end(), Node(layerName, std::move(layer)));
 
         if(layers.size() == 1)
         {
             layers.front().isFirstLayer = true;
         }
+
+        layers.back().isLastLayer = true;
 
         layerNames.insert(std::make_pair(layerName, layerIterator));
 
@@ -813,7 +837,7 @@ private:
             return;
         }
 
-        if(node.forwardSuccessors.size() < 2)
+        if(node.totalSuccessors() < 2)
         {
             return;
         }
@@ -857,7 +881,7 @@ private:
         {
             auto& predecessor = *predecessorIterator;
 
-            size_t nextActivation = currentActivation + predecessor->layer->getInputCount();
+            size_t nextActivation = currentActivation + predecessor->getOutputActivationCount();
 
             newInputDeltas.push_back(slice(inputDeltasData, {currentActivation, 0, 0},
                 {nextActivation, inputDeltasData.size()[1], inputDeltasData.size()[2]}));
@@ -866,6 +890,148 @@ private:
         }
 
         inputDeltas = std::move(newInputDeltas);
+    }
+
+private:
+    void _zeroPadTimeConnections(StringToMatrixMap& layerToOutputDeltas,
+        size_t miniBatchSize, const matrix::Precision& precision)
+    {
+        for(auto& node : layers)
+        {
+            auto& layerOutputDeltas = layerToOutputDeltas[node.name];
+
+            for(size_t i = 0; i < node.timeSuccessors.size(); ++i)
+            {
+                util::log("SubgraphLayer") << " Zero padding output deltas with ["
+                    << 0 << ", " << node.getOutputActivationCount()
+                    << "] for '" << node.name << "'\n";
+
+                layerOutputDeltas.push_back(
+                    zeros({node.getOutputActivationCount(), miniBatchSize, 1}, precision));
+            }
+        }
+    }
+
+    void _updateSublayerOutputDeltasForTimestep(StringToMatrixMap& layerToOutputDeltas,
+        const MatrixVector& outputDeltas, size_t timestep)
+    {
+        if(outputDeltas.empty())
+        {
+            return;
+        }
+
+        auto& lastLayerName = layers.back().name;
+
+        assert(outputDeltas.size() <= 1);
+
+        auto& lastLayerOutputDeltas = layerToOutputDeltas[lastLayerName];
+
+        auto outputDeltasForTimestep = _extractTimestep(outputDeltas.front(), timestep);
+
+        util::log("SubgraphLayer") << " Appending single timestep from sublayer output deltas ["
+            << 0 << ", " << outputDeltasForTimestep.size().front()
+            << "] for '" << lastLayerName << "'\n";
+
+        lastLayerOutputDeltas.push_front(outputDeltasForTimestep);
+    }
+
+    void _routeInputDeltasForLayerAndTimestep(StringToMatrixMap& layerToOutputDeltas,
+        MatrixVector& sublayerInputDeltas, const MatrixVector& localInputDeltas, const Node& node,
+        size_t timesteps)
+    {
+        if(node.layer->getSupportsMultipleInputsAndOutputs())
+        {
+            return;
+        }
+
+        assert(localInputDeltas.size() == 1);
+
+        auto inputDeltas = _collapseActivations(localInputDeltas.front());
+
+        // format input deltas according to predecessors
+        size_t totalActivations = 0;
+
+        for(auto& predecessor : node.forwardPredecessors)
+        {
+            totalActivations += predecessor->getOutputActivationCount();
+        }
+
+        for(auto& predecessor : node.timePredecessors)
+        {
+            totalActivations += predecessor->getOutputActivationCount();
+        }
+
+        size_t currentActivation = 0;
+
+        if(inputDeltas.size().front() > totalActivations)
+        {
+            size_t nextActivation = inputDeltas.size().front() - totalActivations;
+
+            auto inputDeltasSlice = slice(inputDeltas, {currentActivation, 0, 0},
+                {nextActivation, inputDeltas.size()[1], inputDeltas.size()[2]});
+
+            util::log("SubgraphLayer") << " Routing input deltas ["
+                << currentActivation << ", " << nextActivation
+                << "] to sublayer input.\n";
+
+            if(timesteps == 0)
+            {
+                sublayerInputDeltas.push_back(inputDeltasSlice);
+            }
+            else
+            {
+                // find the correct output activation
+                size_t inputDeltasIndex = 0;
+
+                for(; inputDeltasIndex < sublayerInputDeltas.size(); ++inputDeltasIndex)
+                {
+                    if(sublayerInputDeltas[inputDeltasIndex].size().back() <= timesteps)
+                    {
+                        break;
+                    }
+                }
+
+                assert(inputDeltasIndex < sublayerInputDeltas.size());
+
+                sublayerInputDeltas[inputDeltasIndex] = concatenate(
+                    inputDeltasSlice, sublayerInputDeltas[inputDeltasIndex], 2);
+            }
+
+            currentActivation = nextActivation;
+        }
+
+        for(auto& predecessor : node.timePredecessors)
+        {
+            size_t nextActivation = currentActivation + predecessor->getOutputActivationCount();
+
+            util::log("SubgraphLayer") << " Routing input deltas ["
+                << currentActivation << ", " << nextActivation
+                << "] to time successor '" << predecessor->name << "'\n";
+
+            auto inputDeltasSlice = slice(inputDeltas, {currentActivation, 0, 0},
+                {nextActivation, inputDeltas.size()[1], inputDeltas.size()[2]});
+
+            currentActivation = nextActivation;
+
+            layerToOutputDeltas[predecessor->name].push_back(inputDeltasSlice);
+        }
+
+        for(auto& predecessor : node.forwardPredecessors)
+        {
+            size_t nextActivation = currentActivation + predecessor->getOutputActivationCount();
+
+            util::log("SubgraphLayer") << " Routing input deltas ["
+                << currentActivation << ", " << nextActivation
+                << "] to forward predecessor '" << predecessor->name << "'\n";
+
+            auto inputDeltasSlice = slice(inputDeltas, {currentActivation, 0, 0},
+                {nextActivation, inputDeltas.size()[1], inputDeltas.size()[2]});
+
+            currentActivation = nextActivation;
+
+            layerToOutputDeltas[predecessor->name].push_back(inputDeltasSlice);
+        }
+
     }
 
 private:
