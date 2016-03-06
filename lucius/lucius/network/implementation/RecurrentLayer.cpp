@@ -91,16 +91,11 @@ RecurrentLayer& RecurrentLayer::operator=(const RecurrentLayer& l)
 
 void RecurrentLayer::initialize()
 {
-    /* Glorot
+    #if 0
+    //Glorot
     double e = util::KnobDatabase::getKnobValue("Layer::RandomInitializationEpsilon", 6);
 
     double epsilon = std::sqrt((e) / (getInputCount() + getOutputCount() + 1));
-    */
-
-    // He
-    double e = util::KnobDatabase::getKnobValue("Layer::RandomInitializationEpsilon", 1);
-
-    double epsilon = std::sqrt((e) / (getInputCount() * 2));
 
     // generate uniform random values between [0, 1]
     matrix::rand(_forwardWeights);
@@ -113,6 +108,22 @@ void RecurrentLayer::initialize()
     // scale, the range is now [-epsilon, epsilon]
     apply(_forwardWeights, _forwardWeights, matrix::Multiply(2.0 * epsilon));
     apply(_recurrentWeights, _recurrentWeights, matrix::Multiply(2.0 * epsilon));
+
+    #else
+    // He
+    double e = util::KnobDatabase::getKnobValue("Layer::RandomInitializationEpsilon", 1);
+
+    double epsilon = std::sqrt((e) / (getInputCount()*2));
+
+    // generate normal random values with N(0,1)
+    matrix::randn(_forwardWeights);
+    matrix::randn(_recurrentWeights);
+
+    // scale, the range is now [-epsilon, epsilon]
+    apply(_forwardWeights, _forwardWeights, matrix::Multiply(epsilon));
+    apply(_recurrentWeights, _recurrentWeights, matrix::Multiply(epsilon));
+
+    #endif
 
     // assign bias to 0.0f
     apply(_bias, _bias, matrix::Fill(0.0f));
