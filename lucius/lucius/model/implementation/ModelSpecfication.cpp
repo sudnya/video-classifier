@@ -117,16 +117,14 @@ static void loadModelAttributes(Model& model, const util::PropertyTree& specific
 
 typedef std::map<std::string, util::ParameterPack> TypeMap;
 
-matrix::Dimension computeInputSize(const util::PropertyTree& network)
+matrix::Dimension computeInputSize(const util::PropertyTree& model)
 {
-    if(!network.exists("model-attributes"))
+    if(!model.exists("model-attributes"))
     {
         return matrix::Dimension(1, 1, 1, 1, 1);
     }
 
-    auto layers = network.get("layers");
-
-    auto attributes = network.get("model-attributes");
+    auto attributes = model.get("model-attributes");
 
     matrix::Dimension result;
 

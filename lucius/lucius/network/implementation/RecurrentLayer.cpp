@@ -172,8 +172,8 @@ void RecurrentLayer::runForwardImplementation(MatrixVector& outputActivationsVec
     }
 
     size_t activationCount = inputActivations.size()[0];
-    size_t miniBatch       = inputActivations.size()[1];
-    size_t timesteps       = inputActivations.size()[2];
+    size_t miniBatch       = inputActivations.size()[inputActivations.size().size() - 2];
+    size_t timesteps       = inputActivations.size().back();
 
     auto unbiasedOutput = gemm(Matrix(_forwardWeights), false, 1.0, reshape(inputActivations,
         {activationCount, miniBatch * timesteps}), false);
@@ -291,8 +291,8 @@ void RecurrentLayer::runReverseImplementation(MatrixVector& gradients,
     auto unfoldedInputActivations = loadMatrix("inputActivations");
 
     size_t activationCount = unfoldedInputActivations.size()[0];
-    size_t miniBatch       = unfoldedInputActivations.size()[1];
-    size_t timesteps       = unfoldedInputActivations.size()[2];
+    size_t miniBatch       = unfoldedInputActivations.size()[unfoldedInputActivations.size().size() - 2];
+    size_t timesteps       = unfoldedInputActivations.size().back();
 
     auto forwardInputActivations = reshape(unfoldedInputActivations,
         {activationCount, miniBatch * timesteps});
