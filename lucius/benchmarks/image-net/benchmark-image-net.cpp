@@ -134,7 +134,7 @@ static void addClassifier(Model& model, const Parameters& parameters)
     NeuralNetwork classifier;
 
     Dimension inputSize(parameters.xPixels, parameters.yPixels, parameters.colors, 1, 1);
-
+/*
     if(parameters.layers > 3)
     {
         inputSize = addConvolutionalLayer(classifier, inputSize, 64, parameters.useBatchNormalization);
@@ -177,7 +177,7 @@ static void addClassifier(Model& model, const Parameters& parameters)
                 parameters.useBatchNormalization);
         }
     }
-
+*/
     // connect the network
     if(parameters.layers > 1)
     {
@@ -194,6 +194,18 @@ static void addClassifier(Model& model, const Parameters& parameters)
 
     if(parameters.layers > 2)
     {
+        classifier.addLayer(std::make_unique<FeedForwardLayer>(classifier.back()->getOutputCount(),
+            parameters.layerSize));
+
+        if(parameters.useFeedForwardBatchNormalization)
+        {
+            classifier.back()->setActivationFunction(
+                ActivationFunctionFactory::create("NullActivationFunction"));
+            classifier.addLayer(std::make_unique<BatchNormalizationLayer>(parameters.layerSize));
+        }
+    }
+
+    for(int i = 3; i < parameters.layers; ++i) {
         classifier.addLayer(std::make_unique<FeedForwardLayer>(classifier.back()->getOutputCount(),
             parameters.layerSize));
 
@@ -350,7 +362,7 @@ static void setupSolverParameters(const Parameters& parameters)
     lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::IterationsPerBatch", "1");
     lucius::util::KnobDatabase::setKnob("GeneralDifferentiableSolver::Type",
         "NesterovAcceleratedGradientSolver");
-    lucius::util::KnobDatabase::setKnob("InputVisualDataProducer::CropImagesRandomly", "1");
+    lucius::util::KnobDatabase::setKnob("InputVisualDataProducer::CropImagesRandomly", "0");
     //lucius::util::KnobDatabase::setKnob("GeneralDifferentiableSolver::Type", "LBFGSSolver");
 }
 

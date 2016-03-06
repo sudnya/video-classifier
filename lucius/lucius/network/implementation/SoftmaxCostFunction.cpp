@@ -1,4 +1,4 @@
-/*    \file   SoftmaxCostFunction.cpp
+/*  \file   SoftmaxCostFunction.cpp
     \date   November 19, 2014
     \author Gregory Diamos <solusstultus@gmail.com>
     \brief  The source file for the SoftmaxCostFunction class.
