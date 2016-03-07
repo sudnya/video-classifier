@@ -2,6 +2,7 @@
 
 // Forward Declarations
 namespace lucius { namespace matrix { class Matrix;    } }
+namespace lucius { namespace matrix { class Precision; } }
 
 namespace lucius
 {

@@ -7,6 +7,7 @@
 // Lucius Includes
 #include <lucius/network/interface/CTCCostFunction.h>
 
+#include <lucius/matrix/interface/CTCOperations.h>
 #include <lucius/matrix/interface/Matrix.h>
 #include <lucius/matrix/interface/MatrixOperations.h>
 #include <lucius/matrix/interface/Operation.h>
@@ -28,14 +29,12 @@ CTCCostFunction::~CTCCostFunction()
 
 }
 
-//void computeCtc(Matrix& costs, Matrix& gradients, const Matrix& inputActivations, const Matrix& reference);
-
 Matrix CTCCostFunction::computeCost(const Matrix& output, const Matrix& reference) const
 {
     size_t miniBatchSize = output.size()[1];
 
     Matrix cost({miniBatchSize}, output.precision());
-    Matrix fakeGradients();
+    Matrix fakeGradients;
 
     matrix::computeCtc(cost, fakeGradients, output, reference);
 

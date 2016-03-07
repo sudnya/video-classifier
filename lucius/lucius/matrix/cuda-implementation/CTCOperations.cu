@@ -1,7 +1,14 @@
 // Lucius Includes
+#include <lucius/matrix/interface/Allocation.h>
 #include <lucius/matrix/interface/CTCOperations.h>
+#include <lucius/matrix/interface/Matrix.h>
+#include <lucius/matrix/interface/MatrixOperations.h>
+#include <lucius/matrix/interface/Operation.h>
+//CTC Includes
+#include <lucius/matrix/ctc/interface/ctc.h>
 
 // Standard Library Includes
+#include <vector>
 #include <thread>
 
 // Forward Declarations
@@ -11,33 +18,26 @@ namespace lucius
 {
 namespace matrix
 {
-struct ctcComputeInfo {
-    ctcComputeLocation loc;
-    union {
-        unsigned int num_threads;
-        CUstream stream;
-    };
-};
 
 void computeCtc(Matrix& costs, Matrix& gradients, const Matrix& inputActivations, const Matrix& reference)
 {
-    assert(costs.precision() == matrix::SinglePrecision());
-    assert(gradients.precision() == matrix::SinglePrecision());
-    assert(inputActivations.precision() == matrix::SinglePrecision());
-    assert(reference.precision() == matrix::SinglePrecision());
+    assert(costs.precision()            == SinglePrecision());
+    assert(gradients.precision()        == SinglePrecision());
+    assert(inputActivations.precision() == SinglePrecision());
+    assert(reference.precision()        == SinglePrecision());
 
     //first call get_workspace_size to get workspace size
     size_t sizeBytes = 0;
-    ctcComputeInfo runtimeInfo;
+    lucius::matrix::ctc::ctcComputeInfo runtimeInfo;
     
     if(parallel::isCudaEnabled())
     {
-        runtimeInfo.loc = CTC_GPU;
+        runtimeInfo.loc = lucius::matrix::ctc::ctcComputeLocation::CTC_GPU;
         runtimeInfo.stream = 0;
     }
     else
     {
-        runtimeInfo.loc = CTC_CPU;
+        runtimeInfo.loc = lucius::matrix::ctc::ctcComputeLocation::CTC_CPU;
         runtimeInfo.num_threads = std::thread::hardware_concurrency();
     }
 
@@ -62,17 +62,17 @@ void computeCtc(Matrix& costs, Matrix& gradients, const Matrix& inputActivations
 
     std::vector<int> labelsInMinibatch;
 
-    auto labels = reduceGetPositions(reference, {0}, matrix::Maximum());
+    auto labels = reduceGetPositions(reference, {0}, lucius::matrix::Maximum());
     
-    for(auto& element : labels)
+    for(auto element : labels)
     {
         labelsInMinibatch.push_back(static_cast<int>(element));
     }
 
     //call compute_ctc_loss
-    compute_ctc_loss(inputActivations.data(), gradients.data(), labelsInMinibatch.data(),
+    compute_ctc_loss(static_cast<const float*>(inputActivations.data()), static_cast<float*>(gradients.data()), labelsInMinibatch.data(),
         labelLengthInMinibatch.data(), timeStepsInMinibatch.data(), vocabularySize, samplesPerMinibatch,
-        costs.data(), workspace.data(), runtimeInfo);
+        static_cast<float*>(costs.data()), workspace.data(), runtimeInfo);
 
 }
 }
