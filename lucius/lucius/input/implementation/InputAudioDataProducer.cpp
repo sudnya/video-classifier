@@ -40,7 +40,8 @@ public:
         const std::string& audioDatabaseFilename)
     : _producer(producer), _databaseFilename(audioDatabaseFilename), _initialized(false),
       _remainingSamples(0), _nextSample(0), _nextNoiseSample(0), _totalTimestepsPerUtterance(0),
-      _audioTimesteps(0), _noiseRateLower(0.0), _noiseRateUpper(0.0)
+      _audioTimesteps(0), _noiseRateLower(0.0), _noiseRateUpper(0.0),
+      _speechScaleLower(0.0), _speechScaleUpper(0.0)
     {
 
     }
@@ -77,6 +78,11 @@ public:
             "InputAudioDataProducer::NoiseRateLower", 0.0);
         _noiseRateUpper = util::KnobDatabase::getKnobValue(
             "InputAudioDataProducer::NoiseRateUpper", 0.2);
+
+        _speechScaleLower = util::KnobDatabase::getKnobValue(
+            "InputAudioDataProducer::SpeechScaleLower", 0.5);
+        _speechScaleUpper = util::KnobDatabase::getKnobValue(
+            "InputAudioDataProducer::SpeechScaleUpper", 5.0);
 
         _parseAudioDatabase();
 
@@ -171,8 +177,8 @@ private:
 
             _downsampleToMatchFrequencies(audio, noise);
 
-            //_scaleRandomly(audio, 1.0);
-            _scaleRandomly(noise, _noiseRateLower, _noiseRateUpper);
+            _scaleRandomly(audio, _speechScaleLower, _speechScaleUpper);
+            _scaleRandomly(noise, _noiseRateLower,   _noiseRateUpper);
 
             auto selectedTimesteps = ((_generator() % _audioTimesteps) + _audioTimesteps) / 2;
 
@@ -271,11 +277,101 @@ private:
             ++position;
         }
 
-        result.addLabel(0,                       position,                noise.label());
-        result.addLabel(position,                position + audio.size(), audio.label());
-        result.addLabel(position + audio.size(), noise.size(),            noise.label());
+        if(_usesGraphemes())
+        {
+            result.setDefaultLabel(_defaultGrapheme);
+
+            auto noiseGraphemes = _toGraphemes(noise.label());
+            auto audioGraphemes = _toGraphemes(audio.label());
+
+            _applyGraphemesToRange(result, 0, position, noiseGraphemes);
+            _applyGraphemesToRange(result, position, position + audio.size(), audioGraphemes);
+            _applyGraphemesToRange(result, position + audio.size(), noise.size(), noiseGraphemes);
+
+        }
+        else
+        {
+            result.addLabel(0,                       position,                noise.label());
+            result.addLabel(position,                position + audio.size(), audio.label());
+            result.addLabel(position + audio.size(), noise.size(),            noise.label());
+        }
 
         return result;
+    }
+
+private:
+    typedef std::vector<std::string> StringVector;
+
+private:
+    void _applyGraphemesToRange(Audio& result, size_t beginTimestep, size_t endTimestep,
+        const StringVector& graphemes)
+    {
+        size_t possibleRange = endTimestep - beginTimestep;
+        size_t offset = 0;
+
+        if(possibleRange > graphemes.size())
+        {
+            possibleRange -= graphemes.size();
+
+            offset = _generator() % possibleRange;
+        }
+
+        for(size_t i = beginTimestep + offset; i < beginTimestep + offset + graphemes.size(); ++i)
+        {
+            result.addLabel(i, i+1, graphemes[i]);
+        }
+    }
+
+    StringVector _toGraphemes(const std::string& label)
+    {
+        auto remainingLabel = label;
+
+        StringVector graphemes;
+
+        while(!remainingLabel.empty())
+        {
+            auto endRange = remainingLabel.begin() + 1;
+            auto endUncertainty = remainingLabel.end();
+
+            auto beginGrapheme = _graphemes.lower_bound(
+                std::string(remainingLabel.begin(), remainingLabel.begin() + 1));
+
+            if(beginGrapheme == _graphemes.end())
+            {
+                throw std::runtime_error("No grapheme could match label starting at '" +
+                    remainingLabel + "'.");
+            }
+
+            while(endUncertainty != endRange)
+            {
+                size_t distance = endUncertainty - endRange;
+
+                size_t midpoint = (distance + 1) / 2;
+
+                auto proposal = endRange + midpoint;
+
+                auto proposedGrapheme = _graphemes.lower_bound(
+                    std::string(remainingLabel.begin(), proposal));
+
+                if(proposedGrapheme == _graphemes.end())
+                {
+                    endUncertainty = proposal;
+                }
+                else
+                {
+                    endRange = proposal;
+                }
+            }
+
+            remainingLabel = std::string(remainingLabel.begin(), endRange);
+        }
+
+        return graphemes;
+    }
+
+    bool _usesGraphemes() const
+    {
+        return !_graphemes.empty();
     }
 
     void _downsampleToMatchFrequencies(Audio& first, Audio& second)
@@ -356,6 +452,11 @@ private:
                 }
             }
         }
+
+        auto graphemes = sampleDatabase.getGraphemes();
+
+        _defaultGrapheme = sampleDatabase.getDefaultGrapheme();
+        _graphemes.insert(graphemes.begin(), graphemes.end());
     }
 
 private:
@@ -367,6 +468,13 @@ private:
 private:
     AudioVector _audio;
     AudioVector _noise;
+
+private:
+    typedef std::set<std::string> StringSet;
+
+private:
+    StringSet _graphemes;
+    std::string _defaultGrapheme;
 
 private:
     std::default_random_engine _generator;
@@ -386,6 +494,10 @@ private:
 private:
     double _noiseRateLower;
     double _noiseRateUpper;
+
+private:
+    double _speechScaleLower;
+    double _speechScaleUpper;
 
 };
 

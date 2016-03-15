@@ -116,8 +116,12 @@ def updateMetadata(outputPath, speakerId, root, files):
             if not isAudioFile(filename):
                 continue
 
+            label = getLabel(root, files, filename)
+
+            print "Adding label '" + filename + "' -> '" + label + "'"
+
             filePath = os.path.join(outputPath, 'speech', speakerId, filename)
-            metadataFile.write(filePath + ", \"" + getLabel(root, files, filename) + "\"\n")
+            metadataFile.write(filePath + ", " + label + "\n")
 
 def convertLibriSpeech(options):
     inputPath  = options["input_path"]
@@ -141,7 +145,8 @@ def main():
 
     parser.add_argument("-i", "--input-path", default="", help="Input path to libri speech dataset.")
     parser.add_argument("-o", "--output-path", default="", help="Output path to lucius dataset.")
-    parser.add_argument("-c", "--clear-output", default=False, action='store_true', help="Clear the output path before running.")
+    parser.add_argument("-c", "--clear-output", default=False, action='store_true',
+        help="Clear the output path before running.")
 
     arguments = parser.parse_args()
 

@@ -132,8 +132,8 @@ void ConvolutionalLayer::initialize()
     // He
     double e = util::KnobDatabase::getKnobValue("Layer::RandomInitializationEpsilon", 1);
 
-    double epsilon = std::sqrt((e) /
-        ((2*_weights.size()[0])*(_weights.size()[1])*(_weights.size()[2])));
+    double epsilon = std::sqrt((2.*e) /
+        ((_weights.size()[0])*(_weights.size()[1])*(_weights.size()[2])));
 
     // generate uniform random values between [0, 1]
     matrix::randn(_weights);

@@ -81,9 +81,10 @@
         {
             "SamplingRate"  : "8000",
             "FrameDuration" : "160",
-            "Graphemes"     : ["START", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m",
-                               "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z",
-                               ".", ",", "'", "END"]
+            "Graphemes" : [ "a", "b", "c", "d", "e", "f", "g", "h", "i",
+                            "j", "k", "l", "m", "n", "o", "p", "q", "r",
+                            "s", "t", "u", "v", "w", "x", "y", "z", ".",
+                            ",", "'"]
         },
 
         "infer-outputs-from" : "/Users/gregorydiamos/temp/audio-search-100-hours/development/database.txt"
@@ -91,9 +92,11 @@
 
     "attributes" :
     {
+        "InputAudioDataProducer::SpeechScaleLower" : "0.9",
+        "InputAudioDataProducer::SpeechScaleUpper" : "1.1",
         "InputAudioDataProducer::NoiseRateLower" : "0.0",
         "InputAudioDataProducer::NoiseRateUpper" : "0.1",
-        "InputAudioDataProducer::TotalTimestepsPerUtterance" : "2048"
+        "InputAudioDataProducer::TotalTimestepsPerUtterance" : "2048",
     },
 
     "dataset" :

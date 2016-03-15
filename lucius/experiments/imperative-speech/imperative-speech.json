@@ -13,10 +13,10 @@
 
         "parameters" :
         {
-            "NesterovAcceleratedGradient::LearningRate"       : "1.0e-5",
+            "NesterovAcceleratedGradient::LearningRate"       : "1.56e-6",
             "NesterovAcceleratedGradient::Momentum"           : "0.99",
             "NesterovAcceleratedGradient::AnnealingRate"      : "1.000001",
-            "NesterovAcceleratedGradient::MaxGradNorm"        : "100.0",
+            "NesterovAcceleratedGradient::MaxGradNorm"        : "400.0",
             "NesterovAcceleratedGradient::IterationsPerBatch" : "1"
         }
     },
@@ -80,7 +80,11 @@
         "model-attributes" :
         {
             "SamplingRate"  : "8000",
-            "FrameDuration" : "160"
+            "FrameDuration" : "160",
+            "Graphemes"     : [ "a", "b", "c", "d", "e", "f", "g", "h", "i",
+                            "j", "k", "l", "m", "n", "o", "p", "q", "r",
+                            "s", "t", "u", "v", "w", "x", "y", "z", ".",
+                            ",", "'" ]
         },
 
         "infer-outputs-from" : "/Users/gregorydiamos/temp/imperative-speech-2-hours/development/database.txt"
@@ -88,8 +92,10 @@
 
     "attributes" :
     {
-        "InputAudioDataProducer::NoiseRateLower" : "0.0",
-        "InputAudioDataProducer::NoiseRateUpper" : "0.1",
+        "InputAudioDataProducer::NoiseRateLower"   : "0.0",
+        "InputAudioDataProducer::NoiseRateUpper"   : "0.01",
+        "InputAudioDataProducer::SpeechScaleLower" : "0.9",
+        "InputAudioDataProducer::SpeechScaleUpper" : "1.1",
         "InputAudioDataProducer::TotalTimestepsPerUtterance" : "512",
         "InputAudioDataProducer::AudioTimesteps" : "64"
     },

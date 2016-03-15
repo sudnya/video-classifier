@@ -104,7 +104,7 @@ void FeedForwardLayer::initialize()
     // He
     double e = util::KnobDatabase::getKnobValue("Layer::RandomInitializationEpsilon", 1);
 
-    double epsilon = std::sqrt((e) / (getInputCount()*2));
+    double epsilon = std::sqrt((2.*e) / (getInputCount()));
     // generate normal random values with N(0,1)
     matrix::randn(_weights);
 

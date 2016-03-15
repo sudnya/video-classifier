@@ -111,6 +111,11 @@ static void loadModelAttributes(Model& model, const util::PropertyTree& specific
 
     for(auto& attribute : attributes)
     {
+        if(attribute.isList())
+        {
+            continue;
+        }
+
         model.setAttribute(attribute.key(), attribute.value());
     }
 }
@@ -188,6 +193,25 @@ static void setupOutputLayerParameters(model::Model& model,
     auto datasetPath = specification.get<std::string>("infer-outputs-from");
 
     database::SampleDatabase inputDatabase(datasetPath);
+
+    if(specification.exists("model-attributes.Graphemes"))
+    {
+        for(auto& grapheme : specification.get("model-attributes.Graphemes"))
+        {
+            inputDatabase.addGrapheme(grapheme.key());
+        }
+    }
+
+    if(specification.exists("model-attributes.DefaultGrapheme"))
+    {
+        inputDatabase.setDefaultGrapheme(
+            specification.get("model-attributes.DefaultGrapheme").key());
+    }
+    else
+    {
+        inputDatabase.setDefaultGrapheme(" ");
+    }
+
     inputDatabase.load();
 
     auto labels = inputDatabase.getAllPossibleLabels();
