@@ -153,7 +153,7 @@ def getExtraLibs(env):
         return []
     else:
         if cuda_exists(env):
-            return ['cudart']
+            return ['cudart_static']
         else:
             return []
 

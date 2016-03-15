@@ -14,6 +14,7 @@
 #include <lucius/results/interface/ResultProcessorFactory.h>
 #include <lucius/results/interface/LabelMatchResult.h>
 #include <lucius/results/interface/LabelResult.h>
+#include <lucius/results/interface/CostResult.h>
 #include <lucius/results/interface/ResultVector.h>
 
 #include <lucius/matrix/interface/Matrix.h>
@@ -79,8 +80,8 @@ util::StringVector convertActivationsToLabels(matrix::Matrix&& activations,
     return labels;
 }
 
-results::ResultVector compareWithReference(const util::StringVector& labels,
-    const util::StringVector& references)
+results::ResultVector compareWithReference(double cost, size_t iteration,
+    const util::StringVector& labels, const util::StringVector& references)
 {
     results::ResultVector result;
 
@@ -89,6 +90,8 @@ results::ResultVector compareWithReference(const util::StringVector& labels,
     {
         result.push_back(new results::LabelMatchResult(*label, *reference));
     }
+
+    result.push_back(new results::CostResult(cost, iteration));
 
     return result;
 }
@@ -111,19 +114,27 @@ ClassifierEngine::ResultVector ClassifierEngine::runOnBatch(Matrix&& input, Matr
 
     network->setIsTraining(false);
 
-    auto result = network->runInputs(std::move(input));
-
-    restoreAggregateNetwork();
+    auto result = network->runInputs(input);
 
     auto labels = convertActivationsToLabels(std::move(result), *getModel());
 
+    ClassifierEngine::ResultVector results;
+
     if(_shouldUseLabeledData)
     {
-        return compareWithReference(labels,
-            convertActivationsToLabels(std::move(reference), *getModel()));
+        auto cost = network->getCost(input, reference);
+
+        results = std::move(compareWithReference(cost * labels.size(), getIteration(), labels,
+            convertActivationsToLabels(std::move(reference), *getModel())));
+    }
+    else
+    {
+        results = std::move(recordLabels(labels));
     }
 
-    return recordLabels(labels);
+    restoreAggregateNetwork();
+
+    return results;
 }
 
 bool ClassifierEngine::requiresLabeledData() const

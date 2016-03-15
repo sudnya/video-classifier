@@ -103,6 +103,11 @@ size_t Model::getOutputCount() const
     return _outputLabels.size();
 }
 
+void Model::setPath(const std::string& path)
+{
+    _path = path;
+}
+
 void Model::save(std::ostream& stream) const
 {
     util::OutputTarArchive tar(stream);

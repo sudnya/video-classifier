@@ -112,7 +112,7 @@ static bool isImageModel(const model::Model* model)
 
 static bool isAudioModel(const model::Model* model)
 {
-    return model->hasAttribute("SamplesPerFrame");
+    return model->hasAttribute("FrameDuration");
 }
 
 matrix::Dimension InputDataProducer::getInputSize() const
@@ -127,7 +127,7 @@ matrix::Dimension InputDataProducer::getInputSize() const
 
     if(isAudioModel(getModel()))
     {
-        return {getModel()->getAttribute<size_t>("SamplesPerFrame")};
+        return {getModel()->getAttribute<size_t>("FrameDuration")};
     }
 
     throw std::runtime_error("Unknown model type.");

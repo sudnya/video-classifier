@@ -26,13 +26,13 @@ class SimpleNeuralNetworkSolver : public NeuralNetworkSolver
 public:
     SimpleNeuralNetworkSolver(NeuralNetwork* );
     ~SimpleNeuralNetworkSolver();
-    
+
 public:
     SimpleNeuralNetworkSolver(const SimpleNeuralNetworkSolver&);
     SimpleNeuralNetworkSolver& operator=(const SimpleNeuralNetworkSolver&);
 
 public:
-    virtual void solve();
+    virtual double solve();
 
 public:
     virtual NeuralNetworkSolver* clone() const;

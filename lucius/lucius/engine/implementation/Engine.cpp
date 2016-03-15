@@ -43,7 +43,8 @@ namespace engine
 
 Engine::Engine()
 : _dataProducer(input::InputDataProducerFactory::create()),
-  _resultProcessor(results::ResultProcessorFactory::create("NullResultProcessor"))
+  _resultProcessor(results::ResultProcessorFactory::create("NullResultProcessor")),
+  _iteration(0)
 {
 
 }
@@ -106,6 +107,8 @@ void Engine::runOnDataProducer(InputDataProducer& producer)
 
     producer.initialize();
 
+    _iteration = 0;
+
     util::log("Engine") << "Running for " << producer.getEpochs() <<  " epochs.\n";
     for(size_t epoch = 0; epoch != producer.getEpochs(); ++epoch)
     {
@@ -113,10 +116,15 @@ void Engine::runOnDataProducer(InputDataProducer& producer)
         {
             auto dataAndReference = std::move(producer.pop());
 
+            size_t batchSize = dataAndReference.first.size()[
+                dataAndReference.first.size().size() - 2];
+
             auto results = runOnBatch(std::move(dataAndReference.first),
                 std::move(dataAndReference.second));
 
             _resultProcessor->process(std::move(results));
+
+            _iteration += batchSize;
         }
 
         for(auto& observer : _observers)
@@ -196,6 +204,11 @@ void Engine::closeModel()
 bool Engine::requiresLabeledData() const
 {
     return false;
+}
+
+size_t Engine::getIteration() const
+{
+    return _iteration;
 }
 
 void Engine::saveModel()

@@ -17,6 +17,17 @@ programs = []
 programs.append(env.Program('lucius-classifier', \
     ['tools/lucius-classifier.cpp'], LIBS=lucius_libs))
 
+programs.append(env.Command("lucius-train-model.py",
+    "tools/lucius-train-model.py", Copy("$TARGET", "$SOURCE")))
+
+programs.append(env.Command("luciusgraphing.py",
+    "tools/lucius-graph-training.py", Copy("$TARGET", "$SOURCE")))
+
+programs.append(env.Command("lucius-graph-training.py",
+    "tools/lucius-graph-training.py", Copy("$TARGET", "$SOURCE")))
+
+programs.append(env.Command("__init__.py", "tools/lucius-graph-training.py", Touch("$TARGET")))
+
 programs.append(env.Program('lucius-make-dataset', \
     ['tools/lucius-make-dataset.cpp'], LIBS=lucius_libs))
 
@@ -58,6 +69,9 @@ programs.append(env.Program('test-gradient', \
 
 programs.append(env.Program('test-convolutional-gradient', \
     ['network/test/test-convolutional-gradient-check.cpp'], LIBS=lucius_libs))
+
+programs.append(env.Program('test-subgraph', \
+    ['network/test/test-subgraph.cpp'], LIBS=lucius_libs))
 
 programs.append(env.Program('test-linear-regression', \
     ['network/test/test-linear-regression.cpp'], LIBS=lucius_libs))

@@ -1,6 +1,8 @@
 
 // Lucius Includes
 #include <lucius/matrix/interface/MatrixTransformations.h>
+
+#include <lucius/matrix/interface/Matrix.h>
 #include <lucius/matrix/interface/DimensionTransformations.h>
 #include <lucius/matrix/interface/CopyOperations.h>
 
@@ -62,7 +64,8 @@ static Dimension computeSpacing(const Dimension& stride, const Dimension& size)
     return spacing;
 }
 
-static Dimension fillInStride(const Dimension& newSize, const Dimension& inputStride, const Dimension& inputSize)
+static Dimension fillInStride(const Dimension& newSize,
+    const Dimension& inputStride, const Dimension& inputSize)
 {
     Dimension inputSpacing = computeSpacing(inputStride, inputSize);
 
@@ -106,16 +109,19 @@ Matrix slice(const Matrix& input, const Dimension& begin, const Dimension& end)
 
     Matrix tempInput(input);
 
-    return Matrix(size, input.stride(), input.precision(), tempInput.allocation(), tempInput[begin].address());
+    return Matrix(size, input.stride(), input.precision(),
+        tempInput.allocation(), tempInput[begin].address());
 }
 
-Matrix slice(const Matrix& input, const Dimension& begin, const Dimension& end, const Dimension& stride)
+Matrix slice(const Matrix& input, const Dimension& begin,
+    const Dimension& end, const Dimension& stride)
 {
     auto size = (end - begin) / stride;
 
     Matrix tempInput(input);
 
-    return Matrix(size, input.stride() * stride, input.precision(), tempInput.allocation(), tempInput[begin].address());
+    return Matrix(size, input.stride() * stride, input.precision(),
+        tempInput.allocation(), tempInput[begin].address());
 }
 
 Matrix resize(const Matrix& input, const Dimension& size)
@@ -128,6 +134,28 @@ Matrix resize(const Matrix& input, const Dimension& size)
     auto inputSlice  = slice(input,  zeros(overlap), overlap);
 
     copy(resultSlice, inputSlice);
+
+    return result;
+}
+
+Matrix concatenate(const Matrix& left, const Matrix& right, size_t dimension)
+{
+    auto size = left.size();
+
+    size[dimension] += right.size()[dimension];
+
+    Matrix result(size, left.precision());
+
+    auto leftStart  = zeros(size);
+    auto rightStart = zeros(size);
+
+    rightStart[dimension] = left.size()[dimension];
+
+    auto leftSlice  = slice(result, leftStart,  left.size());
+    auto rightSlice = slice(result, rightStart, result.size());
+
+    copy(leftSlice,  left);
+    copy(rightSlice, right);
 
     return result;
 }

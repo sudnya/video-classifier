@@ -8,6 +8,7 @@
 // Standard Library Includes
 #include <random>
 #include <set>
+#include <map>
 #include <memory>
 
 // Forward Declarations
@@ -47,10 +48,16 @@ public:
     virtual void initialize() = 0;
 
 public:
-    void runForward(MatrixVector& activations);
-    Matrix runReverse(MatrixVector& gradients,
-        MatrixVector& activations,
-        const Matrix& deltas);
+    void runForward(MatrixVector& outputActivations,
+        const MatrixVector& inputActivations);
+
+    void runReverse(MatrixVector& gradients,
+        MatrixVector& inputDeltas,
+        const MatrixVector& outputDeltas);
+
+public:
+    void popReversePropagationData();
+    void clearReversePropagationData();
 
 public:
     virtual       MatrixVector& weights()       = 0;
@@ -71,13 +78,13 @@ public:
     virtual size_t getOutputCount() const = 0;
 
 public:
-    virtual size_t totalNeurons()      const = 0;
+    virtual size_t totalNeurons()     const = 0;
     virtual size_t totalConnections() const = 0;
 
 public:
     virtual size_t getFloatingPointOperationCount() const = 0;
-    virtual size_t getParameterMemory() const;
     virtual size_t getActivationMemory() const = 0;
+    virtual size_t getParameterMemory()  const;
 
 public:
     /*! \brief Save the layer to the tar file and header. */
@@ -87,7 +94,6 @@ public:
 
 public:
     virtual std::unique_ptr<Layer> clone() const = 0;
-    virtual std::unique_ptr<Layer> mirror() const = 0;
 
 public:
     virtual std::string getTypeName() const = 0;
@@ -121,16 +127,30 @@ public:
     void setIsTraining(bool training);
 
     /*! \brief Query whether or not the network is being trained. */
-    bool isTraining() const;
+    bool getIsTraining() const;
+
+public:
+    /*! \brief Query whether or not the layer supports multiple inputs and outputs. */
+    bool getSupportsMultipleInputsAndOutputs() const;
+
+public:
+    /*! \brief Indicate whether or not the layer should compute deltas. */
+    virtual void setShouldComputeDeltas(bool shouldComputeDeltas);
+
+    /*! \brief Query whether or not the layer should compute deltas. */
+    bool getShouldComputeDeltas() const;
 
 public:
     std::string shapeString() const;
     std::string resourceString() const;
 
 protected:
-    virtual void runForwardImplementation(MatrixVector& m) = 0;
-    virtual Matrix runReverseImplementation(MatrixVector& gradients,
-        MatrixVector& activations, const Matrix& deltas) = 0;
+    virtual void runForwardImplementation(MatrixVector& outputActivations,
+        const MatrixVector& inputActivations) = 0;
+
+    virtual void runReverseImplementation(MatrixVector& gradients,
+        MatrixVector& inputDeltas,
+        const MatrixVector& outputDeltas) = 0;
 
 protected:
     /*! \brief Save the layer to the tar file and header. */
@@ -138,13 +158,28 @@ protected:
     /*! \brief Intialize the layer from the tar file and header. */
     virtual void loadLayer(util::InputTarArchive& archive, const util::PropertyTree& properties);
 
+protected:
+    /*! \brief Cache a matrix for back propagation */
+    void saveMatrix(const std::string& name, const Matrix& data);
+    /*! \brief Load a cached matrix. */
+    Matrix loadMatrix(const std::string& name);
+
+protected:
+    /*! \brief Indicate that the layer supports multiple inputs and outputs. */
+    void setSupportsMultipleInputsAndOutputs(bool supportMultipleIOs);
+
 private:
     std::unique_ptr<ActivationFunction>     _activationFunction;
     std::unique_ptr<ActivationCostFunction> _activationCostFunction;
     std::unique_ptr<WeightCostFunction>     _weightCostFunction;
 
 private:
+    std::map<std::string, MatrixVector> _matrixCache;
+
+private:
     bool _isTraining;
+    bool _shouldComputeDeltas;
+    bool _supportsMultipleInputsAndOutputs;
 
 };
 

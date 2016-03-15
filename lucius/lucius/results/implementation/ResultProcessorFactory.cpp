@@ -12,6 +12,9 @@
 #include <lucius/results/interface/LabelMatchResultProcessor.h>
 #include <lucius/results/interface/FeatureResultProcessor.h>
 #include <lucius/results/interface/VideoDisplayResultProcessor.h>
+#include <lucius/results/interface/CostLoggingResultProcessor.h>
+
+#include <lucius/util/interface/ParameterPack.h>
 
 namespace lucius
 {
@@ -20,6 +23,13 @@ namespace results
 {
 
 ResultProcessor* ResultProcessorFactory::create(const std::string& name)
+{
+    return create(name, util::ParameterPack());
+}
+
+
+ResultProcessor* ResultProcessorFactory::create(const std::string& name,
+    const util::ParameterPack& parameters)
 {
     if(name == "NullResultProcessor")
     {
@@ -40,6 +50,12 @@ ResultProcessor* ResultProcessorFactory::create(const std::string& name)
     else if(name == "VideoDisplayResultProcessor")
     {
         return new VideoDisplayResultProcessor;
+    }
+    else if(name == "CostLoggingResultProcessor")
+    {
+        auto outputPath = parameters.get<std::string>("OutputPath", "");
+
+        return new CostLoggingResultProcessor(outputPath);
     }
 
     return nullptr;

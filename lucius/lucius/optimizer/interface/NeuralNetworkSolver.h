@@ -27,7 +27,7 @@ public:
     virtual ~NeuralNetworkSolver();
 
 public:
-    virtual void solve() = 0;
+    virtual double solve() = 0;
 
 public:
     virtual NeuralNetworkSolver* clone() const = 0;

@@ -10,6 +10,7 @@
 #include <lucius/network/interface/NeuralNetwork.h>
 
 #include <lucius/results/interface/ResultVector.h>
+#include <lucius/results/interface/CostResult.h>
 
 #include <lucius/matrix/interface/Matrix.h>
 
@@ -36,23 +37,27 @@ LearnerEngine::~LearnerEngine()
 
 void LearnerEngine::closeModel()
 {
-    //saveModel();
+
 }
 
 LearnerEngine::ResultVector LearnerEngine::runOnBatch(Matrix&& input, Matrix&& reference)
 {
     util::log("LearnerEngine") << "Performing supervised "
-        "learning on batch of " << input.size()[input.size().size()-2] <<  " images...\n";
+        "learning on batch of " << input.size()[input.size().size()-2] << " images...\n";
 
     auto network = getAggregateNetwork();
 
     network->setIsTraining(true);
 
-    network->train(std::move(input), std::move(reference));
+    double cost = network->train(std::move(input), std::move(reference));
 
     restoreAggregateNetwork();
 
-    return ResultVector();
+    ResultVector results;
+
+    results.push_back(new results::CostResult(cost, getIteration()));
+
+    return results;
 }
 
 bool LearnerEngine::requiresLabeledData() const

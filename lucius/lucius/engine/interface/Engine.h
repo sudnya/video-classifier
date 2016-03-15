@@ -103,6 +103,10 @@ protected:
     virtual bool requiresLabeledData() const;
 
 protected:
+    /*! \brief Get the current iteration */
+    size_t getIteration() const;
+
+protected:
     /*! \brief Save the model to persistent storage. */
     void saveModel();
 
@@ -136,6 +140,9 @@ private:
 
 private:
     ObserverList _observers;
+
+private:
+    size_t _iteration;
 
 };
 

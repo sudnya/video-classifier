@@ -37,6 +37,8 @@ public:
 
 public:
     StringVector getAllPossibleLabels() const;
+    StringVector getGraphemes() const;
+    const std::string& getDefaultGrapheme() const;
     size_t getTotalLabelCount() const;
 
 public:
@@ -62,6 +64,8 @@ public:
 public:
     void addSample(const Sample& sample);
     void addLabel(const std::string& label);
+    void addGrapheme(const std::string& grapheme);
+    void setDefaultGrapheme(const std::string& grapheme);
 
 public:
     void save() const;
@@ -78,6 +82,8 @@ private:
 private:
     SampleVector _samples;
     StringSet    _labels;
+    StringSet    _graphemes;
+    std::string  _defaultGrapheme;
 
 };
 

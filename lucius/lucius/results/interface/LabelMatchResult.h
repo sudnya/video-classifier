@@ -23,7 +23,7 @@ class LabelMatchResult : public Result
 {
 public:
     LabelMatchResult(const std::string&, const std::string&);
-    
+
 public:
     std::string label;
     std::string reference;

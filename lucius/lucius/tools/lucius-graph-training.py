@@ -1,3 +1,4 @@
+#! /usr/local/bin/python
 
 import os
 from argparse import ArgumentParser
@@ -28,12 +29,10 @@ class ExperimentData:
         self.trainingError        = None
         self.trainingIterations   = None
         self.validationError      = None
-        self.epochs               = None
+        self.validationIterations = None
 
     def resize(self, maximumIterations):
         maximumIterations = lower_bound(self.trainingIterations, maximumIterations)
-
-        print maximumIterations, len(self.trainingIterations), self.trainingIterations[0:10]
 
         if len(self.trainingError) > maximumIterations:
             self.trainingError = self.trainingError[0:maximumIterations]
@@ -46,16 +45,15 @@ class ExperimentData:
         self.normalizeTrainingError()
 
     def setValidationError(self, data):
-        self.validationError = data
+        self.validationError, self.validationIterations = data
 
         self.normalizeValidationError()
 
     def hasValidationError(self):
-        if self.epochs == None or self.validationError == None:
+        if self.validationError == None:
             return False
 
-
-        if len(self.epochs) == 0 or len(self.validationError) == 0:
+        if len(self.validationError) == 0:
             return False
 
         return True
@@ -68,57 +66,27 @@ class ExperimentData:
         if len(self.trainingIterations) > len(self.trainingError):
             self.trainingIterations = self.trainingIterations[0:len(self.trainingError)]
 
-        if len(self.trainingIterations) == 0:
-            return
+        averageError = []
 
-        epochLength = self.trainingIterations[0]
+        average = 0.0
+        samples = 1
 
-        previousSampleCount = self.trainingIterations[0]
-        increment = 0
-        maxvalue = 0
-        self.epochs = []
+        for sample in self.trainingError:
+            windowSamples = min(100, samples)
+            ratio = 1.0 / windowSamples
+            average = average * (1.0 - ratio) + ratio * sample
+            averageError.append(average)
+            samples += 1
 
-        self.trainingIterations[0] = 0
-
-        for i in range(1, len(self.trainingIterations)):
-            sampleCount = self.trainingIterations[i]
-
-            if sampleCount > previousSampleCount:
-                increment += epochLength
-                epochLength = sampleCount
-                self.epochs.append(increment)
-
-            previousSampleCount = sampleCount
-
-            samplesSoFar = epochLength - sampleCount
-            self.trainingIterations[i] = samplesSoFar + increment
+        self.trainingError = averageError
 
     def normalizeValidationError(self):
-        maxEpochLength = 0
-        previousIterations = 0
 
-        for iterations in self.epochs:
-            maxEpochLength = max(maxEpochLength, iterations - previousIterations)
-            previousIterations = iterations
+        if len(self.validationError) > len(self.validationIterations):
+            self.validationError = self.validationError[0:len(self.validationIterations)]
 
-        epochs = []
-        previousIterations = 0
-
-        for iterations in self.epochs:
-            epochLength = iterations - previousIterations
-
-            if epochLength > (maxEpochLength / 2):
-                epochs.append(iterations)
-
-            previousIterations = iterations
-
-        self.epochs = epochs
-
-        if len(self.validationError) > len(self.epochs):
-            self.validationError = self.validationError[0:len(self.epochs)]
-
-        if len(self.epochs) > len(self.validationError):
-            self.epochs = self.epochs[0:len(self.validationError)]
+        if len(self.validationIterations) > len(self.validationError):
+            self.validationIterations = self.validationIterations[0:len(self.validationError)]
 
 
 class ExperimentGroup:
@@ -142,69 +110,44 @@ class ExperimentGroup:
         for experiment in self.getExperiments():
             experiment.resize(size)
 
-def parseCost(line):
-    position = line.find("running cost sum")
-    if position == -1:
-        return None
+    def hasAnyValidationError(self):
+        for experiment in self.getExperiments():
+            if experiment.hasValidationError():
+                return True
 
-    remainder = line[position + len("running cost sum"):]
+        return False
 
-    if len(remainder) == 0:
-        return None
+    def getSimpleName(self):
+        base, extension = os.path.split(self.name)
 
-    words = remainder.split()
-
-    resultString = words[0].strip(",")
-
-    try:
-        result = float(resultString)
-    except ValueError:
-        return None
-
-    return result
-
-def parseIteration(line):
-    position = line.find(" image frames, ")
-    if position == -1:
-        return None
-
-    remainder = line[position + len(" image frames, "):]
-
-    if len(remainder) == 0:
-        return None
-
-    words = remainder.split()
-
-    resultString = words[0].strip()
-
-    try:
-        result = int(resultString)
-    except ValueError:
-        return None
-
-    return result
-
+        if len(extension) == 0:
+            return base
+        else:
+            return extension
 
 def loadTrainingErrorFromLogFile(path):
     data       = []
     iterations = []
     with open(path, 'r') as log:
         for line in log:
-            cost      = parseCost(line)
-            iteration = parseIteration(line)
+            elements = line.split(',')
 
-            if cost != None:
-                data.append(cost)
+            if len(elements) != 2:
+                continue
 
-            if iteration != None:
-                if len(data) == 0:
-                    if len(iterations) == 0:
-                        iterations.append(iteration)
-                    iterations[0] = iteration
-                else:
-                    iterations.append(iteration)
+            try:
+                cost = float(elements[0].strip())
+            except ValueError:
+                continue
 
-    #print path, data[0:10], iterations[0:10]
+            try:
+                iteration = int(elements[1].strip())
+            except ValueError:
+                continue
+
+
+            data.append(cost)
+            iterations.append(iteration)
 
     return data, iterations
 
@@ -223,35 +166,46 @@ def loadValidationError(path):
 
                 error.append(result)
 
-    return error
+    return error, [i for i in range(len(error))]
 
-def getExperimentName(path):
-    head, tail = os.path.split(path)
+def getContainingDirectory(path):
 
-    if len(tail) == 0:
-        return head
+    head = path
+    tail = ""
+
+    while len(tail) == 0:
+        if len(head) == 0:
+            return '.'
+
+        head, tail = os.path.split(head)
 
     return tail
+
+def getExperimentName(path):
+    return getContainingDirectory(path)
+
 
 def getGroupName(path):
     name = getExperimentName(path)
 
     if name == '.':
-        name = 'training_error'
+        name = 'experiment'
 
     return name
 
 def loadExperiment(path):
-    logPath        = os.path.join(path, 'log')
+    print 'loading experiment from "' + path + '"'
+
+    trainingPath   = os.path.join(path, 'training-error.csv')
     validationPath = os.path.join(path, 'validation-error.csv')
     name           = getExperimentName(path)
 
-    if not os.path.exists(logPath):
-        raise ValueError("The path" + logPath + " does not exist.")
+    if not os.path.exists(trainingPath):
+        raise ValueError("The path" + trainingPath + " does not exist.")
 
     experimentData = ExperimentData(name)
 
-    experimentData.setTrainingError(loadTrainingErrorFromLogFile(logPath))
+    experimentData.setTrainingError(loadTrainingErrorFromLogFile(trainingPath))
 
     if os.path.exists(validationPath):
         experimentData.setValidationError(loadValidationError(validationPath))
@@ -272,7 +226,7 @@ def formatNameForLabel(name):
     return result
 
 def isExperimentPath(path):
-    logPath = os.path.join(path, 'log')
+    logPath = os.path.join(path, 'training-error.csv')
 
     if not os.path.exists(logPath):
         return False
@@ -289,7 +243,9 @@ def discoverGroups(inputs):
     path = inputs[0]
 
     if isExperimentPath(path):
-        return [ExperimentGroup(path)]
+        group = ExperimentGroup(path)
+        group.addExperiment(loadExperiment(path))
+        return [group]
 
     groups = []
 
@@ -352,49 +308,74 @@ class Visualizer:
         plots = []
 
         for group in experimentGroups:
-
-            figure, axes = pyplot.subplots()
-
-            for experiment in group.getExperiments():
-                experimentLabel = formatNameForLabel(experiment.name)
-                axes.plot(experiment.trainingIterations, experiment.trainingError,
-                    label=experimentLabel)
-                if experiment.hasValidationError():
-                    print experiment.epochs, experiment.validationError
-                    axes.plot(experiment.epochs, experiment.validationError, linestyle='--', marker='o',
-                        label=(experimentLabel + '-val'))
-
-            percent = max(0.1, min(0.07 * group.size(), .7))
-
-            box = axes.get_position()
-            axes.set_position([box.x0, box.y0 + box.height * percent,
-                     box.width, box.height * (1.0 - percent)])
-
-            if not self.autoScale:
-                axes.set_ylim(getYLimit(group.getExperiments()))
-
-            axes.legend(bbox_to_anchor=(0.0, -.5*percent, 1, 0), loc='upper center',
-                ncol=1, mode="expand", borderaxespad=0., fontsize='x-small')
-
-            axes.minorticks_on()
-
-            axes.yaxis.grid(b=True, which='major', linestyle='-')
-            axes.yaxis.grid(b=True, which='minor', linestyle='--')
-
-            plots.append((group, figure, axes))
+            plots.append(self.plotTrainingError(group))
+            plots.append(self.plotValidationError(group))
 
         return plots
 
+    def plotTrainingError(self, group):
+        if group.empty():
+            print "Group " + group.name + " is empty"
+            return (None, None, None, None)
+
+        return self.plotGroupData(group.getSimpleName() + '-training', group, True)
+
+    def plotValidationError(self, group):
+        if not group.hasAnyValidationError():
+            return (None, None, None, None)
+
+        return self.plotGroupData(group.getSimpleName() + '-validation', group, False)
+
+    def plotGroupData(self, name, group, useTraining):
+        figure, axes = pyplot.subplots()
+
+        for experiment in group.getExperiments():
+            experimentLabel = formatNameForLabel(experiment.name)
+
+            if useTraining:
+                axes.plot(experiment.trainingIterations, experiment.trainingError,
+                    label=experimentLabel)
+
+            elif experiment.hasValidationError():
+                axes.plot(experiment.validationIterations, experiment.validationError,
+                    linestyle='--', marker='o', label=(experimentLabel + '-val'))
+
+        percent = max(0.1, min(0.07 * group.size(), .7))
+
+        box = axes.get_position()
+        axes.set_position([box.x0, box.y0 + box.height * percent,
+                 box.width, box.height * (1.0 - percent)])
+
+        if not self.autoScale:
+            axes.set_ylim(getYLimit(group.getExperiments()))
+
+        axes.legend(bbox_to_anchor=(0.0, -.5*percent, 1, 0), loc='upper center',
+            ncol=1, mode="expand", borderaxespad=0., fontsize='x-small')
+
+        axes.minorticks_on()
+
+        axes.yaxis.grid(b=True, which='major', linestyle='-')
+        axes.yaxis.grid(b=True, which='minor', linestyle='--')
+
+        return (name, group, figure, axes)
+
+
     def savePlots(self, plots):
-        for group, figure, axes in plots:
+        if plots == None:
+            return
+
+        for name, group, figure, axes in plots:
+
+            if name == None:
+                continue
 
             pyplot.figure(figure.number)
 
             output = self.output
 
-            path = os.path.join(output, group.name)
+            path = os.path.join(output, name)
 
-            print "saving training error at " + path
+            print "saving plot " + name + " at " + path + '.png'
 
             pyplot.savefig(path)
 

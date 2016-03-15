@@ -1,6 +1,9 @@
 
 #pragma once
 
+// Standard Library Includes
+#include <memory>
+
 namespace std
 {
 

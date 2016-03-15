@@ -40,7 +40,7 @@ void ValidationErrorObserver::epochCompleted(Engine& runningEngine)
     engine->setBatchSize(_batchSize);
     engine->setModel(runningEngine.getModel());
     engine->setStandardizeInput(true);
-    engine->setMaximumSamplesToRun(1024);
+    engine->setMaximumSamplesToRun(100000);
 
     // read from database and use model to test
     engine->runOnDatabaseFile(_validationSetPath);
@@ -49,7 +49,7 @@ void ValidationErrorObserver::epochCompleted(Engine& runningEngine)
     auto resultProcessor = static_cast<results::LabelMatchResultProcessor*>(
         engine->getResultProcessor());
 
-    _accuracy.push_back(resultProcessor->getAccuracy());
+    _accuracy.push_back(resultProcessor->getCost());
 
     // write the output
     std::ofstream output(_outputPath);

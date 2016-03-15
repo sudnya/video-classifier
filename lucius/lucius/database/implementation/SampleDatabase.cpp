@@ -39,6 +39,16 @@ SampleDatabase::StringVector SampleDatabase::getAllPossibleLabels() const
     return StringVector(_labels.begin(), _labels.end());
 }
 
+SampleDatabase::StringVector SampleDatabase::getGraphemes() const
+{
+    return StringVector(_graphemes.begin(), _graphemes.end());
+}
+
+const std::string& SampleDatabase::getDefaultGrapheme() const
+{
+    return _defaultGrapheme;
+}
+
 size_t SampleDatabase::getTotalLabelCount() const
 {
     return _labels.size();
@@ -136,6 +146,16 @@ void SampleDatabase::addSample(const Sample& sample)
 void SampleDatabase::addLabel(const std::string& label)
 {
     _labels.insert(label);
+}
+
+void SampleDatabase::addGrapheme(const std::string& grapheme)
+{
+    _graphemes.insert(grapheme);
+}
+
+void SampleDatabase::setDefaultGrapheme(const std::string& grapheme)
+{
+    _defaultGrapheme = grapheme;
 }
 
 void SampleDatabase::save() const

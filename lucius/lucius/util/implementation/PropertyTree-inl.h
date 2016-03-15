@@ -60,6 +60,17 @@ T PropertyTree::get(const std::string& field) const
 }
 
 template<typename T>
+T PropertyTree::get(const std::string& field, const T& defaultValue) const
+{
+    if(!exists(field))
+    {
+        return defaultValue;
+    }
+
+    return get<T>(field);
+}
+
+template<typename T>
 T PropertyTree::key() const
 {
     return fromString<T>(key());

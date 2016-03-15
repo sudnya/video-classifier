@@ -1,4 +1,4 @@
-/*    \file   Model.h
+/*  \file   Model.h
     \date   Saturday August 10, 2013
     \author Gregory Diamos <solusstultus@gmail.com>
     \brief  The header file for the Model class.
@@ -61,6 +61,9 @@ public:
 
 public:
     size_t getOutputCount() const;
+
+public:
+    void setPath(const std::string& path);
 
 public:
     void load(const std::string& path);

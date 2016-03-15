@@ -10,6 +10,8 @@
 #include <lucius/parallel/interface/cuda.h>
 #include <lucius/parallel/interface/ScalarOperations.h>
 
+#include <lucius/matrix/interface/DimensionTransformations.h>
+
 // Standard Library Includes
 #include <cmath>
 #include <algorithm>
@@ -57,7 +59,8 @@ public:
         Nop,
         NopDerivative,
         Pool2DGather,
-        Pool2DGatherInverse
+        Pool2DGatherInverse,
+        PermuteDimensionGather
     };
 
 public:
@@ -833,6 +836,38 @@ public:
 
 };
 
+class PermuteDimensionGather : public Operation
+{
+public:
+    CUDA_DECORATOR PermuteDimensionGather()
+    : Operation(Operation::PermuteDimensionGather)
+    {}
+
+    CUDA_DECORATOR PermuteDimensionGather(const Dimension& inputStride,
+        const Dimension& outputSize, const Dimension& order)
+    : Operation(Operation::PermuteDimensionGather), inputStride(inputStride),
+      outputSize(outputSize), order(order)
+    {
+
+    }
+
+public:
+    CUDA_DECORATOR size_t operator()(size_t outputPosition) const
+    {
+        auto outputDimension = linearToDimension(outputPosition, outputSize);
+
+        auto inputDimension = selectReverseMappingDimensions(outputDimension, order);
+
+        return dotProduct(inputDimension, inputStride);
+    }
+
+public:
+    Dimension inputStride;
+    Dimension outputSize;
+    Dimension order;
+
+};
+
 typedef std::tuple<Add, Subtract, Multiply, Divide, Log, Exp, Pow, Abs, Sqrt, RectifiedLinear,
                    RectifiedLinearDerivative, Sigmoid, SigmoidDerivative, Negate, Maximum,
                    Minimum, Equal, LessThan, NotEqual, Fill, Square, SquareAndScale, Inverse,
@@ -846,7 +881,7 @@ typedef std::tuple<Add, Subtract, Multiply, Divide, Log, Exp, Pow, Abs, Sqrt, Re
                    Minimum, Equal, LessThan, NotEqual, Fill, Square, SquareAndScale, Inverse,
                    Nop, NopDerivative> AllUnaryOperations;
 
-typedef std::tuple<Pool2DGather, Pool2DGatherInverse> AllGatherOperations;
+typedef std::tuple<Pool2DGather, Pool2DGatherInverse, PermuteDimensionGather> AllGatherOperations;
 
 }
 }

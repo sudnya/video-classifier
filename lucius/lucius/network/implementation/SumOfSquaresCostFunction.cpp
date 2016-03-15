@@ -28,7 +28,7 @@ matrix::Matrix SumOfSquaresCostFunction::computeCost(const Matrix& output, const
 
     size_t samples = output.size()[output.size().size() - 2];
 
-    return apply(difference, matrix::SquareAndScale(0.5/samples));
+    return apply(difference, matrix::SquareAndScale(0.5 / samples));
 }
 
 matrix::Matrix SumOfSquaresCostFunction::computeDelta(const Matrix& output, const Matrix& reference) const

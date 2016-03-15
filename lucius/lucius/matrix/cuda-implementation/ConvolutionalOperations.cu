@@ -157,14 +157,14 @@ Matrix gatherForwardConvolutionInputOverPrecisions(const Matrix& input, const Ma
 
     Matrix result({rows, columns}, input.precision());
 
-    typedef typename PrecisionType::type NativeType;
+    typedef typename PrecisionType::type NativePrecision;
 
-    MatrixView<NativeType>      resultView(result);
-    ConstMatrixView<NativeType> inputView(input);
+    MatrixView<NativePrecision>      resultView(result);
+    ConstMatrixView<NativePrecision> inputView(input);
 
     size_t elements = rows * columns;
 
-    auto lambda = ForwardReshapeInputLambda<NativeType>{resultView, inputView, elements,
+    auto lambda = ForwardReshapeInputLambda<NativePrecision>{resultView, inputView, elements,
         rows, w, h, q, p, s, r, v, u, padWidth, padHeight};
 
     parallel::multiBulkSynchronousParallel(lambda);

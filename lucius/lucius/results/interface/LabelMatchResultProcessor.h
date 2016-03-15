@@ -30,11 +30,13 @@ public:
     virtual std::string toString() const;
 
 public:
-    float getAccuracy() const;
+    double getAccuracy() const;
+    double getCost() const;
 
 private:
     size_t _matches;
     size_t _total;
+    double _cost;
 
 };
 
