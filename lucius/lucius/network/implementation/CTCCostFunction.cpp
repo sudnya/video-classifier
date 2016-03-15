@@ -31,7 +31,7 @@ CTCCostFunction::~CTCCostFunction()
 
 Matrix CTCCostFunction::computeCost(const Matrix& output, const Matrix& reference) const
 {
-    size_t miniBatchSize = output.size()[1];
+    size_t miniBatchSize = output.size()[output.size().size() - 2];
 
     Matrix cost({miniBatchSize}, output.precision());
     Matrix fakeGradients;
@@ -43,7 +43,7 @@ Matrix CTCCostFunction::computeCost(const Matrix& output, const Matrix& referenc
 
 Matrix CTCCostFunction::computeDelta(const Matrix& output, const Matrix& reference) const
 {
-    size_t miniBatchSize = output.size()[1];
+    size_t miniBatchSize = output.size()[output.size().size() - 2];
 
     Matrix cost({miniBatchSize}, output.precision());
     Matrix gradients(output.size(), output.precision());

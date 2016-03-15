@@ -212,6 +212,16 @@ static void setupOutputLayerParameters(model::Model& model,
         inputDatabase.setDefaultGrapheme(" ");
     }
 
+    if(specification.exists("model-attributes.DelimiterGrapheme"))
+    {
+        inputDatabase.setDelimiterGrapheme(
+            specification.get("model-attributes.DelimiterGrapheme").key());
+    }
+    else
+    {
+        inputDatabase.setDelimiterGrapheme("END");
+    }
+
     inputDatabase.load();
 
     auto labels = inputDatabase.getAllPossibleLabels();

@@ -287,7 +287,6 @@ private:
             _applyGraphemesToRange(result, 0, position, noiseGraphemes);
             _applyGraphemesToRange(result, position, position + audio.size(), audioGraphemes);
             _applyGraphemesToRange(result, position + audio.size(), noise.size(), noiseGraphemes);
-
         }
         else
         {
@@ -306,20 +305,14 @@ private:
     void _applyGraphemesToRange(Audio& result, size_t beginTimestep, size_t endTimestep,
         const StringVector& graphemes)
     {
-        size_t possibleRange = endTimestep - beginTimestep;
-        size_t offset = 0;
+        size_t limit = std::min(beginTimestep + graphemes.size(), endTimestep - 2);
 
-        if(possibleRange > graphemes.size())
+        for(size_t i = beginTimestep, grapheme = 0; i < limit; ++i, ++grapheme)
         {
-            possibleRange -= graphemes.size();
-
-            offset = _generator() % possibleRange;
+            result.addLabel(i, i+1, graphemes[grapheme]);
         }
 
-        for(size_t i = beginTimestep + offset; i < beginTimestep + offset + graphemes.size(); ++i)
-        {
-            result.addLabel(i, i+1, graphemes[i]);
-        }
+        result.addLabel(endTimestep - 1, endTimestep, _delimiterGrapheme);
     }
 
     StringVector _toGraphemes(const std::string& label)
@@ -456,6 +449,7 @@ private:
         auto graphemes = sampleDatabase.getGraphemes();
 
         _defaultGrapheme = sampleDatabase.getDefaultGrapheme();
+        _delimiterGrapheme = sampleDatabase.getDelimiterGrapheme();
         _graphemes.insert(graphemes.begin(), graphemes.end());
     }
 
@@ -475,6 +469,7 @@ private:
 private:
     StringSet _graphemes;
     std::string _defaultGrapheme;
+    std::string _delimiterGrapheme;
 
 private:
     std::default_random_engine _generator;
