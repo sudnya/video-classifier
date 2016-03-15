@@ -203,6 +203,11 @@ bool isDirectory(const std::string& path)
 
 void makeDirectory(const std::string& path)
 {
+    if(path.empty())
+    {
+        return;
+    }
+
     if(isDirectory(path))
     {
         return;
@@ -232,6 +237,17 @@ size_t getFileSize(std::istream& stream)
     stream.seekg(0, std::ios::beg);
 
     return length;
+}
+
+std::string getFileData(std::istream& stream)
+{
+    size_t size = getFileSize(stream);
+
+    std::string result(size, ' ');
+
+    stream.read(const_cast<char*>(result.data()), size);
+
+    return result;
 }
 
 void copyFile(const std::string& outputPath, const std::string& inputPath)

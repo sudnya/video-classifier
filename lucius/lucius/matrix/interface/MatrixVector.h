@@ -87,6 +87,8 @@ public:
     const_reverse_iterator rend() const;
 
 public:
+    void push_front(const Matrix&  );
+    void push_front(Matrix&&);
     void push_back(const Matrix&  );
     void push_back(Matrix&&);
     void push_back(MatrixVector&&);
@@ -94,6 +96,7 @@ public:
 
 public:
     void pop_back();
+    void pop_front();
 
 public:
     Matrix& back();

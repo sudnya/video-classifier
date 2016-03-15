@@ -12,28 +12,28 @@ namespace lucius
 namespace parallel
 {
 
-CUDA_DECORATOR inline ThreadGroup::ThreadGroup(int size, int id)
+CUDA_DECORATOR inline ThreadGroup::ThreadGroup(uint32_t size, uint32_t id)
 : _size(size), _id(id)
 {
 
 }
 
-CUDA_DECORATOR inline int ThreadGroup::size() const
+CUDA_DECORATOR inline uint32_t ThreadGroup::size() const
 {
 	return _size;
 }
 
-CUDA_DECORATOR inline int ThreadGroup::id() const
+CUDA_DECORATOR inline uint32_t ThreadGroup::id() const
 {
 	return _id;
 }
 
-CUDA_DECORATOR inline ThreadGroup partitionThreadGroup(ThreadGroup g, int subgroupSize)
+CUDA_DECORATOR inline ThreadGroup partitionThreadGroup(ThreadGroup g, uint32_t subgroupSize)
 {
     return ThreadGroup(subgroupSize, g.id() % subgroupSize);
 }
 
-CUDA_DECORATOR inline ThreadGroup partitionThreadGroupAtLevel(ThreadGroup g, int level)
+CUDA_DECORATOR inline ThreadGroup partitionThreadGroupAtLevel(ThreadGroup g, uint32_t level)
 {
     if(level == 0)
     {
@@ -75,7 +75,7 @@ CUDA_DECORATOR inline void barrier(ThreadGroup g)
 }
 
 template<typename T>
-CUDA_DECORATOR inline T gather(ThreadGroup g, T value, int index)
+CUDA_DECORATOR inline T gather(ThreadGroup g, T value, uint32_t index)
 {
     if(g.size() == GroupLevelSize<0>::size())
     {
@@ -116,7 +116,7 @@ CUDA_DECORATOR inline T reduce(ThreadGroup g, T value, Function f)
 {
     T result = value;
 
-    for(int i = g.size() / 2; i >= 1; i /= 2)
+    for(uint32_t i = g.size() / 2; i >= 1; i /= 2)
     {
         result = f(result, gather(g, value, g.id() + i));
     }

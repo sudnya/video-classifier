@@ -23,6 +23,7 @@
 
 // Global Typedefs
 typedef lucius::matrix::Matrix Matrix;
+typedef lucius::matrix::Dimension Dimension;
 
 /* A simple test to save and load from a numpy array */
 bool testSaveLoad()
@@ -1596,6 +1597,102 @@ bool testBackwardMaxPooling()
     return reference == computed;
 }
 
+/*
+    Test permute dimensions.
+
+    [  0  2  4 ]
+    [  1  3  5 ]
+
+    [  6  8 10 ]
+    [  7  9 11 ]
+
+    [ 12 14 16 ]
+    [ 13 15 17 ]
+
+    [ 18 20 22 ]
+    [ 19 21 23 ]
+
+*/
+bool testPermuteDimensions()
+{
+    Dimension inputSize = {2, 3, 4};
+    Dimension newOrder  = {1, 2, 0};
+
+    Matrix input(inputSize);
+
+    input(0, 0, 0) = 0;
+    input(1, 0, 0) = 1;
+    input(0, 1, 0) = 2;
+    input(1, 1, 0) = 3;
+    input(0, 2, 0) = 4;
+    input(1, 2, 0) = 5;
+
+    input(0, 0, 1) = 6;
+    input(1, 0, 1) = 7;
+    input(0, 1, 1) = 8;
+    input(1, 1, 1) = 9;
+    input(0, 2, 1) = 10;
+    input(1, 2, 1) = 11;
+
+    input(0, 0, 2) = 12;
+    input(1, 0, 2) = 13;
+    input(0, 1, 2) = 14;
+    input(1, 1, 2) = 15;
+    input(0, 2, 2) = 16;
+    input(1, 2, 2) = 17;
+
+    input(0, 0, 3) = 18;
+    input(1, 0, 3) = 19;
+    input(0, 1, 3) = 20;
+    input(1, 1, 3) = 21;
+    input(0, 2, 3) = 22;
+    input(1, 2, 3) = 23;
+
+    Matrix reference({inputSize[1], inputSize[2], inputSize[0]}, input.precision());
+
+    reference(0, 0, 0) = static_cast<double>(input(0, 0, 0));
+    reference(0, 0, 1) = static_cast<double>(input(1, 0, 0));
+    reference(1, 0, 0) = static_cast<double>(input(0, 1, 0));
+    reference(1, 0, 1) = static_cast<double>(input(1, 1, 0));
+    reference(2, 0, 0) = static_cast<double>(input(0, 2, 0));
+    reference(2, 0, 1) = static_cast<double>(input(1, 2, 0));
+    reference(0, 1, 0) = static_cast<double>(input(0, 0, 1));
+    reference(0, 1, 1) = static_cast<double>(input(1, 0, 1));
+    reference(1, 1, 0) = static_cast<double>(input(0, 1, 1));
+    reference(1, 1, 1) = static_cast<double>(input(1, 1, 1));
+    reference(2, 1, 0) = static_cast<double>(input(0, 2, 1));
+    reference(2, 1, 1) = static_cast<double>(input(1, 2, 1));
+    reference(0, 2, 0) = static_cast<double>(input(0, 0, 2));
+    reference(0, 2, 1) = static_cast<double>(input(1, 0, 2));
+    reference(1, 2, 0) = static_cast<double>(input(0, 1, 2));
+    reference(1, 2, 1) = static_cast<double>(input(1, 1, 2));
+    reference(2, 2, 0) = static_cast<double>(input(0, 2, 2));
+    reference(2, 2, 1) = static_cast<double>(input(1, 2, 2));
+    reference(0, 3, 0) = static_cast<double>(input(0, 0, 3));
+    reference(0, 3, 1) = static_cast<double>(input(1, 0, 3));
+    reference(1, 3, 0) = static_cast<double>(input(0, 1, 3));
+    reference(1, 3, 1) = static_cast<double>(input(1, 1, 3));
+    reference(2, 3, 0) = static_cast<double>(input(0, 2, 3));
+    reference(2, 3, 1) = static_cast<double>(input(1, 2, 3));
+
+    Matrix computed(reference.size(), reference.precision());
+
+    permuteDimensions(computed, input, newOrder);
+
+    if(reference != computed)
+    {
+        std::cout << " Matrix Permute Dimensions Test Failed:\n";
+        std::cout << "  result matrix " << computed.toString();
+        std::cout << "  does not match reference matrix " << reference.toString();
+    }
+    else
+    {
+        std::cout << " Matrix Permute Dimensions Test Passed\n";
+    }
+
+    return reference == computed;
+}
+
 int main(int argc, char** argv)
 {
     //lucius::util::enableAllLogs();
@@ -1637,6 +1734,8 @@ int main(int argc, char** argv)
 
     passed &= testForwardMaxPooling();
     passed &= testBackwardMaxPooling();
+
+    passed &= testPermuteDimensions();
 
     if(not passed)
     {

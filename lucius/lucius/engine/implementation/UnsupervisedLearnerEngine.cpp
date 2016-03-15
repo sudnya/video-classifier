@@ -134,7 +134,7 @@ void UnsupervisedLearnerEngine::_restoreAugmentedNetwork(network::NeuralNetwork&
 
 static void mirrorNeuralNetwork(network::NeuralNetwork& network)
 {
-    network.addLayer(network.front()->mirror());
+    assertM(false, "Not Implemented.");
 }
 
 network::NeuralNetwork& UnsupervisedLearnerEngine::_getOrCreateAugmentor(const std::string& name,

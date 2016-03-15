@@ -1,0 +1,137 @@
+{
+    "name" : "image-net-$tag",
+
+    "optimization" :
+    {
+        "type" : "NesterovAcceleratedGradientSolver",
+
+        "batch-size"      : "8",
+        "maximum-samples" : "1e9",
+
+        "epochs" : "20",
+
+        "parameters" :
+        {
+            "NesterovAcceleratedGradient::LearningRate"       : "1.0e-2",
+            "NesterovAcceleratedGradient::Momentum"           : "0.9",
+            "NesterovAcceleratedGradient::AnnealingRate"      : "1.000001",
+            "NesterovAcceleratedGradient::MaxGradNorm"        : "100.0",
+            "NesterovAcceleratedGradient::IterationsPerBatch" : "1"
+        }
+    },
+
+    "model" :
+    {
+        "engine" : "LearnerEngine",
+
+        "layer-types" :
+        {
+            "conv1" :
+            {
+                "type"            : "ConvolutionalLayer",
+                "filter-height"   : "3",
+                "filter-width"    : "3",
+                "filter-outputs"  : "64"
+            },
+            "pool" :
+            {
+                "type" : "MaxPoolingLayer"
+            },
+            "conv2" :
+            {
+                "type"            : "ConvolutionalLayer",
+                "filter-height"   : "3",
+                "filter-width"    : "3",
+                "filter-outputs"  : "128"
+            },
+            "conv3" :
+            {
+                "type"            : "ConvolutionalLayer",
+                "filter-height"   : "3",
+                "filter-width"    : "3",
+                "filter-outputs"  : "256"
+            },
+            "fully-connected":
+            {
+                "type" : "FullyConnectedLayer",
+                "size" : "1024"
+            },
+            "batch-norm" :
+            {
+                "type" : "BatchNormalizationLayer"
+            }
+        },
+
+        "networks" :
+        {
+            "Classifier" :
+            {
+                "layers" :
+                [
+                    "conv1",
+                    "batch-norm",
+                    "pooling",
+                    "conv2",
+                    "batch-norm",
+                    "pooling",
+                    "conv3",
+                    "batch-norm",
+                    "conv3",
+                    "batch-norm",
+                    "fully-connected",
+                    "batch-norm"
+                ]
+            }
+        },
+
+        "cost-function" :
+        {
+            "name" : "Softmax"
+        },
+
+        "model-attributes" :
+        {
+            "ResolutionX"     : "224",
+            "ResolutionY"     : "224",
+            "ColorComponents" : "3"
+        }
+    },
+
+    "attributes" :
+    {
+        "InputVisualDataProducer::CropImagesRandomly" : "1",
+        "InputVisualDataProducer::CropWindowRatio"    : "0.15"
+    },
+
+    "dataset" :
+    {
+        "training-dataset-path"   : "/data/1tb-ssd/image-net-50-2000/train/database.txt",
+        "validation-dataset-path" : "/data/1tb-ssd/image-net-50-2000/test/database.txt",
+
+        "required-accuracy" : "90.0"
+    },
+
+    "checkpointing" :
+    {
+        "base-directory" : "$name"
+    },
+
+    "logging" :
+    {
+        "enabled-loggers" :
+        [
+            "NesterovAcceleratedGradientSolver",
+            "BenchmarkDataset",
+            "LabelMatchResultProcessor",
+            "InputVisualDataProducer"
+        ]
+    },
+
+    "system" :
+    {
+        "use-cuda"    : "1",
+        "cuda-device" : "0",
+        "precision"   : "SinglePrecision"
+    }
+
+}

@@ -63,13 +63,16 @@ FeedForwardLayer::~FeedForwardLayer()
 }
 
 FeedForwardLayer::FeedForwardLayer(const FeedForwardLayer& l)
-: _parameters(std::make_unique<MatrixVector>(*l._parameters)), _weights((*_parameters)[0]), _bias((*_parameters)[1])
+: Layer(l), _parameters(std::make_unique<MatrixVector>(*l._parameters)),
+  _weights((*_parameters)[0]), _bias((*_parameters)[1])
 {
 
 }
 
 FeedForwardLayer& FeedForwardLayer::operator=(const FeedForwardLayer& l)
 {
+    Layer::operator=(l);
+
     if(&l == this)
     {
         return *this;
@@ -82,6 +85,8 @@ FeedForwardLayer& FeedForwardLayer::operator=(const FeedForwardLayer& l)
 
 void FeedForwardLayer::initialize()
 {
+    #if 0
+    //Glorot
     double e = util::KnobDatabase::getKnobValue("Layer::RandomInitializationEpsilon", 6);
 
     double epsilon = std::sqrt((e) / (getInputCount() + getOutputCount() + 1));
@@ -94,6 +99,18 @@ void FeedForwardLayer::initialize()
 
     // scale, the range is now [-epsilon, epsilon]
     apply(_weights, _weights, matrix::Multiply(2.0 * epsilon));
+
+    #else
+    // He
+    double e = util::KnobDatabase::getKnobValue("Layer::RandomInitializationEpsilon", 1);
+
+    double epsilon = std::sqrt((2.*e) / (getInputCount()));
+    // generate normal random values with N(0,1)
+    matrix::randn(_weights);
+
+    // scale, the range is now [-epsilon, epsilon]
+    apply(_weights, _weights, matrix::Multiply(epsilon));
+    #endif
 
     // assign bias to 0.0
     apply(_bias, _bias, matrix::Fill(0.0));
@@ -134,29 +151,35 @@ static Matrix unfoldTime(const Matrix& result, const Dimension& inputSize)
     return reshape(result, {layerSize, miniBatch, timesteps});
 }
 
-void FeedForwardLayer::runForwardImplementation(MatrixVector& activations)
+void FeedForwardLayer::runForwardImplementation(MatrixVector& outputActivations,
+    const MatrixVector& inputActivations)
 {
-    auto m = foldTime(activations.back());
+    assert(inputActivations.size() == 1);
+
+    auto inputActivation = foldTime(inputActivations.front());
+
+    saveMatrix("inputActivation", inputActivation);
 
     if(util::isLogEnabled("FeedForwardLayer"))
     {
         util::log("FeedForwardLayer") << " Running forward propagation of matrix "
-            << m.shapeString() << " through layer: " << _weights.shapeString() << "\n";
+            << inputActivation.shapeString() << " through layer: "
+            << _weights.shapeString() << "\n";
     }
 
     if(util::isLogEnabled("FeedForwardLayer::Detail"))
     {
-        util::log("FeedForwardLayer::Detail") << "  input: " << m.debugString();
+        util::log("FeedForwardLayer::Detail") << "  input: " << inputActivation.debugString();
         util::log("FeedForwardLayer::Detail") << "  layer: " << _weights.debugString();
         util::log("FeedForwardLayer::Detail") << "  bias:  " << _bias.debugString();
     }
     else
     {
         util::log("FeedForwardLayer") << "  input shape: "
-            << activations.back().shapeString() << "\n";
+            << inputActivations.back().shapeString() << "\n";
     }
 
-    auto unbiasedOutput = gemm(Matrix(_weights), false, 1.0, m, false);
+    auto unbiasedOutput = gemm(Matrix(_weights), false, 1.0, inputActivation, false);
 
     auto output = broadcast(unbiasedOutput, _bias, {}, matrix::Add());
 
@@ -169,28 +192,35 @@ void FeedForwardLayer::runForwardImplementation(MatrixVector& activations)
         util::log("FeedForwardLayer") << "  output shape: " << output.shapeString() << "\n";
     }
 
-    auto activation = unfoldTime(getActivationFunction()->apply(output), activations.back().size());
+    auto outputActivation = getActivationFunction()->apply(output);
+
+    saveMatrix("outputActivation", outputActivation);
 
     if(util::isLogEnabled("FeedForwardLayer::Detail"))
     {
-        util::log("FeedForwardLayer::Detail") << "  activation: " << activation.debugString();
+        util::log("FeedForwardLayer::Detail") << "  activation: "
+            << outputActivation.debugString();
     }
     else
     {
-        util::log("FeedForwardLayer") << "  activation: " << activation.shapeString() << "\n";
+        util::log("FeedForwardLayer") << "  activation: "
+            << outputActivation.shapeString() << "\n";
     }
 
-    activations.push_back(std::move(activation));
+    outputActivations.push_back(unfoldTime(outputActivation,
+        inputActivations.front().size()));
 }
 
-matrix::Matrix FeedForwardLayer::runReverseImplementation(MatrixVector& gradients,
-    MatrixVector& activations,
-    const Matrix& differenceWithTime)
+void FeedForwardLayer::runReverseImplementation(MatrixVector& gradients,
+    MatrixVector& inputDeltas,
+    const MatrixVector& outputDeltas)
 {
-    auto outputActivations = foldTime(activations.back());
-    activations.pop_back();
+    assert(outputDeltas.size() == 1);
 
-    auto inputActivations = foldTime(activations.back());
+    auto inputActivation  = loadMatrix("inputActivation" );
+    auto outputActivation = loadMatrix("outputActivation");
+
+    auto differenceWithTime = outputDeltas.front();
     auto difference = foldTime(differenceWithTime);
 
     if(util::isLogEnabled("FeedForwardLayer"))
@@ -214,17 +244,17 @@ matrix::Matrix FeedForwardLayer::runReverseImplementation(MatrixVector& gradient
 
     if(util::isLogEnabled("FeedForwardLayer"))
     {
-        util::log("FeedForwardLayer") << "  output size: " << outputActivations.shapeString()
+        util::log("FeedForwardLayer") << "  output size: " << outputActivation.shapeString()
             << "\n";
     }
 
     if(util::isLogEnabled("FeedForwardLayer::Detail"))
     {
-        util::log("FeedForwardLayer::Detail") << "  output: " << outputActivations.debugString();
+        util::log("FeedForwardLayer::Detail") << "  output: " << outputActivation.debugString();
     }
 
     // finish computing the deltas
-    auto deltas = apply(getActivationFunction()->applyDerivative(outputActivations),
+    auto deltas = apply(getActivationFunction()->applyDerivative(outputActivation),
         difference, matrix::Multiply());
 
     if(util::isLogEnabled("FeedForwardLayer::Detail"))
@@ -233,9 +263,9 @@ matrix::Matrix FeedForwardLayer::runReverseImplementation(MatrixVector& gradient
     }
 
     // compute gradient for the weights
-    auto samples = activations.back().size()[1];
+    auto samples = outputActivation.size()[1];
 
-    auto weightGradient = gemm(Matrix(deltas), false, 1.0 / samples, inputActivations, true);
+    auto weightGradient = gemm(Matrix(deltas), false, 1.0 / samples, inputActivation, true);
 
     // add in the weight cost function term
     if(getWeightCostFunction() != nullptr)
@@ -254,7 +284,8 @@ matrix::Matrix FeedForwardLayer::runReverseImplementation(MatrixVector& gradient
 
     if(util::isLogEnabled("FeedForwardLayer::Detail"))
     {
-        util::log("FeedForwardLayer::Detail") << "  weight grad: " << weightGradient.debugString();
+        util::log("FeedForwardLayer::Detail") << "  weight grad: "
+            << weightGradient.debugString();
     }
 
     // compute gradient for the bias
@@ -268,7 +299,8 @@ matrix::Matrix FeedForwardLayer::runReverseImplementation(MatrixVector& gradient
 
     if(util::isLogEnabled("FeedForwardLayer::Detail"))
     {
-        util::log("FeedForwardLayer::Detail") << "  bias grad: " << biasGradient.debugString();
+        util::log("FeedForwardLayer::Detail") << "  bias grad: "
+            << biasGradient.debugString();
     }
 
     assert(biasGradient.size() == _bias.size());
@@ -283,7 +315,7 @@ matrix::Matrix FeedForwardLayer::runReverseImplementation(MatrixVector& gradient
     if(getActivationCostFunction() != nullptr)
     {
         auto activationCostFunctionGradient =
-            getActivationCostFunction()->getGradient(outputActivations);
+            getActivationCostFunction()->getGradient(outputActivation);
 
         apply(previousLayerDeltas, deltasPropagatedReverse,
             activationCostFunctionGradient, matrix::Multiply());
@@ -305,7 +337,7 @@ matrix::Matrix FeedForwardLayer::runReverseImplementation(MatrixVector& gradient
             << previousLayerDeltas.debugString();
     }
 
-    return unfoldTime(previousLayerDeltas, differenceWithTime.size());
+    inputDeltas.push_back(unfoldTime(previousLayerDeltas, differenceWithTime.size()));
 }
 
 MatrixVector& FeedForwardLayer::weights()
@@ -390,11 +422,6 @@ void FeedForwardLayer::load(util::InputTarArchive& archive, const util::Property
 std::unique_ptr<Layer> FeedForwardLayer::clone() const
 {
     return std::make_unique<FeedForwardLayer>(*this);
-}
-
-std::unique_ptr<Layer> FeedForwardLayer::mirror() const
-{
-    return std::make_unique<FeedForwardLayer>(getOutputCount(), getInputCount(), precision());
 }
 
 std::string FeedForwardLayer::getTypeName() const

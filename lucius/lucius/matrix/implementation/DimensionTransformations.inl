@@ -95,6 +95,23 @@ CUDA_DECORATOR Dimension selectDimensions(const Dimension& base, const Dimension
     return result;
 }
 
+CUDA_DECORATOR Dimension selectReverseMappingDimensions(const Dimension& base,
+    const Dimension& selected)
+{
+    Dimension result;
+
+    result.resize(base.size());
+
+    size_t index = 0;
+    for(auto i : selected)
+    {
+        result[i] = base[index++];
+    }
+
+    return result;
+}
+
+
 CUDA_DECORATOR Dimension intersection(const Dimension& left, const Dimension& right)
 {
     size_t totalDimensions = parallel::min(left.size(), right.size());

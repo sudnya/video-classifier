@@ -57,7 +57,7 @@ MaxPoolingLayer::~MaxPoolingLayer()
 }
 
 MaxPoolingLayer::MaxPoolingLayer(const MaxPoolingLayer& l)
-: _inputSize(std::make_unique<matrix::Dimension>(*l._inputSize)),
+: Layer(l), _inputSize(std::make_unique<matrix::Dimension>(*l._inputSize)),
   _filterSize(std::make_unique<matrix::Dimension>(*l._filterSize)),
   _precision(std::make_unique<matrix::Precision>(*l._precision))
 {
@@ -66,6 +66,8 @@ MaxPoolingLayer::MaxPoolingLayer(const MaxPoolingLayer& l)
 
 MaxPoolingLayer& MaxPoolingLayer::operator=(const MaxPoolingLayer& l)
 {
+    Layer::operator=(l);
+
     if(&l == this)
     {
         return *this;
@@ -95,9 +97,12 @@ static Matrix setupShape(const Matrix& output, const Dimension& outputSize)
     return reshape(output, size);
 }
 
-void MaxPoolingLayer::runForwardImplementation(MatrixVector& activations)
+void MaxPoolingLayer::runForwardImplementation(MatrixVector& outputActivationsVector,
+    const MatrixVector& inputActivationsVector)
 {
-    auto inputActivations = activations.back();
+    assert(inputActivationsVector.size() == 1);
+
+    auto inputActivations = inputActivationsVector.back();
 
     util::log("MaxPoolingLayer") << " Running forward propagation of matrix "
         << inputActivations.shapeString() << " through max pooling: "
@@ -118,28 +123,29 @@ void MaxPoolingLayer::runForwardImplementation(MatrixVector& activations)
             << outputActivations.debugString();
     }
 
-    activations.push_back(std::move(outputActivations));
+    saveMatrix("inputActivations",  inputActivations);
+    saveMatrix("outputActivations", outputActivations);
+
+    outputActivationsVector.push_back(std::move(outputActivations));
 }
 
-Matrix MaxPoolingLayer::runReverseImplementation(MatrixVector& gradients,
-    MatrixVector& activations,
-    const Matrix& deltasWithTime)
+void MaxPoolingLayer::runReverseImplementation(MatrixVector& gradients,
+    MatrixVector& inputDeltasVector,
+    const MatrixVector& outputDeltas)
 {
     // Get the output activations
-    auto outputActivations = activations.back();
-
-    // deallocate memory for the output activations
-    activations.pop_back();
+    auto outputActivations = loadMatrix("outputActivations");
 
     // Get the input activations and deltas
-    auto inputActivations = activations.back();
+    auto inputActivations = loadMatrix("inputActivations");
+
     auto deltas = apply(getActivationFunction()->applyDerivative(outputActivations),
-        deltasWithTime, matrix::Multiply());
+        outputDeltas.front(), matrix::Multiply());
 
     auto inputDeltas = backwardMaxPooling(inputActivations, outputActivations,
         deltas, *_filterSize);
 
-    return inputDeltas;
+    inputDeltasVector.push_back(std::move(inputDeltas));
 }
 
 MatrixVector& MaxPoolingLayer::weights()
@@ -233,11 +239,6 @@ void MaxPoolingLayer::load(util::InputTarArchive& archive,
 std::unique_ptr<Layer> MaxPoolingLayer::clone() const
 {
     return std::make_unique<MaxPoolingLayer>(*this);
-}
-
-std::unique_ptr<Layer> MaxPoolingLayer::mirror() const
-{
-    return clone();
 }
 
 std::string MaxPoolingLayer::getTypeName() const
