@@ -4,7 +4,14 @@
 #include <vector>
 #include <random>
 
-#include <ctc.h>
+//CTC Includes
+#include <lucius/matrix/ctc/interface/ctc.h>
+namespace lucius
+{
+namespace matrix
+{
+namespace ctc
+{
 
 inline void throw_on_error(ctcStatus_t status, const char* message) {
     if (status != CTC_STATUS_SUCCESS) {
@@ -87,4 +94,7 @@ void softmax(const float* const acts,
             probs[t*alphabet_size + a] =
                std::exp(acts[t*alphabet_size + a] - max_activation) / denom;
     }
+}
+}
+}
 }

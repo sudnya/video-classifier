@@ -5,9 +5,16 @@
 
 #include <iostream>
 
-#include <ctc.h>
+//CTC Includes
+#include <lucius/matrix/ctc/interface/ctc.h>
+#include <lucius/matrix/ctc/tests/test.h>
 
-#include "test.h"
+namespace lucius
+{
+namespace matrix
+{
+namespace ctc
+{
 
 bool small_test() {
     const int alphabet_size = 5;
@@ -163,8 +170,6 @@ float grad_check(int T, int alphabet_size,
                                     info),
                    "Error: compute_ctc_loss (0) in grad_check");
 
-    float cost = std::accumulate(costs.begin(), costs.end(), 0.);
-
     std::vector<float> num_grad(grads.size());
 
     //perform 2nd order central differencing
@@ -240,14 +245,17 @@ bool run_tests() {
 
     return status;
 }
+}
+}
+}
 
 int main(void) {
     std::cout << "Running CPU tests" << std::endl;
 
     bool status = true;
-    status &= small_test();
-    status &= inf_test();
-    status &= run_tests();
+    status &= lucius::matrix::ctc::small_test();
+    status &= lucius::matrix::ctc::inf_test();
+    status &= lucius::matrix::ctc::run_tests();
 
     if (status)
         std::cout << "Tests pass" << std::endl;
