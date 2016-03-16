@@ -4,10 +4,16 @@
 #include <vector>
 #include <iostream>
 
-#include <ctc.h>
+//CTC Includes
+#include <lucius/matrix/ctc/interface/ctc.h>
+#include <lucius/matrix/ctc/tests/test.h>
 
-#include "test.h"
-
+namespace lucius
+{
+namespace matrix
+{
+namespace ctc
+{
 bool small_test() {
     const int alphabet_size = 5;
     const int T = 2;
@@ -324,15 +330,18 @@ bool run_tests() {
 
     return status;
 }
+}
+}
+}
 
 int main(void) {
     std::cout << "Running GPU tests" << std::endl;
-    throw_on_error(cudaSetDevice(0), "cudaSetDevice");
+    lucius::matrix::ctc::throw_on_error(cudaSetDevice(0), "cudaSetDevice");
 
     bool status = true;
-    status &= small_test();
-    status &= inf_test();
-    status &= run_tests();
+    status &= lucius::matrix::ctc::small_test();
+    status &= lucius::matrix::ctc::inf_test();
+    status &= lucius::matrix::ctc::run_tests();
 
     if (status)
         std::cout << "Tests pass" << std::endl;
