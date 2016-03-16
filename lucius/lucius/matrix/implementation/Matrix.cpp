@@ -111,6 +111,11 @@ size_t Matrix::elements() const
     return size().product();
 }
 
+bool Matrix::empty() const
+{
+    return size().empty();
+}
+
 FloatIterator Matrix::begin()
 {
     return FloatIterator(precision(), size(), stride(), zeros(size()), _data_begin);

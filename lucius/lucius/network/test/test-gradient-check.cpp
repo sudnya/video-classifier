@@ -102,7 +102,8 @@ static NeuralNetwork createFeedForwardFullyConnectedSoftmaxNetwork(
 
     for(size_t layer = 0; layer < layerCount; ++layer)
     {
-        network.addLayer(std::make_unique<FeedForwardLayer>(layerSize, layerSize, DoublePrecision()));
+        network.addLayer(std::make_unique<FeedForwardLayer>(layerSize,
+            layerSize, DoublePrecision()));
     }
 
     network.setCostFunction(CostFunctionFactory::create("SoftmaxCostFunction"));
@@ -151,6 +152,15 @@ static NeuralNetwork createRecurrentNetwork(size_t layerSize, size_t layerCount)
     return network;
 }
 
+static NeuralNetwork createRecurrentCtcNetwork(size_t layerSize, size_t layerCount)
+{
+    auto network = createRecurrentNetwork(layerSize, layerCount);
+
+    network.setCostFunction(CostFunctionFactory::create("CTCCostFunction"));
+
+    return network;
+}
+
 static Matrix generateInput(NeuralNetwork& network)
 {
     return matrix::rand(network.getInputSize(), DoublePrecision());
@@ -178,7 +188,8 @@ static Matrix generateOneHotReference(NeuralNetwork& network)
 {
     Matrix result = zeros(network.getOutputSize(), DoublePrecision());
 
-    Matrix position = apply(rand({1}, DoublePrecision()), lucius::matrix::Multiply(network.getOutputCount()));
+    Matrix position = apply(rand({1}, DoublePrecision()),
+        lucius::matrix::Multiply(network.getOutputCount()));
 
     result[position[0]] = 1.0;
 
@@ -478,10 +489,44 @@ static bool runTestRecurrent(size_t layerSize, size_t layerCount, size_t timeste
     }
 }
 
+static bool runTestRecurrentCtc(size_t layerSize, size_t layerCount, size_t timesteps, bool seed)
+{
+    if(seed)
+    {
+        matrix::srand(std::time(0));
+    }
+    else
+    {
+        matrix::srand(1456212655);
+    }
+
+    auto network = createRecurrentCtcNetwork(layerSize, layerCount);
+
+    if(gradientCheckTimeSeries(network, timesteps))
+    {
+        std::cout << "Recurrent Network Test Passed\n";
+
+        return true;
+    }
+    else
+    {
+        std::cout << "Recurrent Network Test Failed\n";
+
+        return false;
+    }
+}
+
 static void runTest(size_t layerSize, size_t layerCount, size_t batchSize,
     size_t timesteps, bool seed)
 {
     bool result = true;
+
+    result &= runTestRecurrentCtc(layerSize, layerCount, timesteps, seed);
+
+    if(!result)
+    {
+        return;
+    }
 
     result &= runTestConvolutional(layerSize, layerCount, seed);
 
