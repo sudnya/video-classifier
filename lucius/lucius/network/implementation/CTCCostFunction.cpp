@@ -34,12 +34,10 @@ Matrix CTCCostFunction::computeCost(const Matrix& output, const Matrix& referenc
 {
     size_t miniBatchSize = output.size()[output.size().size() - 2];
 
-    auto softmaxOutput = softmax(output);
-
     Matrix cost({miniBatchSize}, output.precision());
     Matrix fakeGradients;
 
-    matrix::computeCtc(cost, fakeGradients, softmaxOutput, reference);
+    matrix::computeCtc(cost, fakeGradients, output, reference);
 
     return apply(cost, matrix::Divide(miniBatchSize));
 }
@@ -51,7 +49,7 @@ Matrix CTCCostFunction::computeDelta(const Matrix& output, const Matrix& referen
     Matrix cost({miniBatchSize}, output.precision());
     Matrix gradients(output.size(), output.precision());
 
-    matrix::computeCtc(cost, gradients, softmax(output), reference);
+    matrix::computeCtc(cost, gradients, output, reference);
 
     return apply(gradients, matrix::Divide(miniBatchSize));
 }

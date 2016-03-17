@@ -49,13 +49,46 @@ static void computeCtcOnSinglePrecisionSequence(Matrix& costs, Matrix& gradients
     size_t labelSize           = reference.size()[reference.size().size() - 1];
     size_t timesteps           = inputActivations.size()[inputActivations.size().size() - 1];
 
-    std::vector<int> labelLengthInMinibatch;
     std::vector<int> timeStepsInMinibatch;
 
     for(size_t sample = 0; sample < samplesPerMinibatch; ++sample)
     {
-        labelLengthInMinibatch.push_back(labelSize);
         timeStepsInMinibatch.push_back(timesteps);
+    }
+
+    std::vector<int> labelsInMinibatch;
+    std::vector<int> labelLengthInMinibatch;
+
+    // gather the labels
+    // TODO: do this on the GPU
+    for(size_t miniBatch = 0; miniBatch != samplesPerMinibatch; ++miniBatch)
+    {
+        for(size_t l = 0; l != labelSize; ++l)
+        {
+            size_t label = labelSize - l - 1;
+
+            double letterValue    = 0.0;
+            size_t selectedLetter = 0;
+
+            for(size_t letter = 0; letter != vocabularySize; ++letter)
+            {
+                double value = reference(letter, miniBatch, label);
+
+                if(value > letterValue)
+                {
+                    letterValue    = value;
+                    selectedLetter = letter;
+                }
+            }
+
+            labelsInMinibatch.push_back(selectedLetter);
+
+            if(((selectedLetter == labelSize - 2) && (l > 0)) || (l == labelSize - 1))
+            {
+                labelLengthInMinibatch.push_back(l + 1);
+                break;
+            }
+        }
     }
 
     get_workspace_size(labelLengthInMinibatch.data(), timeStepsInMinibatch.data(),
@@ -63,40 +96,24 @@ static void computeCtcOnSinglePrecisionSequence(Matrix& costs, Matrix& gradients
 
     Allocation workspace(sizeBytes);
 
-    std::vector<int> labelsInMinibatch;
-
-    // TODO: do this on the GPU
-    for(size_t miniBatch = 0; miniBatch != samplesPerMinibatch; ++miniBatch)
-    {
-        for(size_t timestep = 0; timestep != timesteps; ++timestep)
-        {
-            double labelValue = 0.0;
-            size_t label      = 0;
-
-            for(size_t letter = 0; letter != vocabularySize; ++letter)
-            {
-                double value = reference(label, miniBatch, timestep);
-
-                if(value > labelValue)
-                {
-                    labelValue = value;
-                    label      = letter;
-                }
-            }
-
-            labelsInMinibatch.push_back(label);
-        }
-    }
-
     //call compute_ctc_loss
     compute_ctc_loss(static_cast<const float*>(inputActivations.data()),
         static_cast<float*>(gradients.data()), labelsInMinibatch.data(),
         labelLengthInMinibatch.data(), timeStepsInMinibatch.data(), vocabularySize,
         samplesPerMinibatch, static_cast<float*>(costs.data()), workspace.data(), runtimeInfo);
 
+    if(util::isLogEnabled("CTCOperations::Detail"))
+    {
+        util::log("CTCOperations::Detail") << " activations "
+            << inputActivations.toString() << "\n";
+        util::log("CTCOperations::Detail") << " reference " << reference.toString() << "\n";
+        util::log("CTCOperations::Detail") << " costs " << costs.toString() << "\n";
+        util::log("CTCOperations::Detail") << " input-gradients " << gradients.toString() << "\n";
+    }
+
 }
 
-static void computeCtcOnSingleSequence(Matrix& costs, Matrix& gradients,
+void computeCtc(Matrix& costs, Matrix& gradients,
     const Matrix& inputActivations, const Matrix& reference)
 {
     if(costs.precision() == SinglePrecision())
@@ -125,90 +142,6 @@ static void computeCtcOnSingleSequence(Matrix& costs, Matrix& gradients,
         if(!gradients.empty())
         {
             copy(gradients, singleGradients);
-        }
-    }
-}
-
-static void runCtcOnSlice(Matrix& costs, Matrix& gradients,
-    const Matrix& inputActivations, const Matrix& reference, size_t startTimestep,
-    size_t timestep, size_t sample)
-{
-    auto start = zeros(reference.size());
-    auto end   = reference.size();
-
-    start[start.size() - 2] = sample;
-    end  [end.size()   - 2] = sample + 1;
-
-    start[start.size() - 1] = startTimestep;
-    end  [end.size()   - 1] = timestep;
-
-    Matrix gradientsSlice;
-
-    auto costsSlice = slice(costs, {sample}, {sample + 1});
-
-    if(!gradients.empty())
-    {
-        gradientsSlice  = slice(gradients, start, end);
-    }
-
-    auto inputActivationsSlice = copy(slice(inputActivations, start, end));
-    auto referenceSlice        = copy(slice(reference,        start, end));
-
-    auto costsCopy  = zeros({1}, costs.precision());
-
-    Matrix gradientsCopy;
-
-    if (!gradients.empty())
-    {
-        gradientsCopy = zeros(gradientsSlice.size(), gradientsSlice.precision());
-    }
-
-    computeCtcOnSingleSequence(costsCopy, gradientsCopy, inputActivationsSlice,
-        referenceSlice);
-
-    copy(costsSlice, costsCopy);
-
-    if(!gradients.empty())
-    {
-        copy(gradientsSlice, gradientsCopy);
-    }
-}
-
-void computeCtc(Matrix& costs, Matrix& gradients,
-    const Matrix& inputActivations, const Matrix& reference)
-{
-    if(true)
-    {
-        computeCtcOnSingleSequence(costs, gradients, inputActivations, reference);
-        return;
-    }
-
-    size_t miniBatchSize = reference.size()[reference.size().size() - 2];
-    size_t timesteps     = reference.size()[reference.size().size() - 1];
-    size_t layerSize     = reference.size().product() / (miniBatchSize * timesteps);
-
-    for(size_t sample = 0; sample < miniBatchSize; ++sample)
-    {
-        size_t startTimestep = 0;
-
-        for(size_t timestep = 0; timestep < timesteps; ++timestep)
-        {
-            if(reference(layerSize - 1, sample, timestep) == 0.0)
-            {
-                continue;
-            }
-
-            runCtcOnSlice(costs, gradients, inputActivations, reference,
-                startTimestep, timesteps, sample);
-
-            startTimestep = timestep + 1;
-            timestep      = timestep + 1;
-        }
-
-        if(startTimestep < timesteps)
-        {
-            runCtcOnSlice(costs, gradients, inputActivations, reference,
-                startTimestep, timesteps, sample);
         }
     }
 }
