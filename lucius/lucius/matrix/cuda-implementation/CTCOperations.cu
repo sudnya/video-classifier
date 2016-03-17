@@ -7,6 +7,8 @@
 #include <lucius/matrix/interface/MatrixTransformations.h>
 #include <lucius/matrix/interface/Operation.h>
 
+#include <lucius/util/interface/debug.h>
+
 //CTC Includes
 #include <lucius/matrix/ctc/interface/ctc.h>
 
@@ -44,14 +46,16 @@ static void computeCtcOnSinglePrecisionSequence(Matrix& costs, Matrix& gradients
 
     size_t vocabularySize      = reference.size().front();
     size_t samplesPerMinibatch = reference.size()[reference.size().size() - 2];
+    size_t labelSize           = reference.size()[reference.size().size() - 1];
+    size_t timesteps           = inputActivations.size()[inputActivations.size().size() - 1];
 
     std::vector<int> labelLengthInMinibatch;
     std::vector<int> timeStepsInMinibatch;
 
     for(size_t sample = 0; sample < samplesPerMinibatch; ++sample)
     {
-        labelLengthInMinibatch.push_back(reference.size()[reference.size().size() - 1]);
-        timeStepsInMinibatch.push_back(inputActivations.size()[inputActivations.size().size() - 1]);
+        labelLengthInMinibatch.push_back(labelSize);
+        timeStepsInMinibatch.push_back(timesteps);
     }
 
     get_workspace_size(labelLengthInMinibatch.data(), timeStepsInMinibatch.data(),
@@ -61,11 +65,27 @@ static void computeCtcOnSinglePrecisionSequence(Matrix& costs, Matrix& gradients
 
     std::vector<int> labelsInMinibatch;
 
-    auto labels = reduceGetPositions(reference, {0}, lucius::matrix::Maximum());
-
-    for(auto element : labels)
+    // TODO: do this on the GPU
+    for(size_t miniBatch = 0; miniBatch != samplesPerMinibatch; ++miniBatch)
     {
-        labelsInMinibatch.push_back(static_cast<int>(element));
+        for(size_t timestep = 0; timestep != timesteps; ++timestep)
+        {
+            double labelValue = 0.0;
+            size_t label      = 0;
+
+            for(size_t letter = 0; letter != vocabularySize; ++letter)
+            {
+                double value = reference(label, miniBatch, timestep);
+
+                if(value > labelValue)
+                {
+                    labelValue = value;
+                    label      = letter;
+                }
+            }
+
+            labelsInMinibatch.push_back(label);
+        }
     }
 
     //call compute_ctc_loss
@@ -120,7 +140,7 @@ static void runCtcOnSlice(Matrix& costs, Matrix& gradients,
     end  [end.size()   - 2] = sample + 1;
 
     start[start.size() - 1] = startTimestep;
-    end  [end.size()   - 1] = timestep + 1;
+    end  [end.size()   - 1] = timestep;
 
     Matrix gradientsSlice;
 
@@ -157,6 +177,12 @@ static void runCtcOnSlice(Matrix& costs, Matrix& gradients,
 void computeCtc(Matrix& costs, Matrix& gradients,
     const Matrix& inputActivations, const Matrix& reference)
 {
+    if(true)
+    {
+        computeCtcOnSingleSequence(costs, gradients, inputActivations, reference);
+        return;
+    }
+
     size_t miniBatchSize = reference.size()[reference.size().size() - 2];
     size_t timesteps     = reference.size()[reference.size().size() - 1];
     size_t layerSize     = reference.size().product() / (miniBatchSize * timesteps);
@@ -171,7 +197,6 @@ void computeCtc(Matrix& costs, Matrix& gradients,
             {
                 continue;
             }
-
 
             runCtcOnSlice(costs, gradients, inputActivations, reference,
                 startTimestep, timesteps, sample);

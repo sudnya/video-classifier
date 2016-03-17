@@ -145,6 +145,7 @@ static NeuralNetwork createRecurrentNetwork(size_t layerSize, size_t layerCount)
     for(size_t layer = 0; layer < layerCount; ++layer)
     {
         network.addLayer(std::make_unique<RecurrentLayer>(layerSize, 1, DoublePrecision()));
+        network.back()->setActivationFunction(ActivationFunctionFactory::create("SigmoidActivationFunction"));
     }
 
     network.initialize();
