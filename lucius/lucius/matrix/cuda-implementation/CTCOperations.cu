@@ -63,10 +63,8 @@ static void computeCtcOnSinglePrecisionSequence(Matrix& costs, Matrix& gradients
     // TODO: do this on the GPU
     for(size_t miniBatch = 0; miniBatch != samplesPerMinibatch; ++miniBatch)
     {
-        for(size_t l = 0; l != labelSize; ++l)
+        for(size_t label = 0; label != labelSize; ++label)
         {
-            size_t label = labelSize - l - 1;
-
             double letterValue    = 0.0;
             size_t selectedLetter = 0;
 
@@ -83,9 +81,9 @@ static void computeCtcOnSinglePrecisionSequence(Matrix& costs, Matrix& gradients
 
             labelsInMinibatch.push_back(selectedLetter);
 
-            if(((selectedLetter == labelSize - 2) && (l > 0)) || (l == labelSize - 1))
+            if(((selectedLetter >= vocabularySize - 2) && (label > 0)) || (label == labelSize - 1))
             {
-                labelLengthInMinibatch.push_back(l + 1);
+                labelLengthInMinibatch.push_back(label + 1);
                 break;
             }
         }

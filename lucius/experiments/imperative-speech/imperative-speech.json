@@ -74,7 +74,7 @@
 
         "cost-function" :
         {
-            "name" : "SoftmaxCostFunction"
+            "name" : "CTCCostFunction"
         },
 
         "model-attributes" :

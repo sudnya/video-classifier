@@ -215,6 +215,13 @@ std::string Audio::getLabelForSample(size_t samplePosition) const
 {
     auto possibleLabel = _labels.lower_bound(samplePosition);
 
+    if(possibleLabel != _labels.end() &&
+        samplePosition >= possibleLabel->first &&
+        samplePosition < possibleLabel->second.endSample)
+    {
+        return possibleLabel->second.label;
+    }
+
     if(possibleLabel != _labels.begin())
     {
         --possibleLabel;

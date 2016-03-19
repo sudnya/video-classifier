@@ -212,6 +212,8 @@ static void setupOutputLayerParameters(model::Model& model,
         inputDatabase.setDefaultGrapheme(" ");
     }
 
+    model.setAttribute("DefaultGrapheme", inputDatabase.getDefaultGrapheme());
+
     if(specification.exists("model-attributes.DelimiterGrapheme"))
     {
         inputDatabase.setDelimiterGrapheme(
@@ -221,6 +223,8 @@ static void setupOutputLayerParameters(model::Model& model,
     {
         inputDatabase.setDelimiterGrapheme("END");
     }
+
+    model.setAttribute("DelimiterGrapheme", inputDatabase.getDelimiterGrapheme());
 
     inputDatabase.load();
 
