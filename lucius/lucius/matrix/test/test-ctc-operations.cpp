@@ -8,6 +8,7 @@
 #include <lucius/matrix/interface/Matrix.h>
 #include <lucius/matrix/interface/MatrixOperations.h>
 #include <lucius/matrix/interface/CTCOperations.h>
+#include <lucius/matrix/interface/SoftmaxOperations.h>
 
 //CTC Includes
 #include <lucius/matrix/ctc/interface/ctc.h>
