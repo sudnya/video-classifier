@@ -269,7 +269,8 @@ static MatrixVector runSelectForward(SubgraphLayer& layer,
     else
     {
         auto inputActivation = inputActivations[0];
-        auto previousTimestepActivation = zeros(inputActivation.size());
+        auto previousTimestepActivation = zeros(inputActivation.size(),
+            inputActivation.precision());
 
         copy(previousTimestepSlice, previousTimestepActivation);
         copy(currentTimestepSlice,  inputActivation);
@@ -456,7 +457,7 @@ static MatrixVector runProcessForward(SubgraphLayer& layer, const MatrixVector& 
     else
     {
         auto inputActivation = inputActivations[0];
-        auto previousTimestepActivation = zeros(inputActivation.size());
+        auto previousTimestepActivation = zeros(inputActivation.size(), inputActivation.precision());
 
         copy(previousTimestepSlice, previousTimestepActivation);
         copy(currentTimestepSlice,  inputActivation);
