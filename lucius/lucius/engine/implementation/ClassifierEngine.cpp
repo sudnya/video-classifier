@@ -124,12 +124,12 @@ ClassifierEngine::ResultVector ClassifierEngine::runOnBatch(Matrix&& input, Matr
     {
         auto cost = network->getCost(input, reference);
 
-        results = std::move(compareWithReference(cost * labels.size(), getIteration(), labels,
-            convertActivationsToLabels(std::move(reference), *getModel())));
+        results = compareWithReference(cost * labels.size(), getIteration(), labels,
+            convertActivationsToLabels(std::move(reference), *getModel()));
     }
     else
     {
-        results = std::move(recordLabels(labels));
+        results = recordLabels(labels);
     }
 
     restoreAggregateNetwork();

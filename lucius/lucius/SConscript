@@ -46,6 +46,9 @@ programs.append(env.Program('test-ctc-cpu', \
 programs.append(env.Program('test-ctc-gpu', \
     ['matrix/test/test-ctc-gpu.cu'], LIBS=lucius_libs))
 
+programs.append(env.Program('test-ctc-operations', \
+    ['matrix/test/test-ctc-operations.cpp'], LIBS=lucius_libs))
+
 programs.append(env.Program('test-matrix', \
     ['matrix/test/test-matrix.cpp'], LIBS=lucius_libs))
 

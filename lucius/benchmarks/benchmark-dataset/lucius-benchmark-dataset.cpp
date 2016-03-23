@@ -173,7 +173,7 @@ static void runTest(const Parameters& parameters)
     }
     else
     {
-        model = std::move(ModelBuilder::create(config.getModelSpecification()));
+        model = ModelBuilder::create(config.getModelSpecification());
         setSampleStatistics(*model, config);
     }
 

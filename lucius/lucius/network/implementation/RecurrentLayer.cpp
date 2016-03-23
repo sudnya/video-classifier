@@ -83,7 +83,7 @@ RecurrentLayer& RecurrentLayer::operator=(const RecurrentLayer& l)
         return *this;
     }
 
-    _parameters = std::move(std::make_unique<MatrixVector>(*l._parameters));
+    _parameters = std::make_unique<MatrixVector>(*l._parameters);
     _expectedBatchSize = l._expectedBatchSize;
 
     return *this;

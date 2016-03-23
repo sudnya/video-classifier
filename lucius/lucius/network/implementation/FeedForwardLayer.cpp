@@ -78,7 +78,7 @@ FeedForwardLayer& FeedForwardLayer::operator=(const FeedForwardLayer& l)
         return *this;
     }
 
-    _parameters = std::move(std::make_unique<MatrixVector>(*l._parameters));
+    _parameters = std::make_unique<MatrixVector>(*l._parameters);
 
     return *this;
 }

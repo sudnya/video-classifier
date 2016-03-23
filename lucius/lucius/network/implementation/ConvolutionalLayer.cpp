@@ -101,10 +101,10 @@ ConvolutionalLayer& ConvolutionalLayer::operator=(const ConvolutionalLayer& l)
         return *this;
     }
 
-    _parameters   = std::move(std::make_unique<MatrixVector>(*l._parameters));
-    _inputSize    = std::move(std::make_unique<matrix::Dimension>(*l._inputSize));
-    _filterStride = std::move(std::make_unique<matrix::Dimension>(*l._filterStride));
-    _inputPadding = std::move(std::make_unique<matrix::Dimension>(*l._inputPadding));
+    _parameters   = std::make_unique<MatrixVector>(*l._parameters);
+    _inputSize    = std::make_unique<matrix::Dimension>(*l._inputSize);
+    _filterStride = std::make_unique<matrix::Dimension>(*l._filterStride);
+    _inputPadding = std::make_unique<matrix::Dimension>(*l._inputPadding);
 
     return *this;
 }

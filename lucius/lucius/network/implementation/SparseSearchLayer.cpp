@@ -226,8 +226,8 @@ SparseSearchLayer& SparseSearchLayer::operator=(const SparseSearchLayer& l)
         return *this;
     }
 
-    _selectUnit  = std::move(convert(l._selectUnit->clone()));
-    _processUnit = std::move(convert(l._processUnit->clone()));
+    _selectUnit  = convert(l._selectUnit->clone());
+    _processUnit = convert(l._processUnit->clone());
 
     _depth      = l._depth;
     _size       = l._size;
