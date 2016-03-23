@@ -26,40 +26,45 @@ bool small_test() {
 //  std::vector<float> activations = {0.1, 0.6, 0.1, 0.1, 0.1, 0.1, 0.1, 0.6, 0.1, 0.1};
     const int alphabetSize = 5;
     const int timeSteps    = 2;
-    Matrix inputActivations(alphabetSize, timeSteps);
+    Matrix inputActivations(alphabetSize, 1, timeSteps);
     
-    inputActivations(0,0) = 0.1;
-    inputActivations(1,0) = 0.6;
-    inputActivations(2,0) = 0.1;
-    inputActivations(3,0) = 0.1;
-    inputActivations(4,0) = 0.1;
-    inputActivations(0,1) = 0.1;
-    inputActivations(1,1) = 0.1;
-    inputActivations(2,1) = 0.6;
-    inputActivations(3,1) = 0.1;
-    inputActivations(4,1) = 0.1;
+    inputActivations(0,0,0) = 0.1;
+    inputActivations(1,0,0) = 0.6;
+    inputActivations(2,0,0) = 0.1;
+    inputActivations(3,0,0) = 0.1;
+    inputActivations(4,0,0) = 0.1;
+    inputActivations(0,0,1) = 0.1;
+    inputActivations(1,0,1) = 0.1;
+    inputActivations(2,0,1) = 0.6;
+    inputActivations(3,0,1) = 0.1;
+    inputActivations(4,0,1) = 0.1;
 
     // Calculate the score analytically
     Matrix probs = softmax(inputActivations);
 
     // Score calculation is specific to the given activations above
-    float expectedScore = probs(1, 0) * probs(2, 1);
+    float expectedScore = probs(1, 0, 0) * probs(2, 0, 1);
     
     Matrix referenceCosts({1});
     
-    referenceCosts(0,0) = expectedScore;
+    referenceCosts(0) = expectedScore;
     
     Matrix costs({1});
     Matrix gradients(inputActivations.size());
     
     Matrix referenceLabels = zeros(inputActivations.size(), inputActivations.precision());
     
-    referenceLabels(1, 0) = 1.0;
-    referenceLabels(2, 1) = 1.0;
+    referenceLabels(1, 0, 0) = 1.0;
+    referenceLabels(2, 0, 1) = 1.0;
+    std::cout << "inputActivations: " << inputActivations.toString() << "\n";
+    std::cout << "referenceLabels: " << referenceLabels.toString() << std::endl;
 
     computeCtc(costs, gradients, inputActivations, referenceLabels);
+    std::cout << "costs: " << costs.toString();
 
     float score = costs(0);
+    std::cout << "Score: " << score << "\n";
+    std::cout << "Gradients: " << gradients.toString();
     score = std::exp(-score);
     const float eps = 1e-6;
 
