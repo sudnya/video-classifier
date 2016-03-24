@@ -7,7 +7,7 @@
 
 //CTC Includes
 #include <lucius/matrix/ctc/interface/ctc.h>
-#include <lucius/matrix/ctc/tests/test.h>
+#include <lucius/matrix/ctc/test/test.h>
 
 namespace lucius
 {
