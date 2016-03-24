@@ -217,6 +217,11 @@ Configuration::AttributeList Configuration::getAllAttributes() const
         attributes.push_back(std::make_pair(parameter.key(), parameter.value()));
     }
 
+    for (auto& parameter : (*_properties)["attributes"])
+    {
+        attributes.push_back(std::make_pair(parameter.key(), parameter.value()));
+    }
+
     return attributes;
 }
 

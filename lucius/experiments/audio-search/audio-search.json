@@ -6,14 +6,14 @@
         "type" : "NesterovAcceleratedGradientSolver",
 
         "batch-size"      : "8",
-        "maximum-samples" : "1e9",
+        "maximum-samples" : "1024",
         "standardization-samples" : "128",
 
         "epochs" : "20",
 
         "parameters" :
         {
-            "NesterovAcceleratedGradient::LearningRate"       : "1.0e-4",
+            "NesterovAcceleratedGradient::LearningRate"       : "1.56e-6",
             "NesterovAcceleratedGradient::Momentum"           : "0.99",
             "NesterovAcceleratedGradient::AnnealingRate"      : "1.000001",
             "NesterovAcceleratedGradient::MaxGradNorm"        : "400.0",
@@ -35,7 +35,7 @@
             "input-convolution":
             {
                 "Type"              : "AudioConvolutionalLayer",
-                "FilterSamples"    : "160",
+                "FilterSamples"    : "320",
                 "FilterTimesteps"  : "3",
                 "FilterOutputs"    : "512",
                 "PaddingSamples"   : "0",
@@ -80,12 +80,11 @@
         "model-attributes" :
         {
             "SamplingRate"  : "8000",
-            "FrameDuration" : "160",
+            "FrameDuration" : "320",
             "Graphemes" : [ "a", "b", "c", "d", "e", "f", "g", "h", "i",
                             "j", "k", "l", "m", "n", "o", "p", "q", "r",
                             "s", "t", "u", "v", "w", "x", "y", "z", ".",
                             ",", "'", " "],
-            "DefaultGrapheme" : "BLANK",
             "DelimiterGrapheme" : "END"
 
 
@@ -97,12 +96,13 @@
 
     "attributes" :
     {
-        "InputAudioDataProducer::SpeechScaleLower" : "0.9",
-        "InputAudioDataProducer::SpeechScaleUpper" : "1.1",
+        "InputAudioDataProducer::SpeechScaleLower" : "1.0",
+        "InputAudioDataProducer::SpeechScaleUpper" : "1.0",
         "InputAudioDataProducer::NoiseRateLower" : "0.0",
-        "InputAudioDataProducer::NoiseRateUpper" : "0.1",
-        "InputAudioDataProducer::TotalTimestepsPerUtterance" : "2048",
-        "InputAudioDataProducer::AudioTimesteps" : "512"
+        "InputAudioDataProducer::NoiseRateUpper" : "0.01",
+        "InputAudioDataProducer::TotalTimestepsPerUtterance" : "1024",
+        "InputAudioDataProducer::AudioTimesteps" : "1024",
+        "InputAudioDataProducer::SaveSamples" : "0"
     },
 
     "dataset" :
@@ -111,6 +111,11 @@
         "validation-dataset-path" : "/Users/gregorydiamos/temp/libri-speech-100/development/database.txt",
 
         "required-accuracy" : "99.0"
+    },
+
+    "result" :
+    {
+        "result-processor" : "GraphemeErrorRateResultProcessor"
     },
 
     "checkpointing" :
@@ -125,7 +130,8 @@
         [
             "NesterovAcceleratedGradientSolver",
             "BenchmarkDataset",
-            "LabelMatchResultProcessor",
+            "GraphemeMatchResultProcessor",
+            "GraphemeMatchResultProcessor::Detail",
             "InputAudioDataProducer"
         ]
     },

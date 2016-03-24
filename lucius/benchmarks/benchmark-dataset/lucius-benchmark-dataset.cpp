@@ -106,7 +106,7 @@ static double testNetwork(Model& model, const Configuration& config)
     engine->runOnDatabaseFile(config.getValidationPath());
 
     // get the result processor
-    auto resultProcessor = static_cast<LabelMatchResultProcessor*>(engine->getResultProcessor());
+    auto resultProcessor = engine->getResultProcessor();
 
     lucius::util::log("BenchmarkDataset") << resultProcessor->toString();
 

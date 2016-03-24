@@ -81,7 +81,7 @@ static void computeCtcOnSinglePrecisionSequence(Matrix& costs, Matrix& gradients
 
             labelsInMinibatch.push_back(selectedLetter);
 
-            if(((selectedLetter >= vocabularySize - 2) && (label > 0)) || (label == labelSize - 1))
+            if(((selectedLetter >= vocabularySize - 1) && (label > 0)) || (label == labelSize - 1))
             {
                 labelLengthInMinibatch.push_back(label + 1);
                 break;

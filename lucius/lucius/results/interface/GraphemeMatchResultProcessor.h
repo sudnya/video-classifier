@@ -1,7 +1,7 @@
-/*  \file   LabelMatchResultProcessor.h
-    \date   Saturday August 10, 2014
+/*  \file   GraphemeMatchResultProcessor.h
+    \date   Saturday March 20, 2016
     \author Gregory Diamos <solusstultus@gmail.com>
-    \brief  The header file for the LabelMatchResultProcessor class.
+    \brief  The header file for the GraphemeMatchResultProcessor class.
 */
 
 #pragma once
@@ -15,11 +15,11 @@ namespace results
 {
 
 /*! \brief A class for processing the label match results of an engine. */
-class LabelMatchResultProcessor : public ResultProcessor
+class GraphemeMatchResultProcessor : public ResultProcessor
 {
 public:
-    LabelMatchResultProcessor();
-    virtual ~LabelMatchResultProcessor();
+    GraphemeMatchResultProcessor();
+    virtual ~GraphemeMatchResultProcessor();
 
 public:
     /*! \brief Process a batch of results */
@@ -33,9 +33,15 @@ public:
     virtual double getAccuracy() const;
     virtual double getCost() const;
 
+public:
+    double getSampleAccuracy() const;
+
 private:
-    size_t _matches;
-    size_t _total;
+    size_t _totalGraphemes;
+    size_t _totalGraphemeMatches;
+    size_t _totalSamples;
+    size_t _totalSampleMatches;
+
     double _cost;
 
 };
@@ -43,6 +49,7 @@ private:
 }
 
 }
+
 
 
 

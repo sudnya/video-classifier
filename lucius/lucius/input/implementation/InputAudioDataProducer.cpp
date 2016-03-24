@@ -157,7 +157,7 @@ public:
         _nextSample       = 0;
         _nextNoiseSample  = 0;
 
-        std::shuffle(_audio.begin(), _audio.end(), _generator);
+        std::shuffle(_audio.begin(), _audio.begin() + _remainingSamples, _generator);
         std::shuffle(_noise.begin(), _noise.end(), _generator);
     }
 
@@ -263,6 +263,17 @@ private:
 
     Audio _merge(const Audio& audio, const Audio& noise)
     {
+        if(audio.size() * 2 >= noise.size())
+        {
+            auto result = audio;
+
+            auto audioGraphemes = _toGraphemes(audio.label());
+            result.setDefaultLabel(_delimiterGrapheme);
+            _applyGraphemesToRange(result, 0, audioGraphemes.size(), audioGraphemes);
+
+            return result;
+        }
+
         assert(2 * audio.size() < noise.size());
 
         size_t remainder = noise.size() - 2 * audio.size();
@@ -281,12 +292,11 @@ private:
             ++position;
         }
 
-        auto audioDimension = _producer->getInputSize();
-        size_t frameSize = audioDimension[0];
+        size_t frameSize = _getFrameSize();
 
         if(_usesGraphemes())
         {
-            result.setDefaultLabel(_defaultGrapheme);
+            result.setDefaultLabel(_delimiterGrapheme);
 
             auto noiseGraphemes = _toGraphemes(noise.label());
             auto audioGraphemes = _toGraphemes(audio.label());
@@ -296,8 +306,6 @@ private:
                 noiseGraphemes.size() + audioGraphemes.size(), audioGraphemes);
             _applyGraphemesToRange(result, noiseGraphemes.size() + audioGraphemes.size(),
                 (result.size() - frameSize)/frameSize, noiseGraphemes);
-
-            result.addLabel((result.size() - frameSize), result.size(), _delimiterGrapheme);
         }
         else
         {
@@ -320,9 +328,7 @@ private:
     {
         size_t limit = std::min(beginTimestep + graphemes.size(), endTimestep);
 
-        auto audioDimension = _producer->getInputSize();
-
-        size_t frameSize = audioDimension[0];
+        size_t frameSize = _getFrameSize();
 
         for(size_t i = beginTimestep, grapheme = 0; i < limit; ++i, ++grapheme)
         {
@@ -467,7 +473,6 @@ private:
             _graphemes.insert(_producer->getModel()->getOutputLabel(output));
         }
 
-        _defaultGrapheme = _producer->getModel()->getAttribute<std::string>("DefaultGrapheme");
         _delimiterGrapheme = _producer->getModel()->getAttribute<std::string>("DelimiterGrapheme");
     }
 
@@ -486,7 +491,6 @@ private:
 
 private:
     StringSet _graphemes;
-    std::string _defaultGrapheme;
     std::string _delimiterGrapheme;
 
 private:

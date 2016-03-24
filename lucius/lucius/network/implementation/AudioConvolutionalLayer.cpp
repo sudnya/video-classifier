@@ -81,6 +81,16 @@ void AudioConvolutionalLayer::initialize()
     _layer->initialize();
 }
 
+void AudioConvolutionalLayer::popReversePropagationData()
+{
+    _layer->popReversePropagationData();
+}
+
+void AudioConvolutionalLayer::clearReversePropagationData()
+{
+    _layer->clearReversePropagationData();
+}
+
 void AudioConvolutionalLayer::setShouldComputeDeltas(bool shouldComputeDeltas)
 {
     _layer->setShouldComputeDeltas(shouldComputeDeltas);

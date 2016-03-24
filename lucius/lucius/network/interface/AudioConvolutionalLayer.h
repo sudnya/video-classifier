@@ -39,6 +39,10 @@ public:
     virtual void initialize();
 
 public:
+    virtual void popReversePropagationData();
+    virtual void clearReversePropagationData();
+
+public:
     virtual void setShouldComputeDeltas(bool shouldComputeDeltas);
 
 public:
