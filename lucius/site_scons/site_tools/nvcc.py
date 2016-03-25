@@ -118,7 +118,8 @@ def add_nvcc_flags(env):
     pass
 
   env.AppendUnique(NVCCFLAGS = '-std=c++11')
-  env.AppendUnique(NVCCFLAGS = '-Xcompiler=-Wno-unused-function')
+  #env.AppendUnique(NVCCFLAGS = '-Xcompiler=-Wno-unused-function')
+  env.AppendUnique(NVCCFLAGS = '-Xcompiler=-Wno-unused-local-typedef')
 
 def cuda_exists(env):
     return os.path.exists(env['cuda_path'])

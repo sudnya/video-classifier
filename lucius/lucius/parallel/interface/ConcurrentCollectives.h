@@ -5,7 +5,7 @@
 #include <lucius/parallel/interface/cuda.h>
 
 // Standard Library Includes
-#include <cstddef>
+#include <cstdint>
 
 namespace lucius
 {
@@ -15,15 +15,15 @@ namespace parallel
 class ThreadGroup
 {
 public:
-    CUDA_DECORATOR inline ThreadGroup(int size, int id);
+    CUDA_DECORATOR inline ThreadGroup(uint32_t size, uint32_t id);
 
 public:
-    CUDA_DECORATOR inline int size() const;
-    CUDA_DECORATOR inline int id()   const;
+    CUDA_DECORATOR inline uint32_t size() const;
+    CUDA_DECORATOR inline uint32_t id()   const;
 
 public:
-    int _size;
-    int _id;
+    uint32_t _size;
+    uint32_t _id;
 
 };
 
@@ -31,7 +31,7 @@ template<int level>
 class GroupLevelSize
 {
 public:
-    CUDA_DECORATOR static constexpr int size()
+    CUDA_DECORATOR static constexpr uint32_t size()
     {
         #ifdef __CUDA_ARCH__
         return level == 0 ? 1  :
@@ -42,15 +42,15 @@ public:
     }
 };
 
-CUDA_DECORATOR inline ThreadGroup partitionThreadGroup(ThreadGroup g, int subgroupSize);
-CUDA_DECORATOR inline ThreadGroup partitionThreadGroupAtLevel(ThreadGroup g, int level);
+CUDA_DECORATOR inline ThreadGroup partitionThreadGroup(ThreadGroup g, uint32_t subgroupSize);
+CUDA_DECORATOR inline ThreadGroup partitionThreadGroupAtLevel(ThreadGroup g, uint32_t level);
 
 CUDA_DECORATOR inline ThreadGroup getRelativeGroup(ThreadGroup inner, ThreadGroup outer);
 
 CUDA_DECORATOR inline void barrier(ThreadGroup g);
 
 template<typename T>
-CUDA_DECORATOR inline T gather(ThreadGroup g, T value, int index);
+CUDA_DECORATOR inline T gather(ThreadGroup g, T value, uint32_t index);
 
 template<typename T, typename Function>
 CUDA_DECORATOR inline T reduce(ThreadGroup g, T value, Function f);

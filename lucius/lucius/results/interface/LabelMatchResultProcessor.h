@@ -1,4 +1,4 @@
-/*    \file   LabelMatchResultProcessor.h
+/*  \file   LabelMatchResultProcessor.h
     \date   Saturday August 10, 2014
     \author Gregory Diamos <solusstultus@gmail.com>
     \brief  The header file for the LabelMatchResultProcessor class.
@@ -30,8 +30,8 @@ public:
     virtual std::string toString() const;
 
 public:
-    double getAccuracy() const;
-    double getCost() const;
+    virtual double getAccuracy() const;
+    virtual double getCost() const;
 
 private:
     size_t _matches;

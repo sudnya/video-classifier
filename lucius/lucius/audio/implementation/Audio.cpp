@@ -70,7 +70,7 @@ void Audio::invalidateCache()
 {
     _isLoaded = false;
 
-   _data = std::move(ByteVector());
+   _data = ByteVector();
 }
 
 bool Audio::isCached() const
@@ -214,6 +214,13 @@ Audio Audio::sample(size_t newFrequency) const
 std::string Audio::getLabelForSample(size_t samplePosition) const
 {
     auto possibleLabel = _labels.lower_bound(samplePosition);
+
+    if(possibleLabel != _labels.end() &&
+        samplePosition >= possibleLabel->first &&
+        samplePosition < possibleLabel->second.endSample)
+    {
+        return possibleLabel->second.label;
+    }
 
     if(possibleLabel != _labels.begin())
     {

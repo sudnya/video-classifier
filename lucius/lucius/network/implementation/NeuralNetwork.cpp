@@ -66,33 +66,56 @@ double NeuralNetwork::getCostAndGradient(MatrixVector& gradient, const Matrix& i
 
     size_t weightMatrices = 0;
 
+    util::log("NeuralNetwork") << " Running forward propagation of input "
+        << input.shapeString() << "\n";
+
     for(auto layer = begin(); layer != end(); ++layer)
     {
         util::log("NeuralNetwork") << " Running forward propagation through layer "
             << std::distance(begin(), layer) << "\n";
 
-        (*layer)->runForward(activations);
+        MatrixVector outputActivations;
+
+        (*layer)->runForward(outputActivations, activations);
+
+        activations = std::move(outputActivations);
 
         weightMatrices += (*layer)->weights().size();
     }
 
     gradient.resize(weightMatrices);
 
+    if(!empty())
+    {
+        front()->setShouldComputeDeltas(false);
+    }
+
     auto costFunctionResult = getCostFunction()->computeCost(activations.back(), reference);
 
     auto activation = activations.rbegin();
     auto delta      = getCostFunction()->computeDelta(*activation, reference);
+
+    util::log("NeuralNetwork") << " Running forward propagation of delta "
+        << delta.shapeString() << "\n";
+
+    MatrixVector outputDeltas;
+
+    outputDeltas.push_back(delta);
 
     auto gradientMatrix = gradient.rbegin();
 
     for(auto layer = rbegin(); layer != rend(); ++layer, ++activation)
     {
         MatrixVector grad;
+        MatrixVector inputDeltas;
 
         util::log("NeuralNetwork") << " Running reverse propagation through layer "
             << std::distance(begin(), std::next(layer).base()) << "\n";
 
-        delta = (*layer)->runReverse(grad, activations, delta);
+        (*layer)->runReverse(grad, inputDeltas, outputDeltas);
+        (*layer)->clearReversePropagationData();
+
+        outputDeltas = std::move(inputDeltas);
 
         for(auto gradMatrix = grad.rbegin(); gradMatrix != grad.rend();
             ++gradMatrix, ++gradientMatrix)
@@ -119,7 +142,6 @@ double NeuralNetwork::getCostAndGradient(MatrixVector& gradient, const Matrix& i
             << costFunctionResult.shapeString() << "\n";
     }
 
-
     return weightCost + reduce(costFunctionResult, {}, matrix::Add())[0];
 }
 
@@ -135,7 +157,16 @@ double NeuralNetwork::getInputCostAndGradient(Matrix& gradient,
         util::log("NeuralNetwork") << " Running forward propagation through layer "
             << std::distance(begin(), layer) << "\n";
 
-        (*layer)->runForward(activations);
+        MatrixVector outputActivations;
+
+        (*layer)->runForward(outputActivations, activations);
+
+        activations = std::move(outputActivations);
+    }
+
+    if(!empty())
+    {
+        front()->setShouldComputeDeltas(true);
     }
 
     auto costFunctionResult = getCostFunction()->computeCost(activations.back(), reference);
@@ -143,11 +174,19 @@ double NeuralNetwork::getInputCostAndGradient(Matrix& gradient,
     auto activation = activations.rbegin();
     auto delta      = getCostFunction()->computeDelta(*activation, reference);
 
+    MatrixVector outputDeltas;
+
+    outputDeltas.push_back(delta);
+
     for(auto layer = rbegin(); layer != rend(); ++layer, ++activation)
     {
         MatrixVector grad;
+        MatrixVector inputDeltas;
 
-        delta = (*layer)->runReverse(grad, activations, delta);
+        (*layer)->runReverse(grad, inputDeltas, outputDeltas);
+        (*layer)->clearReversePropagationData();
+
+        outputDeltas = std::move(inputDeltas);
     }
 
     auto samples = input.size().back();
@@ -190,14 +229,15 @@ NeuralNetwork::Matrix NeuralNetwork::runInputs(const Matrix& m)
         util::log("NeuralNetwork") << " Running forward propagation through layer "
             << std::distance(_layers.begin(), i) << "\n";
 
-        (*i)->runForward(activations);
+        MatrixVector outputActivations;
 
-        auto output = activations.back();
+        (*i)->runForward(outputActivations, activations);
+        (*i)->clearReversePropagationData();
 
-        activations.clear();
-
-        activations.push_back(output);
+        activations = std::move(outputActivations);
     }
+
+    assert(activations.size() == 1);
 
     return activations.back();
 }

@@ -1,0 +1,147 @@
+{
+    "name" : "audio-search",
+
+    "optimization" :
+    {
+        "type" : "NesterovAcceleratedGradientSolver",
+
+        "batch-size"      : "8",
+        "maximum-samples" : "1024",
+        "standardization-samples" : "128",
+
+        "epochs" : "20",
+
+        "parameters" :
+        {
+            "NesterovAcceleratedGradient::LearningRate"       : "1.56e-6",
+            "NesterovAcceleratedGradient::Momentum"           : "0.99",
+            "NesterovAcceleratedGradient::AnnealingRate"      : "1.000001",
+            "NesterovAcceleratedGradient::MaxGradNorm"        : "400.0",
+            "NesterovAcceleratedGradient::IterationsPerBatch" : "1"
+        }
+    },
+
+    "model" :
+    {
+        "engine" : "LearnerEngine",
+
+        "layer-types" :
+        {
+            "recurrent" :
+            {
+                "Type" : "RecurrentLayer",
+                "Size" : "512"
+            },
+            "input-convolution":
+            {
+                "Type"              : "AudioConvolutionalLayer",
+                "FilterSamples"    : "320",
+                "FilterTimesteps"  : "3",
+                "FilterOutputs"    : "512",
+                "PaddingSamples"   : "0",
+                "PaddingTimesteps" : "1"
+
+            },
+            "output":
+            {
+                "Type" : "FeedForwardLayer"
+            },
+            "batch-norm" :
+            {
+                "Type" : "BatchNormalizationLayer"
+            }
+        },
+
+        "networks" :
+        {
+            "Classifier" :
+            {
+                "layers" :
+                [
+                    "input-convolution",
+                    "batch-norm",
+                    "recurrent",
+                    "batch-norm",
+                    "recurrent",
+                    "batch-norm",
+                    "recurrent",
+                    "batch-norm",
+                    "recurrent",
+                    "output"
+                ]
+            }
+        },
+
+        "cost-function" :
+        {
+            "name" : "CTCCostFunction"
+        },
+
+        "model-attributes" :
+        {
+            "SamplingRate"  : "8000",
+            "FrameDuration" : "320",
+            "Graphemes" : [ "a", "b", "c", "d", "e", "f", "g", "h", "i",
+                            "j", "k", "l", "m", "n", "o", "p", "q", "r",
+                            "s", "t", "u", "v", "w", "x", "y", "z", ".",
+                            ",", "'", " "],
+            "DelimiterGrapheme" : "END"
+
+
+        },
+
+        "infer-outputs-from" : "/Users/gregorydiamos/temp/libri-speech-100/development/database.txt"
+
+    },
+
+    "attributes" :
+    {
+        "InputAudioDataProducer::SpeechScaleLower" : "1.0",
+        "InputAudioDataProducer::SpeechScaleUpper" : "1.0",
+        "InputAudioDataProducer::NoiseRateLower" : "0.0",
+        "InputAudioDataProducer::NoiseRateUpper" : "0.01",
+        "InputAudioDataProducer::TotalTimestepsPerUtterance" : "1024",
+        "InputAudioDataProducer::AudioTimesteps" : "1024",
+        "InputAudioDataProducer::SaveSamples" : "0"
+    },
+
+    "dataset" :
+    {
+        "training-dataset-path"   : "/Users/gregorydiamos/temp/libri-speech-100/training/database.txt",
+        "validation-dataset-path" : "/Users/gregorydiamos/temp/libri-speech-100/development/database.txt",
+
+        "required-accuracy" : "99.0"
+    },
+
+    "result" :
+    {
+        "result-processor" : "GraphemeErrorRateResultProcessor"
+    },
+
+    "checkpointing" :
+    {
+        "use-log-file" : "1",
+        "base-directory" : "audio-search"
+    },
+
+    "logging" :
+    {
+        "enabled-loggers" :
+        [
+            "NesterovAcceleratedGradientSolver",
+            "BenchmarkDataset",
+            "GraphemeMatchResultProcessor",
+            "GraphemeMatchResultProcessor::Detail",
+            "InputAudioDataProducer"
+        ]
+    },
+
+    "system" :
+    {
+        "use-cuda"    : "0",
+        "cuda-device" : "0",
+        "precision"   : "SinglePrecision"
+    }
+
+}
+

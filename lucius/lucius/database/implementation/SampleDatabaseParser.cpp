@@ -87,7 +87,8 @@ void SampleDatabaseParser::parse()
 
 }
 
-static unsigned int parseInteger(const std::string s);
+static unsigned int parseInteger(const std::string& s);
+static std::string toLower(const std::string& s);
 
 static void parseLabeledPath(SampleDatabase* database, const std::string& line,
     const std::string& databaseDirectory)
@@ -104,7 +105,7 @@ static void parseLabeledPath(SampleDatabase* database, const std::string& line,
     auto filePath = util::getRelativePath(databaseDirectory,
         removeWhitespace(components[0]));
 
-    auto label = removeWhitespace(components[1]);
+    auto label = util::strip(toLower(removeWhitespace(components[1])), "\"");
 
     if(video::Image::isPathAnImage(filePath) || audio::Audio::isPathAnAudio(filePath))
     {
@@ -151,7 +152,7 @@ static void parseLabeledPath(SampleDatabase* database, const std::string& line,
     }
 }
 
-static unsigned int parseInteger(const std::string s)
+static unsigned int parseInteger(const std::string& s)
 {
     std::stringstream stream;
 
@@ -231,6 +232,18 @@ static std::string removeWhitespace(const std::string& line)
 static bool isWhitespace(char c)
 {
     return (c == ' ') || (c == '\n') || (c == '\t') || (c == '\r');
+}
+
+static std::string toLower(const std::string& string)
+{
+    auto result = string;
+
+    for(auto& character : result)
+    {
+        character = std::tolower(character);
+    }
+
+    return result;
 }
 
 }

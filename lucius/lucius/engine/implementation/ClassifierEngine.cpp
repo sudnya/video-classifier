@@ -40,14 +40,88 @@ ClassifierEngine::~ClassifierEngine()
 
 }
 
+void ClassifierEngine::setModel(Model* model)
+{
+    if(model->getAttribute<bool>("UsesGraphemes"))
+    {
+        setResultProcessor(results::ResultProcessorFactory::create("GraphemeMatchResultProcessor"));
+    }
+
+    Engine::setModel(model);
+}
+
 void ClassifierEngine::setUseLabeledData(bool shouldUse)
 {
     _shouldUseLabeledData = shouldUse;
 }
 
-util::StringVector convertActivationsToLabels(matrix::Matrix&& activations,
+static util::StringVector convertActivationsToGraphemeLabels(matrix::Matrix&& activations,
     const model::Model& model)
 {
+    assert(activations.size().size() >= 3);
+
+    if(activations.size().size() > 3)
+    {
+        activations = reshape(activations,
+            {activations.size().front(),
+             activations.size()[1],
+             activations.size().product() / (activations.size().front() * activations.size()[1])});
+    }
+
+    size_t timesteps     = activations.size()[2];
+    size_t miniBatchSize = activations.size()[1];
+    size_t graphemes     = activations.size()[0];
+
+    util::StringVector labels;
+
+    for(size_t miniBatch = 0; miniBatch < miniBatchSize; ++miniBatch)
+    {
+        std::string currentLabel;
+
+        size_t currentGrapheme = graphemes;
+
+        for(size_t timestep = 0; timestep < timesteps; ++timestep)
+        {
+            size_t maxGrapheme = 0;
+            double maxValue    = 0.0;
+
+            for(size_t grapheme = 0; grapheme < graphemes; ++grapheme)
+            {
+                if(activations(grapheme, miniBatch, timestep) >= maxValue)
+                {
+                    maxValue    = activations(grapheme, miniBatch, timestep);
+                    maxGrapheme = grapheme;
+                }
+            }
+
+            if(maxGrapheme != currentGrapheme)
+            {
+                currentGrapheme = maxGrapheme;
+                auto newGrapheme = model.getOutputLabel(maxGrapheme);
+
+                currentLabel.insert(currentLabel.end(), newGrapheme.begin(), newGrapheme.end());
+            }
+
+            /*if(maxGrapheme == graphemes - 1)
+            {
+                break;
+            }*/
+        }
+
+        labels.push_back(currentLabel);
+    }
+
+    return labels;
+}
+
+static util::StringVector convertActivationsToLabels(matrix::Matrix&& activations,
+    const model::Model& model)
+{
+    if(model.getAttribute<bool>("UsesGraphemes"))
+    {
+        return convertActivationsToGraphemeLabels(std::move(activations), model);
+    }
+
     if(activations.size().size() > 2)
     {
         activations = reshape(activations,
@@ -124,12 +198,12 @@ ClassifierEngine::ResultVector ClassifierEngine::runOnBatch(Matrix&& input, Matr
     {
         auto cost = network->getCost(input, reference);
 
-        results = std::move(compareWithReference(cost * labels.size(), getIteration(), labels,
-            convertActivationsToLabels(std::move(reference), *getModel())));
+        results = compareWithReference(cost * labels.size(), getIteration(), labels,
+            convertActivationsToLabels(std::move(reference), *getModel()));
     }
     else
     {
-        results = std::move(recordLabels(labels));
+        results = recordLabels(labels);
     }
 
     restoreAggregateNetwork();

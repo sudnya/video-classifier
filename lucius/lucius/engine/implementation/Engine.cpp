@@ -114,7 +114,7 @@ void Engine::runOnDataProducer(InputDataProducer& producer)
     {
         while(!producer.empty())
         {
-            auto dataAndReference = std::move(producer.pop());
+            auto dataAndReference = producer.pop();
 
             size_t batchSize = dataAndReference.first.size()[
                 dataAndReference.first.size().size() - 2];

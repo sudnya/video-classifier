@@ -51,6 +51,7 @@ public:
 
 public:
     size_t elements() const;
+    bool empty() const;
 
 public:
     FloatIterator begin();

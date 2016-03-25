@@ -7,6 +7,7 @@
 #include <string>
 #include <cassert>
 #include <sstream>
+#include <stdexcept>
 
 namespace lucius
 {
@@ -29,6 +30,34 @@ public:
     }
 
 public:
+    bool contains(const std::string& name) const
+    {
+        return _parameters.count(name) != 0;
+    }
+
+public:
+    template <typename T>
+    T get(const std::string& name) const
+    {
+        auto parameter = _parameters.find(name);
+
+        if(parameter == _parameters.end())
+        {
+            throw std::runtime_error("Parameter with name '" + name +
+                "' not found in ParameterPack(" + toString() + ")");
+        }
+
+        T value;
+
+        std::stringstream stream;
+
+        stream << parameter->second;
+
+        stream >> value;
+
+        return value;
+    }
+
     template <typename T>
     T get(const std::string& name, const T& defaultValue) const
     {
@@ -48,6 +77,31 @@ public:
         stream >> value;
 
         return value;
+    }
+
+public:
+    template <typename T>
+    void insert(const std::string& name, const T& value)
+    {
+        _parameters.insert(std::make_pair(name, _toString(value)));
+    }
+
+public:
+    std::string toString() const
+    {
+        std::stringstream stream;
+
+        bool first = true;
+
+        for(auto& parameter : _parameters)
+        {
+            if(!first) stream << ", ";
+            first = false;
+
+            stream << parameter.first << " : " << parameter.second;
+        }
+
+        return stream.str();
     }
 
 private:

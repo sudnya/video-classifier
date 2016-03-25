@@ -10,7 +10,7 @@
 #include <lucius/engine/interface/Engine.h>
 #include <lucius/engine/interface/EngineFactory.h>
 
-#include <lucius/results/interface/LabelMatchResultProcessor.h>
+#include <lucius/results/interface/ResultProcessor.h>
 
 // Standard Library Includes
 #include <fstream>
@@ -22,8 +22,10 @@ namespace engine
 {
 
 ValidationErrorObserver::ValidationErrorObserver(
-    const std::string& validationSetPath, const std::string& outputPath, size_t batchSize)
-: _validationSetPath(validationSetPath), _outputPath(outputPath), _batchSize(batchSize)
+    const std::string& validationSetPath, const std::string& outputPath, size_t batchSize,
+    size_t maximumSamples)
+: _validationSetPath(validationSetPath), _outputPath(outputPath), _batchSize(batchSize),
+  _maximumSamples(maximumSamples)
 {
 
 }
@@ -40,14 +42,13 @@ void ValidationErrorObserver::epochCompleted(Engine& runningEngine)
     engine->setBatchSize(_batchSize);
     engine->setModel(runningEngine.getModel());
     engine->setStandardizeInput(true);
-    engine->setMaximumSamplesToRun(100000);
+    engine->setMaximumSamplesToRun(_maximumSamples);
 
     // read from database and use model to test
     engine->runOnDatabaseFile(_validationSetPath);
 
     // get the result processor
-    auto resultProcessor = static_cast<results::LabelMatchResultProcessor*>(
-        engine->getResultProcessor());
+    auto resultProcessor = engine->getResultProcessor();
 
     _accuracy.push_back(resultProcessor->getCost());
 

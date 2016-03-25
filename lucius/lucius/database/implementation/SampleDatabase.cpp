@@ -36,7 +36,34 @@ SampleDatabase::~SampleDatabase()
 
 SampleDatabase::StringVector SampleDatabase::getAllPossibleLabels() const
 {
-    return StringVector(_labels.begin(), _labels.end());
+    if(_graphemes.empty())
+    {
+        return StringVector(_labels.begin(), _labels.end());
+    }
+    else
+    {
+        return getGraphemes();
+    }
+}
+
+SampleDatabase::StringVector SampleDatabase::getGraphemes() const
+{
+    StringVector graphemes(_graphemes.begin(), _graphemes.end());
+
+    graphemes.push_back(getDefaultGrapheme());
+    graphemes.push_back(getDelimiterGrapheme());
+
+    return graphemes;
+}
+
+const std::string& SampleDatabase::getDefaultGrapheme() const
+{
+    return _defaultGrapheme;
+}
+
+const std::string& SampleDatabase::getDelimiterGrapheme() const
+{
+    return _delimiterGrapheme;
 }
 
 size_t SampleDatabase::getTotalLabelCount() const
@@ -136,6 +163,21 @@ void SampleDatabase::addSample(const Sample& sample)
 void SampleDatabase::addLabel(const std::string& label)
 {
     _labels.insert(label);
+}
+
+void SampleDatabase::addGrapheme(const std::string& grapheme)
+{
+    _graphemes.insert(grapheme);
+}
+
+void SampleDatabase::setDefaultGrapheme(const std::string& grapheme)
+{
+    _defaultGrapheme = grapheme;
+}
+
+void SampleDatabase::setDelimiterGrapheme(const std::string& grapheme)
+{
+    _delimiterGrapheme = grapheme;
 }
 
 void SampleDatabase::save() const

@@ -85,6 +85,12 @@ double NesterovAcceleratedGradientSolver::solve(MatrixVector& inputs,
 
         futurePointCost = callback.computeCostAndGradient(futurePointDerivative, futureInputs);
 
+        if(!std::isfinite(futurePointCost))
+        {
+            util::log("NesterovAcceleratedGradientSolver") << "Skipping not finite update.\n";
+            continue;
+        }
+
         double gradNorm = std::sqrt(matrix::dotProduct(futurePointDerivative,
             futurePointDerivative));
 

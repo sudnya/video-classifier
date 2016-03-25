@@ -46,22 +46,22 @@ static std::unique_ptr<engine::Engine> createEngine(
 
 static std::string loadFile(const std::string& path);
 
-static void createNewModel(const std::string& modelFileName, const std::string& modelSpecificationPath)
+static void createNewModel(const std::string& modelFileName,
+    const std::string& modelSpecificationPath)
 {
-    model::ModelBuilder builder;
-
     std::unique_ptr<model::Model> model;
 
     if(modelSpecificationPath.empty())
     {
-        model.reset(builder.create(modelFileName));
+        throw std::runtime_error("Missing model specification.");
     }
     else
     {
         auto specification = loadFile(modelSpecificationPath);
 
-        model.reset(builder.create(modelFileName, specification));
+        model = model::ModelBuilder::create(specification);
 
+        model->setPath(modelFileName);
     }
 
     model->save();

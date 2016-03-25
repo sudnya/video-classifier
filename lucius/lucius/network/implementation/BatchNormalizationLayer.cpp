@@ -67,7 +67,7 @@ BatchNormalizationLayer::~BatchNormalizationLayer()
 }
 
 BatchNormalizationLayer::BatchNormalizationLayer(const BatchNormalizationLayer& l)
-: _parameters(std::make_unique<MatrixVector>(*l._parameters)),
+: Layer(l), _parameters(std::make_unique<MatrixVector>(*l._parameters)),
   _gamma((*_parameters)[0]), _beta((*_parameters)[1]),
   _internal_parameters(std::make_unique<MatrixVector>(*l._internal_parameters)),
   _means((*_internal_parameters)[0]), _variances((*_internal_parameters)[1]),
@@ -79,15 +79,17 @@ BatchNormalizationLayer::BatchNormalizationLayer(const BatchNormalizationLayer& 
 
 BatchNormalizationLayer& BatchNormalizationLayer::operator=(const BatchNormalizationLayer& l)
 {
+    Layer::operator=(l);
+
     if(&l == this)
     {
         return *this;
     }
 
-    _parameters = std::move(std::make_unique<MatrixVector>(*l._parameters));
-    _inputSize  = std::move(std::make_unique<matrix::Dimension>(*l._inputSize));
+    _parameters = std::make_unique<MatrixVector>(*l._parameters);
+    _inputSize  = std::make_unique<matrix::Dimension>(*l._inputSize);
 
-    _internal_parameters = std::move(std::make_unique<MatrixVector>(*l._internal_parameters));
+    _internal_parameters = std::make_unique<MatrixVector>(*l._internal_parameters);
     _samples             = l._samples;
 
     return *this;
@@ -195,9 +197,14 @@ static Matrix scaleAndShift(const Matrix& activations, const Matrix& gamma, cons
         beta, {1}, matrix::Add());
 }
 
-void BatchNormalizationLayer::runForwardImplementation(MatrixVector& activations)
+void BatchNormalizationLayer::runForwardImplementation(MatrixVector& outputActivationsVector,
+    const MatrixVector& inputActivationsVector)
 {
-    auto inputActivations = foldTime(activations.back());
+    assert(inputActivationsVector.size() == 1);
+
+    saveMatrix("inputActivations", inputActivationsVector.front());
+
+    auto inputActivations = foldTime(inputActivationsVector.front());
 
     util::log("BatchNormalizationLayer") << " Running forward propagation of matrix "
         << inputActivations.shapeString() << " through batch normalization: "
@@ -212,7 +219,7 @@ void BatchNormalizationLayer::runForwardImplementation(MatrixVector& activations
     Matrix means;
     Matrix variances;
 
-    if(isTraining())
+    if(getIsTraining())
     {
         updateMeansAndVariances(means, variances, _means,
             _variances, inputActivations, _samples);
@@ -248,7 +255,10 @@ void BatchNormalizationLayer::runForwardImplementation(MatrixVector& activations
     }
 
     auto outputActivations = unfoldTime(getActivationFunction()->apply(
-        scaleAndShift(normalizedActivations, _gamma, _beta)), activations.back().size());
+        scaleAndShift(normalizedActivations, _gamma, _beta)),
+        inputActivationsVector.front().size());
+
+    saveMatrix("outputActivations", outputActivations);
 
     if(util::isLogEnabled("BatchNormalizationLayer::Detail"))
     {
@@ -256,25 +266,24 @@ void BatchNormalizationLayer::runForwardImplementation(MatrixVector& activations
             << outputActivations.debugString();
     }
 
-    activations.push_back(std::move(outputActivations));
+    outputActivationsVector.push_back(std::move(outputActivations));
 }
 
-Matrix BatchNormalizationLayer::runReverseImplementation(MatrixVector& gradients,
-    MatrixVector& activations,
-    const Matrix& deltasWithTime)
+void BatchNormalizationLayer::runReverseImplementation(MatrixVector& gradients,
+    MatrixVector& inputDeltasVector,
+    const MatrixVector& outputDeltas)
 {
-    assert(isTraining());
+    assert(getIsTraining());
+    assert(outputDeltas.size() == 1);
 
     // Get the output activations
-    auto outputActivations = foldTime(activations.back());
-
-    // deallocate memory for the output activations
-    activations.pop_back();
+    auto outputActivations = foldTime(loadMatrix("outputActivations"));
 
     // Get the input activations and deltas
-    auto inputActivations = foldTime(activations.back());
+    auto inputActivations = foldTime(loadMatrix("inputActivations"));
+
     auto deltas = apply(getActivationFunction()->applyDerivative(outputActivations),
-        foldTime(deltasWithTime), matrix::Multiply());
+        foldTime(outputDeltas.front()), matrix::Multiply());
 
     // Get sizes
     size_t miniBatchSize = outputActivations.size()[1];
@@ -290,7 +299,6 @@ Matrix BatchNormalizationLayer::runReverseImplementation(MatrixVector& gradients
         util::log("BatchNormalizationLayer::Detail") << " variances:  "
             << variances.debugString();
     }
-
 
     // Compute derivatives:
 
@@ -310,7 +318,8 @@ Matrix BatchNormalizationLayer::runReverseImplementation(MatrixVector& gradients
     auto variancePlusEpsilon = apply(variances,
         matrix::Add(std::numeric_limits<double>::epsilon()));
 
-    //  dl/dVariance = sum_mini_batch(dl/dx^ * (inputMinusMean)) * (-1.0/2.0) * (variance + epsilon)^(-3.0/2.0)
+    //  dl/dVariance = sum_mini_batch(dl/dx^ * (inputMinusMean)) *
+    //                 (-1.0/2.0) * (variance + epsilon)^(-3.0/2.0)
     auto variancePlusEpsilonPowHalf = apply(apply(variancePlusEpsilon, matrix::Pow(-3.0/2.0)),
         matrix::Multiply(-1.0/2.0));
 
@@ -394,7 +403,7 @@ Matrix BatchNormalizationLayer::runReverseImplementation(MatrixVector& gradients
             << betaDeltas.debugString();
     }
 
-    return unfoldTime(inputDeltas, deltasWithTime.size());
+    inputDeltasVector.push_back(unfoldTime(inputDeltas, outputDeltas.front().size()));
 }
 
 MatrixVector& BatchNormalizationLayer::weights()
@@ -495,11 +504,6 @@ void BatchNormalizationLayer::load(util::InputTarArchive& archive,
 std::unique_ptr<Layer> BatchNormalizationLayer::clone() const
 {
     return std::make_unique<BatchNormalizationLayer>(*this);
-}
-
-std::unique_ptr<Layer> BatchNormalizationLayer::mirror() const
-{
-    return clone();
 }
 
 std::string BatchNormalizationLayer::getTypeName() const

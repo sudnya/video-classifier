@@ -51,7 +51,8 @@ static NeuralNetwork createFeedForwardFullyConnectedNetwork(
 
     for(size_t layer = 0; layer < layerCount; ++layer)
     {
-        network.addLayer(std::make_unique<FeedForwardLayer>(layerSize, layerSize, DoublePrecision()));
+        network.addLayer(std::make_unique<FeedForwardLayer>(
+            layerSize, layerSize, DoublePrecision()));
     }
 
     network.initialize();
@@ -86,8 +87,10 @@ static NeuralNetwork createFeedForwardFullyConnectedSigmoidNetwork(
 
     for(size_t layer = 0; layer < layerCount; ++layer)
     {
-        network.addLayer(std::make_unique<FeedForwardLayer>(layerSize, layerSize, DoublePrecision()));
-        network.back()->setActivationFunction(ActivationFunctionFactory::create("SigmoidActivationFunction"));
+        network.addLayer(std::make_unique<FeedForwardLayer>(
+            layerSize, layerSize, DoublePrecision()));
+        network.back()->setActivationFunction(
+            ActivationFunctionFactory::create("SigmoidActivationFunction"));
     }
 
     network.initialize();
@@ -102,7 +105,8 @@ static NeuralNetwork createFeedForwardFullyConnectedSoftmaxNetwork(
 
     for(size_t layer = 0; layer < layerCount; ++layer)
     {
-        network.addLayer(std::make_unique<FeedForwardLayer>(layerSize, layerSize, DoublePrecision()));
+        network.addLayer(std::make_unique<FeedForwardLayer>(layerSize,
+            layerSize, DoublePrecision()));
     }
 
     network.setCostFunction(CostFunctionFactory::create("SoftmaxCostFunction"));
@@ -144,9 +148,20 @@ static NeuralNetwork createRecurrentNetwork(size_t layerSize, size_t layerCount)
     for(size_t layer = 0; layer < layerCount; ++layer)
     {
         network.addLayer(std::make_unique<RecurrentLayer>(layerSize, 1, DoublePrecision()));
+        network.back()->setActivationFunction(
+            ActivationFunctionFactory::create("SigmoidActivationFunction"));
     }
 
     network.initialize();
+
+    return network;
+}
+
+static NeuralNetwork createRecurrentCtcNetwork(size_t layerSize, size_t layerCount)
+{
+    auto network = createRecurrentNetwork(layerSize, layerCount);
+
+    network.setCostFunction(CostFunctionFactory::create("CTCCostFunction"));
 
     return network;
 }
@@ -174,13 +189,21 @@ static Matrix generateInputWithBatchSize(NeuralNetwork& network, size_t batchSiz
     return matrix::rand(size, DoublePrecision());
 }
 
-static Matrix generateOneHotReference(NeuralNetwork& network)
+static Matrix generateOneHotReference(NeuralNetwork& network, size_t timesteps = 1)
 {
-    Matrix result = zeros(network.getOutputSize(), DoublePrecision());
+    auto size = network.getOutputSize();
 
-    Matrix position = apply(rand({1}, DoublePrecision()), lucius::matrix::Multiply(network.getOutputCount()));
+    size.back() = timesteps;
 
-    result[position[0]] = 1.0;
+    Matrix result = zeros(size, DoublePrecision());
+
+    for(size_t t = 0; t < timesteps; ++t)
+    {
+        Matrix position = apply(rand({1}, DoublePrecision()),
+            lucius::matrix::Multiply(network.getOutputCount()));
+
+        result[position[0] + network.getOutputCount() * t] = 1.0;
+    }
 
     return result;
 }
@@ -223,10 +246,9 @@ static double getDifference(double difference, double total)
     return difference / total;
 }
 
-static bool gradientCheck(NeuralNetwork& network, const Matrix& input, const Matrix& reference)
+static bool gradientCheck(NeuralNetwork& network, const Matrix& input, const Matrix& reference,
+    const double epsilon = 1.0e-5)
 {
-    const double epsilon = 1.0e-5;
-
     double total = 0.0;
     double difference = 0.0;
 
@@ -249,9 +271,13 @@ static bool gradientCheck(NeuralNetwork& network, const Matrix& input, const Mat
 
                 double newCost = network.getCost(input, reference);
 
-                weight -= epsilon;
+                weight -= 2*epsilon;
 
-                double estimatedGradient = (newCost - cost) / epsilon;
+                double newCost2 = network.getCost(input, reference);
+
+                weight += epsilon;
+
+                double estimatedGradient = (newCost - newCost2) / (2*epsilon);
                 double computedGradient = gradient[matrixId][weightId];
 
                 double thisDifference = std::pow(estimatedGradient - computedGradient, 2.0);
@@ -259,10 +285,10 @@ static bool gradientCheck(NeuralNetwork& network, const Matrix& input, const Mat
                 difference += thisDifference;
                 total += std::pow(computedGradient, 2.0);
 
-                lucius::util::log("TestGradientCheck") << " (layer " << layerId << ", matrix " << matrixId
-                    << ", weight " << weightId << ") value is " << computedGradient << " estimate is "
-                    << estimatedGradient << " (newCost " << newCost << ", oldCost " << cost << ")"
-                    << " difference is " << thisDifference << " \n";
+                lucius::util::log("TestGradientCheck") << " (layer " << layerId << ", matrix "
+                    << matrixId << ", weight " << weightId << ") value is " << computedGradient
+                    << " estimate is " << estimatedGradient << " (newCost " << newCost
+                    << ", oldCost " << cost << ")" << " difference is " << thisDifference << " \n";
 
                 if(!isInRange(getDifference(difference, total), epsilon))
                 {
@@ -313,6 +339,14 @@ static bool gradientCheckTimeSeries(NeuralNetwork& network, size_t timesteps)
     auto reference = generateReferenceWithTimeSeries(network, timesteps);
 
     return gradientCheck(network, input, reference);
+}
+
+static bool gradientCheckCtc(NeuralNetwork& network, size_t timesteps)
+{
+    auto input     = generateInputWithTimeSeries(network, timesteps);
+    auto reference = generateOneHotReference(network, timesteps/2);
+
+    return gradientCheck(network, input, reference, 1.0e-3);
 }
 
 static bool runTestFeedForwardFullyConnected(size_t layerSize, size_t layerCount, bool seed)
@@ -432,7 +466,7 @@ static bool runTestConvolutional(size_t layerSize, size_t layerCount, bool seed)
     }
     else
     {
-        matrix::srand(377);
+        matrix::srand(380);
     }
 
     auto network = createConvolutionalNetwork(layerSize, layerCount);
@@ -459,7 +493,7 @@ static bool runTestRecurrent(size_t layerSize, size_t layerCount, size_t timeste
     }
     else
     {
-        matrix::srand(377);
+        matrix::srand(1456212655);
     }
 
     auto network = createRecurrentNetwork(layerSize, layerCount);
@@ -478,10 +512,44 @@ static bool runTestRecurrent(size_t layerSize, size_t layerCount, size_t timeste
     }
 }
 
+static bool runTestRecurrentCtc(size_t layerSize, size_t layerCount, size_t timesteps, bool seed)
+{
+    if(seed)
+    {
+        matrix::srand(std::time(0));
+    }
+    else
+    {
+        matrix::srand(1456212655);
+    }
+
+    auto network = createRecurrentCtcNetwork(layerSize, 1);
+
+    if(gradientCheckCtc(network, timesteps))
+    {
+        std::cout << "Recurrent Network Test Passed\n";
+
+        return true;
+    }
+    else
+    {
+        std::cout << "Recurrent Network Test Failed\n";
+
+        return false;
+    }
+}
+
 static void runTest(size_t layerSize, size_t layerCount, size_t batchSize,
     size_t timesteps, bool seed)
 {
     bool result = true;
+
+    result &= runTestRecurrentCtc(layerSize, layerCount, timesteps, seed);
+
+    if(!result)
+    {
+        return;
+    }
 
     result &= runTestConvolutional(layerSize, layerCount, seed);
 
@@ -490,7 +558,7 @@ static void runTest(size_t layerSize, size_t layerCount, size_t batchSize,
         return;
     }
 
-    result &= runTestBatchNormalizationNetwork(layerSize, layerCount, batchSize, seed);
+    result &= runTestRecurrent(layerSize, layerCount, timesteps, seed);
 
     if(!result)
     {
@@ -518,7 +586,8 @@ static void runTest(size_t layerSize, size_t layerCount, size_t batchSize,
         return;
     }
 
-    result &= runTestRecurrent(layerSize, layerCount, timesteps, seed);
+    result &= runTestBatchNormalizationNetwork(layerSize, layerCount, batchSize, seed);
+
 }
 
 }

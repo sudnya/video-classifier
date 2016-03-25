@@ -15,6 +15,8 @@
 
 #include <lucius/matrix/interface/Matrix.h>
 
+#include <lucius/model/interface/Model.h>
+
 #include <lucius/util/interface/Knobs.h>
 #include <lucius/util/interface/debug.h>
 #include <lucius/util/interface/memory.h>
@@ -40,7 +42,8 @@ public:
         const std::string& audioDatabaseFilename)
     : _producer(producer), _databaseFilename(audioDatabaseFilename), _initialized(false),
       _remainingSamples(0), _nextSample(0), _nextNoiseSample(0), _totalTimestepsPerUtterance(0),
-      _audioTimesteps(0), _noiseRateLower(0.0), _noiseRateUpper(0.0)
+      _audioTimesteps(0), _noiseRateLower(0.0), _noiseRateUpper(0.0),
+      _speechScaleLower(0.0), _speechScaleUpper(0.0)
     {
 
     }
@@ -68,6 +71,9 @@ public:
             _generator.seed(127);
         }
 
+        _saveSamples = util::KnobDatabase::getKnobValue(
+            "InputAudioDataProducer::SaveSamples", false);
+
         _totalTimestepsPerUtterance = util::KnobDatabase::getKnobValue(
             "InputAudioDataProducer::TotalTimestepsPerUtterance", 512);
         _audioTimesteps             = util::KnobDatabase::getKnobValue(
@@ -78,9 +84,14 @@ public:
         _noiseRateUpper = util::KnobDatabase::getKnobValue(
             "InputAudioDataProducer::NoiseRateUpper", 0.2);
 
+        _speechScaleLower = util::KnobDatabase::getKnobValue(
+            "InputAudioDataProducer::SpeechScaleLower", 0.5);
+        _speechScaleUpper = util::KnobDatabase::getKnobValue(
+            "InputAudioDataProducer::SpeechScaleUpper", 5.0);
+
         _parseAudioDatabase();
 
-        // Determine how many images to cache
+        // Determine how many audio samples to cache
         size_t samplesToCache = util::KnobDatabase::getKnobValue(
             "InputAudioDataProducer::CacheSize", 16);
 
@@ -146,7 +157,7 @@ public:
         _nextSample       = 0;
         _nextNoiseSample  = 0;
 
-        std::shuffle(_audio.begin(), _audio.end(), _generator);
+        std::shuffle(_audio.begin(), _audio.begin() + _remainingSamples, _generator);
         std::shuffle(_noise.begin(), _noise.end(), _generator);
     }
 
@@ -171,8 +182,8 @@ private:
 
             _downsampleToMatchFrequencies(audio, noise);
 
-            //_scaleRandomly(audio, 1.0);
-            _scaleRandomly(noise, _noiseRateLower, _noiseRateUpper);
+            _scaleRandomly(audio, _speechScaleLower, _speechScaleUpper);
+            _scaleRandomly(noise, _noiseRateLower,   _noiseRateUpper);
 
             auto selectedTimesteps = ((_generator() % _audioTimesteps) + _audioTimesteps) / 2;
 
@@ -181,7 +192,7 @@ private:
 
             batch.push_back(_merge(audio, noise));
 
-            #if 0
+            if(_saveSamples)
             {
                 std::stringstream filename;
 
@@ -199,7 +210,6 @@ private:
 
                 _audio[_nextSample].save(audiofile, ".wav");
             }
-            #endif
 
             if(!isAudioCached)
             {
@@ -253,6 +263,17 @@ private:
 
     Audio _merge(const Audio& audio, const Audio& noise)
     {
+        if(audio.size() * 2 >= noise.size())
+        {
+            auto result = audio;
+
+            auto audioGraphemes = _toGraphemes(audio.label());
+            result.setDefaultLabel(_delimiterGrapheme);
+            _applyGraphemesToRange(result, 0, audioGraphemes.size(), audioGraphemes);
+
+            return result;
+        }
+
         assert(2 * audio.size() < noise.size());
 
         size_t remainder = noise.size() - 2 * audio.size();
@@ -271,11 +292,101 @@ private:
             ++position;
         }
 
-        result.addLabel(0,                       position,                noise.label());
-        result.addLabel(position,                position + audio.size(), audio.label());
-        result.addLabel(position + audio.size(), noise.size(),            noise.label());
+        size_t frameSize = _getFrameSize();
+
+        if(_usesGraphemes())
+        {
+            result.setDefaultLabel(_delimiterGrapheme);
+
+            auto noiseGraphemes = _toGraphemes(noise.label());
+            auto audioGraphemes = _toGraphemes(audio.label());
+
+            _applyGraphemesToRange(result, 0, noiseGraphemes.size(), noiseGraphemes);
+            _applyGraphemesToRange(result, noiseGraphemes.size(),
+                noiseGraphemes.size() + audioGraphemes.size(), audioGraphemes);
+            _applyGraphemesToRange(result, noiseGraphemes.size() + audioGraphemes.size(),
+                (result.size() - frameSize)/frameSize, noiseGraphemes);
+        }
+        else
+        {
+            result.addLabel(0, position * frameSize, noise.label());
+            result.addLabel(position * frameSize,
+                frameSize * (position + audio.size()), audio.label());
+            result.addLabel(frameSize * (position + audio.size()),
+                noise.size() * frameSize, noise.label());
+        }
 
         return result;
+    }
+
+private:
+    typedef std::vector<std::string> StringVector;
+
+private:
+    void _applyGraphemesToRange(Audio& result, size_t beginTimestep, size_t endTimestep,
+        const StringVector& graphemes)
+    {
+        size_t limit = std::min(beginTimestep + graphemes.size(), endTimestep);
+
+        size_t frameSize = _getFrameSize();
+
+        for(size_t i = beginTimestep, grapheme = 0; i < limit; ++i, ++grapheme)
+        {
+            result.addLabel(frameSize * i, frameSize*(i+1), graphemes[grapheme]);
+        }
+    }
+
+    StringVector _toGraphemes(const std::string& label)
+    {
+        if(_graphemes.empty())
+        {
+            throw std::runtime_error("Could not match remaining label '" + label +
+                "' against a grapheme because there aren't any graphemes.");
+        }
+
+        auto remainingLabel = label;
+
+        StringVector graphemes;
+
+        while(!remainingLabel.empty())
+        {
+            auto insertPosition = _graphemes.lower_bound(remainingLabel);
+
+            // exact match
+            if(insertPosition != _graphemes.end() && *insertPosition == remainingLabel)
+            {
+                graphemes.push_back(remainingLabel);
+                break;
+            }
+
+            // ordered before first grapheme
+            if(insertPosition == _graphemes.begin())
+            {
+                throw std::runtime_error("Could not match remaining label '" + remainingLabel +
+                    "' against a grapheme.");
+            }
+
+            --insertPosition;
+
+            auto grapheme = remainingLabel.substr(0, insertPosition->size());
+
+            if(grapheme != *insertPosition)
+            {
+                throw std::runtime_error("Could not match remaining label '" + remainingLabel +
+                    "' against best grapheme '" + *insertPosition + "'.");
+            }
+
+            graphemes.push_back(grapheme);
+
+            remainingLabel = remainingLabel.substr(grapheme.size());
+        }
+
+        return graphemes;
+    }
+
+    bool _usesGraphemes() const
+    {
+        return !_graphemes.empty();
     }
 
     void _downsampleToMatchFrequencies(Audio& first, Audio& second)
@@ -346,9 +457,9 @@ private:
                         << sample.path() << "'\n";
                 }
 
-                if(sample.label() == "noise")
+                if(sample.label() == "noise" || sample.label().find("background|") == 0)
                 {
-                    _noise.push_back(Audio(sample.path(), sample.label()));
+                    _noise.push_back(Audio(sample.path(), util::strip(sample.label(), "|")));
                 }
                 else
                 {
@@ -356,6 +467,13 @@ private:
                 }
             }
         }
+
+        for(size_t output = 0; output != _producer->getModel()->getOutputCount(); ++output)
+        {
+            _graphemes.insert(_producer->getModel()->getOutputLabel(output));
+        }
+
+        _delimiterGrapheme = _producer->getModel()->getAttribute<std::string>("DelimiterGrapheme");
     }
 
 private:
@@ -369,10 +487,18 @@ private:
     AudioVector _noise;
 
 private:
+    typedef std::set<std::string> StringSet;
+
+private:
+    StringSet _graphemes;
+    std::string _delimiterGrapheme;
+
+private:
     std::default_random_engine _generator;
 
 private:
     bool _initialized;
+    bool _saveSamples;
 
 private:
     size_t _remainingSamples;
@@ -386,6 +512,10 @@ private:
 private:
     double _noiseRateLower;
     double _noiseRateUpper;
+
+private:
+    double _speechScaleLower;
+    double _speechScaleUpper;
 
 };
 

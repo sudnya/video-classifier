@@ -145,6 +145,34 @@ void MatrixVector::push_back(Matrix&& m)
     _matrix.push_back(std::move(m));
 }
 
+void MatrixVector::push_front(const Matrix&  m)
+{
+    Vector temp;
+
+    temp.push_back(m);
+
+    for(auto& m : _matrix)
+    {
+        temp.push_back(m);
+    }
+
+    _matrix = std::move(temp);
+}
+
+void MatrixVector::push_front(Matrix&& m)
+{
+    Vector temp;
+
+    temp.push_back(std::move(m));
+
+    for(auto& m : _matrix)
+    {
+        temp.push_back(m);
+    }
+
+    _matrix = std::move(temp);
+}
+
 void MatrixVector::push_back(MatrixVector&& v)
 {
     for(auto& m : v)
@@ -164,6 +192,20 @@ void MatrixVector::push_back(const MatrixVector& v)
 void MatrixVector::pop_back()
 {
     _matrix.pop_back();
+}
+
+void MatrixVector::pop_front()
+{
+    assert(!empty());
+
+    Vector newMatrix;
+
+    for(auto i = ++begin(); i != end(); ++i)
+    {
+        newMatrix.push_back(std::move(*i));
+    }
+
+    _matrix = std::move(newMatrix);
 }
 
 Matrix& MatrixVector::back()

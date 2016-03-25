@@ -1,0 +1,150 @@
+{
+    "name" : "sparse-text-search",
+
+    "optimization" :
+    {
+        "type" : "NesterovAcceleratedGradientSolver",
+
+        "batch-size"      : "64",
+        "maximum-samples" : "1e9",
+
+        "epochs" : "20",
+
+        "parameters" :
+        {
+            "NesterovAcceleratedGradient::LearningRate"       : "1.0e-4",
+            "NesterovAcceleratedGradient::Momentum"           : "0.99",
+            "NesterovAcceleratedGradient::AnnealingRate"      : "1.0001",
+            "NesterovAcceleratedGradient::MaxGradNorm"        : "100.0",
+            "NesterovAcceleratedGradient::IterationsPerBatch" : "1"
+        }
+    },
+
+    "model" :
+    {
+        "engine" : "InputOutputLearnerEngine",
+
+        "layer-types" :
+        {
+            "input-search" :
+            {
+                "Type"       : "SparseSearchLayer",
+                "Connection" : "Input",
+                "Size"       : "128",
+                "Radix"      : "32",
+                "Selections" : "4"
+            },
+            "output-search" :
+            {
+                "Type"       : "SparseSearchLayer",
+                "Connection" : "Output",
+                "Size"       : "128",
+                "Radix"      : "32",
+                "Selections" : "4"
+            },
+            "recurrent" :
+            {
+                "Type" : "RecurrentLayer",
+                "Size" : "128"
+            },
+            "output-update" :
+            {
+                "Type"       : "SparseUpdateLayer",
+                "Size"       : "128",
+                "Radix"      : "32",
+                "Selections" : "4"
+            },
+            "search-module" :
+            {
+                "Type"       : "SubgraphLayer",
+                "Submodules" :
+                {
+                    "input-search-0" :
+                    {
+                        "Type" : "input-search",
+                        "ForwardConnections" : ["output-search-0"]
+                    },
+                    "output-search-0" :
+                    {
+                        "Type" : "output-search",
+                        "ForwardConnections" : ["rnn-stack-0"]
+                    },
+                    "rnn-stack-0" :
+                    {
+                        "Type" : "rnn-stack",
+                        "ForwardConnections" : ["output-update-0"]
+                    },
+                    "output-update-0" :
+                    {
+                        "Type" : "output-update",
+                        "TimeConnections" : ["input-search-0", "output-search-0"]
+                    }
+                }
+            },
+            "rnn-stack" :
+            {
+                "Type" : "SubgraphLayer",
+                "Submodules" :
+                [
+                    "recurrent",
+                    "recurrent",
+                    "recurrent"
+                ]
+            }
+        },
+
+        "networks" :
+        {
+            "Classifier" :
+            {
+                "layers" :
+                [
+                    "search-module"
+                ]
+            }
+        },
+
+        "cost-function" :
+        {
+            "name" : "SoftmaxCostFunction"
+        }
+    },
+
+    "attributes" :
+    {
+        "InputOutputLearnerEngine::TimestepDecay"       : "1.1",
+        "InputTextDataProducer::InputMinimumCorruption" : "0.0",
+        "InputTextDataProducer::InputMaximumCorruption" : "0.1"
+    },
+
+    "dataset" :
+    {
+        "training-dataset-path"   : "/data/4tb/sparse-text-search/training/database.txt",
+        "validation-dataset-path" : "/data/4tb/sparse-text-search/validation/database.txt",
+        "required-accuracy"       : "90.0"
+    },
+
+    "checkpointing" :
+    {
+        "base-directory" : "sparse-text-search"
+    },
+
+    "logging" :
+    {
+        "enabled-loggers" :
+        [
+            "NesterovAcceleratedGradientSolver",
+            "BenchmarkDataset",
+            "LabelMatchResultProcessor",
+            "InputVisualDataProducer"
+        ]
+    },
+
+    "system" :
+    {
+        "use-cuda"    : "0",
+        "cuda-device" : "0",
+        "precision"   : "SinglePrecision"
+    }
+
+}

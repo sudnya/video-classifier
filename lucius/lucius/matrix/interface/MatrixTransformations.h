@@ -1,8 +1,12 @@
 
 #pragma once
 
-// Lucius Includes
-#include <lucius/matrix/interface/Matrix.h>
+// Standard Library Includes
+#include <cstddef>
+
+// Forward Declarations
+namespace lucius { namespace matrix { class Matrix;    } }
+namespace lucius { namespace matrix { class Dimension; } }
 
 namespace lucius
 {
@@ -17,6 +21,8 @@ Matrix slice(const Matrix& input, const Dimension& begin, const Dimension& end,
     const Dimension& stride);
 Matrix resize(const Matrix& input, const Dimension& size);
 Matrix reshape(const Matrix& input, const Dimension& size);
+
+Matrix concatenate(const Matrix& left, const Matrix& right, size_t dimension);
 
 }
 }

@@ -48,7 +48,7 @@ public:
 
 public:
     /*! \brief Add model directly, the caller retains takes ownership. */
-    void setModel(Model* model);
+    virtual void setModel(Model* model);
 
     /*! \brief Set the result handler, the engine takes ownership. */
     void setResultProcessor(ResultProcessor* processor);

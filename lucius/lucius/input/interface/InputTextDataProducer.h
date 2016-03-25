@@ -18,7 +18,7 @@ namespace input
 class InputTextDataProducer : public InputDataProducer
 {
 public:
-    InputTextDataProducer(const std::string& imageDatabaseFilename);
+    InputTextDataProducer(const std::string& textDatabaseFilename);
     virtual ~InputTextDataProducer();
 
 public:
