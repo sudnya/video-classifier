@@ -23,6 +23,16 @@ void ResultProcessor::setOutputFilename(const std::string& filename)
     // intentionally blank
 }
 
+double ResultProcessor::getAccuracy() const
+{
+    return 0.0;
+}
+
+double ResultProcessor::getCost() const
+{
+    return 0.0;
+}
+
 }
 
 }

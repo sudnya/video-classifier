@@ -25,6 +25,9 @@ public:
     virtual ~ClassifierEngine();
 
 public:
+    virtual void setModel(Model* model);
+
+public:
     void setUseLabeledData(bool useIt);
 
 protected:

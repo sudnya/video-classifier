@@ -10,8 +10,8 @@
 #include <string>
 
 // Forward Declarations
-namespace lucius { namespace results { class ResultProcessor; } } 
-namespace lucius { namespace results { class ResultVector;    } } 
+namespace lucius { namespace results { class ResultProcessor; } }
+namespace lucius { namespace results { class ResultVector;    } }
 
 namespace lucius
 {
@@ -35,6 +35,10 @@ public:
 
 public:
     virtual void setOutputFilename(const std::string& filename);
+
+public:
+    virtual double getAccuracy() const;
+    virtual double getCost() const;
 
 };
 

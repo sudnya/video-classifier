@@ -200,24 +200,14 @@ static void setupOutputLayerParameters(model::Model& model,
         {
             inputDatabase.addGrapheme(grapheme.key());
         }
-    }
 
-    if(specification.exists("model-attributes.DefaultGrapheme"))
-    {
-        inputDatabase.setDefaultGrapheme(
-            specification.get("model-attributes.DefaultGrapheme").key());
+        model.setAttribute("UsesGraphemes", "1");
     }
-    else
-    {
-        inputDatabase.setDefaultGrapheme(" ");
-    }
-
-    model.setAttribute("DefaultGrapheme", inputDatabase.getDefaultGrapheme());
 
     if(specification.exists("model-attributes.DelimiterGrapheme"))
     {
         inputDatabase.setDelimiterGrapheme(
-            specification.get("model-attributes.DelimiterGrapheme").key());
+            specification.get("model-attributes.DelimiterGrapheme").value());
     }
     else
     {

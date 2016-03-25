@@ -24,7 +24,7 @@ class ValidationErrorObserver : public EngineObserver
 {
 public:
     ValidationErrorObserver(const std::string& validationSetPath, const std::string& outputPath,
-        size_t batchSize);
+        size_t batchSize, size_t maximumSamples);
     virtual ~ValidationErrorObserver();
 
 public:
@@ -40,6 +40,7 @@ private:
 
 private:
     size_t _batchSize;
+    size_t _maximumSamples;
 };
 
 }

@@ -56,8 +56,8 @@ public:
         const MatrixVector& outputDeltas);
 
 public:
-    void popReversePropagationData();
-    void clearReversePropagationData();
+    virtual void popReversePropagationData();
+    virtual void clearReversePropagationData();
 
 public:
     virtual       MatrixVector& weights()       = 0;
