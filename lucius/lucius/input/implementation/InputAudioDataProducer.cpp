@@ -15,6 +15,8 @@
 
 #include <lucius/matrix/interface/Matrix.h>
 
+#include <lucius/model/interface/Model.h>
+
 #include <lucius/util/interface/Knobs.h>
 #include <lucius/util/interface/debug.h>
 #include <lucius/util/interface/memory.h>
@@ -68,6 +70,9 @@ public:
         {
             _generator.seed(127);
         }
+
+        _saveSamples = util::KnobDatabase::getKnobValue(
+            "InputAudioDataProducer::SaveSamples", false);
 
         _totalTimestepsPerUtterance = util::KnobDatabase::getKnobValue(
             "InputAudioDataProducer::TotalTimestepsPerUtterance", 512);
@@ -187,7 +192,7 @@ private:
 
             batch.push_back(_merge(audio, noise));
 
-            #if 0
+            if(_saveSamples)
             {
                 std::stringstream filename;
 
@@ -205,7 +210,6 @@ private:
 
                 _audio[_nextSample].save(audiofile, ".wav");
             }
-            #endif
 
             if(!isAudioCached)
             {
@@ -277,6 +281,9 @@ private:
             ++position;
         }
 
+        auto audioDimension = _producer->getInputSize();
+        size_t frameSize = audioDimension[0];
+
         if(_usesGraphemes())
         {
             result.setDefaultLabel(_defaultGrapheme);
@@ -284,16 +291,21 @@ private:
             auto noiseGraphemes = _toGraphemes(noise.label());
             auto audioGraphemes = _toGraphemes(audio.label());
 
-            _applyGraphemesToRange(result, 0, position, noiseGraphemes);
-            _applyGraphemesToRange(result, position, position + audio.size(), audioGraphemes);
-            _applyGraphemesToRange(result, position + audio.size(), noise.size(), noiseGraphemes);
+            _applyGraphemesToRange(result, 0, noiseGraphemes.size(), noiseGraphemes);
+            _applyGraphemesToRange(result, noiseGraphemes.size(),
+                noiseGraphemes.size() + audioGraphemes.size(), audioGraphemes);
+            _applyGraphemesToRange(result, noiseGraphemes.size() + audioGraphemes.size(),
+                (result.size() - frameSize)/frameSize, noiseGraphemes);
 
+            result.addLabel((result.size() - frameSize), result.size(), _delimiterGrapheme);
         }
         else
         {
-            result.addLabel(0,                       position,                noise.label());
-            result.addLabel(position,                position + audio.size(), audio.label());
-            result.addLabel(position + audio.size(), noise.size(),            noise.label());
+            result.addLabel(0, position * frameSize, noise.label());
+            result.addLabel(position * frameSize,
+                frameSize * (position + audio.size()), audio.label());
+            result.addLabel(frameSize * (position + audio.size()),
+                noise.size() * frameSize, noise.label());
         }
 
         return result;
@@ -306,64 +318,61 @@ private:
     void _applyGraphemesToRange(Audio& result, size_t beginTimestep, size_t endTimestep,
         const StringVector& graphemes)
     {
-        size_t possibleRange = endTimestep - beginTimestep;
-        size_t offset = 0;
+        size_t limit = std::min(beginTimestep + graphemes.size(), endTimestep);
 
-        if(possibleRange > graphemes.size())
+        auto audioDimension = _producer->getInputSize();
+
+        size_t frameSize = audioDimension[0];
+
+        for(size_t i = beginTimestep, grapheme = 0; i < limit; ++i, ++grapheme)
         {
-            possibleRange -= graphemes.size();
-
-            offset = _generator() % possibleRange;
-        }
-
-        for(size_t i = beginTimestep + offset; i < beginTimestep + offset + graphemes.size(); ++i)
-        {
-            result.addLabel(i, i+1, graphemes[i]);
+            result.addLabel(frameSize * i, frameSize*(i+1), graphemes[grapheme]);
         }
     }
 
     StringVector _toGraphemes(const std::string& label)
     {
+        if(_graphemes.empty())
+        {
+            throw std::runtime_error("Could not match remaining label '" + label +
+                "' against a grapheme because there aren't any graphemes.");
+        }
+
         auto remainingLabel = label;
 
         StringVector graphemes;
 
         while(!remainingLabel.empty())
         {
-            auto endRange = remainingLabel.begin() + 1;
-            auto endUncertainty = remainingLabel.end();
+            auto insertPosition = _graphemes.lower_bound(remainingLabel);
 
-            auto beginGrapheme = _graphemes.lower_bound(
-                std::string(remainingLabel.begin(), remainingLabel.begin() + 1));
-
-            if(beginGrapheme == _graphemes.end())
+            // exact match
+            if(insertPosition != _graphemes.end() && *insertPosition == remainingLabel)
             {
-                throw std::runtime_error("No grapheme could match label starting at '" +
-                    remainingLabel + "'.");
+                graphemes.push_back(remainingLabel);
+                break;
             }
 
-            while(endUncertainty != endRange)
+            // ordered before first grapheme
+            if(insertPosition == _graphemes.begin())
             {
-                size_t distance = endUncertainty - endRange;
-
-                size_t midpoint = (distance + 1) / 2;
-
-                auto proposal = endRange + midpoint;
-
-                auto proposedGrapheme = _graphemes.lower_bound(
-                    std::string(remainingLabel.begin(), proposal));
-
-                if(proposedGrapheme == _graphemes.end())
-                {
-                    endUncertainty = proposal;
-                }
-                else
-                {
-                    endRange = proposal;
-                }
+                throw std::runtime_error("Could not match remaining label '" + remainingLabel +
+                    "' against a grapheme.");
             }
 
-            remainingLabel = std::string(remainingLabel.begin(), endRange);
+            --insertPosition;
+
+            auto grapheme = remainingLabel.substr(0, insertPosition->size());
+
+            if(grapheme != *insertPosition)
+            {
+                throw std::runtime_error("Could not match remaining label '" + remainingLabel +
+                    "' against best grapheme '" + *insertPosition + "'.");
+            }
+
+            graphemes.push_back(grapheme);
+
+            remainingLabel = remainingLabel.substr(grapheme.size());
         }
 
         return graphemes;
@@ -442,9 +451,9 @@ private:
                         << sample.path() << "'\n";
                 }
 
-                if(sample.label() == "noise")
+                if(sample.label() == "noise" || sample.label().find("background|") == 0)
                 {
-                    _noise.push_back(Audio(sample.path(), sample.label()));
+                    _noise.push_back(Audio(sample.path(), util::strip(sample.label(), "|")));
                 }
                 else
                 {
@@ -453,10 +462,13 @@ private:
             }
         }
 
-        auto graphemes = sampleDatabase.getGraphemes();
+        for(size_t output = 0; output != _producer->getModel()->getOutputCount(); ++output)
+        {
+            _graphemes.insert(_producer->getModel()->getOutputLabel(output));
+        }
 
-        _defaultGrapheme = sampleDatabase.getDefaultGrapheme();
-        _graphemes.insert(graphemes.begin(), graphemes.end());
+        _defaultGrapheme = _producer->getModel()->getAttribute<std::string>("DefaultGrapheme");
+        _delimiterGrapheme = _producer->getModel()->getAttribute<std::string>("DelimiterGrapheme");
     }
 
 private:
@@ -475,12 +487,14 @@ private:
 private:
     StringSet _graphemes;
     std::string _defaultGrapheme;
+    std::string _delimiterGrapheme;
 
 private:
     std::default_random_engine _generator;
 
 private:
     bool _initialized;
+    bool _saveSamples;
 
 private:
     size_t _remainingSamples;

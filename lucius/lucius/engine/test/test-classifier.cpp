@@ -74,7 +74,7 @@ Matrix matrixXor(const Matrix& inputs)
 {
     assertM(inputs.size()[0] % 2 == 0, "Incompatible size of input bit vectors");
 
-    Matrix output(inputs.size()[0] / 2, inputs.size()[1], 1);
+    Matrix output({inputs.size()[0] / 2, inputs.size()[1], 1});
 
     for (unsigned i = 0; i < inputs.size()[1]; ++i)
     {

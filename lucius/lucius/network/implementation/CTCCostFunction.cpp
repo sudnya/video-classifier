@@ -11,6 +11,7 @@
 #include <lucius/matrix/interface/Matrix.h>
 #include <lucius/matrix/interface/MatrixOperations.h>
 #include <lucius/matrix/interface/Operation.h>
+#include <lucius/matrix/interface/SoftmaxOperations.h>
 
 #include <lucius/util/interface/debug.h>
 
@@ -31,26 +32,26 @@ CTCCostFunction::~CTCCostFunction()
 
 Matrix CTCCostFunction::computeCost(const Matrix& output, const Matrix& reference) const
 {
-    size_t miniBatchSize = output.size()[1];
+    size_t miniBatchSize = output.size()[output.size().size() - 2];
 
     Matrix cost({miniBatchSize}, output.precision());
     Matrix fakeGradients;
 
     matrix::computeCtc(cost, fakeGradients, output, reference);
 
-    return cost;
+    return apply(cost, matrix::Divide(miniBatchSize));
 }
 
 Matrix CTCCostFunction::computeDelta(const Matrix& output, const Matrix& reference) const
 {
-    size_t miniBatchSize = output.size()[1];
+    size_t miniBatchSize = output.size()[output.size().size() - 2];
 
     Matrix cost({miniBatchSize}, output.precision());
     Matrix gradients(output.size(), output.precision());
 
     matrix::computeCtc(cost, gradients, output, reference);
 
-    return gradients;
+    return apply(gradients, matrix::Divide(miniBatchSize));
 }
 
 CostFunction* CTCCostFunction::clone() const

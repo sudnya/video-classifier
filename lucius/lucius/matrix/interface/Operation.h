@@ -219,7 +219,7 @@ public:
     template<typename T>
     CUDA_DECORATOR T operator()(const T& l) const
     {
-        return abs(l);
+        return std::abs(l);
     }
 
     CUDA_DECORATOR float operator()(const float& l) const

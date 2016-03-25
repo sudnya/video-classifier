@@ -10,6 +10,7 @@
 #include <lucius/matrix/interface/Matrix.h>
 #include <lucius/matrix/interface/MatrixOperations.h>
 #include <lucius/matrix/interface/Operation.h>
+#include <lucius/matrix/interface/SoftmaxOperations.h>
 
 #include <lucius/util/interface/debug.h>
 
@@ -28,25 +29,13 @@ SoftmaxCostFunction::~SoftmaxCostFunction()
 
 }
 
-static Matrix softmax(const Matrix& output)
-{
-    auto normalizedOutput = broadcast(output,
-        reduce(output, {0}, matrix::Maximum()), {0}, matrix::Subtract());
-
-    auto expOutput = apply(normalizedOutput, matrix::Exp());
-
-    auto sums = reduce(expOutput, {0}, matrix::Add());
-
-    return broadcast(expOutput, sums, {0}, matrix::Divide());
-}
-
 Matrix SoftmaxCostFunction::computeCost(const Matrix& output, const Matrix& reference) const
 {
     auto softmaxResult = softmax(output);
 
     auto result = apply(softmaxResult, matrix::Log());
 
-    size_t samples = output.size()[1];
+    size_t samples = output.size()[output.size().size() - 2];
 
     return apply(apply(reference, result, matrix::Multiply()), matrix::Multiply(-1.0/samples));
 }

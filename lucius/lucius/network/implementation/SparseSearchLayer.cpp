@@ -226,8 +226,8 @@ SparseSearchLayer& SparseSearchLayer::operator=(const SparseSearchLayer& l)
         return *this;
     }
 
-    _selectUnit  = std::move(convert(l._selectUnit->clone()));
-    _processUnit = std::move(convert(l._processUnit->clone()));
+    _selectUnit  = convert(l._selectUnit->clone());
+    _processUnit = convert(l._processUnit->clone());
 
     _depth      = l._depth;
     _size       = l._size;
@@ -269,7 +269,8 @@ static MatrixVector runSelectForward(SubgraphLayer& layer,
     else
     {
         auto inputActivation = inputActivations[0];
-        auto previousTimestepActivation = zeros(inputActivation.size());
+        auto previousTimestepActivation = zeros(inputActivation.size(),
+            inputActivation.precision());
 
         copy(previousTimestepSlice, previousTimestepActivation);
         copy(currentTimestepSlice,  inputActivation);
@@ -456,7 +457,7 @@ static MatrixVector runProcessForward(SubgraphLayer& layer, const MatrixVector& 
     else
     {
         auto inputActivation = inputActivations[0];
-        auto previousTimestepActivation = zeros(inputActivation.size());
+        auto previousTimestepActivation = zeros(inputActivation.size(), inputActivation.precision());
 
         copy(previousTimestepSlice, previousTimestepActivation);
         copy(currentTimestepSlice,  inputActivation);
