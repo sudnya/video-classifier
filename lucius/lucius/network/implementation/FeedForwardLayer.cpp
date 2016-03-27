@@ -85,32 +85,38 @@ FeedForwardLayer& FeedForwardLayer::operator=(const FeedForwardLayer& l)
 
 void FeedForwardLayer::initialize()
 {
-    #if 0
-    //Glorot
-    double e = util::KnobDatabase::getKnobValue("Layer::RandomInitializationEpsilon", 6);
+    auto initializationType = util::KnobDatabase::getKnobValue(
+        "FeedForwardLayer::InitializationType", "glorot");
 
-    double epsilon = std::sqrt((e) / (getInputCount() + getOutputCount() + 1));
+    if(initializationType == "glorot")
+    {
+        double e = util::KnobDatabase::getKnobValue(
+            "FeedForwardLayer::RandomInitializationEpsilon", 6);
 
-    // generate uniform random values between [0, 1]
-    matrix::rand(_weights);
+        double epsilon = std::sqrt((e) / (getInputCount() + getOutputCount() + 1));
 
-    // shift to center on 0, the range is now [-0.5, 0.5]
-    apply(_weights, _weights, matrix::Add(-0.5));
+        // generate uniform random values between [0, 1]
+        matrix::rand(_weights);
 
-    // scale, the range is now [-epsilon, epsilon]
-    apply(_weights, _weights, matrix::Multiply(2.0 * epsilon));
+        // shift to center on 0, the range is now [-0.5, 0.5]
+        apply(_weights, _weights, matrix::Add(-0.5));
 
-    #else
-    // He
-    double e = util::KnobDatabase::getKnobValue("Layer::RandomInitializationEpsilon", 1);
+        // scale, the range is now [-epsilon, epsilon]
+        apply(_weights, _weights, matrix::Multiply(2.0 * epsilon));
+    }
+    else if(initializationType == "he")
+    {
+        // He
+        double e = util::KnobDatabase::getKnobValue(
+            "FeedForwardLayer::RandomInitializationEpsilon", 6);
 
-    double epsilon = std::sqrt((2.*e) / (getInputCount()));
-    // generate normal random values with N(0,1)
-    matrix::randn(_weights);
+        double epsilon = std::sqrt((2.*e) / (getInputCount()));
+        // generate normal random values with N(0,1)
+        matrix::randn(_weights);
 
-    // scale, the range is now [-epsilon, epsilon]
-    apply(_weights, _weights, matrix::Multiply(epsilon));
-    #endif
+        // scale, the range is now [-epsilon, epsilon]
+        apply(_weights, _weights, matrix::Multiply(epsilon));
+    }
 
     // assign bias to 0.0
     apply(_bias, _bias, matrix::Fill(0.0));

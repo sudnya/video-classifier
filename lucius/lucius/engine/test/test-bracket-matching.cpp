@@ -201,10 +201,10 @@ static void addClassifier(Model& model, const Parameters& parameters)
     for(size_t layer = 2; layer < parameters.forwardLayers; ++layer)
     {
         classifier.addLayer(LayerFactory::create("BatchNormalizationLayer",
-            std::make_tuple("Size", parameters.layerSize)));
+            std::make_tuple("InputSizeHeight", parameters.layerSize)));
 
         classifier.addLayer(LayerFactory::create("FeedForwardLayer",
-            std::make_tuple("InputSize", parameters.layerSize)));
+            std::make_tuple("InputSizeHeight", parameters.layerSize)));
     }
 
     for(size_t layer = 0; layer != parameters.recurrentLayers; ++layer)
@@ -212,14 +212,14 @@ static void addClassifier(Model& model, const Parameters& parameters)
 
 
         classifier.addLayer(LayerFactory::create("BatchNormalizationLayer",
-            std::make_tuple("Size", parameters.layerSize)));
+            std::make_tuple("InputSizeHeight", parameters.layerSize)));
         classifier.addLayer(LayerFactory::create("RecurrentLayer",
-            std::make_tuple("Size",      parameters.layerSize),
+            std::make_tuple("InputSizeHeight",      parameters.layerSize),
             std::make_tuple("BatchSize", parameters.batchSize)));
     }
 
     classifier.addLayer(LayerFactory::create("FeedForwardLayer",
-        std::make_tuple("InputSize",  parameters.layerSize),
+        std::make_tuple("InputSizeHeight",  parameters.layerSize),
         std::make_tuple("OutputSize", 5)));
 
     classifier.setCostFunction(lucius::network::CostFunctionFactory::create("SoftmaxCostFunction"));

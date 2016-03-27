@@ -7,7 +7,7 @@
 
         "batch-size"      : "8",
         "maximum-samples" : "1024",
-        "standardization-samples" : "128",
+        "standardization-samples" : "512",
 
         "epochs" : "200",
 
