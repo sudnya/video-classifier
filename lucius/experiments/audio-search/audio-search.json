@@ -7,13 +7,13 @@
 
         "batch-size"      : "8",
         "maximum-samples" : "1024",
-        "standardization-samples" : "128",
+        "standardization-samples" : "512",
 
-        "epochs" : "20",
+        "epochs" : "100",
 
         "parameters" :
         {
-            "NesterovAcceleratedGradient::LearningRate"       : "1.56e-6",
+            "NesterovAcceleratedGradient::LearningRate"       : "1.56e-5",
             "NesterovAcceleratedGradient::Momentum"           : "0.99",
             "NesterovAcceleratedGradient::AnnealingRate"      : "1.000001",
             "NesterovAcceleratedGradient::MaxGradNorm"        : "400.0",
@@ -37,7 +37,7 @@
                 "Type"              : "AudioConvolutionalLayer",
                 "FilterSamples"    : "320",
                 "FilterTimesteps"  : "3",
-                "FilterOutputs"    : "512",
+                "FilterOutputs"    : "128",
                 "PaddingSamples"   : "0",
                 "PaddingTimesteps" : "1"
 

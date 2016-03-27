@@ -15,7 +15,7 @@
 
 #include <lucius/network/interface/NeuralNetwork.h>
 
-#include <lucius/Configuration/interface/Configuration.h>
+#include <lucius/configuration/interface/Configuration.h>
 
 #include <lucius/results/interface/ResultProcessor.h>
 #include <lucius/results/interface/ResultProcessorFactory.h>

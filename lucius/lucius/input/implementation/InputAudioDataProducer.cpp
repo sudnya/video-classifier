@@ -391,7 +391,7 @@ private:
 
     void _downsampleToMatchFrequencies(Audio& first, Audio& second)
     {
-        size_t minimumFrequency = std::min(first.frequency(), second.frequency());
+        size_t minimumFrequency = _producer->getModel()->getAttribute<size_t>("SamplingRate");
 
         _downsample(first,  minimumFrequency);
         _downsample(second, minimumFrequency);
