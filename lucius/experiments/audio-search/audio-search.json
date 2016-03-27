@@ -9,13 +9,13 @@
         "maximum-samples" : "1024",
         "standardization-samples" : "128",
 
-        "epochs" : "20",
+        "epochs" : "200",
 
         "parameters" :
         {
-            "NesterovAcceleratedGradient::LearningRate"       : "1.56e-6",
+            "NesterovAcceleratedGradient::LearningRate"       : "1.0e-5",
             "NesterovAcceleratedGradient::Momentum"           : "0.99",
-            "NesterovAcceleratedGradient::AnnealingRate"      : "1.000001",
+            "NesterovAcceleratedGradient::AnnealingRate"      : "1.0000001",
             "NesterovAcceleratedGradient::MaxGradNorm"        : "400.0",
             "NesterovAcceleratedGradient::IterationsPerBatch" : "1"
         }
@@ -30,14 +30,14 @@
             "recurrent" :
             {
                 "Type" : "RecurrentLayer",
-                "Size" : "512"
+                "Size" : "128"
             },
             "input-convolution":
             {
                 "Type"              : "AudioConvolutionalLayer",
-                "FilterSamples"    : "320",
+                "FilterSamples"    : "160",
                 "FilterTimesteps"  : "3",
-                "FilterOutputs"    : "512",
+                "FilterOutputs"    : "128",
                 "PaddingSamples"   : "0",
                 "PaddingTimesteps" : "1"
 
@@ -80,7 +80,7 @@
         "model-attributes" :
         {
             "SamplingRate"  : "8000",
-            "FrameDuration" : "320",
+            "FrameDuration" : "160",
             "Graphemes" : [ "a", "b", "c", "d", "e", "f", "g", "h", "i",
                             "j", "k", "l", "m", "n", "o", "p", "q", "r",
                             "s", "t", "u", "v", "w", "x", "y", "z", ".",
@@ -90,7 +90,7 @@
 
         },
 
-        "infer-outputs-from" : "/Users/gregorydiamos/temp/libri-speech-100/development/database.txt"
+        "infer-outputs-from" : "/data/1tb-ssd/libri-speech-100/development/database.txt"
 
     },
 
@@ -99,7 +99,7 @@
         "InputAudioDataProducer::SpeechScaleLower" : "1.0",
         "InputAudioDataProducer::SpeechScaleUpper" : "1.0",
         "InputAudioDataProducer::NoiseRateLower" : "0.0",
-        "InputAudioDataProducer::NoiseRateUpper" : "0.01",
+        "InputAudioDataProducer::NoiseRateUpper" : "0.001",
         "InputAudioDataProducer::TotalTimestepsPerUtterance" : "1024",
         "InputAudioDataProducer::AudioTimesteps" : "1024",
         "InputAudioDataProducer::SaveSamples" : "0"
@@ -107,15 +107,10 @@
 
     "dataset" :
     {
-        "training-dataset-path"   : "/Users/gregorydiamos/temp/libri-speech-100/training/database.txt",
-        "validation-dataset-path" : "/Users/gregorydiamos/temp/libri-speech-100/development/database.txt",
+        "training-dataset-path"   : "/data/1tb-ssd/libri-speech-100/training/database.txt",
+        "validation-dataset-path" : "/data/1tb-ssd/libri-speech-100/development/database.txt",
 
         "required-accuracy" : "99.0"
-    },
-
-    "result" :
-    {
-        "result-processor" : "GraphemeErrorRateResultProcessor"
     },
 
     "checkpointing" :
