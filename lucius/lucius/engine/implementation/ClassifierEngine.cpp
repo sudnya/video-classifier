@@ -42,7 +42,7 @@ ClassifierEngine::~ClassifierEngine()
 
 void ClassifierEngine::setModel(Model* model)
 {
-    if(model->getAttribute<bool>("UsesGraphemes"))
+    if(model->hasAttribute("UsesGraphemes") && model->getAttribute<bool>("UsesGraphemes"))
     {
         setResultProcessor(results::ResultProcessorFactory::create("GraphemeMatchResultProcessor"));
     }
@@ -83,7 +83,7 @@ static util::StringVector convertActivationsToGraphemeLabels(matrix::Matrix&& ac
         for(size_t timestep = 0; timestep < timesteps; ++timestep)
         {
             size_t maxGrapheme = 0;
-            double maxValue    = 0.0;
+            double maxValue    = std::numeric_limits<double>::min();
 
             for(size_t grapheme = 0; grapheme < graphemes; ++grapheme)
             {
@@ -117,7 +117,7 @@ static util::StringVector convertActivationsToGraphemeLabels(matrix::Matrix&& ac
 static util::StringVector convertActivationsToLabels(matrix::Matrix&& activations,
     const model::Model& model)
 {
-    if(model.getAttribute<bool>("UsesGraphemes"))
+    if(model.hasAttribute("UsesGraphmes") && model.getAttribute<bool>("UsesGraphemes"))
     {
         return convertActivationsToGraphemeLabels(std::move(activations), model);
     }
@@ -198,12 +198,12 @@ ClassifierEngine::ResultVector ClassifierEngine::runOnBatch(Matrix&& input, Matr
     {
         auto cost = network->getCost(input, reference);
 
-        results = std::move(compareWithReference(cost * labels.size(), getIteration(), labels,
-            convertActivationsToLabels(std::move(reference), *getModel())));
+        results = compareWithReference(cost * labels.size(), getIteration(), labels,
+            convertActivationsToLabels(std::move(reference), *getModel()));
     }
     else
     {
-        results = std::move(recordLabels(labels));
+        results = recordLabels(labels);
     }
 
     restoreAggregateNetwork();

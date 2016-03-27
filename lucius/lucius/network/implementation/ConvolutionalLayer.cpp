@@ -101,46 +101,53 @@ ConvolutionalLayer& ConvolutionalLayer::operator=(const ConvolutionalLayer& l)
         return *this;
     }
 
-    _parameters   = std::move(std::make_unique<MatrixVector>(*l._parameters));
-    _inputSize    = std::move(std::make_unique<matrix::Dimension>(*l._inputSize));
-    _filterStride = std::move(std::make_unique<matrix::Dimension>(*l._filterStride));
-    _inputPadding = std::move(std::make_unique<matrix::Dimension>(*l._inputPadding));
+    _parameters   = std::make_unique<MatrixVector>(*l._parameters);
+    _inputSize    = std::make_unique<matrix::Dimension>(*l._inputSize);
+    _filterStride = std::make_unique<matrix::Dimension>(*l._filterStride);
+    _inputPadding = std::make_unique<matrix::Dimension>(*l._inputPadding);
 
     return *this;
 }
 
 void ConvolutionalLayer::initialize()
 {
+    auto initializationType = util::KnobDatabase::getKnobValue(
+        "ConvolutionalLayer::InitializationType", "glorot");
 
-    #if 0
-    // Glorot
-    double e = util::KnobDatabase::getKnobValue("Layer::RandomInitializationEpsilon", 6);
+    if(initializationType == "glorot")
+    {
+        // Glorot
+        double e = util::KnobDatabase::getKnobValue(
+            "ConvolutionalLayer::RandomInitializationEpsilon", 6);
 
-    double epsilon = std::sqrt(e) /
-        std::sqrt((_weights.size()[0])*(_weights.size()[1])*(_weights.size()[2]) +
-        (_weights.size()[3]));
+        double epsilon = std::sqrt(e) /
+            std::sqrt((_weights.size()[0])*(_weights.size()[1])*(_weights.size()[2]) +
+            (_weights.size()[3]));
 
-    // generate uniform random values between [0, 1]
-    matrix::rand(_weights);
+        // generate uniform random values between [0, 1]
+        matrix::rand(_weights);
 
-    // shift to center on 0, the range is now [-0.5, 0.5]
-    apply(_weights, _weights, matrix::Add(-0.5));
+        // shift to center on 0, the range is now [-0.5, 0.5]
+        apply(_weights, _weights, matrix::Add(-0.5));
 
-    // scale, the range is now [-epsilon, epsilon]
-    apply(_weights, _weights, matrix::Multiply(2.0 * epsilon));
-    #else
-    // He
-    double e = util::KnobDatabase::getKnobValue("Layer::RandomInitializationEpsilon", 1);
+        // scale, the range is now [-epsilon, epsilon]
+        apply(_weights, _weights, matrix::Multiply(2.0 * epsilon));
+    }
+    else if(initializationType == "he")
+    {
+        // He
+        double e = util::KnobDatabase::getKnobValue(
+            "ConvolutionalLayer::RandomInitializationEpsilon", 1);
 
-    double epsilon = std::sqrt((2.*e) /
-        ((_weights.size()[0])*(_weights.size()[1])*(_weights.size()[2])));
+        double epsilon = std::sqrt((2.*e) /
+            ((_weights.size()[0])*(_weights.size()[1])*(_weights.size()[2])));
 
-    // generate uniform random values between [0, 1]
-    matrix::randn(_weights);
+        // generate uniform random values between [0, 1]
+        matrix::randn(_weights);
 
-    // scale, the range is now [-epsilon, epsilon]
-    apply(_weights, _weights, matrix::Multiply(epsilon));
-    #endif
+        // scale, the range is now [-epsilon, epsilon]
+        apply(_weights, _weights, matrix::Multiply(epsilon));
+    }
 
     // assign bias to 0.0
     apply(_bias, _bias, matrix::Fill(0.0));

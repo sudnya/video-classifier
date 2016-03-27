@@ -15,7 +15,7 @@
 
 #include <lucius/network/interface/NeuralNetwork.h>
 
-#include <lucius/Configuration/interface/Configuration.h>
+#include <lucius/configuration/interface/Configuration.h>
 
 #include <lucius/results/interface/ResultProcessor.h>
 #include <lucius/results/interface/ResultProcessorFactory.h>
@@ -173,7 +173,7 @@ static void runTest(const Parameters& parameters)
     }
     else
     {
-        model = std::move(ModelBuilder::create(config.getModelSpecification()));
+        model = ModelBuilder::create(config.getModelSpecification());
         setSampleStatistics(*model, config);
     }
 
