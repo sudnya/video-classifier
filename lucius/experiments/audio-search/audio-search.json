@@ -6,8 +6,8 @@
         "type" : "NesterovAcceleratedGradientSolver",
 
         "batch-size"      : "8",
-        "maximum-samples" : "1024",
-        "standardization-samples" : "512",
+        "maximum-samples" : "1e9",
+        "standardization-samples" : "128",
 
         "epochs" : "200",
 
@@ -35,7 +35,7 @@
             "input-convolution":
             {
                 "Type"              : "AudioConvolutionalLayer",
-                "FilterSamples"    : "160",
+                "FilterSamples"    : "240",
                 "FilterTimesteps"  : "3",
                 "FilterOutputs"    : "128",
                 "PaddingSamples"   : "0",
@@ -80,7 +80,7 @@
         "model-attributes" :
         {
             "SamplingRate"  : "8000",
-            "FrameDuration" : "160",
+            "FrameDuration" : "240",
             "Graphemes" : [ "a", "b", "c", "d", "e", "f", "g", "h", "i",
                             "j", "k", "l", "m", "n", "o", "p", "q", "r",
                             "s", "t", "u", "v", "w", "x", "y", "z", ".",
@@ -100,8 +100,8 @@
         "InputAudioDataProducer::SpeechScaleUpper" : "1.0",
         "InputAudioDataProducer::NoiseRateLower" : "0.0",
         "InputAudioDataProducer::NoiseRateUpper" : "0.001",
-        "InputAudioDataProducer::TotalTimestepsPerUtterance" : "1024",
-        "InputAudioDataProducer::AudioTimesteps" : "1024",
+        "InputAudioDataProducer::TotalTimestepsPerUtterance" : "768",
+        "InputAudioDataProducer::AudioTimesteps" : "768",
         "InputAudioDataProducer::SaveSamples" : "0"
     },
 

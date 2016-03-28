@@ -1,6 +1,7 @@
 #! /usr/local/bin/python
 
 import os
+import math
 from argparse import ArgumentParser
 
 import matplotlib
@@ -22,6 +23,8 @@ def lower_bound(array, value):
 
     return index
 
+def isfinite(x):
+    return (not math.isinf(x)) and (not math.isnan(x))
 
 class ExperimentData:
     def __init__(self, name):
@@ -58,7 +61,14 @@ class ExperimentData:
 
         return True
 
+    def removeInvalidTrainingData(self):
+        self.trainingError = [ x for x in self.trainingError if isfinite(x) ]
+
+    def removeInvalidValidationData(self):
+        self.validationError = [ x for x in self.validationError if isfinite(x) ]
+
     def normalizeTrainingError(self):
+        self.removeInvalidTrainingData()
 
         if len(self.trainingError) > len(self.trainingIterations):
             self.trainingError = self.trainingError[0:len(self.trainingIterations)]
@@ -81,6 +91,8 @@ class ExperimentData:
         self.trainingError = averageError
 
     def normalizeValidationError(self):
+
+        self.removeInvalidValidationData()
 
         if len(self.validationError) > len(self.validationIterations):
             self.validationError = self.validationError[0:len(self.validationIterations)]
