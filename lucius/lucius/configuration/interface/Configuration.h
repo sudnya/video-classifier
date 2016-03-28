@@ -61,6 +61,7 @@ public:
     std::string getOutputPath() const;
 
 public:
+    bool getIsLogFileEnabled() const;
     std::string getLogPath() const;
     std::string getLoggingEnabledModules() const;
 

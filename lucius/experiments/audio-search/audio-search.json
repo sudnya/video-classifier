@@ -7,13 +7,13 @@
 
         "batch-size"      : "8",
         "maximum-samples" : "1024",
-        "standardization-samples" : "512",
+        "standardization-samples" : "16",
 
         "epochs" : "100",
 
         "parameters" :
         {
-            "NesterovAcceleratedGradient::LearningRate"       : "1.56e-5",
+            "NesterovAcceleratedGradient::LearningRate"       : "1.0e-5",
             "NesterovAcceleratedGradient::Momentum"           : "0.99",
             "NesterovAcceleratedGradient::AnnealingRate"      : "1.000001",
             "NesterovAcceleratedGradient::MaxGradNorm"        : "400.0",
@@ -30,12 +30,12 @@
             "recurrent" :
             {
                 "Type" : "RecurrentLayer",
-                "Size" : "512"
+                "Size" : "128"
             },
             "input-convolution":
             {
                 "Type"              : "AudioConvolutionalLayer",
-                "FilterSamples"    : "320",
+                "FilterSamples"    : "160",
                 "FilterTimesteps"  : "3",
                 "FilterOutputs"    : "128",
                 "PaddingSamples"   : "0",
@@ -80,7 +80,7 @@
         "model-attributes" :
         {
             "SamplingRate"  : "8000",
-            "FrameDuration" : "320",
+            "FrameDuration" : "160",
             "Graphemes" : [ "a", "b", "c", "d", "e", "f", "g", "h", "i",
                             "j", "k", "l", "m", "n", "o", "p", "q", "r",
                             "s", "t", "u", "v", "w", "x", "y", "z", ".",
@@ -138,7 +138,7 @@
 
     "system" :
     {
-        "use-cuda"    : "0",
+        "use-cuda"    : "1",
         "cuda-device" : "0",
         "precision"   : "SinglePrecision"
     }

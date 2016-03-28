@@ -117,7 +117,7 @@ static util::StringVector convertActivationsToGraphemeLabels(matrix::Matrix&& ac
 static util::StringVector convertActivationsToLabels(matrix::Matrix&& activations,
     const model::Model& model)
 {
-    if(model.hasAttribute("UsesGraphmes") && model.getAttribute<bool>("UsesGraphemes"))
+    if(model.hasAttribute("UsesGraphemes") && model.getAttribute<bool>("UsesGraphemes"))
     {
         return convertActivationsToGraphemeLabels(std::move(activations), model);
     }
