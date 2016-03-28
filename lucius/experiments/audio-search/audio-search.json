@@ -30,14 +30,14 @@
             "recurrent" :
             {
                 "Type" : "RecurrentLayer",
-                "Size" : "128"
+                "Size" : "512"
             },
             "input-convolution":
             {
                 "Type"              : "AudioConvolutionalLayer",
                 "FilterSamples"    : "240",
                 "FilterTimesteps"  : "3",
-                "FilterOutputs"    : "128",
+                "FilterOutputs"    : "512",
                 "PaddingSamples"   : "0",
                 "PaddingTimesteps" : "1"
 
@@ -100,8 +100,8 @@
         "InputAudioDataProducer::SpeechScaleUpper" : "1.0",
         "InputAudioDataProducer::NoiseRateLower" : "0.0",
         "InputAudioDataProducer::NoiseRateUpper" : "0.001",
-        "InputAudioDataProducer::TotalTimestepsPerUtterance" : "768",
-        "InputAudioDataProducer::AudioTimesteps" : "768",
+        "InputAudioDataProducer::TotalTimestepsPerUtterance" : "1024",
+        "InputAudioDataProducer::AudioTimesteps" : "1024",
         "InputAudioDataProducer::SaveSamples" : "0"
     },
 
@@ -133,7 +133,7 @@
 
     "system" :
     {
-        "use-cuda"    : "0",
+        "use-cuda"    : "1",
         "cuda-device" : "0",
         "precision"   : "SinglePrecision"
     }
