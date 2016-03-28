@@ -149,6 +149,11 @@ std::string Configuration::getOutputPath() const
     return _properties->get<std::string>("checkpointing.base-directory");
 }
 
+bool Configuration::getIsLogFileEnabled() const
+{
+    return _properties->get<bool>("checkpointing.use-log-file", false);
+}
+
 std::string Configuration::getLoggingEnabledModules() const
 {
     std::stringstream modules;
