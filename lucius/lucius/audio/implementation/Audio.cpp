@@ -70,7 +70,7 @@ void Audio::invalidateCache()
 {
     _isLoaded = false;
 
-   _data = std::move(ByteVector());
+   _data = ByteVector();
 }
 
 bool Audio::isCached() const

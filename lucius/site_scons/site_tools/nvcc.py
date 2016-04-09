@@ -122,6 +122,9 @@ def add_nvcc_flags(env):
   env.AppendUnique(NVCCFLAGS = '-Xcompiler=-Wno-unused-local-typedef')
 
 def cuda_exists(env):
+    if not env['with_cuda']:
+        return False
+
     return os.path.exists(env['cuda_path'])
 
 def generate_dummy(env):

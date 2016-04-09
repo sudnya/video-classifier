@@ -180,6 +180,98 @@ size_t CudnnForwardWorkspace::size() const
     return _data->size();
 }
 
+CudnnBackwardDataWorkspace::CudnnBackwardDataWorkspace(const CudnnFilterDescriptor& filter,
+        const CudnnTensorDescriptor& outputDeltas,
+        cudnnConvolutionDescriptor_t convolutionDescriptor,
+        const CudnnTensorDescriptor& inputDeltas)
+{
+    CudnnLibrary::cudnnConvolutionBwdDataAlgo_t algorithm;
+
+    CudnnLibrary::cudnnGetConvolutionBackwardDataAlgorithm(
+        filter.descriptor(),
+        outputDeltas.descriptor(),
+        convolutionDescriptor,
+        inputDeltas.descriptor(),
+        CudnnLibrary::CUDNN_CONVOLUTION_BWD_DATA_SPECIFY_WORKSPACE_LIMIT, // TODO: make this a knob
+        inputDeltas.bytes(),
+        &algorithm);
+
+    _algorithm = algorithm;
+
+    size_t bytes = 0;
+
+    CudnnLibrary::cudnnGetConvolutionBackwardDataWorkspaceSize(
+        filter.descriptor(),
+        outputDeltas.descriptor(),
+        convolutionDescriptor,
+        inputDeltas.descriptor(),
+        algorithm,
+        &bytes);
+
+    _data = std::make_unique<Allocation>(bytes);
+}
+
+int CudnnBackwardDataWorkspace::algorithm() const
+{
+    return _algorithm;
+}
+
+void* CudnnBackwardDataWorkspace::data()
+{
+    return _data->data();
+}
+
+size_t CudnnBackwardDataWorkspace::size() const
+{
+    return _data->size();
+}
+
+CudnnBackwardFilterWorkspace::CudnnBackwardFilterWorkspace(const CudnnTensorDescriptor& input,
+        const CudnnTensorDescriptor& outputDeltas,
+        cudnnConvolutionDescriptor_t convolutionDescriptor,
+        const CudnnFilterDescriptor& filterGradient)
+{
+    CudnnLibrary::cudnnConvolutionBwdFilterAlgo_t algorithm;
+
+    CudnnLibrary::cudnnGetConvolutionBackwardFilterAlgorithm(
+        input.descriptor(),
+        outputDeltas.descriptor(),
+        convolutionDescriptor,
+        filterGradient.descriptor(),
+        CudnnLibrary::CUDNN_CONVOLUTION_BWD_FILTER_SPECIFY_WORKSPACE_LIMIT, // TODO: make this a knob
+        input.bytes(),
+        &algorithm);
+
+    _algorithm = algorithm;
+
+    size_t bytes = 0;
+
+    CudnnLibrary::cudnnGetConvolutionBackwardFilterWorkspaceSize(
+        input.descriptor(),
+        outputDeltas.descriptor(),
+        convolutionDescriptor,
+        filterGradient.descriptor(),
+        algorithm,
+        &bytes);
+
+    _data = std::make_unique<Allocation>(bytes);
+}
+
+int CudnnBackwardFilterWorkspace::algorithm() const
+{
+    return _algorithm;
+}
+
+void* CudnnBackwardFilterWorkspace::data()
+{
+    return _data->data();
+}
+
+size_t CudnnBackwardFilterWorkspace::size() const
+{
+    return _data->size();
+}
+
 CudnnPooling2dDescriptor::CudnnPooling2dDescriptor(size_t inputW, size_t inputH, size_t padW,
     size_t padH, size_t poolW, size_t poolH)
 {

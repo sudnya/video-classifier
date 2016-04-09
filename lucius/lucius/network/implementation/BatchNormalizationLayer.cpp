@@ -86,10 +86,10 @@ BatchNormalizationLayer& BatchNormalizationLayer::operator=(const BatchNormaliza
         return *this;
     }
 
-    _parameters = std::move(std::make_unique<MatrixVector>(*l._parameters));
-    _inputSize  = std::move(std::make_unique<matrix::Dimension>(*l._inputSize));
+    _parameters = std::make_unique<MatrixVector>(*l._parameters);
+    _inputSize  = std::make_unique<matrix::Dimension>(*l._inputSize);
 
-    _internal_parameters = std::move(std::make_unique<MatrixVector>(*l._internal_parameters));
+    _internal_parameters = std::make_unique<MatrixVector>(*l._internal_parameters);
     _samples             = l._samples;
 
     return *this;
