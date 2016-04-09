@@ -335,12 +335,71 @@ void CudnnLibrary::cudnnConvolutionForward(const void* alpha,
     }
 }
 
+void CudnnLibrary::cudnnGetConvolutionBackwardDataAlgorithm(
+                            const cudnnFilterDescriptor_t       wDesc,
+                            const cudnnTensorDescriptor_t       dyDesc,
+                            const cudnnConvolutionDescriptor_t  convDesc,
+                            const cudnnTensorDescriptor_t       dxDesc,
+                            cudnnConvolutionBwdDataPreference_t preference,
+                            size_t                              memoryLimitInBytes,
+                            cudnnConvolutionBwdDataAlgo_t*      algo )
+{
+    _check();
+
+    auto status = (*_interface.cudnnGetConvolutionBackwardDataAlgorithm)(
+        _interface.getHandle(),
+        wDesc,
+        dyDesc,
+        convDesc,
+        dxDesc,
+        preference,
+        memoryLimitInBytes,
+        algo);
+
+    if(status != CUDNN_STATUS_SUCCESS)
+    {
+        throw std::runtime_error("cudnnConvolutionBackwardDataAlgorithm failed: " +
+            _interface.getErrorString(status));
+    }
+
+}
+
+void CudnnLibrary::cudnnGetConvolutionBackwardDataWorkspaceSize(
+                            const cudnnFilterDescriptor_t       wDesc,
+                            const cudnnTensorDescriptor_t       dyDesc,
+                            const cudnnConvolutionDescriptor_t  convDesc,
+                            const cudnnTensorDescriptor_t       dxDesc,
+                            cudnnConvolutionBwdDataAlgo_t       algo,
+                            size_t*                             sizeInBytes )
+{
+    _check();
+
+    auto status = (*_interface.cudnnGetConvolutionBackwardDataWorkspaceSize)(
+        _interface.getHandle(),
+        wDesc,
+        dyDesc,
+        convDesc,
+        dxDesc,
+        algo,
+        sizeInBytes);
+
+    if(status != CUDNN_STATUS_SUCCESS)
+    {
+        throw std::runtime_error("cudnnConvolutionBackwardDataWorkspaceSize failed: " +
+            _interface.getErrorString(status));
+    }
+
+}
+
 void CudnnLibrary::cudnnConvolutionBackwardData(const void*        alpha,
                                 const cudnnFilterDescriptor_t      filterDesc,
                                 const void*                        filterData,
                                 const cudnnTensorDescriptor_t      diffDesc,
                                 const void*                        diffData,
                                 const cudnnConvolutionDescriptor_t convDesc,
+                                cudnnConvolutionBwdDataAlgo_t      algo,
+                                void*                              workSpace,
+                                size_t                             workSpaceSizeInBytes,
                                 const void*                        beta,
                                 const cudnnTensorDescriptor_t      gradDesc,
                                 void*                              gradData)
@@ -349,12 +408,70 @@ void CudnnLibrary::cudnnConvolutionBackwardData(const void*        alpha,
 
     auto status = (*_interface.cudnnConvolutionBackwardData)(_interface.getHandle(),
         alpha, filterDesc, filterData, diffDesc, diffData, convDesc,
+        algo, workSpace, workSpaceSizeInBytes,
         beta, gradDesc, gradData);
 
     if(status != CUDNN_STATUS_SUCCESS)
     {
-        throw std::runtime_error("cudnnConvolutionBackwardData failed: " + _interface.getErrorString(status));
+        throw std::runtime_error("cudnnConvolutionBackwardData failed: " +
+            _interface.getErrorString(status));
     }
+}
+
+void CudnnLibrary::cudnnGetConvolutionBackwardFilterAlgorithm(
+                        const cudnnTensorDescriptor_t         xDesc,
+                        const cudnnTensorDescriptor_t         dyDesc,
+                        const cudnnConvolutionDescriptor_t    convDesc,
+                        const cudnnFilterDescriptor_t         dwDesc,
+                        cudnnConvolutionBwdFilterPreference_t preference,
+                        size_t                                memoryLimitInBytes,
+                        cudnnConvolutionBwdFilterAlgo_t*      algo )
+{
+    _check();
+
+    auto status = (*_interface.cudnnGetConvolutionBackwardFilterAlgorithm)(
+        _interface.getHandle(),
+        xDesc,
+        dyDesc,
+        convDesc,
+        dwDesc,
+        preference,
+        memoryLimitInBytes,
+        algo);
+
+    if(status != CUDNN_STATUS_SUCCESS)
+    {
+        throw std::runtime_error("cudnnConvolutionBackwardFilterAlgorithm failed: " +
+            _interface.getErrorString(status));
+    }
+
+}
+
+void CudnnLibrary::cudnnGetConvolutionBackwardFilterWorkspaceSize(
+                        const cudnnTensorDescriptor_t       xDesc,
+                        const cudnnTensorDescriptor_t       dyDesc,
+                        const cudnnConvolutionDescriptor_t  convDesc,
+                        const cudnnFilterDescriptor_t       gradDesc,
+                        cudnnConvolutionBwdFilterAlgo_t     algo,
+                        size_t*                             sizeInBytes )
+{
+    _check();
+
+    auto status = (*_interface.cudnnGetConvolutionBackwardFilterWorkspaceSize)(
+        _interface.getHandle(),
+        xDesc,
+        dyDesc,
+        convDesc,
+        gradDesc,
+        algo,
+        sizeInBytes);
+
+    if(status != CUDNN_STATUS_SUCCESS)
+    {
+        throw std::runtime_error("cudnnConvolutionBackwardFilterWorkspaceSize failed: " +
+            _interface.getErrorString(status));
+    }
+
 }
 
 void CudnnLibrary::cudnnConvolutionBackwardFilter(const void*      alpha,
@@ -363,6 +480,9 @@ void CudnnLibrary::cudnnConvolutionBackwardFilter(const void*      alpha,
                                 const cudnnTensorDescriptor_t      diffDesc,
                                 const void*                        diffData,
                                 const cudnnConvolutionDescriptor_t convDesc,
+                                cudnnConvolutionBwdFilterAlgo_t    algo,
+                                void*                              workSpace,
+                                size_t                             workSpaceSizeInBytes,
                                 const void*                        beta,
                                 const cudnnFilterDescriptor_t      gradDesc,
                                 void*                              gradData)
@@ -371,11 +491,12 @@ void CudnnLibrary::cudnnConvolutionBackwardFilter(const void*      alpha,
 
     auto status = (*_interface.cudnnConvolutionBackwardFilter)(_interface.getHandle(),
         alpha, srcDesc, srcData, diffDesc, diffData, convDesc,
+        algo, workSpace, workSpaceSizeInBytes,
         beta, gradDesc, gradData);
 
     if(status != CUDNN_STATUS_SUCCESS)
     {
-        throw std::runtime_error("cudnnConvolutionBackwardData failed: " +
+        throw std::runtime_error("cudnnConvolutionBackwardFilter failed: " +
             _interface.getErrorString(status));
     }
 }
@@ -526,8 +647,12 @@ void CudnnLibrary::Interface::load()
         DynLink(cudnnGetConvolutionForwardWorkspaceSize);
         DynLink(cudnnConvolutionForward);
 
+        DynLink(cudnnGetConvolutionBackwardDataAlgorithm);
+        DynLink(cudnnGetConvolutionBackwardDataWorkspaceSize);
         DynLink(cudnnConvolutionBackwardData);
 
+        DynLink(cudnnGetConvolutionBackwardFilterAlgorithm);
+        DynLink(cudnnGetConvolutionBackwardFilterWorkspaceSize);
         DynLink(cudnnConvolutionBackwardFilter);
 
         DynLink(cudnnPoolingForward);

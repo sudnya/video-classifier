@@ -31,7 +31,7 @@ void convertInputVectorToMatrix(Matrix& desti, std::vector<float> src, const int
             for (int k = 0; k < timeSteps; ++k)
             {
                 counter = k*(miniBatch * alphabetSize) + (j*alphabetSize)+i;
-                std::cout << "vector at: " << counter << std::endl;
+                //std::cout << "vector at: " << counter << std::endl;
                 desti(i,j,k) = src.at(counter);
             }
         }
@@ -97,8 +97,6 @@ bool small_test()
     return (score > lb && score < ub);
 }
 
-//void computeCtc(Matrix& costs, Matrix& gradients, const Matrix& inputActivations, const Matrix& reference);
-
 bool inf_test() {
     const int alphabetSize = 15;
     const int timeSteps    = 50;
@@ -113,6 +111,8 @@ bool inf_test() {
     Matrix inputActivations(alphabetSize, miniBatch, timeSteps);
     convertInputVectorToMatrix(inputActivations, activationVector, alphabetSize, miniBatch, timeSteps);
     
+    std::cout << inputActivations.shapeString() << std::endl;
+
     std::vector<int> sizes;
     sizes.push_back(timeSteps);
 
@@ -123,31 +123,14 @@ bool inf_test() {
     std::vector<int> labels = genLabels(alphabetSize, labelSize);
     std::vector<int> labelSizes(1);
     labelSizes[0] = labelSize;
+    
+    labels[0] = 2;
 
     Matrix referenceLabels = zeros(inputActivations.size(), inputActivations.precision());
     convertReferenceVectorToMatrix(referenceLabels, labels, labelSizes, alphabetSize, miniBatch, timeSteps);
 
-    labels[0] = 2;
     std::vector<int> labelLengths = {labelSize};
 
-/*
-    float cost;
-    ctcComputeInfo info;
-    info.loc = CTC_CPU;
-    info.num_threads = 1;
-
-    size_t cpu_alloc_bytes;
-    throw_on_error(get_workspace_size(labelLengths.data(), sizes.data(), alphabetSize, sizes.size(), info, &cpu_alloc_bytes),
-                   "Error: get_workspace_size in inf_test");
-
-    void* ctc_cpu_workspace = malloc(cpu_alloc_bytes);
-
-    throw_on_error(compute_ctc_loss(inputActivations.data(), gradientsVector.data(),
-                                    labels.data(), labelLengths.data(), sizes.data(), alphabetSize, sizes.size(),
-                                    &cost, ctc_cpu_workspace, info), "Error: compute_ctc_loss in inf_test");
-
-    free(ctc_cpu_workspace);
-*/
     computeCtc(costs, gradients, inputActivations, referenceLabels);
 
     bool status = true;
@@ -283,11 +266,15 @@ bool run_tests() {
 
 int main(void) {
     std::cout << "Running CTC operations tests" << std::endl;
+    std::cout << "Status Pass=1, Fail=0" << std::endl;
 
     bool status = true;
     status &= lucius::matrix::ctc::small_test();
-    //status &= lucius::matrix::ctc::inf_test();
-    //status &= lucius::matrix::ctc::run_tests();
+    std::cout << "small test status " << status << std::endl;
+    status &= lucius::matrix::ctc::inf_test();
+    std::cout << "inf test status " << status << std::endl;
+    status &= lucius::matrix::ctc::run_tests();
+    std::cout << "run tests status " << status << std::endl;
 
     if (status)
         std::cout << "Tests pass" << std::endl;
