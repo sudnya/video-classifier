@@ -103,6 +103,47 @@ private:
     std::unique_ptr<Allocation> _data;
 };
 
+class CudnnBackwardDataWorkspace
+{
+public:
+    CudnnBackwardDataWorkspace(const CudnnFilterDescriptor& filter,
+        const CudnnTensorDescriptor& outputDeltas,
+        cudnnConvolutionDescriptor_t convolutionDescriptor,
+        const CudnnTensorDescriptor& inputDeltas);
+
+public:
+    int algorithm() const;
+    void* data();
+    size_t size() const;
+
+private:
+    int _algorithm;
+
+private:
+    std::unique_ptr<Allocation> _data;
+};
+
+class CudnnBackwardFilterWorkspace
+{
+public:
+    CudnnBackwardFilterWorkspace(const CudnnTensorDescriptor& source,
+        const CudnnTensorDescriptor& outputDeltas,
+        cudnnConvolutionDescriptor_t convolutionDescriptor,
+        const CudnnFilterDescriptor& filterGradient
+        );
+
+public:
+    int algorithm() const;
+    void* data();
+    size_t size() const;
+
+private:
+    int _algorithm;
+
+private:
+    std::unique_ptr<Allocation> _data;
+};
+
 class CudnnPooling2dDescriptor
 {
 public:

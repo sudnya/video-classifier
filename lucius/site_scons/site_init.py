@@ -146,6 +146,8 @@ def getLINKFLAGS(mode, LINK):
     return result
 
 def cuda_exists(env):
+    if not env['with_cuda']:
+        return False
     return os.path.exists(env['cuda_path'])
 
 def getExtraLibs(env):
@@ -201,6 +203,9 @@ def BuildEnvironment():
 
     # add a variable to treat warnings as errors
     vars.Add(BoolVariable('Werror', 'Treat warnings as errors', 1))
+
+    # enable_cuda
+    vars.Add(BoolVariable('with_cuda', 'Enable cuda', 1))
 
     # add a variable to determine the install path
     default_install_path = '/usr/local'
