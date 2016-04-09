@@ -244,7 +244,7 @@ static bool runTestAudioConvolutional(size_t layerSize, bool seed)
     }
     else
     {
-        matrix::srand(10);
+        matrix::srand(3490945);
     }
 
     auto network = createAudioConvolutionalNetwork(layerSize);

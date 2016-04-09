@@ -527,13 +527,13 @@ static bool runTestRecurrentCtc(size_t layerSize, size_t layerCount, size_t time
 
     if(gradientCheckCtc(network, timesteps))
     {
-        std::cout << "Recurrent Network Test Passed\n";
+        std::cout << "Recurrent Network CTC Test Passed\n";
 
         return true;
     }
     else
     {
-        std::cout << "Recurrent Network Test Failed\n";
+        std::cout << "Recurrent Network CTC Test Failed\n";
 
         return false;
     }
