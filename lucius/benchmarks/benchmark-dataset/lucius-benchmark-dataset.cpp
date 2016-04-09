@@ -130,7 +130,7 @@ static void setupSolverParameters(const Configuration& config)
 
 static void setupReportParameters(const Configuration& config)
 {
-    if(!config.getLogPath().empty())
+    if(config.getIsLogFileEnabled() && !config.getLogPath().empty())
     {
         lucius::util::setLogFile(config.getLogPath());
     }
