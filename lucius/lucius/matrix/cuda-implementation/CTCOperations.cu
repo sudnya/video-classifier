@@ -30,6 +30,8 @@ static void computeCtcOnSinglePrecisionSequence(Matrix& costs, Matrix& gradients
     assert(inputActivations.precision() == SinglePrecision());
     assert(reference.precision()        == SinglePrecision());
 
+    assert(reference.size().size() >= 3);
+
     size_t sizeBytes = 0;
     lucius::matrix::ctc::ctcComputeInfo runtimeInfo;
 

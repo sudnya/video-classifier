@@ -5,6 +5,11 @@
 
 #include <iostream>
 
+#include <lucius/matrix/interface/Matrix.h>
+#include <lucius/matrix/interface/MatrixOperations.h>
+#include <lucius/matrix/interface/CTCOperations.h>
+#include <lucius/matrix/interface/SoftmaxOperations.h>
+
 //CTC Includes
 #include <lucius/matrix/ctc/interface/ctc.h>
 #include <lucius/matrix/ctc/test/test.h>
@@ -16,114 +21,124 @@ namespace matrix
 namespace ctc
 {
 
-bool small_test() {
-    const int alphabet_size = 5;
-    const int T = 2;
-
-    std::vector<float> activations = {0.1, 0.6, 0.1, 0.1, 0.1,
-                                      0.1, 0.1, 0.6, 0.1, 0.1};
-
-    // Calculate the score analytically
-    float expected_score;
+void convertInputVectorToMatrix(Matrix& desti, std::vector<float> src, const int alphabetSize, const int miniBatch, const int timeSteps) 
+{
+    int counter = 0;
+    for (int i = 0; i < alphabetSize; ++i) 
     {
-        std::vector<float> probs(activations.size());
-        softmax(activations.data(), alphabet_size, T, probs.data());
-
-        // Score calculation is specific to the given activations above
-        expected_score = probs[1] * probs[7];
+        for (int j = 0; j < miniBatch; ++j)
+        {
+            for (int k = 0; k < timeSteps; ++k)
+            {
+                counter = k*(miniBatch * alphabetSize) + (j*alphabetSize)+i;
+                //std::cout << "vector at: " << counter << std::endl;
+                desti(i,j,k) = src.at(counter);
+            }
+        }
     }
+}
+void convertReferenceVectorToMatrix(Matrix& desti, std::vector<int> labels, std::vector<int> labelLengths,
+    const int alphabetSize, const int miniBatch, const int timeSteps) 
+{
+    int counter = 0;
+    for (int j = 0; j < miniBatch; ++j)
+    {
+        for (int k = 0; k < labelLengths[j]; ++k, ++counter)
+        {
+            int i = labels[counter];
 
-    std::vector<int> labels = {1, 2};
-    std::vector<int> label_lengths = {2};
+            desti(i,j,k) = 1.0;
+        }
 
-    std::vector<int> lengths;
-    lengths.push_back(T);
+        desti(alphabetSize - 1,j,labelLengths[j]) = 1.0;
+    }
+}
 
-    float score;
 
-    ctcComputeInfo info;
-    info.loc = CTC_CPU;
-    info.num_threads = 1;
+bool small_test() 
+{
+    const int alphabetSize = 5;
+    const int timeSteps    = 2;
+    const int miniBatch    = 1;
+    Matrix inputActivations(alphabetSize, miniBatch, timeSteps);
+    
+    std::vector<float> activationVector = {0.1, 0.6, 0.1, 0.1, 0.1, 0.1, 0.1, 0.6, 0.1, 0.1};
+    convertInputVectorToMatrix(inputActivations, activationVector, alphabetSize, miniBatch, timeSteps);
+    
+    // Calculate the score analytically
+    Matrix probs = softmax(inputActivations);
 
-    size_t cpu_alloc_bytes;
-    throw_on_error(get_workspace_size(label_lengths.data(), lengths.data(),
-                                      alphabet_size, lengths.size(), info,
-                                      &cpu_alloc_bytes),
-                   "Error: get_workspace_size in small_test");
+    // Score calculation is specific to the given activations above
+    float expectedScore = probs(1, 0, 0) * probs(2, 0, 1);
+    
+    Matrix referenceCosts({1});
+    referenceCosts(0) = expectedScore;
+    
+    Matrix costs({1});
+    Matrix gradients(inputActivations.size());
+    Matrix referenceLabels = zeros(inputActivations.size(), inputActivations.precision());
+    referenceLabels(1, 0, 0) = 1.0;
+    referenceLabels(2, 0, 1) = 1.0;
+    //std::cout << "inputActivations: " << inputActivations.toString() << "\n";
+    //std::cout << "referenceLabels: " << referenceLabels.toString() << std::endl;
 
-    void* ctc_cpu_workspace = malloc(cpu_alloc_bytes);
+    computeCtc(costs, gradients, inputActivations, referenceLabels);
+    //std::cout << "costs: " << costs.toString();
 
-    throw_on_error(compute_ctc_loss(activations.data(), NULL,
-                                    labels.data(), label_lengths.data(),
-                                    lengths.data(),
-                                    alphabet_size,
-                                    lengths.size(),
-                                    &score,
-                                    ctc_cpu_workspace,
-                                    info),
-                   "Error: compute_ctc_loss in small_test");
-
-    free(ctc_cpu_workspace);
+    float score = costs(0);
+    //std::cout << "Score: " << score << "\n";
+    //std::cout << "Gradients: " << gradients.toString();
     score = std::exp(-score);
     const float eps = 1e-6;
 
-    const float lb = expected_score - eps;
-    const float ub = expected_score + eps;
+    const float lb = expectedScore - eps;
+    const float ub = expectedScore + eps;
 
     return (score > lb && score < ub);
 }
 
 bool inf_test() {
-    const int alphabet_size = 15;
-    const int T = 50;
-    const int L = 10;
-    const int minibatch = 1;
+    const int alphabetSize = 15;
+    const int timeSteps    = 50;
+    const int labelSize    = 10;
+    const int miniBatch    = 1;
 
-    std::vector<int> labels = genLabels(alphabet_size, L);
-    labels[0] = 2;
-    std::vector<int> label_lengths = {L};
+    std::vector<float> activationVector = genActs(alphabetSize * timeSteps * miniBatch);
 
-    std::vector<float> acts = genActs(alphabet_size * T * minibatch);
+    for (int i = 0; i < timeSteps; ++i)
+        activationVector[alphabetSize * i + 2] = -1e30;
 
-    for (int i = 0; i < T; ++i)
-        acts[alphabet_size * i + 2] = -1e30;
+    Matrix inputActivations(alphabetSize, miniBatch, timeSteps);
+    convertInputVectorToMatrix(inputActivations, activationVector, alphabetSize, miniBatch, timeSteps);
+    
+    std::cout << inputActivations.shapeString() << std::endl;
 
     std::vector<int> sizes;
-    sizes.push_back(T);
+    sizes.push_back(timeSteps);
 
-    std::vector<float> grads(alphabet_size * T);
+    //std::vector<float> gradientsVector(alphabetSize * timeSteps);
 
-    float cost;
+    Matrix costs({1});
+    Matrix gradients(inputActivations.size());
+    std::vector<int> labels = genLabels(alphabetSize, labelSize);
+    std::vector<int> labelSizes(1);
+    labelSizes[0] = labelSize;
+    
+    labels[0] = 2;
 
-    ctcComputeInfo info;
-    info.loc = CTC_CPU;
-    info.num_threads = 1;
+    Matrix referenceLabels = zeros(inputActivations.size(), inputActivations.precision());
+    convertReferenceVectorToMatrix(referenceLabels, labels, labelSizes, alphabetSize, miniBatch, timeSteps);
 
-    size_t cpu_alloc_bytes;
-    throw_on_error(get_workspace_size(label_lengths.data(), sizes.data(),
-                                      alphabet_size, sizes.size(), info,
-                                      &cpu_alloc_bytes),
-                   "Error: get_workspace_size in inf_test");
+    std::vector<int> labelLengths = {labelSize};
 
-    void* ctc_cpu_workspace = malloc(cpu_alloc_bytes);
-
-    throw_on_error(compute_ctc_loss(acts.data(), grads.data(),
-                                    labels.data(), label_lengths.data(),
-                                    sizes.data(),
-                                    alphabet_size,
-                                    sizes.size(),
-                                    &cost,
-                                    ctc_cpu_workspace,
-                                    info),
-                   "Error: compute_ctc_loss in inf_test");
-
-    free(ctc_cpu_workspace);
+    computeCtc(costs, gradients, inputActivations, referenceLabels);
 
     bool status = true;
+    float cost = costs(0);
     status &= std::isinf(cost);
 
-    for (int i = 0; i < alphabet_size * T; ++i)
-        status &= !std::isnan(grads[i]);
+    for (int i = 0; i < alphabetSize * timeSteps; ++i)
+        status &= !std::isnan(static_cast<float>(gradients[i]));
  
     return status;
 }
@@ -250,12 +265,16 @@ bool run_tests() {
 }
 
 int main(void) {
-    std::cout << "Running CPU tests" << std::endl;
+    std::cout << "Running CTC operations tests" << std::endl;
+    std::cout << "Status Pass=1, Fail=0" << std::endl;
 
     bool status = true;
     status &= lucius::matrix::ctc::small_test();
+    std::cout << "small test status " << status << std::endl;
     status &= lucius::matrix::ctc::inf_test();
+    std::cout << "inf test status " << status << std::endl;
     status &= lucius::matrix::ctc::run_tests();
+    std::cout << "run tests status " << status << std::endl;
 
     if (status)
         std::cout << "Tests pass" << std::endl;

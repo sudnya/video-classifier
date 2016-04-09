@@ -13,7 +13,7 @@
 #include "lucius/matrix/ctc/interface/detail/ctc_helper.h"
 #include "lucius/matrix/ctc/interface/ctc.h"
 
-
+#ifdef __CUDACC__
 namespace lucius
 {
 namespace matrix
@@ -167,3 +167,5 @@ ctcStatus_t reduce_max(const float *input, float *output, int rows, int cols, bo
 }
 }
 }
+#endif
+
