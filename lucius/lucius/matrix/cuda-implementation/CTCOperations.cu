@@ -97,7 +97,7 @@ static void computeCtcOnSinglePrecisionSequence(Matrix& costs, Matrix& gradients
     Allocation workspace(sizeBytes);
 
     //call compute_ctc_loss
-    compute_ctc_loss(static_cast<const float*>(inputActivations.data()),
+    auto status = compute_ctc_loss(static_cast<const float*>(inputActivations.data()),
         static_cast<float*>(gradients.data()), labelsInMinibatch.data(),
         labelLengthInMinibatch.data(), timeStepsInMinibatch.data(), vocabularySize,
         samplesPerMinibatch, static_cast<float*>(costs.data()), workspace.data(), runtimeInfo);
