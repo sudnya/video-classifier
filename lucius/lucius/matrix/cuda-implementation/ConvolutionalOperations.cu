@@ -431,9 +431,12 @@ void forwardConvolution(Matrix& result, const Matrix& input, const Matrix& filte
             CudnnLibrary::CUDNN_CONVOLUTION // convolution mode
         );
 
+        auto inputFoldedTime  = foldTime(input);
+        auto resultFoldedTime = foldTime(result);
+
         CudnnFilterDescriptor filterDescriptor(filter);
-        CudnnTensorDescriptor inputDescriptor(input);
-        CudnnTensorDescriptor resultDescriptor(result);
+        CudnnTensorDescriptor inputDescriptor(inputFoldedTime);
+        CudnnTensorDescriptor resultDescriptor(resultFoldedTime);
 
         CudnnScalar alpha(1.0, input.precision());
         CudnnScalar beta( 0.0, input.precision());
@@ -847,9 +850,12 @@ void reverseConvolutionDeltas(Matrix& resultDeltas, const Matrix& filter,
             CudnnLibrary::CUDNN_CONVOLUTION // convolution mode
         );
 
+        auto deltasFoldedTime       = foldTime(deltas);
+        auto resultDeltasFoldedTime = foldTime(resultDeltas);
+
         CudnnFilterDescriptor filterDescriptor(filter);
-        CudnnTensorDescriptor deltasDescriptor(deltas);
-        CudnnTensorDescriptor resultDescriptor(resultDeltas);
+        CudnnTensorDescriptor deltasDescriptor(deltasFoldedTime);
+        CudnnTensorDescriptor resultDescriptor(resultDeltasFoldedTime);
 
         CudnnScalar alpha(1.0, deltas.precision());
         CudnnScalar beta( 0.0, deltas.precision());
@@ -1228,9 +1234,12 @@ void reverseConvolutionGradients(Matrix& gradients, const Matrix& inputs, const 
             CudnnLibrary::CUDNN_CONVOLUTION // convolution mode
         );
 
+        auto inputsFoldedTime = foldTime(inputs);
+        auto deltasFoldedTime = foldTime(deltas);
+
         CudnnFilterDescriptor gradientDescriptor(gradients);
-        CudnnTensorDescriptor inputDescriptor(inputs);
-        CudnnTensorDescriptor deltasDescriptor(deltas);
+        CudnnTensorDescriptor inputDescriptor(inputsFoldedTime);
+        CudnnTensorDescriptor deltasDescriptor(deltasFoldedTime);
 
         CudnnScalar alpha(a,   deltas.precision());
         CudnnScalar beta( 0.0, deltas.precision());
