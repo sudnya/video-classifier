@@ -102,6 +102,11 @@ static void computeCtcOnSinglePrecisionSequence(Matrix& costs, Matrix& gradients
         labelLengthInMinibatch.data(), timeStepsInMinibatch.data(), vocabularySize,
         samplesPerMinibatch, static_cast<float*>(costs.data()), workspace.data(), runtimeInfo);
 
+    if (status != ctc::CTC_STATUS_SUCCESS)
+    {
+        throw std::runtime_error("CTC operation failed.");
+    }
+
     if(util::isLogEnabled("CTCOperations::Detail"))
     {
         util::log("CTCOperations::Detail") << " activations "
