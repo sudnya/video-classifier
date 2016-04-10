@@ -226,7 +226,12 @@ def BuildEnvironment():
         PathVariable.PathAccept))
 
     # add a variable to handle cuda architecture
-    vars.Add(EnumVariable('cuda_arch', 'Cuda architecture', 'sm_30',
+    default_cuda_arch = 'sm_30'
+
+    if 'CUDA_ARCH' in os.environ:
+        default_cuda_arch = os.environ['CUDA_ARCH']
+
+    vars.Add(EnumVariable('cuda_arch', 'Cuda architecture', default_cuda_arch,
         allowed_values = ('sm_30', 'sm_35', 'sm_50', 'sm_52')))
 
     # create an Environment

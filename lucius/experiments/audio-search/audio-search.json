@@ -5,15 +5,15 @@
     {
         "type" : "NesterovAcceleratedGradientSolver",
 
-        "batch-size"      : "8",
+        "batch-size"      : "64",
         "maximum-samples" : "1e9",
         "standardization-samples" : "128",
 
-        "epochs" : "200",
+        "epochs" : "20",
 
         "parameters" :
         {
-            "NesterovAcceleratedGradient::LearningRate"       : "1.0e-5",
+            "NesterovAcceleratedGradient::LearningRate"       : "1.0e-4",
             "NesterovAcceleratedGradient::Momentum"           : "0.99",
             "NesterovAcceleratedGradient::AnnealingRate"      : "1.0000001",
             "NesterovAcceleratedGradient::MaxGradNorm"        : "400.0",
@@ -30,14 +30,14 @@
             "recurrent" :
             {
                 "Type" : "RecurrentLayer",
-                "Size" : "128"
+                "Size" : "512"
             },
             "input-convolution":
             {
                 "Type"              : "AudioConvolutionalLayer",
-                "FilterSamples"    : "80",
+                "FilterSamples"    : "256",
                 "FilterTimesteps"  : "3",
-                "FilterOutputs"    : "128",
+                "FilterOutputs"    : "512",
                 "PaddingSamples"   : "0",
                 "PaddingTimesteps" : "1"
 
@@ -79,8 +79,8 @@
 
         "model-attributes" :
         {
-            "SamplingRate"  : "4000",
-            "FrameDuration" : "80",
+            "SamplingRate"  : "8000",
+            "FrameDuration" : "256",
             "Graphemes" : [ "a", "b", "c", "d", "e", "f", "g", "h", "i",
                             "j", "k", "l", "m", "n", "o", "p", "q", "r",
                             "s", "t", "u", "v", "w", "x", "y", "z", ".",
@@ -133,7 +133,7 @@
 
     "system" :
     {
-        "use-cuda"    : "0",
+        "use-cuda"    : "1",
         "cuda-device" : "0",
         "precision"   : "SinglePrecision"
     }

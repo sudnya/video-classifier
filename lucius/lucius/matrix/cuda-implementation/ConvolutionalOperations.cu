@@ -415,6 +415,8 @@ void forwardConvolution(Matrix& result, const Matrix& input, const Matrix& filte
 {
     if(CudnnLibrary::loaded())
     {
+        parallel::setNotSynchronized();
+
         cudnnConvolutionDescriptor_t convolutionDescriptor;
 
         CudnnLibrary::cudnnCreateConvolutionDescriptor(&convolutionDescriptor);
@@ -452,6 +454,8 @@ void forwardConvolution(Matrix& result, const Matrix& input, const Matrix& filte
             beta.data(),                       //*beta,
             resultDescriptor.descriptor(),     // destDesc,
             resultDescriptor.data());          //*destData);
+
+        parallel::synchronize();
 
         CudnnLibrary::cudnnDestroyConvolutionDescriptor(convolutionDescriptor);
     }
@@ -827,6 +831,8 @@ void reverseConvolutionDeltas(Matrix& resultDeltas, const Matrix& filter,
 {
     if(CudnnLibrary::loaded())
     {
+        parallel::setNotSynchronized();
+
         cudnnConvolutionDescriptor_t convolutionDescriptor;
 
         CudnnLibrary::cudnnCreateConvolutionDescriptor(&convolutionDescriptor);
@@ -864,6 +870,8 @@ void reverseConvolutionDeltas(Matrix& resultDeltas, const Matrix& filter,
             beta.data(),
             resultDescriptor.descriptor(),
             resultDescriptor.data());
+
+        parallel::synchronize();
 
         CudnnLibrary::cudnnDestroyConvolutionDescriptor(convolutionDescriptor);
     }
@@ -1204,6 +1212,8 @@ void reverseConvolutionGradients(Matrix& gradients, const Matrix& inputs, const 
 {
     if(CudnnLibrary::loaded())
     {
+        parallel::setNotSynchronized();
+
         cudnnConvolutionDescriptor_t convolutionDescriptor;
 
         CudnnLibrary::cudnnCreateConvolutionDescriptor(&convolutionDescriptor);
@@ -1241,6 +1251,8 @@ void reverseConvolutionGradients(Matrix& gradients, const Matrix& inputs, const 
             beta.data(),
             gradientDescriptor.descriptor(),
             gradientDescriptor.data());
+
+        parallel::synchronize();
 
         CudnnLibrary::cudnnDestroyConvolutionDescriptor(convolutionDescriptor);
     }
