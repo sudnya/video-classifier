@@ -7,13 +7,13 @@
 
         "batch-size"      : "64",
         "maximum-samples" : "1e9",
-        "standardization-samples" : "128",
+        "standardization-samples" : "1024",
 
         "epochs" : "20",
 
         "parameters" :
         {
-            "NesterovAcceleratedGradient::LearningRate"       : "1.0e-4",
+            "NesterovAcceleratedGradient::LearningRate"       : "3.75e-5",
             "NesterovAcceleratedGradient::Momentum"           : "0.99",
             "NesterovAcceleratedGradient::AnnealingRate"      : "1.0000001",
             "NesterovAcceleratedGradient::MaxGradNorm"        : "400.0",

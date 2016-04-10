@@ -68,17 +68,10 @@ CudnnTensorDescriptor::CudnnTensorDescriptor(const Matrix& tensor)
 {
     CudnnLibrary::cudnnCreateTensorDescriptor(&_descriptor);
 
-    size_t timesteps = 1;
-
-    if(_tensor->size().size() == 5)
-    {
-        timesteps = _tensor->size()[4];
-    }
-
     CudnnLibrary::cudnnSetTensor4dDescriptor(_descriptor,
         CudnnLibrary::CUDNN_TENSOR_NCHW,
         getCudnnDataType(_tensor->precision()), // image data type
-        timesteps * _tensor->size()[3],        // number of inputs (batch size)
+        _tensor->size()[3],        // number of inputs (batch size)
         _tensor->size()[2],        // number of input feature maps
         _tensor->size()[1],        // height of input section
         _tensor->size()[0]         // width of input section
@@ -89,17 +82,10 @@ CudnnTensorDescriptor::CudnnTensorDescriptor(const Dimension& size)
 {
     CudnnLibrary::cudnnCreateTensorDescriptor(&_descriptor);
 
-    size_t timesteps = 1;
-
-    if(size.size() == 5)
-    {
-        timesteps = size[4];
-    }
-
     CudnnLibrary::cudnnSetTensor4dDescriptor(_descriptor,
         CudnnLibrary::CUDNN_TENSOR_NCHW,
         CudnnLibrary::CUDNN_DATA_FLOAT, // image data type
-        timesteps * size[3],        // number of inputs (batch size)
+        size[3],        // number of inputs (batch size)
         size[2],        // number of input feature maps
         size[1],        // height of input section
         size[0]         // width of input section
