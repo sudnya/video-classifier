@@ -8,6 +8,7 @@ export PATH=$LUCIUS_INSTALL_PATH/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/u
 export LD_LIBRARY_PATH=/usr/local/ffmpeg_build/lib:/usr/lib/x86_64-linux-gnu:/usr/local/lib:$CUDA_PATH/lib64:$LUCIUS_INSTALL_PATH/lib
 
 export LUCIUS_KNOB_FILE=$SCRIPTPATH/scripts/lucius.config
+export CUDA_ARCH=sm_50
 
 
 
