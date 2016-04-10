@@ -391,6 +391,8 @@ class Visualizer:
 
             pyplot.savefig(path)
 
+            figure.close()
+
 # MAIN
 def main():
 
