@@ -458,6 +458,9 @@ private:
 
         sampleDatabase.load();
 
+        bool useNoise = util::KnobDatabase::getKnobValue(
+            "InputAudioDataProducer::UseNoise", false);
+
         for(auto& sample : sampleDatabase)
         {
             if(!sample.hasLabel() && _producer->getRequiresLabeledData())
@@ -480,7 +483,8 @@ private:
                         << sample.path() << "'\n";
                 }
 
-                if(sample.label() == "noise" || sample.label().find("background|") == 0)
+                if(useNoise &&
+                    (sample.label() == "noise" || sample.label().find("background|") == 0))
                 {
                     _noise.push_back(Audio(sample.path(), util::strip(sample.label(), "|")));
                 }
