@@ -496,7 +496,7 @@ private:
                 }
                 else
                 {
-                    _audio.push_back(Audio(sample.path(), sample.label()));
+                    _audio.push_back(Audio(sample.path(), sample.label() + " "));
                 }
             }
         }
