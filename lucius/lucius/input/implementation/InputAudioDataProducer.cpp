@@ -208,6 +208,10 @@ private:
 
                 audio = _sample(audio, selectedTimesteps);
 
+                auto audioGraphemes = _toGraphemes(audio.label());
+                audio.setDefaultLabel(_delimiterGrapheme);
+                _applyGraphemesToRange(audio, 0, audioGraphemes.size(), audioGraphemes);
+
                 batch.push_back(audio);
             }
 
@@ -483,10 +487,12 @@ private:
                         << sample.path() << "'\n";
                 }
 
-                if(useNoise &&
-                    (sample.label() == "noise" || sample.label().find("background|") == 0))
+                if(sample.label() == "noise" || sample.label().find("background|") == 0)
                 {
-                    _noise.push_back(Audio(sample.path(), util::strip(sample.label(), "|")));
+                    if(useNoise)
+                    {
+                        _noise.push_back(Audio(sample.path(), util::strip(sample.label(), "|")));
+                    }
                 }
                 else
                 {
