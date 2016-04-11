@@ -13,7 +13,7 @@
 
         "parameters" :
         {
-            "NesterovAcceleratedGradient::LearningRate"       : "3.75e-5",
+            "NesterovAcceleratedGradient::LearningRate"       : "1.0e-6",
             "NesterovAcceleratedGradient::Momentum"           : "0.99",
             "NesterovAcceleratedGradient::AnnealingRate"      : "1.0000001",
             "NesterovAcceleratedGradient::MaxGradNorm"        : "400.0",
