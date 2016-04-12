@@ -204,10 +204,6 @@ private:
 
                 _scaleRandomly(audio, _speechScaleLower, _speechScaleUpper);
 
-                auto selectedTimesteps = ((_generator() % _audioTimesteps) + _audioTimesteps) / 2;
-
-                audio = _sample(audio, selectedTimesteps);
-
                 auto audioGraphemes = _toGraphemes(audio.label());
                 audio.setDefaultLabel(_delimiterGrapheme);
                 _applyGraphemesToRange(audio, 0, audioGraphemes.size(), audioGraphemes);
