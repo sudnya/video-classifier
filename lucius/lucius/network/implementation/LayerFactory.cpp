@@ -156,16 +156,13 @@ std::unique_ptr<Layer> LayerFactory::create(const std::string& name,
     }
     else if("SoftmaxLayer" == name)
     {
-        size_t inputWidth  = parameters.get("InputWidth",  inputSizeWidth);
-        size_t inputHeight = parameters.get("InputHeight", inputSizeHeight);
-        size_t inputColors = parameters.get("InputColors", inputSizeChannels);
-        size_t inputBatch  = parameters.get("BatchSize",   inputSizeBatch);
+        size_t inputSize  = parameters.get("InputSize",  inputSizeAggregate);
 
         auto precision = *matrix::Precision::fromString(parameters.get("Precision",
             matrix::Precision::getDefaultPrecision().toString()));
 
         layer = std::make_unique<SoftmaxLayer>(
-            matrix::Dimension({inputWidth, inputHeight, inputColors, inputBatch, 1}), precision);
+            matrix::Dimension({inputSize, 1, 1}), precision);
     }
     else if("SubgraphLayer" == name)
     {

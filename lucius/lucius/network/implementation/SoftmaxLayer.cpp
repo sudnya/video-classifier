@@ -30,7 +30,7 @@ typedef matrix::Dimension    Dimension;
 typedef matrix::MatrixVector MatrixVector;
 
 SoftmaxLayer::SoftmaxLayer()
-: SoftmaxLayer({1, 1, 1, 1})
+: SoftmaxLayer({1, 1, 1, 1, 1})
 {
 
 }
