@@ -87,7 +87,8 @@ double NesterovAcceleratedGradientSolver::solve(MatrixVector& inputs,
 
         if(!std::isfinite(futurePointCost))
         {
-            util::log("NesterovAcceleratedGradientSolver") << "Skipping not finite update.\n";
+            util::log("NesterovAcceleratedGradientSolver") << "Skipping not finite update ("
+                << futurePointCost << ").\n";
             continue;
         }
 

@@ -133,7 +133,8 @@ public:
         }
 
         util::log("InputAudioDataProducer") << "Loaded batch of '" << batch.size()
-            <<  "' audio samples, " << _remainingSamples << " remaining in this epoch.\n";
+            <<  "' audio samples (" << input.size()[2] << " timesteps), "
+            << _remainingSamples << " remaining in this epoch.\n";
 
         return InputAudioDataProducer::InputAndReferencePair(
             std::move(input), std::move(reference));
@@ -492,7 +493,7 @@ private:
                 }
                 else
                 {
-                    _audio.push_back(Audio(sample.path(), " " + sample.label() + " "));
+                    _audio.push_back(Audio(sample.path(), sample.label()));
                 }
             }
         }

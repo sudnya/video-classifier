@@ -13,10 +13,10 @@
 
         "parameters" :
         {
-            "NesterovAcceleratedGradient::LearningRate"       : "2.6378952887100143e-05",
-            "NesterovAcceleratedGradient::Momentum"           : "0.9940020370744312",
-            "NesterovAcceleratedGradient::AnnealingRate"      : "1.0000006063328517",
-            "NesterovAcceleratedGradient::MaxGradNorm"        : "4000.0",
+            "NesterovAcceleratedGradient::LearningRate"       : "7.324218749998536e-08",
+            "NesterovAcceleratedGradient::Momentum"           : "0.99984375",
+            "NesterovAcceleratedGradient::AnnealingRate"      : "1.0000004798860074",
+            "NesterovAcceleratedGradient::MaxGradNorm"        : "400.0",
             "NesterovAcceleratedGradient::IterationsPerBatch" : "1"
         }
     },
@@ -36,10 +36,10 @@
             {
                 "Type"              : "AudioConvolutionalLayer",
                 "FilterSamples"    : "64",
-                "FilterTimesteps"  : "3",
+                "FilterTimesteps"  : "9",
                 "FilterOutputs"    : "1024",
                 "PaddingSamples"   : "0",
-                "PaddingTimesteps" : "1"
+                "PaddingTimesteps" : "4"
 
             },
             "output":
