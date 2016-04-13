@@ -1,7 +1,7 @@
-/*  \file   FeedForwardLayer.h
+/*  \file   SoftmaxLayer.h
     \author Gregory Diamos
     \date   Dec 24, 2014
-    \brief  The interface for the FeedForwardLayer class.
+    \brief  The interface for the SoftmaxLayer class.
 */
 
 #pragma once
@@ -14,18 +14,18 @@ namespace lucius
 namespace network
 {
 
-/* \brief An implementation of a generic fully connected feed forward layer. */
-class FeedForwardLayer : public Layer
+/* \brief An implementation of a softmax layer. */
+class SoftmaxLayer : public Layer
 {
 public:
-    FeedForwardLayer();
-    FeedForwardLayer(size_t inputs, size_t outputs);
-    FeedForwardLayer(size_t inputs, size_t outputs, const matrix::Precision&);
-    virtual ~FeedForwardLayer();
+    SoftmaxLayer();
+    SoftmaxLayer(const Dimension& inputSize);
+    SoftmaxLayer(const Dimension& inputSize, const matrix::Precision&);
+    virtual ~SoftmaxLayer();
 
 public:
-    FeedForwardLayer(const FeedForwardLayer& );
-    FeedForwardLayer& operator=(const FeedForwardLayer&);
+    SoftmaxLayer(const SoftmaxLayer& );
+    SoftmaxLayer& operator=(const SoftmaxLayer&);
 
 public:
     virtual void initialize();
@@ -74,16 +74,14 @@ public:
     virtual std::string getTypeName() const;
 
 private:
-    std::unique_ptr<MatrixVector> _parameters;
-
-private:
-    Matrix& _weights;
-    Matrix& _bias;
+    std::unique_ptr<matrix::Dimension> _inputSize;
+    std::unique_ptr<matrix::Precision> _precision;
 
 };
 
 }
 
 }
+
 
 

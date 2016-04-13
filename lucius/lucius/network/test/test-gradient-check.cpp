@@ -8,6 +8,7 @@
 #include <lucius/network/interface/NeuralNetwork.h>
 #include <lucius/network/interface/FeedForwardLayer.h>
 #include <lucius/network/interface/RecurrentLayer.h>
+#include <lucius/network/interface/SoftmaxLayer.h>
 #include <lucius/network/interface/BatchNormalizationLayer.h>
 #include <lucius/network/interface/ConvolutionalLayer.h>
 #include <lucius/network/interface/CostFunctionFactory.h>
@@ -110,6 +111,29 @@ static NeuralNetwork createFeedForwardFullyConnectedSoftmaxNetwork(
     }
 
     network.setCostFunction(CostFunctionFactory::create("SoftmaxCostFunction"));
+
+    network.initialize();
+
+    return network;
+}
+
+static NeuralNetwork createFeedForwardFullyConnectedSoftmaxLayerNetwork(
+    size_t layerSize, size_t layerCount)
+{
+    NeuralNetwork network;
+
+    for(size_t layer = 0; layer < layerCount; ++layer)
+    {
+        network.addLayer(std::make_unique<FeedForwardLayer>(layerSize,
+            layerSize, DoublePrecision()));
+        network.back()->setActivationFunction(
+            ActivationFunctionFactory::create("SigmoidActivationFunction"));
+    }
+
+    network.addLayer(std::make_unique<SoftmaxLayer>(
+        Dimension(layerSize, 1, 1, 1, 1), DoublePrecision()));
+    network.back()->setActivationFunction(
+        ActivationFunctionFactory::create("SigmoidActivationFunction"));
 
     network.initialize();
 
@@ -458,6 +482,34 @@ static bool runTestFeedForwardFullyConnectedSoftmax(size_t layerSize, size_t lay
     }
 }
 
+static bool runTestFeedForwardFullyConnectedSoftmaxLayer(size_t layerSize,
+    size_t layerCount, bool seed)
+{
+    if(seed)
+    {
+        matrix::srand(std::time(0));
+    }
+    else
+    {
+        matrix::srand(377);
+    }
+
+    auto network = createFeedForwardFullyConnectedSoftmaxLayerNetwork(layerSize, layerCount);
+
+    if(gradientCheck(network))
+    {
+        std::cout << "Feed Forward Fully Connected Network Softmax Layer Test Passed\n";
+
+        return true;
+    }
+    else
+    {
+        std::cout << "Feed Forward Fully Connected Network Softmax Layer Test Failed\n";
+
+        return false;
+    }
+}
+
 static bool runTestConvolutional(size_t layerSize, size_t layerCount, bool seed)
 {
     if(seed)
@@ -543,6 +595,13 @@ static void runTest(size_t layerSize, size_t layerCount, size_t batchSize,
     size_t timesteps, bool seed)
 {
     bool result = true;
+
+    result &= runTestFeedForwardFullyConnectedSoftmaxLayer(layerSize, layerCount, seed);
+
+    if(!result)
+    {
+        return;
+    }
 
     result &= runTestRecurrentCtc(layerSize, layerCount, timesteps, seed);
 

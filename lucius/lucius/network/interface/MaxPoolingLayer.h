@@ -9,9 +9,6 @@
 // Lucius Includes
 #include <lucius/network/interface/Layer.h>
 
-// Standard Library Includes
-#include <memory>
-
 namespace lucius
 {
 namespace network
