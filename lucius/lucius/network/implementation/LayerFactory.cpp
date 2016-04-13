@@ -18,6 +18,7 @@
 
 #include <lucius/matrix/interface/Dimension.h>
 #include <lucius/matrix/interface/Precision.h>
+#include <lucius/matrix/interface/RecurrentOperations.h>
 
 #include <lucius/util/interface/memory.h>
 
@@ -59,11 +60,12 @@ std::unique_ptr<Layer> LayerFactory::create(const std::string& name,
     {
         size_t size      = parameters.get("Size",      inputSizeAggregate);
         size_t batchSize = parameters.get("BatchSize", 1);
+        int direction    = parameters.get<int>("Direction", matrix::RECURRENT_FORWARD_TIME);
 
         auto precision = *matrix::Precision::fromString(parameters.get("Precision",
             matrix::Precision::getDefaultPrecision().toString()));
 
-        layer = std::make_unique<RecurrentLayer>(size, batchSize, precision);
+        layer = std::make_unique<RecurrentLayer>(size, batchSize, direction, precision);
     }
     else if("AudioConvolutionalLayer" == name)
     {

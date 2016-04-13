@@ -19,8 +19,8 @@ class RecurrentLayer : public Layer
 {
 public:
     RecurrentLayer();
-    RecurrentLayer(size_t size, size_t batchSize);
-    RecurrentLayer(size_t size, size_t batchSize, const matrix::Precision&);
+    RecurrentLayer(size_t size, size_t batchSize, int direction);
+    RecurrentLayer(size_t size, size_t batchSize, int direction, const matrix::Precision&);
     virtual ~RecurrentLayer();
 
 public:
@@ -86,6 +86,8 @@ private:
 private:
     size_t _expectedBatchSize;
 
+private:
+    int _direction;
 };
 }
 

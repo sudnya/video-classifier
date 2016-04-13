@@ -39,18 +39,18 @@ typedef matrix::MatrixVector MatrixVector;
 typedef matrix::Dimension Dimension;
 
 RecurrentLayer::RecurrentLayer()
-: RecurrentLayer(1, 1)
+: RecurrentLayer(1, 1, matrix::RECURRENT_FORWARD_TIME)
 {
 
 }
 
-RecurrentLayer::RecurrentLayer(size_t size, size_t batchSize)
-: RecurrentLayer(size, batchSize, matrix::SinglePrecision())
+RecurrentLayer::RecurrentLayer(size_t size, size_t batchSize, int direction)
+: RecurrentLayer(size, batchSize, direction, matrix::SinglePrecision())
 {
 
 }
 
-RecurrentLayer::RecurrentLayer(size_t size, size_t batchSize, const matrix::Precision& precision)
+RecurrentLayer::RecurrentLayer(size_t size, size_t batchSize, int direction, const matrix::Precision& precision)
 : _parameters(new MatrixVector({Matrix({size, size}, precision),
     Matrix({size}, precision), Matrix({size, size}, precision)})),
   _forwardWeights((*_parameters)[0]), _bias((*_parameters)[1]),
@@ -213,7 +213,8 @@ void RecurrentLayer::runForwardImplementation(MatrixVector& outputActivationsVec
     activation = reshape(activation, {activationCount, miniBatch, timesteps});
 
     forwardRecurrentActivations(activation, _recurrentWeights,
-        matrix::RECURRENT_FORWARD_TIME, getActivationFunction()->getOperation());
+        static_cast<lucius::matrix::RecurrentTimeDirection>(_direction), 
+        getActivationFunction()->getOperation());
 
     if(util::isLogEnabled("RecurrentLayer::Detail"))
     {
@@ -260,7 +261,7 @@ void RecurrentLayer::runReverseImplementation(MatrixVector& gradients,
         _expectedBatchSize);
 
     auto forwardDeltas = reverseRecurrentDeltas(Matrix(deltas), _recurrentWeights,
-        outputActivations, matrix::RECURRENT_FORWARD_TIME,
+        outputActivations, static_cast<lucius::matrix::RecurrentTimeDirection>(_direction), 
         getActivationFunction()->getDerivativeOperation());
 
     // Compute recurrent weight gradients
@@ -289,7 +290,7 @@ void RecurrentLayer::runReverseImplementation(MatrixVector& gradients,
     }
 
     auto recurrentWeightGradients = reverseRecurrentGradients(outputActivations,
-        forwardDeltas, matrix::RECURRENT_FORWARD_TIME);
+        forwardDeltas, static_cast<lucius::matrix::RecurrentTimeDirection>(_direction));
 
     if(util::isLogEnabled("RecurrentLayer"))
     {
@@ -466,6 +467,7 @@ void RecurrentLayer::save(util::OutputTarArchive& archive, util::PropertyTree& p
     properties["bias"] = properties.path() + "." + properties.key() + ".bias.npy";
 
     properties["batch-size"] = std::to_string(_expectedBatchSize);
+    properties["direction"] = std::to_string(_direction);
 
     saveToArchive(archive, properties["forward-weights"],   _forwardWeights);
     saveToArchive(archive, properties["recurrent-weights"], _recurrentWeights);
@@ -481,6 +483,7 @@ void RecurrentLayer::load(util::InputTarArchive& archive, const util::PropertyTr
     _bias             = matrix::loadFromArchive(archive, properties["bias"]);
 
     _expectedBatchSize = properties.get<size_t>("batch-size");
+    _direction = properties.get<int>("direction");
 
     loadLayer(archive, properties);
 }

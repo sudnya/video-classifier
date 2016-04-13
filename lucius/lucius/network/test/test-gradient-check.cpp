@@ -17,8 +17,8 @@
 #include <lucius/matrix/interface/MatrixVector.h>
 #include <lucius/matrix/interface/MatrixOperations.h>
 #include <lucius/matrix/interface/Operation.h>
-
 #include <lucius/matrix/interface/RandomOperations.h>
+#include <lucius/matrix/interface/RecurrentOperations.h>
 
 #include <lucius/util/interface/debug.h>
 #include <lucius/util/interface/memory.h>
@@ -147,7 +147,7 @@ static NeuralNetwork createRecurrentNetwork(size_t layerSize, size_t layerCount)
 
     for(size_t layer = 0; layer < layerCount; ++layer)
     {
-        network.addLayer(std::make_unique<RecurrentLayer>(layerSize, 1, DoublePrecision()));
+        network.addLayer(std::make_unique<RecurrentLayer>(layerSize, 1, matrix::RECURRENT_FORWARD_TIME, DoublePrecision()));
         network.back()->setActivationFunction(
             ActivationFunctionFactory::create("SigmoidActivationFunction"));
     }
