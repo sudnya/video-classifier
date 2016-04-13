@@ -30,7 +30,7 @@ typedef matrix::Dimension    Dimension;
 typedef matrix::MatrixVector MatrixVector;
 
 SoftmaxLayer::SoftmaxLayer()
-: SoftmaxLayer({1, 1, 1, 1, 1})
+: SoftmaxLayer({1, 1, 1})
 {
 
 }
@@ -81,12 +81,47 @@ void SoftmaxLayer::initialize()
 
 }
 
+static Matrix foldTime(const Matrix& input)
+{
+    assert(input.size().size() < 4);
+
+    if(input.size().size() == 3)
+    {
+        auto size = input.size();
+        size_t timesteps = size.back();
+
+        size.pop_back();
+
+        size.back() *= timesteps;
+
+        return reshape(input, size);
+    }
+
+    return input;
+}
+
+static Matrix unfoldTime(const Matrix& result, const Dimension& inputSize)
+{
+    if(inputSize.size() <= 2)
+    {
+        return result;
+    }
+
+    assert(inputSize.size() == 3);
+
+    size_t layerSize = result.size()[0];
+    size_t miniBatch = inputSize[1];
+    size_t timesteps = inputSize[2];
+
+    return reshape(result, {layerSize, miniBatch, timesteps});
+}
+
 void SoftmaxLayer::runForwardImplementation(MatrixVector& outputActivationsVector,
     const MatrixVector& inputActivationsVector)
 {
     assert(inputActivationsVector.size() == 1);
 
-    auto inputActivations = inputActivationsVector.back();
+    auto inputActivations = foldTime(inputActivationsVector.back());
 
     util::log("SoftmaxLayer") << " Running forward propagation of matrix "
         << inputActivations.shapeString() << "\n";
@@ -97,7 +132,7 @@ void SoftmaxLayer::runForwardImplementation(MatrixVector& outputActivationsVecto
             << inputActivations.debugString();
     }
 
-    auto outputActivations = reshape(softmax(inputActivations), getOutputSize());
+    auto outputActivations = softmax(inputActivations);
 
     if(util::isLogEnabled("SoftmaxLayer::Detail"))
     {
@@ -107,7 +142,8 @@ void SoftmaxLayer::runForwardImplementation(MatrixVector& outputActivationsVecto
 
     saveMatrix("outputActivations", outputActivations);
 
-    outputActivationsVector.push_back(std::move(outputActivations));
+    outputActivationsVector.push_back(unfoldTime(outputActivations,
+        inputActivationsVector.front().size()));
 }
 
 void SoftmaxLayer::runReverseImplementation(MatrixVector& gradients,
@@ -118,7 +154,7 @@ void SoftmaxLayer::runReverseImplementation(MatrixVector& gradients,
     auto outputActivations = loadMatrix("outputActivations");
 
     // Get the output deltas
-    auto outputDeltas = outputDeltasVector.front();
+    auto outputDeltas = foldTime(outputDeltasVector.front());
 
     auto sum = reduce(apply(matrix::Matrix(outputActivations), outputDeltas, matrix::Multiply()),
         {0}, matrix::Add());
@@ -126,7 +162,7 @@ void SoftmaxLayer::runReverseImplementation(MatrixVector& gradients,
     auto inputDeltas = apply(broadcast(outputDeltas, sum, {0}, matrix::Subtract()),
         outputActivations, matrix::Multiply());
 
-    inputDeltasVector.push_back(std::move(inputDeltas));
+    inputDeltasVector.push_back(unfoldTime(inputDeltas, outputDeltasVector.front().size()));
 }
 
 MatrixVector& SoftmaxLayer::weights()

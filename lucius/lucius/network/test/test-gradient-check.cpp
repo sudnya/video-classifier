@@ -131,7 +131,7 @@ static NeuralNetwork createFeedForwardFullyConnectedSoftmaxLayerNetwork(
     }
 
     network.addLayer(std::make_unique<SoftmaxLayer>(
-        Dimension(layerSize, 1, 1, 1, 1), DoublePrecision()));
+        Dimension(layerSize, 1, 1), DoublePrecision()));
     network.back()->setActivationFunction(
         ActivationFunctionFactory::create("SigmoidActivationFunction"));
 
@@ -483,7 +483,7 @@ static bool runTestFeedForwardFullyConnectedSoftmax(size_t layerSize, size_t lay
 }
 
 static bool runTestFeedForwardFullyConnectedSoftmaxLayer(size_t layerSize,
-    size_t layerCount, bool seed)
+    size_t layerCount, size_t batchSize, bool seed)
 {
     if(seed)
     {
@@ -496,7 +496,7 @@ static bool runTestFeedForwardFullyConnectedSoftmaxLayer(size_t layerSize,
 
     auto network = createFeedForwardFullyConnectedSoftmaxLayerNetwork(layerSize, layerCount);
 
-    if(gradientCheck(network))
+    if(gradientCheckWithBatchSize(network, batchSize))
     {
         std::cout << "Feed Forward Fully Connected Network Softmax Layer Test Passed\n";
 
@@ -596,7 +596,7 @@ static void runTest(size_t layerSize, size_t layerCount, size_t batchSize,
 {
     bool result = true;
 
-    result &= runTestFeedForwardFullyConnectedSoftmaxLayer(layerSize, layerCount, seed);
+    result &= runTestFeedForwardFullyConnectedSoftmaxLayer(layerSize, layerCount, batchSize, seed);
 
     if(!result)
     {
