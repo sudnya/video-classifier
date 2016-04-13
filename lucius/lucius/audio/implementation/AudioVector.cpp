@@ -72,14 +72,14 @@ const Audio& AudioVector::back() const
 
 size_t AudioVector::samples() const
 {
-    size_t minSamples = std::numeric_limits<size_t>::max();
+    size_t samples = 0;
 
     for(auto& sample : *this)
     {
-        minSamples = std::min(minSamples, sample.size());
+        samples = std::max(samples, sample.size());
     }
 
-    return minSamples;
+    return samples;
 }
 
 size_t AudioVector::size() const
