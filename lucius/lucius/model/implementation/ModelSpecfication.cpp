@@ -222,6 +222,11 @@ static void setupOutputLayerParameters(model::Model& model,
 
     size_t index = 0;
 
+    if(specification.exists("model-attributes.Graphemes"))
+    {
+        model.setOutputLabel(index++, "-SEPARATOR-");
+    }
+
     for(auto& label : labels)
     {
         model.setOutputLabel(index++, label);

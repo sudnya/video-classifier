@@ -126,14 +126,12 @@ static NeuralNetwork createFeedForwardFullyConnectedSoftmaxLayerNetwork(
     {
         network.addLayer(std::make_unique<FeedForwardLayer>(layerSize,
             layerSize, DoublePrecision()));
-        network.back()->setActivationFunction(
-            ActivationFunctionFactory::create("SigmoidActivationFunction"));
+        //network.back()->setActivationFunction(
+        //    ActivationFunctionFactory::create("SigmoidActivationFunction"));
     }
 
     network.addLayer(std::make_unique<SoftmaxLayer>(
         Dimension(layerSize, 1, 1), DoublePrecision()));
-    network.back()->setActivationFunction(
-        ActivationFunctionFactory::create("SigmoidActivationFunction"));
 
     network.initialize();
 

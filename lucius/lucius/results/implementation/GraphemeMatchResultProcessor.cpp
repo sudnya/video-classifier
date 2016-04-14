@@ -12,6 +12,7 @@
 
 #include <lucius/util/interface/debug.h>
 #include <lucius/util/interface/EditDistance.h>
+#include <lucius/util/interface/string.h>
 
 // Standard Library Includes
 #include <sstream>
@@ -59,13 +60,15 @@ void GraphemeMatchResultProcessor::process(const ResultVector& results)
             continue;
         }
 
-        size_t distance = util::editDistance(matchResult->reference, matchResult->label);
+        auto label = util::strip(matchResult->label, "-SEPARATOR-");
 
-        util::log("GraphemeMatchResultProcessor::Detail") << " label '" << matchResult->label
+        size_t distance = util::editDistance(matchResult->reference, label);
+
+        util::log("GraphemeMatchResultProcessor::Detail") << " label '" << label
             << "', reference '" << matchResult->reference << "' with distance "
             << distance << "\n";
 
-        if(matchResult->label == matchResult->reference)
+        if(label == matchResult->reference)
         {
             ++_totalSampleMatches;
         }
