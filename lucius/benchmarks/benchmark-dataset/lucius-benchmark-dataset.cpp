@@ -141,7 +141,7 @@ static void setupReportParameters(const Configuration& config)
 static void setupSystemParameters(const Configuration& config)
 {
     lucius::util::KnobDatabase::setKnob("Cuda::Enable", config.isCudaEnabled());
-    lucius::util::KnobDatabase::setKnob("Cuda::Device", config.getCudaDevice());
+    lucius::util::KnobDatabase::setKnob("Cuda::Device", 0);
     lucius::util::KnobDatabase::setKnob("Matrix::DefaultPrecision", config.getPrecision());
 }
 

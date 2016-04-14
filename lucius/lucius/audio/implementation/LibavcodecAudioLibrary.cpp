@@ -20,6 +20,7 @@
 #include <stdexcept>
 #include <memory>
 #include <cstring>
+#include <list>
 
 namespace lucius
 {
@@ -103,6 +104,90 @@ static int64_t seekWriteFunction(void* opaqueStream, int64_t offset, int whence)
     return stream.tellp();
 }
 
+class DataBuffer
+{
+public:
+    DataBuffer()
+    : _bufferSize(1 << 20)
+    {
+
+    }
+
+    void append(const void* data, size_t size)
+    {
+        _adjustSize(size);
+
+        size_t position = _getCurrentPosition();
+
+        _buffers.back().resize(position + size);
+
+        std::memcpy(&_buffers.back()[position], data, size);
+    }
+
+    std::vector<uint8_t> getData() const
+    {
+        std::vector<uint8_t> contiguousData(totalSize());
+
+        size_t position = 0;
+
+        for(auto& buffer : _buffers)
+        {
+            std::memcpy(&contiguousData[position], buffer.data(), buffer.size());
+            position += buffer.size();
+        }
+
+        return contiguousData;
+    }
+
+    size_t totalSize() const
+    {
+        size_t size = 0;
+
+        for(auto& buffer : _buffers)
+        {
+            size += buffer.size();
+        }
+
+        return size;
+    }
+
+private:
+    void _adjustSize(size_t size)
+    {
+        if(!_buffers.empty() && (size + _getCurrentPosition() <= _bufferSize))
+        {
+            return;
+        }
+
+        if(size > _bufferSize)
+        {
+            _bufferSize = size;
+        }
+
+        _buffers.push_back(BufferEntry());
+
+        _buffers.back().reserve(_bufferSize);
+    }
+
+    size_t _getCurrentPosition() const
+    {
+        if(_buffers.empty())
+        {
+            return 0;
+        }
+
+        return _buffers.back().size();
+    }
+
+private:
+    typedef std::vector<uint8_t> BufferEntry;
+    typedef std::list<BufferEntry> BufferList;
+
+private:
+    BufferList _buffers;
+    size_t     _bufferSize;
+
+};
 
 LibavcodecAudioLibrary::HeaderAndData LibavcodecAudioLibrary::loadAudio(std::istream& stream,
     const std::string& format)
@@ -195,6 +280,8 @@ LibavcodecAudioLibrary::HeaderAndData LibavcodecAudioLibrary::loadAudio(std::ist
 
     LibavcodecLibrary::AVFrameRAII decodedFrame;
 
+    DataBuffer dataBuffer;
+
     while(true)
     {
         LibavcodecLibrary::AVPacketRAII packet;
@@ -236,12 +323,7 @@ LibavcodecAudioLibrary::HeaderAndData LibavcodecAudioLibrary::loadAudio(std::ist
                 LibavcodecLibrary::getSampleFormat(context), 1);
             assert(dataSize >= 0);
 
-            size_t position = headerAndData.data.size();
-
-            headerAndData.data.resize(position + dataSize);
-
-            std::memcpy(reinterpret_cast<uint8_t*>(headerAndData.data.data()) + position,
-                LibavcodecLibrary::getData(decodedFrame), dataSize);
+            dataBuffer.append(LibavcodecLibrary::getData(decodedFrame), dataSize);
         }
 
         if(length != packet->size)
@@ -252,6 +334,8 @@ LibavcodecAudioLibrary::HeaderAndData LibavcodecAudioLibrary::loadAudio(std::ist
 
     LibavcodecLibrary::av_free(avioContext->buffer);
     buffer.release();
+
+    headerAndData.data = dataBuffer.getData();
 
     return headerAndData;
 }

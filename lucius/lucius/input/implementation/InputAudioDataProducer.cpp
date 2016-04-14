@@ -93,7 +93,7 @@ public:
 
         // Determine how many audio samples to cache
         size_t samplesToCache = util::KnobDatabase::getKnobValue(
-            "InputAudioDataProducer::CacheSize", 16);
+            "InputAudioDataProducer::CacheSize", 0);
 
         size_t audioSamplesToCache = std::min(samplesToCache, _audio.size());
 
@@ -133,7 +133,8 @@ public:
         }
 
         util::log("InputAudioDataProducer") << "Loaded batch of '" << batch.size()
-            <<  "' audio samples, " << _remainingSamples << " remaining in this epoch.\n";
+            <<  "' audio samples (" << input.size()[2] << " timesteps), "
+            << _remainingSamples << " remaining in this epoch.\n";
 
         return InputAudioDataProducer::InputAndReferencePair(
             std::move(input), std::move(reference));
@@ -172,25 +173,44 @@ private:
         for(size_t i = 0; i < batchSize; ++i)
         {
             bool isAudioCached = _audio[_nextSample].isCached();
-            bool isNoiseCached = _noise[_nextNoiseSample].isCached();
+            bool isNoiseCached = false;
 
             _audio[_nextSample].cache();
-            _noise[_nextNoiseSample].cache();
 
             auto audio = _audio[_nextSample];
-            auto noise = _noise[_nextNoiseSample];
 
-            _downsampleToMatchFrequencies(audio, noise);
+            if(!_noise.empty())
+            {
+                isNoiseCached = _noise[_nextNoiseSample].isCached();
 
-            _scaleRandomly(audio, _speechScaleLower, _speechScaleUpper);
-            _scaleRandomly(noise, _noiseRateLower,   _noiseRateUpper);
+                _noise[_nextNoiseSample].cache();
 
-            auto selectedTimesteps = ((_generator() % _audioTimesteps) + _audioTimesteps) / 2;
+                auto noise = _noise[_nextNoiseSample];
 
-            audio = _sample(audio, selectedTimesteps          );
-            noise = _sample(noise, _totalTimestepsPerUtterance);
+                _downsampleToMatchFrequencies(audio, noise);
 
-            batch.push_back(_merge(audio, noise));
+                _scaleRandomly(audio, _speechScaleLower, _speechScaleUpper);
+                _scaleRandomly(noise, _noiseRateLower,   _noiseRateUpper);
+
+                auto selectedTimesteps = ((_generator() % _audioTimesteps) + _audioTimesteps) / 2;
+
+                audio = _sample(audio, selectedTimesteps          );
+                noise = _sample(noise, _totalTimestepsPerUtterance);
+
+                batch.push_back(_merge(audio, noise));
+            }
+            else
+            {
+                _downsample(audio);
+
+                _scaleRandomly(audio, _speechScaleLower, _speechScaleUpper);
+
+                auto audioGraphemes = _toGraphemes(audio.label());
+                audio.setDefaultLabel(_delimiterGrapheme);
+                _applyGraphemesToRange(audio, 0, audioGraphemes.size(), audioGraphemes);
+
+                batch.push_back(audio);
+            }
 
             if(_saveSamples)
             {
@@ -216,14 +236,18 @@ private:
                 _audio[_nextSample].invalidateCache();
             }
 
-            if(!isNoiseCached)
+            if(!isNoiseCached && !_noise.empty())
             {
                 _noise[_nextNoiseSample].invalidateCache();
             }
 
             --_remainingSamples;
             ++_nextSample;
-            _nextNoiseSample = (_nextNoiseSample + 1) % _noise.size();
+
+            if(!_noise.empty())
+            {
+                _nextNoiseSample = (_nextNoiseSample + 1) % _noise.size();
+            }
         }
 
         return batch;
@@ -391,14 +415,14 @@ private:
 
     void _downsampleToMatchFrequencies(Audio& first, Audio& second)
     {
-        size_t minimumFrequency = _producer->getModel()->getAttribute<size_t>("SamplingRate");
-
-        _downsample(first,  minimumFrequency);
-        _downsample(second, minimumFrequency);
+        _downsample(first);
+        _downsample(second);
     }
 
-    void _downsample(Audio& audio, size_t frequency)
+    void _downsample(Audio& audio)
     {
+        size_t frequency = _producer->getModel()->getAttribute<size_t>("SamplingRate");
+
         if(audio.frequency() == frequency)
         {
             return;
@@ -435,6 +459,9 @@ private:
 
         sampleDatabase.load();
 
+        bool useNoise = util::KnobDatabase::getKnobValue(
+            "InputAudioDataProducer::UseNoise", false);
+
         for(auto& sample : sampleDatabase)
         {
             if(!sample.hasLabel() && _producer->getRequiresLabeledData())
@@ -459,7 +486,10 @@ private:
 
                 if(sample.label() == "noise" || sample.label().find("background|") == 0)
                 {
-                    _noise.push_back(Audio(sample.path(), util::strip(sample.label(), "|")));
+                    if(useNoise)
+                    {
+                        _noise.push_back(Audio(sample.path(), util::strip(sample.label(), "|")));
+                    }
                 }
                 else
                 {

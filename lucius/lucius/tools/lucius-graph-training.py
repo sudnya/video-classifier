@@ -26,6 +26,9 @@ def lower_bound(array, value):
 def isfinite(x):
     return (not math.isinf(x)) and (not math.isnan(x))
 
+def sanitizeFigureName(name):
+    return name.replace('.', '_')
+
 class ExperimentData:
     def __init__(self, name):
         self.name                 = name
@@ -385,11 +388,13 @@ class Visualizer:
 
             output = self.output
 
-            path = os.path.join(output, name)
+            path = os.path.join(output, sanitizeFigureName(name))
 
             print "saving plot " + name + " at " + path + '.png'
 
             pyplot.savefig(path)
+
+            pyplot.close(figure.number)
 
 # MAIN
 def main():

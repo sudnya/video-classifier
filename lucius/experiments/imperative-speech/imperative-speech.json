@@ -5,9 +5,9 @@
     {
         "type" : "NesterovAcceleratedGradientSolver",
 
-        "batch-size"      : "8",
+        "batch-size"      : "64",
         "maximum-samples" : "1e9",
-        "standardization-samples" : "16",
+        "standardization-samples" : "64",
 
         "epochs" : "20",
 

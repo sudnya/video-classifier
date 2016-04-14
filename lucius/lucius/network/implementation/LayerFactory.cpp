@@ -14,6 +14,7 @@
 #include <lucius/network/interface/BatchNormalizationLayer.h>
 #include <lucius/network/interface/MaxPoolingLayer.h>
 #include <lucius/network/interface/SubgraphLayer.h>
+#include <lucius/network/interface/SoftmaxLayer.h>
 #include <lucius/network/interface/ActivationFunctionFactory.h>
 
 #include <lucius/matrix/interface/Dimension.h>
@@ -154,6 +155,16 @@ std::unique_ptr<Layer> LayerFactory::create(const std::string& name,
         layer = std::make_unique<MaxPoolingLayer>(
             matrix::Dimension({inputWidth, inputHeight, inputColors, inputBatch, 1}),
             matrix::Dimension({width, height}), precision);
+    }
+    else if("SoftmaxLayer" == name)
+    {
+        size_t inputSize  = parameters.get("InputSize",  inputSizeAggregate);
+
+        auto precision = *matrix::Precision::fromString(parameters.get("Precision",
+            matrix::Precision::getDefaultPrecision().toString()));
+
+        layer = std::make_unique<SoftmaxLayer>(
+            matrix::Dimension({inputSize, 1, 1}), precision);
     }
     else if("SubgraphLayer" == name)
     {

@@ -5,17 +5,17 @@
     {
         "type" : "NesterovAcceleratedGradientSolver",
 
-        "batch-size"      : "64",
+        "batch-size"      : "8",
         "maximum-samples" : "1e9",
-        "standardization-samples" : "128",
+        "standardization-samples" : "1024",
 
-        "epochs" : "20",
+        "epochs" : "200",
 
         "parameters" :
         {
-            "NesterovAcceleratedGradient::LearningRate"       : "1.0e-4",
-            "NesterovAcceleratedGradient::Momentum"           : "0.99",
-            "NesterovAcceleratedGradient::AnnealingRate"      : "1.0000001",
+            "NesterovAcceleratedGradient::LearningRate"       : "7.324218749998536e-08",
+            "NesterovAcceleratedGradient::Momentum"           : "0.99984375",
+            "NesterovAcceleratedGradient::AnnealingRate"      : "1.0000004798860074",
             "NesterovAcceleratedGradient::MaxGradNorm"        : "400.0",
             "NesterovAcceleratedGradient::IterationsPerBatch" : "1"
         }
@@ -30,16 +30,16 @@
             "recurrent" :
             {
                 "Type" : "RecurrentLayer",
-                "Size" : "512"
+                "Size" : "1024"
             },
             "input-convolution":
             {
                 "Type"              : "AudioConvolutionalLayer",
-                "FilterSamples"    : "256",
-                "FilterTimesteps"  : "3",
-                "FilterOutputs"    : "512",
+                "FilterSamples"    : "64",
+                "FilterTimesteps"  : "9",
+                "FilterOutputs"    : "1024",
                 "PaddingSamples"   : "0",
-                "PaddingTimesteps" : "1"
+                "PaddingTimesteps" : "4"
 
             },
             "output":
@@ -80,7 +80,7 @@
         "model-attributes" :
         {
             "SamplingRate"  : "8000",
-            "FrameDuration" : "256",
+            "FrameDuration" : "64",
             "Graphemes" : [ "a", "b", "c", "d", "e", "f", "g", "h", "i",
                             "j", "k", "l", "m", "n", "o", "p", "q", "r",
                             "s", "t", "u", "v", "w", "x", "y", "z", ".",
@@ -100,8 +100,8 @@
         "InputAudioDataProducer::SpeechScaleUpper" : "1.0",
         "InputAudioDataProducer::NoiseRateLower" : "0.0",
         "InputAudioDataProducer::NoiseRateUpper" : "0.001",
-        "InputAudioDataProducer::TotalTimestepsPerUtterance" : "1024",
-        "InputAudioDataProducer::AudioTimesteps" : "1024",
+        "InputAudioDataProducer::TotalTimestepsPerUtterance" : "2500",
+        "InputAudioDataProducer::AudioTimesteps" : "2500",
         "InputAudioDataProducer::SaveSamples" : "0"
     },
 
