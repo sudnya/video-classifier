@@ -77,8 +77,8 @@ public:
 
     virtual InputAndReferencePair pop()
     {
-        Matrix sample    = zeros({5, getBatchSize(), _sequenceLength}, SinglePrecision());
-        Matrix reference = zeros({5, getBatchSize(), _sequenceLength}, SinglePrecision());
+        Matrix sample    = zeros({6, getBatchSize(), _sequenceLength}, SinglePrecision());
+        Matrix reference = zeros({6, getBatchSize(), _sequenceLength}, SinglePrecision());
 
         for(size_t batchSample = 0; batchSample < getBatchSize(); ++batchSample)
         {
@@ -95,12 +95,14 @@ public:
 
             for(size_t timestep = 0; timestep < partition; )
             {
-                switch(distribution(engine))
+                size_t next = distribution(engine);
+
+                switch(next)
                 {
                 case 0:
                 {
-                    sample   (0, batchSample, timestep) = 1.0f;
-                    reference(0, batchSample, timestep) = 1.0f;
+                    sample   (1, batchSample, timestep) = 1.0f;
+                    reference(1, batchSample, timestep) = 1.0f;
 
                     opens += 1;
 
@@ -114,8 +116,8 @@ public:
                         break;
                     }
 
-                    sample   (1, batchSample, timestep) = 1.0f;
-                    reference(1, batchSample, timestep) = 1.0f;
+                    sample   (2, batchSample, timestep) = 1.0f;
+                    reference(2, batchSample, timestep) = 1.0f;
 
                     closes += 1;
 
@@ -124,8 +126,8 @@ public:
                 }
                 case 2:
                 {
-                    sample   (2, batchSample, timestep) = 1.0f;
-                    reference(2, batchSample, timestep) = 1.0f;
+                    sample   (3, batchSample, timestep) = 1.0f;
+                    reference(3, batchSample, timestep) = 1.0f;
 
                     anys += 1;
 
@@ -142,20 +144,20 @@ public:
 
             for(size_t timestep = partition; timestep < _sequenceLength; ++timestep)
             {
-                sample(3, batchSample, timestep) = 1.0f;
+                sample(4, batchSample, timestep) = 1.0f;
             }
 
             // fill in the reference
-            size_t hanging = opens - closes;
+            size_t hanging = (opens - closes);
 
             for(size_t timestep = partition; timestep < (partition + hanging); ++timestep)
             {
-                reference(1, batchSample, timestep) = 1.0f;
+                reference(2, batchSample, timestep) = 1.0f;
             }
 
             for(size_t timestep = partition + hanging; timestep < _sequenceLength; ++timestep)
             {
-                reference(4, batchSample, timestep) = 1.0f;
+                reference(5, batchSample, timestep) = 1.0f;
             }
 
             ++_sampleIndex;
@@ -194,7 +196,7 @@ static void addClassifier(Model& model, const Parameters& parameters)
     NeuralNetwork classifier;
 
     classifier.addLayer(LayerFactory::create("FeedForwardLayer",
-        std::make_tuple("InputSize" , 5),
+        std::make_tuple("InputSize" , 6),
         std::make_tuple("OutputSize", parameters.layerSize)));
 
     // connect the network
@@ -209,8 +211,6 @@ static void addClassifier(Model& model, const Parameters& parameters)
 
     for(size_t layer = 0; layer != parameters.recurrentLayers; ++layer)
     {
-
-
         classifier.addLayer(LayerFactory::create("BatchNormalizationLayer",
             std::make_tuple("InputSizeHeight", parameters.layerSize)));
         classifier.addLayer(LayerFactory::create("RecurrentLayer",
@@ -220,17 +220,19 @@ static void addClassifier(Model& model, const Parameters& parameters)
 
     classifier.addLayer(LayerFactory::create("FeedForwardLayer",
         std::make_tuple("InputSizeHeight",  parameters.layerSize),
-        std::make_tuple("OutputSize", 5)));
+        std::make_tuple("OutputSize", 6)));
 
-    classifier.setCostFunction(lucius::network::CostFunctionFactory::create("SoftmaxCostFunction"));
+    classifier.setCostFunction(lucius::network::CostFunctionFactory::create(
+        "SoftmaxCostFunction"));
 
     classifier.initialize();
 
-    model.setOutputLabel(0, "{");
-    model.setOutputLabel(1, "}");
-    model.setOutputLabel(2, " ");
-    model.setOutputLabel(3, "UNKOWN");
-    model.setOutputLabel(4, "END");
+    model.setOutputLabel(0, "BLANK");
+    model.setOutputLabel(1, "{");
+    model.setOutputLabel(2, "}");
+    model.setOutputLabel(3, " ");
+    model.setOutputLabel(4, "UNKOWN");
+    model.setOutputLabel(5, "END");
 
     model.setNeuralNetwork("Classifier", classifier);
 
@@ -241,6 +243,8 @@ static void addClassifier(Model& model, const Parameters& parameters)
 static void createModel(Model& model, const Parameters& parameters)
 {
     addClassifier(model, parameters);
+
+    model.setAttribute("UsesGraphemes", true);
 }
 
 static void setSampleStatistics(Model& model, const Parameters& parameters, InputDataProducer& producer)
