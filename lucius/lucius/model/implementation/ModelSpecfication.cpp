@@ -201,6 +201,8 @@ static void setupOutputLayerParameters(model::Model& model,
             inputDatabase.addGrapheme(grapheme.key());
         }
 
+        inputDatabase.addGrapheme("-SEPARATOR-");
+
         model.setAttribute("UsesGraphemes", "1");
     }
 
