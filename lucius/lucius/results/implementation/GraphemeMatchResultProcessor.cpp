@@ -53,6 +53,7 @@ void GraphemeMatchResultProcessor::process(const ResultVector& results)
             auto costResult = dynamic_cast<CostResult*>(result);
 
             _cost += costResult->cost;
+            _costCount += 1;
 
             util::log("GraphemeMatchResultProcessor::Detail") << " cost '"
                 << costResult->cost << "'\n";
