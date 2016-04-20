@@ -201,8 +201,6 @@ static void setupOutputLayerParameters(model::Model& model,
             inputDatabase.addGrapheme(grapheme.key());
         }
 
-        inputDatabase.addGrapheme("-SEPARATOR-");
-
         model.setAttribute("UsesGraphemes", "1");
     }
 
@@ -222,14 +220,23 @@ static void setupOutputLayerParameters(model::Model& model,
 
     auto labels = inputDatabase.getAllPossibleLabels();
 
+    size_t labelCount = labels.size();
     size_t index = 0;
+
+    // The 0th network output must be a separator for CTC
+    if(specification.exists("model-attributes.Graphemes"))
+    {
+        model.setOutputLabel(index++, "-SEPARATOR-");
+        inputDatabase.addGrapheme("-SEPARATOR-");
+        labelCount++;
+    }
 
     for(auto& label : labels)
     {
         model.setOutputLabel(index++, label);
     }
 
-    layerParameters.insert("OutputSize", labels.size());
+    layerParameters.insert("OutputSize", labelCount);
 }
 
 static void populateSubgraphLayer(std::unique_ptr<Layer>& layer,

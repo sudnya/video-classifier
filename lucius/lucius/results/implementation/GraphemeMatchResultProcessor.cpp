@@ -27,7 +27,7 @@ namespace results
 
 GraphemeMatchResultProcessor::GraphemeMatchResultProcessor()
 : _totalGraphemes(0), _totalGraphemeMatches(0), _totalSamples(0),
-  _totalSampleMatches(0), _cost(0.0)
+  _totalSampleMatches(0), _cost(0.0), _costCount(0.0)
 {
 
 }
@@ -101,7 +101,7 @@ double GraphemeMatchResultProcessor::getAccuracy() const
 
 double GraphemeMatchResultProcessor::getCost() const
 {
-    return _cost;
+    return _cost / _costCount;
 }
 
 double GraphemeMatchResultProcessor::getSampleAccuracy() const

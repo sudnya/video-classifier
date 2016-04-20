@@ -43,6 +43,7 @@ private:
     size_t _totalSampleMatches;
 
     double _cost;
+    size_t _costCount;
 
 };
 
