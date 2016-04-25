@@ -289,10 +289,23 @@ def getYLimit(experiments):
 
     return [0, limit]
 
+def parseTuple(text, elements):
+    if len(text) == 0:
+        return None
+
+    split = text.split(",")
+
+    if len(split) != elements:
+        raise ValueError("Expecting a " + str(elements) + " tuple, but got " + text)
+
+    return [int(i) for i in split]
+
 class Visualizer:
     def __init__(self, arguments):
         self.inputs = arguments["input_file"]
         self.output = arguments["output_file"]
+        self.xscale = parseTuple(arguments["x_scale"], 2)
+        self.yscale = parseTuple(arguments["y_scale"], 2)
 
         if not os.path.exists(self.output):
             self.output = self.inputs[0]
@@ -362,7 +375,13 @@ class Visualizer:
                  box.width, box.height * (1.0 - percent)])
 
         if not self.autoScale:
-            axes.set_ylim(getYLimit(group.getExperiments()))
+            if self.yscale != None:
+                axes.set_ylim(self.yscale)
+            else:
+                axes.set_ylim(getYLimit(group.getExperiments()))
+
+            if self.xscale != None:
+                axes.set_xlim(self.xscale)
 
         axes.legend(bbox_to_anchor=(0.0, -.5*percent, 1, 0), loc='upper center',
             ncol=1, mode="expand", borderaxespad=0., fontsize='x-small')
@@ -407,6 +426,10 @@ def main():
         help = "The output file path for the figure (.png, .pdf, etc).")
     parser.add_argument("-m", "--maximum-iterations", default = 0,
         help = "The maximum number of iterations to draw.")
+    parser.add_argument("-x", "--x-scale", default = "",
+        help = "The scale for the x axis.")
+    parser.add_argument("-y", "--y-scale", default = "",
+        help = "The scale for the y axis.")
     parser.add_argument("--scale", default = False, action="store_true",
         help = "Choose the y scale automatically.")
 

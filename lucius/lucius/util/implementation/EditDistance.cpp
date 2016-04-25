@@ -128,6 +128,16 @@ static size_t computeEditDistance(const StringVector& left, size_t leftIndex,
 size_t editDistance(const std::string& left, const std::string& right,
     const StringVector& graphemes)
 {
+    if(left.empty())
+    {
+        return right.size();
+    }
+
+    if(right.empty())
+    {
+        return left.size();
+    }
+
     StringVector leftGraphemes  = toGraphemes(left,  graphemes);
     StringVector rightGraphemes = toGraphemes(right, graphemes);
 
