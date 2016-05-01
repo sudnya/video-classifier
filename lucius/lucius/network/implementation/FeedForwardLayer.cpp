@@ -124,37 +124,29 @@ void FeedForwardLayer::initialize()
 
 static Matrix foldTime(const Matrix& input)
 {
-    assert(input.size().size() < 4);
+    auto size = input.size();
 
-    if(input.size().size() == 3)
+    size_t minibatch = size[size.size() - 2];
+    size_t timesteps = size[size.size() - 1];
+
+    size_t layerSize = 1;
+
+    for(size_t i = 2; i < size.size(); ++i)
     {
-        auto size = input.size();
-        size_t timesteps = size.back();
-
-        size.pop_back();
-
-        size.back() *= timesteps;
-
-        return reshape(input, size);
+        layerSize *= size[i-2];
     }
 
-    return input;
+    return reshape(input, {layerSize, minibatch * timesteps});
 }
 
 static Matrix unfoldTime(const Matrix& result, const Dimension& inputSize)
 {
-    if(inputSize.size() <= 2)
-    {
-        return result;
-    }
+    size_t minibatch = inputSize[inputSize.size() - 2];
+    size_t timesteps = inputSize[inputSize.size() - 1];
 
-    assert(inputSize.size() == 3);
+    size_t layerSize = result.size().product() / (minibatch * timesteps);
 
-    size_t layerSize = result.size()[0];
-    size_t miniBatch = inputSize[1];
-    size_t timesteps = inputSize[2];
-
-    return reshape(result, {layerSize, miniBatch, timesteps});
+    return reshape(result, {layerSize, minibatch, timesteps});
 }
 
 void FeedForwardLayer::runForwardImplementation(MatrixVector& outputActivations,
