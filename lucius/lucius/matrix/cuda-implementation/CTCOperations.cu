@@ -62,9 +62,11 @@ static void computeCtcOnSinglePrecisionSequence(Matrix& costs, Matrix& gradients
     std::vector<int> labelLengthInMinibatch;
 
     // gather the labels
-    // TODO: do this on the GPU
+    // TODO: do this on the GPU, or use metadata
     for(size_t miniBatch = 0; miniBatch != samplesPerMinibatch; ++miniBatch)
     {
+        bool labelEnded = false;
+
         for(size_t label = 0; label != labelSize; ++label)
         {
             double letterValue    = 0.0;
@@ -83,10 +85,28 @@ static void computeCtcOnSinglePrecisionSequence(Matrix& costs, Matrix& gradients
 
             labelsInMinibatch.push_back(selectedLetter);
 
-            if(((selectedLetter >= vocabularySize - 1) && (label > 0)) || (label == labelSize - 1))
+            if(label == labelSize - 1)
             {
-                labelLengthInMinibatch.push_back(label + 1);
-                break;
+                if(!labelEnded)
+                {
+                    labelLengthInMinibatch.push_back(label + 1);
+                }
+
+                timeStepsInMinibatch.push_back(label + 1);
+            }
+
+            if((selectedLetter >= vocabularySize - 1) && (label > 0))
+            {
+                if(!labelEnded)
+                {
+                    labelLengthInMinibatch.push_back(label + 1);
+                    labelEnded = true;
+                }
+                else
+                {
+                    timeStepsInMinibatch.push_back(label + 1);
+                    break;
+                }
             }
         }
     }

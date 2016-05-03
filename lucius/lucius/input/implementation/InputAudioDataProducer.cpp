@@ -4,7 +4,6 @@
     \brief  The source file for the InputAudioDataProducer class.
 */
 
-
 // Lucius Includes
 #include <lucius/input/interface/InputAudioDataProducer.h>
 
@@ -206,8 +205,9 @@ private:
                 _scaleRandomly(audio, _speechScaleLower, _speechScaleUpper);
 
                 auto audioGraphemes = _toGraphemes(audio.label());
-                audio.setDefaultLabel(_delimiterGrapheme);
                 _applyGraphemesToRange(audio, 0, audioGraphemes.size(), audioGraphemes);
+
+                _setSpecialGraphemes(audio, audioGraphemes.size());
 
                 batch.push_back(audio);
             }
@@ -279,6 +279,8 @@ private:
 
         audio.resize(samples);
 
+        audio.setUnpaddedLength(position);
+
         for(; position < audio.size(); ++position)
         {
             audio.setSample(position, 0.0);
@@ -292,8 +294,9 @@ private:
             auto result = audio;
 
             auto audioGraphemes = _toGraphemes(audio.label());
-            result.setDefaultLabel(_delimiterGrapheme);
             _applyGraphemesToRange(result, 0, audioGraphemes.size(), audioGraphemes);
+
+            _setSpecialGraphemes(result, audioGraphemes.size());
 
             return result;
         }
@@ -320,8 +323,6 @@ private:
 
         if(_usesGraphemes())
         {
-            result.setDefaultLabel(_delimiterGrapheme);
-
             auto noiseGraphemes = _toGraphemes(noise.label());
             auto audioGraphemes = _toGraphemes(audio.label());
 
@@ -330,6 +331,8 @@ private:
                 noiseGraphemes.size() + audioGraphemes.size(), audioGraphemes);
             _applyGraphemesToRange(result, noiseGraphemes.size() + audioGraphemes.size(),
                 (result.size() - frameSize)/frameSize, noiseGraphemes);
+
+            _setSpecialGraphemes(result, noiseGraphemes.size() + audioGraphemes.size());
         }
         else
         {
@@ -406,6 +409,27 @@ private:
         }
 
         return graphemes;
+    }
+
+    void _setSpecialGraphemes(Audio& result, size_t sequenceLength)
+    {
+        result.setDefaultLabel(*_graphemes.begin());
+
+        size_t frameSize = _getFrameSize();
+
+        size_t endAudioFrame = result.getUnpaddedLength() / frameSize;
+
+        size_t beginAudioEnd = endAudioFrame * frameSize;
+        size_t endAudioEnd   = std::min(result.size(), (endAudioFrame + 1) * frameSize);
+
+        result.addLabel(beginAudioEnd, endAudioEnd, _delimiterGrapheme);
+
+        size_t endLabelFrame = sequenceLength / frameSize;
+
+        size_t beginLabelEnd = endLabelFrame * frameSize;
+        size_t endLabelEnd   = std::min(result.size(), (endLabelFrame + 1) * frameSize);
+
+        result.addLabel(beginLabelEnd, endLabelEnd, _delimiterGrapheme);
     }
 
     bool _usesGraphemes() const
