@@ -93,6 +93,7 @@ static void computeCtcOnSinglePrecisionSequence(Matrix& costs, Matrix& gradients
                 }
 
                 timeStepsInMinibatch.push_back(label + 1);
+                break;
             }
 
             if((selectedLetter >= vocabularySize - 1) && (label > 0))

@@ -424,7 +424,7 @@ private:
 
         result.addLabel(beginAudioEnd, endAudioEnd, _delimiterGrapheme);
 
-        size_t endLabelFrame = sequenceLength / frameSize;
+        size_t endLabelFrame = sequenceLength + 1;
 
         size_t beginLabelEnd = endLabelFrame * frameSize;
         size_t endLabelEnd   = std::min(result.size(), (endLabelFrame + 1) * frameSize);
