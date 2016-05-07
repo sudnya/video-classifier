@@ -52,12 +52,6 @@ static void computeCtcOnSinglePrecisionSequence(Matrix& costs, Matrix& gradients
     size_t timesteps           = inputActivations.size()[inputActivations.size().size() - 1];
 
     std::vector<int> timeStepsInMinibatch;
-
-    for(size_t sample = 0; sample < samplesPerMinibatch; ++sample)
-    {
-        timeStepsInMinibatch.push_back(timesteps);
-    }
-
     std::vector<int> labelsInMinibatch;
     std::vector<int> labelLengthInMinibatch;
 
