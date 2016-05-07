@@ -447,12 +447,12 @@ private:
     {
         size_t frequency = _producer->getModel()->getAttribute<size_t>("SamplingRate");
 
-        if(audio.frequency() == frequency)
+        if(audio.frequency() != frequency)
         {
-            return;
+            audio = audio.sample(frequency);
         }
 
-        audio = audio.sample(frequency);
+        audio.setUnpaddedLength(audio.size());
     }
 
     void _scaleRandomly(Audio& audio, double lower, double upper)
