@@ -77,7 +77,10 @@ static void computeCtcOnSinglePrecisionSequence(Matrix& costs, Matrix& gradients
                 }
             }
 
-            labelsInMinibatch.push_back(selectedLetter);
+            if(!labelEnded)
+            {
+                labelsInMinibatch.push_back(selectedLetter);
+            }
 
             if(label == labelSize - 1)
             {
