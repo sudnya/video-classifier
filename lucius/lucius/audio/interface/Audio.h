@@ -59,6 +59,10 @@ public:
     void   setSample(size_t sample, double value);
 
 public:
+    void setUnpaddedLength(size_t position);
+    size_t getUnpaddedLength();
+
+public:
     Audio slice(size_t startingSample, size_t endingSample) const;
     Audio sample(size_t newFrequency) const;
 
@@ -109,6 +113,8 @@ private:
     LabelMap _labels;
 
     std::string _defaultLabel;
+
+    size_t _unpaddedSequenceLength;
 
 private:
     size_t _samples;

@@ -23,19 +23,20 @@ namespace audio
 {
 
 Audio::Audio(const std::string& path, const std::string& label)
-: _path(path), _isLoaded(false), _defaultLabel(label)
+: _path(path), _isLoaded(false), _defaultLabel(label), _unpaddedSequenceLength(0)
 {
 
 }
 
 Audio::Audio(std::istream& stream, const std::string& format)
-: _isLoaded(false)
+: _isLoaded(false), _unpaddedSequenceLength(0)
 {
     _load(stream, format);
 }
 
 Audio::Audio(size_t samples, size_t bytesPerSample, size_t frequency)
-: _isLoaded(true), _samples(samples), _bytesPerSample(bytesPerSample), _samplingRate(frequency)
+: _isLoaded(true), _unpaddedSequenceLength(0),
+  _samples(samples), _bytesPerSample(bytesPerSample), _samplingRate(frequency)
 {
     _data.resize(_samples * _bytesPerSample);
 }
@@ -179,6 +180,16 @@ void Audio::setSample(size_t sample, double value)
         assertM(false, "Invalid bytes per sample.");
     }
     }
+}
+
+void Audio::setUnpaddedLength(size_t position)
+{
+    _unpaddedSequenceLength = position;
+}
+
+size_t Audio::getUnpaddedLength()
+{
+    return _unpaddedSequenceLength;
 }
 
 Audio Audio::slice(size_t startingSample, size_t endingSample) const
