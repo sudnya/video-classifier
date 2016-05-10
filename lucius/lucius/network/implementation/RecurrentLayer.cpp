@@ -50,11 +50,13 @@ RecurrentLayer::RecurrentLayer(size_t size, size_t batchSize, int direction)
 
 }
 
-RecurrentLayer::RecurrentLayer(size_t size, size_t batchSize, int direction, const matrix::Precision& precision)
+RecurrentLayer::RecurrentLayer(size_t size, size_t batchSize,
+    int direction, const matrix::Precision& precision)
 : _parameters(new MatrixVector({Matrix({size, size}, precision),
     Matrix({size}, precision), Matrix({size, size}, precision)})),
   _forwardWeights((*_parameters)[0]), _bias((*_parameters)[1]),
-  _recurrentWeights((*_parameters)[2]), _expectedBatchSize(batchSize)
+  _recurrentWeights((*_parameters)[2]), _expectedBatchSize(batchSize),
+  _direction(direction)
 {
 
 }
@@ -69,7 +71,8 @@ RecurrentLayer::RecurrentLayer(const RecurrentLayer& l)
  _forwardWeights((*_parameters)[0]),
  _bias((*_parameters)[1]),
  _recurrentWeights((*_parameters)[2]),
- _expectedBatchSize(l._expectedBatchSize)
+ _expectedBatchSize(l._expectedBatchSize),
+ _direction(l._direction)
 {
 
 }
@@ -85,6 +88,7 @@ RecurrentLayer& RecurrentLayer::operator=(const RecurrentLayer& l)
 
     _parameters = std::make_unique<MatrixVector>(*l._parameters);
     _expectedBatchSize = l._expectedBatchSize;
+    _direction = l._direction;
 
     return *this;
 }
@@ -213,7 +217,7 @@ void RecurrentLayer::runForwardImplementation(MatrixVector& outputActivationsVec
     activation = reshape(activation, {activationCount, miniBatch, timesteps});
 
     forwardRecurrentActivations(activation, _recurrentWeights,
-        static_cast<lucius::matrix::RecurrentTimeDirection>(_direction), 
+        static_cast<lucius::matrix::RecurrentTimeDirection>(_direction),
         getActivationFunction()->getOperation());
 
     if(util::isLogEnabled("RecurrentLayer::Detail"))
@@ -261,7 +265,7 @@ void RecurrentLayer::runReverseImplementation(MatrixVector& gradients,
         _expectedBatchSize);
 
     auto forwardDeltas = reverseRecurrentDeltas(Matrix(deltas), _recurrentWeights,
-        outputActivations, static_cast<lucius::matrix::RecurrentTimeDirection>(_direction), 
+        outputActivations, static_cast<lucius::matrix::RecurrentTimeDirection>(_direction),
         getActivationFunction()->getDerivativeOperation());
 
     // Compute recurrent weight gradients
