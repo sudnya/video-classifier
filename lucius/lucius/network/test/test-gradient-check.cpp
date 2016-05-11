@@ -7,6 +7,7 @@
 // Lucius Includes
 #include <lucius/network/interface/NeuralNetwork.h>
 #include <lucius/network/interface/FeedForwardLayer.h>
+#include <lucius/network/interface/BidirectionalRecurrentLayer.h>
 #include <lucius/network/interface/RecurrentLayer.h>
 #include <lucius/network/interface/SoftmaxLayer.h>
 #include <lucius/network/interface/BatchNormalizationLayer.h>
@@ -635,6 +636,20 @@ static void runTest(size_t layerSize, size_t layerCount, size_t batchSize,
     size_t timesteps, bool seed)
 {
     bool result = true;
+    
+    result &= runTestBidirectionalRecurrent(layerSize, layerCount, timesteps, seed);
+
+    if(!result)
+    {
+        return;
+    }
+
+    result &= runTestRecurrent(layerSize, layerCount, timesteps, seed);
+
+    if(!result)
+    {
+        return;
+    }
 
     result &= runTestFeedForwardFullyConnectedSoftmaxLayer(layerSize, layerCount, batchSize, seed);
 
@@ -651,13 +666,6 @@ static void runTest(size_t layerSize, size_t layerCount, size_t batchSize,
     }
 
     result &= runTestConvolutional(layerSize, layerCount, seed);
-
-    if(!result)
-    {
-        return;
-    }
-
-    result &= runTestRecurrent(layerSize, layerCount, timesteps, seed);
 
     if(!result)
     {

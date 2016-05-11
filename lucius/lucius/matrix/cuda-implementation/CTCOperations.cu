@@ -49,7 +49,6 @@ static void computeCtcOnSinglePrecisionSequence(Matrix& costs, Matrix& gradients
     size_t vocabularySize      = reference.size().front();
     size_t samplesPerMinibatch = reference.size()[reference.size().size() - 2];
     size_t labelSize           = reference.size()[reference.size().size() - 1];
-    size_t timesteps           = inputActivations.size()[inputActivations.size().size() - 1];
 
     std::vector<int> timeStepsInMinibatch;
     std::vector<int> labelsInMinibatch;
@@ -152,7 +151,7 @@ void computeCtc(Matrix& costs, Matrix& gradients,
 
         if(!gradients.empty())
         {
-            singleGradients = Matrix(gradients.size(), singleReference.precision());
+            singleGradients = zeros(gradients.size(), singleReference.precision());
         }
 
         Matrix singleCosts(costs.size(), singleReference.precision());

@@ -161,12 +161,28 @@ std::unique_ptr<Layer> LayerFactory::create(const std::string& name,
     {
         size_t size      = parameters.get("Size",      inputSizeAggregate);
         size_t batchSize = parameters.get("BatchSize", 1);
-        int direction    = parameters.get<int>("Direction", matrix::RECURRENT_FORWARD_TIME);
+        auto direction   = parameters.get<std::string>("Direction", "forward");
+
+        matrix::RecurrentTimeDirection timeDirection = matrix::RECURRENT_FORWARD_TIME;
+
+        if(direction == "forward")
+        {
+            timeDirection = matrix::RECURRENT_FORWARD_TIME;
+        }
+        else if(direction == "reverse")
+        {
+            timeDirection = matrix::RECURRENT_REVERSE_TIME;
+        }
+        else
+        {
+            throw std::runtime_error("Invalid recurrent layer direction '" + direction +
+                "' (should be 'forward' or 'reverse')");
+        }
 
         auto precision = *matrix::Precision::fromString(parameters.get("Precision",
             matrix::Precision::getDefaultPrecision().toString()));
 
-        layer = std::make_unique<RecurrentLayer>(size, batchSize, direction, precision);
+        layer = std::make_unique<RecurrentLayer>(size, batchSize, timeDirection, precision);
     }
     else if("SoftmaxLayer" == name)
     {

@@ -225,12 +225,16 @@ void BidirectionalRecurrentLayer::runForwardImplementation(MatrixVector& outputA
     forwardRecurrentActivations(activation, _recurrentForwardWeights,
         lucius::matrix::RECURRENT_FORWARD_TIME, 
         getActivationFunction()->getOperation());
+
+    saveMatrix("forwardOutputActivations", activation);
     
     forwardRecurrentActivations(reverseActivation, _recurrentReverseWeights,
         lucius::matrix::RECURRENT_REVERSE_TIME, 
         getActivationFunction()->getOperation());
 
-    apply(activation, activation, reverseActivation, matrix::Add());
+    saveMatrix("reverseOutputActivations", reverseActivation);
+
+    auto output = apply(Matrix(activation), reverseActivation, matrix::Add());
 
     if(util::isLogEnabled("BidirectionalRecurrentLayer::Detail"))
     {
@@ -241,9 +245,7 @@ void BidirectionalRecurrentLayer::runForwardImplementation(MatrixVector& outputA
         util::log("BidirectionalRecurrentLayer") << "  activation: " << activation.shapeString() << "\n";
     }
 
-    saveMatrix("outputActivations", activation);
-
-    outputActivationsVector.push_back(std::move(activation));
+    outputActivationsVector.push_back(std::move(output));
 }
 
 void BidirectionalRecurrentLayer::runReverseImplementation(MatrixVector& gradients,
@@ -273,15 +275,17 @@ void BidirectionalRecurrentLayer::runReverseImplementation(MatrixVector& gradien
     }
 
     // Compute deltas for intermediate time steps and the feed forward activations
-    auto outputActivations = unfoldTimeAndBatch(loadMatrix("outputActivations"),
+    auto reverseTimeOutputActivations = unfoldTimeAndBatch(loadMatrix("reverseOutputActivations"),
+        _expectedBatchSize);
+    auto forwardTimeOutputActivations = unfoldTimeAndBatch(loadMatrix("forwardOutputActivations"),
         _expectedBatchSize);
 
     auto recurrentForwardDeltas = reverseRecurrentDeltas(Matrix(deltas), _recurrentForwardWeights,
-        outputActivations, matrix::RECURRENT_FORWARD_TIME, 
+        forwardTimeOutputActivations, matrix::RECURRENT_FORWARD_TIME, 
         getActivationFunction()->getDerivativeOperation());
 
     auto recurrentReverseDeltas = reverseRecurrentDeltas(Matrix(deltas), _recurrentReverseWeights,
-        outputActivations, matrix::RECURRENT_REVERSE_TIME, 
+        reverseTimeOutputActivations, matrix::RECURRENT_REVERSE_TIME, 
         getActivationFunction()->getDerivativeOperation());
 
     auto forwardDeltas = apply(Matrix(recurrentForwardDeltas), recurrentReverseDeltas, matrix::Add());
@@ -301,19 +305,23 @@ void BidirectionalRecurrentLayer::runReverseImplementation(MatrixVector& gradien
 
     if(util::isLogEnabled("BidirectionalRecurrentLayer"))
     {
-        util::log("BidirectionalRecurrentLayer") << "  output size: "
-            << outputActivations.shapeString() << "\n";
+        util::log("BidirectionalRecurrentLayer") << "  output forward size: "
+            << forwardTimeOutputActivations.shapeString() << "\n";
+        util::log("BidirectionalRecurrentLayer") << "  output reverse size: "
+            << reverseTimeOutputActivations.shapeString() << "\n";
     }
 
     if(util::isLogEnabled("BidirectionalRecurrentLayer::Detail"))
     {
-        util::log("BidirectionalRecurrentLayer::Detail") << "  output: "
-            << outputActivations.debugString();
+        util::log("BidirectionalRecurrentLayer::Detail") << "  output forward: "
+            << forwardTimeOutputActivations.debugString();
+        util::log("BidirectionalRecurrentLayer::Detail") << "  output reverse: "
+            << reverseTimeOutputActivations.debugString();
     }
 
-    auto recurrentForwardWeightGradients = reverseRecurrentGradients(outputActivations,
+    auto recurrentForwardWeightGradients = reverseRecurrentGradients(forwardTimeOutputActivations,
         recurrentForwardDeltas, lucius::matrix::RECURRENT_FORWARD_TIME);
-    auto recurrentReverseWeightGradients = reverseRecurrentGradients(outputActivations,
+    auto recurrentReverseWeightGradients = reverseRecurrentGradients(reverseTimeOutputActivations,
         recurrentReverseDeltas, lucius::matrix::RECURRENT_REVERSE_TIME);
 
     if(util::isLogEnabled("BidirectionalRecurrentLayer"))

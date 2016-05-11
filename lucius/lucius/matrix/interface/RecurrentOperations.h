@@ -11,7 +11,7 @@ namespace matrix
 
 enum RecurrentTimeDirection
 {
-    RECURRENT_REVERSE_TIME,
+    RECURRENT_REVERSE_TIME = 0,
     RECURRENT_FORWARD_TIME
 };
 
