@@ -413,7 +413,7 @@ private:
 
     void _setSpecialGraphemes(Audio& result, size_t sequenceLength)
     {
-        result.setDefaultLabel(_graphemes.begin());
+        result.setDefaultLabel(*_graphemes.begin());
 
         size_t frameSize = _getFrameSize();
 

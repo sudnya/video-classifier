@@ -47,7 +47,7 @@ Matrix CTCCostFunction::computeDelta(const Matrix& output, const Matrix& referen
     size_t miniBatchSize = output.size()[output.size().size() - 2];
 
     Matrix cost({miniBatchSize}, output.precision());
-    Matrix gradients(output.size(), output.precision());
+    Matrix gradients = zeros(output.size(), output.precision());
 
     matrix::computeCtc(cost, gradients, output, reference);
 
