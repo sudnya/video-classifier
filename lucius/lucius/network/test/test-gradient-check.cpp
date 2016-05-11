@@ -594,6 +594,13 @@ static void runTest(size_t layerSize, size_t layerCount, size_t batchSize,
 {
     bool result = true;
 
+    result &= runTestRecurrent(layerSize, layerCount, timesteps, seed);
+
+    if(!result)
+    {
+        return;
+    }
+
     result &= runTestFeedForwardFullyConnectedSoftmaxLayer(layerSize, layerCount, batchSize, seed);
 
     if(!result)
@@ -609,13 +616,6 @@ static void runTest(size_t layerSize, size_t layerCount, size_t batchSize,
     }
 
     result &= runTestConvolutional(layerSize, layerCount, seed);
-
-    if(!result)
-    {
-        return;
-    }
-
-    result &= runTestRecurrent(layerSize, layerCount, timesteps, seed);
 
     if(!result)
     {

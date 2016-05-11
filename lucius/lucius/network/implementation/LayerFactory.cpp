@@ -61,7 +61,7 @@ std::unique_ptr<Layer> LayerFactory::create(const std::string& name,
     {
         size_t size      = parameters.get("Size",      inputSizeAggregate);
         size_t batchSize = parameters.get("BatchSize", 1);
-        auto direction   = parameters.get("Direction", "forward");
+        auto direction   = parameters.get<std::string>("Direction", "forward");
 
         matrix::RecurrentTimeDirection timeDirection = matrix::RECURRENT_FORWARD_TIME;
 

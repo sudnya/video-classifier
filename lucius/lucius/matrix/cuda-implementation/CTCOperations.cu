@@ -152,7 +152,7 @@ void computeCtc(Matrix& costs, Matrix& gradients,
 
         if(!gradients.empty())
         {
-            singleGradients = Matrix(gradients.size(), singleReference.precision());
+            singleGradients = zeros(gradients.size(), singleReference.precision());
         }
 
         Matrix singleCosts(costs.size(), singleReference.precision());
