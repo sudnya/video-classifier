@@ -8,6 +8,7 @@
 #include <lucius/network/interface/LayerFactory.h>
 
 #include <lucius/network/interface/FeedForwardLayer.h>
+#include <lucius/network/interface/BidirectionalRecurrentLayer.h>
 #include <lucius/network/interface/RecurrentLayer.h>
 #include <lucius/network/interface/ConvolutionalLayer.h>
 #include <lucius/network/interface/AudioConvolutionalLayer.h>
@@ -47,44 +48,7 @@ std::unique_ptr<Layer> LayerFactory::create(const std::string& name,
 
     std::unique_ptr<Layer> layer;
 
-    if("FeedForwardLayer" == name)
-    {
-        size_t inputSize  = parameters.get("InputSize",  inputSizeAggregate);
-        size_t outputSize = parameters.get("OutputSize", inputSize);
-
-        auto precision = *matrix::Precision::fromString(parameters.get("Precision",
-            matrix::Precision::getDefaultPrecision().toString()));
-
-        layer = std::make_unique<FeedForwardLayer>(inputSize, outputSize, precision);
-    }
-    else if("RecurrentLayer" == name)
-    {
-        size_t size      = parameters.get("Size",      inputSizeAggregate);
-        size_t batchSize = parameters.get("BatchSize", 1);
-        auto direction   = parameters.get<std::string>("Direction", "forward");
-
-        matrix::RecurrentTimeDirection timeDirection = matrix::RECURRENT_FORWARD_TIME;
-
-        if(direction == "forward")
-        {
-            timeDirection = matrix::RECURRENT_FORWARD_TIME;
-        }
-        else if(direction == "reverse")
-        {
-            timeDirection = matrix::RECURRENT_REVERSE_TIME;
-        }
-        else
-        {
-            throw std::runtime_error("Invalid recurrent layer direction '" + direction +
-                "' (should be 'forward' or 'reverse')");
-        }
-
-        auto precision = *matrix::Precision::fromString(parameters.get("Precision",
-            matrix::Precision::getDefaultPrecision().toString()));
-
-        layer = std::make_unique<RecurrentLayer>(size, batchSize, timeDirection, precision);
-    }
-    else if("AudioConvolutionalLayer" == name)
+    if("AudioConvolutionalLayer" == name)
     {
         size_t inputSamples   = parameters.get("InputSamples",   inputSizeWidth);
         size_t inputTimesteps = parameters.get("InputTimesteps", inputSizeHeight);
@@ -112,6 +76,30 @@ std::unique_ptr<Layer> LayerFactory::create(const std::string& name,
             matrix::Dimension({paddingSamples, paddingTimesteps}),
             precision
         );
+    }
+    else if("BatchNormalizationLayer" == name)
+    {
+        size_t inputWidth  = parameters.get("InputWidth",  inputSizeWidth);
+        size_t inputHeight = parameters.get("InputHeight", inputSizeHeight);
+        size_t inputColors = parameters.get("InputColors", inputSizeChannels);
+        size_t inputBatch  = parameters.get("BatchSize",   inputSizeBatch);
+
+        auto precision = *matrix::Precision::fromString(parameters.get("Precision",
+            matrix::Precision::getDefaultPrecision().toString()));
+
+        layer = std::make_unique<BatchNormalizationLayer>(
+            matrix::Dimension({inputWidth, inputHeight, inputColors, inputBatch, 1}), precision);
+    }
+    else if ("BidirectionalRecurrentLayer" == name)
+    {
+        size_t size      = parameters.get("Size",      inputSizeAggregate);
+        size_t batchSize = parameters.get("BatchSize", 1);
+
+        auto precision = *matrix::Precision::fromString(parameters.get("Precision", 
+                    matrix::Precision::getDefaultPrecision().toString()));
+
+        layer = std::make_unique<BidirectionalRecurrentLayer>(size, batchSize, precision);
+
     }
     else if("ConvolutionalLayer" == name)
     {
@@ -142,18 +130,15 @@ std::unique_ptr<Layer> LayerFactory::create(const std::string& name,
             precision
         );
     }
-    else if("BatchNormalizationLayer" == name)
+    else if("FeedForwardLayer" == name)
     {
-        size_t inputWidth  = parameters.get("InputWidth",  inputSizeWidth);
-        size_t inputHeight = parameters.get("InputHeight", inputSizeHeight);
-        size_t inputColors = parameters.get("InputColors", inputSizeChannels);
-        size_t inputBatch  = parameters.get("BatchSize",   inputSizeBatch);
+        size_t inputSize  = parameters.get("InputSize",  inputSizeAggregate);
+        size_t outputSize = parameters.get("OutputSize", inputSize);
 
         auto precision = *matrix::Precision::fromString(parameters.get("Precision",
             matrix::Precision::getDefaultPrecision().toString()));
 
-        layer = std::make_unique<BatchNormalizationLayer>(
-            matrix::Dimension({inputWidth, inputHeight, inputColors, inputBatch, 1}), precision);
+        layer = std::make_unique<FeedForwardLayer>(inputSize, outputSize, precision);
     }
     else if("MaxPoolingLayer" == name)
     {
@@ -171,6 +156,33 @@ std::unique_ptr<Layer> LayerFactory::create(const std::string& name,
         layer = std::make_unique<MaxPoolingLayer>(
             matrix::Dimension({inputWidth, inputHeight, inputColors, inputBatch, 1}),
             matrix::Dimension({width, height}), precision);
+    }
+    else if("RecurrentLayer" == name)
+    {
+        size_t size      = parameters.get("Size",      inputSizeAggregate);
+        size_t batchSize = parameters.get("BatchSize", 1);
+        auto direction   = parameters.get<std::string>("Direction", "forward");
+
+        matrix::RecurrentTimeDirection timeDirection = matrix::RECURRENT_FORWARD_TIME;
+
+        if(direction == "forward")
+        {
+            timeDirection = matrix::RECURRENT_FORWARD_TIME;
+        }
+        else if(direction == "reverse")
+        {
+            timeDirection = matrix::RECURRENT_REVERSE_TIME;
+        }
+        else
+        {
+            throw std::runtime_error("Invalid recurrent layer direction '" + direction +
+                "' (should be 'forward' or 'reverse')");
+        }
+
+        auto precision = *matrix::Precision::fromString(parameters.get("Precision",
+            matrix::Precision::getDefaultPrecision().toString()));
+
+        layer = std::make_unique<RecurrentLayer>(size, batchSize, timeDirection, precision);
     }
     else if("SoftmaxLayer" == name)
     {
