@@ -14,6 +14,7 @@
 #include <lucius/network/interface/AudioConvolutionalLayer.h>
 #include <lucius/network/interface/BatchNormalizationLayer.h>
 #include <lucius/network/interface/MaxPoolingLayer.h>
+#include <lucius/network/interface/AudioMaxPoolingLayer.h>
 #include <lucius/network/interface/SubgraphLayer.h>
 #include <lucius/network/interface/SoftmaxLayer.h>
 #include <lucius/network/interface/ActivationFunctionFactory.h>
@@ -77,6 +78,23 @@ std::unique_ptr<Layer> LayerFactory::create(const std::string& name,
             precision
         );
     }
+    else if("AudioMaxPoolingLayer" == name)
+    {
+        size_t inputSamples   = parameters.get("InputSamples",   inputSizeWidth);
+        size_t inputTimesteps = parameters.get("InputTimesteps", inputSizeHeight);
+        size_t inputChannels  = parameters.get("InputChannels",  inputSizeChannels);
+        size_t inputBatch     = parameters.get("BatchSize",      inputSizeBatch);
+
+        size_t filterSamples   = parameters.get("FilterSamples",   1);
+        size_t filterTimesteps = parameters.get("FilterTimesteps", 1);
+
+        auto precision = *matrix::Precision::fromString(parameters.get("Precision",
+            matrix::Precision::getDefaultPrecision().toString()));
+
+        layer = std::make_unique<AudioMaxPoolingLayer>(
+            matrix::Dimension({inputSamples, inputTimesteps, inputChannels, inputBatch, 1}),
+            matrix::Dimension({filterSamples, filterTimesteps}), precision);
+    }
     else if("BatchNormalizationLayer" == name)
     {
         size_t inputWidth  = parameters.get("InputWidth",  inputSizeWidth);
@@ -95,7 +113,7 @@ std::unique_ptr<Layer> LayerFactory::create(const std::string& name,
         size_t size      = parameters.get("Size",      inputSizeAggregate);
         size_t batchSize = parameters.get("BatchSize", 1);
 
-        auto precision = *matrix::Precision::fromString(parameters.get("Precision", 
+        auto precision = *matrix::Precision::fromString(parameters.get("Precision",
                     matrix::Precision::getDefaultPrecision().toString()));
 
         layer = std::make_unique<BidirectionalRecurrentLayer>(size, batchSize, precision);
