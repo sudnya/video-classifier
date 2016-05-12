@@ -98,17 +98,17 @@ void AudioConvolutionalLayer::setShouldComputeDeltas(bool shouldComputeDeltas)
 
 static Matrix permuteDimensionsForward(Matrix matrix)
 {
-    return permuteDimensions(matrix, {0, 4, 1, 2, 3});
+    return permuteDimensions(matrix, {0, 4, 2, 1, 3});
 }
 
 static Matrix permuteDimensionsBackward(Matrix matrix)
 {
-    return permuteDimensions(matrix, {0, 2, 3, 4, 1});
+    return permuteDimensions(matrix, {0, 3, 2, 4, 1});
 }
 
 static Dimension permuteDimensionsBackward(Dimension dimension)
 {
-    return selectDimensions(dimension, {0, 2, 3, 4, 1});
+    return selectDimensions(dimension, {0, 3, 2, 4, 1});
 }
 
 void AudioConvolutionalLayer::runForwardImplementation(MatrixVector& outputActivations,
