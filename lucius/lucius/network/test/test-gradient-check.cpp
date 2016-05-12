@@ -7,6 +7,7 @@
 // Lucius Includes
 #include <lucius/network/interface/NeuralNetwork.h>
 #include <lucius/network/interface/FeedForwardLayer.h>
+#include <lucius/network/interface/BidirectionalRecurrentLayer.h>
 #include <lucius/network/interface/RecurrentLayer.h>
 #include <lucius/network/interface/SoftmaxLayer.h>
 #include <lucius/network/interface/BatchNormalizationLayer.h>
@@ -172,6 +173,21 @@ static NeuralNetwork createRecurrentNetwork(size_t layerSize, size_t layerCount)
         network.addLayer(std::make_unique<RecurrentLayer>(layerSize, 1, matrix::RECURRENT_FORWARD_TIME, DoublePrecision()));
         network.back()->setActivationFunction(
             ActivationFunctionFactory::create("SigmoidActivationFunction"));
+    }
+
+    network.initialize();
+
+    return network;
+}
+
+static NeuralNetwork createBidirectionalRecurrentNetwork(size_t layerSize, size_t layerCount)
+{
+    NeuralNetwork network;
+
+    for(size_t layer = 0; layer < layerCount; ++layer)
+    {
+        network.addLayer(std::make_unique<BidirectionalRecurrentLayer>(layerSize, 1, DoublePrecision()));
+        network.back()->setActivationFunction(ActivationFunctionFactory::create("SigmoidActivationFunction"));
     }
 
     network.initialize();
@@ -562,6 +578,33 @@ static bool runTestRecurrent(size_t layerSize, size_t layerCount, size_t timeste
     }
 }
 
+static bool runTestBidirectionalRecurrent(size_t layerSize, size_t layerCount, size_t timesteps, bool seed)
+{
+    if(seed)
+    {
+        matrix::srand(std::time(0));
+    }
+    else
+    {
+        matrix::srand(1456212655);
+    }
+
+    auto network = createBidirectionalRecurrentNetwork(layerSize, layerCount);
+
+    if(gradientCheckTimeSeries(network, timesteps))
+    {
+        std::cout << "BidirectionalRecurrent Network Test Passed\n";
+
+        return true;
+    }
+    else
+    {
+        std::cout << "BidirectionalRecurrent Network Test Failed\n";
+
+        return false;
+    }
+}
+
 static bool runTestRecurrentCtc(size_t layerSize, size_t layerCount, size_t timesteps, bool seed)
 {
     if(seed)
@@ -593,6 +636,13 @@ static void runTest(size_t layerSize, size_t layerCount, size_t batchSize,
     size_t timesteps, bool seed)
 {
     bool result = true;
+    
+    result &= runTestBidirectionalRecurrent(layerSize, layerCount, timesteps, seed);
+
+    if(!result)
+    {
+        return;
+    }
 
     result &= runTestRecurrent(layerSize, layerCount, timesteps, seed);
 
