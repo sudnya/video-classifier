@@ -223,13 +223,13 @@ void BidirectionalRecurrentLayer::runForwardImplementation(MatrixVector& outputA
     auto reverseActivation = copy(activation);
 
     forwardRecurrentActivations(activation, _recurrentForwardWeights,
-        lucius::matrix::RECURRENT_FORWARD_TIME, 
+        lucius::matrix::RECURRENT_FORWARD_TIME,
         getActivationFunction()->getOperation());
 
     saveMatrix("forwardOutputActivations", activation);
-    
+
     forwardRecurrentActivations(reverseActivation, _recurrentReverseWeights,
-        lucius::matrix::RECURRENT_REVERSE_TIME, 
+        lucius::matrix::RECURRENT_REVERSE_TIME,
         getActivationFunction()->getOperation());
 
     saveMatrix("reverseOutputActivations", reverseActivation);
@@ -281,11 +281,11 @@ void BidirectionalRecurrentLayer::runReverseImplementation(MatrixVector& gradien
         _expectedBatchSize);
 
     auto recurrentForwardDeltas = reverseRecurrentDeltas(Matrix(deltas), _recurrentForwardWeights,
-        forwardTimeOutputActivations, matrix::RECURRENT_FORWARD_TIME, 
+        forwardTimeOutputActivations, matrix::RECURRENT_FORWARD_TIME,
         getActivationFunction()->getDerivativeOperation());
 
     auto recurrentReverseDeltas = reverseRecurrentDeltas(Matrix(deltas), _recurrentReverseWeights,
-        reverseTimeOutputActivations, matrix::RECURRENT_REVERSE_TIME, 
+        reverseTimeOutputActivations, matrix::RECURRENT_REVERSE_TIME,
         getActivationFunction()->getDerivativeOperation());
 
     auto forwardDeltas = apply(Matrix(recurrentForwardDeltas), recurrentReverseDeltas, matrix::Add());
@@ -399,7 +399,7 @@ void BidirectionalRecurrentLayer::runReverseImplementation(MatrixVector& gradien
     gradients.push_back(std::move(biasGradient));
 
     gradients.push_back(std::move(recurrentForwardWeightGradients));
-    
+
     gradients.push_back(std::move(recurrentReverseWeightGradients));
 
     // compute deltas for previous layer
@@ -500,8 +500,10 @@ void BidirectionalRecurrentLayer::save(util::OutputTarArchive& archive, util::Pr
 {
     properties["forward-weights"] =
         properties.path() + "." + properties.key() + ".forward-weights.npy";
-    properties["recurrent-weights"] =
-        properties.path() + "." + properties.key() + ".recurrent-weights.npy";
+    properties["recurrent-forward-weights"] =
+        properties.path() + "." + properties.key() + ".recurrent-forward-weights.npy";
+    properties["recurrent-reverse-weights"] =
+        properties.path() + "." + properties.key() + ".recurrent-reverse-weights.npy";
 
     properties["bias"] = properties.path() + "." + properties.key() + ".bias.npy";
 
