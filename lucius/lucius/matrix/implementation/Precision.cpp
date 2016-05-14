@@ -53,7 +53,8 @@ bool Precision::operator!=(const Precision& p) const
 
 Precision Precision::getDefaultPrecision()
 {
-    auto precision = util::KnobDatabase::getKnobValue("Matrix::DefaultPrecision", "SinglePrecision");
+    auto precision = util::KnobDatabase::getKnobValue(
+        "Matrix::DefaultPrecision", "SinglePrecision");
 
     if(precision == "SinglePrecision")
     {
