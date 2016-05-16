@@ -111,14 +111,14 @@ static Dimension permuteDimensionsBackward(Dimension dimension)
     return selectDimensions(dimension, {0, 3, 2, 4, 1});
 }
 
-void AudioConvolutionalLayer::runForwardImplementation(MatrixVector& outputActivations,
-    const MatrixVector& inputActivations)
+void AudioConvolutionalLayer::runForwardImplementation(Bundle& bundle)
 {
-    MatrixVector storage;
+    auto& inputActivations  = bundle["inputActivations"];
+    auto& outputActivations = bundle["outputActivations"];
 
-    storage.push_back(permuteDimensionsForward(inputActivations.back()));
+    inputActivations = permuteDimensionsForward(inputActivations.back());
 
-    _layer->runForwardImplementation(outputActivations, storage);
+    _layer->runForwardImplementation(bundle);
 
     outputActivations.back() = permuteDimensionsBackward(outputActivations.back());
 
@@ -138,13 +138,14 @@ void AudioConvolutionalLayer::runReverseImplementation(MatrixVector& gradients,
     MatrixVector& inputDeltas,
     const MatrixVector& outputDeltas)
 {
+    auto& inputDelta   = bundle["inputDeltas"];
+    auto& outputDeltas = bundle["outputDeltas"];
+
     assert(outputDeltas.size() == 1);
 
-    MatrixVector outputDeltasStorage;
+    outputDeltas = permuteDimensionsForward(outputDeltas.front());
 
-    outputDeltasStorage.push_back(permuteDimensionsForward(outputDeltas.front()));
-
-    _layer->runReverseImplementation(gradients, inputDeltas, outputDeltasStorage);
+    _layer->runReverseImplementation(bundle);
 
     inputDeltas.front() = permuteDimensionsBackward(inputDeltas.front());
 }

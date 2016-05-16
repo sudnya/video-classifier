@@ -1,7 +1,7 @@
 /*  \file   ConvolutionalLayer.h
     \author Gregory Diamos
-     \date   Dec 24, 2014
-     \brief  The interface for the ConvolutionalLayer class.
+    \date   Dec 24, 2014
+    \brief  The interface for the ConvolutionalLayer class.
 */
 
 #pragma once
@@ -36,11 +36,8 @@ public:
     virtual void initialize();
 
 public:
-    virtual void runForwardImplementation(MatrixVector& outputActivations,
-        const MatrixVector& inputActivations);
-    virtual void runReverseImplementation(MatrixVector& gradients,
-        MatrixVector& inputDeltas,
-        const MatrixVector& outputDeltas);
+    virtual void runForwardImplementation(Bundle& bundle);
+    virtual void runReverseImplementation(Bundle& bundle);
 
 public:
     virtual       MatrixVector& weights();

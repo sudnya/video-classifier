@@ -153,9 +153,11 @@ void ConvolutionalLayer::initialize()
     apply(_bias, _bias, matrix::Fill(0.0));
 }
 
-void ConvolutionalLayer::runForwardImplementation(MatrixVector& outputActivations,
-    const MatrixVector& inputActivations)
+void ConvolutionalLayer::runForwardImplementation(Bundle& bundle)
 {
+    auto& inputActivations  = bundle[ "inputActivations"].get<MatrixVector>();
+    auto& outputActivations = bundle["outputActivations"].get<MatrixVector>();
+
     assert(inputActivations.size() == 1);
 
     auto m = inputActivations.back();
@@ -206,10 +208,12 @@ void ConvolutionalLayer::runForwardImplementation(MatrixVector& outputActivation
     outputActivations.push_back(std::move(activation));
 }
 
-void ConvolutionalLayer::runReverseImplementation(MatrixVector& gradients,
-    MatrixVector& inputDeltas,
-    const MatrixVector& outputDeltas)
+void ConvolutionalLayer::runReverseImplementation(Bundle& bundle)
 {
+    auto& gradients    = bundle[   "gradients"].get<MatrixVector>();
+    auto& inputDeltas  = bundle[ "inputDeltas"].get<MatrixVector>();
+    auto& outputDeltas = bundle["outputDeltas"].get<MatrixVector>();
+
     auto outputActivation = loadMatrix("outputActivation");
     auto inputActivation  = loadMatrix("inputActivation");
 

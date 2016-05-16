@@ -48,12 +48,8 @@ public:
     virtual void initialize() = 0;
 
 public:
-    void runForward(MatrixVector& outputActivations,
-        const MatrixVector& inputActivations);
-
-    void runReverse(MatrixVector& gradients,
-        MatrixVector& inputDeltas,
-        const MatrixVector& outputDeltas);
+    void runForward(Bundle& bundle);
+    void runReverse(Bundle& bundle);
 
 public:
     virtual void popReversePropagationData();
@@ -145,12 +141,8 @@ public:
     std::string resourceString() const;
 
 protected:
-    virtual void runForwardImplementation(MatrixVector& outputActivations,
-        const MatrixVector& inputActivations) = 0;
-
-    virtual void runReverseImplementation(MatrixVector& gradients,
-        MatrixVector& inputDeltas,
-        const MatrixVector& outputDeltas) = 0;
+    virtual void runForwardImplementation(Bundle& bundle) = 0;
+    virtual void runReverseImplementation(Bundle& bundle) = 0;
 
 protected:
     /*! \brief Save the layer to the tar file and header. */

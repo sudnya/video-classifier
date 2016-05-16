@@ -88,6 +88,9 @@ public:
         _speechScaleUpper = util::KnobDatabase::getKnobValue(
             "InputAudioDataProducer::SpeechScaleUpper", 5.0);
 
+        _randomWindow = util::KnobDatabase::getKnobValue(
+            "InputAudioDataProducer::RandomShuffleWindow", 512);
+
         _parseAudioDatabase();
 
         // Determine how many audio samples to cache
@@ -157,7 +160,13 @@ public:
         _nextSample       = 0;
         _nextNoiseSample  = 0;
 
-        std::shuffle(_audio.begin(), _audio.begin() + _remainingSamples, _generator);
+        for(size_t begin = 0; begin < _remainingSamples; begin += _randomWindow)
+        {
+            size_t end = std::min(begin + _randomWindow, _remainingSamples);
+
+            std::shuffle(_audio.begin() + begin, _audio.begin() + end, _generator);
+        }
+
         std::shuffle(_noise.begin(), _noise.end(), _generator);
     }
 
@@ -528,6 +537,17 @@ private:
         }
 
         _delimiterGrapheme = _producer->getModel()->getAttribute<std::string>("DelimiterGrapheme");
+
+        _sortAudioByLength();
+    }
+
+    void _sortAudioByLength()
+    {
+        std::sort(_audio.begin(), _audio.end(),
+            [](const Audio& left, const Audio& right)
+            {
+                return left.duration() < right.duration();
+            });
     }
 
 private:
@@ -570,6 +590,9 @@ private:
 private:
     double _speechScaleLower;
     double _speechScaleUpper;
+
+private:
+    size_t _randomWindow;
 
 };
 

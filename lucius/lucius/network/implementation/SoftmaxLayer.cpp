@@ -116,9 +116,11 @@ static Matrix unfoldTime(const Matrix& result, const Dimension& inputSize)
     return reshape(result, {layerSize, miniBatch, timesteps});
 }
 
-void SoftmaxLayer::runForwardImplementation(MatrixVector& outputActivationsVector,
-    const MatrixVector& inputActivationsVector)
+void SoftmaxLayer::runForwardImplementation(Bundle& bundle)
 {
+    auto& inputActivationsVector  = bundle[ "inputActivations"].get<MatrixVector>();
+    auto& outputActivationsVector = bundle["outputActivations"].get<MatrixVector>();
+
     assert(inputActivationsVector.size() == 1);
 
     auto inputActivations = foldTime(inputActivationsVector.back());
@@ -146,10 +148,12 @@ void SoftmaxLayer::runForwardImplementation(MatrixVector& outputActivationsVecto
         inputActivationsVector.front().size()));
 }
 
-void SoftmaxLayer::runReverseImplementation(MatrixVector& gradients,
-    MatrixVector& inputDeltasVector,
-    const MatrixVector& outputDeltasVector)
+void SoftmaxLayer::runReverseImplementation(Bundle& bundle)
 {
+    auto& gradients          = bundle[   "gradients"].get<MatrixVector>();
+    auto& inputDeltasVector  = bundle[ "inputDeltas"].get<MatrixVector>();
+    auto& outputDeltasVector = bundle["outputDeltas"].get<MatrixVector>();
+
     // Get the output activations
     auto outputActivations = loadMatrix("outputActivations");
 

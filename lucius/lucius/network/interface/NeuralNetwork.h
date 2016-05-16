@@ -47,19 +47,17 @@ public:
 
 public:
     /*! \brief Get the cost and gradient. */
-    double getCostAndGradient(MatrixVector& gradient,
-        const Matrix& input, const Matrix& reference);
+    void getCostAndGradient(Bundle& bundle);
     /*! \brief Get the cost. */
-    double getCost(const Matrix& input, const Matrix& reference);
+    void getCost(Bundle& bundle);
 
 public:
     /*! \brief Get the cost and gradient with respect to the inputs. */
-    double getInputCostAndGradient(Matrix& gradient,
-        const Matrix& input, const Matrix& reference);
+    void getInputCostAndGradient(Bundle& bundle);
 
 public:
     /*! \brief Run input samples through the network, return the output */
-    Matrix runInputs(const Matrix& m);
+    void runInputs(Bundle& bundle);
 
 public:
     /*! \brief Add an existing layer, the network takes ownership */

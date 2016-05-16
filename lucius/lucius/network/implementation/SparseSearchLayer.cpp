@@ -457,7 +457,8 @@ static MatrixVector runProcessForward(SubgraphLayer& layer, const MatrixVector& 
     else
     {
         auto inputActivation = inputActivations[0];
-        auto previousTimestepActivation = zeros(inputActivation.size(), inputActivation.precision());
+        auto previousTimestepActivation = zeros(inputActivation.size(),
+            inputActivation.precision());
 
         copy(previousTimestepSlice, previousTimestepActivation);
         copy(currentTimestepSlice,  inputActivation);
@@ -495,9 +496,11 @@ static void runForward(MatrixVector& outputActivations,
     outputActivations.push_back(std::move(processedData));
 }
 
-void SparseSearchLayer::runForwardImplementation(MatrixVector& outputActivations,
-    const MatrixVector& inputActivations)
+void SparseSearchLayer::runForwardImplementation(Bundle& bundle)
 {
+    auto& inputActivations  = bundle[ "inputActivations"].get<MatrixVector>();
+    auto& outputActivations = bundle["outputActivations"].get<MatrixVector>();
+
     RecursionState recursionState(*_selectUnit, *_processUnit, *_engine, _radix, _size);
 
     network::runForward(outputActivations, recursionState, inputActivations);
@@ -551,10 +554,12 @@ static MatrixVector runRouterReverse(MatrixVector& gradients,
     return result;
 }
 
-void SparseSearchLayer::runReverseImplementation(MatrixVector& gradients,
-    MatrixVector& inputDeltas,
-    const MatrixVector& outputDeltas)
+void SparseSearchLayer::runReverseImplementation(Bundle& bundle)
 {
+    auto& gradients    = bundle[   "gradients"].get<MatrixVector>();
+    auto& inputDeltas  = bundle[ "inputDeltas"].get<MatrixVector>();
+    auto& outputDeltas = bundle["outputDeltas"].get<MatrixVector>();
+
     // Evaluate the process unit
     auto generatedDataDeltas = runProcessReverse(*_processUnit, gradients, outputDeltas);
 

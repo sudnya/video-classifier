@@ -50,11 +50,15 @@ BidirectionalRecurrentLayer::BidirectionalRecurrentLayer(size_t size, size_t bat
 
 }
 
-BidirectionalRecurrentLayer::BidirectionalRecurrentLayer(size_t size, size_t batchSize, const matrix::Precision& precision)
+BidirectionalRecurrentLayer::BidirectionalRecurrentLayer(size_t size, size_t batchSize,
+    const matrix::Precision& precision)
 : _parameters(new MatrixVector({Matrix({size, size}, precision),
-    Matrix({size}, precision), Matrix({size, size}, precision), Matrix({size, size}, precision)})),
+    Matrix({size}, precision), Matrix({size, size}, precision),
+    Matrix({size, size}, precision)})),
   _forwardWeights((*_parameters)[0]), _bias((*_parameters)[1]),
-  _recurrentForwardWeights((*_parameters)[2]), _recurrentReverseWeights((*_parameters)[3]), _expectedBatchSize(batchSize)
+  _recurrentForwardWeights((*_parameters)[2]),
+  _recurrentReverseWeights((*_parameters)[3]),
+  _expectedBatchSize(batchSize)
 {
 
 }
@@ -75,7 +79,8 @@ BidirectionalRecurrentLayer::BidirectionalRecurrentLayer(const BidirectionalRecu
 
 }
 
-BidirectionalRecurrentLayer& BidirectionalRecurrentLayer::operator=(const BidirectionalRecurrentLayer& l)
+BidirectionalRecurrentLayer& BidirectionalRecurrentLayer::operator=(
+    const BidirectionalRecurrentLayer& l)
 {
     Layer::operator=(l);
 
@@ -169,9 +174,11 @@ static matrix::Matrix unfoldTimeAndBatch(const Matrix& input, size_t batchSize)
     return reshape(input, {activationCount, miniBatch, timesteps});
 }
 
-void BidirectionalRecurrentLayer::runForwardImplementation(MatrixVector& outputActivationsVector,
-    const MatrixVector& inputActivationsVector)
+void BidirectionalRecurrentLayer::runForwardImplementation(Bundle& bundle)
 {
+    auto& inputActivationsVector  = bundle[ "inputActivations"].get<MatrixVector>();
+    auto& outputActivationsVector = bundle["outputActivations"].get<MatrixVector>();
+
     assert(inputActivationsVector.size() == 1);
 
     saveMatrix("inputActivations", inputActivationsVector.back());
@@ -186,7 +193,8 @@ void BidirectionalRecurrentLayer::runForwardImplementation(MatrixVector& outputA
 
     if(util::isLogEnabled("BidirectionalRecurrentLayer::Detail"))
     {
-        util::log("BidirectionalRecurrentLayer::Detail") << "  input: " << inputActivations.debugString();
+        util::log("BidirectionalRecurrentLayer::Detail") << "  input: "
+            << inputActivations.debugString();
         util::log("BidirectionalRecurrentLayer::Detail") << "  forward-weights: "
             << _forwardWeights.debugString();
         util::log("BidirectionalRecurrentLayer::Detail") << "  recurrent-forward-weights: "
@@ -238,20 +246,24 @@ void BidirectionalRecurrentLayer::runForwardImplementation(MatrixVector& outputA
 
     if(util::isLogEnabled("BidirectionalRecurrentLayer::Detail"))
     {
-        util::log("BidirectionalRecurrentLayer::Detail") << "  activation: " << activation.debugString();
+        util::log("BidirectionalRecurrentLayer::Detail") << "  activation: "
+            << activation.debugString();
     }
     else
     {
-        util::log("BidirectionalRecurrentLayer") << "  activation: " << activation.shapeString() << "\n";
+        util::log("BidirectionalRecurrentLayer") << "  activation: "
+            << activation.shapeString() << "\n";
     }
 
     outputActivationsVector.push_back(std::move(output));
 }
 
-void BidirectionalRecurrentLayer::runReverseImplementation(MatrixVector& gradients,
-    MatrixVector& inputDeltas,
-    const MatrixVector& outputDeltas)
+void BidirectionalRecurrentLayer::runReverseImplementation(Bundle& bundle)
 {
+    auto& gradients    = bundle[   "gradients"].get<MatrixVector>();
+    auto& inputDeltas  = bundle[ "inputDeltas"].get<MatrixVector>();
+    auto& outputDeltas = bundle["outputDeltas"].get<MatrixVector>();
+
     assert(outputDeltas.size() == 1);
 
     auto deltas = unfoldTimeAndBatch(outputDeltas.back(), _expectedBatchSize);
@@ -261,12 +273,14 @@ void BidirectionalRecurrentLayer::runReverseImplementation(MatrixVector& gradien
         util::log("BidirectionalRecurrentLayer") << " Running reverse propagation on matrix ("
             << deltas.shapeString() << ") through layer with dimensions ("
             << getInputCount() << " inputs, " << getOutputCount() << " outputs).\n";
-        util::log("BidirectionalRecurrentLayer") << "  layer: " << _forwardWeights.shapeString() << "\n";
+        util::log("BidirectionalRecurrentLayer") << "  layer: "
+            << _forwardWeights.shapeString() << "\n";
     }
 
     if(util::isLogEnabled("BidirectionalRecurrentLayer"))
     {
-        util::log("BidirectionalRecurrentLayer") << "  deltas size: " << deltas.shapeString() << "\n";
+        util::log("BidirectionalRecurrentLayer") << "  deltas size: "
+            << deltas.shapeString() << "\n";
     }
 
     if(util::isLogEnabled("BidirectionalRecurrentLayer::Detail"))

@@ -167,9 +167,11 @@ static matrix::Matrix unfoldTimeAndBatch(const Matrix& input, size_t batchSize)
     return reshape(input, {activationCount, miniBatch, timesteps});
 }
 
-void RecurrentLayer::runForwardImplementation(MatrixVector& outputActivationsVector,
-    const MatrixVector& inputActivationsVector)
+void RecurrentLayer::runForwardImplementation(Bundle& bundle)
 {
+    auto& inputActivations  = bundle[ "inputActivations"].get<MatrixVector>();
+    auto& outputActivations = bundle["outputActivations"].get<MatrixVector>();
+
     assert(inputActivationsVector.size() == 1);
 
     saveMatrix("inputActivations", inputActivationsVector.back());
@@ -234,10 +236,12 @@ void RecurrentLayer::runForwardImplementation(MatrixVector& outputActivationsVec
     outputActivationsVector.push_back(std::move(activation));
 }
 
-void RecurrentLayer::runReverseImplementation(MatrixVector& gradients,
-    MatrixVector& inputDeltas,
-    const MatrixVector& outputDeltas)
+void RecurrentLayer::runReverseImplementation(Bundle& bundle)
 {
+    auto& gradients    = bundle[   "gradients"].get<MatrixVector>();
+    auto& inputDeltas  = bundle[ "inputDeltas"].get<MatrixVector>();
+    auto& outputDeltas = bundle["outputDeltas"].get<MatrixVector>();
+
     assert(outputDeltas.size() == 1);
 
     auto deltas = unfoldTimeAndBatch(outputDeltas.back(), _expectedBatchSize);

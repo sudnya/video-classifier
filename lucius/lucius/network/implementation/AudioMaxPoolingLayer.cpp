@@ -107,14 +107,14 @@ static Dimension permuteDimensionsBackward(Dimension dimension)
     return selectDimensions(dimension, {0, 3, 2, 4, 1});
 }
 
-void AudioMaxPoolingLayer::runForwardImplementation(MatrixVector& outputActivations,
-    const MatrixVector& inputActivations)
+void AudioMaxPoolingLayer::runForwardImplementation(Bundle& bundle)
 {
-    MatrixVector storage;
+    auto& inputActivations  = bundle["inputActivations" ].get<MatrixVector>();
+    auto& outputActivations = bundle["outputActivations"].get<MatrixVector>();
 
-    storage.push_back(permuteDimensionsForward(inputActivations.back()));
+    inputActivations.back() = permuteDimensionsForward(inputActivations.back());
 
-    _layer->runForwardImplementation(outputActivations, storage);
+    _layer->runForwardImplementation(bundle);
 
     outputActivations.back() = permuteDimensionsBackward(outputActivations.back());
 
