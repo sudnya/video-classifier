@@ -42,7 +42,7 @@ void InputCameraDataProducer::initialize()
     // intentionally blank
 }
 
-InputCameraDataProducer::InputAndReferencePair InputCameraDataProducer::pop()
+network::Bundle InputCameraDataProducer::pop()
 {
     auto imageDimension = getInputSize();
 
@@ -62,7 +62,7 @@ InputCameraDataProducer::InputAndReferencePair InputCameraDataProducer::pop()
 
     standardize(input);
 
-    return InputAndReferencePair(std::move(input), Matrix());
+    return Bundle(std::make_pair("inputActivations", MatrixVector(input)));
 }
 
 bool InputCameraDataProducer::empty() const

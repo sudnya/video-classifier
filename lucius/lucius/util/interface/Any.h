@@ -6,6 +6,9 @@
 
 #pragma once
 
+// Lucius Includes
+#include <lucius/util/interface/memory.h>
+
 namespace lucius
 {
 namespace util
@@ -73,7 +76,7 @@ public:
     const T& get() const
     {
         auto* valueContainer = dynamic_cast<
-            const Container<typename std::remove_const<T>::type>*>(conatiner.get());
+            const Container<typename std::remove_const<T>::type>*>(container.get());
 
         if(valueContainer == nullptr)
         {
@@ -87,7 +90,7 @@ public:
     T& get()
     {
         auto* valueContainer = dynamic_cast<
-            Container<typename std::remove_const<T>::type>*>(conatiner.get());
+            Container<typename std::remove_const<T>::type>*>(container.get());
 
         if(valueContainer == nullptr)
         {

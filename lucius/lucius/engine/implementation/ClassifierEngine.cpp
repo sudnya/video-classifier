@@ -8,6 +8,7 @@
 #include <lucius/engine/interface/ClassifierEngine.h>
 
 #include <lucius/network/interface/NeuralNetwork.h>
+#include <lucius/network/interface/Bundle.h>
 
 #include <lucius/model/interface/Model.h>
 
@@ -18,6 +19,7 @@
 #include <lucius/results/interface/ResultVector.h>
 
 #include <lucius/matrix/interface/Matrix.h>
+#include <lucius/matrix/interface/MatrixVector.h>
 #include <lucius/matrix/interface/MatrixTransformations.h>
 
 #include <lucius/util/interface/debug.h>
@@ -190,7 +192,8 @@ ClassifierEngine::ResultVector ClassifierEngine::runOnBatch(Bundle& bundle)
 
     network->runInputs(bundle);
 
-    auto& result = bundle["outputActivations"];
+    auto& result    = bundle["outputActivations"].get<matrix::MatrixVector>().front();
+    auto& reference = bundle["referenceActivations"].get<matrix::MatrixVector>().front();
 
     auto labels = convertActivationsToLabels(std::move(result), *getModel());
 
@@ -198,7 +201,9 @@ ClassifierEngine::ResultVector ClassifierEngine::runOnBatch(Bundle& bundle)
 
     if(_shouldUseLabeledData)
     {
-        auto cost = network->getCost(input, reference);
+        network->getCost(bundle);
+
+        auto cost = bundle["cost"].get<double>();
 
         results = compareWithReference(cost * labels.size(), getIteration(), labels,
             convertActivationsToLabels(std::move(reference), *getModel()));

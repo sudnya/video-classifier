@@ -1,4 +1,4 @@
-/*    \file   SimpleNeuralNetworkSolver.cpp
+/*  \file   SimpleNeuralNetworkSolver.cpp
     \date   Sunday December 26, 2013
     \author Gregory Diamos <solusstultus@gmail.com>
     \brief  The source file for the SimpleNeuralNetworkSolver class.
@@ -32,6 +32,7 @@ namespace optimizer
 {
 
 typedef network::NeuralNetwork                    NeuralNetwork;
+typedef network::Bundle                           Bundle;
 typedef matrix::Matrix                            Matrix;
 typedef GeneralDifferentiableSolver::MatrixVector MatrixVector;
 
@@ -80,8 +81,8 @@ static void setWeights(NeuralNetwork& network, const MatrixVector& weights)
 class NeuralNetworkCostAndGradient : public CostAndGradientFunction
 {
 public:
-    NeuralNetworkCostAndGradient(NeuralNetwork* n, const Matrix* i, const Matrix* r)
-    : _network(n), _input(i), _reference(r)
+    NeuralNetworkCostAndGradient(NeuralNetwork* n, const Bundle* b)
+    : _network(n), _bundle(b)
     {
 
     }
@@ -97,7 +98,12 @@ public:
     {
         setWeights(*_network, weights);
 
-        double newCost = _network->getCostAndGradient(gradient, *_input, *_reference);
+        auto bundle = *_bundle;
+
+        _network->getCostAndGradient(bundle);
+
+        double newCost = bundle["cost"].get<double>();
+        gradient = bundle["gradients"].get<MatrixVector>();
 
         if(util::isLogEnabled("SimpleNeuralNetworkSolver::Detail"))
         {
@@ -112,8 +118,7 @@ public:
 
 private:
     NeuralNetwork* _network;
-    const Matrix*  _input;
-    const Matrix*  _reference;
+    const Bundle*  _bundle;
 };
 
 static MatrixVector getWeights(NeuralNetwork* network)
@@ -128,8 +133,8 @@ static MatrixVector getWeights(NeuralNetwork* network)
     return weights;
 }
 
-static double differentiableSolver(NeuralNetwork* network, const Matrix* input,
-    const Matrix* reference, GeneralDifferentiableSolver* solver)
+static double differentiableSolver(NeuralNetwork* network, const Bundle* bundle,
+    GeneralDifferentiableSolver* solver)
 {
     util::log("SimpleNeuralNetworkSolver") << "  starting general solver\n";
     double newCost = std::numeric_limits<double>::infinity();
@@ -140,7 +145,7 @@ static double differentiableSolver(NeuralNetwork* network, const Matrix* input,
         return newCost;
     }
 
-    NeuralNetworkCostAndGradient costAndGradient(network, input, reference);
+    NeuralNetworkCostAndGradient costAndGradient(network, bundle);
 
     auto weights = getWeights(network);
 
@@ -160,7 +165,7 @@ double SimpleNeuralNetworkSolver::solve()
     util::log("SimpleNeuralNetworkSolver") << "Solve\n";
     util::log("SimpleNeuralNetworkSolver")
         << " no need for tiling, solving entire network at once.\n";
-    return differentiableSolver(_network, _input, _reference, _solver.get());
+    return differentiableSolver(_network, _bundle, _solver.get());
 }
 
 NeuralNetworkSolver* SimpleNeuralNetworkSolver::clone() const

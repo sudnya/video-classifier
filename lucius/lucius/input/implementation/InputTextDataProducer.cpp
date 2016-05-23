@@ -31,11 +31,11 @@ void InputTextDataProducer::initialize()
 
 }
 
-InputTextDataProducer::InputAndReferencePair InputTextDataProducer::pop()
+network::Bundle InputTextDataProducer::pop()
 {
     assertM(false, "Not implemented.");
 
-    return InputAndReferencePair();
+    return Bundle();
 }
 
 bool InputTextDataProducer::empty() const

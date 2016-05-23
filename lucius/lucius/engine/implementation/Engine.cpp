@@ -11,6 +11,7 @@
 #include <lucius/network/interface/NeuralNetwork.h>
 #include <lucius/network/interface/Layer.h>
 #include <lucius/network/interface/CostFunction.h>
+#include <lucius/network/interface/Bundle.h>
 
 #include <lucius/results/interface/ResultProcessorFactory.h>
 #include <lucius/results/interface/ResultVector.h>
@@ -22,6 +23,7 @@
 #include <lucius/model/interface/Model.h>
 
 #include <lucius/matrix/interface/Matrix.h>
+#include <lucius/matrix/interface/MatrixVector.h>
 
 #include <lucius/util/interface/debug.h>
 #include <lucius/util/interface/paths.h>
@@ -114,13 +116,14 @@ void Engine::runOnDataProducer(InputDataProducer& producer)
     {
         while(!producer.empty())
         {
-            auto dataAndReference = producer.pop();
+            auto bundle = producer.pop();
 
-            size_t batchSize = dataAndReference.first.size()[
-                dataAndReference.first.size().size() - 2];
+            auto& inputActivations =
+                bundle["inputActivations"].get<matrix::MatrixVector>().front();
 
-            auto results = runOnBatch(std::move(dataAndReference.first),
-                std::move(dataAndReference.second));
+            size_t batchSize = inputActivations[inputActivations.size().size() - 2];
+
+            auto results = runOnBatch(bundle);
 
             _resultProcessor->process(std::move(results));
 

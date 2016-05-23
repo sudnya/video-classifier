@@ -33,6 +33,7 @@ namespace input
 
 typedef audio::Audio       Audio;
 typedef audio::AudioVector AudioVector;
+typedef network::Bundle    Bundle;
 
 class InputAudioDataProducerImplementation
 {
@@ -117,7 +118,7 @@ public:
     }
 
 public:
-    InputAudioDataProducer::InputAndReferencePair pop()
+    Bundle pop()
     {
         assert(_initialized);
 
@@ -138,8 +139,8 @@ public:
             <<  "' audio samples (" << input.size()[2] << " timesteps), "
             << _remainingSamples << " remaining in this epoch.\n";
 
-        return InputAudioDataProducer::InputAndReferencePair(
-            std::move(input), std::move(reference));
+        return Bundle(std::make_pair("inputActivations", MatrixVector({input})),
+            std::make_pair("referenceActivations", reference));
     }
 
     bool empty() const
@@ -613,7 +614,7 @@ void InputAudioDataProducer::initialize()
     _implementation->initialize();
 }
 
-InputAudioDataProducer::InputAndReferencePair InputAudioDataProducer::pop()
+InputAudioDataProducer::Bundle InputAudioDataProducer::pop()
 {
     return _implementation->pop();
 }

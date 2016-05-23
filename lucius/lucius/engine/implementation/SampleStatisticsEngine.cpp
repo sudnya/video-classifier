@@ -52,14 +52,14 @@ void SampleStatisticsEngine::closeModel()
 
     getModel()->setAttribute("InputSampleMean",              _mean);
     getModel()->setAttribute("InputSampleStandardDeviation", _standardDeviation);
-
-    // TODO
-    // saveModel();
 }
 
-SampleStatisticsEngine::ResultVector SampleStatisticsEngine::runOnBatch(Matrix&& input, Matrix&& reference)
+SampleStatisticsEngine::ResultVector SampleStatisticsEngine::runOnBatch(Bundle& bundle)
 {
-    util::log("SimpleStatisticsEngine") << "Computing sample statistics over " << input.size().product() <<  " elements...\n";
+    auto& input = bundle["inputActivations"].get<MatrixVector>().front();
+
+    util::log("SimpleStatisticsEngine") << "Computing sample statistics over "
+        << input.size().product() <<  " elements...\n";
 
     for(auto element : input)
     {

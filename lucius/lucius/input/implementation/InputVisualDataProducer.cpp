@@ -132,7 +132,8 @@ InputVisualDataProducer::InputAndReferencePair InputVisualDataProducer::pop()
     util::log("InputVisualDataProducer") << "Loaded batch of '" << batch.size()
         <<  "' image frames, " << _remainingSamples << " remaining in this epoch.\n";
 
-    return InputAndReferencePair(std::move(input), std::move(reference));
+    return Bundle(std::make_pair("inputActivations", MatrixVector({input})),
+        std::make_pair("referenceActivations", reference));
 }
 
 bool InputVisualDataProducer::empty() const
