@@ -182,13 +182,15 @@ results::ResultVector recordLabels(const util::StringVector& labels)
     return result;
 }
 
-ClassifierEngine::ResultVector ClassifierEngine::runOnBatch(Matrix&& input, Matrix&& reference)
+ClassifierEngine::ResultVector ClassifierEngine::runOnBatch(Bundle& bundle)
 {
     auto network = getAggregateNetwork();
 
     network->setIsTraining(false);
 
-    auto result = network->runInputs(input);
+    network->runInputs(bundle);
+
+    auto& result = bundle["outputActivations"];
 
     auto labels = convertActivationsToLabels(std::move(result), *getModel());
 

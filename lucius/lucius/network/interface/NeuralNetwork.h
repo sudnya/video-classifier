@@ -15,6 +15,7 @@
 // Forward Declaration
 namespace lucius { namespace network   { class Layer;               } }
 namespace lucius { namespace network   { class CostFunction;        } }
+namespace lucius { namespace network   { class Bundle;              } }
 namespace lucius { namespace matrix    { class Matrix;              } }
 namespace lucius { namespace matrix    { class MatrixVector;        } }
 namespace lucius { namespace matrix    { class Precision;           } }
