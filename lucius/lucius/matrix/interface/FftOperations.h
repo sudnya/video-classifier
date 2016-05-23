@@ -9,8 +9,8 @@ namespace lucius
 namespace matrix
 {
 
-void fft(Matrix& result, const Matrix& signal, const Dimension& transformedDimensions);
-Matrix fft(const Matrix& signal, const Dimension& transformedDimensions);
+void fft(Matrix& result, const Matrix& signal, const Dimension& dimensionsToTransform);
+Matrix fft(const Matrix& signal, const Dimension& dimensionsToTransform);
 
 }
 }
