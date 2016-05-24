@@ -9,7 +9,6 @@
 
 // Standard Library Includes
 
-// System-Specific Includes
 
 namespace lucius
 {
@@ -17,9 +16,31 @@ namespace lucius
 namespace matrix
 {
 
+Dimension convertOutputToInputCoordinate(const Dimension& output, const Dimension& input, const Dimension outputCoordinate)
+{
+    Dimension retVal = input.size();
+    auto frameSize   = input.size[0];
+    auto windowSize  = output.size[0]/frameSize;
+    
+    retVal[0] = outputCoordinate[0]%frameSize;
+    retVal[2] = outputCoordinate[2] + outputCoordinate[0]/frameSize;
+    
+    return retVal;
+}
+
 void hanningWindow(Matrix& result, const Matrix& signal, const Dimension& dimensionsToTransform, const size_t windowSize)
 {
-    
+    assert (dimensionsToTransform.size() == 1);
+    auto frameSize        = signal.size()[0];
+    auto allOutputCoordinates = getAllOutputCoordinates(result);
+
+    for(auto& outputCoordinate : allOutputCoordinates)
+    {
+        auto inputCoordinate = convertOutputToInputCoordinate(result.size(), signal.size(), outputCoordinate);
+
+        result[outputCoordinate] = input[inputCoordinate];
+    }
+
 }
 
 
