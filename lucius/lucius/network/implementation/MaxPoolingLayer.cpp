@@ -8,6 +8,7 @@
 #include <lucius/network/interface/MaxPoolingLayer.h>
 
 #include <lucius/network/interface/ActivationFunction.h>
+#include <lucius/network/interface/Bundle.h>
 
 #include <lucius/matrix/interface/Matrix.h>
 #include <lucius/matrix/interface/MatrixVector.h>
@@ -99,8 +100,8 @@ static Matrix setupShape(const Matrix& output, const Dimension& outputSize)
 
 void MaxPoolingLayer::runForwardImplementation(Bundle& bundle)
 {
-    auto& inputActivations  = bundle[ "inputActivations"].get<MatrixVector>();
-    auto& outputActivations = bundle["outputActivations"].get<MatrixVector>();
+    auto& inputActivationsVector  = bundle[ "inputActivations"].get<MatrixVector>();
+    auto& outputActivationsVector = bundle["outputActivations"].get<MatrixVector>();
 
     assert(inputActivationsVector.size() == 1);
 
@@ -133,9 +134,9 @@ void MaxPoolingLayer::runForwardImplementation(Bundle& bundle)
 
 void MaxPoolingLayer::runReverseImplementation(Bundle& bundle)
 {
-    auto& gradients    = bundle[   "gradients"].get<MatrixVector>();
-    auto& inputDeltas  = bundle[ "inputDeltas"].get<MatrixVector>();
     auto& outputDeltas = bundle["outputDeltas"].get<MatrixVector>();
+
+    auto& inputDeltasVector = bundle["inputDeltas"].get<MatrixVector>();
 
     // Get the output activations
     auto outputActivations = loadMatrix("outputActivations");

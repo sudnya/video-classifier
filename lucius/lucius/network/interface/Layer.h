@@ -19,6 +19,7 @@ namespace lucius { namespace matrix  { class Precision;              } }
 namespace lucius { namespace network { class ActivationFunction;     } }
 namespace lucius { namespace network { class ActivationCostFunction; } }
 namespace lucius { namespace network { class WeightCostFunction;     } }
+namespace lucius { namespace network { class Bundle;                 } }
 namespace lucius { namespace util    { class InputTarArchive;        } }
 namespace lucius { namespace util    { class OutputTarArchive;       } }
 namespace lucius { namespace util    { class PropertyTree;           } }
@@ -35,6 +36,7 @@ public:
     typedef matrix::Matrix       Matrix;
     typedef matrix::MatrixVector MatrixVector;
     typedef matrix::Dimension    Dimension;
+    typedef network::Bundle      Bundle;
 
 public:
     Layer();

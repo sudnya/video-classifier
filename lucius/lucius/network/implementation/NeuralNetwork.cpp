@@ -9,6 +9,7 @@
 #include <lucius/network/interface/CostFunctionFactory.h>
 #include <lucius/network/interface/Layer.h>
 #include <lucius/network/interface/LayerFactory.h>
+#include <lucius/network/interface/Bundle.h>
 
 #include <lucius/optimizer/interface/NeuralNetworkSolver.h>
 

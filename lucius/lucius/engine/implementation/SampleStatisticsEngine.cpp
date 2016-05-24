@@ -9,9 +9,12 @@
 
 #include <lucius/model/interface/Model.h>
 
+#include <lucius/network/interface/Bundle.h>
+
 #include <lucius/results/interface/ResultVector.h>
 
 #include <lucius/matrix/interface/Matrix.h>
+#include <lucius/matrix/interface/MatrixVector.h>
 
 #include <lucius/util/interface/debug.h>
 
@@ -56,7 +59,7 @@ void SampleStatisticsEngine::closeModel()
 
 SampleStatisticsEngine::ResultVector SampleStatisticsEngine::runOnBatch(Bundle& bundle)
 {
-    auto& input = bundle["inputActivations"].get<MatrixVector>().front();
+    auto& input = bundle["inputActivations"].get<matrix::MatrixVector>().front();
 
     util::log("SimpleStatisticsEngine") << "Computing sample statistics over "
         << input.size().product() <<  " elements...\n";

@@ -7,6 +7,7 @@
 // Lucius Includes
 #include <lucius/network/interface/AudioConvolutionalLayer.h>
 #include <lucius/network/interface/ConvolutionalLayer.h>
+#include <lucius/network/interface/Bundle.h>
 
 #include <lucius/matrix/interface/MatrixVector.h>
 #include <lucius/matrix/interface/Matrix.h>
@@ -113,10 +114,10 @@ static Dimension permuteDimensionsBackward(Dimension dimension)
 
 void AudioConvolutionalLayer::runForwardImplementation(Bundle& bundle)
 {
-    auto& inputActivations  = bundle["inputActivations"];
-    auto& outputActivations = bundle["outputActivations"];
+    auto& inputActivations  = bundle["inputActivations"].get<matrix::MatrixVector>();
+    auto& outputActivations = bundle["outputActivations"].get<matrix::MatrixVector>();
 
-    inputActivations = permuteDimensionsForward(inputActivations.back());
+    inputActivations.back() = permuteDimensionsForward(inputActivations.back());
 
     _layer->runForwardImplementation(bundle);
 
@@ -134,16 +135,14 @@ void AudioConvolutionalLayer::runForwardImplementation(Bundle& bundle)
     }
 }
 
-void AudioConvolutionalLayer::runReverseImplementation(MatrixVector& gradients,
-    MatrixVector& inputDeltas,
-    const MatrixVector& outputDeltas)
+void AudioConvolutionalLayer::runReverseImplementation(Bundle& bundle)
 {
-    auto& inputDelta   = bundle["inputDeltas"];
-    auto& outputDeltas = bundle["outputDeltas"];
+    auto& inputDeltas  = bundle["inputDeltas"].get<matrix::MatrixVector>();
+    auto& outputDeltas = bundle["outputDeltas"].get<matrix::MatrixVector>();
 
     assert(outputDeltas.size() == 1);
 
-    outputDeltas = permuteDimensionsForward(outputDeltas.front());
+    outputDeltas.front() = permuteDimensionsForward(outputDeltas.front());
 
     _layer->runReverseImplementation(bundle);
 

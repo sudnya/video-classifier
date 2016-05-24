@@ -10,6 +10,7 @@
 #include <lucius/network/interface/ActivationFunction.h>
 #include <lucius/network/interface/ActivationCostFunction.h>
 #include <lucius/network/interface/WeightCostFunction.h>
+#include <lucius/network/interface/Bundle.h>
 
 #include <lucius/matrix/interface/CopyOperations.h>
 #include <lucius/matrix/interface/MatrixOperations.h>
@@ -176,8 +177,8 @@ static matrix::Matrix unfoldTimeAndBatch(const Matrix& input, size_t batchSize)
 
 void BidirectionalRecurrentLayer::runForwardImplementation(Bundle& bundle)
 {
-    auto& inputActivationsVector  = bundle[ "inputActivations"].get<MatrixVector>();
-    auto& outputActivationsVector = bundle["outputActivations"].get<MatrixVector>();
+    auto& inputActivationsVector  = bundle[ "inputActivations"].get<matrix::MatrixVector>();
+    auto& outputActivationsVector = bundle["outputActivations"].get<matrix::MatrixVector>();
 
     assert(inputActivationsVector.size() == 1);
 
@@ -260,9 +261,9 @@ void BidirectionalRecurrentLayer::runForwardImplementation(Bundle& bundle)
 
 void BidirectionalRecurrentLayer::runReverseImplementation(Bundle& bundle)
 {
-    auto& gradients    = bundle[   "gradients"].get<MatrixVector>();
-    auto& inputDeltas  = bundle[ "inputDeltas"].get<MatrixVector>();
-    auto& outputDeltas = bundle["outputDeltas"].get<MatrixVector>();
+    auto& gradients    = bundle[   "gradients"].get<matrix::MatrixVector>();
+    auto& inputDeltas  = bundle[ "inputDeltas"].get<matrix::MatrixVector>();
+    auto& outputDeltas = bundle["outputDeltas"].get<matrix::MatrixVector>();
 
     assert(outputDeltas.size() == 1);
 
@@ -400,12 +401,14 @@ void BidirectionalRecurrentLayer::runReverseImplementation(Bundle& bundle)
 
     if(util::isLogEnabled("BidirectionalRecurrentLayer"))
     {
-        util::log("BidirectionalRecurrentLayer") << "  bias grad shape: " << biasGradient.shapeString() << "\n";
+        util::log("BidirectionalRecurrentLayer") << "  bias grad shape: "
+            << biasGradient.shapeString() << "\n";
     }
 
     if(util::isLogEnabled("BidirectionalRecurrentLayer::Detail"))
     {
-        util::log("BidirectionalRecurrentLayer::Detail") << "  bias grad: " << biasGradient.debugString();
+        util::log("BidirectionalRecurrentLayer::Detail") << "  bias grad: "
+            << biasGradient.debugString();
     }
 
     assert(biasGradient.size() == _bias.size());
@@ -442,7 +445,8 @@ void BidirectionalRecurrentLayer::runReverseImplementation(Bundle& bundle)
 
     if(util::isLogEnabled("BidirectionalRecurrentLayer::Detail"))
     {
-        util::log("BidirectionalRecurrentLayer::Detail") << "  output: " << previousLayerDeltas.debugString();
+        util::log("BidirectionalRecurrentLayer::Detail") << "  output: "
+            << previousLayerDeltas.debugString();
     }
 
     inputDeltas.push_back(reshape(previousLayerDeltas, {getInputCount(), miniBatch, timesteps}));

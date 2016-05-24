@@ -8,6 +8,7 @@
 #include <lucius/engine/interface/LearnerEngine.h>
 
 #include <lucius/network/interface/NeuralNetwork.h>
+#include <lucius/network/interface/Bundle.h>
 
 #include <lucius/results/interface/ResultVector.h>
 #include <lucius/results/interface/CostResult.h>

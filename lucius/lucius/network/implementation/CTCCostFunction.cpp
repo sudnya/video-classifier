@@ -7,8 +7,11 @@
 // Lucius Includes
 #include <lucius/network/interface/CTCCostFunction.h>
 
+#include <lucius/network/interface/Bundle.h>
+
 #include <lucius/matrix/interface/CTCOperations.h>
 #include <lucius/matrix/interface/Matrix.h>
+#include <lucius/matrix/interface/MatrixVector.h>
 #include <lucius/matrix/interface/MatrixOperations.h>
 #include <lucius/matrix/interface/Operation.h>
 #include <lucius/matrix/interface/SoftmaxOperations.h>
@@ -30,8 +33,11 @@ CTCCostFunction::~CTCCostFunction()
 
 }
 
-Matrix CTCCostFunction::computeCost(const Matrix& output, const Matrix& reference) const
+void CTCCostFunction::computeCost(Bundle& bundle) const
 {
+    auto& output    = bundle["outputActivations"].get<matrix::MatrixVector>().front();
+    auto& reference = bundle["referenceActivations"].get<matrix::MatrixVector>().front();
+
     size_t miniBatchSize = output.size()[output.size().size() - 2];
 
     Matrix cost({miniBatchSize}, output.precision());
@@ -39,11 +45,14 @@ Matrix CTCCostFunction::computeCost(const Matrix& output, const Matrix& referenc
 
     matrix::computeCtc(cost, fakeGradients, output, reference);
 
-    return apply(cost, matrix::Divide(miniBatchSize));
+    bundle["costs"] = apply(cost, matrix::Divide(miniBatchSize));
 }
 
-Matrix CTCCostFunction::computeDelta(const Matrix& output, const Matrix& reference) const
+void CTCCostFunction::computeDelta(Bundle& bundle) const
 {
+    auto& output    = bundle["outputActivations"].get<matrix::MatrixVector>().front();
+    auto& reference = bundle["referenceActivations"].get<matrix::MatrixVector>().front();
+
     size_t miniBatchSize = output.size()[output.size().size() - 2];
 
     Matrix cost({miniBatchSize}, output.precision());
@@ -51,7 +60,8 @@ Matrix CTCCostFunction::computeDelta(const Matrix& output, const Matrix& referen
 
     matrix::computeCtc(cost, gradients, output, reference);
 
-    return apply(gradients, matrix::Divide(miniBatchSize));
+    bundle["outputDeltas"] = matrix::MatrixVector(
+        {apply(gradients, matrix::Divide(miniBatchSize))});
 }
 
 CostFunction* CTCCostFunction::clone() const

@@ -9,6 +9,7 @@
 #include <lucius/network/interface/ActivationCostFunction.h>
 #include <lucius/network/interface/ActivationFunction.h>
 #include <lucius/network/interface/WeightCostFunction.h>
+#include <lucius/network/interface/Bundle.h>
 
 #include <lucius/network/interface/ActivationCostFunctionFactory.h>
 #include <lucius/network/interface/ActivationFunctionFactory.h>
@@ -181,7 +182,7 @@ void Layer::runReverse(Bundle& bundle)
 
     bundle["outputDeltas"] = reshapedOutputDeltas;
 
-    runReverseImplementation(gradients, inputDeltas, reshapedOutputDeltas);
+    runReverseImplementation(bundle);
 }
 
 void Layer::popReversePropagationData()

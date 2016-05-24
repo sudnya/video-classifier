@@ -7,6 +7,7 @@
 // Lucius Includes
 #include <lucius/network/interface/AudioMaxPoolingLayer.h>
 #include <lucius/network/interface/MaxPoolingLayer.h>
+#include <lucius/network/interface/Bundle.h>
 
 #include <lucius/matrix/interface/MatrixVector.h>
 #include <lucius/matrix/interface/Matrix.h>
@@ -109,8 +110,8 @@ static Dimension permuteDimensionsBackward(Dimension dimension)
 
 void AudioMaxPoolingLayer::runForwardImplementation(Bundle& bundle)
 {
-    auto& inputActivations  = bundle["inputActivations" ].get<MatrixVector>();
-    auto& outputActivations = bundle["outputActivations"].get<MatrixVector>();
+    auto& inputActivations  = bundle["inputActivations" ].get<matrix::MatrixVector>();
+    auto& outputActivations = bundle["outputActivations"].get<matrix::MatrixVector>();
 
     inputActivations.back() = permuteDimensionsForward(inputActivations.back());
 
@@ -130,17 +131,16 @@ void AudioMaxPoolingLayer::runForwardImplementation(Bundle& bundle)
     }
 }
 
-void AudioMaxPoolingLayer::runReverseImplementation(MatrixVector& gradients,
-    MatrixVector& inputDeltas,
-    const MatrixVector& outputDeltas)
+void AudioMaxPoolingLayer::runReverseImplementation(Bundle& bundle)
 {
+    auto& inputDeltas  = bundle["inputDeltas"].get<matrix::MatrixVector>();
+    auto& outputDeltas = bundle["outputDeltas"].get<matrix::MatrixVector>();
+
     assert(outputDeltas.size() == 1);
 
-    MatrixVector outputDeltasStorage;
+    outputDeltas.front() = permuteDimensionsForward(outputDeltas.front());
 
-    outputDeltasStorage.push_back(permuteDimensionsForward(outputDeltas.front()));
-
-    _layer->runReverseImplementation(gradients, inputDeltas, outputDeltasStorage);
+    _layer->runReverseImplementation(bundle);
 
     inputDeltas.front() = permuteDimensionsBackward(inputDeltas.front());
 }
