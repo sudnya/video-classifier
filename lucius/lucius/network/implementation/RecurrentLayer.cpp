@@ -10,6 +10,7 @@
 #include <lucius/network/interface/ActivationFunction.h>
 #include <lucius/network/interface/ActivationCostFunction.h>
 #include <lucius/network/interface/WeightCostFunction.h>
+#include <lucius/network/interface/Bundle.h>
 
 #include <lucius/matrix/interface/CopyOperations.h>
 #include <lucius/matrix/interface/MatrixOperations.h>
@@ -169,8 +170,8 @@ static matrix::Matrix unfoldTimeAndBatch(const Matrix& input, size_t batchSize)
 
 void RecurrentLayer::runForwardImplementation(Bundle& bundle)
 {
-    auto& inputActivations  = bundle[ "inputActivations"].get<MatrixVector>();
-    auto& outputActivations = bundle["outputActivations"].get<MatrixVector>();
+    auto& inputActivationsVector  = bundle[ "inputActivations"].get<MatrixVector>();
+    auto& outputActivationsVector = bundle["outputActivations"].get<MatrixVector>();
 
     assert(inputActivationsVector.size() == 1);
 

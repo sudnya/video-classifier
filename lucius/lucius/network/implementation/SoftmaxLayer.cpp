@@ -8,6 +8,7 @@
 #include <lucius/network/interface/SoftmaxLayer.h>
 
 #include <lucius/network/interface/ActivationFunction.h>
+#include <lucius/network/interface/Bundle.h>
 
 #include <lucius/matrix/interface/Matrix.h>
 #include <lucius/matrix/interface/MatrixVector.h>
@@ -150,7 +151,6 @@ void SoftmaxLayer::runForwardImplementation(Bundle& bundle)
 
 void SoftmaxLayer::runReverseImplementation(Bundle& bundle)
 {
-    auto& gradients          = bundle[   "gradients"].get<MatrixVector>();
     auto& inputDeltasVector  = bundle[ "inputDeltas"].get<MatrixVector>();
     auto& outputDeltasVector = bundle["outputDeltas"].get<MatrixVector>();
 

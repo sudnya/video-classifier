@@ -12,6 +12,7 @@
 
 #include <lucius/network/interface/NeuralNetwork.h>
 #include <lucius/network/interface/Layer.h>
+#include <lucius/network/interface/Bundle.h>
 
 #include <lucius/matrix/interface/Matrix.h>
 #include <lucius/matrix/interface/MatrixVector.h>

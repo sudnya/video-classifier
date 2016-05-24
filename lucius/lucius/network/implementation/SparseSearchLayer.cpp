@@ -8,6 +8,7 @@
 #include <lucius/network/interface/SparseSearchLayer.h>
 
 #include <lucius/network/interface/SubgraphLayer.h>
+#include <lucius/network/interface/Bundle.h>
 #include <lucius/network/interface/LayerFactory.h>
 
 #include <lucius/engine/interface/InputOutputLearnerEngine.h>
@@ -276,12 +277,14 @@ static MatrixVector runSelectForward(SubgraphLayer& layer,
         copy(currentTimestepSlice,  inputActivation);
     }
 
-    MatrixVector result;
-    MatrixVector extendedInputActivations;
+    Bundle bundle;
+
+    auto& result = bundle["outputActivations"].get<MatrixVector>();
+    auto& extendedInputActivations = bundle["inputActivations"].get<MatrixVector>();
 
     extendedInputActivations.push_back(extendedInput);
 
-    layer.runForwardImplementation(result, extendedInputActivations);
+    layer.runForwardImplementation(bundle);
 
     return result;
 }
@@ -464,12 +467,14 @@ static MatrixVector runProcessForward(SubgraphLayer& layer, const MatrixVector& 
         copy(currentTimestepSlice,  inputActivation);
     }
 
-    MatrixVector result;
-    MatrixVector extendedInputActivations;
+    Bundle bundle;
+
+    auto& result = bundle["outputActivations"].get<MatrixVector>();
+    auto& extendedInputActivations = bundle["inputActivations"].get<MatrixVector>();
 
     extendedInputActivations.push_back(extendedInput);
 
-    layer.runForward(result, extendedInputActivations);
+    layer.runForward(bundle);
 
     return result;
 }
@@ -514,12 +519,18 @@ static void packOutputDeltas(MatrixVector& packedOutputDeltas, const MatrixVecto
 static MatrixVector runProcessReverse(SubgraphLayer& layer,
     MatrixVector& gradients, const MatrixVector& outputDeltas)
 {
-    MatrixVector generatedDataDeltas;
-    MatrixVector packedOutputDeltas;
+    Bundle bundle;
+
+    auto& generatedDataDeltas = bundle["inputDeltas"].get<MatrixVector>();
+    auto& packedOutputDeltas  = bundle["outputDeltas"].get<MatrixVector>();
+
+    bundle["gradients"] = gradients;
 
     packOutputDeltas(packedOutputDeltas, outputDeltas);
 
-    layer.runReverse(gradients, generatedDataDeltas, packedOutputDeltas);
+    layer.runReverse(bundle);
+
+    gradients = bundle["gradients"].get<MatrixVector>();
 
     return generatedDataDeltas;
 }

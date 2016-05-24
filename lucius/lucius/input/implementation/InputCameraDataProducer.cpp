@@ -11,7 +11,10 @@
 #include <lucius/video/interface/Image.h>
 #include <lucius/video/interface/ImageVector.h>
 
+#include <lucius/network/interface/Bundle.h>
+
 #include <lucius/matrix/interface/Matrix.h>
+#include <lucius/matrix/interface/MatrixVector.h>
 
 #include <lucius/util/interface/Knobs.h>
 
@@ -62,7 +65,7 @@ network::Bundle InputCameraDataProducer::pop()
 
     standardize(input);
 
-    return Bundle(std::make_pair("inputActivations", MatrixVector(input)));
+    return Bundle(std::make_pair("inputActivations", matrix::MatrixVector({input})));
 }
 
 bool InputCameraDataProducer::empty() const

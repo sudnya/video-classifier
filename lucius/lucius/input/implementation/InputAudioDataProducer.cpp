@@ -10,9 +10,12 @@
 #include <lucius/database/interface/SampleDatabase.h>
 #include <lucius/database/interface/Sample.h>
 
+#include <lucius/network/interface/Bundle.h>
+
 #include <lucius/audio/interface/AudioVector.h>
 
 #include <lucius/matrix/interface/Matrix.h>
+#include <lucius/matrix/interface/MatrixVector.h>
 
 #include <lucius/model/interface/Model.h>
 
@@ -34,6 +37,7 @@ namespace input
 typedef audio::Audio       Audio;
 typedef audio::AudioVector AudioVector;
 typedef network::Bundle    Bundle;
+typedef matrix::MatrixVector MatrixVector;
 
 class InputAudioDataProducerImplementation
 {

@@ -13,6 +13,8 @@
 
 #include <lucius/database/interface/SampleDatabase.h>
 
+#include <lucius/util/interface/memory.h>
+
 namespace lucius
 {
 

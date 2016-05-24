@@ -44,7 +44,7 @@ public:
 protected:
     NeuralNetwork* _network;
 
-    const Bundle* _input;
+    const Bundle* _bundle;
 };
 
 }

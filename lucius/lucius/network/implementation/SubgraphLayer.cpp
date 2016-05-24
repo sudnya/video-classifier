@@ -8,6 +8,7 @@
 #include <lucius/network/interface/SubgraphLayer.h>
 
 #include <lucius/network/interface/LayerFactory.h>
+#include <lucius/network/interface/Bundle.h>
 
 #include <lucius/matrix/interface/MatrixVector.h>
 #include <lucius/matrix/interface/MatrixOperations.h>

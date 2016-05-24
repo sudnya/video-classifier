@@ -6,6 +6,8 @@
 
 #include <lucius/input/interface/InputTextDataProducer.h>
 
+#include <lucius/network/interface/Bundle.h>
+
 #include <lucius/matrix/interface/Matrix.h>
 
 #include <lucius/util/interface/debug.h>

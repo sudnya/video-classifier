@@ -1,4 +1,4 @@
-/*    \file   InputVisualDataProducer.h
+/*  \file   InputVisualDataProducer.h
     \date   Saturday August 10, 2014
     \author Gregory Diamos <solusstultus@gmail.com>
     \brief  The header file for the InputVisualDataProducer class.
@@ -13,9 +13,12 @@
 #include <lucius/database/interface/SampleDatabase.h>
 #include <lucius/database/interface/Sample.h>
 
+#include <lucius/network/interface/Bundle.h>
+
 #include <lucius/matrix/interface/MatrixOperations.h>
 #include <lucius/matrix/interface/Operation.h>
 #include <lucius/matrix/interface/Matrix.h>
+#include <lucius/matrix/interface/MatrixVector.h>
 
 #include <lucius/util/interface/Knobs.h>
 #include <lucius/util/interface/debug.h>
@@ -45,6 +48,8 @@ typedef video::Image       Image;
 typedef video::ImageVector ImageVector;
 typedef video::Video       Video;
 typedef video::VideoVector VideoVector;
+
+typedef matrix::MatrixVector MatrixVector;
 
 static void parseImageDatabase(ImageVector& images, VideoVector& video,
     const std::string& path, bool requiresLabeledData);
@@ -94,7 +99,7 @@ static ImageVector getBatch(ImageVector& images, VideoVector& video,
     std::default_random_engine& generator,
     bool requiresLabeledData);
 
-InputVisualDataProducer::InputAndReferencePair InputVisualDataProducer::pop()
+InputVisualDataProducer::Bundle InputVisualDataProducer::pop()
 {
     assert(_initialized);
 

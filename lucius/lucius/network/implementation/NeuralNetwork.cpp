@@ -63,7 +63,7 @@ void NeuralNetwork::getCostAndGradient(Bundle& bundle)
     size_t weightMatrices = 0;
 
     util::log("NeuralNetwork") << " Running forward propagation of input "
-        << input.shapeString() << "\n";
+        << bundle["inputActivations"].get<MatrixVector>().front().shapeString() << "\n";
 
     for(auto layer = begin(); layer != end(); ++layer)
     {
@@ -72,12 +72,14 @@ void NeuralNetwork::getCostAndGradient(Bundle& bundle)
 
         bundle["outputActivations"] = MatrixVector();
 
-        (*layer)->runForward(currentBundle);
+        (*layer)->runForward(bundle);
 
         bundle["inputActivations"] = bundle["outputActivations"];
 
         weightMatrices += (*layer)->weights().size();
     }
+
+    MatrixVector gradient;
 
     gradient.resize(weightMatrices);
 
@@ -89,17 +91,14 @@ void NeuralNetwork::getCostAndGradient(Bundle& bundle)
     getCostFunction()->computeCost(bundle);
     getCostFunction()->computeDelta(bundle);
 
-    auto costFunctionResult = bundle["costs"].get<Matrix()>;
-    auto delta = bundle["delta"].get<Matrix>();
+    auto costFunctionResult = bundle["costs"].get<Matrix>();
 
     util::log("NeuralNetwork") << " Running forward propagation of delta "
-        << delta.shapeString() << "\n";
-
-    bundle["outputDeltas"] = MatrixVector({delta});
+        << bundle["outputDeltas"].get<MatrixVector>().front().shapeString() << "\n";
 
     auto gradientMatrix = gradient.rbegin();
 
-    for(auto layer = rbegin(); layer != rend(); ++layer, ++activation)
+    for(auto layer = rbegin(); layer != rend(); ++layer)
     {
         bundle["gradients"]   = MatrixVector();
         bundle["inputDeltas"] = MatrixVector();
@@ -112,7 +111,7 @@ void NeuralNetwork::getCostAndGradient(Bundle& bundle)
 
         bundle["outputDeltas"] = bundle["inputDeltas"];
 
-        auto gradients = currentBundle["gradients"].get<MatrixVector>();
+        auto gradients = bundle["gradients"].get<MatrixVector>();
 
         for(auto gradMatrix = gradients.rbegin(); gradMatrix != gradients.rend();
             ++gradMatrix, ++gradientMatrix)
@@ -139,6 +138,7 @@ void NeuralNetwork::getCostAndGradient(Bundle& bundle)
             << costFunctionResult.shapeString() << "\n";
     }
 
+    bundle["gradients"] = gradient;
     bundle["cost"] = weightCost + reduce(costFunctionResult, {}, matrix::Add())[0];
 }
 
@@ -164,12 +164,9 @@ void NeuralNetwork::getInputCostAndGradient(Bundle& bundle)
     getCostFunction()->computeCost(bundle);
     getCostFunction()->computeDelta(bundle);
 
-    auto costFunctionResult = bundle["costs"].get<Matrix()>;
-    auto delta = bundle["delta"].get<Matrix>();
+    auto costFunctionResult = bundle["costs"].get<Matrix>();
 
-    bundle["outputDeltas"] = MatrixVector({delta});
-
-    for(auto layer = rbegin(); layer != rend(); ++layer, ++activation)
+    for(auto layer = rbegin(); layer != rend(); ++layer)
     {
         bundle["gradients"]   = MatrixVector();
         bundle["inputDeltas"] = MatrixVector();
@@ -183,11 +180,11 @@ void NeuralNetwork::getInputCostAndGradient(Bundle& bundle)
         bundle["outputDeltas"] = bundle["inputDeltas"];
     }
 
-    delta = bundle["outputDeltas"].get<MatrixVector>().back();
+    auto delta = bundle["inputDeltas"].get<MatrixVector>().front();
 
-    auto samples = input.size()[input.size().size() - 1] * input.size()[input.size().size() - 2];
+    auto samples = delta.size()[delta.size().size() - 1] * delta.size()[delta.size().size() - 2];
 
-    gradient = apply(delta, matrix::Multiply(1.0 / samples));
+    bundle["inputDeltas"] = apply(delta, matrix::Multiply(1.0 / samples));
 
     auto weightCost = 0.0;
 
@@ -212,7 +209,7 @@ void NeuralNetwork::getCost(Bundle& bundle)
 
     getCostFunction()->computeCost(bundle);
 
-    auto costFunctionResult = bundle["costs"].get<Matrix()>;
+    auto costFunctionResult = bundle["costs"].get<Matrix>();
 
     bundle["cost"] = weightCost +
         reduce(costFunctionResult, {}, matrix::Add())[0];
@@ -383,10 +380,10 @@ size_t NeuralNetwork::getActivationMemory() const
 
 void NeuralNetwork::train(Bundle& bundle)
 {
-    getSolver()->setBundle(&input);
+    getSolver()->setBundle(&bundle);
     getSolver()->setNetwork(this);
 
-    return getSolver()->solve();
+    getSolver()->solve();
 }
 
 NeuralNetwork::iterator NeuralNetwork::begin()
