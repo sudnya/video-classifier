@@ -32,6 +32,7 @@ public:
 
 public:
     virtual HeaderAndData loadAudio(std::istream& , const std::string& format) = 0;
+    virtual Header loadAudioHeader(std::istream& , const std::string& format) = 0;
 
 public:
     virtual void saveAudio(std::ostream& path, const std::string& format, const Header& header,

@@ -38,6 +38,7 @@ public:
 
 public:
     void cache();
+    void cacheHeader();
     void invalidateCache();
 
     bool isCached() const;
@@ -88,6 +89,7 @@ private:
 
 private:
     bool _isLoaded;
+    bool _isHeaderLoaded;
 
 private:
     class Label
@@ -126,6 +128,7 @@ private:
 
 private:
     void _load();
+    void _loadHeader();
     void _load(std::istream& stream, const std::string& format);
 
 };

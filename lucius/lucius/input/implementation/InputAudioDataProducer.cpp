@@ -540,6 +540,11 @@ private:
 
     void _sortAudioByLength()
     {
+        for(auto& audio : _audio)
+        {
+            audio.cacheHeader();
+        }
+
         std::sort(_audio.begin(), _audio.end(),
             [](const Audio& left, const Audio& right)
             {

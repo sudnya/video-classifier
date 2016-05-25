@@ -23,19 +23,20 @@ namespace audio
 {
 
 Audio::Audio(const std::string& path, const std::string& label)
-: _path(path), _isLoaded(false), _defaultLabel(label), _unpaddedSequenceLength(0)
+: _path(path), _isLoaded(false), _isHeaderLoaded(false),
+  _defaultLabel(label), _unpaddedSequenceLength(0)
 {
 
 }
 
 Audio::Audio(std::istream& stream, const std::string& format)
-: _isLoaded(false), _unpaddedSequenceLength(0)
+: _isLoaded(false), _isHeaderLoaded(false), _unpaddedSequenceLength(0)
 {
     _load(stream, format);
 }
 
 Audio::Audio(size_t samples, size_t bytesPerSample, size_t frequency)
-: _isLoaded(true), _unpaddedSequenceLength(0),
+: _isLoaded(true), _isHeaderLoaded(true), _unpaddedSequenceLength(0),
   _samples(samples), _bytesPerSample(bytesPerSample), _samplingRate(frequency)
 {
     _data.resize(_samples * _bytesPerSample);
@@ -67,9 +68,15 @@ void Audio::cache()
     _load();
 }
 
+void Audio::cacheHeader()
+{
+    _loadHeader();
+}
+
 void Audio::invalidateCache()
 {
     _isLoaded = false;
+    _isHeaderLoaded = false;
 
    _data = ByteVector();
 }
@@ -81,21 +88,21 @@ bool Audio::isCached() const
 
 size_t Audio::frequency() const
 {
-    assert(_isLoaded);
+    assert(_isHeaderLoaded);
 
     return _samplingRate;
 }
 
 double Audio::duration() const
 {
-    assert(_isLoaded);
+    assert(_isHeaderLoaded);
 
     return (size() + 0.0) / _samplingRate;
 }
 
 size_t Audio::size() const
 {
-    assert(_isLoaded);
+    assert(_isHeaderLoaded);
 
     return _samples;
 }
@@ -109,7 +116,7 @@ size_t Audio::bytes() const
 
 size_t Audio::bytesPerSample() const
 {
-    assert(_isLoaded);
+    assert(_isHeaderLoaded);
 
     return _bytesPerSample;
 }
@@ -153,6 +160,8 @@ double Audio::getSample(size_t sample) const
 
 void Audio::setSample(size_t sample, double value)
 {
+    assert(_isLoaded);
+
     switch(_bytesPerSample)
     {
     case 1:
@@ -324,7 +333,35 @@ void Audio::_load(std::istream& stream, const std::string& format)
     _data = std::move(headerAndData.data);
 
     _isLoaded = true;
+    _isHeaderLoaded = true;
 }
+
+void Audio::_loadHeader()
+{
+    if(_isHeaderLoaded)
+    {
+        return;
+    }
+
+    std::ifstream file(_path);
+
+    util::log("Audio") << "Loading audio header from '" + _path + "'\n";
+
+    if(!file.is_open())
+    {
+        throw std::runtime_error("Failed to open " + _path + " for reading.");
+    }
+
+    auto header = AudioLibraryInterface::loadAudioHeader(file, util::getExtension(_path));
+
+    _samples        = header.samples;
+    _bytesPerSample = header.bytesPerSample;
+    _samplingRate   = header.samplingRate;
+
+    _isHeaderLoaded = true;
+}
+
+
 
 }
 
