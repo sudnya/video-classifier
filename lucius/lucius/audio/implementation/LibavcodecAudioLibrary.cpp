@@ -367,8 +367,6 @@ LibavcodecAudioLibrary::Header LibavcodecAudioLibrary::loadAudioHeader(std::istr
         throw std::runtime_error("Failed to open codec for " + format);
     }
 
-    Header header;
-
     size_t bufferSize = LibavcodecLibrary::AUDIO_INBUF_SIZE +
         LibavcodecLibrary::AV_INPUT_BUFFER_PADDING_SIZE;
 
@@ -380,6 +378,8 @@ LibavcodecAudioLibrary::Header LibavcodecAudioLibrary::loadAudioHeader(std::istr
     {
         throw std::runtime_error("Failed to allocate buffer.");
     }
+
+    Header header;
 
     std::unique_ptr<LibavcodecLibrary::AVIOContext, void(*)(void*)> avioContext(
         LibavcodecLibrary::avio_alloc_context(
@@ -429,52 +429,12 @@ LibavcodecAudioLibrary::Header LibavcodecAudioLibrary::loadAudioHeader(std::istr
     LibavcodecLibrary::av_codec_set_pkt_timebase(context,
         {1, static_cast<int>(LibavcodecLibrary::getSamplingRate(context))});
 
-    LibavcodecLibrary::AVFrameRAII decodedFrame;
+    header.bytesPerSample =
+        LibavcodecLibrary::getBytesPerSampleForFormat(context);
+    header.samplingRate = LibavcodecLibrary::getSamplingRate(context);
 
-    while(true)
-    {
-        LibavcodecLibrary::AVPacketRAII packet;
-
-        int gotPacket = LibavcodecLibrary::av_read_frame(avFormat.get(), packet);
-
-        if(gotPacket < 0)
-        {
-            if(header.samples == 0)
-            {
-                throw std::runtime_error("Failed to get any samples.");
-            }
-            break;
-        }
-
-        int gotFrame = 0;
-
-        int length = LibavcodecLibrary::avcodec_decode_audio4(context,
-             decodedFrame, &gotFrame, packet);
-
-        if(length < 0)
-        {
-            throw std::runtime_error("Error while decoding " + format);
-        }
-
-        if(gotFrame)
-        {
-            header.samples += LibavcodecLibrary::getNumberOfSamples(decodedFrame);
-
-            header.bytesPerSample =
-                LibavcodecLibrary::getBytesPerSampleForFormat(context);
-            header.samplingRate = LibavcodecLibrary::getSamplingRate(context);
-
-            break;
-        }
-
-        if(length != packet->size)
-        {
-            throw std::runtime_error("Did not decode the entire packet.");
-        }
-    }
-
-    LibavcodecLibrary::av_free(avioContext->buffer);
-    buffer.release();
+    header.samples = (avFormatPtr->duration / LibavcodecLibrary::AV_TIME_BASE) *
+        header.samplingRate;
 
     return header;
 }
