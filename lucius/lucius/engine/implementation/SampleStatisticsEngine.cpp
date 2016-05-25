@@ -57,7 +57,7 @@ void SampleStatisticsEngine::closeModel()
     getModel()->setAttribute("InputSampleStandardDeviation", _standardDeviation);
 }
 
-SampleStatisticsEngine::ResultVector SampleStatisticsEngine::runOnBatch(Bundle& bundle)
+SampleStatisticsEngine::ResultVector SampleStatisticsEngine::runOnBatch(const Bundle& bundle)
 {
     auto& input = bundle["inputActivations"].get<matrix::MatrixVector>().front();
 

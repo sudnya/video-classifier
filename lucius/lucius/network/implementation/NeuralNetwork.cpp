@@ -58,8 +58,10 @@ void NeuralNetwork::initialize()
     }
 }
 
-void NeuralNetwork::getCostAndGradient(Bundle& bundle)
+Bundle NeuralNetwork::getCostAndGradient(const Bundle& input)
 {
+    auto bundle = input;
+
     size_t weightMatrices = 0;
 
     util::log("NeuralNetwork") << " Running forward propagation of input "
@@ -140,10 +142,14 @@ void NeuralNetwork::getCostAndGradient(Bundle& bundle)
 
     bundle["gradients"] = gradient;
     bundle["cost"] = weightCost + reduce(costFunctionResult, {}, matrix::Add())[0];
+
+    return bundle;
 }
 
-void NeuralNetwork::getInputCostAndGradient(Bundle& bundle)
+Bundle NeuralNetwork::getInputCostAndGradient(const Bundle& input)
 {
+    auto bundle = input;
+
     for(auto layer = begin(); layer != end(); ++layer)
     {
         util::log("NeuralNetwork") << " Running forward propagation through layer "
@@ -194,11 +200,13 @@ void NeuralNetwork::getInputCostAndGradient(Bundle& bundle)
     }
 
     bundle["cost"] = weightCost + reduce(costFunctionResult, {}, matrix::Add())[0];
+
+    return bundle;
 }
 
-void NeuralNetwork::getCost(Bundle& bundle)
+Bundle NeuralNetwork::getCost(const Bundle& input)
 {
-    runInputs(bundle);
+    auto bundle = runInputs(input);
 
     float weightCost = 0.0f;
 
@@ -213,10 +221,14 @@ void NeuralNetwork::getCost(Bundle& bundle)
 
     bundle["cost"] = weightCost +
         reduce(costFunctionResult, {}, matrix::Add())[0];
+
+    return bundle;
 }
 
-void NeuralNetwork::runInputs(Bundle& bundle)
+Bundle NeuralNetwork::runInputs(const Bundle& input)
 {
+    auto bundle = input;
+
     for (auto layer = begin(); layer != end(); ++layer)
     {
         util::log("NeuralNetwork") << " Running forward propagation through layer "
@@ -229,13 +241,15 @@ void NeuralNetwork::runInputs(Bundle& bundle)
 
         bundle["inputActivations"] = bundle["outputActivations"];
     }
+
+    return bundle;
 }
 
 NeuralNetwork::Matrix NeuralNetwork::runInputs(const Matrix& input)
 {
-    Bundle bundle({std::make_pair("inputActivations", MatrixVector({input}))});
+    Bundle inputBundle({std::make_pair("inputActivations", MatrixVector({input}))});
 
-    runInputs(bundle);
+    auto bundle = runInputs(inputBundle);
 
     return bundle["outputActivations"].get<MatrixVector>().front();
 }
@@ -387,22 +401,26 @@ size_t NeuralNetwork::getActivationMemory() const
     return bytes;
 }
 
-void NeuralNetwork::train(Bundle& bundle)
+Bundle NeuralNetwork::train(const Bundle& bundle)
 {
-    getSolver()->setBundle(&bundle);
+    auto result = bundle;
+
+    getSolver()->setBundle(&result);
     getSolver()->setNetwork(this);
 
-    getSolver()->solve();
+    result["cost"] = getSolver()->solve();
+
+    return result;
 }
 
 double NeuralNetwork::train(const Matrix& input, const Matrix& output)
 {
     Bundle bundle({std::make_pair("inputActivations", MatrixVector({input})),
-        std::make_pair("outputActivations", MatrixVector({output}))});
+        std::make_pair("referenceActivations", MatrixVector({output}))});
 
-    train(bundle);
+    auto result = train(bundle);
 
-    return bundle["cost"].get<double>();
+    return result["cost"].get<double>();
 }
 
 NeuralNetwork::iterator NeuralNetwork::begin()

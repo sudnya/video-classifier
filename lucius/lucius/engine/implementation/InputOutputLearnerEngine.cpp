@@ -88,7 +88,7 @@ Matrix InputOutputLearnerEngine::getSlice(Dimension begin, Dimension end) const
     return slice;
 }
 
-ResultVector InputOutputLearnerEngine::runOnBatch(Bundle& bundle)
+ResultVector InputOutputLearnerEngine::runOnBatch(const Bundle& input)
 {
     ResultVector result;
 

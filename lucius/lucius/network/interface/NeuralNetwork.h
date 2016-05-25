@@ -48,20 +48,20 @@ public:
 
 public:
     /*! \brief Get the cost and gradient. */
-    void getCostAndGradient(Bundle& bundle);
+    Bundle getCostAndGradient(const Bundle& bundle);
     /*! \brief Get the cost. */
-    void getCost(Bundle& bundle);
+    Bundle getCost(const Bundle& bundle);
 
 public:
     /*! \brief Get the cost and gradient with respect to the inputs. */
-    void getInputCostAndGradient(Bundle& bundle);
+    Bundle getInputCostAndGradient(const Bundle& bundle);
 
 public:
     /*! \brief Run input samples through the network, return the output */
     Matrix runInputs(const Matrix& input);
 
     /*! \brief Run input samples through the network, update the bundle. */
-    void runInputs(Bundle& bundle);
+    Bundle runInputs(const Bundle& bundle);
 
 public:
     /*! \brief Add an existing layer, the network takes ownership */
@@ -118,7 +118,7 @@ public:
     double train(const Matrix& input, const Matrix& output);
 
     /*! \brief Train the network on the input and output activations, update the bundle. */
-    void train(Bundle& bundle);
+    Bundle train(const Bundle& bundle);
 
 public:
     typedef std::vector<LayerPointer> LayerVector;

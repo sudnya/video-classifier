@@ -29,7 +29,7 @@ public:
     FeatureExtractorEngine& operator=(const FeatureExtractorEngine&) = delete;
 
 private:
-    virtual ResultVector runOnBatch(Bundle& bundle);
+    virtual ResultVector runOnBatch(const Bundle& bundle);
 
 };
 

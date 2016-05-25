@@ -121,7 +121,7 @@ protected:
 
 public:
     /*! \brief Run the engine on the specified batch. */
-    virtual ResultVector runOnBatch(Bundle& bundle) = 0;
+    virtual ResultVector runOnBatch(const Bundle& bundle) = 0;
 
 private:
     Engine(const Engine&) = delete;

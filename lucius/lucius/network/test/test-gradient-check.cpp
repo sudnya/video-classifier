@@ -289,7 +289,7 @@ static double getDifference(double difference, double total)
     return difference / total;
 }
 
-static bool gradientCheck(NeuralNetwork& network, Bundle& bundle,
+static bool gradientCheck(NeuralNetwork& network, const Bundle& input,
     const double epsilon = 1.0e-5)
 {
     double total = 0.0;
@@ -298,9 +298,9 @@ static bool gradientCheck(NeuralNetwork& network, Bundle& bundle,
     size_t layerId  = 0;
     size_t matrixId = 0;
 
-    network.getCostAndGradient(bundle);
+    auto bundle = network.getCostAndGradient(input);
 
-    MatrixVector& gradient = bundle["gradients"].get<MatrixVector>();
+    MatrixVector gradient = bundle["gradients"].get<MatrixVector>();
     double cost = bundle["cost"].get<double>();
 
     for(auto& layer : network)
@@ -313,13 +313,13 @@ static bool gradientCheck(NeuralNetwork& network, Bundle& bundle,
             {
                 weight += epsilon;
 
-                network.getCost(bundle);
+                bundle = network.getCost(input);
 
                 double newCost = bundle["cost"].get<double>();
 
                 weight -= 2*epsilon;
 
-                network.getCost(bundle);
+                bundle = network.getCost(input);
 
                 double newCost2 = bundle["cost"].get<double>();
 

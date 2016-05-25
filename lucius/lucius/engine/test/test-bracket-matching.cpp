@@ -17,6 +17,7 @@
 #include <lucius/network/interface/LayerFactory.h>
 #include <lucius/network/interface/Layer.h>
 #include <lucius/network/interface/CostFunctionFactory.h>
+#include <lucius/network/interface/ActivationFunctionFactory.h>
 #include <lucius/network/interface/Bundle.h>
 
 #include <lucius/input/interface/InputDataProducer.h>
@@ -93,7 +94,7 @@ public:
             size_t partition = _sequenceLength / 3;
 
             std::uniform_int_distribution<size_t> timestepDistribution(
-                partition + 1, _sequenceLength);
+                2*partition, _sequenceLength);
 
             timestepsInSample.push_back(timestepDistribution(engine));
 
@@ -141,7 +142,7 @@ public:
                 }
                 case 2:
                 {
-                    sample   (3, batchSample, timestep) = 1.0f;
+                    sample(3, batchSample, timestep) = 1.0f;
                     labels.back().push_back(3);
 
                     anys += 1;
@@ -211,7 +212,7 @@ static void addClassifier(Model& model, const Parameters& parameters)
     NeuralNetwork classifier;
 
     classifier.addLayer(LayerFactory::create("FeedForwardLayer",
-        std::make_tuple("InputSize" , 6),
+        std::make_tuple("InputSize" , 5),
         std::make_tuple("OutputSize", parameters.layerSize)));
 
     // connect the network
@@ -219,6 +220,8 @@ static void addClassifier(Model& model, const Parameters& parameters)
     {
         classifier.addLayer(LayerFactory::create("BatchNormalizationLayer",
             std::make_tuple("InputSizeHeight", parameters.layerSize)));
+        classifier.back()->setActivationFunction(
+            lucius::network::ActivationFunctionFactory::create("NullActivationFunction"));
 
         classifier.addLayer(LayerFactory::create("FeedForwardLayer",
             std::make_tuple("InputSizeHeight", parameters.layerSize)));
@@ -228,6 +231,8 @@ static void addClassifier(Model& model, const Parameters& parameters)
     {
         classifier.addLayer(LayerFactory::create("BatchNormalizationLayer",
             std::make_tuple("InputSizeHeight", parameters.layerSize)));
+        classifier.back()->setActivationFunction(
+            lucius::network::ActivationFunctionFactory::create("NullActivationFunction"));
         classifier.addLayer(LayerFactory::create("RecurrentLayer",
             std::make_tuple("InputSizeHeight",      parameters.layerSize),
             std::make_tuple("BatchSize", parameters.batchSize)));
@@ -235,14 +240,14 @@ static void addClassifier(Model& model, const Parameters& parameters)
 
     classifier.addLayer(LayerFactory::create("FeedForwardLayer",
         std::make_tuple("InputSizeHeight",  parameters.layerSize),
-        std::make_tuple("OutputSize", 6)));
+        std::make_tuple("OutputSize", 5)));
 
     classifier.setCostFunction(lucius::network::CostFunctionFactory::create(
-        "SoftmaxCostFunction"));
+        "CTCCostFunction"));
 
     classifier.initialize();
 
-    model.setOutputLabel(0, "BLANK");
+    model.setOutputLabel(0, "-SEPARATOR-");
     model.setOutputLabel(1, "{");
     model.setOutputLabel(2, "}");
     model.setOutputLabel(3, " ");
@@ -348,8 +353,8 @@ static void runTest(const Parameters& parameters)
 static void setupSolverParameters()
 {
     lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::LearningRate", "1.0e-3");
-    lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::Momentum", "0.9");
-    lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::AnnealingRate", "1.00001");
+    lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::Momentum", "0.99");
+    lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::AnnealingRate", "1.0001");
     lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::MaxGradNorm", "10.0");
     lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::IterationsPerBatch", "1");
     lucius::util::KnobDatabase::setKnob("GeneralDifferentiableSolver::Type", "NesterovAcceleratedGradientSolver");

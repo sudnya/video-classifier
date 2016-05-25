@@ -31,7 +31,7 @@ public:
     void setUseLabeledData(bool useIt);
 
 protected:
-    virtual ResultVector runOnBatch(Bundle& bundle);
+    virtual ResultVector runOnBatch(const Bundle& bundle);
 
 protected:
     virtual bool requiresLabeledData() const;

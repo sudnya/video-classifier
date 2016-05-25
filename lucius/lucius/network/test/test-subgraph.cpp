@@ -275,14 +275,14 @@ static bool gradientCheck(NeuralNetwork& network, const Matrix& input, const Mat
     size_t layerId  = 0;
     size_t matrixId = 0;
 
-    Bundle bundle(
+    Bundle inputBundle(
         std::make_pair("inputActivations",     MatrixVector({input})),
         std::make_pair("referenceActivations", MatrixVector({reference}))
     );
 
-    network.getCostAndGradient(bundle);
+    auto bundle = network.getCostAndGradient(inputBundle);
 
-    MatrixVector& gradient = bundle["gradients"].get<MatrixVector>();
+    MatrixVector gradient = bundle["gradients"].get<MatrixVector>();
     double cost = bundle["cost"].get<double>();
 
     for(auto& layer : network)
@@ -295,7 +295,7 @@ static bool gradientCheck(NeuralNetwork& network, const Matrix& input, const Mat
             {
                 weight += epsilon;
 
-                network.getCost(bundle);
+                bundle = network.getCost(inputBundle);
 
                 double newCost = bundle["cost"].get<double>();
 

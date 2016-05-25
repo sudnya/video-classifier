@@ -34,11 +34,11 @@ FeatureExtractorEngine::FeatureExtractorEngine()
     setResultProcessor(new results::FeatureResultProcessor);
 }
 
-FeatureExtractorEngine::ResultVector FeatureExtractorEngine::runOnBatch(Bundle& bundle)
+FeatureExtractorEngine::ResultVector FeatureExtractorEngine::runOnBatch(const Bundle& input)
 {
     auto& featureSelector = getModel()->getNeuralNetwork("FeatureSelector");
 
-    featureSelector.runInputs(bundle);
+    auto bundle = featureSelector.runInputs(input);
 
     auto& featuresVector = bundle["outputActivations"].get<matrix::MatrixVector>();
 

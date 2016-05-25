@@ -99,9 +99,7 @@ public:
     {
         setWeights(*_network, weights);
 
-        auto bundle = *_bundle;
-
-        _network->getCostAndGradient(bundle);
+        auto bundle = _network->getCostAndGradient(*_bundle);
 
         double newCost = bundle["cost"].get<double>();
         gradient = bundle["gradients"].get<MatrixVector>();

@@ -41,13 +41,13 @@ void LearnerEngine::closeModel()
 
 }
 
-LearnerEngine::ResultVector LearnerEngine::runOnBatch(Bundle& bundle)
+LearnerEngine::ResultVector LearnerEngine::runOnBatch(const Bundle& input)
 {
     auto network = getAggregateNetwork();
 
     network->setIsTraining(true);
 
-    network->train(bundle);
+    auto bundle = network->train(input);
 
     double cost = bundle["cost"].get<double>();
 

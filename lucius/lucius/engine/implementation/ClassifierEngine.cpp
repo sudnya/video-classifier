@@ -21,6 +21,7 @@
 #include <lucius/matrix/interface/Matrix.h>
 #include <lucius/matrix/interface/MatrixVector.h>
 #include <lucius/matrix/interface/MatrixTransformations.h>
+#include <lucius/matrix/interface/CTCOperations.h>
 
 #include <lucius/util/interface/debug.h>
 
@@ -104,10 +105,6 @@ static util::StringVector convertActivationsToGraphemeLabels(matrix::Matrix&& ac
                 currentLabel.insert(currentLabel.end(), newGrapheme.begin(), newGrapheme.end());
             }
 
-            /*if(maxGrapheme == graphemes - 1)
-            {
-                break;
-            }*/
         }
 
         labels.push_back(currentLabel);
@@ -156,6 +153,34 @@ static util::StringVector convertActivationsToLabels(matrix::Matrix&& activation
     return labels;
 }
 
+static util::StringVector getReferenceLabels(network::Bundle& bundle,
+    const model::Model& model)
+{
+    if(bundle.contains("referenceLabels"))
+    {
+        util::StringVector labels;
+
+        auto& referenceLabels = bundle["referenceLabels"].get<matrix::LabelVector>();
+
+        for(auto& referenceLabel : referenceLabels)
+        {
+            labels.push_back(std::string());
+
+            for(auto& grapheme : referenceLabel)
+            {
+                labels.back() += model.getOutputLabel(grapheme);
+            }
+        }
+
+        return labels;
+    }
+
+    auto& referenceActivations =
+        bundle["referenceActivations"].get<matrix::MatrixVector>().front();
+
+    return convertActivationsToLabels(std::move(referenceActivations), model);
+}
+
 results::ResultVector compareWithReference(double cost, size_t iteration,
     const util::StringVector& labels, const util::StringVector& references)
 {
@@ -184,16 +209,15 @@ results::ResultVector recordLabels(const util::StringVector& labels)
     return result;
 }
 
-ClassifierEngine::ResultVector ClassifierEngine::runOnBatch(Bundle& bundle)
+ClassifierEngine::ResultVector ClassifierEngine::runOnBatch(const Bundle& input)
 {
     auto network = getAggregateNetwork();
 
     network->setIsTraining(false);
 
-    network->runInputs(bundle);
+    auto bundle = network->runInputs(input);
 
-    auto& result    = bundle["outputActivations"].get<matrix::MatrixVector>().front();
-    auto& reference = bundle["referenceActivations"].get<matrix::MatrixVector>().front();
+    auto& result = bundle["outputActivations"].get<matrix::MatrixVector>().front();
 
     auto labels = convertActivationsToLabels(std::move(result), *getModel());
 
@@ -201,12 +225,12 @@ ClassifierEngine::ResultVector ClassifierEngine::runOnBatch(Bundle& bundle)
 
     if(_shouldUseLabeledData)
     {
-        network->getCost(bundle);
+        bundle = network->getCost(input);
 
         auto cost = bundle["cost"].get<double>();
 
         results = compareWithReference(cost * labels.size(), getIteration(), labels,
-            convertActivationsToLabels(std::move(reference), *getModel()));
+            getReferenceLabels(bundle, *getModel()));
     }
     else
     {
