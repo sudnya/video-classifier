@@ -231,6 +231,15 @@ void NeuralNetwork::runInputs(Bundle& bundle)
     }
 }
 
+NeuralNetwork::Matrix NeuralNetwork::runInputs(const Matrix& input)
+{
+    Bundle bundle({std::make_pair("inputActivations", MatrixVector({input}))});
+
+    runInputs(bundle);
+
+    return bundle["outputActivations"].get<MatrixVector>().front();
+}
+
 void NeuralNetwork::addLayer(std::unique_ptr<Layer>&& l)
 {
     _layers.push_back(std::move(l));
@@ -384,6 +393,16 @@ void NeuralNetwork::train(Bundle& bundle)
     getSolver()->setNetwork(this);
 
     getSolver()->solve();
+}
+
+double NeuralNetwork::train(const Matrix& input, const Matrix& output)
+{
+    Bundle bundle({std::make_pair("inputActivations", MatrixVector({input})),
+        std::make_pair("outputActivations", MatrixVector({output}))});
+
+    train(bundle);
+
+    return bundle["cost"].get<double>();
 }
 
 NeuralNetwork::iterator NeuralNetwork::begin()

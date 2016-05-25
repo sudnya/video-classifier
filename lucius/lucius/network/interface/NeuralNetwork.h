@@ -58,6 +58,9 @@ public:
 
 public:
     /*! \brief Run input samples through the network, return the output */
+    Matrix runInputs(const Matrix& input);
+
+    /*! \brief Run input samples through the network, update the bundle. */
     void runInputs(Bundle& bundle);
 
 public:
@@ -112,6 +115,9 @@ public:
 
 public:
     /*! \brief Train the network on the specified input and reference, return the cost. */
+    double train(const Matrix& input, const Matrix& output);
+
+    /*! \brief Train the network on the input and output activations, update the bundle. */
     void train(Bundle& bundle);
 
 public:

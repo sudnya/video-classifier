@@ -8,6 +8,7 @@
 #include <lucius/network/interface/NeuralNetwork.h>
 
 #include <lucius/network/interface/Layer.h>
+#include <lucius/network/interface/Bundle.h>
 
 #include <lucius/model/interface/ModelBuilder.h>
 #include <lucius/model/interface/Model.h>
@@ -274,9 +275,16 @@ static bool gradientCheck(NeuralNetwork& network, const Matrix& input, const Mat
     size_t layerId  = 0;
     size_t matrixId = 0;
 
-    MatrixVector gradient;
+    Bundle bundle(
+    {
+        std::make_pair("inputActivations",     MatrixVector({input})),
+        std::make_pair("referenceActivations", MatrixVector({reference}))
+    });
 
-    double cost = network.getCostAndGradient(gradient, input, reference);
+    network.getCostAndGradient(bundle);
+
+    MatrixVector& gradient = bundle["gradients"].get<MatrixVector>();
+    double cost = bundle["cost"].get<double>();
 
     for(auto& layer : network)
     {
@@ -288,7 +296,9 @@ static bool gradientCheck(NeuralNetwork& network, const Matrix& input, const Mat
             {
                 weight += epsilon;
 
-                double newCost = network.getCost(input, reference);
+                network.getCost(bundle);
+
+                double newCost = bundle["cost"].get<double>();
 
                 weight -= epsilon;
 

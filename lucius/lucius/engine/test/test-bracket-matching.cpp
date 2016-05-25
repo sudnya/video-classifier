@@ -17,11 +17,13 @@
 #include <lucius/network/interface/LayerFactory.h>
 #include <lucius/network/interface/Layer.h>
 #include <lucius/network/interface/CostFunctionFactory.h>
+#include <lucius/network/interface/Bundle.h>
 
 #include <lucius/input/interface/InputDataProducer.h>
 
 #include <lucius/matrix/interface/RandomOperations.h>
 #include <lucius/matrix/interface/Matrix.h>
+#include <lucius/matrix/interface/MatrixVector.h>
 #include <lucius/matrix/interface/MatrixOperations.h>
 
 #include <lucius/util/interface/ArgumentParser.h>
@@ -31,6 +33,7 @@
 typedef lucius::network::NeuralNetwork NeuralNetwork;
 typedef lucius::network::LayerFactory LayerFactory;
 typedef lucius::matrix::Matrix Matrix;
+typedef lucius::matrix::MatrixVector MatrixVector;
 typedef lucius::matrix::Dimension Dimension;
 typedef lucius::matrix::SinglePrecision SinglePrecision;
 typedef lucius::model::Model Model;
@@ -75,7 +78,7 @@ public:
         reset();
     }
 
-    virtual InputAndReferencePair pop()
+    virtual Bundle pop()
     {
         Matrix sample    = zeros({6, getBatchSize(), _sequenceLength}, SinglePrecision());
         Matrix reference = zeros({6, getBatchSize(), _sequenceLength}, SinglePrecision());
@@ -163,7 +166,8 @@ public:
             ++_sampleIndex;
         }
 
-        return {sample, reference};
+        return Bundle({std::make_pair("inputActivations", MatrixVector({sample})),
+            std::make_pair("referenceActivations", reference)});
     }
 
     virtual bool empty() const
