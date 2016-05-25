@@ -147,7 +147,11 @@ public:
 public:
     size_t getUniqueSampleCount()
     {
-        return std::min(_producer->getMaximumSamplesToRun(), _audio.size());
+        size_t samples = std::min(_producer->getMaximumSamplesToRun(), _audio.size());
+
+        size_t remainder = samples % _producer->getBatchSize();
+
+        return samples - remainder;
     }
 
 public:
