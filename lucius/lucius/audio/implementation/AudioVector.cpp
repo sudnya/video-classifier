@@ -155,6 +155,11 @@ AudioVector::LabelVector AudioVector::getReferenceLabels(
         {
             auto label = (*this)[audioId].getLabelForSample(timestep * frameSize);
 
+            if(label == (*this)[audioId].label())
+            {
+                break;
+            }
+
             if(labelMap.count(label) == 0)
             {
                 throw std::runtime_error("Audio sample contains invalid label '" + label + "'");

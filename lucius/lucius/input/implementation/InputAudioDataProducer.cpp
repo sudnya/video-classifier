@@ -241,6 +241,7 @@ private:
 
                 auto audioGraphemes = _toGraphemes(audio.label());
                 _applyGraphemesToRange(audio, 0, audioGraphemes.size(), audioGraphemes);
+                audio.setDefaultLabel("");
 
                 batch.push_back(audio);
             }
@@ -328,6 +329,7 @@ private:
 
             auto audioGraphemes = _toGraphemes(audio.label());
             _applyGraphemesToRange(result, 0, audioGraphemes.size(), audioGraphemes);
+            result.setDefaultLabel("");
 
             return result;
         }
@@ -362,6 +364,7 @@ private:
                 noiseGraphemes.size() + audioGraphemes.size(), audioGraphemes);
             _applyGraphemesToRange(result, noiseGraphemes.size() + audioGraphemes.size(),
                 (result.size() - frameSize)/frameSize, noiseGraphemes);
+            result.setDefaultLabel("");
         }
         else
         {
