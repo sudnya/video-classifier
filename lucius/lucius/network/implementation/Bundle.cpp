@@ -36,6 +36,11 @@ const util::Any& Bundle::operator[](const std::string& key) const
     return value->second;
 }
 
+bool Bundle::contains(const std::string& key) const
+{
+    return _data.count(key) != 0;
+}
+
 size_t Bundle::size() const
 {
     return _data.size();

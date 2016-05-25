@@ -1,5 +1,8 @@
 #pragma once
 
+// Standard Library Includes
+#include <vector>
+
 // Forward Declarations
 namespace lucius { namespace matrix { class Matrix;    } }
 namespace lucius { namespace matrix { class Operation; } }
@@ -30,6 +33,10 @@ void reverseRecurrentGradients(Matrix& gradients, const Matrix& inputs,
     const Matrix& deltas, const RecurrentTimeDirection& d);
 Matrix reverseRecurrentGradients(const Matrix& inputs, const Matrix& deltas,
     const RecurrentTimeDirection& d);
+
+typedef std::vector<size_t> IndexVector;
+
+void recurrentZeroEnds(Matrix& activations, const IndexVector& lengths);
 
 
 }

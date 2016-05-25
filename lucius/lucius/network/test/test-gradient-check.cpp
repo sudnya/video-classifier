@@ -22,6 +22,7 @@
 #include <lucius/matrix/interface/Operation.h>
 #include <lucius/matrix/interface/RandomOperations.h>
 #include <lucius/matrix/interface/RecurrentOperations.h>
+#include <lucius/matrix/interface/CTCOperations.h>
 
 #include <lucius/util/interface/debug.h>
 #include <lucius/util/interface/memory.h>
@@ -45,6 +46,8 @@ namespace network
 typedef matrix::Matrix Matrix;
 typedef matrix::Dimension Dimension;
 typedef matrix::MatrixVector MatrixVector;
+typedef matrix::IndexVector IndexVector;
+typedef matrix::LabelVector LabelVector;
 typedef matrix::DoublePrecision DoublePrecision;
 
 static NeuralNetwork createFeedForwardFullyConnectedNetwork(
@@ -128,8 +131,6 @@ static NeuralNetwork createFeedForwardFullyConnectedSoftmaxLayerNetwork(
     {
         network.addLayer(std::make_unique<FeedForwardLayer>(layerSize,
             layerSize, DoublePrecision()));
-        //network.back()->setActivationFunction(
-        //    ActivationFunctionFactory::create("SigmoidActivationFunction"));
     }
 
     network.addLayer(std::make_unique<SoftmaxLayer>(
@@ -171,7 +172,8 @@ static NeuralNetwork createRecurrentNetwork(size_t layerSize, size_t layerCount)
 
     for(size_t layer = 0; layer < layerCount; ++layer)
     {
-        network.addLayer(std::make_unique<RecurrentLayer>(layerSize, 1, matrix::RECURRENT_FORWARD_TIME, DoublePrecision()));
+        network.addLayer(std::make_unique<RecurrentLayer>(layerSize, 1,
+            matrix::RECURRENT_FORWARD_TIME, DoublePrecision()));
         network.back()->setActivationFunction(
             ActivationFunctionFactory::create("SigmoidActivationFunction"));
     }
@@ -187,8 +189,10 @@ static NeuralNetwork createBidirectionalRecurrentNetwork(size_t layerSize, size_
 
     for(size_t layer = 0; layer < layerCount; ++layer)
     {
-        network.addLayer(std::make_unique<BidirectionalRecurrentLayer>(layerSize, 1, DoublePrecision()));
-        network.back()->setActivationFunction(ActivationFunctionFactory::create("SigmoidActivationFunction"));
+        network.addLayer(std::make_unique<BidirectionalRecurrentLayer>(
+            layerSize, 1, DoublePrecision()));
+        network.back()->setActivationFunction(
+            ActivationFunctionFactory::create("SigmoidActivationFunction"));
     }
 
     network.initialize();
@@ -285,7 +289,7 @@ static double getDifference(double difference, double total)
     return difference / total;
 }
 
-static bool gradientCheck(NeuralNetwork& network, const Matrix& input, const Matrix& reference,
+static bool gradientCheck(NeuralNetwork& network, Bundle& bundle,
     const double epsilon = 1.0e-5)
 {
     double total = 0.0;
@@ -293,12 +297,6 @@ static bool gradientCheck(NeuralNetwork& network, const Matrix& input, const Mat
 
     size_t layerId  = 0;
     size_t matrixId = 0;
-
-    Bundle bundle(
-    {
-        std::make_pair("inputActivations",     MatrixVector({input})),
-        std::make_pair("referenceActivations", MatrixVector({reference}))
-    });
 
     network.getCostAndGradient(bundle);
 
@@ -364,7 +362,12 @@ static bool gradientCheck(NeuralNetwork& network)
     auto input     = generateInput(network);
     auto reference = generateReference(network);
 
-    return gradientCheck(network, input, reference);
+    Bundle bundle(
+        std::make_pair("inputActivations",     MatrixVector({input})),
+        std::make_pair("referenceActivations", MatrixVector({reference}))
+    );
+
+    return gradientCheck(network, bundle);
 }
 
 static bool gradientCheckWithBatchSize(NeuralNetwork& network, size_t batchSize)
@@ -372,7 +375,12 @@ static bool gradientCheckWithBatchSize(NeuralNetwork& network, size_t batchSize)
     auto input     = generateInputWithBatchSize(network, batchSize);
     auto reference = generateReferenceWithBatchSize(network, batchSize);
 
-    return gradientCheck(network, input, reference);
+    Bundle bundle(
+        std::make_pair("inputActivations",     MatrixVector({input})),
+        std::make_pair("referenceActivations", MatrixVector({reference}))
+    );
+
+    return gradientCheck(network, bundle);
 }
 
 static bool gradientCheckOneHot(NeuralNetwork& network)
@@ -380,7 +388,12 @@ static bool gradientCheckOneHot(NeuralNetwork& network)
     auto input     = generateInput(network);
     auto reference = generateOneHotReference(network);
 
-    return gradientCheck(network, input, reference);
+    Bundle bundle(
+        std::make_pair("inputActivations",     MatrixVector({input})),
+        std::make_pair("referenceActivations", MatrixVector({reference}))
+    );
+
+    return gradientCheck(network, bundle);
 }
 
 static bool gradientCheckTimeSeries(NeuralNetwork& network, size_t timesteps)
@@ -388,15 +401,71 @@ static bool gradientCheckTimeSeries(NeuralNetwork& network, size_t timesteps)
     auto input     = generateInputWithTimeSeries(network, timesteps);
     auto reference = generateReferenceWithTimeSeries(network, timesteps);
 
-    return gradientCheck(network, input, reference);
+    Bundle bundle(
+        std::make_pair("inputActivations",     MatrixVector({input})),
+        std::make_pair("referenceActivations", MatrixVector({reference}))
+    );
+
+    return gradientCheck(network, bundle);
+}
+
+static size_t generateRandomInteger(size_t bound)
+{
+    Matrix position = apply(rand({1}, DoublePrecision()),
+        lucius::matrix::Multiply(bound));
+
+    return position[0];
+}
+
+static IndexVector generateInputTimesteps(size_t timestepsPerSample, size_t miniBatchSize)
+{
+    IndexVector timesteps;
+
+    for(size_t miniBatch = 0; miniBatch != miniBatchSize; ++miniBatch)
+    {
+        size_t length = timestepsPerSample / 2 + generateRandomInteger(timestepsPerSample / 2);
+
+        timesteps.push_back(length);
+    }
+
+    return timesteps;
+}
+
+static LabelVector generateReferenceLabels(size_t networkOutputs, size_t timesteps,
+    size_t miniBatchSize)
+{
+    LabelVector labels;
+
+    for(size_t miniBatch = 0; miniBatch < miniBatchSize; ++miniBatch)
+    {
+        IndexVector label;
+
+        size_t length = generateRandomInteger(timesteps / 2);
+
+        for(size_t i = 0; i < length; ++i)
+        {
+            label.push_back(1 + generateRandomInteger(networkOutputs - 1));
+        }
+
+        labels.push_back(label);
+    }
+
+    return labels;
 }
 
 static bool gradientCheckCtc(NeuralNetwork& network, size_t timesteps)
 {
-    auto input     = generateInputWithTimeSeries(network, timesteps);
-    auto reference = generateOneHotReference(network, timesteps/2);
+    auto input = generateInputWithTimeSeries(network, timesteps);
+    auto inputTimesteps = generateInputTimesteps(timesteps, input.size()[1]);
+    auto labels = generateReferenceLabels(network.getOutputCount(), timesteps, input.size()[1]);
 
-    return gradientCheck(network, input, reference, 1.0e-3);
+    Bundle bundle(
+        std::make_pair("inputActivations", MatrixVector({input})),
+        std::make_pair("inputTimesteps",   inputTimesteps),
+        std::make_pair("referenceLabels",  labels)
+    );
+
+    return gradientCheck(network, bundle, 1.0e-3);
 }
 
 static bool runTestFeedForwardFullyConnected(size_t layerSize, size_t layerCount, bool seed)

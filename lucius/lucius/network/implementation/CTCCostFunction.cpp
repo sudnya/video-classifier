@@ -27,6 +27,9 @@ namespace network
 {
 
 typedef matrix::Matrix Matrix;
+typedef matrix::MatrixVector MatrixVector;
+typedef matrix::IndexVector IndexVector;
+typedef matrix::LabelVector LabelVector;
 
 CTCCostFunction::~CTCCostFunction()
 {
@@ -35,33 +38,34 @@ CTCCostFunction::~CTCCostFunction()
 
 void CTCCostFunction::computeCost(Bundle& bundle) const
 {
-    auto& output    = bundle["outputActivations"].get<matrix::MatrixVector>().front();
-    auto& reference = bundle["referenceActivations"].get<matrix::MatrixVector>().front();
+    auto& output    = bundle["outputActivations"].get<MatrixVector>().front();
+    auto& labels    = bundle["referenceLabels"].get<LabelVector>();
+    auto& timesteps = bundle["inputTimesteps"].get<IndexVector>();
 
     size_t miniBatchSize = output.size()[output.size().size() - 2];
 
     Matrix cost({miniBatchSize}, output.precision());
     Matrix fakeGradients;
 
-    matrix::computeCtc(cost, fakeGradients, output, reference);
+    matrix::computeCtc(cost, fakeGradients, output, labels, timesteps);
 
     bundle["costs"] = apply(cost, matrix::Divide(miniBatchSize));
 }
 
 void CTCCostFunction::computeDelta(Bundle& bundle) const
 {
-    auto& output    = bundle["outputActivations"].get<matrix::MatrixVector>().front();
-    auto& reference = bundle["referenceActivations"].get<matrix::MatrixVector>().front();
+    auto& output    = bundle["outputActivations"].get<MatrixVector>().front();
+    auto& labels    = bundle["referenceLabels"].get<LabelVector>();
+    auto& timesteps = bundle["inputTimesteps"].get<IndexVector>();
 
     size_t miniBatchSize = output.size()[output.size().size() - 2];
 
     Matrix cost({miniBatchSize}, output.precision());
     Matrix gradients = zeros(output.size(), output.precision());
 
-    matrix::computeCtc(cost, gradients, output, reference);
+    matrix::computeCtc(cost, gradients, output, labels, timesteps);
 
-    bundle["outputDeltas"] = matrix::MatrixVector(
-        {apply(gradients, matrix::Divide(miniBatchSize))});
+    bundle["outputDeltas"] = MatrixVector({apply(gradients, matrix::Divide(miniBatchSize))});
 }
 
 CostFunction* CTCCostFunction::clone() const

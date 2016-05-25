@@ -187,7 +187,7 @@ void Audio::setUnpaddedLength(size_t position)
     _unpaddedSequenceLength = position;
 }
 
-size_t Audio::getUnpaddedLength()
+size_t Audio::getUnpaddedLength() const
 {
     return _unpaddedSequenceLength;
 }

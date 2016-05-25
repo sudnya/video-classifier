@@ -189,10 +189,9 @@ static bool gradientCheck(NeuralNetwork& network, const Matrix& input, const Mat
     size_t matrixId = 0;
 
     Bundle bundle(
-    {
         std::make_pair("inputActivations",     MatrixVector({input})),
         std::make_pair("referenceActivations", MatrixVector({reference}))
-    });
+    );
 
     network.getCostAndGradient(bundle);
 

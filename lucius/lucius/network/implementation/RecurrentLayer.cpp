@@ -37,6 +37,7 @@ namespace network
 
 typedef matrix::Matrix Matrix;
 typedef matrix::MatrixVector MatrixVector;
+typedef matrix::IndexVector IndexVector;
 typedef matrix::Dimension Dimension;
 
 RecurrentLayer::RecurrentLayer()
@@ -204,7 +205,10 @@ void RecurrentLayer::runForwardImplementation(Bundle& bundle)
 
     auto activation = broadcast(unbiasedOutput, _bias, {}, matrix::Add());
 
-    saveMatrix("forwardOutputActivations", copy(activation));
+    if(_direction == matrix::RECURRENT_REVERSE_TIME && bundle.contains("inputTimesteps"))
+    {
+        recurrentZeroEnds(activation, bundle["inputTimesteps"].get<IndexVector>());
+    }
 
     if(util::isLogEnabled("RecurrentLayer::Detail"))
     {
@@ -313,8 +317,6 @@ void RecurrentLayer::runReverseImplementation(Bundle& bundle)
             << recurrentWeightGradients.debugString();
     }
 
-    auto forwardOutputActivations = loadMatrix("forwardOutputActivations");
-
     auto unfoldedInputActivations = loadMatrix("inputActivations");
 
     size_t activationCount = unfoldedInputActivations.size()[0];
@@ -376,20 +378,7 @@ void RecurrentLayer::runReverseImplementation(Bundle& bundle)
     // compute deltas for previous layer
     auto deltasPropagatedReverse = gemm(_forwardWeights, true, forwardDeltas, false);
 
-    Matrix previousLayerDeltas;
-
-    if(getActivationCostFunction() != nullptr)
-    {
-        auto activationCostFunctionGradient =
-            getActivationCostFunction()->getGradient(forwardOutputActivations);
-
-        apply(previousLayerDeltas, deltasPropagatedReverse,
-            activationCostFunctionGradient, matrix::Multiply());
-    }
-    else
-    {
-        previousLayerDeltas = std::move(deltasPropagatedReverse);
-    }
+    Matrix previousLayerDeltas = std::move(deltasPropagatedReverse);
 
     if(util::isLogEnabled("RecurrentLayer"))
     {

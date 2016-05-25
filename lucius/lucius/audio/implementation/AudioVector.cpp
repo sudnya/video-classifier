@@ -133,43 +133,38 @@ AudioVector::Matrix AudioVector::getFeatureMatrixForFrameSize(size_t frameSize) 
     return features;
 }
 
-AudioVector::Matrix AudioVector::getReference(const util::StringVector& labels,
-    size_t frameSize) const
+AudioVector::LabelVector AudioVector::getReferenceLabels(
+    const util::StringVector& labels, size_t frameSize) const
 {
-    size_t timesteps = (samples() + frameSize - 1) / frameSize;
+    LabelVector reference;
 
-    Matrix reference(matrix::Dimension({labels.size(), size(), timesteps}));
+    std::map<std::string, size_t> labelMap;
 
-    util::log("AudioVector") << "Generating reference audio:\n";
-
-    for(size_t timestep = 0; timestep != timesteps; ++timestep)
+    for(auto label = labels.begin(); label != labels.end(); ++label)
     {
-        util::log("AudioVector") << " For timestep " << timestep << "\n";
-        size_t sample = timestep * frameSize;
-
-        for(size_t audioId = 0; audioId != size(); ++audioId)
-        {
-            util::log("AudioVector") << "  For audio sample " << audioId << " with label '"
-                << (*this)[audioId].getLabelForSample(sample) << "'\n";
-
-            for(size_t outputNeuron = 0; outputNeuron != labels.size(); ++outputNeuron)
-            {
-                util::log("AudioVector") << "   For output neuron" << outputNeuron
-                    << " with label '" << labels[outputNeuron] << "'\n";
-
-                if((*this)[audioId].getLabelForSample(sample) == labels[outputNeuron])
-                {
-                    reference(outputNeuron, audioId, timestep) = 1.0;
-                }
-                else
-                {
-                    reference(outputNeuron, audioId, timestep) = 0.0;
-                }
-            }
-        }
+        labelMap[*label] = std::distance(labels.begin(), label);
     }
 
-    util::log("AudioVector") << " Generated matrix: " << reference.toString() << "\n";
+    for(size_t audioId = 0; audioId != size(); ++audioId)
+    {
+        std::vector<size_t> audioLabels;
+
+        size_t timesteps = ((*this)[audioId].getUnpaddedLength() + frameSize - 1) / frameSize;
+
+        for(size_t timestep = 0; timestep != timesteps; ++timestep)
+        {
+            auto label = (*this)[audioId].getLabelForSample(timestep * frameSize);
+
+            if(labelMap.count(label) == 0)
+            {
+                throw std::runtime_error("Audio sample contains invalid label '" + label + "'");
+            }
+
+            audioLabels.push_back(labelMap[label]);
+        }
+
+        reference.push_back(audioLabels);
+    }
 
     return reference;
 

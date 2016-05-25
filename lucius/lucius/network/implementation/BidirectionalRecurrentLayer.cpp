@@ -37,6 +37,7 @@ namespace network
 
 typedef matrix::Matrix Matrix;
 typedef matrix::MatrixVector MatrixVector;
+typedef matrix::IndexVector IndexVector;
 typedef matrix::Dimension Dimension;
 
 BidirectionalRecurrentLayer::BidirectionalRecurrentLayer()
@@ -214,8 +215,6 @@ void BidirectionalRecurrentLayer::runForwardImplementation(Bundle& bundle)
 
     auto activation = broadcast(unbiasedOutput, _bias, {}, matrix::Add());
 
-    saveMatrix("forwardOutputActivations", copy(activation));
-
     if(util::isLogEnabled("BidirectionalRecurrentLayer::Detail"))
     {
         util::log("BidirectionalRecurrentLayer::Detail") << "  before-recurrent activation: "
@@ -236,6 +235,11 @@ void BidirectionalRecurrentLayer::runForwardImplementation(Bundle& bundle)
         getActivationFunction()->getOperation());
 
     saveMatrix("forwardOutputActivations", activation);
+
+    if(bundle.contains("inputTimesteps"))
+    {
+        recurrentZeroEnds(reverseActivation, bundle["inputTimesteps"].get<IndexVector>());
+    }
 
     forwardRecurrentActivations(reverseActivation, _recurrentReverseWeights,
         lucius::matrix::RECURRENT_REVERSE_TIME,
@@ -355,8 +359,6 @@ void BidirectionalRecurrentLayer::runReverseImplementation(Bundle& bundle)
             << recurrentReverseWeightGradients.debugString();
     }
 
-    auto forwardOutputActivations = loadMatrix("forwardOutputActivations");
-
     auto unfoldedInputActivations = loadMatrix("inputActivations");
 
     size_t activationCount = unfoldedInputActivations.size()[0];
@@ -422,20 +424,7 @@ void BidirectionalRecurrentLayer::runReverseImplementation(Bundle& bundle)
     // compute deltas for previous layer
     auto deltasPropagatedReverse = gemm(_forwardWeights, true, forwardDeltas, false);
 
-    Matrix previousLayerDeltas;
-
-    if(getActivationCostFunction() != nullptr)
-    {
-        auto activationCostFunctionGradient =
-            getActivationCostFunction()->getGradient(forwardOutputActivations);
-
-        apply(previousLayerDeltas, deltasPropagatedReverse,
-            activationCostFunctionGradient, matrix::Multiply());
-    }
-    else
-    {
-        previousLayerDeltas = std::move(deltasPropagatedReverse);
-    }
+    Matrix previousLayerDeltas = std::move(deltasPropagatedReverse);
 
     if(util::isLogEnabled("BidirectionalRecurrentLayer"))
     {

@@ -39,6 +39,20 @@ typedef audio::AudioVector AudioVector;
 typedef network::Bundle    Bundle;
 typedef matrix::MatrixVector MatrixVector;
 
+typedef std::vector<size_t> IndexVector;
+
+static IndexVector getInputLengths(const AudioVector& batch, size_t frameSize)
+{
+    IndexVector result;
+
+    for(auto& audio : batch)
+    {
+        result.push_back((audio.getUnpaddedLength() + frameSize - 1) / frameSize);
+    }
+
+    return result;
+}
+
 class InputAudioDataProducerImplementation
 {
 public:
@@ -132,7 +146,7 @@ public:
 
         auto input = batch.getFeatureMatrixForFrameSize(audioDimension[0]);
 
-        auto reference = batch.getReference(_producer->getOutputLabels(), audioDimension[0]);
+        auto reference = batch.getReferenceLabels(_producer->getOutputLabels(), audioDimension[0]);
 
         if(_producer->getStandardizeInput())
         {
@@ -143,8 +157,11 @@ public:
             <<  "' audio samples (" << input.size()[2] << " timesteps), "
             << _remainingSamples << " remaining in this epoch.\n";
 
-        return Bundle(std::make_pair("inputActivations", MatrixVector({input})),
-            std::make_pair("referenceActivations", reference));
+        return Bundle(
+            std::make_pair("inputActivations", MatrixVector({input})),
+            std::make_pair("inputTimesteps", getInputLengths(batch, audioDimension[0])),
+            std::make_pair("referenceLabels", reference)
+        );
     }
 
     bool empty() const
@@ -220,8 +237,6 @@ private:
 
                 auto audioGraphemes = _toGraphemes(audio.label());
                 _applyGraphemesToRange(audio, 0, audioGraphemes.size(), audioGraphemes);
-
-                _setSpecialGraphemes(audio, audioGraphemes.size());
 
                 batch.push_back(audio);
             }
@@ -310,8 +325,6 @@ private:
             auto audioGraphemes = _toGraphemes(audio.label());
             _applyGraphemesToRange(result, 0, audioGraphemes.size(), audioGraphemes);
 
-            _setSpecialGraphemes(result, audioGraphemes.size());
-
             return result;
         }
 
@@ -345,8 +358,6 @@ private:
                 noiseGraphemes.size() + audioGraphemes.size(), audioGraphemes);
             _applyGraphemesToRange(result, noiseGraphemes.size() + audioGraphemes.size(),
                 (result.size() - frameSize)/frameSize, noiseGraphemes);
-
-            _setSpecialGraphemes(result, noiseGraphemes.size() + audioGraphemes.size());
         }
         else
         {
@@ -423,27 +434,6 @@ private:
         }
 
         return graphemes;
-    }
-
-    void _setSpecialGraphemes(Audio& result, size_t sequenceLength)
-    {
-        result.setDefaultLabel(*_graphemes.begin());
-
-        size_t frameSize = _getFrameSize();
-
-        size_t endAudioFrame = result.getUnpaddedLength() / frameSize;
-
-        size_t beginAudioEnd = endAudioFrame * frameSize;
-        size_t endAudioEnd   = std::min(result.size(), (endAudioFrame + 1) * frameSize);
-
-        result.addLabel(beginAudioEnd, endAudioEnd, _delimiterGrapheme);
-
-        size_t endLabelFrame = sequenceLength + 1;
-
-        size_t beginLabelEnd = endLabelFrame * frameSize;
-        size_t endLabelEnd   = std::min(result.size(), (endLabelFrame + 1) * frameSize);
-
-        result.addLabel(beginLabelEnd, endLabelEnd, _delimiterGrapheme);
     }
 
     bool _usesGraphemes() const
@@ -541,8 +531,6 @@ private:
             _graphemes.insert(_producer->getModel()->getOutputLabel(output));
         }
 
-        _delimiterGrapheme = _producer->getModel()->getAttribute<std::string>("DelimiterGrapheme");
-
         _sortAudioByLength();
     }
 
@@ -570,7 +558,6 @@ private:
 
 private:
     StringSet _graphemes;
-    std::string _delimiterGrapheme;
 
 private:
     std::default_random_engine _generator;

@@ -25,6 +25,7 @@
 #include <lucius/matrix/interface/Matrix.h>
 #include <lucius/matrix/interface/MatrixVector.h>
 #include <lucius/matrix/interface/MatrixOperations.h>
+#include <lucius/matrix/interface/CTCOperations.h>
 
 #include <lucius/util/interface/ArgumentParser.h>
 #include <lucius/util/interface/Knobs.h>
@@ -34,6 +35,8 @@ typedef lucius::network::NeuralNetwork NeuralNetwork;
 typedef lucius::network::LayerFactory LayerFactory;
 typedef lucius::matrix::Matrix Matrix;
 typedef lucius::matrix::MatrixVector MatrixVector;
+typedef lucius::matrix::IndexVector IndexVector;
+typedef lucius::matrix::LabelVector LabelVector;
 typedef lucius::matrix::Dimension Dimension;
 typedef lucius::matrix::SinglePrecision SinglePrecision;
 typedef lucius::model::Model Model;
@@ -80,19 +83,28 @@ public:
 
     virtual Bundle pop()
     {
-        Matrix sample    = zeros({6, getBatchSize(), _sequenceLength}, SinglePrecision());
-        Matrix reference = zeros({6, getBatchSize(), _sequenceLength}, SinglePrecision());
+        Matrix sample = zeros({5, getBatchSize(), _sequenceLength}, SinglePrecision());
+
+        IndexVector timestepsInSample;
+        LabelVector labels;
 
         for(size_t batchSample = 0; batchSample < getBatchSize(); ++batchSample)
         {
             size_t partition = _sequenceLength / 3;
+
+            std::uniform_int_distribution<size_t> timestepDistribution(
+                partition + 1, _sequenceLength);
+
+            timestepsInSample.push_back(timestepDistribution(engine));
+
+            labels.push_back(IndexVector());
 
             // fill in the sample
             size_t opens    = 0;
             size_t closes   = 0;
             size_t anys     = 0;
 
-            std::discrete_distribution<size_t> distribution({1, 1, 1, 0, 0});
+            std::discrete_distribution<size_t> distribution({1, 1, 1, 0});
 
             assert(_sequenceLength > 3);
 
@@ -104,8 +116,8 @@ public:
                 {
                 case 0:
                 {
-                    sample   (1, batchSample, timestep) = 1.0f;
-                    reference(1, batchSample, timestep) = 1.0f;
+                    sample(1, batchSample, timestep) = 1.0f;
+                    labels.back().push_back(1);
 
                     opens += 1;
 
@@ -119,8 +131,8 @@ public:
                         break;
                     }
 
-                    sample   (2, batchSample, timestep) = 1.0f;
-                    reference(2, batchSample, timestep) = 1.0f;
+                    sample(2, batchSample, timestep) = 1.0f;
+                    labels.back().push_back(2);
 
                     closes += 1;
 
@@ -130,7 +142,7 @@ public:
                 case 2:
                 {
                     sample   (3, batchSample, timestep) = 1.0f;
-                    reference(3, batchSample, timestep) = 1.0f;
+                    labels.back().push_back(3);
 
                     anys += 1;
 
@@ -145,29 +157,28 @@ public:
                 }
             }
 
-            for(size_t timestep = partition; timestep < _sequenceLength; ++timestep)
+            for(size_t timestep = partition; timestep < timestepsInSample.back(); ++timestep)
             {
                 sample(4, batchSample, timestep) = 1.0f;
             }
 
             // fill in the reference
-            size_t hanging = (opens - closes);
+            size_t hanging = std::min(partition + (opens - closes), timestepsInSample.back());
 
-            for(size_t timestep = partition; timestep < (partition + hanging); ++timestep)
+            for(size_t timestep = partition; timestep < hanging; ++timestep)
             {
-                reference(2, batchSample, timestep) = 1.0f;
-            }
-
-            for(size_t timestep = partition + hanging; timestep < _sequenceLength; ++timestep)
-            {
-                reference(5, batchSample, timestep) = 1.0f;
+                labels.back().push_back(2);
             }
 
             ++_sampleIndex;
         }
 
-        return Bundle({std::make_pair("inputActivations", MatrixVector({sample})),
-            std::make_pair("referenceActivations", reference)});
+        return Bundle
+        ({
+            std::make_pair("inputActivations", MatrixVector({sample})),
+            std::make_pair("inputTimesteps", timestepsInSample),
+            std::make_pair("referenceLabels", labels)
+        });
     }
 
     virtual bool empty() const
@@ -236,7 +247,6 @@ static void addClassifier(Model& model, const Parameters& parameters)
     model.setOutputLabel(2, "}");
     model.setOutputLabel(3, " ");
     model.setOutputLabel(4, "UNKOWN");
-    model.setOutputLabel(5, "END");
 
     model.setNeuralNetwork("Classifier", classifier);
 

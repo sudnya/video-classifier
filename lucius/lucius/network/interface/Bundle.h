@@ -35,6 +35,9 @@ public:
     const util::Any& operator[](const std::string& key) const;
 
 public:
+    bool contains(const std::string& key) const;
+
+public:
     size_t size() const;
 
 private:

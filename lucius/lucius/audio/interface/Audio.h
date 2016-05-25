@@ -60,7 +60,7 @@ public:
 
 public:
     void setUnpaddedLength(size_t position);
-    size_t getUnpaddedLength();
+    size_t getUnpaddedLength() const;
 
 public:
     Audio slice(size_t startingSample, size_t endingSample) const;
