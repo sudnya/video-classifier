@@ -15,32 +15,24 @@ namespace lucius
 
 namespace matrix
 {
-
-Dimension convertOutputToInputCoordinate(const Dimension& output, const Dimension& input, const Dimension outputCoordinate)
-{
-    Dimension retVal = input.size();
-    auto frameSize   = input.size[0];
-    auto windowSize  = output.size[0]/frameSize;
-    
-    retVal[0] = outputCoordinate[0]%frameSize;
-    retVal[2] = outputCoordinate[2] + outputCoordinate[0]/frameSize;
-    
-    return retVal;
-}
-
 void hanningWindow(Matrix& result, const Matrix& signal, const Dimension& dimensionsToTransform, const size_t windowSize)
 {
     assert (dimensionsToTransform.size() == 1);
     auto frameSize        = signal.size()[0];
-    auto allOutputCoordinates = getAllOutputCoordinates(result);
+    auto outputFrameSize  = signal.size()[1];
+    
+    HanningGather hg(signal.size(), signal.stride(), result.size());
+    gather(result, signal, hg);
 
-    for(auto& outputCoordinate : allOutputCoordinates)
-    {
-        auto inputCoordinate = convertOutputToInputCoordinate(result.size(), signal.size(), outputCoordinate);
+    double pi = 2.0 * std::acos(0.0);
 
-        result[outputCoordinate] = input[inputCoordinate];
-    }
+    auto hanningWindow = range({outputFrameSize}, result.precision());
+    apply(hanningWindow, hanningWindow, Multiply(2*pi / (outputFrameSize - 1)));
+    apply(hanningWindow, hanningWindow, Cos());
+    apply(hanningWindow, hanningWindow, Multiply(-1/2.0));
+    apply(hanningWindow, hanningWindow, Add(1/2.0));
 
+    broadcast(result, hanningWindow, result, Multiply());
 }
 
 
