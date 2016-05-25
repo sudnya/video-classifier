@@ -433,6 +433,9 @@ LibavcodecAudioLibrary::Header LibavcodecAudioLibrary::loadAudioHeader(std::istr
     header.samples = (avFormatPtr->duration / LibavcodecLibrary::AV_TIME_BASE) *
         header.samplingRate;
 
+    LibavcodecLibrary::av_free(avioContext->buffer);
+    buffer.release();
+
     return header;
 }
 
