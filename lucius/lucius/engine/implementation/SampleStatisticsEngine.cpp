@@ -61,7 +61,7 @@ SampleStatisticsEngine::ResultVector SampleStatisticsEngine::runOnBatch(const Bu
 {
     auto& input = bundle["inputActivations"].get<matrix::MatrixVector>().front();
 
-    util::log("SimpleStatisticsEngine") << "Computing sample statistics over "
+    util::log("SampleStatisticsEngine") << "Computing sample statistics over "
         << input.size().product() <<  " elements...\n";
 
     for(auto element : input)
@@ -74,6 +74,9 @@ SampleStatisticsEngine::ResultVector SampleStatisticsEngine::runOnBatch(const Bu
 
         _sumOfSquaresOfDifferences += delta * (element - _mean);
     }
+
+    util::log("SampleStatisticsEngine") << " mean " << _mean << ", sum of squares of differences "
+        << _sumOfSquaresOfDifferences << ", samples " << _samples << "\n";
 
     return ResultVector();
 }
