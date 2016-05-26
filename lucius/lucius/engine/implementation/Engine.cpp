@@ -121,7 +121,7 @@ void Engine::runOnDataProducer(InputDataProducer& producer)
             auto& inputActivations =
                 bundle["inputActivations"].get<matrix::MatrixVector>().front();
 
-            size_t batchSize = inputActivations[inputActivations.size().size() - 2];
+            size_t batchSize = inputActivations.size()[inputActivations.size().size() - 2];
 
             auto results = runOnBatch(bundle);
 
