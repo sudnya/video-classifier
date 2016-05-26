@@ -429,9 +429,8 @@ LibavcodecAudioLibrary::Header LibavcodecAudioLibrary::loadAudioHeader(std::istr
     LibavcodecLibrary::av_codec_set_pkt_timebase(context,
         {1, static_cast<int>(LibavcodecLibrary::getSamplingRate(context))});
 
-    header.samplingRate = LibavcodecLibrary::getSamplingRate(context);
-    header.samples = (avFormatPtr->duration / LibavcodecLibrary::AV_TIME_BASE) *
-        header.samplingRate;
+    header.samplingRate = 1;
+    header.samples = (avFormatPtr->duration / LibavcodecLibrary::AV_TIME_BASE);
 
     LibavcodecLibrary::av_free(avioContext->buffer);
     buffer.release();
