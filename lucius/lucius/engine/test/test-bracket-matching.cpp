@@ -174,6 +174,8 @@ public:
             ++_sampleIndex;
         }
 
+        standardize(sample);
+
         return Bundle
         ({
             std::make_pair("inputActivations", MatrixVector({sample})),

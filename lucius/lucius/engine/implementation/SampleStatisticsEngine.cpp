@@ -30,7 +30,7 @@ namespace engine
 SampleStatisticsEngine::SampleStatisticsEngine()
 {
     setEpochs(1);
-    setStandardizeInput(true);
+    setStandardizeInput(false);
 }
 
 SampleStatisticsEngine::~SampleStatisticsEngine()

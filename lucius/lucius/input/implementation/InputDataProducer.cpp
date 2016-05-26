@@ -153,12 +153,12 @@ void InputDataProducer::standardize(Matrix& input)
     // subtract mean
     apply(input, input, matrix::Subtract(mean));
 
-    // divide by standard deviation
-    apply(input, input, matrix::Divide(standardDeviation));
-
     // truncate to three standard deviations
     apply(input, input, matrix::Minimum( 3.0 * standardDeviation));
     apply(input, input, matrix::Maximum(-3.0 * standardDeviation));
+
+    // divide by standard deviation
+    apply(input, input, matrix::Divide(standardDeviation));
 
     if(util::isLogEnabled("InputDataProducer::Detail"))
     {
