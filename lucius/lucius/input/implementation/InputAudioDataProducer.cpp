@@ -190,6 +190,11 @@ public:
 
         std::shuffle(_audio.begin(), _audio.end(), _generator);
 
+        for(auto& audio : _audio)
+        {
+            audio.cacheHeader();
+        }
+
         for(size_t begin = 0; begin < _remainingSamples; begin += _randomWindow)
         {
             size_t end = std::min(begin + _randomWindow, _remainingSamples);
