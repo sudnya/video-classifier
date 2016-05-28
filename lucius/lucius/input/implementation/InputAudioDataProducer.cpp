@@ -186,11 +186,17 @@ public:
         _nextSample       = 0;
         _nextNoiseSample  = 0;
 
+        std::shuffle(_audio.begin(), _audio.end(), _generator);
+
         for(size_t begin = 0; begin < _remainingSamples; begin += _randomWindow)
         {
             size_t end = std::min(begin + _randomWindow, _remainingSamples);
 
-            std::shuffle(_audio.begin() + begin, _audio.begin() + end, _generator);
+            std::sort(_audio.begin() + begin, _audio.begin() + end,
+                [](const Audio& left, const Audio& right)
+                {
+                    return left.duration() < right.duration();
+                });
         }
 
         std::shuffle(_noise.begin(), _noise.end(), _generator);

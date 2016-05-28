@@ -174,7 +174,10 @@ public:
             ++_sampleIndex;
         }
 
-        standardize(sample);
+        if(getStandardizeInput())
+        {
+            standardize(sample);
+        }
 
         return Bundle
         ({
