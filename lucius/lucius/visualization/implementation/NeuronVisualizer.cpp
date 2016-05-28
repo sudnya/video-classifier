@@ -268,7 +268,7 @@ static Matrix optimizeWithDerivative(double& bestCost, NeuralNetwork* network,
 
     bestCost = solver->solve(bestSoFar, costAndGradient);
 
-    bundle["inputActivations"] = MatrixVector({bestSoFar});
+    bundle["inputActivations"] = bestSoFar;
 
     network->getCost(bundle);
 
