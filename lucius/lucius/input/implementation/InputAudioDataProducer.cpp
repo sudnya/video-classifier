@@ -108,7 +108,7 @@ public:
             "InputAudioDataProducer::SpeechScaleUpper", 5.0);
 
         _randomWindow = util::KnobDatabase::getKnobValue(
-            "InputAudioDataProducer::RandomShuffleWindow", 512);
+            "InputAudioDataProducer::RandomShuffleWindow", 512.);
 
         _parseAudioDatabase();
 
@@ -131,6 +131,8 @@ public:
         }
 
         reset();
+
+        _sortAudioByLength();
 
         _initialized = true;
     }
@@ -543,8 +545,6 @@ private:
         {
             _graphemes.insert(_producer->getModel()->getOutputLabel(output));
         }
-
-        _sortAudioByLength();
     }
 
     void _sortAudioByLength()

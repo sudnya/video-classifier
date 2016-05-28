@@ -266,7 +266,7 @@ void FeedForwardLayer::runReverseImplementation(Bundle& bundle)
     }
 
     // compute gradient for the weights
-    auto samples = outputActivation.size()[1];
+    auto samples = differenceWithTime.size()[differenceWithTime.size().size() - 2];
 
     auto weightGradient = gemm(Matrix(deltas), false, 1.0 / samples, inputActivation, true);
 
