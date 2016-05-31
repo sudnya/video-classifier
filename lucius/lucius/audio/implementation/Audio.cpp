@@ -15,6 +15,7 @@
 #include <cassert>
 #include <fstream>
 #include <cstring>
+#include <cmath>
 
 namespace lucius
 {
@@ -224,6 +225,43 @@ Audio Audio::sample(size_t newFrequency) const
         size_t originalSample = std::min(sample * frequency() / newFrequency, size());
 
         result.setSample(sample, getSample(originalSample));
+    }
+
+    result.setDefaultLabel(_defaultLabel);
+
+    return result;
+}
+
+Audio Audio::powerNormalize() const
+{
+    Audio result(size(), bytesPerSample(), frequency());
+
+    size_t samples = size();
+
+    double mean = 0.0;
+    double sumOfSquaresOfDifferences = 0.0;
+    double currentSamples = 0.0;
+
+    for(size_t sample = 0; sample < samples; ++sample)
+    {
+        double value = getSample(sample);
+
+        currentSamples += 1.0;
+
+        double delta = value - mean;
+
+        mean += delta / currentSamples;
+
+        sumOfSquaresOfDifferences += delta * (value - mean);
+    }
+
+    double standardDeviation = std::sqrt(sumOfSquaresOfDifferences / (currentSamples - 1.0));
+
+    for(size_t sample = 0; sample < samples; ++sample)
+    {
+        double value = getSample(sample);
+
+        result.setSample(sample, (value - mean) / standardDeviation);
     }
 
     result.setDefaultLabel(_defaultLabel);

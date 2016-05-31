@@ -115,7 +115,8 @@ AudioVector::Matrix AudioVector::getFeatureMatrixForFrameSize(size_t frameSize) 
             auto& audio = (*this)[audioId];
 
             size_t sample  = 0;
-            size_t samples = std::min(audio.size() - timestep * frameSize, frameSize);
+            size_t samples = std::min(audio.size() -
+                std::min(audio.size(), timestep * frameSize), frameSize);
 
             for(; sample != samples; ++sample)
             {

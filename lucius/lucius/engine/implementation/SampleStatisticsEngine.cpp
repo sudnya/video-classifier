@@ -66,9 +66,9 @@ SampleStatisticsEngine::ResultVector SampleStatisticsEngine::runOnBatch(const Bu
 
     for(auto element : input)
     {
-        _samples += 1.0f;
+        _samples += 1.0;
 
-        float delta = element - _mean;
+        double delta = element - _mean;
 
         _mean = _mean + delta / _samples;
 

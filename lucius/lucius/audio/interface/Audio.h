@@ -66,6 +66,7 @@ public:
 public:
     Audio slice(size_t startingSample, size_t endingSample) const;
     Audio sample(size_t newFrequency) const;
+    Audio powerNormalize() const;
 
 public:
     std::string getLabelForSample(size_t sample) const;

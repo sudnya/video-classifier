@@ -476,6 +476,8 @@ private:
             audio = audio.sample(frequency);
         }
 
+        audio = audio.powerNormalize();
+
         audio.setUnpaddedLength(audio.size());
     }
 
