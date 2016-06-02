@@ -91,6 +91,20 @@ AudioLibraryInterface::HeaderAndData AudioLibraryInterface::loadAudio(std::istre
     return library->second->loadAudio(stream, extension);
 }
 
+AudioLibraryInterface::Header AudioLibraryInterface::loadAudioHeader(std::istream& stream,
+    const std::string& extension)
+{
+    auto library = database.libraries.find(extension);
+
+    if(library == database.libraries.end())
+    {
+        throw std::runtime_error("No audio library can support extension '" +
+            extension + "'");
+    }
+
+    return library->second->loadAudioHeader(stream, extension);
+}
+
 void AudioLibraryInterface::saveAudio(std::ostream& stream, const std::string& extension,
     const Header& header, const DataVector& data)
 {

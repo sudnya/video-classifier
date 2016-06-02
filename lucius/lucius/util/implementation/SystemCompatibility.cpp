@@ -1,7 +1,7 @@
 /*! \file SystemCompatibility.h
     \date Monday August 2, 2010
     \author Gregory Diamos <gregory.diamos@gatech.edu>
-    \brief The header file for hacked code required to assist windows 
+    \brief The header file for hacked code required to assist windows
         compilaiton
 */
 
@@ -18,14 +18,16 @@
 #elif __APPLE__
     #include <sys/types.h>
     #include <sys/sysctl.h>
+    #include <execinfo.h>
 #elif __GNUC__
     #if HAVE_GLEW
     #include <GL/glx.h>
     #endif
-    #include <unistd.h> 
+    #include <unistd.h>
     #include <sys/sysinfo.h>
     #include <cxxabi.h>
-#else 
+    #include <execinfo.h>
+#else
     #error "Unknown system/compiler (WIN32, APPLE, and GNUC are supported)."
 #endif
 
@@ -85,20 +87,20 @@ long long unsigned int getFreePhysicalMemory()
     #elif __APPLE__
 
         #if 0
-        int mib[2]; 
-        uint64_t physical_memory; 
-        size_t length; 
-        // Get the Physical memory size 
-        mib[0] = CTL_HW; 
-        mib[1] = HW_USERMEM; // HW_MEMSIZE -> physical memory 
-        length = sizeof(uint64_t); 
-        sysctl(mib, 2, &physical_memory, &length, NULL, 0); 
+        int mib[2];
+        uint64_t physical_memory;
+        size_t length;
+        // Get the Physical memory size
+        mib[0] = CTL_HW;
+        mib[1] = HW_USERMEM; // HW_MEMSIZE -> physical memory
+        length = sizeof(uint64_t);
+        sysctl(mib, 2, &physical_memory, &length, NULL, 0);
         return physical_memory;
         #else
         return (100ULL * (1ULL << 20));
         #endif
 
-            
+
     #elif __GNUC__
         return get_avphys_pages() * getpagesize();
     #endif
@@ -161,7 +163,7 @@ std::string demangleCXXString(const std::string& string)
         {
             name = string;
         }
-        
+
         return name;
     #endif
 }
@@ -174,13 +176,42 @@ std::string getEnvironmentVariable(const std::string& string)
             "Tried to access undefined environment variable '" +
             string + "'");
     }
-    
+
     return std::getenv(string.c_str());
 }
 
 bool isEnvironmentVariableDefined(const std::string& name)
 {
     return std::getenv(name.c_str()) != nullptr;
+}
+
+std::string backtrace()
+{
+    std::string result;
+
+    #if __GNUC__
+    void*  array[1024];
+    size_t size;
+
+    // get void*'s for all entries on the stack
+    size = ::backtrace(array, 1024);
+
+    // print out all the frames to stderr
+    char** data = ::backtrace_symbols(array, size);
+
+    if(data != nullptr)
+    {
+        for(size_t i = 0; i < size; ++i)
+        {
+            result += data[i];
+        }
+    }
+
+    std::free(data);
+    #else
+    #endif
+
+    return result;
 }
 
 }

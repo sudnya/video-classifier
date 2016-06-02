@@ -7,6 +7,7 @@
 // Lucius Includes
 #include <lucius/network/interface/AudioConvolutionalLayer.h>
 #include <lucius/network/interface/ConvolutionalLayer.h>
+#include <lucius/network/interface/Bundle.h>
 
 #include <lucius/matrix/interface/MatrixVector.h>
 #include <lucius/matrix/interface/Matrix.h>
@@ -111,14 +112,14 @@ static Dimension permuteDimensionsBackward(Dimension dimension)
     return selectDimensions(dimension, {0, 3, 2, 4, 1});
 }
 
-void AudioConvolutionalLayer::runForwardImplementation(MatrixVector& outputActivations,
-    const MatrixVector& inputActivations)
+void AudioConvolutionalLayer::runForwardImplementation(Bundle& bundle)
 {
-    MatrixVector storage;
+    auto& inputActivations  = bundle["inputActivations"].get<matrix::MatrixVector>();
+    auto& outputActivations = bundle["outputActivations"].get<matrix::MatrixVector>();
 
-    storage.push_back(permuteDimensionsForward(inputActivations.back()));
+    inputActivations.back() = permuteDimensionsForward(inputActivations.back());
 
-    _layer->runForwardImplementation(outputActivations, storage);
+    _layer->runForwardImplementation(bundle);
 
     outputActivations.back() = permuteDimensionsBackward(outputActivations.back());
 
@@ -134,17 +135,16 @@ void AudioConvolutionalLayer::runForwardImplementation(MatrixVector& outputActiv
     }
 }
 
-void AudioConvolutionalLayer::runReverseImplementation(MatrixVector& gradients,
-    MatrixVector& inputDeltas,
-    const MatrixVector& outputDeltas)
+void AudioConvolutionalLayer::runReverseImplementation(Bundle& bundle)
 {
+    auto& inputDeltas  = bundle["inputDeltas"].get<matrix::MatrixVector>();
+    auto& outputDeltas = bundle["outputDeltas"].get<matrix::MatrixVector>();
+
     assert(outputDeltas.size() == 1);
 
-    MatrixVector outputDeltasStorage;
+    outputDeltas.front() = permuteDimensionsForward(outputDeltas.front());
 
-    outputDeltasStorage.push_back(permuteDimensionsForward(outputDeltas.front()));
-
-    _layer->runReverseImplementation(gradients, inputDeltas, outputDeltasStorage);
+    _layer->runReverseImplementation(bundle);
 
     inputDeltas.front() = permuteDimensionsBackward(inputDeltas.front());
 }

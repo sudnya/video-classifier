@@ -51,7 +51,7 @@ public:
     Matrix getSlice(Dimension begin, Dimension end) const;
 
 private:
-    virtual ResultVector runOnBatch(Matrix&& input, Matrix&& reference);
+    virtual ResultVector runOnBatch(const Bundle& bundle);
 
     virtual bool requiresLabeledData() const;
 

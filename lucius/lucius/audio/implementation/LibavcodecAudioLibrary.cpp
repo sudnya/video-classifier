@@ -340,6 +340,104 @@ LibavcodecAudioLibrary::HeaderAndData LibavcodecAudioLibrary::loadAudio(std::ist
     return headerAndData;
 }
 
+LibavcodecAudioLibrary::Header LibavcodecAudioLibrary::loadAudioHeader(std::istream& stream,
+    const std::string& format)
+{
+    auto codecName = util::strip(format, ".");
+
+    auto* codec = LibavcodecLibrary::avcodec_find_decoder_by_name(
+        codecName.c_str());
+
+    if(codec == nullptr)
+    {
+        throw std::runtime_error("Failed to open decoder for " + format);
+    }
+
+    LibavcodecLibrary::AVCodecContextRAII context(codec);
+
+    if(context == nullptr)
+    {
+        throw std::runtime_error("Failed to allocate codec context for " + format);
+    }
+
+    auto status = LibavcodecLibrary::avcodec_open2(context, codec, nullptr);
+
+    if(status < 0)
+    {
+        throw std::runtime_error("Failed to open codec for " + format);
+    }
+
+    size_t bufferSize = LibavcodecLibrary::AUDIO_INBUF_SIZE +
+        LibavcodecLibrary::AV_INPUT_BUFFER_PADDING_SIZE;
+
+    std::unique_ptr<uint8_t, void(*)(void*)> buffer(reinterpret_cast<uint8_t*>(
+        LibavcodecLibrary::av_malloc(bufferSize)),
+        &LibavcodecLibrary::av_free);
+
+    if(!buffer)
+    {
+        throw std::runtime_error("Failed to allocate buffer.");
+    }
+
+    Header header;
+
+    std::unique_ptr<LibavcodecLibrary::AVIOContext, void(*)(void*)> avioContext(
+        LibavcodecLibrary::avio_alloc_context(
+        buffer.get(), bufferSize, 0, reinterpret_cast<void*>(static_cast<std::istream*>(&stream)),
+        &readFunction, nullptr, &seekFunction), &LibavcodecLibrary::av_free);
+
+    if(!avioContext)
+    {
+        throw std::runtime_error("Failed to allocate avio context.");
+    }
+
+    std::unique_ptr<LibavcodecLibrary::AVFormatContext,
+        void(*)(LibavcodecLibrary::AVFormatContext*)> avFormat(
+            LibavcodecLibrary::avformat_alloc_context(),
+            &LibavcodecLibrary::avformat_free_context);
+
+    if(!avFormat)
+    {
+        throw std::runtime_error("Failed to allocate avformat context.");
+    }
+
+    avFormat->pb = avioContext.get();
+
+    auto avFormatPtr = avFormat.get();
+
+    auto openStatus = LibavcodecLibrary::avformat_open_input(&avFormatPtr,
+        "invalidFilename", nullptr, nullptr);
+
+    if(openStatus < 0)
+    {
+        // the library frees the format context on error
+        avFormat.release();
+        buffer.release();
+
+        throw std::runtime_error("Failed to open avformat input with error " +
+            LibavcodecLibrary::getErrorCode(openStatus) + ".");
+    }
+
+    status = LibavcodecLibrary::avformat_find_stream_info(avFormatPtr, nullptr);
+
+    if(status < 0)
+    {
+        throw std::runtime_error("Failed to find stream info with error " +
+            LibavcodecLibrary::getErrorCode(status) + ".");
+    }
+
+    LibavcodecLibrary::av_codec_set_pkt_timebase(context,
+        {1, static_cast<int>(LibavcodecLibrary::getSamplingRate(context))});
+
+    header.samplingRate = 1;
+    header.samples = (avFormatPtr->duration / LibavcodecLibrary::AV_TIME_BASE);
+
+    LibavcodecLibrary::av_free(avioContext->buffer);
+    buffer.release();
+
+    return header;
+}
+
 static int checkSampleFormat(LibavcodecLibrary::AVCodec *codec,
     LibavcodecLibrary::AVSampleFormat format)
 {

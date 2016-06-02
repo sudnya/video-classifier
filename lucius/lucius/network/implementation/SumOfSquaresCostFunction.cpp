@@ -6,8 +6,10 @@
 
 // Lucius Includes
 #include <lucius/network/interface/SumOfSquaresCostFunction.h>
+#include <lucius/network/interface/Bundle.h>
 
 #include <lucius/matrix/interface/Matrix.h>
+#include <lucius/matrix/interface/MatrixVector.h>
 #include <lucius/matrix/interface/MatrixOperations.h>
 #include <lucius/matrix/interface/Operation.h>
 
@@ -17,23 +19,32 @@ namespace lucius
 namespace network
 {
 
+typedef matrix::MatrixVector MatrixVector;
+typedef matrix::Matrix       Matrix;
+
 SumOfSquaresCostFunction::~SumOfSquaresCostFunction()
 {
 
 }
 
-matrix::Matrix SumOfSquaresCostFunction::computeCost(const Matrix& output, const Matrix& reference) const
+void SumOfSquaresCostFunction::computeCost(Bundle& bundle) const
 {
-    auto difference = apply(output, reference, matrix::Subtract());
+    auto& output    = bundle[   "outputActivations"].get<MatrixVector>().front();
+    auto& reference = bundle["referenceActivations"].get<MatrixVector>().front();
+
+    auto difference = apply(Matrix(output), reference, matrix::Subtract());
 
     size_t samples = output.size()[output.size().size() - 2];
 
-    return apply(difference, matrix::SquareAndScale(0.5 / samples));
+    bundle["costs"] = apply(difference, matrix::SquareAndScale(0.5 / samples));
 }
 
-matrix::Matrix SumOfSquaresCostFunction::computeDelta(const Matrix& output, const Matrix& reference) const
+void SumOfSquaresCostFunction::computeDelta(Bundle& bundle) const
 {
-    return apply(output, reference, matrix::Subtract());
+    auto& output    = bundle[   "outputActivations"].get<MatrixVector>().front();
+    auto& reference = bundle["referenceActivations"].get<MatrixVector>().front();
+
+    bundle["outputDeltas"] = MatrixVector({apply(Matrix(output), reference, matrix::Subtract())});
 }
 
 CostFunction* SumOfSquaresCostFunction::clone() const

@@ -1,4 +1,4 @@
-/*    \file   InputDataProducer.h
+/*  \file   InputDataProducer.h
     \date   Saturday August 10, 2014
     \author Gregory Diamos <solusstultus@gmail.com>
     \brief  The header file for the InputDataProducer class.
@@ -10,9 +10,10 @@
 #include <lucius/util/interface/string.h>
 
 // Forward Declarations
-namespace lucius { namespace matrix { class Matrix;    } }
-namespace lucius { namespace matrix { class Dimension; } }
-namespace lucius { namespace model  { class Model;     } }
+namespace lucius { namespace network { class Bundle;    } }
+namespace lucius { namespace matrix  { class Dimension; } }
+namespace lucius { namespace matrix  { class Matrix;    } }
+namespace lucius { namespace model   { class Model;     } }
 
 // Standard Library Includes
 #include <utility>
@@ -27,9 +28,9 @@ namespace input
 class InputDataProducer
 {
 public:
-    typedef matrix::Matrix Matrix;
     typedef matrix::Dimension Dimension;
-    typedef std::pair<Matrix, Matrix> InputAndReferencePair;
+    typedef matrix::Matrix    Matrix;
+    typedef network::Bundle   Bundle;
 
 public:
     InputDataProducer();
@@ -42,9 +43,8 @@ public:
     /*! \brief Deque a set of samples from the producer.
 
         Note: the caller must ensure that the producer is not empty.
-
     */
-    virtual InputAndReferencePair pop() = 0;
+    virtual Bundle pop() = 0;
 
     /*! \brief Return true if there are no more samples. */
     virtual bool empty() const = 0;

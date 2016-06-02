@@ -9,9 +9,12 @@
 
 #include <lucius/model/interface/Model.h>
 
+#include <lucius/network/interface/Bundle.h>
+
 #include <lucius/results/interface/ResultVector.h>
 
 #include <lucius/matrix/interface/Matrix.h>
+#include <lucius/matrix/interface/MatrixVector.h>
 
 #include <lucius/util/interface/debug.h>
 
@@ -27,7 +30,7 @@ namespace engine
 SampleStatisticsEngine::SampleStatisticsEngine()
 {
     setEpochs(1);
-    setStandardizeInput(true);
+    setStandardizeInput(false);
 }
 
 SampleStatisticsEngine::~SampleStatisticsEngine()
@@ -52,25 +55,28 @@ void SampleStatisticsEngine::closeModel()
 
     getModel()->setAttribute("InputSampleMean",              _mean);
     getModel()->setAttribute("InputSampleStandardDeviation", _standardDeviation);
-
-    // TODO
-    // saveModel();
 }
 
-SampleStatisticsEngine::ResultVector SampleStatisticsEngine::runOnBatch(Matrix&& input, Matrix&& reference)
+SampleStatisticsEngine::ResultVector SampleStatisticsEngine::runOnBatch(const Bundle& bundle)
 {
-    util::log("SimpleStatisticsEngine") << "Computing sample statistics over " << input.size().product() <<  " elements...\n";
+    auto& input = bundle["inputActivations"].get<matrix::MatrixVector>().front();
+
+    util::log("SampleStatisticsEngine") << "Computing sample statistics over "
+        << input.size().product() <<  " elements...\n";
 
     for(auto element : input)
     {
-        _samples += 1.0f;
+        _samples += 1.0;
 
-        float delta = element - _mean;
+        double delta = element - _mean;
 
         _mean = _mean + delta / _samples;
 
         _sumOfSquaresOfDifferences += delta * (element - _mean);
     }
+
+    util::log("SampleStatisticsEngine") << " mean " << _mean << ", sum of squares of differences "
+        << _sumOfSquaresOfDifferences << ", samples " << _samples << "\n";
 
     return ResultVector();
 }

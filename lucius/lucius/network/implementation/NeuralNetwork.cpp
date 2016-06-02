@@ -9,6 +9,7 @@
 #include <lucius/network/interface/CostFunctionFactory.h>
 #include <lucius/network/interface/Layer.h>
 #include <lucius/network/interface/LayerFactory.h>
+#include <lucius/network/interface/Bundle.h>
 
 #include <lucius/optimizer/interface/NeuralNetworkSolver.h>
 
@@ -57,31 +58,30 @@ void NeuralNetwork::initialize()
     }
 }
 
-double NeuralNetwork::getCostAndGradient(MatrixVector& gradient, const Matrix& input,
-    const Matrix& reference)
+Bundle NeuralNetwork::getCostAndGradient(const Bundle& input)
 {
-    MatrixVector activations;
-
-    activations.push_back(input);
+    auto bundle = input;
 
     size_t weightMatrices = 0;
 
     util::log("NeuralNetwork") << " Running forward propagation of input "
-        << input.shapeString() << "\n";
+        << bundle["inputActivations"].get<MatrixVector>().front().shapeString() << "\n";
 
     for(auto layer = begin(); layer != end(); ++layer)
     {
         util::log("NeuralNetwork") << " Running forward propagation through layer "
             << std::distance(begin(), layer) << "\n";
 
-        MatrixVector outputActivations;
+        bundle["outputActivations"] = MatrixVector();
 
-        (*layer)->runForward(outputActivations, activations);
+        (*layer)->runForward(bundle);
 
-        activations = std::move(outputActivations);
+        bundle["inputActivations"] = bundle["outputActivations"];
 
         weightMatrices += (*layer)->weights().size();
     }
+
+    MatrixVector gradient;
 
     gradient.resize(weightMatrices);
 
@@ -90,34 +90,32 @@ double NeuralNetwork::getCostAndGradient(MatrixVector& gradient, const Matrix& i
         front()->setShouldComputeDeltas(false);
     }
 
-    auto costFunctionResult = getCostFunction()->computeCost(activations.back(), reference);
+    getCostFunction()->computeCost(bundle);
+    getCostFunction()->computeDelta(bundle);
 
-    auto activation = activations.rbegin();
-    auto delta      = getCostFunction()->computeDelta(*activation, reference);
+    auto costFunctionResult = bundle["costs"].get<Matrix>();
 
     util::log("NeuralNetwork") << " Running forward propagation of delta "
-        << delta.shapeString() << "\n";
-
-    MatrixVector outputDeltas;
-
-    outputDeltas.push_back(delta);
+        << bundle["outputDeltas"].get<MatrixVector>().front().shapeString() << "\n";
 
     auto gradientMatrix = gradient.rbegin();
 
-    for(auto layer = rbegin(); layer != rend(); ++layer, ++activation)
+    for(auto layer = rbegin(); layer != rend(); ++layer)
     {
-        MatrixVector grad;
-        MatrixVector inputDeltas;
+        bundle["gradients"]   = MatrixVector();
+        bundle["inputDeltas"] = MatrixVector();
 
         util::log("NeuralNetwork") << " Running reverse propagation through layer "
             << std::distance(begin(), std::next(layer).base()) << "\n";
 
-        (*layer)->runReverse(grad, inputDeltas, outputDeltas);
+        (*layer)->runReverse(bundle);
         (*layer)->clearReversePropagationData();
 
-        outputDeltas = std::move(inputDeltas);
+        bundle["outputDeltas"] = bundle["inputDeltas"];
 
-        for(auto gradMatrix = grad.rbegin(); gradMatrix != grad.rend();
+        auto gradients = bundle["gradients"].get<MatrixVector>();
+
+        for(auto gradMatrix = gradients.rbegin(); gradMatrix != gradients.rend();
             ++gradMatrix, ++gradientMatrix)
         {
             *gradientMatrix = std::move(*gradMatrix);
@@ -142,26 +140,26 @@ double NeuralNetwork::getCostAndGradient(MatrixVector& gradient, const Matrix& i
             << costFunctionResult.shapeString() << "\n";
     }
 
-    return weightCost + reduce(costFunctionResult, {}, matrix::Add())[0];
+    bundle["gradients"] = gradient;
+    bundle["cost"] = weightCost + reduce(costFunctionResult, {}, matrix::Add())[0];
+
+    return bundle;
 }
 
-double NeuralNetwork::getInputCostAndGradient(Matrix& gradient,
-    const Matrix& input, const Matrix& reference)
+Bundle NeuralNetwork::getInputCostAndGradient(const Bundle& input)
 {
-    MatrixVector activations;
-
-    activations.push_back(input);
+    auto bundle = input;
 
     for(auto layer = begin(); layer != end(); ++layer)
     {
         util::log("NeuralNetwork") << " Running forward propagation through layer "
             << std::distance(begin(), layer) << "\n";
 
-        MatrixVector outputActivations;
+        bundle["outputActivations"] = MatrixVector();
 
-        (*layer)->runForward(outputActivations, activations);
+        (*layer)->runForward(bundle);
 
-        activations = std::move(outputActivations);
+        bundle["inputActivations"] = bundle["outputActivations"];
     }
 
     if(!empty())
@@ -169,29 +167,30 @@ double NeuralNetwork::getInputCostAndGradient(Matrix& gradient,
         front()->setShouldComputeDeltas(true);
     }
 
-    auto costFunctionResult = getCostFunction()->computeCost(activations.back(), reference);
+    getCostFunction()->computeCost(bundle);
+    getCostFunction()->computeDelta(bundle);
 
-    auto activation = activations.rbegin();
-    auto delta      = getCostFunction()->computeDelta(*activation, reference);
+    auto costFunctionResult = bundle["costs"].get<Matrix>();
 
-    MatrixVector outputDeltas;
-
-    outputDeltas.push_back(delta);
-
-    for(auto layer = rbegin(); layer != rend(); ++layer, ++activation)
+    for(auto layer = rbegin(); layer != rend(); ++layer)
     {
-        MatrixVector grad;
-        MatrixVector inputDeltas;
+        bundle["gradients"]   = MatrixVector();
+        bundle["inputDeltas"] = MatrixVector();
 
-        (*layer)->runReverse(grad, inputDeltas, outputDeltas);
+        util::log("NeuralNetwork") << " Running reverse propagation through layer "
+            << std::distance(begin(), std::next(layer).base()) << "\n";
+
+        (*layer)->runReverse(bundle);
         (*layer)->clearReversePropagationData();
 
-        outputDeltas = std::move(inputDeltas);
+        bundle["outputDeltas"] = bundle["inputDeltas"];
     }
 
-    auto samples = input.size().back();
+    auto delta = bundle["inputDeltas"].get<MatrixVector>().front();
 
-    gradient = apply(delta, matrix::Multiply(1.0 / samples));
+    auto samples = delta.size()[delta.size().size() - 1] * delta.size()[delta.size().size() - 2];
+
+    bundle["inputDeltas"] = apply(delta, matrix::Multiply(1.0 / samples));
 
     auto weightCost = 0.0;
 
@@ -200,12 +199,14 @@ double NeuralNetwork::getInputCostAndGradient(Matrix& gradient,
         weightCost += layer->computeWeightCost();
     }
 
-    return weightCost + reduce(costFunctionResult, {}, matrix::Add())[0];
+    bundle["cost"] = weightCost + reduce(costFunctionResult, {}, matrix::Add())[0];
+
+    return bundle;
 }
 
-double NeuralNetwork::getCost(const Matrix& input, const Matrix& reference)
+Bundle NeuralNetwork::getCost(const Bundle& input)
 {
-    auto result = runInputs(input);
+    auto bundle = runInputs(input);
 
     float weightCost = 0.0f;
 
@@ -214,32 +215,43 @@ double NeuralNetwork::getCost(const Matrix& input, const Matrix& reference)
         weightCost += layer->computeWeightCost();
     }
 
-    return weightCost +
-        reduce(getCostFunction()->computeCost(result, reference), {}, matrix::Add())[0];
+    getCostFunction()->computeCost(bundle);
+
+    auto costFunctionResult = bundle["costs"].get<Matrix>();
+
+    bundle["cost"] = weightCost +
+        reduce(costFunctionResult, {}, matrix::Add())[0];
+
+    return bundle;
 }
 
-NeuralNetwork::Matrix NeuralNetwork::runInputs(const Matrix& m)
+Bundle NeuralNetwork::runInputs(const Bundle& input)
 {
-    MatrixVector activations;
+    auto bundle = input;
 
-    activations.push_back(m);
-
-    for (auto i = begin(); i != end(); ++i)
+    for (auto layer = begin(); layer != end(); ++layer)
     {
         util::log("NeuralNetwork") << " Running forward propagation through layer "
-            << std::distance(_layers.begin(), i) << "\n";
+            << std::distance(_layers.begin(), layer) << "\n";
 
-        MatrixVector outputActivations;
+        bundle["outputActivations"] = MatrixVector();
 
-        (*i)->runForward(outputActivations, activations);
-        (*i)->clearReversePropagationData();
+        (*layer)->runForward(bundle);
+        (*layer)->clearReversePropagationData();
 
-        activations = std::move(outputActivations);
+        bundle["inputActivations"] = bundle["outputActivations"];
     }
 
-    assert(activations.size() == 1);
+    return bundle;
+}
 
-    return activations.back();
+NeuralNetwork::Matrix NeuralNetwork::runInputs(const Matrix& input)
+{
+    Bundle inputBundle({std::make_pair("inputActivations", MatrixVector({input}))});
+
+    auto bundle = runInputs(inputBundle);
+
+    return bundle["outputActivations"].get<MatrixVector>().front();
 }
 
 void NeuralNetwork::addLayer(std::unique_ptr<Layer>&& l)
@@ -389,13 +401,26 @@ size_t NeuralNetwork::getActivationMemory() const
     return bytes;
 }
 
-double NeuralNetwork::train(const Matrix& input, const Matrix& reference)
+Bundle NeuralNetwork::train(const Bundle& bundle)
 {
-    getSolver()->setInput(&input);
-    getSolver()->setReference(&reference);
+    auto result = bundle;
+
+    getSolver()->setBundle(&result);
     getSolver()->setNetwork(this);
 
-    return getSolver()->solve();
+    result["cost"] = getSolver()->solve();
+
+    return result;
+}
+
+double NeuralNetwork::train(const Matrix& input, const Matrix& output)
+{
+    Bundle bundle({std::make_pair("inputActivations", MatrixVector({input})),
+        std::make_pair("referenceActivations", MatrixVector({output}))});
+
+    auto result = train(bundle);
+
+    return result["cost"].get<double>();
 }
 
 NeuralNetwork::iterator NeuralNetwork::begin()

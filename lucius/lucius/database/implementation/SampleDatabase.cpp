@@ -51,7 +51,6 @@ SampleDatabase::StringVector SampleDatabase::getGraphemes() const
     StringVector graphemes(_graphemes.begin(), _graphemes.end());
 
     graphemes.push_back(getDefaultGrapheme());
-    graphemes.push_back(getDelimiterGrapheme());
 
     return graphemes;
 }
@@ -59,11 +58,6 @@ SampleDatabase::StringVector SampleDatabase::getGraphemes() const
 const std::string& SampleDatabase::getDefaultGrapheme() const
 {
     return _defaultGrapheme;
-}
-
-const std::string& SampleDatabase::getDelimiterGrapheme() const
-{
-    return _delimiterGrapheme;
 }
 
 size_t SampleDatabase::getTotalLabelCount() const
@@ -173,11 +167,6 @@ void SampleDatabase::addGrapheme(const std::string& grapheme)
 void SampleDatabase::setDefaultGrapheme(const std::string& grapheme)
 {
     _defaultGrapheme = grapheme;
-}
-
-void SampleDatabase::setDelimiterGrapheme(const std::string& grapheme)
-{
-    _delimiterGrapheme = grapheme;
 }
 
 void SampleDatabase::save() const

@@ -208,6 +208,32 @@ WavAudioLibrary::HeaderAndData WavAudioLibrary::loadAudio(
     return headerAndData;
 }
 
+WavAudioLibrary::Header WavAudioLibrary::loadAudioHeader(
+    std::istream& stream, const std::string& format)
+{
+    assert(format == ".wav");
+
+    auto basePosition = stream.tellg();
+
+    auto riffHeader = loadRiffHeader(basePosition, stream);
+
+    checkRiffHeader(riffHeader);
+
+    auto formatHeader = loadFormatHeader(basePosition, stream);
+    auto dataHeader   = loadDataHeader(basePosition, stream);
+
+    Header header;
+
+    header.bytesPerSample = formatHeader.bitsPerSample / 8;
+
+    size_t sampleSize = formatHeader.channels * header.bytesPerSample;
+
+    header.samples      = dataHeader.size / (sampleSize);
+    header.samplingRate = formatHeader.samplesPerSec;
+
+    return header;
+}
+
 static ArrayWrapper toByte4Array(const std::string& string)
 {
     ArrayWrapper array;

@@ -21,10 +21,10 @@ namespace matrix
 namespace ctc
 {
 
-void convertInputVectorToMatrix(Matrix& desti, std::vector<float> src, const int alphabetSize, const int miniBatch, const int timeSteps) 
+void convertInputVectorToMatrix(Matrix& desti, std::vector<float> src, const int alphabetSize, const int miniBatch, const int timeSteps)
 {
     int counter = 0;
-    for (int i = 0; i < alphabetSize; ++i) 
+    for (int i = 0; i < alphabetSize; ++i)
     {
         for (int j = 0; j < miniBatch; ++j)
         {
@@ -38,7 +38,7 @@ void convertInputVectorToMatrix(Matrix& desti, std::vector<float> src, const int
     }
 }
 void convertReferenceVectorToMatrix(Matrix& desti, std::vector<int> labels, std::vector<int> labelLengths,
-    const int alphabetSize, const int miniBatch, const int timeSteps) 
+    const int alphabetSize, const int miniBatch, const int timeSteps)
 {
     int counter = 0;
     for (int j = 0; j < miniBatch; ++j)
@@ -55,34 +55,29 @@ void convertReferenceVectorToMatrix(Matrix& desti, std::vector<int> labels, std:
 }
 
 
-bool small_test() 
+bool small_test()
 {
     const int alphabetSize = 5;
     const int timeSteps    = 2;
     const int miniBatch    = 1;
     Matrix inputActivations(alphabetSize, miniBatch, timeSteps);
-    
+
     std::vector<float> activationVector = {0.1, 0.6, 0.1, 0.1, 0.1, 0.1, 0.1, 0.6, 0.1, 0.1};
-    convertInputVectorToMatrix(inputActivations, activationVector, alphabetSize, miniBatch, timeSteps);
-    
+    convertInputVectorToMatrix(inputActivations, activationVector, alphabetSize,
+        miniBatch, timeSteps);
+
     // Calculate the score analytically
     Matrix probs = softmax(inputActivations);
 
     // Score calculation is specific to the given activations above
     float expectedScore = probs(1, 0, 0) * probs(2, 0, 1);
-    
-    Matrix referenceCosts({1});
-    referenceCosts(0) = expectedScore;
-    
+
     Matrix costs({1});
     Matrix gradients(inputActivations.size());
-    Matrix referenceLabels = zeros(inputActivations.size(), inputActivations.precision());
-    referenceLabels(1, 0, 0) = 1.0;
-    referenceLabels(2, 0, 1) = 1.0;
-    //std::cout << "inputActivations: " << inputActivations.toString() << "\n";
-    //std::cout << "referenceLabels: " << referenceLabels.toString() << std::endl;
 
-    computeCtc(costs, gradients, inputActivations, referenceLabels);
+    //std::cout << "inputActivations: " << inputActivations.toString() << "\n";
+
+    computeCtc(costs, gradients, inputActivations, {{1, 2}}, {2});
     //std::cout << "costs: " << costs.toString();
 
     float score = costs(0);
@@ -110,20 +105,18 @@ bool inf_test() {
 
     Matrix inputActivations(alphabetSize, miniBatch, timeSteps);
     convertInputVectorToMatrix(inputActivations, activationVector, alphabetSize, miniBatch, timeSteps);
-    
+
     std::cout << inputActivations.shapeString() << std::endl;
 
     std::vector<int> sizes;
     sizes.push_back(timeSteps);
-
-    //std::vector<float> gradientsVector(alphabetSize * timeSteps);
 
     Matrix costs({1});
     Matrix gradients(inputActivations.size());
     std::vector<int> labels = genLabels(alphabetSize, labelSize);
     std::vector<int> labelSizes(1);
     labelSizes[0] = labelSize;
-    
+
     labels[0] = 2;
 
     Matrix referenceLabels = zeros(inputActivations.size(), inputActivations.precision());
@@ -131,7 +124,8 @@ bool inf_test() {
 
     std::vector<int> labelLengths = {labelSize};
 
-    computeCtc(costs, gradients, inputActivations, referenceLabels);
+    computeCtc(costs, gradients, inputActivations, {IndexVector(labels.begin(), labels.end())},
+        {timeSteps});
 
     bool status = true;
     float cost = costs(0);
@@ -139,7 +133,7 @@ bool inf_test() {
 
     for (int i = 0; i < alphabetSize * timeSteps; ++i)
         status &= !std::isnan(static_cast<float>(gradients[i]));
- 
+
     return status;
 }
 

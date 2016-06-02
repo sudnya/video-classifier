@@ -10,8 +10,9 @@
 #include <lucius/engine/interface/ClassifierEngine.h>
 #include <lucius/engine/interface/FeatureExtractorEngine.h>
 #include <lucius/engine/interface/LearnerEngine.h>
-#include <lucius/engine/interface/UnsupervisedLearnerEngine.h>
 #include <lucius/engine/interface/SampleStatisticsEngine.h>
+
+#include <lucius/util/interface/memory.h>
 
 namespace lucius
 {
@@ -19,34 +20,26 @@ namespace lucius
 namespace engine
 {
 
-Engine* EngineFactory::create(const std::string& classifierName)
+std::unique_ptr<Engine> EngineFactory::create(const std::string& classifierName)
 {
     if(classifierName == "ClassifierEngine")
     {
-        return new ClassifierEngine;
+        return std::make_unique<ClassifierEngine>();
     }
-
-    if(classifierName == "LearnerEngine")
+    else if(classifierName == "LearnerEngine")
     {
-        return new LearnerEngine;
+        return std::make_unique<LearnerEngine>();
     }
-
-    if(classifierName == "UnsupervisedLearnerEngine")
+    else if(classifierName == "FeatureExtractorEngine")
     {
-        return new UnsupervisedLearnerEngine;
+        return std::make_unique<FeatureExtractorEngine>();
     }
-
-    if(classifierName == "FeatureExtractorEngine")
+    else if(classifierName == "SampleStatisticsEngine")
     {
-        return new FeatureExtractorEngine;
+        return std::make_unique<SampleStatisticsEngine>();
     }
 
-    if(classifierName == "SampleStatisticsEngine")
-    {
-        return new SampleStatisticsEngine;
-    }
-
-    return nullptr;
+    return std::unique_ptr<Engine>();
 }
 
 }

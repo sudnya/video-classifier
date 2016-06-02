@@ -7,8 +7,11 @@
 // Lucius Includes
 #include <lucius/network/interface/CTCCostFunction.h>
 
+#include <lucius/network/interface/Bundle.h>
+
 #include <lucius/matrix/interface/CTCOperations.h>
 #include <lucius/matrix/interface/Matrix.h>
+#include <lucius/matrix/interface/MatrixVector.h>
 #include <lucius/matrix/interface/MatrixOperations.h>
 #include <lucius/matrix/interface/Operation.h>
 #include <lucius/matrix/interface/SoftmaxOperations.h>
@@ -24,34 +27,45 @@ namespace network
 {
 
 typedef matrix::Matrix Matrix;
+typedef matrix::MatrixVector MatrixVector;
+typedef matrix::IndexVector IndexVector;
+typedef matrix::LabelVector LabelVector;
 
 CTCCostFunction::~CTCCostFunction()
 {
 
 }
 
-Matrix CTCCostFunction::computeCost(const Matrix& output, const Matrix& reference) const
+void CTCCostFunction::computeCost(Bundle& bundle) const
 {
+    auto& output    = bundle["outputActivations"].get<MatrixVector>().front();
+    auto& labels    = bundle["referenceLabels"].get<LabelVector>();
+    auto& timesteps = bundle["inputTimesteps"].get<IndexVector>();
+
     size_t miniBatchSize = output.size()[output.size().size() - 2];
 
     Matrix cost({miniBatchSize}, output.precision());
     Matrix fakeGradients;
 
-    matrix::computeCtc(cost, fakeGradients, output, reference);
+    matrix::computeCtc(cost, fakeGradients, output, labels, timesteps);
 
-    return apply(cost, matrix::Divide(miniBatchSize));
+    bundle["costs"] = apply(cost, matrix::Divide(miniBatchSize));
 }
 
-Matrix CTCCostFunction::computeDelta(const Matrix& output, const Matrix& reference) const
+void CTCCostFunction::computeDelta(Bundle& bundle) const
 {
+    auto& output    = bundle["outputActivations"].get<MatrixVector>().front();
+    auto& labels    = bundle["referenceLabels"].get<LabelVector>();
+    auto& timesteps = bundle["inputTimesteps"].get<IndexVector>();
+
     size_t miniBatchSize = output.size()[output.size().size() - 2];
 
     Matrix cost({miniBatchSize}, output.precision());
     Matrix gradients = zeros(output.size(), output.precision());
 
-    matrix::computeCtc(cost, gradients, output, reference);
+    matrix::computeCtc(cost, gradients, output, labels, timesteps);
 
-    return apply(gradients, matrix::Divide(miniBatchSize));
+    bundle["outputDeltas"] = MatrixVector({apply(gradients, matrix::Divide(miniBatchSize))});
 }
 
 CostFunction* CTCCostFunction::clone() const

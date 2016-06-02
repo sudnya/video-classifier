@@ -27,7 +27,7 @@ typedef network::FeedForwardLayer FeedForwardLayer;
 typedef matrix::Matrix Matrix;
 typedef matrix::SinglePrecision SinglePrecision;
 
-network::NeuralNetwork createAndInitializeNeuralNetwork(unsigned networkSize)
+network::NeuralNetwork createAndInitializeNeuralNetwork(size_t networkSize)
 {
     network::NeuralNetwork ann;
 
@@ -44,7 +44,7 @@ network::NeuralNetwork createAndInitializeNeuralNetwork(unsigned networkSize)
     return ann;
 }
 
-Matrix generateRandomMatrix(unsigned rows, unsigned columns, std::default_random_engine& generator)
+Matrix generateRandomMatrix(size_t rows, size_t columns, std::default_random_engine& generator)
 {
     std::bernoulli_distribution distribution(0.5f);
 
@@ -76,9 +76,9 @@ Matrix matrixXor(const Matrix& inputs)
 
     Matrix output({inputs.size()[0] / 2, inputs.size()[1], 1});
 
-    for (unsigned i = 0; i < inputs.size()[1]; ++i)
+    for (size_t i = 0; i < inputs.size()[1]; ++i)
     {
-        for (unsigned j = 0; j < inputs.size()[0]/2; ++j)
+        for (size_t j = 0; j < inputs.size()[0]/2; ++j)
         {
             output(j, i) = floatXor(inputs(j * 2, i, 0), inputs(j * 2 + 1, i, 0));
         }
@@ -105,13 +105,14 @@ Matrix threshold(const Matrix& output)
     return temp;
 }
 
-void trainNeuralNetwork(network::NeuralNetwork& ann, unsigned trainingIter, std::default_random_engine& generator)
+void trainNeuralNetwork(network::NeuralNetwork& ann, size_t trainingIter,
+    std::default_random_engine& generator)
 {
-    unsigned samplesPerIter = ann.getInputCount() * 100;
+    size_t samplesPerIter = ann.getInputCount() * 100;
 
     util::log("TestClassifier") << "Starting training\n";
 
-    for(unsigned i = 0; i < trainingIter; ++i)
+    for(size_t i = 0; i < trainingIter; ++i)
     {
         // matrix is (samples) rows x (features) columns
         Matrix input = generateRandomMatrix(ann.getInputCount(), samplesPerIter, generator);
@@ -128,19 +129,20 @@ void trainNeuralNetwork(network::NeuralNetwork& ann, unsigned trainingIter, std:
 
         if(util::isLogEnabled("TestClassifier"))
         {
-            util::log("TestClassifier") << " After BackProp, output is:    " << threshold(ann.runInputs(input)).toString();
+            util::log("TestClassifier") << " After BackProp, output is:    "
+                << threshold(ann.runInputs(input)).toString();
         }
     }
 }
 
-unsigned compare(const Matrix& output, const Matrix& reference)
+size_t compare(const Matrix& output, const Matrix& reference)
 {
     assertM(output.size() == reference.size(),
         "Output and reference matrix have incompatible dimensions");
-    unsigned bitsThatMatch = 0;
-    for (unsigned i = 0; i < output.size()[0]; ++i)
+    size_t bitsThatMatch = 0;
+    for (size_t i = 0; i < output.size()[0]; ++i)
     {
-        for (unsigned j = 0; j < output.size()[1]; ++j)
+        for (size_t j = 0; j < output.size()[1]; ++j)
         {
             bool outputIsTrue    = output(i,j,0)    > 0.5f;
             bool referenceIsTrue = reference(i,j,0) > 0.5f;
@@ -153,15 +155,15 @@ unsigned compare(const Matrix& output, const Matrix& reference)
     return bitsThatMatch;
 }
 
-float classify(network::NeuralNetwork& ann, unsigned iterations, std::default_random_engine& generator)
+float classify(network::NeuralNetwork& ann, size_t iterations, std::default_random_engine& generator)
 {
     float accuracy = 0.0f;
-    unsigned correctBits = 0;
-    unsigned samplesPerIter = ann.getInputCount() * 100;
+    size_t correctBits = 0;
+    size_t samplesPerIter = ann.getInputCount() * 100;
 
     util::log("TestClassifier") << "Starting classification\n";
 
-    for(unsigned i = 0; i < iterations; ++i)
+    for(size_t i = 0; i < iterations; ++i)
     {
         // matrix is 100 rows x 1024 columns
         Matrix input = generateRandomMatrix(ann.getInputCount(), samplesPerIter, generator);
@@ -180,7 +182,7 @@ float classify(network::NeuralNetwork& ann, unsigned iterations, std::default_ra
     return accuracy;
 }
 
-void runTest(unsigned iterations, bool seed, unsigned networkSize)
+void runTest(size_t iterations, bool seed, size_t networkSize)
 {
     // Create neural network
     // 3 layers
@@ -193,7 +195,7 @@ void runTest(unsigned iterations, bool seed, unsigned networkSize)
     trainNeuralNetwork(ann, iterations, generator);
 
     // Run classifier and record accuracy
-    float accuracy = classify(ann, std::max(1U, iterations/10), generator);
+    float accuracy = classify(ann, std::max(static_cast<size_t>(1), iterations/10), generator);
 
     // Test if accuracy is greater than threshold
 
@@ -232,8 +234,8 @@ static void setupSolverParameters()
     lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::AnnealingRate", "1.000");
     lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::MaxGradNorm", "2000.0");
     lucius::util::KnobDatabase::setKnob("NesterovAcceleratedGradient::IterationsPerBatch", "10");
-    lucius::util::KnobDatabase::setKnob("GeneralDifferentiableSolver::Type", "NesterovAcceleratedGradientSolver");
-
+    lucius::util::KnobDatabase::setKnob("GeneralDifferentiableSolver::Type",
+        "NesterovAcceleratedGradientSolver");
 }
 
 int main(int argc, char** argv)
@@ -244,8 +246,8 @@ int main(int argc, char** argv)
     bool seed = false;
     std::string loggingEnabledModules;
 
-    unsigned iterations = 0;
-    unsigned networkSize = 0;
+    size_t iterations = 0;
+    size_t networkSize = 0;
 
     parser.description("A lucius nerual network sanity test.");
 

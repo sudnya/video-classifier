@@ -15,6 +15,7 @@
 #include <list>
 
 // Forward Declarations
+namespace lucius { namespace network { class Bundle;            } }
 namespace lucius { namespace model   { class Model;             } }
 namespace lucius { namespace input   { class InputDataProducer; } }
 namespace lucius { namespace results { class ResultProcessor;   } }
@@ -40,6 +41,7 @@ public:
     typedef results::ResultProcessor ResultProcessor;
     typedef results::ResultVector    ResultVector;
     typedef network::NeuralNetwork   NeuralNetwork;
+    typedef network::Bundle          Bundle;
     typedef matrix::Matrix           Matrix;
 
 public:
@@ -119,7 +121,7 @@ protected:
 
 public:
     /*! \brief Run the engine on the specified batch. */
-    virtual ResultVector runOnBatch(Matrix&& batchOfSamples, Matrix&& referenceForEachSample) = 0;
+    virtual ResultVector runOnBatch(const Bundle& bundle) = 0;
 
 private:
     Engine(const Engine&) = delete;

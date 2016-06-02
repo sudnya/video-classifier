@@ -1,7 +1,7 @@
 /*! \file SystemCompatibility.h
     \date Monday August 2, 2010
     \author Gregory Diamos <gregory.diamos@gatech.edu>
-    \brief The header file for hacked code required to assist windows 
+    \brief The header file for hacked code required to assist windows
         compilaiton
 */
 
@@ -40,6 +40,8 @@ std::string demangleCXXString(const std::string& string);
 std::string getEnvironmentVariable(const std::string& string);
 /*! \brief Is an environment variable defined? */
 bool isEnvironmentVariableDefined(const std::string& name);
+/*! \brief Print a backtrace */
+std::string backtrace();
 
 
 }

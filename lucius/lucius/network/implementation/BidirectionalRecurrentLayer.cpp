@@ -10,6 +10,7 @@
 #include <lucius/network/interface/ActivationFunction.h>
 #include <lucius/network/interface/ActivationCostFunction.h>
 #include <lucius/network/interface/WeightCostFunction.h>
+#include <lucius/network/interface/Bundle.h>
 
 #include <lucius/matrix/interface/CopyOperations.h>
 #include <lucius/matrix/interface/MatrixOperations.h>
@@ -36,6 +37,7 @@ namespace network
 
 typedef matrix::Matrix Matrix;
 typedef matrix::MatrixVector MatrixVector;
+typedef matrix::IndexVector IndexVector;
 typedef matrix::Dimension Dimension;
 
 BidirectionalRecurrentLayer::BidirectionalRecurrentLayer()
@@ -50,11 +52,15 @@ BidirectionalRecurrentLayer::BidirectionalRecurrentLayer(size_t size, size_t bat
 
 }
 
-BidirectionalRecurrentLayer::BidirectionalRecurrentLayer(size_t size, size_t batchSize, const matrix::Precision& precision)
+BidirectionalRecurrentLayer::BidirectionalRecurrentLayer(size_t size, size_t batchSize,
+    const matrix::Precision& precision)
 : _parameters(new MatrixVector({Matrix({size, size}, precision),
-    Matrix({size}, precision), Matrix({size, size}, precision), Matrix({size, size}, precision)})),
+    Matrix({size}, precision), Matrix({size, size}, precision),
+    Matrix({size, size}, precision)})),
   _forwardWeights((*_parameters)[0]), _bias((*_parameters)[1]),
-  _recurrentForwardWeights((*_parameters)[2]), _recurrentReverseWeights((*_parameters)[3]), _expectedBatchSize(batchSize)
+  _recurrentForwardWeights((*_parameters)[2]),
+  _recurrentReverseWeights((*_parameters)[3]),
+  _expectedBatchSize(batchSize)
 {
 
 }
@@ -75,7 +81,8 @@ BidirectionalRecurrentLayer::BidirectionalRecurrentLayer(const BidirectionalRecu
 
 }
 
-BidirectionalRecurrentLayer& BidirectionalRecurrentLayer::operator=(const BidirectionalRecurrentLayer& l)
+BidirectionalRecurrentLayer& BidirectionalRecurrentLayer::operator=(
+    const BidirectionalRecurrentLayer& l)
 {
     Layer::operator=(l);
 
@@ -169,9 +176,11 @@ static matrix::Matrix unfoldTimeAndBatch(const Matrix& input, size_t batchSize)
     return reshape(input, {activationCount, miniBatch, timesteps});
 }
 
-void BidirectionalRecurrentLayer::runForwardImplementation(MatrixVector& outputActivationsVector,
-    const MatrixVector& inputActivationsVector)
+void BidirectionalRecurrentLayer::runForwardImplementation(Bundle& bundle)
 {
+    auto& inputActivationsVector  = bundle[ "inputActivations"].get<matrix::MatrixVector>();
+    auto& outputActivationsVector = bundle["outputActivations"].get<matrix::MatrixVector>();
+
     assert(inputActivationsVector.size() == 1);
 
     saveMatrix("inputActivations", inputActivationsVector.back());
@@ -186,7 +195,8 @@ void BidirectionalRecurrentLayer::runForwardImplementation(MatrixVector& outputA
 
     if(util::isLogEnabled("BidirectionalRecurrentLayer::Detail"))
     {
-        util::log("BidirectionalRecurrentLayer::Detail") << "  input: " << inputActivations.debugString();
+        util::log("BidirectionalRecurrentLayer::Detail") << "  input: "
+            << inputActivations.debugString();
         util::log("BidirectionalRecurrentLayer::Detail") << "  forward-weights: "
             << _forwardWeights.debugString();
         util::log("BidirectionalRecurrentLayer::Detail") << "  recurrent-forward-weights: "
@@ -204,8 +214,6 @@ void BidirectionalRecurrentLayer::runForwardImplementation(MatrixVector& outputA
         {activationCount, miniBatch * timesteps}), false);
 
     auto activation = broadcast(unbiasedOutput, _bias, {}, matrix::Add());
-
-    saveMatrix("forwardOutputActivations", copy(activation));
 
     if(util::isLogEnabled("BidirectionalRecurrentLayer::Detail"))
     {
@@ -228,6 +236,11 @@ void BidirectionalRecurrentLayer::runForwardImplementation(MatrixVector& outputA
 
     saveMatrix("forwardOutputActivations", activation);
 
+    if(bundle.contains("inputTimesteps"))
+    {
+        recurrentZeroEnds(reverseActivation, bundle["inputTimesteps"].get<IndexVector>());
+    }
+
     forwardRecurrentActivations(reverseActivation, _recurrentReverseWeights,
         lucius::matrix::RECURRENT_REVERSE_TIME,
         getActivationFunction()->getOperation());
@@ -238,20 +251,24 @@ void BidirectionalRecurrentLayer::runForwardImplementation(MatrixVector& outputA
 
     if(util::isLogEnabled("BidirectionalRecurrentLayer::Detail"))
     {
-        util::log("BidirectionalRecurrentLayer::Detail") << "  activation: " << activation.debugString();
+        util::log("BidirectionalRecurrentLayer::Detail") << "  activation: "
+            << activation.debugString();
     }
     else
     {
-        util::log("BidirectionalRecurrentLayer") << "  activation: " << activation.shapeString() << "\n";
+        util::log("BidirectionalRecurrentLayer") << "  activation: "
+            << activation.shapeString() << "\n";
     }
 
     outputActivationsVector.push_back(std::move(output));
 }
 
-void BidirectionalRecurrentLayer::runReverseImplementation(MatrixVector& gradients,
-    MatrixVector& inputDeltas,
-    const MatrixVector& outputDeltas)
+void BidirectionalRecurrentLayer::runReverseImplementation(Bundle& bundle)
 {
+    auto& gradients    = bundle[   "gradients"].get<matrix::MatrixVector>();
+    auto& inputDeltas  = bundle[ "inputDeltas"].get<matrix::MatrixVector>();
+    auto& outputDeltas = bundle["outputDeltas"].get<matrix::MatrixVector>();
+
     assert(outputDeltas.size() == 1);
 
     auto deltas = unfoldTimeAndBatch(outputDeltas.back(), _expectedBatchSize);
@@ -261,12 +278,14 @@ void BidirectionalRecurrentLayer::runReverseImplementation(MatrixVector& gradien
         util::log("BidirectionalRecurrentLayer") << " Running reverse propagation on matrix ("
             << deltas.shapeString() << ") through layer with dimensions ("
             << getInputCount() << " inputs, " << getOutputCount() << " outputs).\n";
-        util::log("BidirectionalRecurrentLayer") << "  layer: " << _forwardWeights.shapeString() << "\n";
+        util::log("BidirectionalRecurrentLayer") << "  layer: "
+            << _forwardWeights.shapeString() << "\n";
     }
 
     if(util::isLogEnabled("BidirectionalRecurrentLayer"))
     {
-        util::log("BidirectionalRecurrentLayer") << "  deltas size: " << deltas.shapeString() << "\n";
+        util::log("BidirectionalRecurrentLayer") << "  deltas size: "
+            << deltas.shapeString() << "\n";
     }
 
     if(util::isLogEnabled("BidirectionalRecurrentLayer::Detail"))
@@ -340,8 +359,6 @@ void BidirectionalRecurrentLayer::runReverseImplementation(MatrixVector& gradien
             << recurrentReverseWeightGradients.debugString();
     }
 
-    auto forwardOutputActivations = loadMatrix("forwardOutputActivations");
-
     auto unfoldedInputActivations = loadMatrix("inputActivations");
 
     size_t activationCount = unfoldedInputActivations.size()[0];
@@ -386,12 +403,14 @@ void BidirectionalRecurrentLayer::runReverseImplementation(MatrixVector& gradien
 
     if(util::isLogEnabled("BidirectionalRecurrentLayer"))
     {
-        util::log("BidirectionalRecurrentLayer") << "  bias grad shape: " << biasGradient.shapeString() << "\n";
+        util::log("BidirectionalRecurrentLayer") << "  bias grad shape: "
+            << biasGradient.shapeString() << "\n";
     }
 
     if(util::isLogEnabled("BidirectionalRecurrentLayer::Detail"))
     {
-        util::log("BidirectionalRecurrentLayer::Detail") << "  bias grad: " << biasGradient.debugString();
+        util::log("BidirectionalRecurrentLayer::Detail") << "  bias grad: "
+            << biasGradient.debugString();
     }
 
     assert(biasGradient.size() == _bias.size());
@@ -405,20 +424,7 @@ void BidirectionalRecurrentLayer::runReverseImplementation(MatrixVector& gradien
     // compute deltas for previous layer
     auto deltasPropagatedReverse = gemm(_forwardWeights, true, forwardDeltas, false);
 
-    Matrix previousLayerDeltas;
-
-    if(getActivationCostFunction() != nullptr)
-    {
-        auto activationCostFunctionGradient =
-            getActivationCostFunction()->getGradient(forwardOutputActivations);
-
-        apply(previousLayerDeltas, deltasPropagatedReverse,
-            activationCostFunctionGradient, matrix::Multiply());
-    }
-    else
-    {
-        previousLayerDeltas = std::move(deltasPropagatedReverse);
-    }
+    Matrix previousLayerDeltas = std::move(deltasPropagatedReverse);
 
     if(util::isLogEnabled("BidirectionalRecurrentLayer"))
     {
@@ -428,7 +434,8 @@ void BidirectionalRecurrentLayer::runReverseImplementation(MatrixVector& gradien
 
     if(util::isLogEnabled("BidirectionalRecurrentLayer::Detail"))
     {
-        util::log("BidirectionalRecurrentLayer::Detail") << "  output: " << previousLayerDeltas.debugString();
+        util::log("BidirectionalRecurrentLayer::Detail") << "  output: "
+            << previousLayerDeltas.debugString();
     }
 
     inputDeltas.push_back(reshape(previousLayerDeltas, {getInputCount(), miniBatch, timesteps}));

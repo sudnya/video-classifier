@@ -9,6 +9,7 @@
 
 #include <lucius/network/interface/NeuralNetwork.h>
 #include <lucius/network/interface/Layer.h>
+#include <lucius/network/interface/Bundle.h>
 
 #include <lucius/video/interface/Image.h>
 
@@ -41,6 +42,7 @@ namespace visualization
 {
 
 typedef matrix::Matrix Matrix;
+typedef matrix::MatrixVector MatrixVector;
 typedef network::NeuralNetwork NeuralNetwork;
 typedef video::Image Image;
 typedef optimizer::ConstantConstraint ConstantConstraint;
@@ -193,12 +195,18 @@ public:
     {
         util::log("NeuronVisualizer::Detail") << " inputs are : " << inputs.front().toString();
 
-        Matrix gradient;
-        double newCost = _network->getInputCostAndGradient(gradient, inputs.front(), *_reference);
+        network::Bundle bundle;
 
-        gradients.push_back(std::move(gradient));
+        bundle["inputActivations"] = inputs;
+        bundle["referenceActivations"] = MatrixVector({*_reference});
 
-        util::log("NeuronVisualizer::Detail") << " new gradient is : " << gradients.front().toString();
+        _network->getInputCostAndGradient(bundle);
+
+        gradients = bundle["gradients"].get<MatrixVector>();
+        double newCost = bundle["cost"].get<double>();
+
+        util::log("NeuronVisualizer::Detail") << " new gradient is : "
+            << gradients.front().toString();
         util::log("NeuronVisualizer::Detail") << " new cost is : " << newCost << "\n";
 
         return newCost;
@@ -231,13 +239,21 @@ static Matrix optimizeWithDerivative(double& bestCost, NeuralNetwork* network,
 {
     auto reference = generateReferenceForNeuron(network, neuron);
 
+    network::Bundle bundle;
+
+    bundle["inputActivations"] = MatrixVector({input});
+    bundle["referenceActivations"] = MatrixVector({reference});
+
+    network->getCost(bundle);
+
     auto bestSoFar = matrix::MatrixVector({input});
-         bestCost  = network->getCost(input, reference);
+         bestCost  = bundle["cost"].get<double>();
 
     std::string solverType = util::KnobDatabase::getKnobValue(
         "NeuronVisualizer::SolverType", "LBFGSSolver");
 
-    std::unique_ptr<optimizer::GeneralDifferentiableSolver> solver(optimizer::GeneralDifferentiableSolverFactory::create(solverType));
+    std::unique_ptr<optimizer::GeneralDifferentiableSolver> solver(
+        optimizer::GeneralDifferentiableSolverFactory::create(solverType));
 
     assert(solver != nullptr);
 
@@ -245,16 +261,20 @@ static Matrix optimizeWithDerivative(double& bestCost, NeuralNetwork* network,
 
     util::log("NeuronVisualizer") << " Initial inputs are   : " << input.toString();
     util::log("NeuronVisualizer") << " Initial reference is : " << generateReferenceForNeuron(network, neuron).toString();
-    util::log("NeuronVisualizer") << " Initial output is    : " << network->runInputs(input).toString();
+    util::log("NeuronVisualizer") << " Initial output is    : " << bundle["outputActivations"].get<MatrixVector>().front().toString();
     util::log("NeuronVisualizer") << " Initial cost is      : " << bestCost << "\n";
 
     CostAndGradientFunction costAndGradient(network, &reference);
 
     bestCost = solver->solve(bestSoFar, costAndGradient);
 
+    bundle["inputActivations"] = bestSoFar;
+
+    network->getCost(bundle);
+
     util::log("NeuronVisualizer") << "  solver produced new cost: " << bestCost << ".\n";
     util::log("NeuronVisualizer") << "  final input is : " << bestSoFar.toString();
-    util::log("NeuronVisualizer") << "  final output is : " << network->runInputs(bestSoFar.front()).toString();
+    util::log("NeuronVisualizer") << "  final output is : " << bundle["outputActivations"].get<MatrixVector>().front().toString();
 
     return bestSoFar.front();
 }

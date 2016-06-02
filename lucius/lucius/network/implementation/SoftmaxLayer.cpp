@@ -8,6 +8,7 @@
 #include <lucius/network/interface/SoftmaxLayer.h>
 
 #include <lucius/network/interface/ActivationFunction.h>
+#include <lucius/network/interface/Bundle.h>
 
 #include <lucius/matrix/interface/Matrix.h>
 #include <lucius/matrix/interface/MatrixVector.h>
@@ -116,9 +117,11 @@ static Matrix unfoldTime(const Matrix& result, const Dimension& inputSize)
     return reshape(result, {layerSize, miniBatch, timesteps});
 }
 
-void SoftmaxLayer::runForwardImplementation(MatrixVector& outputActivationsVector,
-    const MatrixVector& inputActivationsVector)
+void SoftmaxLayer::runForwardImplementation(Bundle& bundle)
 {
+    auto& inputActivationsVector  = bundle[ "inputActivations"].get<MatrixVector>();
+    auto& outputActivationsVector = bundle["outputActivations"].get<MatrixVector>();
+
     assert(inputActivationsVector.size() == 1);
 
     auto inputActivations = foldTime(inputActivationsVector.back());
@@ -146,10 +149,11 @@ void SoftmaxLayer::runForwardImplementation(MatrixVector& outputActivationsVecto
         inputActivationsVector.front().size()));
 }
 
-void SoftmaxLayer::runReverseImplementation(MatrixVector& gradients,
-    MatrixVector& inputDeltasVector,
-    const MatrixVector& outputDeltasVector)
+void SoftmaxLayer::runReverseImplementation(Bundle& bundle)
 {
+    auto& inputDeltasVector  = bundle[ "inputDeltas"].get<MatrixVector>();
+    auto& outputDeltasVector = bundle["outputDeltas"].get<MatrixVector>();
+
     // Get the output activations
     auto outputActivations = loadMatrix("outputActivations");
 

@@ -10,6 +10,7 @@
 #include <lucius/network/interface/ActivationFunction.h>
 #include <lucius/network/interface/ActivationCostFunction.h>
 #include <lucius/network/interface/WeightCostFunction.h>
+#include <lucius/network/interface/Bundle.h>
 
 #include <lucius/matrix/interface/Matrix.h>
 #include <lucius/matrix/interface/MatrixOperations.h>
@@ -149,9 +150,11 @@ static Matrix unfoldTime(const Matrix& result, const Dimension& inputSize)
     return reshape(result, {layerSize, minibatch, timesteps});
 }
 
-void FeedForwardLayer::runForwardImplementation(MatrixVector& outputActivations,
-    const MatrixVector& inputActivations)
+void FeedForwardLayer::runForwardImplementation(Bundle& bundle)
 {
+    auto& inputActivations  = bundle[ "inputActivations"].get<MatrixVector>();
+    auto& outputActivations = bundle["outputActivations"].get<MatrixVector>();
+
     assert(inputActivations.size() == 1);
 
     auto inputActivation = foldTime(inputActivations.front());
@@ -209,10 +212,12 @@ void FeedForwardLayer::runForwardImplementation(MatrixVector& outputActivations,
         inputActivations.front().size()));
 }
 
-void FeedForwardLayer::runReverseImplementation(MatrixVector& gradients,
-    MatrixVector& inputDeltas,
-    const MatrixVector& outputDeltas)
+void FeedForwardLayer::runReverseImplementation(Bundle& bundle)
 {
+    auto& gradients    = bundle[   "gradients"].get<MatrixVector>();
+    auto& inputDeltas  = bundle[ "inputDeltas"].get<MatrixVector>();
+    auto& outputDeltas = bundle["outputDeltas"].get<MatrixVector>();
+
     assert(outputDeltas.size() == 1);
 
     auto inputActivation  = loadMatrix("inputActivation" );
@@ -261,7 +266,7 @@ void FeedForwardLayer::runReverseImplementation(MatrixVector& gradients,
     }
 
     // compute gradient for the weights
-    auto samples = outputActivation.size()[1];
+    auto samples = differenceWithTime.size()[differenceWithTime.size().size() - 2];
 
     auto weightGradient = gemm(Matrix(deltas), false, 1.0 / samples, inputActivation, true);
 

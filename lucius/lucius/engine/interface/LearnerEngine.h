@@ -29,7 +29,7 @@ private:
     virtual void closeModel();
 
 private:
-    virtual ResultVector runOnBatch(Matrix&& input, Matrix&& reference);
+    virtual ResultVector runOnBatch(const Bundle& bundle);
 
     virtual bool requiresLabeledData() const;
 

@@ -11,6 +11,7 @@
 #include <lucius/network/interface/LayerFactory.h>
 #include <lucius/network/interface/CostFunctionFactory.h>
 #include <lucius/network/interface/ActivationFunctionFactory.h>
+#include <lucius/network/interface/Bundle.h>
 
 #include <lucius/matrix/interface/Matrix.h>
 #include <lucius/matrix/interface/MatrixVector.h>
@@ -177,7 +178,8 @@ static double getDifference(double difference, double total)
     return difference / total;
 }
 
-static bool gradientCheck(NeuralNetwork& network, const Matrix& input, const Matrix& reference)
+static bool gradientCheck(NeuralNetwork& network,
+    const Matrix& input, const Matrix& reference)
 {
     const double epsilon = 1.0e-5;
 
@@ -187,9 +189,15 @@ static bool gradientCheck(NeuralNetwork& network, const Matrix& input, const Mat
     size_t layerId  = 0;
     size_t matrixId = 0;
 
-    MatrixVector gradient;
+    Bundle inputBundle(
+        std::make_pair("inputActivations",     MatrixVector({input})),
+        std::make_pair("referenceActivations", MatrixVector({reference}))
+    );
 
-    double cost = network.getCostAndGradient(gradient, input, reference);
+    auto bundle = network.getCostAndGradient(inputBundle);
+
+    MatrixVector gradient = bundle["gradients"].get<MatrixVector>();
+    double cost = bundle["cost"].get<double>();
 
     for(auto& layer : network)
     {
@@ -201,7 +209,9 @@ static bool gradientCheck(NeuralNetwork& network, const Matrix& input, const Mat
             {
                 weight += epsilon;
 
-                double newCost = network.getCost(input, reference);
+                bundle = network.getCost(inputBundle);
+
+                double newCost = bundle["cost"].get<double>();
 
                 weight -= epsilon;
 

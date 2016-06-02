@@ -154,7 +154,8 @@ CUDA_DECORATOR Dimension linearToDimension(size_t linearIndex, const Dimension& 
     return result;
 }
 
-CUDA_DECORATOR Dimension selectNamedDimensions(const Dimension& selectedDimensions, const Dimension& left, const Dimension& right)
+CUDA_DECORATOR Dimension selectNamedDimensions(const Dimension& selectedDimensions,
+    const Dimension& left, const Dimension& right)
 {
     Dimension result;
 
@@ -168,7 +169,8 @@ CUDA_DECORATOR Dimension selectNamedDimensions(const Dimension& selectedDimensio
 
     for(size_t rightIndex = 0; rightIndex != right.size(); ++rightIndex)
     {
-        if(selectedDimensionIndex < selectedDimensions.size() && selectedDimensions[selectedDimensionIndex] == rightIndex)
+        if(selectedDimensionIndex < selectedDimensions.size() &&
+            selectedDimensions[selectedDimensionIndex] == rightIndex)
         {
             result.push_back(right[rightIndex]);
             ++selectedDimensionIndex;
@@ -216,7 +218,8 @@ CUDA_DECORATOR static size_t getOffset(const Dimension& stride, const Dimension&
     return offset;
 }
 
-CUDA_DECORATOR void* getAddress(const Dimension& stride, const Dimension& position, void* data, size_t elementSize)
+CUDA_DECORATOR void* getAddress(const Dimension& stride, const Dimension& position,
+    void* data, size_t elementSize)
 {
     size_t offset = getOffset(stride, position);
 
@@ -225,7 +228,8 @@ CUDA_DECORATOR void* getAddress(const Dimension& stride, const Dimension& positi
     return address + elementSize * offset;
 }
 
-CUDA_DECORATOR const void* getAddress(const Dimension& stride, const Dimension& position, const void* data, size_t elementSize)
+CUDA_DECORATOR const void* getAddress(const Dimension& stride, const Dimension& position,
+    const void* data, size_t elementSize)
 {
     size_t offset = getOffset(stride, position);
 

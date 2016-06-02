@@ -23,14 +23,12 @@ namespace matrix
 {
 
 static void computeCtcOnSinglePrecisionSequence(Matrix& costs, Matrix& gradients,
-    const Matrix& inputActivations, const Matrix& reference)
+    const Matrix& inputActivations, const LabelVector& labels,
+    const IndexVector& timestepsPerSample)
 {
     assert(costs.precision()            == SinglePrecision());
     assert(gradients.precision()        == SinglePrecision());
     assert(inputActivations.precision() == SinglePrecision());
-    assert(reference.precision()        == SinglePrecision());
-
-    assert(reference.size().size() >= 3);
 
     size_t sizeBytes = 0;
     lucius::matrix::ctc::ctcComputeInfo runtimeInfo;
@@ -46,66 +44,24 @@ static void computeCtcOnSinglePrecisionSequence(Matrix& costs, Matrix& gradients
         runtimeInfo.num_threads = std::thread::hardware_concurrency();
     }
 
-    size_t vocabularySize      = reference.size().front();
-    size_t samplesPerMinibatch = reference.size()[reference.size().size() - 2];
-    size_t labelSize           = reference.size()[reference.size().size() - 1];
+    size_t vocabularySize      = inputActivations.size().front();
+    size_t samplesPerMinibatch = inputActivations.size()[inputActivations.size().size() - 2];
+    size_t labelSize           = inputActivations.size()[inputActivations.size().size() - 1];
 
     std::vector<int> timeStepsInMinibatch;
     std::vector<int> labelsInMinibatch;
     std::vector<int> labelLengthInMinibatch;
 
-    // gather the labels
-    // TODO: do this on the GPU, or use metadata
     for(size_t miniBatch = 0; miniBatch != samplesPerMinibatch; ++miniBatch)
     {
-        bool labelEnded = false;
+        timeStepsInMinibatch.push_back(timestepsPerSample[miniBatch]);
 
-        for(size_t label = 0; label != labelSize; ++label)
+        for(auto& label : labels[miniBatch])
         {
-            double letterValue    = 0.0;
-            size_t selectedLetter = 0;
-
-            for(size_t letter = 0; letter != vocabularySize; ++letter)
-            {
-                double value = reference(letter, miniBatch, label);
-
-                if(value > letterValue)
-                {
-                    letterValue    = value;
-                    selectedLetter = letter;
-                }
-            }
-
-            if(!labelEnded)
-            {
-                labelsInMinibatch.push_back(selectedLetter);
-            }
-
-            if(label == labelSize - 1)
-            {
-                if(!labelEnded)
-                {
-                    labelLengthInMinibatch.push_back(label + 1);
-                }
-
-                timeStepsInMinibatch.push_back(label + 1);
-                break;
-            }
-
-            if((selectedLetter >= vocabularySize - 1) && (label > 0))
-            {
-                if(!labelEnded)
-                {
-                    labelLengthInMinibatch.push_back(label + 1);
-                    labelEnded = true;
-                }
-                else
-                {
-                    timeStepsInMinibatch.push_back(label + 1);
-                    break;
-                }
-            }
+            labelsInMinibatch.push_back(label);
         }
+
+        labelLengthInMinibatch.push_back(labels[miniBatch].size());
     }
 
     get_workspace_size(labelLengthInMinibatch.data(), timeStepsInMinibatch.data(),
@@ -128,7 +84,6 @@ static void computeCtcOnSinglePrecisionSequence(Matrix& costs, Matrix& gradients
     {
         util::log("CTCOperations::Detail") << " activations "
             << inputActivations.toString() << "\n";
-        util::log("CTCOperations::Detail") << " reference " << reference.toString() << "\n";
         util::log("CTCOperations::Detail") << " costs " << costs.toString() << "\n";
         util::log("CTCOperations::Detail") << " input-gradients " << gradients.toString() << "\n";
     }
@@ -136,28 +91,29 @@ static void computeCtcOnSinglePrecisionSequence(Matrix& costs, Matrix& gradients
 }
 
 void computeCtc(Matrix& costs, Matrix& gradients,
-    const Matrix& inputActivations, const Matrix& reference)
+    const Matrix& inputActivations, const LabelVector& labels,
+    const IndexVector& timestepsPerSample)
 {
     if(costs.precision() == SinglePrecision())
     {
-        computeCtcOnSinglePrecisionSequence(costs, gradients, inputActivations, reference);
+        computeCtcOnSinglePrecisionSequence(costs, gradients, inputActivations,
+            labels, timestepsPerSample);
     }
     else
     {
         auto singleInputActivations = copy(inputActivations, SinglePrecision());
-        auto singleReference = copy(reference, SinglePrecision());
 
         Matrix singleGradients;
 
         if(!gradients.empty())
         {
-            singleGradients = zeros(gradients.size(), singleReference.precision());
+            singleGradients = zeros(gradients.size(), SinglePrecision());
         }
 
-        Matrix singleCosts(costs.size(), singleReference.precision());
+        Matrix singleCosts(costs.size(), singleGradients.precision());
 
         computeCtcOnSinglePrecisionSequence(singleCosts, singleGradients, singleInputActivations,
-            singleReference);
+            labels, timestepsPerSample);
 
         copy(costs, singleCosts);
 

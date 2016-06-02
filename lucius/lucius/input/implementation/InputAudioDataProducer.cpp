@@ -10,9 +10,12 @@
 #include <lucius/database/interface/SampleDatabase.h>
 #include <lucius/database/interface/Sample.h>
 
+#include <lucius/network/interface/Bundle.h>
+
 #include <lucius/audio/interface/AudioVector.h>
 
 #include <lucius/matrix/interface/Matrix.h>
+#include <lucius/matrix/interface/MatrixVector.h>
 
 #include <lucius/model/interface/Model.h>
 
@@ -33,6 +36,22 @@ namespace input
 
 typedef audio::Audio       Audio;
 typedef audio::AudioVector AudioVector;
+typedef network::Bundle    Bundle;
+typedef matrix::MatrixVector MatrixVector;
+
+typedef std::vector<size_t> IndexVector;
+
+static IndexVector getInputLengths(const AudioVector& batch, size_t frameSize)
+{
+    IndexVector result;
+
+    for(auto& audio : batch)
+    {
+        result.push_back((audio.getUnpaddedLength() + frameSize - 1) / frameSize);
+    }
+
+    return result;
+}
 
 class InputAudioDataProducerImplementation
 {
@@ -88,6 +107,9 @@ public:
         _speechScaleUpper = util::KnobDatabase::getKnobValue(
             "InputAudioDataProducer::SpeechScaleUpper", 5.0);
 
+        _randomWindow = util::KnobDatabase::getKnobValue(
+            "InputAudioDataProducer::RandomShuffleWindow", 512.);
+
         _parseAudioDatabase();
 
         // Determine how many audio samples to cache
@@ -110,11 +132,13 @@ public:
 
         reset();
 
+        _sortAudioByLength();
+
         _initialized = true;
     }
 
 public:
-    InputAudioDataProducer::InputAndReferencePair pop()
+    Bundle pop()
     {
         assert(_initialized);
 
@@ -124,7 +148,7 @@ public:
 
         auto input = batch.getFeatureMatrixForFrameSize(audioDimension[0]);
 
-        auto reference = batch.getReference(_producer->getOutputLabels(), audioDimension[0]);
+        auto reference = batch.getReferenceLabels(_producer->getOutputLabels(), audioDimension[0]);
 
         if(_producer->getStandardizeInput())
         {
@@ -135,8 +159,11 @@ public:
             <<  "' audio samples (" << input.size()[2] << " timesteps), "
             << _remainingSamples << " remaining in this epoch.\n";
 
-        return InputAudioDataProducer::InputAndReferencePair(
-            std::move(input), std::move(reference));
+        return Bundle(
+            std::make_pair("inputActivations", MatrixVector({input})),
+            std::make_pair("inputTimesteps", getInputLengths(batch, audioDimension[0])),
+            std::make_pair("referenceLabels", reference)
+        );
     }
 
     bool empty() const
@@ -161,7 +188,24 @@ public:
         _nextSample       = 0;
         _nextNoiseSample  = 0;
 
-        std::shuffle(_audio.begin(), _audio.begin() + _remainingSamples, _generator);
+        std::shuffle(_audio.begin(), _audio.end(), _generator);
+
+        for(auto& audio : _audio)
+        {
+            audio.cacheHeader();
+        }
+
+        for(size_t begin = 0; begin < _remainingSamples; begin += _randomWindow)
+        {
+            size_t end = std::min(begin + _randomWindow, _remainingSamples);
+
+            std::sort(_audio.begin() + begin, _audio.begin() + end,
+                [](const Audio& left, const Audio& right)
+                {
+                    return left.duration() < right.duration();
+                });
+        }
+
         std::shuffle(_noise.begin(), _noise.end(), _generator);
     }
 
@@ -210,8 +254,7 @@ private:
 
                 auto audioGraphemes = _toGraphemes(audio.label());
                 _applyGraphemesToRange(audio, 0, audioGraphemes.size(), audioGraphemes);
-
-                _setSpecialGraphemes(audio, audioGraphemes.size());
+                audio.setDefaultLabel("");
 
                 batch.push_back(audio);
             }
@@ -299,8 +342,7 @@ private:
 
             auto audioGraphemes = _toGraphemes(audio.label());
             _applyGraphemesToRange(result, 0, audioGraphemes.size(), audioGraphemes);
-
-            _setSpecialGraphemes(result, audioGraphemes.size());
+            result.setDefaultLabel("");
 
             return result;
         }
@@ -335,8 +377,7 @@ private:
                 noiseGraphemes.size() + audioGraphemes.size(), audioGraphemes);
             _applyGraphemesToRange(result, noiseGraphemes.size() + audioGraphemes.size(),
                 (result.size() - frameSize)/frameSize, noiseGraphemes);
-
-            _setSpecialGraphemes(result, noiseGraphemes.size() + audioGraphemes.size());
+            result.setDefaultLabel("");
         }
         else
         {
@@ -415,27 +456,6 @@ private:
         return graphemes;
     }
 
-    void _setSpecialGraphemes(Audio& result, size_t sequenceLength)
-    {
-        result.setDefaultLabel(*_graphemes.begin());
-
-        size_t frameSize = _getFrameSize();
-
-        size_t endAudioFrame = result.getUnpaddedLength() / frameSize;
-
-        size_t beginAudioEnd = endAudioFrame * frameSize;
-        size_t endAudioEnd   = std::min(result.size(), (endAudioFrame + 1) * frameSize);
-
-        result.addLabel(beginAudioEnd, endAudioEnd, _delimiterGrapheme);
-
-        size_t endLabelFrame = sequenceLength + 1;
-
-        size_t beginLabelEnd = endLabelFrame * frameSize;
-        size_t endLabelEnd   = std::min(result.size(), (endLabelFrame + 1) * frameSize);
-
-        result.addLabel(beginLabelEnd, endLabelEnd, _delimiterGrapheme);
-    }
-
     bool _usesGraphemes() const
     {
         return !_graphemes.empty();
@@ -455,6 +475,8 @@ private:
         {
             audio = audio.sample(frequency);
         }
+
+        audio = audio.powerNormalize();
 
         audio.setUnpaddedLength(audio.size());
     }
@@ -530,8 +552,20 @@ private:
         {
             _graphemes.insert(_producer->getModel()->getOutputLabel(output));
         }
+    }
 
-        _delimiterGrapheme = _producer->getModel()->getAttribute<std::string>("DelimiterGrapheme");
+    void _sortAudioByLength()
+    {
+        for(auto& audio : _audio)
+        {
+            audio.cacheHeader();
+        }
+
+        std::sort(_audio.begin(), _audio.end(),
+            [](const Audio& left, const Audio& right)
+            {
+                return left.duration() < right.duration();
+            });
     }
 
 private:
@@ -549,7 +583,6 @@ private:
 
 private:
     StringSet _graphemes;
-    std::string _delimiterGrapheme;
 
 private:
     std::default_random_engine _generator;
@@ -575,6 +608,9 @@ private:
     double _speechScaleLower;
     double _speechScaleUpper;
 
+private:
+    size_t _randomWindow;
+
 };
 
 InputAudioDataProducer::InputAudioDataProducer(const std::string& audioDatabaseFilename)
@@ -594,7 +630,7 @@ void InputAudioDataProducer::initialize()
     _implementation->initialize();
 }
 
-InputAudioDataProducer::InputAndReferencePair InputAudioDataProducer::pop()
+InputAudioDataProducer::Bundle InputAudioDataProducer::pop()
 {
     return _implementation->pop();
 }

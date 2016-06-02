@@ -8,6 +8,7 @@
 #include <lucius/network/interface/SubgraphLayer.h>
 
 #include <lucius/network/interface/LayerFactory.h>
+#include <lucius/network/interface/Bundle.h>
 
 #include <lucius/matrix/interface/MatrixVector.h>
 #include <lucius/matrix/interface/MatrixOperations.h>
@@ -271,13 +272,15 @@ public:
     }
 
 public:
-    void runForwardAllTimesteps(MatrixVector& outputActivations,
-        const MatrixVector& inputActivations)
+    void runForwardAllTimesteps(Bundle& bundle)
     {
         if(layers.empty())
         {
             return;
         }
+
+        auto& inputActivations  = bundle[ "inputActivations"].get<MatrixVector>();
+        auto& outputActivations = bundle["outputActivations"].get<MatrixVector>();
 
         // Set the input activations for the first layer
         std::map<std::string, MatrixVector> layerToInputActivations;
@@ -295,12 +298,15 @@ public:
             _formatInputActivationsForLayer(inputs, layer);
 
             // run the layer
-            MatrixVector localOutputs;
+            Bundle localBundle;
+
+            localBundle["inputActivations"] = inputs;
+            MatrixVector& localOutputs = localBundle["outputActivations"].get<MatrixVector>();
 
             util::log("SubgraphLayer") << "Running forward propagation on layer '"
                 << name << "'\n";
 
-            layer.layer->runForward(localOutputs, inputs);
+            layer.layer->runForward(localBundle);
 
             inputs.clear();
 
@@ -323,9 +329,12 @@ public:
         }
     }
 
-    void runReverseAllTimesteps(MatrixVector& gradients, MatrixVector& inputDeltas,
-        const MatrixVector& outputDeltas)
+    void runReverseAllTimesteps(Bundle& bundle)
     {
+        auto& gradients    = bundle[   "gradients"].get<MatrixVector>();
+        auto& inputDeltas  = bundle[ "inputDeltas"].get<MatrixVector>();
+        auto& outputDeltas = bundle["outputDeltas"].get<MatrixVector>();
+
         if(layers.empty())
         {
             return;
@@ -350,12 +359,18 @@ public:
             _formatOutputDeltasForLayer(deltas, *node);
 
             // run the layer
-            MatrixVector localInputDeltas;
-            MatrixVector localGradients;
+            Bundle localBundle;
+
+            localBundle["gradients"]    = MatrixVector();
+            localBundle["inputDeltas"]  = MatrixVector();
+            localBundle["outputDeltas"] = deltas;
+
+            MatrixVector& localInputDeltas = localBundle["inputDeltas"].get<MatrixVector>();
+            MatrixVector& localGradients   = localBundle[  "gradients"].get<MatrixVector>();
 
             util::log("SubgraphLayer") << "Running reverse propagation on layer '"
                 << name << "'\n";
-            layer.runReverse(localGradients, localInputDeltas, deltas);
+            layer.runReverse(bundle);
 
             _formatInputDeltasForLayer(localInputDeltas, *node);
 
@@ -386,13 +401,15 @@ public:
     }
 
 public:
-    void runForwardIterateTimesteps(MatrixVector& outputActivations,
-        const MatrixVector& inputActivations)
+    void runForwardIterateTimesteps(Bundle& bundle)
     {
         if(layers.empty())
         {
             return;
         }
+
+        auto& inputActivations  = bundle[ "inputActivations"].get<MatrixVector>();
+        auto& outputActivations = bundle["outputActivations"].get<MatrixVector>();
 
         // Get the total number of timesteps
         size_t timesteps = inputActivations.front().size().back();
@@ -420,12 +437,16 @@ public:
                 _formatInputActivationsForLayer(inputs, node);
 
                 // run the layer
-                MatrixVector localOutputs;
+                Bundle localBundle;
+
+                localBundle["inputActivations"] = inputs;
+
+                MatrixVector& localOutputs = localBundle["outputActivations"].get<MatrixVector>();
 
                 util::log("SubgraphLayer") << " Running forward propagation on layer '"
                     << name << "' on timestep " << timestep << "\n";
 
-                layer.runForward(localOutputs, inputs);
+                layer.runForward(localBundle);
 
                 inputs.clear();
 
@@ -434,9 +455,12 @@ public:
             }
         }
     }
-    void runReverseIterateTimesteps(MatrixVector& gradients, MatrixVector& inputDeltas,
-        const MatrixVector& outputDeltas)
+    void runReverseIterateTimesteps(Bundle& bundle)
     {
+        auto& gradients    = bundle[   "gradients"].get<MatrixVector>();
+        auto& inputDeltas  = bundle[ "inputDeltas"].get<MatrixVector>();
+        auto& outputDeltas = bundle["outputDeltas"].get<MatrixVector>();
+
         if(layers.empty())
         {
             return;
@@ -465,7 +489,11 @@ public:
                     outputDeltas.front().precision());
             }
 
-            MatrixVector localGradients;
+            Bundle localBundle;
+
+            localBundle["gradients"] = MatrixVector();
+
+            auto& localGradients = localBundle["gradients"].get<MatrixVector>();
 
             // Evaluate the layers in reverse order
             for(auto node = layers.rbegin(); node != layers.rend(); ++node)
@@ -479,12 +507,14 @@ public:
                 _formatOutputDeltasForLayer(deltas, *node);
 
                 // run the layer
-                MatrixVector localInputDeltas;
+                localBundle["outputDeltas"] = deltas;
+                localBundle["inputDeltas"] = MatrixVector();
+                auto& localInputDeltas = localBundle["inputDeltas"].get<MatrixVector>();
 
                 util::log("SubgraphLayer") << " Running reverse propagation on layer '"
                     << name << "' on timestep " << timestep << "\n";
 
-                layer.runReverse(localGradients, localInputDeltas, deltas);
+                layer.runReverse(localBundle);
 
                 layer.popReversePropagationData();
 
@@ -1135,35 +1165,30 @@ void SubgraphLayer::initialize()
     }
 }
 
-void SubgraphLayer::runForwardImplementation(MatrixVector& outputActivations,
-    const MatrixVector& inputActivations)
+void SubgraphLayer::runForwardImplementation(Bundle& bundle)
 {
     // if there are no through-timestep connections, do all timesteps in one shot
     if(!_implementation->doAnyTimeConnectionsExist())
     {
-        _implementation->runForwardAllTimesteps(outputActivations, inputActivations);
+        _implementation->runForwardAllTimesteps(bundle);
     }
     else
     {
-        _implementation->runForwardIterateTimesteps(outputActivations, inputActivations);
+        _implementation->runForwardIterateTimesteps(bundle);
     }
 
 }
 
-void SubgraphLayer::runReverseImplementation(MatrixVector& gradients,
-    MatrixVector& inputDeltas,
-    const MatrixVector& outputDeltas)
+void SubgraphLayer::runReverseImplementation(Bundle& bundle)
 {
     // if there are no through-timestep connections, do all timesteps in one shot
     if(!_implementation->doAnyTimeConnectionsExist())
     {
-        _implementation->runReverseAllTimesteps(gradients, inputDeltas,
-            outputDeltas);
+        _implementation->runReverseAllTimesteps(bundle);
     }
     else
     {
-        _implementation->runReverseIterateTimesteps(gradients, inputDeltas,
-            outputDeltas);
+        _implementation->runReverseIterateTimesteps(bundle);
     }
 }
 
