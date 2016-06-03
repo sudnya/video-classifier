@@ -61,7 +61,8 @@ public:
         Pool2DGather,
         Pool2DGatherInverse,
         PermuteDimensionGather,
-        HanningGather
+        HanningGather,
+        Cos
     };
 
 public:
@@ -891,7 +892,6 @@ public:
         
         Dimension retVal = inputSize;
         auto frameSize   = inputSize[0];
-        auto windowSize  = outputSize[0]/frameSize;
         
         retVal[0] = outputCoordinate[0] % frameSize;
         retVal[2] = outputCoordinate[2] + (outputCoordinate[0]/frameSize);
@@ -906,10 +906,28 @@ public:
 
 };
 
+class Cos : public Operation
+{
+public:
+    CUDA_DECORATOR Cos() : Operation(Operation::Cos) {}
+
+public:
+    CUDA_DECORATOR float operator() (float operand) const
+    {
+        return std::cosf(operand);
+    }
+
+    CUDA_DECORATOR double operator() (double operand) const
+    {
+        return std::cos(operand);
+    }
+};
+
+
 typedef std::tuple<Add, Subtract, Multiply, Divide, Log, Exp, Pow, Abs, Sqrt, RectifiedLinear,
                    RectifiedLinearDerivative, Sigmoid, SigmoidDerivative, Negate, Maximum,
                    Minimum, Equal, LessThan, NotEqual, Fill, Square, SquareAndScale, Inverse,
-                    Nop, NopDerivative> AllOperations;
+                    Nop, NopDerivative, Cos> AllOperations;
 
 typedef std::tuple<Add, Subtract, Multiply, Divide, Maximum, Minimum,
                    Equal, LessThan, NotEqual, CopyRight> AllBinaryOperations;
@@ -917,7 +935,7 @@ typedef std::tuple<Add, Subtract, Multiply, Divide, Maximum, Minimum,
 typedef std::tuple<Add, Subtract, Multiply, Divide, Log, Exp, Pow, Abs, Sqrt, RectifiedLinear,
                    RectifiedLinearDerivative, Sigmoid, SigmoidDerivative, Negate, Maximum,
                    Minimum, Equal, LessThan, NotEqual, Fill, Square, SquareAndScale, Inverse,
-                   Nop, NopDerivative> AllUnaryOperations;
+                   Nop, NopDerivative, Cos> AllUnaryOperations;
 
 typedef std::tuple<Pool2DGather, Pool2DGatherInverse, PermuteDimensionGather, HanningGather> AllGatherOperations;
 
