@@ -106,6 +106,7 @@ void MaxPoolingLayer::runForwardImplementation(Bundle& bundle)
     assert(inputActivationsVector.size() == 1);
 
     auto inputActivations = inputActivationsVector.back();
+    assert(inputActivations.size()[4] == 1);
 
     util::log("MaxPoolingLayer") << " Running forward propagation of matrix "
         << inputActivations.shapeString() << " through max pooling: "
