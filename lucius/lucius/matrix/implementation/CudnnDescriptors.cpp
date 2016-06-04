@@ -279,6 +279,7 @@ CudnnPooling2dDescriptor::CudnnPooling2dDescriptor(size_t inputW, size_t inputH,
 
     CudnnLibrary::cudnnSetPooling2dDescriptor(_descriptor,
         CudnnLibrary::CUDNN_POOLING_MAX,
+        CudnnLibrary::CUDNN_NOT_PROPAGATE_NAN,
         inputH,
         inputW,
         padH,

@@ -1,4 +1,4 @@
-/*    \file   CurandLibrary.cpp
+/*  \file   CurandLibrary.cpp
     \date   Thursday August 15, 2013
     \author Gregory Diamos <solusstultus@gmail.com>
     \brief  The source file for the CurandLibrary class.
@@ -29,16 +29,16 @@ void CurandLibrary::load()
 bool CurandLibrary::loaded()
 {
     load();
-    
+
     return _interface.loaded();
 }
 
 void CurandLibrary::curandCreateGenerator(curandGenerator_t *generator, curandRngType_t rng_type)
 {
     _check();
-    
+
     curandStatus_t status = (*_interface.curandCreateGenerator)(generator, rng_type);
-    
+
     if(status != CURAND_STATUS_SUCCESS)
     {
         throw std::runtime_error("Cuda destroy generator failed: " +
@@ -49,9 +49,9 @@ void CurandLibrary::curandCreateGenerator(curandGenerator_t *generator, curandRn
 void CurandLibrary::curandDestroyGenerator(curandGenerator_t generator)
 {
     _check();
-    
+
     curandStatus_t status = (*_interface.curandDestroyGenerator)(generator);
-    
+
     if(status != CURAND_STATUS_SUCCESS)
     {
         throw std::runtime_error("Cuda destroy generator failed: " +
@@ -62,9 +62,9 @@ void CurandLibrary::curandDestroyGenerator(curandGenerator_t generator)
 void CurandLibrary::curandSetPseudoRandomGeneratorSeed(curandGenerator_t generator, unsigned long long seed)
 {
     _check();
-    
+
     curandStatus_t status = (*_interface.curandSetPseudoRandomGeneratorSeed)(generator, seed);
-    
+
     if(status != CURAND_STATUS_SUCCESS)
     {
         throw std::runtime_error("Cuda seed generator failed: " +
@@ -75,9 +75,9 @@ void CurandLibrary::curandSetPseudoRandomGeneratorSeed(curandGenerator_t generat
 void CurandLibrary::curandGenerateUniform(curandGenerator_t generator, float* outputPtr, size_t num)
 {
     _check();
-    
+
     curandStatus_t status = (*_interface.curandGenerateUniform)(generator, outputPtr, num);
-    
+
     if(status != CURAND_STATUS_SUCCESS)
     {
         throw std::runtime_error("Cuda generate uniform failed: " +
@@ -88,9 +88,9 @@ void CurandLibrary::curandGenerateUniform(curandGenerator_t generator, float* ou
 void CurandLibrary::curandGenerateNormal(curandGenerator_t generator, float* outputPtr, size_t num, float mean, float stddev)
 {
     _check();
-    
+
     curandStatus_t status = (*_interface.curandGenerateNormal)(generator, outputPtr, num, mean, stddev);
-    
+
     if(status != CURAND_STATUS_SUCCESS)
     {
         throw std::runtime_error("Cuda generate normal failed: " +
@@ -101,9 +101,9 @@ void CurandLibrary::curandGenerateNormal(curandGenerator_t generator, float* out
 void CurandLibrary::curandGenerateUniformDouble(curandGenerator_t generator, double* outputPtr, size_t num)
 {
     _check();
-    
+
     curandStatus_t status = (*_interface.curandGenerateUniformDouble)(generator, outputPtr, num);
-    
+
     if(status != CURAND_STATUS_SUCCESS)
     {
         throw std::runtime_error("Cuda generate uniform double failed: " +
@@ -114,9 +114,9 @@ void CurandLibrary::curandGenerateUniformDouble(curandGenerator_t generator, dou
 void CurandLibrary::curandGenerateNormalDouble(curandGenerator_t generator, double* outputPtr, size_t num, double mean, double stddev)
 {
     _check();
-    
+
     curandStatus_t status = (*_interface.curandGenerateNormalDouble)(generator, outputPtr, num, mean, stddev);
-    
+
     if(status != CURAND_STATUS_SUCCESS)
     {
         throw std::runtime_error("Cuda generate normal double failed: " +
@@ -195,14 +195,14 @@ std::string CurandLibrary::curandGetErrorString(curandStatus error)
         break;
     }
     }
-    
+
     return "Unknown error.";
 }
 
 void CurandLibrary::_check()
 {
     load();
-    
+
     if(!loaded())
     {
         throw std::runtime_error("Tried to call CURAND function when "
@@ -236,7 +236,7 @@ void CurandLibrary::Interface::load()
     if(_failed)  return;
     if(loaded()) return;
     if(!parallel::isCudaEnabled()) return;
-    
+
     #ifdef __APPLE__
     //const char* libraryName = "libcurand-optimized.dylib";
     const char* libraryName = "libcurand.dylib";
@@ -261,19 +261,19 @@ void CurandLibrary::Interface::load()
         #define DynLink( function ) \
             util::bit_cast(function, dlsym(_library, #function)); \
             checkFunction((void*)function, #function)
-        
+
         DynLink(curandCreateGenerator);
         DynLink(curandDestroyGenerator);
-        
+
         DynLink(curandSetPseudoRandomGeneratorSeed);
-        
+
         DynLink(curandGenerateUniform);
         DynLink(curandGenerateNormal);
-        
+
         DynLink(curandGenerateUniformDouble);
         DynLink(curandGenerateNormalDouble);
-        
-        #undef DynLink    
+
+        #undef DynLink
 
         util::log("CurandLibrary") << " Loaded library '" << libraryName
             << "' successfully\n";

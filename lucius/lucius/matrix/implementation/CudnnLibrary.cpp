@@ -201,6 +201,7 @@ void CudnnLibrary::cudnnCreatePoolingDescriptor(cudnnPoolingDescriptor_t* poolin
 
 void CudnnLibrary::cudnnSetPooling2dDescriptor(cudnnPoolingDescriptor_t poolingDesc,
                                                     cudnnPoolingMode_t mode,
+                                                    cudnnNanPropagation_t nan,
                                                     int windowHeight,
                                                     int windowWidth,
                                                     int verticalPadding,
@@ -211,9 +212,10 @@ void CudnnLibrary::cudnnSetPooling2dDescriptor(cudnnPoolingDescriptor_t poolingD
 {
     _check();
 
-    auto status = (*_interface.cudnnSetPooling2dDescriptor)(
+    auto status = (*_interface.cudnnSetPooling2dDescriptor_v4)(
         poolingDesc,
         mode,
+        nan,
         windowHeight,
         windowWidth,
         verticalPadding,
@@ -639,7 +641,7 @@ void CudnnLibrary::Interface::load()
         DynLink(cudnnDestroyConvolutionDescriptor);
 
         DynLink(cudnnCreatePoolingDescriptor);
-        DynLink(cudnnSetPooling2dDescriptor);
+        DynLink(cudnnSetPooling2dDescriptor_v4);
         DynLink(cudnnDestroyPoolingDescriptor);
         DynLink(cudnnGetPooling2dForwardOutputDim);
 

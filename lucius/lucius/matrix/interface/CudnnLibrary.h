@@ -114,6 +114,13 @@ public:
         CUDNN_POOLING_AVERAGE_COUNT_EXCLUDE_PADDING = 2
     } cudnnPoolingMode_t;
 
+    typedef enum
+    {
+        CUDNN_NOT_PROPAGATE_NAN  = 0,
+        CUDNN_PROPAGATE_NAN      = 1,
+    } cudnnNanPropagation_t;
+
+
 public:
     static void load();
     static bool loaded();
@@ -172,6 +179,7 @@ public:
 
     static void cudnnSetPooling2dDescriptor(cudnnPoolingDescriptor_t poolingDesc,
                                                         cudnnPoolingMode_t mode,
+                                                        cudnnNanPropagation_t nan,
                                                         int windowHeight,
                                                         int windowWidth,
                                                         int verticalPadding,
@@ -375,8 +383,9 @@ private:
     public:
         cudnnStatus_t (*cudnnCreatePoolingDescriptor)(cudnnPoolingDescriptor_t* poolingDesc);
 
-        cudnnStatus_t (*cudnnSetPooling2dDescriptor)(cudnnPoolingDescriptor_t poolingDesc,
+        cudnnStatus_t (*cudnnSetPooling2dDescriptor_v4)(cudnnPoolingDescriptor_t poolingDesc,
                                                             cudnnPoolingMode_t mode,
+                                                            cudnnNanPropagation_t nan,
                                                             int windowHeight,
                                                             int windowWidth,
                                                             int verticalPadding,
