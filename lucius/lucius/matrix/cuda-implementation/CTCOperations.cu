@@ -7,6 +7,8 @@
 #include <lucius/matrix/interface/MatrixTransformations.h>
 #include <lucius/matrix/interface/Operation.h>
 
+#include <lucius/parallel/interface/Synchronization.h>
+
 #include <lucius/util/interface/debug.h>
 
 //CTC Includes
@@ -35,6 +37,8 @@ static void computeCtcOnSinglePrecisionSequence(Matrix& costs, Matrix& gradients
 
     if(parallel::isCudaEnabled())
     {
+        parallel::setNotSynchronized();
+
         runtimeInfo.loc = lucius::matrix::ctc::ctcComputeLocation::CTC_GPU;
         runtimeInfo.stream = 0;
     }
