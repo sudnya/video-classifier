@@ -27,6 +27,7 @@
 #include <random>
 #include <fstream>
 #include <algorithm>
+#include <set>
 
 namespace lucius
 {
@@ -58,10 +59,10 @@ class InputAudioDataProducerImplementation
 public:
     InputAudioDataProducerImplementation(InputAudioDataProducer* producer,
         const std::string& audioDatabaseFilename)
-    : _producer(producer), _databaseFilename(audioDatabaseFilename), _initialized(false),
-      _remainingSamples(0), _nextSample(0), _nextNoiseSample(0), _totalTimestepsPerUtterance(0),
-      _audioTimesteps(0), _noiseRateLower(0.0), _noiseRateUpper(0.0),
-      _speechScaleLower(0.0), _speechScaleUpper(0.0)
+    : _producer(producer), _databaseFilename(audioDatabaseFilename),
+      _noiseRateLower(0.0), _noiseRateUpper(0.0),
+      _speechScaleLower(0.0), _speechScaleUpper(0.0),
+      _sampleCache(producer)
     {
 
     }
@@ -69,7 +70,7 @@ public:
 public:
     void initialize()
     {
-        if(_initialized)
+        if(_sampleCache.initialized())
         {
             return;
         }
@@ -92,11 +93,6 @@ public:
         _saveSamples = util::KnobDatabase::getKnobValue(
             "InputAudioDataProducer::SaveSamples", false);
 
-        _totalTimestepsPerUtterance = util::KnobDatabase::getKnobValue(
-            "InputAudioDataProducer::TotalTimestepsPerUtterance", 512);
-        _audioTimesteps             = util::KnobDatabase::getKnobValue(
-            "InputAudioDataProducer::AudioTimesteps", 64);
-
         _noiseRateLower = util::KnobDatabase::getKnobValue(
             "InputAudioDataProducer::NoiseRateLower", 0.0);
         _noiseRateUpper = util::KnobDatabase::getKnobValue(
@@ -107,41 +103,14 @@ public:
         _speechScaleUpper = util::KnobDatabase::getKnobValue(
             "InputAudioDataProducer::SpeechScaleUpper", 5.0);
 
-        _randomWindow = util::KnobDatabase::getKnobValue(
-            "InputAudioDataProducer::RandomShuffleWindow", 512.);
-
         _parseAudioDatabase();
 
-        // Determine how many audio samples to cache
-        size_t samplesToCache = util::KnobDatabase::getKnobValue(
-            "InputAudioDataProducer::CacheSize", 0);
-
-        size_t audioSamplesToCache = std::min(samplesToCache, _audio.size());
-
-        for(size_t i = 0; i < audioSamplesToCache; ++i)
-        {
-            _audio[i].cache();
-        }
-
-        size_t noiseSamplesToCache = std::min(samplesToCache, _noise.size());
-
-        for(size_t i = 0; i < noiseSamplesToCache; ++i)
-        {
-            _noise[i].cache();
-        }
-
-        reset();
-
-        _sortAudioByLength();
-
-        _initialized = true;
+        _sampleCache.initialize();
     }
 
 public:
     Bundle pop()
     {
-        assert(_initialized);
-
         auto batch = _getBatch();
 
         auto audioDimension = _producer->getInputSize();
@@ -168,45 +137,19 @@ public:
 
     bool empty() const
     {
-        return _remainingSamples == 0;
+        return _sampleCache.empty();
     }
 
 public:
     size_t getUniqueSampleCount()
     {
-        size_t samples = std::min(_producer->getMaximumSamplesToRun(), _audio.size());
-
-        size_t remainder = samples % _producer->getBatchSize();
-
-        return samples - remainder;
+        return _sampleCache.getUniqueSampleCount();
     }
 
 public:
     void reset()
     {
-        _remainingSamples = getUniqueSampleCount();
-        _nextSample       = 0;
-        _nextNoiseSample  = 0;
-
-        std::shuffle(_audio.begin(), _audio.end(), _generator);
-
-        for(auto& audio : _audio)
-        {
-            audio.cacheHeader();
-        }
-
-        for(size_t begin = 0; begin < _remainingSamples; begin += _randomWindow)
-        {
-            size_t end = std::min(begin + _randomWindow, _remainingSamples);
-
-            std::sort(_audio.begin() + begin, _audio.begin() + end,
-                [](const Audio& left, const Audio& right)
-                {
-                    return left.duration() < right.duration();
-                });
-        }
-
-        std::shuffle(_noise.begin(), _noise.end(), _generator);
+        _sampleCache.reset();
     }
 
 private:
@@ -214,50 +157,21 @@ private:
     {
         AudioVector batch;
 
-        auto batchSize = std::min(_audio.size(), std::min(_remainingSamples,
-            _producer->getBatchSize()));
+        auto batchSize = _producer->getBatchSize();
 
         for(size_t i = 0; i < batchSize; ++i)
         {
-            bool isAudioCached = _audio[_nextSample].isCached();
-            bool isNoiseCached = false;
+            Audio audio = _sampleCache.getNextSample();
 
-            _audio[_nextSample].cache();
+            _downsample(audio);
 
-            auto audio = _audio[_nextSample];
+            _scaleRandomly(audio, _speechScaleLower, _speechScaleUpper);
 
-            if(!_noise.empty())
-            {
-                isNoiseCached = _noise[_nextNoiseSample].isCached();
+            auto audioGraphemes = _toGraphemes(audio.label());
+            _applyGraphemesToRange(audio, 0, audioGraphemes.size(), audioGraphemes);
+            audio.setDefaultLabel("");
 
-                _noise[_nextNoiseSample].cache();
-
-                auto noise = _noise[_nextNoiseSample];
-
-                _downsampleToMatchFrequencies(audio, noise);
-
-                _scaleRandomly(audio, _speechScaleLower, _speechScaleUpper);
-                _scaleRandomly(noise, _noiseRateLower,   _noiseRateUpper);
-
-                auto selectedTimesteps = ((_generator() % _audioTimesteps) + _audioTimesteps) / 2;
-
-                audio = _sample(audio, selectedTimesteps          );
-                noise = _sample(noise, _totalTimestepsPerUtterance);
-
-                batch.push_back(_merge(audio, noise));
-            }
-            else
-            {
-                _downsample(audio);
-
-                _scaleRandomly(audio, _speechScaleLower, _speechScaleUpper);
-
-                auto audioGraphemes = _toGraphemes(audio.label());
-                _applyGraphemesToRange(audio, 0, audioGraphemes.size(), audioGraphemes);
-                audio.setDefaultLabel("");
-
-                batch.push_back(audio);
-            }
+            batch.push_back(audio);
 
             if(_saveSamples)
             {
@@ -268,32 +182,6 @@ private:
                 std::ofstream file(filename.str());
 
                 batch.back().save(file, ".wav");
-
-                std::stringstream audiofilename;
-
-                audiofilename << "audio" << _nextSample << ".wav";
-
-                std::ofstream audiofile(audiofilename.str());
-
-                _audio[_nextSample].save(audiofile, ".wav");
-            }
-
-            if(!isAudioCached)
-            {
-                _audio[_nextSample].invalidateCache();
-            }
-
-            if(!isNoiseCached && !_noise.empty())
-            {
-                _noise[_nextNoiseSample].invalidateCache();
-            }
-
-            --_remainingSamples;
-            ++_nextSample;
-
-            if(!_noise.empty())
-            {
-                _nextNoiseSample = (_nextNoiseSample + 1) % _noise.size();
             }
         }
 
@@ -367,26 +255,17 @@ private:
 
         size_t frameSize = _getFrameSize();
 
-        if(_usesGraphemes())
-        {
-            auto noiseGraphemes = _toGraphemes(noise.label());
-            auto audioGraphemes = _toGraphemes(audio.label());
+        assert(_usesGraphemes());
 
-            _applyGraphemesToRange(result, 0, noiseGraphemes.size(), noiseGraphemes);
-            _applyGraphemesToRange(result, noiseGraphemes.size(),
-                noiseGraphemes.size() + audioGraphemes.size(), audioGraphemes);
-            _applyGraphemesToRange(result, noiseGraphemes.size() + audioGraphemes.size(),
-                (result.size() - frameSize)/frameSize, noiseGraphemes);
-            result.setDefaultLabel("");
-        }
-        else
-        {
-            result.addLabel(0, position * frameSize, noise.label());
-            result.addLabel(position * frameSize,
-                frameSize * (position + audio.size()), audio.label());
-            result.addLabel(frameSize * (position + audio.size()),
-                noise.size() * frameSize, noise.label());
-        }
+        auto noiseGraphemes = _toGraphemes(noise.label());
+        auto audioGraphemes = _toGraphemes(audio.label());
+
+        _applyGraphemesToRange(result, 0, noiseGraphemes.size(), noiseGraphemes);
+        _applyGraphemesToRange(result, noiseGraphemes.size(),
+            noiseGraphemes.size() + audioGraphemes.size(), audioGraphemes);
+        _applyGraphemesToRange(result, noiseGraphemes.size() + audioGraphemes.size(),
+            (result.size() - frameSize)/frameSize, noiseGraphemes);
+        result.setDefaultLabel("");
 
         return result;
     }
@@ -483,6 +362,11 @@ private:
 
     void _scaleRandomly(Audio& audio, double lower, double upper)
     {
+        if(lower == 1.0 && upper == 1.0)
+        {
+            return;
+        }
+
         std::uniform_real_distribution<double> distribution(lower, upper);
 
         double scale = distribution(_generator);
@@ -534,16 +418,22 @@ private:
                         << sample.path() << "'\n";
                 }
 
-                if(sample.label() == "noise" || sample.label().find("background|") == 0)
+                if(sample.label() == "noise" || sample.label().find("|") != std::string::npos)
                 {
                     if(useNoise)
                     {
-                        _noise.push_back(Audio(sample.path(), util::strip(sample.label(), "|")));
+                        _sampleCache.addNoise(
+                            Audio(sample.path(), util::strip(sample.label(), "|")));
+                    }
+                    else
+                    {
+                        _sampleCache.addRepeatedAudio(
+                            Audio(sample.path(), util::strip(sample.label(), "|")));
                     }
                 }
                 else
                 {
-                    _audio.push_back(Audio(sample.path(), sample.label()));
+                    _sampleCache.addAudio(Audio(sample.path(), sample.label()));
                 }
             }
         }
@@ -554,29 +444,11 @@ private:
         }
     }
 
-    void _sortAudioByLength()
-    {
-        for(auto& audio : _audio)
-        {
-            audio.cacheHeader();
-        }
-
-        std::sort(_audio.begin(), _audio.end(),
-            [](const Audio& left, const Audio& right)
-            {
-                return left.duration() < right.duration();
-            });
-    }
-
 private:
     InputAudioDataProducer* _producer;
 
 private:
     std::string _databaseFilename;
-
-private:
-    AudioVector _audio;
-    AudioVector _noise;
 
 private:
     typedef std::set<std::string> StringSet;
@@ -588,17 +460,12 @@ private:
     std::default_random_engine _generator;
 
 private:
-    bool _initialized;
     bool _saveSamples;
 
 private:
     size_t _remainingSamples;
     size_t _nextSample;
     size_t _nextNoiseSample;
-
-private:
-    size_t _totalTimestepsPerUtterance;
-    size_t _audioTimesteps;
 
 private:
     double _noiseRateLower;
@@ -609,7 +476,291 @@ private:
     double _speechScaleUpper;
 
 private:
-    size_t _randomWindow;
+    class Sample
+    {
+    public:
+        enum Type
+        {
+            AudioType,
+            NoiseType,
+            RepeatedType
+        };
+
+    public:
+        Sample(Type type, size_t audioVectorOffset, size_t audioClipOffset,
+            size_t audioClipDuration)
+        : type(type), audioVectorOffset(audioVectorOffset), audioClipOffset(audioClipOffset),
+          audioClipDuration(audioClipDuration)
+        {
+
+        }
+
+    public:
+        Type   type;
+        size_t audioVectorOffset;
+        size_t audioClipOffset;
+        size_t audioClipDuration;
+    };
+
+    typedef std::vector<Sample> SampleVector;
+    typedef std::set<size_t> CacheSet;
+
+private:
+    class SampleCache
+    {
+    public:
+        SampleCache(InputAudioDataProducer* producer)
+        : _producer(producer), _initialized(false)
+        {
+            _randomWindow = util::KnobDatabase::getKnobValue(
+                "InputAudioDataProducer::RandomShuffleWindow", 512.);
+
+            _totalTimestepsPerUtterance = util::KnobDatabase::getKnobValue(
+                "InputAudioDataProducer::TotalTimestepsPerUtterance", 512);
+            _audioTimesteps             = util::KnobDatabase::getKnobValue(
+                "InputAudioDataProducer::AudioTimesteps", 64);
+
+            // Determine how many audio samples to cache
+            _samplesToCache = util::KnobDatabase::getKnobValue(
+                "InputAudioDataProducer::CacheSize", 128);
+
+            bool shouldSeedWithTime = util::KnobDatabase::getKnobValue(
+                "InputAudioDataProducer::SeedWithTime", false);
+
+            if(shouldSeedWithTime)
+            {
+                _generator.seed(std::time(0));
+            }
+            else
+            {
+                _generator.seed(127);
+            }
+        }
+
+        Audio getNextSample()
+        {
+            assert(_nextSample < getUniqueSampleCount());
+
+            auto sample = _samples[_nextSample++];
+
+            size_t begin = sample.audioClipOffset * _getFrameSize();
+            size_t end = (sample.audioClipOffset + _totalTimestepsPerUtterance) *
+                _getFrameSize();
+
+            if(sample.type == Sample::AudioType)
+            {
+                return _audio[sample.audioVectorOffset];
+            }
+            else if(sample.type == Sample::NoiseType)
+            {
+                return _noise[sample.audioVectorOffset].slice(begin, end);
+            }
+            else
+            {
+                assert(sample.type == Sample::RepeatedType);
+                return _repeatedAudio[sample.audioVectorOffset].slice(begin, end);
+            }
+
+            _updateCache();
+        }
+
+    public:
+        void addAudio(const Audio& audio)
+        {
+            _audio.push_back(audio);
+
+            size_t index = _audio.size();
+
+            _audio.back().cacheHeader();
+
+            size_t frequency = _producer->getModel()->getAttribute<size_t>("SamplingRate");
+
+            size_t frameCount = _audio.back().duration() * frequency / _getFrameSize();
+
+            if(frameCount <= _totalTimestepsPerUtterance)
+            {
+                _samples.push_back(Sample(Sample::AudioType, index, 0, frameCount));
+            }
+        }
+
+        void addNoise(const Audio& noise)
+        {
+            _noise.push_back(noise);
+
+            size_t index = _noise.size();
+
+            _noise.back().cacheHeader();
+
+            size_t frequency = _producer->getModel()->getAttribute<size_t>("SamplingRate");
+
+            size_t frameCount = _noise.back().duration() * frequency / _getFrameSize();
+
+            size_t totalSamples = frameCount / _totalTimestepsPerUtterance;
+
+            for(size_t sample = 0; sample < totalSamples; ++sample)
+            {
+                _samples.push_back(Sample(Sample::NoiseType, index,
+                    sample * _totalTimestepsPerUtterance, _totalTimestepsPerUtterance));
+            }
+        }
+
+        void addRepeatedAudio(const Audio& audio)
+        {
+            _repeatedAudio.push_back(audio);
+
+            size_t index = _repeatedAudio.size();
+
+            _repeatedAudio.back().cacheHeader();
+
+            size_t frequency = _producer->getModel()->getAttribute<size_t>("SamplingRate");
+
+            size_t frameCount = _noise.back().duration() * frequency / _getFrameSize();
+
+            size_t totalSamples = frameCount / _totalTimestepsPerUtterance;
+
+            for(size_t sample = 0; sample < totalSamples; ++sample)
+            {
+                _samples.push_back(Sample(Sample::RepeatedType, index,
+                    sample * _totalTimestepsPerUtterance, _totalTimestepsPerUtterance));
+            }
+        }
+
+        size_t getUniqueSampleCount() const
+        {
+            size_t samples = std::min(_producer->getMaximumSamplesToRun(), _samples.size());
+
+            size_t remainder = samples % _producer->getBatchSize();
+
+            return samples - remainder;
+        }
+
+        void reset()
+        {
+            _remainingSamples = getUniqueSampleCount();
+            _nextSample       = 0;
+
+            std::shuffle(_samples.begin(), _samples.begin() + _remainingSamples, _generator);
+
+            for(size_t begin = 0; begin < _remainingSamples; begin += _randomWindow)
+            {
+                size_t end = std::min(begin + _randomWindow, _remainingSamples);
+
+                std::sort(_samples.begin() + begin, _samples.begin() + end,
+                    [](const Sample& left, const Sample& right)
+                    {
+                        return left.audioClipDuration < right.audioClipDuration;
+                    });
+            }
+        }
+
+        void initialize()
+        {
+            reset();
+
+            _sortSamplesByLength();
+
+            _initialized = true;
+        }
+
+        bool initialized() const
+        {
+            return _initialized;
+        }
+
+        bool empty() const
+        {
+            return _nextSample >= getUniqueSampleCount();
+        }
+
+    private:
+        void _updateCache()
+        {
+            _updateCache(_audio,         _cachedAudio,         Sample::AudioType);
+            _updateCache(_noise,         _cachedNoise,         Sample::NoiseType);
+            _updateCache(_repeatedAudio, _cachedRepeatedAudio, Sample::RepeatedType);
+        }
+
+        void _updateCache(AudioVector& audio, CacheSet& cacheSet, Sample::Type type)
+        {
+            size_t begin = _nextSample;
+            size_t end   = std::min(getUniqueSampleCount(), begin + _samplesToCache);
+
+            CacheSet newCacheSet;
+
+            for(size_t i = begin; i < end; ++i)
+            {
+                newCacheSet.insert(_samples[i].audioVectorOffset);
+            }
+
+            for(auto& element : cacheSet)
+            {
+                if(newCacheSet.count(element) == 0)
+                {
+                    audio[element].invalidateCache();
+                }
+            }
+
+            for(auto& element : newCacheSet)
+            {
+                if(cacheSet.count(element) == 0)
+                {
+                    audio[element].cache();
+                }
+            }
+
+            cacheSet = std::move(newCacheSet);
+        }
+
+    private:
+        size_t _getFrameSize() const
+        {
+            return _producer->getInputSize()[0];
+        }
+
+    private:
+        void _sortSamplesByLength()
+        {
+            std::sort(_samples.begin(), _samples.end(), [](const Sample& left, const Sample& right)
+                {
+                    return left.audioClipDuration < right.audioClipDuration;
+                });
+        }
+
+    private:
+        InputAudioDataProducer* _producer;
+
+    private:
+        AudioVector _audio;
+        AudioVector _noise;
+        AudioVector _repeatedAudio;
+
+    private:
+        SampleVector _samples;
+
+    private:
+        CacheSet _cachedAudio;
+        CacheSet _cachedNoise;
+        CacheSet _cachedRepeatedAudio;
+
+    private:
+        std::default_random_engine _generator;
+
+    private:
+        size_t _randomWindow;
+        size_t _totalTimestepsPerUtterance;
+        size_t _audioTimesteps;
+        size_t _samplesToCache;
+
+    private:
+        size_t _nextSample;
+        size_t _remainingSamples;
+
+    private:
+        bool _initialized;
+    };
+
+private:
+    SampleCache _sampleCache;
 
 };
 
