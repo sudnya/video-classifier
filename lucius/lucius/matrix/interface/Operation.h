@@ -877,9 +877,9 @@ public:
     : Operation(Operation::HanningGather)
     {}
 
-    CUDA_DECORATOR HanningGather(const Dimension& inputSize, const Dimension& inputStride, 
+    CUDA_DECORATOR HanningGather(const Dimension& inputSize, const Dimension& inputStride,
         const Dimension& outputSize)
-    : Operation(Operation::HanningGather), inputSize(inputSize), inputStride(inputStride), 
+    : Operation(Operation::HanningGather), inputSize(inputSize), inputStride(inputStride),
         outputSize(outputSize)
     {
 
@@ -889,13 +889,13 @@ public:
     CUDA_DECORATOR size_t operator()(size_t outputPosition) const
     {
         auto outputCoordinate = linearToDimension(outputPosition, outputSize);
-        
+
         Dimension retVal = outputCoordinate;
         auto frameSize   = inputSize[0];
-        
+
         retVal[0] = outputCoordinate[0] % frameSize;
         retVal[2] = outputCoordinate[2] + (outputCoordinate[0]/frameSize);
-        
+
         return dotProduct(retVal, inputStride);
     }
 
@@ -914,7 +914,7 @@ public:
 public:
     CUDA_DECORATOR float operator() (float operand) const
     {
-        return std::cosf(operand);
+        return std::cos(operand);
     }
 
     CUDA_DECORATOR double operator() (double operand) const

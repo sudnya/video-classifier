@@ -25,6 +25,7 @@ public:
     Audio(std::istream& stream, const std::string& format);
 
     Audio(size_t samples, size_t bytesPerSample, size_t frequency);
+    Audio();
 
 public:
     void save(std::ostream& stream, const std::string& format);

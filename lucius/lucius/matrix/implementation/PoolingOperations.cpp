@@ -12,6 +12,8 @@
 #include <lucius/matrix/interface/Matrix.h>
 #include <lucius/matrix/interface/Dimension.h>
 
+#include <lucius/parallel/interface/Synchronization.h>
+
 namespace lucius
 {
 namespace matrix
@@ -59,7 +61,7 @@ static void cudnnForwardMaxPooling(Matrix& result,
 static Dimension getForwardMaxPoolingSize(const Dimension& inputSize, const Dimension& poolingSize)
 {
     auto resultSize = inputSize;
-/*
+
     if(CudnnLibrary::loaded())
     {
         int n = 0;
@@ -67,7 +69,7 @@ static Dimension getForwardMaxPoolingSize(const Dimension& inputSize, const Dime
         int h = 0;
         int w = 0;
 
-        CudnnPooling2dDescriptor poolingDescriptor(inputSize[0], inputSize[1], 0, 0,
+        CudnnPooling2dDescriptor poolingDescriptor(poolingSize[0], poolingSize[1], 0, 0,
             poolingSize[0], poolingSize[1]);
 
         CudnnTensorDescriptor inputDescriptor(inputSize);
@@ -86,11 +88,12 @@ static Dimension getForwardMaxPoolingSize(const Dimension& inputSize, const Dime
         resultSize[3] = n;
     }
     else
-    {*/
+    {
+
         resultSize[0] /= poolingSize[0];
         resultSize[1] /= poolingSize[1];
 
-    //}
+    }
 
     return resultSize;
 }
@@ -119,6 +122,8 @@ void forwardMaxPooling(Matrix& result, const Matrix& input, const Dimension& poo
 
     if(CudnnLibrary::loaded())
     {
+        parallel::setNotSynchronized();
+
         cudnnForwardMaxPooling(result, input, poolingSize);
         return;
     }
@@ -203,6 +208,8 @@ void backwardMaxPooling(Matrix& result, const Matrix& inputActivations,
 
     if(CudnnLibrary::loaded())
     {
+        parallel::setNotSynchronized();
+
         cudnnBackwardMaxPooling(result, inputActivations, outputActivations, outputDeltas,
             poolingSize);
         return;
