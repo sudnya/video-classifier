@@ -43,6 +43,12 @@ Audio::Audio(size_t samples, size_t bytesPerSample, size_t frequency)
     _data.resize(_samples * _bytesPerSample);
 }
 
+Audio::Audio()
+: Audio(0, 0, 0)
+{
+    _data.resize(_samples * _bytesPerSample);
+}
+
 void Audio::save(std::ostream& stream, const std::string& format)
 {
     AudioLibraryInterface::saveAudio(stream, format,

@@ -35,9 +35,9 @@ namespace lucius
 namespace input
 {
 
-typedef audio::Audio       Audio;
-typedef audio::AudioVector AudioVector;
-typedef network::Bundle    Bundle;
+typedef audio::Audio         Audio;
+typedef audio::AudioVector   AudioVector;
+typedef network::Bundle      Bundle;
 typedef matrix::MatrixVector MatrixVector;
 
 typedef std::vector<size_t> IndexVector;
@@ -126,7 +126,7 @@ public:
 
         util::log("InputAudioDataProducer") << "Loaded batch of '" << batch.size()
             <<  "' audio samples (" << input.size()[2] << " timesteps), "
-            << _remainingSamples << " remaining in this epoch.\n";
+            << _sampleCache.getRemainingSamples() << " remaining in this epoch.\n";
 
         return Bundle(
             std::make_pair("inputActivations", MatrixVector({input})),
@@ -177,7 +177,7 @@ private:
             {
                 std::stringstream filename;
 
-                filename << "audio" << _nextSample << "noise" << _nextNoiseSample << ".wav";
+                filename << "audio" << _sampleCache.getRemainingSamples() << ".wav";
 
                 std::ofstream file(filename.str());
 
@@ -463,11 +463,6 @@ private:
     bool _saveSamples;
 
 private:
-    size_t _remainingSamples;
-    size_t _nextSample;
-    size_t _nextNoiseSample;
-
-private:
     double _noiseRateLower;
     double _noiseRateUpper;
 
@@ -516,6 +511,10 @@ private:
                 "InputAudioDataProducer::RandomShuffleWindow", 512.);
 
             _totalTimestepsPerUtterance = util::KnobDatabase::getKnobValue(
+                "InputAudioDataProducer::TotalTimestepsPerRepeat", 512);
+            _totalTimestepsPerUtterance = util::KnobDatabase::getKnobValue(
+                "InputAudioDataProducer::TotalTimestepsPerNoise", 512);
+            _totalTimestepsPerUtterance = util::KnobDatabase::getKnobValue(
                 "InputAudioDataProducer::TotalTimestepsPerUtterance", 512);
             _audioTimesteps             = util::KnobDatabase::getKnobValue(
                 "InputAudioDataProducer::AudioTimesteps", 64);
@@ -547,29 +546,33 @@ private:
             size_t end = (sample.audioClipOffset + _totalTimestepsPerUtterance) *
                 _getFrameSize();
 
+            Audio result;
+
             if(sample.type == Sample::AudioType)
             {
-                return _audio[sample.audioVectorOffset];
+                result = _audio[sample.audioVectorOffset];
             }
             else if(sample.type == Sample::NoiseType)
             {
-                return _noise[sample.audioVectorOffset].slice(begin, end);
+                result = _noise[sample.audioVectorOffset].slice(begin, end);
             }
             else
             {
                 assert(sample.type == Sample::RepeatedType);
-                return _repeatedAudio[sample.audioVectorOffset].slice(begin, end);
+                result = _repeatedAudio[sample.audioVectorOffset].slice(begin, end);
             }
 
             _updateCache();
+
+            return result;
         }
 
     public:
         void addAudio(const Audio& audio)
         {
-            _audio.push_back(audio);
-
             size_t index = _audio.size();
+
+            _audio.push_back(audio);
 
             _audio.back().cacheHeader();
 
@@ -585,9 +588,9 @@ private:
 
         void addNoise(const Audio& noise)
         {
-            _noise.push_back(noise);
-
             size_t index = _noise.size();
+
+            _noise.push_back(noise);
 
             _noise.back().cacheHeader();
 
@@ -606,15 +609,15 @@ private:
 
         void addRepeatedAudio(const Audio& audio)
         {
-            _repeatedAudio.push_back(audio);
-
             size_t index = _repeatedAudio.size();
+
+            _repeatedAudio.push_back(audio);
 
             _repeatedAudio.back().cacheHeader();
 
             size_t frequency = _producer->getModel()->getAttribute<size_t>("SamplingRate");
 
-            size_t frameCount = _noise.back().duration() * frequency / _getFrameSize();
+            size_t frameCount = _repeatedAudio.back().duration() * frequency / _getFrameSize();
 
             size_t totalSamples = frameCount / _totalTimestepsPerUtterance;
 
@@ -634,16 +637,21 @@ private:
             return samples - remainder;
         }
 
+        size_t getRemainingSamples() const
+        {
+            return getUniqueSampleCount() - _nextSample;
+        }
+
         void reset()
         {
-            _remainingSamples = getUniqueSampleCount();
-            _nextSample       = 0;
+            size_t remainingSamples = getUniqueSampleCount();
+                  _nextSample       = 0;
 
-            std::shuffle(_samples.begin(), _samples.begin() + _remainingSamples, _generator);
+            std::shuffle(_samples.begin(), _samples.begin() + remainingSamples, _generator);
 
-            for(size_t begin = 0; begin < _remainingSamples; begin += _randomWindow)
+            for(size_t begin = 0; begin < remainingSamples; begin += _randomWindow)
             {
-                size_t end = std::min(begin + _randomWindow, _remainingSamples);
+                size_t end = std::min(begin + _randomWindow, remainingSamples);
 
                 std::sort(_samples.begin() + begin, _samples.begin() + end,
                     [](const Sample& left, const Sample& right)
@@ -651,6 +659,8 @@ private:
                         return left.audioClipDuration < right.audioClipDuration;
                     });
             }
+
+            _updateCache();
         }
 
         void initialize()
@@ -658,6 +668,8 @@ private:
             reset();
 
             _sortSamplesByLength();
+
+            _updateCache();
 
             _initialized = true;
         }
@@ -683,12 +695,18 @@ private:
         void _updateCache(AudioVector& audio, CacheSet& cacheSet, Sample::Type type)
         {
             size_t begin = _nextSample;
-            size_t end   = std::min(getUniqueSampleCount(), begin + _samplesToCache);
+            size_t end = std::min(getUniqueSampleCount(),
+                begin + std::max((size_t)1, _samplesToCache));
 
             CacheSet newCacheSet;
 
             for(size_t i = begin; i < end; ++i)
             {
+                if(_samples[i].type != type)
+                {
+                    continue;
+                }
+
                 newCacheSet.insert(_samples[i].audioVectorOffset);
             }
 
@@ -748,12 +766,13 @@ private:
     private:
         size_t _randomWindow;
         size_t _totalTimestepsPerUtterance;
+        size_t _totalTimestepsPerRepeat;
+        size_t _totalTimestepsPerNoise;
         size_t _audioTimesteps;
         size_t _samplesToCache;
 
     private:
         size_t _nextSample;
-        size_t _remainingSamples;
 
     private:
         bool _initialized;
