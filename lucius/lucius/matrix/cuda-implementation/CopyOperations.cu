@@ -195,7 +195,9 @@ public:
     {
         for(size_t i = threadGroup.id(), step = threadGroup.size(); i < elements; i += step)
         {
-            resultBase[i] = inputBase[nativeOperation(i)];
+            size_t newIndex = nativeOperation(i);
+
+            resultBase[i] = inputBase[newIndex];
         }
     }
 

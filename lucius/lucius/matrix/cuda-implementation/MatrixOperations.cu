@@ -1257,6 +1257,87 @@ Matrix ones(const Dimension& size, const Precision& precision)
 namespace detail
 {
 
+template<typename NativeType>
+class NoncontiguousRangeLambda
+{
+public:
+    CUDA_DECORATOR void operator()(parallel::ThreadGroup threadGroup)
+    {
+        for(size_t i = threadGroup.id(), step = threadGroup.size(); i < elements; i += step)
+        {
+            auto dimension = linearToDimension(i, resultView.size());
+
+            resultView(dimension) = i;
+        }
+    }
+
+public:
+    MatrixView<NativeType>      resultView;
+    ConstMatrixView<NativeType> inputView;
+
+public:
+    size_t elements;
+};
+
+template<typename T>
+void rangeOverPrecisions(Matrix& result, const Matrix& input,
+    const Precision& precision, std::tuple<T> precisions)
+{
+    typedef T PrecisionPrimitive;
+    typedef typename PrecisionPrimitive::type NativeType;
+
+    assert(precision == PrecisionPrimitive());
+
+    size_t elements = result.elements();
+
+    // TODO: specialize the contiguous case to make it faster
+    MatrixView<NativeType>      resultView(result);
+    ConstMatrixView<NativeType> inputView(input);
+
+    auto lambda = NoncontiguousRangeLambda<NativeType>
+        {resultView, inputView, elements};
+
+    parallel::multiBulkSynchronousParallel(lambda);
+}
+
+template<typename PossiblePrecisions>
+void rangeOverPrecisions(Matrix& result, const Matrix& input,
+    const Precision& precision, PossiblePrecisions precisions)
+{
+    typedef typename std::tuple_element<0, PossiblePrecisions>::type PossiblePrecisionType;
+
+    if(precision == PossiblePrecisionType())
+    {
+        rangeOverPrecisions(result, input, precision,
+            std::tuple<PossiblePrecisionType>());
+    }
+    else
+    {
+        typedef typename util::RemoveFirstType<PossiblePrecisions>::type RemainingPrecisions;
+
+        rangeOverPrecisions(result, input, precision, RemainingPrecisions());
+    }
+}
+
+}
+
+void range(Matrix& result)
+{
+    detail::rangeOverPrecisions(result, result, result.precision(), AllPrecisions());
+}
+
+Matrix range(const Dimension& size, const Precision& precision)
+{
+    Matrix result(size, precision);
+
+    range(result);
+
+    return result;
+}
+
+namespace detail
+{
+
 template<typename NativeType, typename ActualOperation>
 class GenericReduceGetPositionsLambda
 {

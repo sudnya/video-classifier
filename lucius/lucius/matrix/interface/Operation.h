@@ -60,7 +60,9 @@ public:
         NopDerivative,
         Pool2DGather,
         Pool2DGatherInverse,
-        PermuteDimensionGather
+        PermuteDimensionGather,
+        HanningGather,
+        Cos
     };
 
 public:
@@ -868,10 +870,64 @@ public:
 
 };
 
+class HanningGather : public Operation
+{
+public:
+    CUDA_DECORATOR HanningGather()
+    : Operation(Operation::HanningGather)
+    {}
+
+    CUDA_DECORATOR HanningGather(const Dimension& inputSize, const Dimension& inputStride, 
+        const Dimension& outputSize)
+    : Operation(Operation::HanningGather), inputSize(inputSize), inputStride(inputStride), 
+        outputSize(outputSize)
+    {
+
+    }
+
+public:
+    CUDA_DECORATOR size_t operator()(size_t outputPosition) const
+    {
+        auto outputCoordinate = linearToDimension(outputPosition, outputSize);
+        
+        Dimension retVal = outputCoordinate;
+        auto frameSize   = inputSize[0];
+        
+        retVal[0] = outputCoordinate[0] % frameSize;
+        retVal[2] = outputCoordinate[2] + (outputCoordinate[0]/frameSize);
+        
+        return dotProduct(retVal, inputStride);
+    }
+
+public:
+    Dimension inputSize;
+    Dimension inputStride;
+    Dimension outputSize;
+
+};
+
+class Cos : public Operation
+{
+public:
+    CUDA_DECORATOR Cos() : Operation(Operation::Cos) {}
+
+public:
+    CUDA_DECORATOR float operator() (float operand) const
+    {
+        return std::cosf(operand);
+    }
+
+    CUDA_DECORATOR double operator() (double operand) const
+    {
+        return std::cos(operand);
+    }
+};
+
+
 typedef std::tuple<Add, Subtract, Multiply, Divide, Log, Exp, Pow, Abs, Sqrt, RectifiedLinear,
                    RectifiedLinearDerivative, Sigmoid, SigmoidDerivative, Negate, Maximum,
                    Minimum, Equal, LessThan, NotEqual, Fill, Square, SquareAndScale, Inverse,
-                    Nop, NopDerivative> AllOperations;
+                    Nop, NopDerivative, Cos> AllOperations;
 
 typedef std::tuple<Add, Subtract, Multiply, Divide, Maximum, Minimum,
                    Equal, LessThan, NotEqual, CopyRight> AllBinaryOperations;
@@ -879,9 +935,9 @@ typedef std::tuple<Add, Subtract, Multiply, Divide, Maximum, Minimum,
 typedef std::tuple<Add, Subtract, Multiply, Divide, Log, Exp, Pow, Abs, Sqrt, RectifiedLinear,
                    RectifiedLinearDerivative, Sigmoid, SigmoidDerivative, Negate, Maximum,
                    Minimum, Equal, LessThan, NotEqual, Fill, Square, SquareAndScale, Inverse,
-                   Nop, NopDerivative> AllUnaryOperations;
+                   Nop, NopDerivative, Cos> AllUnaryOperations;
 
-typedef std::tuple<Pool2DGather, Pool2DGatherInverse, PermuteDimensionGather> AllGatherOperations;
+typedef std::tuple<Pool2DGather, Pool2DGatherInverse, PermuteDimensionGather, HanningGather> AllGatherOperations;
 
 }
 }

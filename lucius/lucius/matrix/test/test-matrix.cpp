@@ -11,6 +11,7 @@
 #include <lucius/matrix/interface/RandomOperations.h>
 #include <lucius/matrix/interface/FileOperations.h>
 #include <lucius/matrix/interface/PoolingOperations.h>
+#include <lucius/matrix/interface/WindowOperations.h>
 #include <lucius/matrix/interface/ConvolutionalOperations.h>
 #include <lucius/matrix/interface/MatrixTransformations.h>
 #include <lucius/matrix/interface/Operation.h>
@@ -1693,6 +1694,66 @@ bool testPermuteDimensions()
     return reference == computed;
 }
 
+bool isApproximatelyEqual(Matrix A, Matrix B, float epsilon)
+{
+    if(A.size() != B.size())
+    {
+        return false;
+    }
+
+    for (auto i = A.begin(), j = B.begin(); i != A.end(); ++i, ++j)
+    {
+        if(*i - *j > epsilon)
+        {
+            return false;
+        }
+    }
+    return true;
+}
+// reference wave: 
+// [0.0, 0.04322727117869957, 0.16543469682057083, 0.3454915028125263, 0.5522642316338267, 0.7499999999999999, 0.9045084971874737, 0.9890738003669028, 0.9890738003669028, 0.9045084971874737, 0.7500000000000002, 0.5522642316338271, 0.3454915028125264, 0.16543469682057077, 0.04322727117869951, 0.0]
+
+
+bool testHanningWindow()
+{
+    Dimension size({16, 1, 1});
+
+    Matrix reference(size);
+
+    reference(0)  = 0.0;
+    reference(1)  = 0.04322727117869957;
+    reference(2)  = 0.16543469682057083;
+    reference(3)  = 0.3454915028125263;
+    reference(4)  = 0.5522642316338267;
+    reference(5)  = 0.7499999999999999;
+    reference(6)  = 0.9045084971874737;
+    reference(7)  = 0.9890738003669028;
+    reference(8)  = 0.9890738003669028;
+    reference(9)  = 0.9045084971874737;
+    reference(10) = 0.7499999999999999;
+    reference(11) = 0.5522642316338267;
+    reference(12) = 0.3454915028125263;
+    reference(13) = 0.16543469682057083;
+    reference(14) = 0.04322727117869957;
+    reference(15) = 0.0;
+    
+    auto computed = hanningWindow(ones(size, reference.precision()), {0}, 1);
+
+    if(!isApproximatelyEqual(reference, computed, 1e-6))
+    {
+        std::cout << " Matrix Hanning Window Test Failed:\n";
+        std::cout << "  result matrix " << computed.toString();
+        std::cout << "  does not match reference matrix " << reference.toString();
+    }
+    else
+    {
+        std::cout << " Matrix Hanning Window Test Passed\n";
+    }
+
+    return isApproximatelyEqual(reference, computed, 1e-6);
+}
+
+
 int main(int argc, char** argv)
 {
     //lucius::util::enableAllLogs();
@@ -1736,6 +1797,8 @@ int main(int argc, char** argv)
     passed &= testBackwardMaxPooling();
 
     passed &= testPermuteDimensions();
+    
+    passed &= testHanningWindow();
 
     if(not passed)
     {
