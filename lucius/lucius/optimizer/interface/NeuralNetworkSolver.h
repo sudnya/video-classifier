@@ -6,6 +6,7 @@
 #pragma once
 
 namespace lucius { namespace network { class NeuralNetwork; } }
+namespace lucius { namespace network { class Bundle;        } }
 namespace lucius { namespace matrix  { class Matrix;        } }
 
 namespace lucius
@@ -20,6 +21,7 @@ class NeuralNetworkSolver
 public:
     typedef network::NeuralNetwork NeuralNetwork;
     typedef matrix::Matrix         Matrix;
+    typedef network::Bundle        Bundle;
 
 public:
     NeuralNetworkSolver(NeuralNetwork* n);
@@ -33,8 +35,7 @@ public:
     virtual NeuralNetworkSolver* clone() const = 0;
 
 public:
-    void setInput(const Matrix* input);
-    void setReference(const Matrix* reference);
+    void setBundle(const Bundle* bundle);
     void setNetwork(NeuralNetwork* network);
 
 public:
@@ -43,8 +44,7 @@ public:
 protected:
     NeuralNetwork* _network;
 
-    const Matrix* _input;
-    const Matrix* _reference;
+    const Bundle* _bundle;
 };
 
 }

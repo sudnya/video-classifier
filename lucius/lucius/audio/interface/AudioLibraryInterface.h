@@ -53,6 +53,7 @@ public:
 
 public:
     static HeaderAndData loadAudio(std::istream& path, const std::string& format);
+    static Header loadAudioHeader(std::istream& path, const std::string& format);
 
 public:
     static void saveAudio(std::ostream& path, const std::string& format,

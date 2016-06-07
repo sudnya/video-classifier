@@ -8,6 +8,7 @@
 #include <lucius/network/interface/BatchNormalizationLayer.h>
 
 #include <lucius/network/interface/ActivationFunction.h>
+#include <lucius/network/interface/Bundle.h>
 
 #include <lucius/matrix/interface/Matrix.h>
 #include <lucius/matrix/interface/MatrixVector.h>
@@ -197,9 +198,11 @@ static Matrix scaleAndShift(const Matrix& activations, const Matrix& gamma, cons
         beta, {1}, matrix::Add());
 }
 
-void BatchNormalizationLayer::runForwardImplementation(MatrixVector& outputActivationsVector,
-    const MatrixVector& inputActivationsVector)
+void BatchNormalizationLayer::runForwardImplementation(Bundle& bundle)
 {
+    auto& inputActivationsVector  = bundle[ "inputActivations"].get<matrix::MatrixVector>();
+    auto& outputActivationsVector = bundle["outputActivations"].get<matrix::MatrixVector>();
+
     assert(inputActivationsVector.size() == 1);
 
     saveMatrix("inputActivations", inputActivationsVector.front());
@@ -269,10 +272,13 @@ void BatchNormalizationLayer::runForwardImplementation(MatrixVector& outputActiv
     outputActivationsVector.push_back(std::move(outputActivations));
 }
 
-void BatchNormalizationLayer::runReverseImplementation(MatrixVector& gradients,
-    MatrixVector& inputDeltasVector,
-    const MatrixVector& outputDeltas)
+void BatchNormalizationLayer::runReverseImplementation(Bundle& bundle)
 {
+    auto& gradients    = bundle[   "gradients"].get<matrix::MatrixVector>();
+    auto& outputDeltas = bundle["outputDeltas"].get<matrix::MatrixVector>();
+
+    auto& inputDeltasVector = bundle["inputDeltas"].get<matrix::MatrixVector>();
+
     assert(getIsTraining());
     assert(outputDeltas.size() == 1);
 

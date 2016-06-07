@@ -25,7 +25,8 @@ CUDA_DECORATOR inline Dimension selectNamedDimensions(const Dimension& selectedD
     const Dimension& left, const Dimension& right);
 CUDA_DECORATOR inline bool isContiguous(const Dimension& dimensions);
 
-CUDA_DECORATOR inline       void* getAddress(const Dimension& stride, const Dimension& position,       void* data, size_t elementSize);
+CUDA_DECORATOR inline void* getAddress(const Dimension& stride, const Dimension& position,
+    void* data, size_t elementSize);
 CUDA_DECORATOR inline const void* getAddress(const Dimension& stride, const Dimension& position,
     const void* data, size_t elementSize);
 

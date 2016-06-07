@@ -10,6 +10,7 @@
 #include <lucius/network/interface/ActivationFunction.h>
 #include <lucius/network/interface/ActivationCostFunction.h>
 #include <lucius/network/interface/WeightCostFunction.h>
+#include <lucius/network/interface/Bundle.h>
 
 #include <lucius/matrix/interface/CopyOperations.h>
 #include <lucius/matrix/interface/MatrixOperations.h>
@@ -36,6 +37,7 @@ namespace network
 
 typedef matrix::Matrix Matrix;
 typedef matrix::MatrixVector MatrixVector;
+typedef matrix::IndexVector IndexVector;
 typedef matrix::Dimension Dimension;
 
 RecurrentLayer::RecurrentLayer()
@@ -167,9 +169,11 @@ static matrix::Matrix unfoldTimeAndBatch(const Matrix& input, size_t batchSize)
     return reshape(input, {activationCount, miniBatch, timesteps});
 }
 
-void RecurrentLayer::runForwardImplementation(MatrixVector& outputActivationsVector,
-    const MatrixVector& inputActivationsVector)
+void RecurrentLayer::runForwardImplementation(Bundle& bundle)
 {
+    auto& inputActivationsVector  = bundle[ "inputActivations"].get<MatrixVector>();
+    auto& outputActivationsVector = bundle["outputActivations"].get<MatrixVector>();
+
     assert(inputActivationsVector.size() == 1);
 
     saveMatrix("inputActivations", inputActivationsVector.back());
@@ -201,7 +205,10 @@ void RecurrentLayer::runForwardImplementation(MatrixVector& outputActivationsVec
 
     auto activation = broadcast(unbiasedOutput, _bias, {}, matrix::Add());
 
-    saveMatrix("forwardOutputActivations", copy(activation));
+    if(_direction == matrix::RECURRENT_REVERSE_TIME && bundle.contains("inputTimesteps"))
+    {
+        recurrentZeroEnds(activation, bundle["inputTimesteps"].get<IndexVector>());
+    }
 
     if(util::isLogEnabled("RecurrentLayer::Detail"))
     {
@@ -234,10 +241,12 @@ void RecurrentLayer::runForwardImplementation(MatrixVector& outputActivationsVec
     outputActivationsVector.push_back(std::move(activation));
 }
 
-void RecurrentLayer::runReverseImplementation(MatrixVector& gradients,
-    MatrixVector& inputDeltas,
-    const MatrixVector& outputDeltas)
+void RecurrentLayer::runReverseImplementation(Bundle& bundle)
 {
+    auto& gradients    = bundle[   "gradients"].get<MatrixVector>();
+    auto& inputDeltas  = bundle[ "inputDeltas"].get<MatrixVector>();
+    auto& outputDeltas = bundle["outputDeltas"].get<MatrixVector>();
+
     assert(outputDeltas.size() == 1);
 
     auto deltas = unfoldTimeAndBatch(outputDeltas.back(), _expectedBatchSize);
@@ -308,8 +317,6 @@ void RecurrentLayer::runReverseImplementation(MatrixVector& gradients,
             << recurrentWeightGradients.debugString();
     }
 
-    auto forwardOutputActivations = loadMatrix("forwardOutputActivations");
-
     auto unfoldedInputActivations = loadMatrix("inputActivations");
 
     size_t activationCount = unfoldedInputActivations.size()[0];
@@ -371,20 +378,7 @@ void RecurrentLayer::runReverseImplementation(MatrixVector& gradients,
     // compute deltas for previous layer
     auto deltasPropagatedReverse = gemm(_forwardWeights, true, forwardDeltas, false);
 
-    Matrix previousLayerDeltas;
-
-    if(getActivationCostFunction() != nullptr)
-    {
-        auto activationCostFunctionGradient =
-            getActivationCostFunction()->getGradient(forwardOutputActivations);
-
-        apply(previousLayerDeltas, deltasPropagatedReverse,
-            activationCostFunctionGradient, matrix::Multiply());
-    }
-    else
-    {
-        previousLayerDeltas = std::move(deltasPropagatedReverse);
-    }
+    Matrix previousLayerDeltas = std::move(deltasPropagatedReverse);
 
     if(util::isLogEnabled("RecurrentLayer"))
     {

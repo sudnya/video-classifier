@@ -31,9 +31,8 @@ public:
     virtual void initialize();
 
 public:
-    virtual void runForwardImplementation(MatrixVector& activations);
-    virtual void runReverseImplementation(MatrixVector& gradients,
-        MatrixVector& activations, const Matrix& deltas);
+    virtual void runForwardImplementation(Bundle& bundle);
+    virtual void runReverseImplementation(Bundle& bundle);
 
 public:
     virtual       MatrixVector& weights();

@@ -1,4 +1,4 @@
-/*    \file   InputDataProducer.cpp
+/*  \file   InputDataProducer.cpp
     \date   Saturday August 10, 2014
     \author Gregory Diamos <solusstultus@gmail.com>
     \brief  The source file for the InputDataProducer class.
@@ -13,37 +13,40 @@
 
 #include <lucius/database/interface/SampleDatabase.h>
 
+#include <lucius/util/interface/memory.h>
+
 namespace lucius
 {
 
 namespace input
 {
 
-InputDataProducer* InputDataProducerFactory::create(const std::string& producerName,
-    const std::string& databaseName)
+std::unique_ptr<InputDataProducer> InputDataProducerFactory::create(
+    const std::string& producerName, const std::string& databaseName)
 {
     if(producerName == "InputAudioDataProducer")
     {
-        return new InputAudioDataProducer(databaseName);
+        return std::make_unique<InputAudioDataProducer>(databaseName);
     }
     else if(producerName == "InputTextDataProducer")
     {
-        return new InputTextDataProducer(databaseName);
+        return std::make_unique<InputTextDataProducer>(databaseName);
     }
     else if(producerName == "InputVisualDataProducer")
     {
-        return new InputVisualDataProducer(databaseName);
+        return std::make_unique<InputVisualDataProducer>(databaseName);
     }
 
-    return nullptr;
+    return std::unique_ptr<InputDataProducer>();
 }
 
-InputDataProducer* InputDataProducerFactory::create()
+std::unique_ptr<InputDataProducer> InputDataProducerFactory::create()
 {
     return create("InputVisualDataProducer", "");
 }
 
-InputDataProducer* InputDataProducerFactory::createForDatabase(const std::string& databaseName)
+std::unique_ptr<InputDataProducer> InputDataProducerFactory::createForDatabase(
+    const std::string& databaseName)
 {
     database::SampleDatabase database(databaseName);
 
@@ -62,7 +65,7 @@ InputDataProducer* InputDataProducerFactory::createForDatabase(const std::string
         return create("InputTextDataProducer", databaseName);
     }
 
-    return nullptr;
+    return std::unique_ptr<InputDataProducer>();
 }
 
 }

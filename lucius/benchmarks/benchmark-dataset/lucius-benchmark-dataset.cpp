@@ -27,7 +27,11 @@
 
 #include <lucius/util/interface/ArgumentParser.h>
 #include <lucius/util/interface/Knobs.h>
+#include <lucius/util/interface/SystemCompatibility.h>
 #include <lucius/util/interface/paths.h>
+
+// Standard Library Includes
+#include <csignal>
 
 // Type definitions
 typedef lucius::model::Model Model;
@@ -196,8 +200,20 @@ static void runTest(const Parameters& parameters)
     }
 }
 
+void fatalFaultHandler(int signal)
+{
+    std::cout << "Lucius faulted (" << signal << "): backtrace\n"
+        << lucius::util::backtrace() << "\n";
+
+    std::exit(1);
+}
+
 int main(int argc, char** argv)
 {
+    std::signal(SIGSEGV, fatalFaultHandler);
+    std::signal(SIGFPE,  fatalFaultHandler);
+    std::signal(SIGILL,  fatalFaultHandler);
+
     lucius::util::ArgumentParser parser(argc, argv);
 
     Parameters parameters;

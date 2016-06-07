@@ -27,7 +27,7 @@ private:
     virtual void closeModel();
 
 private:
-    virtual ResultVector runOnBatch(Matrix&& input, Matrix&& reference);
+    virtual ResultVector runOnBatch(const Bundle& bundle);
 
 private:
     double _samples;

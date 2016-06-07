@@ -27,6 +27,7 @@ namespace audio
 class AudioVector
 {
 private:
+    typedef std::vector<std::vector<size_t>> LabelVector;
     typedef std::vector<Audio> BaseAudioVector;
     typedef matrix::Matrix Matrix;
 
@@ -66,7 +67,7 @@ public:
 
 public:
     Matrix getFeatureMatrixForFrameSize(size_t samplesPerFrame) const;
-    Matrix getReference(const util::StringVector& labels, size_t samplesPerFrame) const;
+    LabelVector getReferenceLabels(const util::StringVector& labels, size_t samplesPerFrame) const;
 
 private:
     BaseAudioVector _audio;

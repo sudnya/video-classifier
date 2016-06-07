@@ -26,14 +26,9 @@ NeuralNetworkSolver::~NeuralNetworkSolver()
 
 }
 
-void NeuralNetworkSolver::setInput(const Matrix* input)
+void NeuralNetworkSolver::setBundle(const Bundle* bundle)
 {
-    _input = input;
-}
-
-void NeuralNetworkSolver::setReference(const Matrix* reference)
-{
-    _reference = reference;
+    _bundle = bundle;
 }
 
 void NeuralNetworkSolver::setNetwork(NeuralNetwork* network)

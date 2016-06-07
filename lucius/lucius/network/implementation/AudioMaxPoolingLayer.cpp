@@ -1,12 +1,12 @@
-/*  \file   AudioConvolutionalLayer.h
+/*  \file   AudioMaxPoolingLayer.h
     \author Gregory Diamos
     \date   Dec 19, 2015
-    \brief  The source file for the AudioConvolutionalLayer class.
+    \brief  The source file for the AudioMaxPoolingLayer class.
 */
 
 // Lucius Includes
-#include <lucius/network/interface/AudioConvolutionalLayer.h>
-#include <lucius/network/interface/ConvolutionalLayer.h>
+#include <lucius/network/interface/AudioMaxPoolingLayer.h>
+#include <lucius/network/interface/MaxPoolingLayer.h>
 #include <lucius/network/interface/Bundle.h>
 
 #include <lucius/matrix/interface/MatrixVector.h>
@@ -30,45 +30,41 @@ typedef matrix::MatrixVector MatrixVector;
 typedef matrix::Matrix Matrix;
 typedef matrix::Dimension Dimension;
 
-AudioConvolutionalLayer::AudioConvolutionalLayer()
-: AudioConvolutionalLayer({}, {}, {}, {}, matrix::Precision::getDefaultPrecision())
+AudioMaxPoolingLayer::AudioMaxPoolingLayer()
+: AudioMaxPoolingLayer({}, {}, matrix::Precision::getDefaultPrecision())
 {
 
 }
 
-AudioConvolutionalLayer::~AudioConvolutionalLayer()
+AudioMaxPoolingLayer::~AudioMaxPoolingLayer()
 {
 
 }
 
-AudioConvolutionalLayer::AudioConvolutionalLayer(const matrix::Dimension& inputSize,
-    const matrix::Dimension& filterSize,
-    const matrix::Dimension& filterStride,
-    const matrix::Dimension& inputPadding)
-: AudioConvolutionalLayer(inputSize, filterSize, filterStride, inputPadding,
+AudioMaxPoolingLayer::AudioMaxPoolingLayer(const matrix::Dimension& inputSize,
+    const matrix::Dimension& filterSize)
+: AudioMaxPoolingLayer(inputSize, filterSize,
     matrix::Precision::getDefaultPrecision())
 {
 
 }
 
-AudioConvolutionalLayer::AudioConvolutionalLayer(const matrix::Dimension& inputSize,
+AudioMaxPoolingLayer::AudioMaxPoolingLayer(const matrix::Dimension& inputSize,
     const matrix::Dimension& filterSize,
-    const matrix::Dimension& filterStride,
-    const matrix::Dimension& inputPadding,
     const matrix::Precision& precision)
-: _layer(std::make_unique<ConvolutionalLayer>(
-    inputSize, filterSize, filterStride, inputPadding, precision))
+: _layer(std::make_unique<MaxPoolingLayer>(
+    inputSize, filterSize, precision))
 {
 
 }
 
-AudioConvolutionalLayer::AudioConvolutionalLayer(const AudioConvolutionalLayer& l)
-: _layer(std::make_unique<ConvolutionalLayer>(*l._layer))
+AudioMaxPoolingLayer::AudioMaxPoolingLayer(const AudioMaxPoolingLayer& l)
+: _layer(std::make_unique<MaxPoolingLayer>(*l._layer))
 {
 
 }
 
-AudioConvolutionalLayer& AudioConvolutionalLayer::operator=(const AudioConvolutionalLayer& l)
+AudioMaxPoolingLayer& AudioMaxPoolingLayer::operator=(const AudioMaxPoolingLayer& l)
 {
     Layer::operator=(l);
 
@@ -77,22 +73,22 @@ AudioConvolutionalLayer& AudioConvolutionalLayer::operator=(const AudioConvoluti
     return *this;
 }
 
-void AudioConvolutionalLayer::initialize()
+void AudioMaxPoolingLayer::initialize()
 {
     _layer->initialize();
 }
 
-void AudioConvolutionalLayer::popReversePropagationData()
+void AudioMaxPoolingLayer::popReversePropagationData()
 {
     _layer->popReversePropagationData();
 }
 
-void AudioConvolutionalLayer::clearReversePropagationData()
+void AudioMaxPoolingLayer::clearReversePropagationData()
 {
     _layer->clearReversePropagationData();
 }
 
-void AudioConvolutionalLayer::setShouldComputeDeltas(bool shouldComputeDeltas)
+void AudioMaxPoolingLayer::setShouldComputeDeltas(bool shouldComputeDeltas)
 {
     _layer->setShouldComputeDeltas(shouldComputeDeltas);
 }
@@ -112,9 +108,9 @@ static Dimension permuteDimensionsBackward(Dimension dimension)
     return selectDimensions(dimension, {0, 3, 2, 4, 1});
 }
 
-void AudioConvolutionalLayer::runForwardImplementation(Bundle& bundle)
+void AudioMaxPoolingLayer::runForwardImplementation(Bundle& bundle)
 {
-    auto& inputActivations  = bundle["inputActivations"].get<matrix::MatrixVector>();
+    auto& inputActivations  = bundle["inputActivations" ].get<matrix::MatrixVector>();
     auto& outputActivations = bundle["outputActivations"].get<matrix::MatrixVector>();
 
     inputActivations.back() = permuteDimensionsForward(inputActivations.back());
@@ -123,19 +119,19 @@ void AudioConvolutionalLayer::runForwardImplementation(Bundle& bundle)
 
     outputActivations.back() = permuteDimensionsBackward(outputActivations.back());
 
-    if(util::isLogEnabled("AudioConvolutionalLayer::Detail"))
+    if(util::isLogEnabled("AudioMaxPoolingLayer::Detail"))
     {
-        util::log("AudioConvolutionalLayer::Detail") << "  activation: "
+        util::log("AudioMaxPoolingLayer::Detail") << "  activation: "
             << outputActivations.back().debugString();
     }
     else
     {
-        util::log("AudioConvolutionalLayer") << "  activation: "
+        util::log("AudioMaxPoolingLayer") << "  activation: "
             << outputActivations.back().shapeString() << "\n";
     }
 }
 
-void AudioConvolutionalLayer::runReverseImplementation(Bundle& bundle)
+void AudioMaxPoolingLayer::runReverseImplementation(Bundle& bundle)
 {
     auto& inputDeltas  = bundle["inputDeltas"].get<matrix::MatrixVector>();
     auto& outputDeltas = bundle["outputDeltas"].get<matrix::MatrixVector>();
@@ -149,90 +145,91 @@ void AudioConvolutionalLayer::runReverseImplementation(Bundle& bundle)
     inputDeltas.front() = permuteDimensionsBackward(inputDeltas.front());
 }
 
-MatrixVector& AudioConvolutionalLayer::weights()
+MatrixVector& AudioMaxPoolingLayer::weights()
 {
     return _layer->weights();
 }
 
-const MatrixVector& AudioConvolutionalLayer::weights() const
+const MatrixVector& AudioMaxPoolingLayer::weights() const
 {
     return _layer->weights();
 }
 
-const matrix::Precision& AudioConvolutionalLayer::precision() const
+const matrix::Precision& AudioMaxPoolingLayer::precision() const
 {
     return _layer->precision();
 }
 
-double AudioConvolutionalLayer::computeWeightCost() const
+double AudioMaxPoolingLayer::computeWeightCost() const
 {
     return _layer->computeWeightCost();
 }
 
-Dimension AudioConvolutionalLayer::getInputSize() const
+Dimension AudioMaxPoolingLayer::getInputSize() const
 {
     return permuteDimensionsBackward(_layer->getInputSize());
 }
 
-Dimension AudioConvolutionalLayer::getOutputSize() const
+Dimension AudioMaxPoolingLayer::getOutputSize() const
 {
     return permuteDimensionsBackward(_layer->getOutputSize());
 }
 
-size_t AudioConvolutionalLayer::getInputCount()  const
+size_t AudioMaxPoolingLayer::getInputCount()  const
 {
     return _layer->getInputCount();
 }
 
-size_t AudioConvolutionalLayer::getOutputCount() const
+size_t AudioMaxPoolingLayer::getOutputCount() const
 {
     return _layer->getOutputCount();
 }
 
-size_t AudioConvolutionalLayer::totalNeurons() const
+size_t AudioMaxPoolingLayer::totalNeurons() const
 {
     return _layer->totalNeurons();
 }
 
-size_t AudioConvolutionalLayer::totalConnections() const
+size_t AudioMaxPoolingLayer::totalConnections() const
 {
     return _layer->totalConnections();
 }
 
-size_t AudioConvolutionalLayer::getFloatingPointOperationCount() const
+size_t AudioMaxPoolingLayer::getFloatingPointOperationCount() const
 {
     return _layer->getFloatingPointOperationCount();
 }
 
-size_t AudioConvolutionalLayer::getActivationMemory() const
+size_t AudioMaxPoolingLayer::getActivationMemory() const
 {
     return _layer->getActivationMemory();
 }
 
-void AudioConvolutionalLayer::save(util::OutputTarArchive& archive,
+void AudioMaxPoolingLayer::save(util::OutputTarArchive& archive,
     util::PropertyTree& properties) const
 {
     _layer->save(archive, properties);
 }
 
-void AudioConvolutionalLayer::load(util::InputTarArchive& archive,
+void AudioMaxPoolingLayer::load(util::InputTarArchive& archive,
     const util::PropertyTree& properties)
 {
     _layer->load(archive, properties);
 }
 
-std::unique_ptr<Layer> AudioConvolutionalLayer::clone() const
+std::unique_ptr<Layer> AudioMaxPoolingLayer::clone() const
 {
-    return std::unique_ptr<Layer>(new AudioConvolutionalLayer(*this));
+    return std::unique_ptr<Layer>(new AudioMaxPoolingLayer(*this));
 }
 
-std::string AudioConvolutionalLayer::getTypeName() const
+std::string AudioMaxPoolingLayer::getTypeName() const
 {
-    return "AudioConvolutionalLayer";
+    return "AudioMaxPoolingLayer";
 }
 
 }
 
 }
+
 
 

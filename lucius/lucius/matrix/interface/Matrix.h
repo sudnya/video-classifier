@@ -1,4 +1,4 @@
-/*    \file   Matrix.h
+/*  \file   Matrix.h
     \date   Sunday August 11, 2013
     \author Gregory Diamos <solusstultus@gmail.com>
     \brief  The header file for the Matrix class.

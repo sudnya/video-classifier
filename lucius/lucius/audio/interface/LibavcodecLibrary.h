@@ -92,6 +92,7 @@ public:
 
     static const int AV_NUM_DATA_POINTERS = 8;
     static const int AVSEEK_SIZE = 0x10000;
+    static const int AV_TIME_BASE = 1000000;
 
     enum AVColorSpace
     {
@@ -462,6 +463,9 @@ public:
         int ctx_flags;
         unsigned int nb_streams;
         AVStream** streams;
+        char filename[1024];
+        int64_t start_time;
+        int64_t duration;
     };
 
     class AVCodecContextRAII

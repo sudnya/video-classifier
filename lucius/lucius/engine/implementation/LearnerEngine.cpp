@@ -8,6 +8,7 @@
 #include <lucius/engine/interface/LearnerEngine.h>
 
 #include <lucius/network/interface/NeuralNetwork.h>
+#include <lucius/network/interface/Bundle.h>
 
 #include <lucius/results/interface/ResultVector.h>
 #include <lucius/results/interface/CostResult.h>
@@ -40,16 +41,15 @@ void LearnerEngine::closeModel()
 
 }
 
-LearnerEngine::ResultVector LearnerEngine::runOnBatch(Matrix&& input, Matrix&& reference)
+LearnerEngine::ResultVector LearnerEngine::runOnBatch(const Bundle& input)
 {
-    util::log("LearnerEngine") << "Performing supervised "
-        "learning on batch of " << input.size()[input.size().size()-2] << " images...\n";
-
     auto network = getAggregateNetwork();
 
     network->setIsTraining(true);
 
-    double cost = network->train(std::move(input), std::move(reference));
+    auto bundle = network->train(input);
+
+    double cost = bundle["cost"].get<double>();
 
     restoreAggregateNetwork();
 

@@ -15,6 +15,7 @@
 // Forward Declaration
 namespace lucius { namespace network   { class Layer;               } }
 namespace lucius { namespace network   { class CostFunction;        } }
+namespace lucius { namespace network   { class Bundle;              } }
 namespace lucius { namespace matrix    { class Matrix;              } }
 namespace lucius { namespace matrix    { class MatrixVector;        } }
 namespace lucius { namespace matrix    { class Precision;           } }
@@ -47,19 +48,20 @@ public:
 
 public:
     /*! \brief Get the cost and gradient. */
-    double getCostAndGradient(MatrixVector& gradient,
-        const Matrix& input, const Matrix& reference);
+    Bundle getCostAndGradient(const Bundle& bundle);
     /*! \brief Get the cost. */
-    double getCost(const Matrix& input, const Matrix& reference);
+    Bundle getCost(const Bundle& bundle);
 
 public:
     /*! \brief Get the cost and gradient with respect to the inputs. */
-    double getInputCostAndGradient(Matrix& gradient,
-        const Matrix& input, const Matrix& reference);
+    Bundle getInputCostAndGradient(const Bundle& bundle);
 
 public:
     /*! \brief Run input samples through the network, return the output */
-    Matrix runInputs(const Matrix& m);
+    Matrix runInputs(const Matrix& input);
+
+    /*! \brief Run input samples through the network, update the bundle. */
+    Bundle runInputs(const Bundle& bundle);
 
 public:
     /*! \brief Add an existing layer, the network takes ownership */
@@ -113,7 +115,10 @@ public:
 
 public:
     /*! \brief Train the network on the specified input and reference, return the cost. */
-    double train(const Matrix& input, const Matrix& reference);
+    double train(const Matrix& input, const Matrix& output);
+
+    /*! \brief Train the network on the input and output activations, update the bundle. */
+    Bundle train(const Bundle& bundle);
 
 public:
     typedef std::vector<LayerPointer> LayerVector;

@@ -6,8 +6,10 @@
 
 // Lucius Includes
 #include <lucius/network/interface/SoftmaxCostFunction.h>
+#include <lucius/network/interface/Bundle.h>
 
 #include <lucius/matrix/interface/Matrix.h>
+#include <lucius/matrix/interface/MatrixVector.h>
 #include <lucius/matrix/interface/MatrixOperations.h>
 #include <lucius/matrix/interface/Operation.h>
 #include <lucius/matrix/interface/SoftmaxOperations.h>
@@ -23,26 +25,34 @@ namespace network
 {
 
 typedef matrix::Matrix Matrix;
+typedef matrix::MatrixVector MatrixVector;
 
 SoftmaxCostFunction::~SoftmaxCostFunction()
 {
 
 }
 
-Matrix SoftmaxCostFunction::computeCost(const Matrix& output, const Matrix& reference) const
+void SoftmaxCostFunction::computeCost(Bundle& bundle) const
 {
+    auto& output    = bundle["outputActivations"].get<MatrixVector>().front();
+    auto& reference = bundle["referenceActivations"].get<MatrixVector>().front();
+
     auto softmaxResult = softmax(output);
 
     auto result = apply(softmaxResult, matrix::Log());
 
     size_t samples = output.size()[output.size().size() - 2];
 
-    return apply(apply(reference, result, matrix::Multiply()), matrix::Multiply(-1.0/samples));
+    bundle["costs"] = apply(apply(Matrix(reference), result, matrix::Multiply()),
+        matrix::Multiply(-1.0/samples));
 }
 
-Matrix SoftmaxCostFunction::computeDelta(const Matrix& output, const Matrix& reference) const
+void SoftmaxCostFunction::computeDelta(Bundle& bundle) const
 {
-    return apply(softmax(output), reference, matrix::Subtract());
+    auto& output    = bundle["outputActivations"].get<MatrixVector>().front();
+    auto& reference = bundle["referenceActivations"].get<MatrixVector>().front();
+
+    bundle["outputDeltas"] = MatrixVector({apply(softmax(output), reference, matrix::Subtract())});
 }
 
 CostFunction* SoftmaxCostFunction::clone() const

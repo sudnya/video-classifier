@@ -37,7 +37,7 @@ public:
         Note: the caller must ensure that the producer is not empty.
 
     */
-    virtual InputAndReferencePair pop();
+    virtual Bundle pop();
 
     /*! \brief Return true if there are no more samples. */
     virtual bool empty() const;

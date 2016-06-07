@@ -11,6 +11,7 @@
 #include <lucius/network/interface/LayerFactory.h>
 #include <lucius/network/interface/CostFunctionFactory.h>
 #include <lucius/network/interface/ActivationFunctionFactory.h>
+#include <lucius/network/interface/Bundle.h>
 
 #include <lucius/matrix/interface/Matrix.h>
 #include <lucius/matrix/interface/MatrixVector.h>
@@ -112,6 +113,44 @@ static NeuralNetwork createAudioConvolutionalNetwork(size_t layerSize)
     return network;
 }
 
+static NeuralNetwork createAudioMaxPoolingNetwork(size_t layerSize)
+{
+    NeuralNetwork network;
+
+    size_t timesteps = 6;
+
+    network.addLayer(LayerFactory::create("AudioConvolutionalLayer",
+        std::make_tuple("InputSamples",     layerSize),
+        std::make_tuple("InputTimesteps",   timesteps),
+        std::make_tuple("InputChannels",    1        ),
+        std::make_tuple("BatchSize",        1        ),
+        std::make_tuple("FilterSamples",    layerSize),
+        std::make_tuple("FilterTimesteps",  3        ),
+        std::make_tuple("FilterInputs",     1        ),
+        std::make_tuple("FilterOutputs",    layerSize),
+        std::make_tuple("StrideSamples",    layerSize),
+        std::make_tuple("StrideTimesteps",  1        ),
+        std::make_tuple("PaddingSamples",   0        ),
+        std::make_tuple("PaddingTimesteps", 1        ),
+        std::make_tuple("Precision",        "DoublePrecision")));
+
+    network.addLayer(LayerFactory::create("AudioMaxPoolingLayer",
+        std::make_tuple("InputSamples",     layerSize),
+        std::make_tuple("InputTimesteps",   timesteps),
+        std::make_tuple("InputChannels",    1        ),
+        std::make_tuple("BatchSize",        1        ),
+        std::make_tuple("FilterSamples",    1        ),
+        std::make_tuple("FilterTimesteps",  3        ),
+        std::make_tuple("Precision",        "DoublePrecision")));
+
+    network.back()->setActivationFunction(ActivationFunctionFactory::create(
+        "SigmoidActivationFunction"));
+
+    network.initialize();
+
+    return network;
+}
+
 static Matrix generateInput(NeuralNetwork& network)
 {
     return matrix::rand(network.getInputSize(), DoublePrecision());
@@ -139,7 +178,8 @@ static double getDifference(double difference, double total)
     return difference / total;
 }
 
-static bool gradientCheck(NeuralNetwork& network, const Matrix& input, const Matrix& reference)
+static bool gradientCheck(NeuralNetwork& network,
+    const Matrix& input, const Matrix& reference)
 {
     const double epsilon = 1.0e-5;
 
@@ -149,9 +189,15 @@ static bool gradientCheck(NeuralNetwork& network, const Matrix& input, const Mat
     size_t layerId  = 0;
     size_t matrixId = 0;
 
-    MatrixVector gradient;
+    Bundle inputBundle(
+        std::make_pair("inputActivations",     MatrixVector({input})),
+        std::make_pair("referenceActivations", MatrixVector({reference}))
+    );
 
-    double cost = network.getCostAndGradient(gradient, input, reference);
+    auto bundle = network.getCostAndGradient(inputBundle);
+
+    MatrixVector gradient = bundle["gradients"].get<MatrixVector>();
+    double cost = bundle["cost"].get<double>();
 
     for(auto& layer : network)
     {
@@ -163,7 +209,9 @@ static bool gradientCheck(NeuralNetwork& network, const Matrix& input, const Mat
             {
                 weight += epsilon;
 
-                double newCost = network.getCost(input, reference);
+                bundle = network.getCost(inputBundle);
+
+                double newCost = bundle["cost"].get<double>();
 
                 weight -= epsilon;
 
@@ -236,6 +284,33 @@ static bool runTestConvolutional(size_t layerSize, bool seed)
     }
 }
 
+static bool runTestAudioMaxPooling(size_t layerSize, bool seed)
+{
+    if(seed)
+    {
+        matrix::srand(std::time(0));
+    }
+    else
+    {
+        matrix::srand(3490945);
+    }
+
+    auto network = createAudioMaxPoolingNetwork(layerSize);
+
+    if(gradientCheck(network))
+    {
+        std::cout << "Audio Max Pooling Network Test Passed\n";
+
+        return true;
+    }
+    else
+    {
+        std::cout << "Audio Max Pooling Network Test Failed\n";
+
+        return false;
+    }
+}
+
 static bool runTestAudioConvolutional(size_t layerSize, bool seed)
 {
     if(seed)
@@ -266,8 +341,23 @@ static bool runTestAudioConvolutional(size_t layerSize, bool seed)
 
 static void runTest(size_t layerSize, bool seed)
 {
-    runTestAudioConvolutional(layerSize, seed);
-    runTestConvolutional(layerSize, seed);
+    bool result = true;
+
+    result &= runTestAudioMaxPooling(layerSize, seed);
+
+    if(!result)
+    {
+        return;
+    }
+
+    result &= runTestAudioConvolutional(layerSize, seed);
+
+    if(!result)
+    {
+        return;
+    }
+
+    result &= runTestConvolutional(layerSize, seed);
 }
 
 }

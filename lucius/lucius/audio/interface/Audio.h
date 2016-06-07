@@ -38,6 +38,7 @@ public:
 
 public:
     void cache();
+    void cacheHeader();
     void invalidateCache();
 
     bool isCached() const;
@@ -60,11 +61,12 @@ public:
 
 public:
     void setUnpaddedLength(size_t position);
-    size_t getUnpaddedLength();
+    size_t getUnpaddedLength() const;
 
 public:
     Audio slice(size_t startingSample, size_t endingSample) const;
     Audio sample(size_t newFrequency) const;
+    Audio powerNormalize() const;
 
 public:
     std::string getLabelForSample(size_t sample) const;
@@ -88,6 +90,7 @@ private:
 
 private:
     bool _isLoaded;
+    bool _isHeaderLoaded;
 
 private:
     class Label
@@ -126,6 +129,7 @@ private:
 
 private:
     void _load();
+    void _loadHeader();
     void _load(std::istream& stream, const std::string& format);
 
 };

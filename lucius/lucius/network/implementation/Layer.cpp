@@ -9,6 +9,7 @@
 #include <lucius/network/interface/ActivationCostFunction.h>
 #include <lucius/network/interface/ActivationFunction.h>
 #include <lucius/network/interface/WeightCostFunction.h>
+#include <lucius/network/interface/Bundle.h>
 
 #include <lucius/network/interface/ActivationCostFunctionFactory.h>
 #include <lucius/network/interface/ActivationFunctionFactory.h>
@@ -133,8 +134,10 @@ static matrix::Matrix reshapeActivations(const matrix::Matrix& m, matrix::Dimens
     return reshape(m, newShape);
 }
 
-void Layer::runForward(MatrixVector& outputActivations, const MatrixVector& inputActivations)
+void Layer::runForward(Bundle& bundle)
 {
+    MatrixVector inputActivations = bundle["inputActivations"].get<MatrixVector>();
+
     MatrixVector reshapedInputActivations;
 
     for(auto& activation : inputActivations)
@@ -159,14 +162,16 @@ void Layer::runForward(MatrixVector& outputActivations, const MatrixVector& inpu
         }
     }
 
-    return runForwardImplementation(outputActivations, reshapedInputActivations);
+    bundle["inputActivations"] = reshapedInputActivations;
+
+    return runForwardImplementation(bundle);
 }
 
-void Layer::runReverse(MatrixVector& gradients,
-    MatrixVector& inputDeltas,
-    const MatrixVector& outputDeltas)
+void Layer::runReverse(Bundle& bundle)
 {
     assert(getIsTraining());
+
+    MatrixVector outputDeltas = bundle["outputDeltas"].get<MatrixVector>();
 
     MatrixVector reshapedOutputDeltas;
 
@@ -175,7 +180,9 @@ void Layer::runReverse(MatrixVector& gradients,
         reshapedOutputDeltas.push_back(reshapeActivations(outputDelta, getOutputSize()));
     }
 
-    runReverseImplementation(gradients, inputDeltas, reshapedOutputDeltas);
+    bundle["outputDeltas"] = reshapedOutputDeltas;
+
+    runReverseImplementation(bundle);
 }
 
 void Layer::popReversePropagationData()
