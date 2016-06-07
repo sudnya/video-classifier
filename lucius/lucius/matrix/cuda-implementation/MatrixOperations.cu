@@ -1290,21 +1290,14 @@ void rangeOverPrecisions(Matrix& result, const Matrix& input,
 
     size_t elements = result.elements();
 
-    if(input.isContiguous() && result.isContiguous())
-    {
-        // TODO
-    }
-    else
-    {
+    // TODO: specialize the contiguous case to make it faster
+    MatrixView<NativeType>      resultView(result);
+    ConstMatrixView<NativeType> inputView(input);
 
-        MatrixView<NativeType>      resultView(result);
-        ConstMatrixView<NativeType> inputView(input);
+    auto lambda = NoncontiguousRangeLambda<NativeType>
+        {resultView, inputView, elements};
 
-        auto lambda = NoncontiguousRangeLambda<NativeType>
-            {resultView, inputView, elements};
-
-        parallel::multiBulkSynchronousParallel(lambda);
-    }
+    parallel::multiBulkSynchronousParallel(lambda);
 }
 
 template<typename PossiblePrecisions>

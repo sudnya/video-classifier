@@ -890,7 +890,7 @@ public:
     {
         auto outputCoordinate = linearToDimension(outputPosition, outputSize);
         
-        Dimension retVal = inputSize;
+        Dimension retVal = outputCoordinate;
         auto frameSize   = inputSize[0];
         
         retVal[0] = outputCoordinate[0] % frameSize;
