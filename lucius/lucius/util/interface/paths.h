@@ -42,6 +42,7 @@ bool isDirectory(const std::string& path);
 void makeDirectory(const std::string& path);
 
 size_t getFileSize(std::istream& stream);
+size_t getFileSize(const std::string& path);
 void copyFile(const std::string& outputPath, const std::string& inputPath);
 std::string getFileData(std::istream& stream);
 

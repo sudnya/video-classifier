@@ -18,9 +18,9 @@ namespace lucius
 namespace input
 {
 
-InputTextDataProducer::InputTextDataProducer(const std::string& imageDatabaseFilename)
+InputTextDataProducer::InputTextDataProducer(const std::string& textDatabaseFilename) : _sampleDatabasePath(textDatabaseFilename), _initialized(false)
 {
-
+    
 }
 
 InputTextDataProducer::~InputTextDataProducer()
@@ -30,7 +30,17 @@ InputTextDataProducer::~InputTextDataProducer()
 
 void InputTextDataProducer::initialize()
 {
+    if(_initialized)
+    {
+        return;
+    }
+    util::log("InputTextDataProducer") << "Initializing from text database '" << _sampleDatabasePath << "'\n";
+    
+    _segmentSize = util::KnobDatabase::getKnobValue( "InputTextDataProducer::SegmentSize", 1000);
 
+    createTextDatabase();
+
+    _initialized = true;    
 }
 
 network::Bundle InputTextDataProducer::pop()
@@ -56,6 +66,44 @@ size_t InputTextDataProducer::getUniqueSampleCount() const
 }
 
 
+}
+
+void createTextDatabase()
+{
+    //
+    util::log("InputTextDataProducer") << " scanning text database '" << _sampleDatabasePath << "'\n";
+
+    database::SampleDatabase sampleDatabase(_sampleDatabasePath);
+
+    sampleDatabase.load();
+
+    for(auto& sample : sampleDatabase)
+    {
+        if(sample.isTextSample())
+        {
+            if(sample.hasLabel())
+            {
+                util::log("InputTextDataProducer::Detail") << " found labeled image '" << sample.path() << "' with label '" << sample.label() << "'\n";
+            }
+            else
+            {
+                util::log("InputTextDataProducer::Detail") << "  found unlabeled image '" << sample.path() << "'\n";
+            }
+
+            //get file size
+            size_t fileSize      = util::getFileSize(sample.path());
+            int iterationsInFile = fileSize/_segmentSize;
+            int leftOver         = fileSize%_segmentSize;
+
+            for (int i = 0; i <= iterationsInFile; ++i) //<= to accomodate the last uneven segment
+            {
+                _descriptors.add(new FileDescriptor(sample.path, i*_segmentSize));
+            }
+            //leftover
+            //_descriptors.add(new FileDescriptor(sample.path, iterationsInFile*_segmentSize));
+        }
+
+    }
 }
 
 }

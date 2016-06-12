@@ -61,6 +61,12 @@ bool Sample::isAudioSample() const
     return audio::Audio::isPathAnAudio(path());
 }
 
+bool Sample::isTextSample() const
+{
+    assert(false);
+    return false; 
+}
+
 bool Sample::hasLabel() const
 {
     return !label().empty();

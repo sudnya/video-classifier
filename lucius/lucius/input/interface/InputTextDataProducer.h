@@ -42,6 +42,22 @@ public:
     /*! \brief Get the total number of unique samples that can be produced. */
     virtual size_t getUniqueSampleCount() const;
 
+private:
+    std::vector<FileDescriptor> _descriptors;
+    std::string _sampleDatabasePath;
+    bool _initialized;
+
+private:
+    class FileDescriptor
+    {
+        public:
+            FileDescriptor(std::string filename, size_t offset) : _filename(filename), _offsetInFile(offset)
+            {
+            }
+        private:
+            std::string _filename;
+            size_t _offsetInFile;
+    }
 };
 
 }

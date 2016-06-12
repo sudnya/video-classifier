@@ -239,6 +239,12 @@ size_t getFileSize(std::istream& stream)
     return length;
 }
 
+size_t getFileSize(const std::string& path)
+{
+    std::ifstream stream(path);
+    return getFileSize(stream);
+}
+
 std::string getFileData(std::istream& stream)
 {
     size_t size = getFileSize(stream);
