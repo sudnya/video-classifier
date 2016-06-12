@@ -510,9 +510,9 @@ private:
             _randomWindow = util::KnobDatabase::getKnobValue(
                 "InputAudioDataProducer::RandomShuffleWindow", 512.);
 
-            _totalTimestepsPerUtterance = util::KnobDatabase::getKnobValue(
+            _totalTimestepsPerRepeat = util::KnobDatabase::getKnobValue(
                 "InputAudioDataProducer::TotalTimestepsPerRepeat", 512);
-            _totalTimestepsPerUtterance = util::KnobDatabase::getKnobValue(
+            _totalTimestepsPerNoise = util::KnobDatabase::getKnobValue(
                 "InputAudioDataProducer::TotalTimestepsPerNoise", 512);
             _totalTimestepsPerUtterance = util::KnobDatabase::getKnobValue(
                 "InputAudioDataProducer::TotalTimestepsPerUtterance", 512);
@@ -543,8 +543,6 @@ private:
             auto sample = _samples[_nextSample++];
 
             size_t begin = sample.audioClipOffset * _getFrameSize();
-            size_t end = (sample.audioClipOffset + _totalTimestepsPerUtterance) *
-                _getFrameSize();
 
             Audio result;
 
@@ -554,11 +552,15 @@ private:
             }
             else if(sample.type == Sample::NoiseType)
             {
+                size_t end = (sample.audioClipOffset + _totalTimestepsPerNoise) *
+                    _getFrameSize();
                 result = _noise[sample.audioVectorOffset].slice(begin, end);
             }
             else
             {
                 assert(sample.type == Sample::RepeatedType);
+                size_t end = (sample.audioClipOffset + _totalTimestepsPerRepeat) *
+                    _getFrameSize();
                 result = _repeatedAudio[sample.audioVectorOffset].slice(begin, end);
             }
 
@@ -598,12 +600,12 @@ private:
 
             size_t frameCount = _noise.back().duration() * frequency / _getFrameSize();
 
-            size_t totalSamples = frameCount / _totalTimestepsPerUtterance;
+            size_t totalSamples = frameCount / _totalTimestepsPerNoise;
 
             for(size_t sample = 0; sample < totalSamples; ++sample)
             {
                 _samples.push_back(Sample(Sample::NoiseType, index,
-                    sample * _totalTimestepsPerUtterance, _totalTimestepsPerUtterance));
+                    sample * _totalTimestepsPerNoise, _totalTimestepsPerNoise));
             }
         }
 
@@ -619,12 +621,12 @@ private:
 
             size_t frameCount = _repeatedAudio.back().duration() * frequency / _getFrameSize();
 
-            size_t totalSamples = frameCount / _totalTimestepsPerUtterance;
+            size_t totalSamples = frameCount / _totalTimestepsPerRepeat;
 
             for(size_t sample = 0; sample < totalSamples; ++sample)
             {
                 _samples.push_back(Sample(Sample::RepeatedType, index,
-                    sample * _totalTimestepsPerUtterance, _totalTimestepsPerUtterance));
+                    sample * _totalTimestepsPerRepeat, _totalTimestepsPerRepeat));
             }
         }
 
