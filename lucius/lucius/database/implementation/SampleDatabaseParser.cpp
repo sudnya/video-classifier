@@ -47,21 +47,30 @@ static std::string removeWhitespace(const std::string& line);
 
 void SampleDatabaseParser::parse()
 {
-    std::ifstream file(_database->path().c_str());
+    std::istream* stream = &_database->stream();
 
-    if(!file.is_open())
+    std::ifstream file;
+
+    if(stream == nullptr)
     {
-        throw std::runtime_error("Could not open '" +
-            _database->path() + "' for reading.");
+        file.open(_database->path().c_str());
+
+        if(!file.is_open())
+        {
+            throw std::runtime_error("Could not open '" +
+                _database->path() + "' for reading.");
+        }
+
+        stream = &file;
     }
 
     auto databaseDirectory = util::getDirectory(_database->path());
 
-    while(file.good())
+    while(stream.good())
     {
         std::string line;
 
-        std::getline(file, line);
+        std::getline(stream, line);
 
         line = removeWhitespace(line);
 

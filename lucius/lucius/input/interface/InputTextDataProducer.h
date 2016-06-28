@@ -1,6 +1,6 @@
-/*    \file   InputTextDataProducer.h
-    \date   Saturday August 10, 2014
-    \author Gregory Diamos <solusstultus@gmail.com>
+/*  \file   InputTextDataProducer.cpp
+    \date   Saturday June 11, 2016
+    \author Sudnya Diamos <mailsudnya@gmail.com>
     \brief  The header file for the InputTextDataProducer class.
 */
 
@@ -19,6 +19,7 @@ class InputTextDataProducer : public InputDataProducer
 {
 public:
     InputTextDataProducer(const std::string& textDatabaseFilename);
+    InputTextDataProducer(std::istream& textDatabase);
     virtual ~InputTextDataProducer();
 
 public:
@@ -26,9 +27,7 @@ public:
     virtual void initialize();
 
     /*! \brief Deque a set of samples from the producer.
-
         Note: the caller must ensure that the producer is not empty.
-
     */
     virtual Bundle pop();
 
@@ -41,11 +40,8 @@ public:
 
     /*! \brief Get the total number of unique samples that can be produced. */
     virtual size_t getUniqueSampleCount() const;
-
 private:
-    std::vector<FileDescriptor> _descriptors;
-    std::string _sampleDatabasePath;
-    bool _initialized;
+    void createTextDatabase();
 
 private:
     class FileDescriptor
@@ -54,10 +50,23 @@ private:
             FileDescriptor(std::string filename, size_t offset) : _filename(filename), _offsetInFile(offset)
             {
             }
+
+        public:
+            size_t getOffsetInFile() const
+            {
+                return _offsetInFile;
+            }
         private:
             std::string _filename;
             size_t _offsetInFile;
-    }
+    };
+private:
+    std::vector<FileDescriptor> _descriptors;
+    std::string _sampleDatabasePath;
+    std::istream& _sampleDatabase;
+    bool _initialized;
+    size_t _segmentSize;
+
 };
 
 }

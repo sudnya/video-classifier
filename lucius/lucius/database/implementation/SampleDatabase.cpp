@@ -24,7 +24,13 @@ SampleDatabase::SampleDatabase()
 }
 
 SampleDatabase::SampleDatabase(const std::string& path)
-: _path(path)
+: _path(path), _stream(nullptr)
+{
+
+}
+
+SampleDatabase::SampleDatabase(std::istream& stream)
+: _stream(&stream)
 {
 
 }
@@ -98,6 +104,11 @@ bool SampleDatabase::empty() const
 const std::string& SampleDatabase::path() const
 {
     return _path;
+}
+
+std::istream& SampleDatabase::stream()
+{
+    return *_stream;
 }
 
 bool SampleDatabase::containsVideoSamples() const

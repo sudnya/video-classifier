@@ -122,6 +122,37 @@ static void loadModelAttributes(Model& model, const util::PropertyTree& specific
 
 typedef std::map<std::string, util::ParameterPack> TypeMap;
 
+StringVector getAllPossibleGraphemes(const util::PropertyTree& specification)
+{
+    if(!specification.exists("infer-outputs-from"))
+    {
+        return;
+    }
+
+    auto datasetPath = specification.get<std::string>("infer-outputs-from");
+
+    database::SampleDatabase inputDatabase(datasetPath);
+
+    if(specification.exists("model-attributes.Graphemes"))
+    {
+        for(auto& grapheme : specification.get("model-attributes.Graphemes"))
+        {
+            inputDatabase.addGrapheme(grapheme.key());
+        }
+
+        model.setAttribute("UsesGraphemes", "1");
+    }
+
+    inputDatabase.load();
+
+    auto labels = inputDatabase.getAllPossibleLabels();
+
+    size_t labelCount = labels.size();
+    size_t index = 0;
+
+    return labels;
+}
+
 matrix::Dimension computeInputSize(const util::PropertyTree& model)
 {
     if(!model.exists("model-attributes"))
@@ -148,6 +179,15 @@ matrix::Dimension computeInputSize(const util::PropertyTree& model)
         result.push_back(1);
         result.push_back(1);
         result.push_back(1);
+    }
+    else if(attributes.exists("SegmentSize"))
+    {
+        result.push_back(getAllPossibleGraphemes(model).size()); 
+        result.push_back(1); 
+        result.push_back(1); 
+        result.push_back(1); // minibatch
+        result.push_back(1); // timesteps
+
     }
     else
     {
@@ -185,38 +225,17 @@ static void appendInputSize(util::ParameterPack& parameters, const matrix::Dimen
 static void setupOutputLayerParameters(model::Model& model,
     util::ParameterPack& layerParameters, const util::PropertyTree& specification)
 {
-    if(!specification.exists("infer-outputs-from"))
-    {
-        return;
-    }
-
-    auto datasetPath = specification.get<std::string>("infer-outputs-from");
-
-    database::SampleDatabase inputDatabase(datasetPath);
-
-    if(specification.exists("model-attributes.Graphemes"))
-    {
-        for(auto& grapheme : specification.get("model-attributes.Graphemes"))
-        {
-            inputDatabase.addGrapheme(grapheme.key());
-        }
-
-        model.setAttribute("UsesGraphemes", "1");
-    }
-
-    inputDatabase.load();
-
-    auto labels = inputDatabase.getAllPossibleLabels();
-
-    size_t labelCount = labels.size();
+    auto labels = getAllPossibleGraphemes(specification);
     size_t index = 0;
 
     // The 0th network output must be a separator for CTC
-    if(specification.exists("model-attributes.Graphemes"))
+    if(specification.exists("cost-function") &&
+        specification.get("cost-function") == "CTCCostFunction")
     {
-        model.setOutputLabel(index++, "-SEPARATOR-");
-        inputDatabase.addGrapheme("-SEPARATOR-");
-        labelCount++;
+        if(specification.exists("model-attributes.Graphemes"))
+        {
+            model.setOutputLabel(index++, "-SEPARATOR-");
+        }
     }
 
     for(auto& label : labels)
@@ -224,7 +243,13 @@ static void setupOutputLayerParameters(model::Model& model,
         model.setOutputLabel(index++, label);
     }
 
-    layerParameters.insert("OutputSize", labelCount);
+    if(specification.exists("cost-function") &&
+        specification.get("cost-function") == "CTCCostFunction")
+    {
+        labels.push_back("-SEPARATOR-");
+    }
+
+    layerParameters.insert("OutputSize", labels.size());
 }
 
 static void populateSubgraphLayer(std::unique_ptr<Layer>& layer,
