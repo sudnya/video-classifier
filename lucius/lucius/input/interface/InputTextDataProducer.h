@@ -1,4 +1,4 @@
-/*  \file   InputTextDataProducer.cpp
+/*  \file   InputTextDataProducer.h
     \date   Saturday June 11, 2016
     \author Sudnya Diamos <mailsudnya@gmail.com>
     \brief  The header file for the InputTextDataProducer class.
@@ -7,6 +7,9 @@
 #pragma once
 
 #include <lucius/input/interface/InputDataProducer.h>
+
+// Standard Library Includes
+#include <istream>
 
 namespace lucius
 {
@@ -56,16 +59,26 @@ private:
             {
                 return _offsetInFile;
             }
+
+            const std::string& getFilename() const
+            {
+                return _filename;
+            }
         private:
             std::string _filename;
             size_t _offsetInFile;
     };
+
+private:
+    void convertChunkToOneHot(const std::string& filename, size_t offsetInFile, Matrix m, size_t miniBatch);
+
 private:
     std::vector<FileDescriptor> _descriptors;
     std::string _sampleDatabasePath;
-    std::istream& _sampleDatabase;
+    std::istream* _sampleDatabase;
     bool _initialized;
     size_t _segmentSize;
+    size_t _poppedCount;
 
 };
 

@@ -122,11 +122,13 @@ static void loadModelAttributes(Model& model, const util::PropertyTree& specific
 
 typedef std::map<std::string, util::ParameterPack> TypeMap;
 
-StringVector getAllPossibleGraphemes(const util::PropertyTree& specification)
+database::SampleDatabase::StringVector getAllPossibleGraphemes(const util::PropertyTree& specification)
 {
+    database::SampleDatabase::StringVector labels;
+    
     if(!specification.exists("infer-outputs-from"))
     {
-        return;
+        return labels;
     }
 
     auto datasetPath = specification.get<std::string>("infer-outputs-from");
@@ -139,16 +141,11 @@ StringVector getAllPossibleGraphemes(const util::PropertyTree& specification)
         {
             inputDatabase.addGrapheme(grapheme.key());
         }
-
-        model.setAttribute("UsesGraphemes", "1");
     }
 
     inputDatabase.load();
 
-    auto labels = inputDatabase.getAllPossibleLabels();
-
-    size_t labelCount = labels.size();
-    size_t index = 0;
+    labels = inputDatabase.getAllPossibleLabels();
 
     return labels;
 }
@@ -228,9 +225,14 @@ static void setupOutputLayerParameters(model::Model& model,
     auto labels = getAllPossibleGraphemes(specification);
     size_t index = 0;
 
+    if(specification.exists("model-attributes.Graphemes"))
+    {
+        model.setAttribute("UsesGraphemes", "1");
+    }
+        
     // The 0th network output must be a separator for CTC
     if(specification.exists("cost-function") &&
-        specification.get("cost-function") == "CTCCostFunction")
+        specification.get<std::string>("cost-function") == "CTCCostFunction")
     {
         if(specification.exists("model-attributes.Graphemes"))
         {
@@ -244,7 +246,7 @@ static void setupOutputLayerParameters(model::Model& model,
     }
 
     if(specification.exists("cost-function") &&
-        specification.get("cost-function") == "CTCCostFunction")
+        specification.get<std::string>("cost-function") == "CTCCostFunction")
     {
         labels.push_back("-SEPARATOR-");
     }

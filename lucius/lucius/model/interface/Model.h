@@ -61,6 +61,7 @@ public:
 
 public:
     size_t getOutputCount() const;
+    size_t getInputCount() const;
 
 public:
     void setPath(const std::string& path);
@@ -107,6 +108,7 @@ private:
     NeuralNetworkList _neuralNetworks;
     NeuralNetworkMap  _neuralNetworkMap;
     LabelMap          _outputLabels;
+    LabelMap          _inputLabels;
     AttributeMap      _attributes;
 
 };

@@ -103,6 +103,15 @@ size_t Model::getOutputCount() const
     return _outputLabels.size();
 }
 
+size_t Model::getInputCount() const
+{
+    if (_neuralNetworks.empty())
+    {
+        return 0;
+    }
+    return _neuralNetworks.front().getInputCount();
+}
+
 void Model::setPath(const std::string& path)
 {
     _path = path;

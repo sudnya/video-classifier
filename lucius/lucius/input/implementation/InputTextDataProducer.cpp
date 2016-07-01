@@ -6,16 +6,20 @@
 
 #include <lucius/input/interface/InputTextDataProducer.h>
 
+#include <lucius/model/interface/Model.h>
 #include <lucius/network/interface/Bundle.h>
 
 #include <lucius/database/interface/SampleDatabase.h>
 #include <lucius/database/interface/Sample.h>
 
 #include <lucius/matrix/interface/Matrix.h>
+#include <lucius/matrix/interface/MatrixOperations.h>
 
 #include <lucius/util/interface/debug.h>
 #include <lucius/util/interface/Knobs.h>
 #include <lucius/util/interface/paths.h>
+
+#include <fstream>
 
 namespace lucius
 {
@@ -23,12 +27,12 @@ namespace lucius
 namespace input
 {
 
-InputTextDataProducer::InputTextDataProducer(const std::string& textDatabaseFilename) : _sampleDatabasePath(textDatabaseFilename), _initialized(false)
+InputTextDataProducer::InputTextDataProducer(const std::string& textDatabaseFilename) : _sampleDatabasePath(textDatabaseFilename),_sampleDatabase(nullptr), _initialized(false), _poppedCount(0)
 {
     
 }
 
-InputTextDataProducer::InputTextDataProducer(std::istream& textDatabase) : _sampleDatabase(textDatabase), _initialized(false)
+InputTextDataProducer::InputTextDataProducer(std::istream& textDatabase) : _sampleDatabase(&textDatabase), _initialized(false), _poppedCount(0)
 {
     
 }
@@ -58,15 +62,15 @@ network::Bundle InputTextDataProducer::pop()
     // get minibatch size
     auto miniBatchSize = this->getBatchSize();
 
-    Matrix inputActivations(this->getModel()->getInputCount(), miniBatchSize, _segmentSize);
+    Matrix inputActivations = matrix::zeros({this->getModel()->getInputCount(), miniBatchSize, _segmentSize},
+           matrix::Precision::getDefaultPrecision());
 
     // get minibatch number of descriptors (key)
     for (size_t i = 0; i < miniBatchSize; ++i)
     {
-        convertChunkToOneHot(_descriptors[_poppedCount+i]);
+        // one hot encoded the samples within descriptors
+        convertChunkToOneHot(_descriptors[_poppedCount+i].getFilename(), _descriptors[_poppedCount+i].getOffsetInFile(), inputActivations, i);
     }
-
-    // one hot encoded the samples within descriptors
     // add one hot encoded matrix to bundle
     // add one hot encoded reference matrix (shifted to next char) to bundle 
     _poppedCount += miniBatchSize;
@@ -75,7 +79,7 @@ network::Bundle InputTextDataProducer::pop()
 
 bool InputTextDataProducer::empty() const
 {
-    return (_descriptor.size() - _poppedCount) == 0;
+    return (_descriptors.size() - _poppedCount) == 0;
 }
 
 void InputTextDataProducer::reset()
@@ -89,7 +93,40 @@ size_t InputTextDataProducer::getUniqueSampleCount() const
     return _descriptors.size();
 }
 
+void InputTextDataProducer::convertChunkToOneHot(const std::string& filename, size_t offsetInFile, Matrix inputActivations, size_t miniBatch)
+{
+    std::ifstream file(filename);
 
+    file.seekg(offsetInFile);
+
+    for(size_t charPosInFile = 0; charPosInFile < _segmentSize; ++charPosInFile)
+    {
+        std::string c;
+        
+        c.push_back(file.get());
+
+        // TODO check for file read errors
+
+        size_t characterPositionInGraphemeSet = getModel()->getOutputCount();
+
+        for(size_t index = 0; index < getModel()->getOutputCount(); ++index)
+        {
+            if(c == getModel()->getOutputLabel(index))
+            {
+                characterPositionInGraphemeSet = index;
+                break;
+            }
+        }
+
+        if(characterPositionInGraphemeSet == getModel()->getOutputCount())
+        {
+            throw std::runtime_error("Could not match loaded grapheme '" + c +
+                "' against any known grapheme.");
+        }
+
+        inputActivations[{characterPositionInGraphemeSet, miniBatch, charPosInFile}] = 1.0;
+    }
+}
 
 void InputTextDataProducer::createTextDatabase()
 {
@@ -104,7 +141,7 @@ void InputTextDataProducer::createTextDatabase()
     }
     else
     {
-        sampleDatabase.reset(new database::SampleDatabase(_sampleDatabase));
+        sampleDatabase.reset(new database::SampleDatabase(*_sampleDatabase));
     }
 
     sampleDatabase->load();

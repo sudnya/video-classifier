@@ -66,11 +66,11 @@ void SampleDatabaseParser::parse()
 
     auto databaseDirectory = util::getDirectory(_database->path());
 
-    while(stream.good())
+    while(stream->good())
     {
         std::string line;
 
-        std::getline(stream, line);
+        std::getline(*stream, line);
 
         line = removeWhitespace(line);
 
