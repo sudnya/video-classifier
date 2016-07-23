@@ -546,8 +546,6 @@ private:
                 "InputAudioDataProducer::TotalTimestepsPerNoise", 512);
             _totalTimestepsPerUtterance = util::KnobDatabase::getKnobValue(
                 "InputAudioDataProducer::TotalTimestepsPerUtterance", 512);
-            _audioTimesteps             = util::KnobDatabase::getKnobValue(
-                "InputAudioDataProducer::AudioTimesteps", 64);
 
             // Determine how many audio samples to cache
             _secondsToCache = util::KnobDatabase::getKnobValue(
@@ -584,14 +582,14 @@ private:
             {
                 size_t end = (sample.audioClipOffset + _totalTimestepsPerNoise) *
                     _getFrameSize();
-                result = _noise[sample.audioVectorOffset].slice(begin, end);
+                result = _audio[sample.audioVectorOffset].slice(begin, end);
             }
             else
             {
                 assert(sample.type == AudioDescriptor::RepeatedType);
                 size_t end = (sample.audioClipOffset + _totalTimestepsPerRepeat) *
                     _getFrameSize();
-                result = _repeatedAudio[sample.audioVectorOffset].slice(begin, end);
+                result = _audio[sample.audioVectorOffset].slice(begin, end);
             }
 
             _updateCache();
@@ -621,15 +619,15 @@ private:
 
         void addNoise(const Audio& noise)
         {
-            size_t index = _noise.size();
+            size_t index = _audio.size();
 
-            _noise.push_back(noise);
+            _audio.push_back(noise);
 
-            _noise.back().cacheHeader();
+            _audio.back().cacheHeader();
 
             size_t frequency = _producer->getModel()->getAttribute<size_t>("SamplingRate");
 
-            size_t frameCount = _noise.back().duration() * frequency / _getFrameSize();
+            size_t frameCount = _audio.back().duration() * frequency / _getFrameSize();
 
             _descriptors.push_back(AudioDescriptor(AudioDescriptor::NoiseType,
                 index, frameCount));
@@ -637,15 +635,15 @@ private:
 
         void addRepeatedAudio(const Audio& audio)
         {
-            size_t index = _repeatedAudio.size();
+            size_t index = _audio.size();
 
-            _repeatedAudio.push_back(audio);
+            _audio.push_back(audio);
 
-            _repeatedAudio.back().cacheHeader();
+            _audio.back().cacheHeader();
 
             size_t frequency = _producer->getModel()->getAttribute<size_t>("SamplingRate");
 
-            size_t frameCount = _repeatedAudio.back().duration() * frequency / _getFrameSize();
+            size_t frameCount = _audio.back().duration() * frequency / _getFrameSize();
 
             _descriptors.push_back(AudioDescriptor(AudioDescriptor::RepeatedType,
                 index, frameCount));
@@ -847,12 +845,10 @@ private:
 
         void _updateCache()
         {
-            _updateCache(_audio,         _cachedAudio,         AudioDescriptor::AudioType);
-            _updateCache(_noise,         _cachedNoise,         AudioDescriptor::NoiseType);
-            _updateCache(_repeatedAudio, _cachedRepeatedAudio, AudioDescriptor::RepeatedType);
+            _updateCache(_audio, _cachedAudio);
         }
 
-        void _updateCache(AudioVector& audio, CacheSet& cacheSet, Sample::Type type)
+        void _updateCache(AudioVector& audio, CacheSet& cacheSet)
         {
             CacheSet newCacheSet = _samples[_nextSample].cacheSet;
 
@@ -886,8 +882,6 @@ private:
 
     private:
         AudioVector _audio;
-        AudioVector _noise;
-        AudioVector _repeatedAudio;
 
     private:
         AudioDescriptorVector _descriptors;
@@ -895,8 +889,6 @@ private:
 
     private:
         CacheSet _cachedAudio;
-        CacheSet _cachedNoise;
-        CacheSet _cachedRepeatedAudio;
 
     private:
         std::default_random_engine _generator;
@@ -906,7 +898,6 @@ private:
         size_t _totalTimestepsPerUtterance;
         size_t _totalTimestepsPerRepeat;
         size_t _totalTimestepsPerNoise;
-        size_t _audioTimesteps;
         double _secondsToCache;
 
     private:
