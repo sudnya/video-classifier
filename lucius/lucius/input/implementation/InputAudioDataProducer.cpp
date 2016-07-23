@@ -163,8 +163,6 @@ private:
         {
             Audio audio = _sampleCache.getNextSample();
 
-            _downsample(audio);
-
             _scaleRandomly(audio, _speechScaleLower, _speechScaleUpper);
 
             auto audioGraphemes = _toGraphemes(audio.label());
@@ -338,26 +336,6 @@ private:
     bool _usesGraphemes() const
     {
         return !_graphemes.empty();
-    }
-
-    void _downsampleToMatchFrequencies(Audio& first, Audio& second)
-    {
-        _downsample(first);
-        _downsample(second);
-    }
-
-    void _downsample(Audio& audio)
-    {
-        size_t frequency = _producer->getModel()->getAttribute<size_t>("SamplingRate");
-
-        if(audio.frequency() != frequency)
-        {
-            audio = audio.sample(frequency);
-        }
-
-        audio = audio.powerNormalize();
-
-        audio.setUnpaddedLength(audio.size());
     }
 
     void _scaleRandomly(Audio& audio, double lower, double upper)
@@ -865,10 +843,27 @@ private:
                 if(cacheSet.count(element) == 0)
                 {
                     audio[element].cache();
+                    _downsample(audio[element]);
+
                 }
             }
 
             cacheSet = std::move(newCacheSet);
+        }
+
+    private:
+        void _downsample(Audio& audio)
+        {
+            size_t frequency = _producer->getModel()->getAttribute<size_t>("SamplingRate");
+
+            if(audio.frequency() != frequency)
+            {
+                audio = audio.sample(frequency);
+            }
+
+            audio = audio.powerNormalize();
+
+            audio.setUnpaddedLength(audio.size());
         }
 
     private:
