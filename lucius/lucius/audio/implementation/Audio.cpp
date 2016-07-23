@@ -245,7 +245,7 @@ Audio Audio::sample(size_t newFrequency) const
 
 Audio Audio::powerNormalize() const
 {
-    Audio result(size(), bytesPerSample(), frequency());
+    Audio result(size(), bytesPerSample(), frequency(), path());
 
     size_t samples = size();
 
