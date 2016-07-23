@@ -572,6 +572,10 @@ private:
 
             _updateCache();
 
+            result = result.powerNormalize();
+
+            result.setUnpaddedLength(result.size());
+
             return result;
         }
 
@@ -860,10 +864,6 @@ private:
             {
                 audio = audio.sample(frequency);
             }
-
-            audio = audio.powerNormalize();
-
-            audio.setUnpaddedLength(audio.size());
         }
 
     private:
