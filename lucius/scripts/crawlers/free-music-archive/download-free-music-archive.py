@@ -18,14 +18,14 @@ class Track:
     def __init__(self, url, curator="unkown", album = "unknown",
             title = "unknown", artist = "unknown", date = "unknown", genre = "",
             filename = "unknown"):
-        self.url = url
-        self.curator = curator
-        self.album = album
-        self.title = title
-        self.artist = artist
-        self.date = date
-        self.genre = genre
-        self.filename = filename
+        self.url = url.encode('ascii', errors='ignore')
+        self.curator = curator.encode('ascii', errors='ignore')
+        self.album = album.encode('ascii', errors='ignore')
+        self.title = title.encode('ascii', errors='ignore')
+        self.artist = artist.encode('ascii', errors='ignore')
+        self.date = date.encode('ascii', errors='ignore')
+        self.genre = genre.encode('ascii', errors='ignore')
+        self.filename = filename.encode('ascii', errors='ignore')
 
     def getMetadataLine(self):
         return str(self.url + ", " +
@@ -38,12 +38,12 @@ class Track:
                    self.filename + "\n")
 
     def getDatabaseLine(self):
-        return str(self.getRelativePath() + ", \"" +
-                   self.getLabel() + "\"\n")
+        return self.getRelativePath() + ", \"" + self.getLabel() + "\"\n"
 
     def getLabel(self):
-        return "\"music by the artist " + self.artist + " in the genres " + " and ".join(
-            self.genre.split(":")) + "\""
+        return str("music by the artist " + self.artist + " on the album " + self.album +
+            " with the title " + self.title + " in the genres " +
+            " and ".join(self.genre.split(":")))
 
     def getRelativePath(self):
         return os.path.join(self.getRelativeDirectory(), self.filename)
@@ -119,6 +119,8 @@ class Downloader:
                     continue
 
                 self.metadata[metadata.url] = metadata
+
+        self.downloadedFiles = len(self.metadata)
 
     def createMetadataFromLine(self, line):
         splitLine = [entry.strip() for entry in line.split(",")]
@@ -310,10 +312,17 @@ class Downloader:
             title = track['track_title']
             artist = track['artist_name']
             date = track['track_date_created']
-            genres = ":".join([genre['genre_title'] for genre in track['track_genres']])
+            if 'track_genres' in track:
+                genres = ":".join([genre['genre_title'] for genre in track['track_genres']])
+            else:
+                genres = ""
             filename = self.getFilename(track['track_file'])
 
-            tracks.append(Track(url, curator, album, title, artist, date, genres, filename))
+            newTrack = Track(url, curator, album, title, artist, date, genres, filename)
+
+            self.logger.info("  Get track '" + repr(newTrack.getMetadataLine()) + "'")
+
+            tracks.append(newTrack)
 
         return tracks
 
@@ -373,14 +382,9 @@ def main():
 
     arguments = parser.parse_args()
 
-    try:
-        downloader = Downloader(vars(arguments))
+    downloader = Downloader(vars(arguments))
 
-        downloader.run()
-
-    except ValueError as e:
-        print "Bad Inputs: " + str(e) + "\n\n"
-        print parser.print_help()
+    downloader.run()
 
 main()
 
