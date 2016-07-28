@@ -62,6 +62,7 @@ class Downloader:
         self.apiKey = options["api_key"]
         self.fileLimit = int(options["file_limit"])
         self.outputPath = options["output_path"]
+        self.timeout = float(options['timeout'])
 
         self.downloadedFiles = 0
 
@@ -175,7 +176,7 @@ class Downloader:
 
     def getCuratorPageCount(self):
         request = requests.get("https://freemusicarchive.org/api/get/curators.json?api_key=" +
-            self.apiKey)
+            self.apiKey, timeout=self.timeout)
 
         request.raise_for_status()
 
@@ -188,7 +189,7 @@ class Downloader:
 
     def getCuratorsOnPage(self, page):
         request = requests.get("https://freemusicarchive.org/api/get/curators.json?api_key=" +
-            self.apiKey + "&page=" + str(page))
+            self.apiKey + "&page=" + str(page), timeout=self.timeout)
 
         request.raise_for_status()
 
@@ -219,7 +220,7 @@ class Downloader:
 
     def getAlbumPageCount(self, curator):
         request = requests.get("https://freemusicarchive.org/api/get/albums.json?api_key=" +
-            self.apiKey + "&curator_handle=" + curator)
+            self.apiKey + "&curator_handle=" + curator, timeout=self.timeout)
 
         request.raise_for_status()
 
@@ -232,7 +233,8 @@ class Downloader:
 
     def getAlbumsOnPage(self, curator, page):
         request = requests.get("https://freemusicarchive.org/api/get/albums.json?api_key=" +
-            self.apiKey + "&page=" + str(page) + "&curator_handle=" + curator)
+            self.apiKey + "&page=" + str(page) + "&curator_handle=" + curator,
+            timeout=self.timeout)
 
         request.raise_for_status()
 
@@ -283,7 +285,8 @@ class Downloader:
 
     def getTrackPageCount(self, curator, album):
         request = requests.get("https://freemusicarchive.org/api/get/tracks.json?api_key=" +
-            self.apiKey + "&curator_handle=" + curator + "&album_handle=" + album)
+            self.apiKey + "&curator_handle=" + curator + "&album_handle=" + album,
+            timeout=self.timeout)
 
         request.raise_for_status()
 
@@ -298,7 +301,7 @@ class Downloader:
 
         request = requests.get("https://freemusicarchive.org/api/get/tracks.json?api_key=" +
             self.apiKey + "&page=" + str(page) + "&curator_handle=" + curator +
-            "&album_handle=" + album)
+            "&album_handle=" + album, timeout=self.timeout)
 
         request.raise_for_status()
 
@@ -343,7 +346,7 @@ class Downloader:
 
     def downloadData(self, url):
         self.logger.debug("   Downloading track from url \'" + url + "\'")
-        request = requests.get(url)
+        request = requests.get(url, timeout=self.timeout)
 
         request.raise_for_status()
 
@@ -373,6 +376,7 @@ def main():
 
     parser.add_argument("-k", "--api-key", default = "IEXBC4ZZ7EA0KR4R",
         help="Free music archive api key.")
+    parser.add_argument("-t", "--timeout", default = 0.1, help="Timeout for requests.")
     parser.add_argument("-l", "--file-limit", default = 1,
         help="A limit on the maximum number of files to download.")
     parser.add_argument("-o", "--output-path", default = "free-music-archive",
