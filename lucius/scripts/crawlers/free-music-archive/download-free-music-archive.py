@@ -5,6 +5,7 @@ from argparse import ArgumentParser
 
 import os
 import logging
+import random
 
 def mkdir(directory):
     if not os.path.exists(directory):
@@ -163,10 +164,18 @@ class Downloader:
         self.logger.debug("Got curator page count of " + str(pages))
 
         try:
-            for pageNumber in range(pages):
-                curators = self.getCuratorsOnPage(pageNumber)
+            pageRange = range(pages)
+            random.shuffle(pageRange)
+            for pageNumber in pageRange:
+                try:
+                    curators = self.getCuratorsOnPage(pageNumber)
+                except Exception:
+                    self.logger.warn("Failed to get curator page " + str(pageNumber))
+                    pass
 
                 self.logger.debug("Got curator page " + str(pageNumber) + " with " + str(curators))
+
+                random.shuffle(curators)
 
                 for curator in curators:
                     self.downloadFilesFromCurator(curator)
@@ -206,14 +215,27 @@ class Downloader:
     def downloadFilesFromCurator(self, curator):
         self.logger.debug(" for curator " + curator)
 
-        pages = self.getAlbumPageCount(curator)
+        try:
+            pages = self.getAlbumPageCount(curator)
+        except Exception:
+            self.logger.debug(" Failed to get album page count ")
+            return
 
         self.logger.debug(" Got album page count of " + str(pages))
 
-        for pageNumber in range(pages):
-            albums = self.getAlbumsOnPage(curator, pageNumber)
+        pageRange = range(pages)
+        random.shuffle(pageRange)
+
+        for pageNumber in pageRange:
+            try:
+                albums = self.getAlbumsOnPage(curator, pageNumber)
+            except Exception:
+                self.logger.warn(" Failed to get album page " + str(pageNumber))
+                continue
 
             self.logger.debug(" Got album page " + str(pageNumber) + " with " + str(albums))
+
+            random.shuffle(albums)
 
             for album in albums:
                 self.downloadFilesFromAlbum(curator, album)
@@ -251,12 +273,19 @@ class Downloader:
     def downloadFilesFromAlbum(self, curator, album):
         self.logger.debug("  for album " + album)
 
-        pages = self.getTrackPageCount(curator, album)
+        try:
+            pages = self.getTrackPageCount(curator, album)
+        except Exception:
+            self.logger.warn("  Failed to get track page count")
+            return
 
         self.logger.debug("  Got track page count of " + str(pages))
 
         for pageNumber in range(pages):
-            tracks = self.getTracksOnPage(curator, album, pageNumber)
+            try:
+                tracks = self.getTracksOnPage(curator, album, pageNumber)
+            except Exception:
+                continue
 
             self.logger.debug("  Got track page " + str(pageNumber) + " with " +
                 str([track.title for track in tracks]))
@@ -342,7 +371,6 @@ class Downloader:
         except Exception as e:
             self.logger.warning("Downloading track from URL '" + url + "' failed with '" +
                 str(e) + "'.")
-            pass
 
     def downloadData(self, url):
         self.logger.debug("   Downloading track from url \'" + url + "\'")
@@ -376,7 +404,7 @@ def main():
 
     parser.add_argument("-k", "--api-key", default = "IEXBC4ZZ7EA0KR4R",
         help="Free music archive api key.")
-    parser.add_argument("-t", "--timeout", default = 0.1, help="Timeout for requests.")
+    parser.add_argument("-t", "--timeout", default = 10.0, help="Timeout for requests.")
     parser.add_argument("-l", "--file-limit", default = 1,
         help="A limit on the maximum number of files to download.")
     parser.add_argument("-o", "--output-path", default = "free-music-archive",
