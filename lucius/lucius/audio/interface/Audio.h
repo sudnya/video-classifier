@@ -24,7 +24,7 @@ public:
     Audio(const std::string& path, const std::string& defaultLabel);
     Audio(std::istream& stream, const std::string& format);
 
-    Audio(size_t samples, size_t bytesPerSample, size_t frequency);
+    Audio(size_t samples, size_t bytesPerSample, size_t frequency, const std::string& path = "");
     Audio();
 
 public:
@@ -52,6 +52,9 @@ public:
     size_t size() const;
     size_t bytes() const;
     size_t bytesPerSample() const;
+
+public:
+    const std::string& path() const;
 
 public:
     void resize(size_t samples);

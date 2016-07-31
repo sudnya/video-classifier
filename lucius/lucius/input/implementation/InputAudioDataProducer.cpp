@@ -163,8 +163,6 @@ private:
         {
             Audio audio = _sampleCache.getNextSample();
 
-            _downsample(audio);
-
             _scaleRandomly(audio, _speechScaleLower, _speechScaleUpper);
 
             auto audioGraphemes = _toGraphemes(audio.label());
@@ -340,26 +338,6 @@ private:
         return !_graphemes.empty();
     }
 
-    void _downsampleToMatchFrequencies(Audio& first, Audio& second)
-    {
-        _downsample(first);
-        _downsample(second);
-    }
-
-    void _downsample(Audio& audio)
-    {
-        size_t frequency = _producer->getModel()->getAttribute<size_t>("SamplingRate");
-
-        if(audio.frequency() != frequency)
-        {
-            audio = audio.sample(frequency);
-        }
-
-        audio = audio.powerNormalize();
-
-        audio.setUnpaddedLength(audio.size());
-    }
-
     void _scaleRandomly(Audio& audio, double lower, double upper)
     {
         if(lower == 1.0 && upper == 1.0)
@@ -471,15 +449,36 @@ private:
     double _speechScaleUpper;
 
 private:
-    class Sample
+    typedef std::set<size_t> CacheSet;
+
+    class AudioDescriptor
     {
     public:
         enum Type
         {
             AudioType,
             NoiseType,
-            RepeatedType
+            RepeatedType,
+            InvalidType
         };
+
+    public:
+        AudioDescriptor(Type type, size_t audioVectorOffset, size_t audioClipDuration)
+        : type(type), audioVectorOffset(audioVectorOffset), audioClipDuration(audioClipDuration)
+        {
+
+        }
+
+    public:
+        Type   type;
+        size_t audioVectorOffset;
+        size_t audioClipDuration;
+    };
+
+    class Sample
+    {
+    public:
+        typedef AudioDescriptor::Type Type;
 
     public:
         Sample(Type type, size_t audioVectorOffset, size_t audioClipOffset,
@@ -490,15 +489,24 @@ private:
 
         }
 
+        Sample()
+        : Sample(AudioDescriptor::InvalidType, 0, 0, 0)
+        {
+
+        }
+
     public:
         Type   type;
         size_t audioVectorOffset;
         size_t audioClipOffset;
         size_t audioClipDuration;
+
+    public:
+        CacheSet cacheSet;
     };
 
     typedef std::vector<Sample> SampleVector;
-    typedef std::set<size_t> CacheSet;
+    typedef std::vector<AudioDescriptor> AudioDescriptorVector;
 
 private:
     class SampleCache
@@ -516,12 +524,10 @@ private:
                 "InputAudioDataProducer::TotalTimestepsPerNoise", 512);
             _totalTimestepsPerUtterance = util::KnobDatabase::getKnobValue(
                 "InputAudioDataProducer::TotalTimestepsPerUtterance", 512);
-            _audioTimesteps             = util::KnobDatabase::getKnobValue(
-                "InputAudioDataProducer::AudioTimesteps", 64);
 
             // Determine how many audio samples to cache
-            _samplesToCache = util::KnobDatabase::getKnobValue(
-                "InputAudioDataProducer::CacheSize", 128);
+            _secondsToCache = util::KnobDatabase::getKnobValue(
+                "InputAudioDataProducer::SecondsToCache", 3600);
 
             bool shouldSeedWithTime = util::KnobDatabase::getKnobValue(
                 "InputAudioDataProducer::SeedWithTime", false);
@@ -546,25 +552,29 @@ private:
 
             Audio result;
 
-            if(sample.type == Sample::AudioType)
+            if(sample.type == AudioDescriptor::AudioType)
             {
                 result = _audio[sample.audioVectorOffset];
             }
-            else if(sample.type == Sample::NoiseType)
+            else if(sample.type == AudioDescriptor::NoiseType)
             {
                 size_t end = (sample.audioClipOffset + _totalTimestepsPerNoise) *
                     _getFrameSize();
-                result = _noise[sample.audioVectorOffset].slice(begin, end);
+                result = _audio[sample.audioVectorOffset].slice(begin, end);
             }
             else
             {
-                assert(sample.type == Sample::RepeatedType);
+                assert(sample.type == AudioDescriptor::RepeatedType);
                 size_t end = (sample.audioClipOffset + _totalTimestepsPerRepeat) *
                     _getFrameSize();
-                result = _repeatedAudio[sample.audioVectorOffset].slice(begin, end);
+                result = _audio[sample.audioVectorOffset].slice(begin, end);
             }
 
             _updateCache();
+
+            result = result.powerNormalize();
+
+            result.setUnpaddedLength(result.size());
 
             return result;
         }
@@ -584,50 +594,41 @@ private:
 
             if(frameCount <= _totalTimestepsPerUtterance)
             {
-                _samples.push_back(Sample(Sample::AudioType, index, 0, frameCount));
+                _descriptors.push_back(AudioDescriptor(AudioDescriptor::AudioType,
+                    index, frameCount));
             }
         }
 
         void addNoise(const Audio& noise)
         {
-            size_t index = _noise.size();
+            size_t index = _audio.size();
 
-            _noise.push_back(noise);
+            _audio.push_back(noise);
 
-            _noise.back().cacheHeader();
+            _audio.back().cacheHeader();
 
             size_t frequency = _producer->getModel()->getAttribute<size_t>("SamplingRate");
 
-            size_t frameCount = _noise.back().duration() * frequency / _getFrameSize();
+            size_t frameCount = _audio.back().duration() * frequency / _getFrameSize();
 
-            size_t totalSamples = frameCount / _totalTimestepsPerNoise;
-
-            for(size_t sample = 0; sample < totalSamples; ++sample)
-            {
-                _samples.push_back(Sample(Sample::NoiseType, index,
-                    sample * _totalTimestepsPerNoise, _totalTimestepsPerNoise));
-            }
+            _descriptors.push_back(AudioDescriptor(AudioDescriptor::NoiseType,
+                index, frameCount));
         }
 
         void addRepeatedAudio(const Audio& audio)
         {
-            size_t index = _repeatedAudio.size();
+            size_t index = _audio.size();
 
-            _repeatedAudio.push_back(audio);
+            _audio.push_back(audio);
 
-            _repeatedAudio.back().cacheHeader();
+            _audio.back().cacheHeader();
 
             size_t frequency = _producer->getModel()->getAttribute<size_t>("SamplingRate");
 
-            size_t frameCount = _repeatedAudio.back().duration() * frequency / _getFrameSize();
+            size_t frameCount = _audio.back().duration() * frequency / _getFrameSize();
 
-            size_t totalSamples = frameCount / _totalTimestepsPerRepeat;
-
-            for(size_t sample = 0; sample < totalSamples; ++sample)
-            {
-                _samples.push_back(Sample(Sample::RepeatedType, index,
-                    sample * _totalTimestepsPerRepeat, _totalTimestepsPerRepeat));
-            }
+            _descriptors.push_back(AudioDescriptor(AudioDescriptor::RepeatedType,
+                index, frameCount));
         }
 
         size_t getUniqueSampleCount() const
@@ -646,20 +647,34 @@ private:
 
         void reset()
         {
+            size_t remainingDescriptors = _getUniqueDescriptorCount();
+                  _nextSample           = 0;
+
             size_t remainingSamples = getUniqueSampleCount();
-                  _nextSample       = 0;
 
-            std::shuffle(_samples.begin(), _samples.begin() + remainingSamples, _generator);
+            std::shuffle(_descriptors.begin(), _descriptors.begin() + remainingDescriptors,
+                _generator);
 
-            for(size_t begin = 0; begin < remainingSamples; begin += _randomWindow)
+            size_t sampleBegin = 0;
+            size_t sampleOffsetInDescriptor = 0;
+
+            for(size_t begin = 0; begin < remainingDescriptors; )
             {
-                size_t end = std::min(begin + _randomWindow, remainingSamples);
+                SampleVector sortedSamples = _getSortedSamplesForRange(begin,
+                    sampleOffsetInDescriptor);
 
-                std::sort(_samples.begin() + begin, _samples.begin() + end,
-                    [](const Sample& left, const Sample& right)
-                    {
-                        return left.audioClipDuration < right.audioClipDuration;
-                    });
+                size_t usableSamples = std::min(remainingSamples, sortedSamples.size());
+
+                std::copy(sortedSamples.begin(), sortedSamples.begin() + usableSamples,
+                    _samples.begin() + sampleBegin);
+
+                sampleBegin += usableSamples;
+                remainingSamples -= usableSamples;
+
+                if(remainingSamples == 0)
+                {
+                    break;
+                }
             }
 
             _updateCache();
@@ -667,11 +682,9 @@ private:
 
         void initialize()
         {
+            _createSampleVector();
+
             reset();
-
-            _sortSamplesByLength();
-
-            _updateCache();
 
             _initialized = true;
         }
@@ -687,30 +700,139 @@ private:
         }
 
     private:
-        void _updateCache()
+        size_t _getUniqueDescriptorCount() const
         {
-            _updateCache(_audio,         _cachedAudio,         Sample::AudioType);
-            _updateCache(_noise,         _cachedNoise,         Sample::NoiseType);
-            _updateCache(_repeatedAudio, _cachedRepeatedAudio, Sample::RepeatedType);
+            return _descriptors.size();
         }
 
-        void _updateCache(AudioVector& audio, CacheSet& cacheSet, Sample::Type type)
+    private:
+        SampleVector _getSortedSamplesForRange(size_t& descriptorIndex,
+            size_t& sampleOffsetInDescriptor)
         {
-            size_t begin = _nextSample;
-            size_t end = std::min(getUniqueSampleCount(),
-                begin + std::max((size_t)1, _samplesToCache));
+            SampleVector samples;
 
-            CacheSet newCacheSet;
+            size_t frequency = _producer->getModel()->getAttribute<size_t>("SamplingRate");
+            size_t timestepsToCache = _secondsToCache * frequency / _getFrameSize();
 
-            for(size_t i = begin; i < end; ++i)
+            assert(timestepsToCache > 0);
+
+            size_t timestepsSoFar = 0;
+
+            CacheSet cachedFiles;
+
+            while(timestepsSoFar < timestepsToCache)
             {
-                if(_samples[i].type != type)
+                if(!_findValidSample(descriptorIndex, sampleOffsetInDescriptor))
                 {
-                    continue;
+                    break;
                 }
 
-                newCacheSet.insert(_samples[i].audioVectorOffset);
+                samples.push_back(_createSample(descriptorIndex, sampleOffsetInDescriptor));
+
+                cachedFiles.insert(samples.back().audioVectorOffset);
+                timestepsSoFar += samples.back().audioClipDuration;
+                sampleOffsetInDescriptor += samples.back().audioClipDuration;
             }
+
+            std::sort(samples.begin(), samples.end(), [](const Sample& left, const Sample& right)
+                {
+                    return left.audioClipDuration < right.audioClipDuration;
+                });
+
+            for(auto& sample : samples)
+            {
+                sample.cacheSet = cachedFiles;
+            }
+
+            return samples;
+        }
+
+        bool _findValidSample(size_t& descriptorIndex, size_t& sampleOffsetInDescriptor)
+        {
+            while(true)
+            {
+                if(descriptorIndex >= _descriptors.size())
+                {
+                    return false;
+                }
+
+                size_t nextSampleSize = _getNextSampleSize(descriptorIndex);
+
+                if(sampleOffsetInDescriptor + nextSampleSize <=
+                    _descriptors[descriptorIndex].audioClipDuration)
+                {
+                    return true;
+                }
+
+                descriptorIndex += 1;
+                sampleOffsetInDescriptor = 0;
+            }
+        }
+
+        size_t _getNextSampleSize(size_t descriptorIndex)
+        {
+            if(_descriptors[descriptorIndex].type == AudioDescriptor::AudioType)
+            {
+                return _descriptors[descriptorIndex].audioClipDuration;
+            }
+            else if(_descriptors[descriptorIndex].type == AudioDescriptor::RepeatedType)
+            {
+                return _totalTimestepsPerRepeat;
+            }
+            else
+            {
+                assert(_descriptors[descriptorIndex].type == AudioDescriptor::NoiseType);
+                return _totalTimestepsPerNoise;
+            }
+        }
+
+        Sample _createSample(size_t descriptorIndex, size_t sampleOffsetInDescriptor)
+        {
+            return Sample(_descriptors[descriptorIndex].type,
+                _descriptors[descriptorIndex].audioVectorOffset,
+                sampleOffsetInDescriptor, _getNextSampleSize(descriptorIndex));
+        }
+
+    private:
+        void _createSampleVector()
+        {
+            size_t totalSamples = 0;
+
+            for(auto& fileDescriptor : _descriptors)
+            {
+                totalSamples += _getSamplesInDescriptor(fileDescriptor);
+            }
+
+            _samples.resize(totalSamples);
+        }
+
+        size_t _getSamplesInDescriptor(const AudioDescriptor& descriptor) const
+        {
+            if(descriptor.type == AudioDescriptor::AudioType)
+            {
+                return 1;
+            }
+            else if(descriptor.type == AudioDescriptor::RepeatedType)
+            {
+                return descriptor.audioClipDuration / _totalTimestepsPerRepeat;
+            }
+            else
+            {
+                assert(descriptor.type == AudioDescriptor::NoiseType);
+                return descriptor.audioClipDuration / _totalTimestepsPerNoise;
+            }
+        }
+
+    private:
+
+        void _updateCache()
+        {
+            _updateCache(_audio, _cachedAudio);
+        }
+
+        void _updateCache(AudioVector& audio, CacheSet& cacheSet)
+        {
+            CacheSet newCacheSet = _samples[_nextSample].cacheSet;
 
             for(auto& element : cacheSet)
             {
@@ -725,10 +847,23 @@ private:
                 if(cacheSet.count(element) == 0)
                 {
                     audio[element].cache();
+                    _downsample(audio[element]);
+
                 }
             }
 
             cacheSet = std::move(newCacheSet);
+        }
+
+    private:
+        void _downsample(Audio& audio)
+        {
+            size_t frequency = _producer->getModel()->getAttribute<size_t>("SamplingRate");
+
+            if(audio.frequency() != frequency)
+            {
+                audio = audio.sample(frequency);
+            }
         }
 
     private:
@@ -738,29 +873,17 @@ private:
         }
 
     private:
-        void _sortSamplesByLength()
-        {
-            std::sort(_samples.begin(), _samples.end(), [](const Sample& left, const Sample& right)
-                {
-                    return left.audioClipDuration < right.audioClipDuration;
-                });
-        }
-
-    private:
         InputAudioDataProducer* _producer;
 
     private:
         AudioVector _audio;
-        AudioVector _noise;
-        AudioVector _repeatedAudio;
 
     private:
-        SampleVector _samples;
+        AudioDescriptorVector _descriptors;
+        SampleVector          _samples;
 
     private:
         CacheSet _cachedAudio;
-        CacheSet _cachedNoise;
-        CacheSet _cachedRepeatedAudio;
 
     private:
         std::default_random_engine _generator;
@@ -770,8 +893,7 @@ private:
         size_t _totalTimestepsPerUtterance;
         size_t _totalTimestepsPerRepeat;
         size_t _totalTimestepsPerNoise;
-        size_t _audioTimesteps;
-        size_t _samplesToCache;
+        double _secondsToCache;
 
     private:
         size_t _nextSample;

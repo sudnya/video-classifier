@@ -36,8 +36,8 @@ Audio::Audio(std::istream& stream, const std::string& format)
     _load(stream, format);
 }
 
-Audio::Audio(size_t samples, size_t bytesPerSample, size_t frequency)
-: _isLoaded(true), _isHeaderLoaded(true), _unpaddedSequenceLength(0),
+Audio::Audio(size_t samples, size_t bytesPerSample, size_t frequency, const std::string& path)
+: _path(path), _isLoaded(true), _isHeaderLoaded(true), _unpaddedSequenceLength(0),
   _samples(samples), _bytesPerSample(bytesPerSample), _samplingRate(frequency)
 {
     _data.resize(_samples * _bytesPerSample);
@@ -46,7 +46,6 @@ Audio::Audio(size_t samples, size_t bytesPerSample, size_t frequency)
 Audio::Audio()
 : Audio(0, 0, 0)
 {
-    _data.resize(_samples * _bytesPerSample);
 }
 
 void Audio::save(std::ostream& stream, const std::string& format)
@@ -126,6 +125,11 @@ size_t Audio::bytesPerSample() const
     assert(_isHeaderLoaded);
 
     return _bytesPerSample;
+}
+
+const std::string& Audio::path() const
+{
+    return _path;
 }
 
 void Audio::resize(size_t samples)
@@ -224,7 +228,7 @@ Audio Audio::sample(size_t newFrequency) const
 {
     size_t samples = size() * newFrequency / frequency();
 
-    Audio result(samples, bytesPerSample(), newFrequency);
+    Audio result(samples, bytesPerSample(), newFrequency, path());
 
     for(size_t sample = 0; sample != samples; ++sample)
     {
@@ -240,7 +244,7 @@ Audio Audio::sample(size_t newFrequency) const
 
 Audio Audio::powerNormalize() const
 {
-    Audio result(size(), bytesPerSample(), frequency());
+    Audio result(size(), bytesPerSample(), frequency(), path());
 
     size_t samples = size();
 
