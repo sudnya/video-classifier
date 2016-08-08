@@ -2,163 +2,513 @@
 // Lucius Includes
 #include <lucius/matrix/interface/RecurrentOperations.h>
 
-#include <lucius/matrix/interface/BlasOperations.h>
 #include <lucius/matrix/interface/Matrix.h>
-#include <lucius/matrix/interface/MatrixTransformations.h>
-#include <lucius/matrix/interface/MatrixOperations.h>
-#include <lucius/matrix/interface/CopyOperations.h>
-#include <lucius/matrix/interface/Operation.h>
 
-#include <lucius/parallel/interface/MultiBulkSynchronousParallel.h>
+#include <lucius/matrix/interface/CudnnLibrary.h>
+#include <lucius/matrix/interface/PrnnLibrary.h>
 
 namespace lucius
 {
 namespace matrix
 {
 
-void forwardRecurrentActivations(Matrix& input, const Matrix& weights,
-    const RecurrentTimeDirection& direction, const Operation& activationFunction)
+RecurrentOpsHandle::RecurrentOpsHandle(size_t layerSize, size_t miniBatchSize, size_t timesteps,
+    size_t layers,
+    RecurrentLayerDirection direction,
+    RecurrentLayerType layerType,
+    RecurrentLayerInputMode inputMode,
+    RecurrentLayerBackend backend) :
+
+    layerSize(layerSize),
+    miniBatchSize(miniBatchSize),
+    timesteps(timesteps),
+    layers(layers),
+    direction(direction),
+    layerType(layerType),
+    inputMode(inputMode),
+    backend(backend)
+{}
+
+std::string RecurrentOpsHandle::toString() const
 {
-    bool reversed = (direction == RECURRENT_REVERSE_TIME);
+    std::stringstream stream;
 
-    size_t timesteps     = input.size()[2];
-    size_t miniBatchSize = input.size()[1];
-    size_t layerSize     = input.size()[0];
+    stream <<
+        "layerSize: " << layerSize << ", "
+        "miniBatchSize: " << miniBatchSize << ", "
+        "timesteps: " << timesteps << ", "
+        "direction: " << getString(direction) << ", "
+        "layerType: " << getString(layerType) << ", "
+        "inputMode: " << getString(inputMode) << ", "
+        "backend: " << getString(backend);
 
-    size_t currentTimestep = reversed ? timesteps - 1 : 0;
+    return stream.str();
+}
 
-    // Start value
-    auto currentInput = slice(input, {0, 0, currentTimestep},
-        {layerSize, miniBatchSize, currentTimestep + 1});
+CudnnTensorDescriptor getCudnnInputDescriptor(const RecurrentOpsHandle& handle)
+{
+    return CudnnTensorDescriptor({handle.layerSize, handle.miniBatchSize, handle.timesteps});
+}
 
-    apply(currentInput, currentInput, activationFunction);
+PrnnTensorDescriptor getPrnnInputDescriptor()
+{
+    return PrnnTensorDescriptor({handle.layerSize, handle.miniBatchSize, handle.timesteps});
+}
 
-    // Propagate through time
-    for(size_t timestep = 1; timestep < timesteps; ++timestep)
+PrnnFilterDescriptor getPrnnFilterDescriptor(const matrix::Matrix& weights)
+{
+    return PrnnFilterDescriptor(weights.size());
+}
+
+PrnnFilterDescriptor getPrnnFilterDescriptor()
+{
+    return PrnnFilterDescriptor({});
+}
+
+CudnnFilterDescriptor getCudnnFilterDescriptor(const matrix::Matrix& weights)
+{
+    return CudnnFilterDescriptor(weights.size());
+}
+
+CudnnFilterDescriptor getCudnnFilterDescriptor()
+{
+    return CudnnFilterDescriptor({});
+}
+
+matrix::Matrix createReserveRecurrent(const RecurrentOpsHandle& handle,
+    const matrix::Precision& precision)
+{
+    size_t reserveSize = 0;
+
+    if(PrnnLibrary::loaded())
     {
-        currentTimestep = reversed ? timesteps - timestep - 1 : timestep;
+        PrnnRNNDescriptor descriptor(handle);
+        PrnnTensorDescriptor inputDescriptor = getPrnnInputDescriptor(handle);
 
-        auto nextInput = slice(input, {0, 0, currentTimestep},
-            {layerSize, miniBatchSize, currentTimestep + 1});
+        PrnnLibrary::prnnGetRNNTrainingReserveSize(descriptor.descriptor(),
+                                                   handle.timesteps,
+                                                   inputDescriptor.descriptor(),
+                                                   &reserveSize);
+    }
+    else if(CudnnLibrary::loaded())
+    {
+        CudnnRNNDescriptor descriptor(handle);
+        CudnnTensorDescriptor inputDescriptor = getCudnnInputDescriptor(handle);
 
-        auto reshapedNextInput    = reshape(nextInput,    {layerSize, miniBatchSize});
-        auto reshapedCurrentInput = reshape(currentInput, {layerSize, miniBatchSize});
+        CudnnLibrary::cudnnGetRNNTrainingReserveSize(descriptor.descriptor(),
+                                                     handle.timesteps,
+                                                     inputDescriptor.descriptor(),
+                                                     &reserveSize);
+    }
+    else
+    {
+        throw std::runtime_error("Tried to create recurrent ops reserve "
+            "without CUDNN or Prnn libraries.");
+    }
 
-        gemm(
-            reshapedNextInput,           1.0,
-            weights,              false, 1.0,
-            reshapedCurrentInput, false);
+    return matrix::Matrix({reserveSize / precision.size()}, precision);
+}
 
-        currentInput = nextInput;
+matrix::Matrix createWeightsRecurrent(const RecurrentOpsHandle& handle,
+    const matrix::Precision& precision)
+{
+    size_t weightsSize = 0;
 
-        apply(currentInput, currentInput, activationFunction);
+    if(PrnnLibrary::loaded())
+    {
+        PrnnRNNDescriptor descriptor(handle);
+        PrnnTensorDescriptor inputDescriptor = getPrnnInputDescriptor(handle);
+
+        PrnnLibrary::prnnGetRNNParamsSize(descriptor.descriptor(),
+                                          handle.timesteps,
+                                          inputDescriptor.descriptor(),
+                                          &reserveSize);
+    }
+    else if(CudnnLibrary::loaded())
+    {
+        CudnnRNNDescriptor descriptor(handle);
+        CudnnTensorDescriptor inputDescriptor = getCudnnInputDescriptor(handle);
+
+        CudnnLibrary::cudnnGetRNNParamsSize(descriptor.descriptor(),
+                                            handle.timesteps,
+                                            inputDescriptor.descriptor(),
+                                            &reserveSize);
+    }
+    else
+    {
+        throw std::runtime_error("Tried to create recurrent ops weights "
+            "without CUDNN or Prnn libraries.");
+    }
+
+    return matrix::Matrix({weightsSize / precision.size()}, precision);
+}
+
+matrix::Matrix sliceLayerWeights(const matrix::Matrix& weights, const RecurrentOpsHandle& handle,
+    size_t layer, size_t offsetInLayer)
+{
+    size_t size   = 0;
+    size_t offset = 0;
+
+    if(PrnnLibrary::loaded())
+    {
+        PrnnRNNDescriptor descriptor(handle);
+        PrnnTensorDescriptor inputDescriptor = getPrnnInputDescriptor(handle);
+        auto weightDescriptor = getPrnnFilterDescriptor(weights);
+        PrnnFilterDescriptor filterDescriptor = getPrnnFilterDescriptor();
+
+        PrnnLibrary::prnnGetRNNLinLayerMatrixParams(descriptor.descriptor(),
+                                                    layer,
+                                                    inputDescriptor.descriptor(),
+                                                    weightDescriptor.descriptor(),
+                                                    nullptr,
+                                                    offsetInLayer,
+                                                    filterDescriptor.descriptor(),
+                                                    reinterpret_cast<void**>(&offset)
+                                                    );
+
+        size = getSize(filterDescriptor);
+    }
+    else if(CudnnLibrary::loaded())
+    {
+        CudnnRNNDescriptor descriptor(handle);
+        CudnnTensorDescriptor inputDescriptor = getCudnnInputDescriptor(handle);
+        auto weightDescriptor = getPrnnFilterDescriptor(weights);
+        CudnnFilterDescriptor filterDescriptor = getCudnnFilterDescriptor();
+
+        CudnnLibrary::prnnGetRNNLinLayerMatrixParams(descriptor.descriptor(),
+                                                     layer,
+                                                     inputDescriptor.descriptor(),
+                                                     weightDescriptor.descriptor(),
+                                                     nullptr,
+                                                     offsetInLayer,
+                                                     filterDescriptor.descriptor(),
+                                                     reinterpret_cast<void**>(&offset)
+                                                     );
+
+        size = getSize(filterDescriptor);
+    }
+    else
+    {
+        throw std::runtime_error("Tried to create slice out layer weights "
+            "without CUDNN or Prnn libraries.");
+    }
+
+    return slice(weights, {offset}, {offset + size});
+}
+
+size_t getCudnnMatricesPerLayer(const RecurrentOpsHandle& handle)
+{
+    if(handle.layerType == RECURRENT_SIMPLE_TYPE)
+    {
+        return 4;
+    }
+    else if(handle.layerType == RECURRENT_GRU_TYPE)
+    {
+        return 12;
+    }
+    else
+    {
+        return 16;
     }
 }
 
-Matrix forwardRecurrentActivations(const Matrix& input, const Matrix& weights,
-    const RecurrentTimeDirection& d, const Operation& activationFunction)
+size_t getMatricesPerLayer(const RecurrentOpsHandle& handle)
 {
-    Matrix result = copy(input);
-
-    forwardRecurrentActivations(result, weights, d, activationFunction);
-
-    return result;
+    if(handle.layerType == RECURRENT_SIMPLE_TYPE)
+    {
+        return 4;
+    }
+    else if(handle.layerType == RECURRENT_GRU_TYPE)
+    {
+        return 12;
+    }
+    else
+    {
+        return 16;
+    }
 }
 
-void reverseRecurrentDeltas(Matrix& resultAndInputDeltas, const Matrix& weights,
-    const Matrix& activations, const RecurrentTimeDirection& direction,
-    const Operation& activationDerivativeFunction)
+size_t getTotalWeightMatrices(const RecurrentOpsHandle& handle)
 {
-    bool reversed = (direction == RECURRENT_REVERSE_TIME);
+    return handle.layers * getMatricesPerLayer(handle);
+}
 
-    size_t maxTimesteps     = resultAndInputDeltas.size()[2];
-    size_t miniBatchSize    = resultAndInputDeltas.size()[1];
-    size_t layerSize        = resultAndInputDeltas.size()[0];
-
-    auto currentTimestep = reversed ? 0 : maxTimesteps - 1;
-    // Start value
-    auto currentDeltas = slice(resultAndInputDeltas, {0, 0, currentTimestep},
-        {layerSize, miniBatchSize, currentTimestep + 1});
-    auto currentActivations = slice(activations, {0, 0, currentTimestep},
-        {layerSize, miniBatchSize, currentTimestep + 1});
-
-    apply(currentDeltas, currentDeltas,
-        apply(currentActivations, activationDerivativeFunction), matrix::Multiply());
-
-    //go over all timesteps in reverse
-    for(size_t t = 1; t < maxTimesteps; ++t)
+/** \brief Forward propagate through a recurrent weight matrix.
+ *  \param weights The recurrent weight matrix.
+ *   \param reserve Memory allocated for storing data needed for back propagation
+ *                  (storage format determined by implementation)
+ *  \param activations The input/output activations from the previous layer
+ *                     (stored as [previous-layer-outputs, mini-batch, timesteps]).
+ */
+void forwardPropRecurrent(matrix::Matrix& outputActivations,
+                          const matrix::Matrix& inputActivations,
+                          matrix::Matrix& reserve,
+                          const matrix::Matrix& weights,
+                          const RecurrentOpsHandle& handle)
+{
+    if(PrnnLibrary::loaded())
     {
-        size_t timestep = reversed ? t : maxTimesteps - t - 1;
+        PrnnRNNDescriptor descriptor(handle);
 
-        auto previousDeltas = slice(resultAndInputDeltas, {0, 0, timestep},
-            {layerSize, miniBatchSize, timestep + 1});
+        auto xDescriptor = getPrnnInputDescriptor(inputActivations);
+        auto yDescriptor = getPrnnInputDescriptor(outputActivations);
+        auto workspace   = getPrnnWorkspace(handle);
 
-        auto reshapedPreviousDeltas = reshape(previousDeltas, {layerSize, miniBatchSize});
-        auto reshapedCurrentDeltas  = reshape(currentDeltas,  {layerSize, miniBatchSize});
+        auto hxDescriptor = getPrnnSingleDescriptor(handle);
+        auto cxDescriptor = getPrnnSingleDescriptor(handle);
+        auto hyDescriptor = getPrnnSingleDescriptor(handle);
+        auto cyDescriptor = getPrnnSingleDescriptor(handle);
 
-        gemm(
-            reshapedPreviousDeltas, 1.0,
-            weights, true, 1.0,
-            reshapedCurrentDeltas, false
-        );
+        PrnnLibrary::prnnRNNForward(descriptor.descriptor(),
+                                    handle.timesteps,
+                                    xDescriptor.descriptor(),
+                                    xDescriptor.data(),
+                                    hxDescriptor.descriptor(),
+                                    nullptr,
+                                    cxDescriptor.descriptor(),
+                                    nullptr,
+                                    weightsDescriptor.descriptor(),
+                                    nullptr,
+                                    yDescriptor.descriptor(),
+                                    yDescriptor.data(),
+                                    hyDescriptor.descriptor(),
+                                    nullptr,
+                                    cyDescriptor.descriptor(),
+                                    nullptr,
+                                    workspace.data(),
+                                    workspace.elements() * workspace.precision().size(),
+                                    reserve.data(),
+                                    reserve.elements() * reserve.precision().size());
 
-        currentDeltas = previousDeltas;
+    }
+    else if(CudnnLibrary::loaded())
+    {
+        PrnnRNNDescriptor descriptor(handle);
 
-        currentActivations = slice(activations, {0, 0, timestep},
-            {layerSize, miniBatchSize, timestep + 1});
+        auto xDescriptor = getCudnnInputDescriptor(inputActivations);
+        auto yDescriptor = getCudnnInputDescriptor(outputActivations);
+        auto workspace   = getCudnnWorkspace(handle);
 
-        apply(currentDeltas, currentDeltas,
-            apply(currentActivations, activationDerivativeFunction), matrix::Multiply());
+        auto hxDescriptor = getCudnnSingleDescriptor(handle);
+        auto cxDescriptor = getCudnnSingleDescriptor(handle);
+        auto hyDescriptor = getCudnnSingleDescriptor(handle);
+        auto cyDescriptor = getCudnnSingleDescriptor(handle);
+
+        PrnnLibrary::prnnRNNForward(descriptor.descriptor(),
+                                    handle.timesteps,
+                                    xDescriptor.descriptor(),
+                                    xDescriptor.data(),
+                                    hxDescriptor.descriptor(),
+                                    nullptr,
+                                    cxDescriptor.descriptor(),
+                                    nullptr,
+                                    weightsDescriptor.descriptor(),
+                                    nullptr,
+                                    yDescriptor.descriptor(),
+                                    yDescriptor.data(),
+                                    hyDescriptor.descriptor(),
+                                    nullptr,
+                                    cyDescriptor.descriptor(),
+                                    nullptr,
+                                    workspace.data(),
+                                    workspace.elements() * workspace.precision().size(),
+                                    reserve.data(),
+                                    reserve.elements() * reserve.precision().size());
+
+    }
+    else
+    {
+        throw std::runtime_error("Tried to call forwardPropRecurrent "
+            "without CUDNN or Prnn libraries.");
     }
 
 }
 
-Matrix reverseRecurrentDeltas(const Matrix& deltas, const Matrix& weights,
-    const Matrix& activations, const RecurrentTimeDirection& d,
-    const Operation& activationDerivativeFunction)
+/** \brief Back propagate through a recurrent weight matrix, generating deltas.
+ *  \param weights The recurrent weight matrix.
+ *  \param deltas The input/output deltas from the previous layer
+ *                (stored as [previous-layer-outputs, mini-batch, timesteps]).
+ *   \param reserve Memory allocated for storing data needed for back propagation
+ *                  (storage format determined by implementation)
+ */
+void backPropDeltasRecurrent(matrix::Matrix& inputDeltas,
+    const matrix::Matrix& outputDeltas,
+    const matrix::Matrix& weights,
+    const matrix::Matrix& outputActivations,
+    matrix::Matrix& reserve,
+    const RecurrentOpsHandle& handle)
 {
-    Matrix result = copy(deltas);
-    reverseRecurrentDeltas(result, weights, activations, d, activationDerivativeFunction);
-    return result;
+    if(PrnnLibrary::loaded())
+    {
+        PrnnRNNDescriptor descriptor(handle);
+
+        auto yDescriptor  = getPrnnInputDescriptor(outputActivations);
+        auto dyDescriptor = getPrnnInputDescriptor(outputDeltas);
+        auto dxDescriptor = getPrnnInputDescriptor(inputDeltas);
+        auto workspace    = getPrnnWorkspace(handle);
+        auto weights      = getPrnnFilterDescriptor(weights);
+
+        auto hxDescriptor  = getPrnnSingleDescriptor(handle);
+        auto cxDescriptor  = getPrnnSingleDescriptor(handle);
+        auto dhxDescriptor = getPrnnSingleDescriptor(handle);
+        auto dcxDescriptor = getPrnnSingleDescriptor(handle);
+        auto dhyDescriptor = getPrnnSingleDescriptor(handle);
+        auto dcyDescriptor = getPrnnSingleDescriptor(handle);
+
+        PrnnLibrary::prnnRNNBackwardData(descriptor.descriptor(),
+                                         handle.timesteps,
+                                         yDescriptor.descriptor(),
+                                         yDescriptor.data(),
+                                         dyDescriptor.descriptor(),
+                                         dyDescriptor.data(),
+                                         dhyDescriptor.descriptor(),
+                                         nullptr,
+                                         dcyDescriptor.descriptor(),
+                                         nullptr,
+                                         weightDescriptor.descriptor(),
+                                         weightDescriptor.data(),
+                                         hxDescriptor.descriptor(),
+                                         hxDescriptor.data(),
+                                         cxDescriptor.descriptor(),
+                                         cxDescriptor.data(),
+                                         &dxDescriptor.descriptor(),
+                                         dxDescriptor.data(),
+                                         dhxDescriptor.descriptor(),
+                                         dhxDescriptor.data(),
+                                         dcxDescriptor.descriptor(),
+                                         dcxDescriptor.data(),
+                                         workspace.data(),
+                                         workspace.elements() * workspace.precision().size(),
+                                         reserve.data(),
+                                         reserve.elements() * reserve.precision().size());
+
+    }
+    else if(CudnnLibrary::loaded())
+    {
+        CudnnRNNDescriptor descriptor(handle);
+
+        auto yDescriptor  = getCudnnInputDescriptor(outputActivations);
+        auto dyDescriptor = getCudnnInputDescriptor(outputDeltas);
+        auto dxDescriptor = getCudnnInputDescriptor(inputDeltas);
+        auto workspace    = getCudnnWorkspace(handle);
+        auto weights      = getCudnnFilterDescriptor(weights);
+
+        auto hxDescriptor  = getCudnnSingleDescriptor(handle);
+        auto cxDescriptor  = getCudnnSingleDescriptor(handle);
+        auto dhxDescriptor = getCudnnSingleDescriptor(handle);
+        auto dcxDescriptor = getCudnnSingleDescriptor(handle);
+        auto dhyDescriptor = getCudnnSingleDescriptor(handle);
+        auto dcyDescriptor = getCudnnSingleDescriptor(handle);
+
+        PrnnLibrary::cudnnRNNBackwardData(descriptor.descriptor(),
+                                          handle.timesteps,
+                                          yDescriptor.descriptor(),
+                                          yDescriptor.data(),
+                                          dyDescriptor.descriptor(),
+                                          dyDescriptor.data(),
+                                          dhyDescriptor.descriptor(),
+                                          nullptr,
+                                          dcyDescriptor.descriptor(),
+                                          nullptr,
+                                          weightDescriptor.descriptor(),
+                                          weightDescriptor.data(),
+                                          hxDescriptor.descriptor(),
+                                          hxDescriptor.data(),
+                                          cxDescriptor.descriptor(),
+                                          cxDescriptor.data(),
+                                          &dxDescriptor.descriptor(),
+                                          dxDescriptor.data(),
+                                          dhxDescriptor.descriptor(),
+                                          dhxDescriptor.data(),
+                                          dcxDescriptor.descriptor(),
+                                          dcxDescriptor.data(),
+                                          workspace.data(),
+                                          workspace.elements() * workspace.precision().size(),
+                                          reserve.data(),
+                                          reserve.elements() * reserve.precision().size());
+
+    }
+    else
+    {
+        throw std::runtime_error("Tried to call backPropDeltasRecurrent "
+            "without CUDNN or Prnn libraries.");
+    }
+
 }
 
-void reverseRecurrentGradients(Matrix& gradients, const Matrix& activations, const Matrix& deltas,
-    const RecurrentTimeDirection& direction)
+/** \brief Compute gradient for the recurrent weight matrix.
+ *  \param deltas Deltas for the layer.
+ *  \param dWeights The output gradients.
+ *   \param reserve Memory allocated for storing data needed for back propagation
+ *                  (storage format determined by implementation)
+ */
+void backPropGradientsRecurrent(matrix::Matrix& dWeights,
+    const matrix::Matrix& inputActivations,
+    const matrix::Matrix& outputActivations,
+    const matrix::Matrix& deltas,
+    const matrix::Matrix& reserve,
+    const RecurrentOpsHandle& handle)
 {
-    bool reversed = (direction == RECURRENT_REVERSE_TIME);
+    if(PrnnLibrary::loaded())
+    {
+        PrnnRNNDescriptor descriptor(handle);
 
-    size_t maxTimesteps  = activations.size()[2];
-    size_t miniBatchSize = activations.size()[1];
-    size_t layerSize     = activations.size()[0];
+        auto yDescriptor = getPrnnInputDescriptor(outputActivations);
+        auto xDescriptor = getPrnnInputDescriptor(inputActivations);
+        auto workspace   = getPrnnWorkspace(handle);
+        auto dWeights    = getPrnnFilterDescriptor(dWeights);
 
-    size_t deltaStart = reversed ?                0 : 1;
-    size_t deltaEnd   = reversed ? maxTimesteps - 1 : maxTimesteps;
+        auto hxDescriptor = getPrnnSingleDescriptor(handle);
 
-    size_t activationStart = reversed ?            1 : 0;
-    size_t activationEnd   = reversed ? maxTimesteps : maxTimesteps - 1;
+        PrnnLibrary::prnnRNNBackwardWeights(descriptor.descriptor(),
+                                            handle.timesteps,
+                                            xDescriptor.descriptor(),
+                                            xDescriptor.data(),
+                                            hxDescriptor.descriptor(),
+                                            hxDescriptor.data(),
+                                            yDescriptor.descriptor(),
+                                            yDescriptor.data(),
+                                            workspace.data(),
+                                            workspace.elements() * workspace.precision().size(),
+                                            dWeights.descriptor(),
+                                            dWeights.data(),
+                                            reserve.data(),
+                                            reserve.elements() * reserve.precision().size());
 
-    auto currentDeltas = slice(deltas, {0, 0, deltaStart},
-        {layerSize, miniBatchSize, deltaEnd});
-    auto currentActivations = slice(activations, {0, 0, activationStart},
-        {layerSize, miniBatchSize, activationEnd});
+    }
+    else if(CudnnLibrary::loaded())
+    {
+        CudnnRNNDescriptor descriptor(handle);
 
-    gemm(
-        gradients, 0.0,
-        reshape(currentDeltas, {layerSize, miniBatchSize * (maxTimesteps - 1)}),
-        false, (1.0 / miniBatchSize),
-        reshape(currentActivations, {layerSize, miniBatchSize * (maxTimesteps - 1)} ),
-        true
-    );
-}
+        auto yDescriptor = getCudnnInputDescriptor(outputActivations);
+        auto xDescriptor = getCudnnInputDescriptor(inputActivations);
+        auto workspace   = getCudnnWorkspace(handle);
+        auto dWeights    = getCudnnFilterDescriptor(dWeights);
 
-Matrix reverseRecurrentGradients(const Matrix& inputs, const Matrix& deltas,
-    const RecurrentTimeDirection& d)
-{
-    Matrix result({deltas.size()[0], inputs.size()[0]}, inputs.precision());
+        auto hxDescriptor = getCudnnSingleDescriptor(handle);
 
-    reverseRecurrentGradients(result, inputs, deltas, d);
+        PrnnLibrary::cudnnRNNBackwardWeights(descriptor.descriptor(),
+                                             handle.timesteps,
+                                             xDescriptor.descriptor(),
+                                             xDescriptor.data(),
+                                             hxDescriptor.descriptor(),
+                                             hxDescriptor.data(),
+                                             yDescriptor.descriptor(),
+                                             yDescriptor.data(),
+                                             workspace.data(),
+                                             workspace.elements() * workspace.precision().size(),
+                                             dWeights.descriptor(),
+                                             dWeights.data(),
+                                             reserve.data(),
+                                             reserve.elements() * reserve.precision().size());
 
-    return result;
+    }
+    else
+    {
+        throw std::runtime_error("Tried to call backPropDeltasRecurrent "
+            "without CUDNN or PRNN libraries.");
+    }
+
 }
 
 void recurrentZeroEnds(Matrix& activations, const IndexVector& lengths)

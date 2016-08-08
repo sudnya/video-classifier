@@ -660,6 +660,21 @@ void CudnnLibrary::Interface::load()
         DynLink(cudnnPoolingForward);
         DynLink(cudnnPoolingBackward);
 
+        DynLink(cudnnCreateRNNDescriptor);
+        DynLink(cudnnDestroyRNNDescriptor);
+        DynLink(cudnnSetRNNDescriptor);
+
+        DynLink(cudnnGetRNNWorkspaceSize);
+        DynLink(cudnnGetRNNTrainingReserveSize);
+        DynLink(cudnnGetRNNParamsSize);
+
+        DynLink(cudnnGetRNNLinLayerMatrixParams);
+        DynLink(cudnnGetRNNLinLayerBiasParams);
+
+        DynLink(cudnnRNNForwardTraining);
+        DynLink(cudnnRNNBackwardData);
+        DynLink(cudnnRNNBackwardWeights);
+
         #undef DynLink
 
         auto status = (*cudnnCreate)(&_handle);

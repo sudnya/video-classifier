@@ -49,19 +49,16 @@ public:
         RecurrentLayerDirection direction = RECURRENT_FORWARD,
         RecurrentLayerType layerType = RECURRENT_SIMPLE_TYPE,
         RecurrentLayerInputMode inputMode = RECURRENT_SKIP_INPUT,
-        RecurrentLayerBackend backend = RECURRENT_BEST_BACKEND,
-        double skipConnectionScale = 0.0) :
+        RecurrentLayerBackend backend = RECURRENT_BEST_BACKEND) :
 
         layerSize(layerSize),
         miniBatchSize(miniBatchSize),
         timesteps(timesteps),
         layers(layers),
-        skipConnectionScale(skipConnectionScale),
         direction(direction),
         layerType(layerType),
         inputMode(inputMode),
-        backend(backend),
-        stream(stream)
+        backend(backend)
     {}
 
 public:
@@ -74,9 +71,6 @@ public:
 
 public:
     size_t layers;
-
-public:
-    double skipConnectionScale;
 
 public:
     RecurrentLayerDirection     direction;
@@ -102,7 +96,8 @@ size_t getTotalWeightMatrices(const RecurrentOpsHandle& handle);
  *  \param activations The input/output activations from the previous layer
  *                     (stored as [previous-layer-outputs, mini-batch, timesteps]).
  */
-void forwardPropRecurrent(matrix::Matrix& activations,
+void forwardPropRecurrent(matrix::Matrix& outputActivations,
+                          const matrix::Matrix& inputActivations,
                           matrix::Matrix& reserve,
                           const matrix::Matrix& weights,
                           const RecurrentOpsHandle& handle);
@@ -114,7 +109,8 @@ void forwardPropRecurrent(matrix::Matrix& activations,
  *   \param reserve Memory allocated for storing data needed for back propagation
  *                  (storage format determined by implementation)
  */
-void backPropDeltasRecurrent(matrix::Matrix& deltas,
+void backPropDeltasRecurrent(matrix::Matrix& inputDeltas,
+    const matrix::Matrix& outputDeltas,
     const matrix::Matrix& weights,
     const matrix::Matrix& activations,
     matrix::Matrix& reserve,
@@ -127,7 +123,8 @@ void backPropDeltasRecurrent(matrix::Matrix& deltas,
  *                  (storage format determined by implementation)
  */
 void backPropGradientsRecurrent(matrix::Matrix& dWeights,
-    const matrix::Matrix& activations,
+    const matrix::Matrix& inputActivations,
+    const matrix::Matrix& outputActivations,
     const matrix::Matrix& deltas,
     const matrix::Matrix& reserve,
     const RecurrentOpsHandle& handle);
