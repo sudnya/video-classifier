@@ -7,6 +7,7 @@
 // Forward Declarations
 namespace lucius { namespace matrix { class Matrix;    } }
 namespace lucius { namespace matrix { class Operation; } }
+namespace lucius { namespace matrix { class Precision; } }
 
 namespace lucius
 {
@@ -33,14 +34,6 @@ enum RecurrentLayerInputMode
     RECURRENT_SKIP_INPUT
 };
 
-enum RecurrentLayerBackend
-{
-    RECURRENT_CUDNN_BACKEND,
-    RECURRENT_PERSISTENT_BACKEND,
-    RECURRENT_GENERIC_BACKEND,
-    RECURRENT_BEST_BACKEND
-};
-
 class RecurrentOpsHandle
 {
 public:
@@ -48,18 +41,7 @@ public:
         size_t layers = 1,
         RecurrentLayerDirection direction = RECURRENT_FORWARD,
         RecurrentLayerType layerType = RECURRENT_SIMPLE_TYPE,
-        RecurrentLayerInputMode inputMode = RECURRENT_SKIP_INPUT,
-        RecurrentLayerBackend backend = RECURRENT_BEST_BACKEND) :
-
-        layerSize(layerSize),
-        miniBatchSize(miniBatchSize),
-        timesteps(timesteps),
-        layers(layers),
-        direction(direction),
-        layerType(layerType),
-        inputMode(inputMode),
-        backend(backend)
-    {}
+        RecurrentLayerInputMode inputMode = RECURRENT_SKIP_INPUT);
 
 public:
     std::string toString() const;
@@ -76,7 +58,6 @@ public:
     RecurrentLayerDirection     direction;
     RecurrentLayerType          layerType;
     RecurrentLayerInputMode     inputMode;
-    RecurrentLayerBackend       backend;
 };
 
 

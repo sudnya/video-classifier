@@ -141,13 +141,13 @@ public:
 
 
     static void prnnGetRNNParamsSize(const prnnRNNDescriptor_t rnnDesc,
-                                     const prnnTensorDescriptor_t* xDesc,
+                                     const prnnTensorDescriptor_t xDesc,
                                      size_t* sizeInBytes
                                      );
 
     static void prnnGetRNNLinLayerMatrixParams(const prnnRNNDescriptor_t rnnDesc,
                                                const int layer,
-                                               const prnnTensorDescriptor_t* xDesc,
+                                               const prnnTensorDescriptor_t xDesc,
                                                const prnnFilterDescriptor_t wDesc,
                                                const void* w,
                                                const int linLayerID,
@@ -157,7 +157,7 @@ public:
 
     static void prnnGetRNNLinLayerBiasParams(const prnnRNNDescriptor_t rnnDesc,
                                              const int layer,
-                                             const prnnTensorDescriptor_t* xDesc,
+                                             const prnnTensorDescriptor_t xDesc,
                                              const prnnFilterDescriptor_t wDesc,
                                              const void* w,
                                              const int linLayerID,
@@ -238,8 +238,14 @@ private:
 
     class Interface
     {
-    pubilc:
+    public:
         const char* (*prnnGetErrorString)(prnnStatus_t status);
+
+    public:
+        prnnStatus_t (*prnnCreate)    (prnnHandle_t* handle);
+        prnnStatus_t (*prnnDestroy)   (prnnHandle_t handle);
+        prnnStatus_t (*prnnSetStream) (prnnHandle_t handle, void* streamId);
+        prnnStatus_t (*prnnGetStream) (prnnHandle_t handle, void** streamId);
 
     public:
         /* Create an instance of a generic Tensor descriptor */
@@ -295,14 +301,14 @@ private:
 
         prnnStatus_t (*prnnGetRNNParamsSize)(prnnHandle_t handle,
                                           const prnnRNNDescriptor_t rnnDesc,
-                                          const prnnTensorDescriptor_t* xDesc,
+                                          const prnnTensorDescriptor_t xDesc,
                                           size_t* sizeInBytes
                                           );
 
         prnnStatus_t (*prnnGetRNNLinLayerMatrixParams)(prnnHandle_t handle,
                                                     const prnnRNNDescriptor_t rnnDesc,
                                                     const int layer,
-                                                    const prnnTensorDescriptor_t* xDesc,
+                                                    const prnnTensorDescriptor_t xDesc,
                                                     const prnnFilterDescriptor_t wDesc,
                                                     const void* w,
                                                     const int linLayerID,
@@ -313,7 +319,7 @@ private:
         prnnStatus_t (*prnnGetRNNLinLayerBiasParams)(prnnHandle_t handle,
                                                   const prnnRNNDescriptor_t rnnDesc,
                                                   const int layer,
-                                                  const prnnTensorDescriptor_t* xDesc,
+                                                  const prnnTensorDescriptor_t xDesc,
                                                   const prnnFilterDescriptor_t wDesc,
                                                   const void* w,
                                                   const int linLayerID,

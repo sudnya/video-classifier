@@ -129,20 +129,20 @@ public:
         CUDNN_RNN_TANH = 1, // Stock RNN with tanh activation
         CUDNN_LSTM     = 2, // LSTM with no peephole connections
         CUDNN_GRU      = 3  // Using h' = tanh(r * Uh(t-1) + Wx) and h = (1 - z) * h' + z * h(t-1);
-    } prnnRNNMode_t;
+    } cudnnRNNMode_t;
 
     typedef enum
     {
        CUDNN_UNIDIRECTIONAL = 0,
        CUDNN_BIDIRECTIONAL  = 1,  // Using output concatination at each step. Do we also want to support output sum?
        CUDNN_REVERSE        = 2
-    } prnnDirectionMode_t;
+    } cudnnDirectionMode_t;
 
     typedef enum
     {
        CUDNN_LINEAR_INPUT = 0,
        CUDNN_SKIP_INPUT   = 1
-    } prnnRNNInputMode_t;
+    } cudnnRNNInputMode_t;
 
 public:
     static void load();

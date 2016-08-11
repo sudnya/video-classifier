@@ -145,8 +145,8 @@ void PrnnLibrary::prnnSetRNNDescriptor(prnnRNNDescriptor_t rnnDesc,
     _check();
 
     auto status = (*_interface.prnnSetRNNDescriptor)(rnnDesc,
-                                                     int hiddenSize,
-                                                     int numLayers,
+                                                     hiddenSize,
+                                                     numLayers,
                                                      dropoutDesc,
                                                      inputMode,
                                                      direction,
@@ -169,7 +169,8 @@ void PrnnLibrary::prnnGetRNNWorkspaceSize(const prnnRNNDescriptor_t rnnDesc,
 {
     _check();
 
-    auto status = (*_interface.prnnGetRNNWorkspaceSize)(rnnDesc,
+    auto status = (*_interface.prnnGetRNNWorkspaceSize)(_interface.getHandle(),
+                                                        rnnDesc,
                                                         seqLength,
                                                         xDesc,
                                                         sizeInBytes
@@ -182,16 +183,16 @@ void PrnnLibrary::prnnGetRNNWorkspaceSize(const prnnRNNDescriptor_t rnnDesc,
     }
 }
 
-void PrnnLibrary::prnnGetRNNTrainingReserveSize(prnnHandle_t handle,
-                                           const prnnRNNDescriptor_t rnnDesc,
-                                           const int seqLength,
-                                           const prnnTensorDescriptor_t* xDesc,
-                                           size_t* sizeInBytes
-                                           )
+void PrnnLibrary::prnnGetRNNTrainingReserveSize(const prnnRNNDescriptor_t rnnDesc,
+                                                const int seqLength,
+                                                const prnnTensorDescriptor_t* xDesc,
+                                                size_t* sizeInBytes
+                                                )
 {
     _check();
 
-    auto status = (*_interface.prnnGetRNNWorkspaceSize)(rnnDesc,
+    auto status = (*_interface.prnnGetRNNWorkspaceSize)(_interface.getHandle(),
+                                                        rnnDesc,
                                                         seqLength,
                                                         xDesc,
                                                         sizeInBytes
@@ -204,16 +205,15 @@ void PrnnLibrary::prnnGetRNNTrainingReserveSize(prnnHandle_t handle,
     }
 }
 
-void PrnnLibrary::prnnGetRNNParamsSize(prnnHandle_t handle,
-                                       const prnnRNNDescriptor_t rnnDesc,
-                                       const prnnTensorDescriptor_t* xDesc,
+void PrnnLibrary::prnnGetRNNParamsSize(const prnnRNNDescriptor_t rnnDesc,
+                                       const prnnTensorDescriptor_t xDesc,
                                        size_t* sizeInBytes
                                        )
 {
     _check();
 
-    auto status = (*_interface.prnnGetRNNParamsSize)(rnnDesc,
-                                                     seqLength,
+    auto status = (*_interface.prnnGetRNNParamsSize)(_interface.getHandle(),
+                                                     rnnDesc,
                                                      xDesc,
                                                      sizeInBytes);
 
@@ -224,23 +224,27 @@ void PrnnLibrary::prnnGetRNNParamsSize(prnnHandle_t handle,
     }
 }
 
-void PrnnLibrary::prnnGetRNNLinLayerMatrixParams(prnnHandle_t handle,
-                                            const prnnRNNDescriptor_t rnnDesc,
-                                            const int layer,
-                                            const prnnTensorDescriptor_t* xDesc,
-                                            const prnnFilterDescriptor_t wDesc,
-                                            const void* w,
-                                            const int linLayerID,
-                                            prnnFilterDescriptor_t linLayerMatDesc,
-                                            void** linLayerMat
-                                            )
+void PrnnLibrary::prnnGetRNNLinLayerMatrixParams(const prnnRNNDescriptor_t rnnDesc,
+                                                 const int layer,
+                                                 const prnnTensorDescriptor_t xDesc,
+                                                 const prnnFilterDescriptor_t wDesc,
+                                                 const void* w,
+                                                 const int linLayerID,
+                                                 prnnFilterDescriptor_t linLayerMatDesc,
+                                                 void** linLayerMat
+                                                 )
 {
     _check();
 
-    auto status = (*_interface.prnnGetRNNParamsSize)(rnnDesc,
-                                                     seqLength,
-                                                     xDesc,
-                                                     sizeInBytes);
+    auto status = (*_interface.prnnGetRNNLinLayerMatrixParams)(_interface.getHandle(),
+                                                               rnnDesc,
+                                                               layer,
+                                                               xDesc,
+                                                               wDesc,
+                                                               w,
+                                                               linLayerID,
+                                                               linLayerMatDesc,
+                                                               linLayerMat);
 
     if(status != PRNN_STATUS_SUCCESS)
     {
@@ -251,7 +255,7 @@ void PrnnLibrary::prnnGetRNNLinLayerMatrixParams(prnnHandle_t handle,
 
 void PrnnLibrary::prnnGetRNNLinLayerBiasParams(const prnnRNNDescriptor_t rnnDesc,
                                                const int layer,
-                                               const prnnTensorDescriptor_t* xDesc,
+                                               const prnnTensorDescriptor_t xDesc,
                                                const prnnFilterDescriptor_t wDesc,
                                                const void* w,
                                                const int linLayerID,
@@ -261,7 +265,8 @@ void PrnnLibrary::prnnGetRNNLinLayerBiasParams(const prnnRNNDescriptor_t rnnDesc
 {
     _check();
 
-    auto status = (*_interface.prnnGetRNNLinLayerBiasParams)(rnnDesc,
+    auto status = (*_interface.prnnGetRNNLinLayerBiasParams)(_interface.getHandle(),
+                                                             rnnDesc,
                                                              layer,
                                                              xDesc,
                                                              wDesc,
@@ -300,11 +305,12 @@ void PrnnLibrary::prnnRNNForward(const prnnRNNDescriptor_t rnnDesc,
 {
     _check();
 
-    auto status = (*_interface.prnnRNNForward)(rnnDesc,
+    auto status = (*_interface.prnnRNNForward)(_interface.getHandle(),
+                                               rnnDesc,
                                                seqLength,
                                                xDesc,
                                                x,
-                                               xDesc,
+                                               hxDesc,
                                                hx,
                                                cxDesc,
                                                cx,
@@ -357,7 +363,8 @@ void PrnnLibrary::prnnRNNBackwardData(const prnnRNNDescriptor_t rnnDesc,
 {
     _check();
 
-    auto status = (*_interface.prnnRNNBackwardData)(rnnDesc,
+    auto status = (*_interface.prnnRNNBackwardData)(_interface.getHandle(),
+                                                    rnnDesc,
                                                     seqLength,
                                                     yDesc,
                                                     y,
@@ -408,7 +415,8 @@ void PrnnLibrary::prnnRNNBackwardWeights(const prnnRNNDescriptor_t rnnDesc,
 {
     _check();
 
-    auto status = (*_interface.prnnRNNBackwardWeights)(rnnDesc,
+    auto status = (*_interface.prnnRNNBackwardWeights)(_interface.getHandle(),
+                                                       rnnDesc,
                                                        seqLength,
                                                        xDesc,
                                                        x,
@@ -545,14 +553,14 @@ bool PrnnLibrary::Interface::loaded() const
 
 void PrnnLibrary::Interface::unload()
 {
-    return (!loaded()) return;
+    if (!loaded()) return;
 
     dlclose(_library);
 
     _library = nullptr;
 }
 
-prnnHandle_t PrnnLibrary::Interface::getHandle()
+PrnnLibrary::prnnHandle_t PrnnLibrary::Interface::getHandle()
 {
     return _handle;
 }
@@ -561,7 +569,7 @@ std::string PrnnLibrary::Interface::getErrorString(prnnStatus_t status)
 {
     _check();
 
-    return (*prnnGetErrorString)(status)
+    return (*prnnGetErrorString)(status);
 }
 
 PrnnLibrary::Interface PrnnLibrary::_interface;

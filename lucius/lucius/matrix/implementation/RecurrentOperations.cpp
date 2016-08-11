@@ -3,9 +3,12 @@
 #include <lucius/matrix/interface/RecurrentOperations.h>
 
 #include <lucius/matrix/interface/Matrix.h>
+#include <lucius/matrix/interface/Dimension.h>
 
 #include <lucius/matrix/interface/CudnnLibrary.h>
 #include <lucius/matrix/interface/PrnnLibrary.h>
+#include <lucius/matrix/interface/PrnnDescriptors.h>
+#include <lucius/matrix/interface/CudnnDescriptors.h>
 
 namespace lucius
 {
@@ -16,8 +19,7 @@ RecurrentOpsHandle::RecurrentOpsHandle(size_t layerSize, size_t miniBatchSize, s
     size_t layers,
     RecurrentLayerDirection direction,
     RecurrentLayerType layerType,
-    RecurrentLayerInputMode inputMode,
-    RecurrentLayerBackend backend) :
+    RecurrentLayerInputMode inputMode) :
 
     layerSize(layerSize),
     miniBatchSize(miniBatchSize),
@@ -25,9 +27,43 @@ RecurrentOpsHandle::RecurrentOpsHandle(size_t layerSize, size_t miniBatchSize, s
     layers(layers),
     direction(direction),
     layerType(layerType),
-    inputMode(inputMode),
-    backend(backend)
+    inputMode(inputMode)
 {}
+
+static std::string toString(RecurrentLayerDirection direction)
+{
+    switch(direction)
+    {
+    case RECURRENT_FORWARD:       return "forward";
+    case RECURRENT_REVERSE:       return "reverse";
+    case RECURRENT_BIDIRECTIONAL: return "bidirectional";
+    }
+
+    return "invalid";
+}
+
+static std::string toString(RecurrentLayerType type)
+{
+    switch(type)
+    {
+    case RECURRENT_SIMPLE_TYPE: return "relu";
+    case RECURRENT_GRU_TYPE:    return "gru";
+    case RECURRENT_LSTM_TYPE:   return "lstm";
+    }
+
+    return "invalid";
+}
+
+static std::string toString(RecurrentLayerInputMode mode)
+{
+    switch(mode)
+    {
+    case RECURRENT_LINEAR_INPUT: return "linear";
+    case RECURRENT_SKIP_INPUT:   return "skip";
+    }
+
+    return "invalid";
+}
 
 std::string RecurrentOpsHandle::toString() const
 {
@@ -37,27 +73,38 @@ std::string RecurrentOpsHandle::toString() const
         "layerSize: " << layerSize << ", "
         "miniBatchSize: " << miniBatchSize << ", "
         "timesteps: " << timesteps << ", "
-        "direction: " << getString(direction) << ", "
-        "layerType: " << getString(layerType) << ", "
-        "inputMode: " << getString(inputMode) << ", "
-        "backend: " << getString(backend);
+        "direction: " << matrix::toString(direction) << ", "
+        "layerType: " << matrix::toString(layerType) << ", "
+        "inputMode: " << matrix::toString(inputMode);
 
     return stream.str();
 }
 
-CudnnTensorDescriptor getCudnnInputDescriptor(const RecurrentOpsHandle& handle)
+CudnnTensorDescriptor getCudnnInputDescriptor(const matrix::Matrix& input)
 {
-    return CudnnTensorDescriptor({handle.layerSize, handle.miniBatchSize, handle.timesteps});
+    return CudnnTensorDescriptor(input);
 }
 
-PrnnTensorDescriptor getPrnnInputDescriptor()
+CudnnTensorDescriptor getCudnnInputDescriptor(const RecurrentOpsHandle& handle)
 {
-    return PrnnTensorDescriptor({handle.layerSize, handle.miniBatchSize, handle.timesteps});
+    return CudnnTensorDescriptor(
+        Dimension(handle.layerSize, handle.miniBatchSize, handle.timesteps));
+}
+
+PrnnTensorDescriptor getPrnnInputDescriptor(const matrix::Matrix& input)
+{
+    return PrnnTensorDescriptor(input);
+}
+
+PrnnTensorDescriptor getPrnnInputDescriptor(const RecurrentOpsHandle& handle)
+{
+    return PrnnTensorDescriptor(
+        Dimension(handle.layerSize, handle.miniBatchSize, handle.timesteps));
 }
 
 PrnnFilterDescriptor getPrnnFilterDescriptor(const matrix::Matrix& weights)
 {
-    return PrnnFilterDescriptor(weights.size());
+    return PrnnFilterDescriptor(weights);
 }
 
 PrnnFilterDescriptor getPrnnFilterDescriptor()
@@ -67,12 +114,38 @@ PrnnFilterDescriptor getPrnnFilterDescriptor()
 
 CudnnFilterDescriptor getCudnnFilterDescriptor(const matrix::Matrix& weights)
 {
-    return CudnnFilterDescriptor(weights.size());
+    return CudnnFilterDescriptor(weights);
 }
 
 CudnnFilterDescriptor getCudnnFilterDescriptor()
 {
     return CudnnFilterDescriptor({});
+}
+
+PrnnTensorDescriptor getPrnnSingleDescriptor(const RecurrentOpsHandle& handle)
+{
+    return PrnnTensorDescriptor(Dimension(1, handle.miniBatchSize, handle.timesteps));
+}
+
+CudnnTensorDescriptor getCudnnSingleDescriptor(const RecurrentOpsHandle& handle)
+{
+    return CudnnTensorDescriptor(Dimension(1, handle.miniBatchSize, handle.timesteps));
+}
+
+CudnnLibrary::cudnnDataType_t getCudnnDataType(const Precision& precision)
+{
+    if(precision == SinglePrecision())
+    {
+        return CudnnLibrary::CUDNN_DATA_FLOAT;
+    }
+    else if(precision == DoublePrecision())
+    {
+        return CudnnLibrary::CUDNN_DATA_DOUBLE;
+    }
+    else
+    {
+        return CudnnLibrary::CUDNN_DATA_HALF;
+    }
 }
 
 matrix::Matrix createReserveRecurrent(const RecurrentOpsHandle& handle,
@@ -87,7 +160,7 @@ matrix::Matrix createReserveRecurrent(const RecurrentOpsHandle& handle,
 
         PrnnLibrary::prnnGetRNNTrainingReserveSize(descriptor.descriptor(),
                                                    handle.timesteps,
-                                                   inputDescriptor.descriptor(),
+                                                   &inputDescriptor.descriptor(),
                                                    &reserveSize);
     }
     else if(CudnnLibrary::loaded())
@@ -97,7 +170,7 @@ matrix::Matrix createReserveRecurrent(const RecurrentOpsHandle& handle,
 
         CudnnLibrary::cudnnGetRNNTrainingReserveSize(descriptor.descriptor(),
                                                      handle.timesteps,
-                                                     inputDescriptor.descriptor(),
+                                                     &inputDescriptor.descriptor(),
                                                      &reserveSize);
     }
     else
@@ -120,9 +193,8 @@ matrix::Matrix createWeightsRecurrent(const RecurrentOpsHandle& handle,
         PrnnTensorDescriptor inputDescriptor = getPrnnInputDescriptor(handle);
 
         PrnnLibrary::prnnGetRNNParamsSize(descriptor.descriptor(),
-                                          handle.timesteps,
                                           inputDescriptor.descriptor(),
-                                          &reserveSize);
+                                          &weightsSize);
     }
     else if(CudnnLibrary::loaded())
     {
@@ -130,9 +202,9 @@ matrix::Matrix createWeightsRecurrent(const RecurrentOpsHandle& handle,
         CudnnTensorDescriptor inputDescriptor = getCudnnInputDescriptor(handle);
 
         CudnnLibrary::cudnnGetRNNParamsSize(descriptor.descriptor(),
-                                            handle.timesteps,
                                             inputDescriptor.descriptor(),
-                                            &reserveSize);
+                                            &weightsSize,
+                                            getCudnnDataType(precision));
     }
     else
     {
@@ -166,7 +238,7 @@ matrix::Matrix sliceLayerWeights(const matrix::Matrix& weights, const RecurrentO
                                                     reinterpret_cast<void**>(&offset)
                                                     );
 
-        size = getSize(filterDescriptor);
+        size = filterDescriptor.dimensions().product();
     }
     else if(CudnnLibrary::loaded())
     {
@@ -175,17 +247,17 @@ matrix::Matrix sliceLayerWeights(const matrix::Matrix& weights, const RecurrentO
         auto weightDescriptor = getPrnnFilterDescriptor(weights);
         CudnnFilterDescriptor filterDescriptor = getCudnnFilterDescriptor();
 
-        CudnnLibrary::prnnGetRNNLinLayerMatrixParams(descriptor.descriptor(),
-                                                     layer,
-                                                     inputDescriptor.descriptor(),
-                                                     weightDescriptor.descriptor(),
-                                                     nullptr,
-                                                     offsetInLayer,
-                                                     filterDescriptor.descriptor(),
-                                                     reinterpret_cast<void**>(&offset)
-                                                     );
+        CudnnLibrary::cudnnGetRNNLinLayerMatrixParams(descriptor.descriptor(),
+                                                      layer,
+                                                      inputDescriptor.descriptor(),
+                                                      weightDescriptor.descriptor(),
+                                                      nullptr,
+                                                      offsetInLayer,
+                                                      filterDescriptor.descriptor(),
+                                                      reinterpret_cast<void**>(&offset)
+                                                      );
 
-        size = getSize(filterDescriptor);
+        size = filterDescriptor.dimensions().product();
     }
     else
     {
@@ -231,6 +303,40 @@ size_t getMatricesPerLayer(const RecurrentOpsHandle& handle)
 size_t getTotalWeightMatrices(const RecurrentOpsHandle& handle)
 {
     return handle.layers * getMatricesPerLayer(handle);
+}
+
+static matrix::Matrix getPrnnWorkspace(const RecurrentOpsHandle& handle)
+{
+    size_t size = 0;
+
+    if(PrnnLibrary::loaded())
+    {
+        PrnnRNNDescriptor descriptor(handle);
+
+        auto inputDescriptor = getPrnnInputDescriptor(handle);
+
+        PrnnLibrary::prnnGetRNNWorkspaceSize(descriptor.descriptor(),
+                                             handle.timesteps,
+                                             &inputDescriptor.descriptor(),
+                                             &size);
+    }
+    else
+    {
+        CudnnRNNDescriptor descriptor(handle);
+
+        auto inputDescriptor = getCudnnInputDescriptor(handle);
+
+        CudnnLibrary::cudnnGetRNNWorkspaceSize(descriptor.descriptor(),
+                                               handle.timesteps,
+                                               &inputDescriptor.descriptor(),
+                                               &size);
+
+    }
+    else
+    {
+        throw std::runtime_error("Tried to call forwardPropRecurrent "
+            "without CUDNN or Prnn libraries.");
+    }
 }
 
 /** \brief Forward propagate through a recurrent weight matrix.

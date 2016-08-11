@@ -10,15 +10,17 @@
 #include <memory>
 
 // Forward Declarations
-namespace lucius { namespace matrix { class Matrix;     } }
-namespace lucius { namespace matrix { class Dimension;  } }
-namespace lucius { namespace matrix { class Precision;  } }
-namespace lucius { namespace matrix { class Allocation; } }
+namespace lucius { namespace matrix { class Matrix;             } }
+namespace lucius { namespace matrix { class Dimension;          } }
+namespace lucius { namespace matrix { class Precision;          } }
+namespace lucius { namespace matrix { class Allocation;         } }
+namespace lucius { namespace matrix { class RecurrentOpsHandle; } }
 
 typedef struct cudnnTensorStruct*      cudnnTensorDescriptor_t;
 typedef struct cudnnFilterStruct*      cudnnFilterDescriptor_t;
 typedef struct cudnnConvolutionStruct* cudnnConvolutionDescriptor_t;
 typedef struct cudnnPoolingStruct*     cudnnPoolingDescriptor_t;
+typedef struct cudnnRNNStruct*         cudnnRNNDescriptor_t;
 
 namespace lucius
 {
@@ -29,12 +31,16 @@ namespace matrix
 class CudnnFilterDescriptor
 {
 public:
+    CudnnFilterDescriptor(CudnnFilterDescriptor&&);
     CudnnFilterDescriptor(const Matrix& filter);
 
     ~CudnnFilterDescriptor();
 
 public:
     cudnnFilterDescriptor_t descriptor() const;
+
+public:
+    Dimension dimensions() const;
 
 public:
     void* data();
@@ -50,12 +56,14 @@ private:
 class CudnnTensorDescriptor
 {
 public:
+    CudnnTensorDescriptor(CudnnTensorDescriptor&&);
     CudnnTensorDescriptor(const Matrix& tensor);
     CudnnTensorDescriptor(const Dimension& size);
     ~CudnnTensorDescriptor();
 
 public:
     cudnnTensorDescriptor_t descriptor() const;
+    cudnnTensorDescriptor_t& descriptor();
     void* data();
     size_t bytes() const;
 
@@ -161,6 +169,19 @@ public:
 private:
     cudnnPoolingDescriptor_t _descriptor;
 
+};
+
+class CudnnRNNDescriptor
+{
+public:
+    CudnnRNNDescriptor(const RecurrentOpsHandle&);
+    ~CudnnRNNDescriptor();
+
+public:
+    cudnnRNNDescriptor_t descriptor() const;
+
+public:
+    cudnnRNNDescriptor_t _descriptor;
 };
 
 }
