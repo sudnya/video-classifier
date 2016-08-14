@@ -51,9 +51,12 @@ FeedForwardLayer::FeedForwardLayer(size_t inputs, size_t outputs)
 
 }
 
-FeedForwardLayer::FeedForwardLayer(size_t inputs, size_t outputs, const matrix::Precision& precision)
-: _parameters(new MatrixVector({Matrix({outputs, inputs}, precision), Matrix({outputs}, precision)})),
-  _weights((*_parameters)[0]), _bias((*_parameters)[1])
+FeedForwardLayer::FeedForwardLayer(size_t inputs, size_t outputs,
+    const matrix::Precision& precision)
+: _parameters(new MatrixVector({Matrix({outputs, inputs}, precision),
+                                Matrix({outputs},         precision)})),
+  _weights((*_parameters)[0]),
+  _bias((*_parameters)[1])
 {
 
 }

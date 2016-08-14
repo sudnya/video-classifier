@@ -19,8 +19,10 @@ class BidirectionalRecurrentLayer : public Layer
 {
 public:
     BidirectionalRecurrentLayer();
-    BidirectionalRecurrentLayer(size_t size, size_t batchSize);
-    BidirectionalRecurrentLayer(size_t size, size_t batchSize, const matrix::Precision&);
+    BidirectionalRecurrentLayer(size_t layerSize, size_t expectedMiniBatchSize, size_t layers,
+        int direction, int layerType, int inputMode);
+    BidirectionalRecurrentLayer(size_t layerSize, size_t expectedMiniBatchSize, size_t layers,
+        int direction, int layerType, int inputMode, const matrix::Precision&);
     virtual ~BidirectionalRecurrentLayer();
 
 public:
@@ -74,15 +76,17 @@ private:
     std::unique_ptr<MatrixVector> _parameters;
 
 private:
-    Matrix& _forwardWeights;
-    Matrix& _bias;
+    matrix::Matrix& _matrix;
 
 private:
-    Matrix& _recurrentForwardWeights;
-    Matrix& _recurrentReverseWeights;
+    size_t _layerSize;
+    size_t _expectedMiniBatchSize;
+    size_t _layers;
 
 private:
-    size_t _expectedBatchSize;
+    int _direction;
+    int _layerType;
+    int _inputMode;
 
 };
 }

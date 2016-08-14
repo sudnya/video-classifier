@@ -4,6 +4,8 @@
 
 #include <lucius/matrix/interface/Matrix.h>
 #include <lucius/matrix/interface/Dimension.h>
+#include <lucius/matrix/interface/MatrixTransformations.h>
+#include <lucius/matrix/interface/MatrixOperations.h>
 
 #include <lucius/matrix/interface/CudnnLibrary.h>
 #include <lucius/matrix/interface/PrnnLibrary.h>
@@ -244,7 +246,7 @@ matrix::Matrix sliceLayerWeights(const matrix::Matrix& weights, const RecurrentO
     {
         CudnnRNNDescriptor descriptor(handle);
         CudnnTensorDescriptor inputDescriptor = getCudnnInputDescriptor(handle);
-        auto weightDescriptor = getPrnnFilterDescriptor(weights);
+        auto weightDescriptor = getCudnnFilterDescriptor(weights);
         CudnnFilterDescriptor filterDescriptor = getCudnnFilterDescriptor();
 
         CudnnLibrary::cudnnGetRNNLinLayerMatrixParams(descriptor.descriptor(),
@@ -305,7 +307,7 @@ size_t getTotalWeightMatrices(const RecurrentOpsHandle& handle)
     return handle.layers * getMatricesPerLayer(handle);
 }
 
-static matrix::Matrix getPrnnWorkspace(const RecurrentOpsHandle& handle)
+static matrix::Matrix getWorkspace(const RecurrentOpsHandle& handle)
 {
     size_t size = 0;
 
@@ -320,7 +322,7 @@ static matrix::Matrix getPrnnWorkspace(const RecurrentOpsHandle& handle)
                                              &inputDescriptor.descriptor(),
                                              &size);
     }
-    else
+    else if(CudnnLibrary::loaded())
     {
         CudnnRNNDescriptor descriptor(handle);
 
@@ -337,6 +339,8 @@ static matrix::Matrix getPrnnWorkspace(const RecurrentOpsHandle& handle)
         throw std::runtime_error("Tried to call forwardPropRecurrent "
             "without CUDNN or Prnn libraries.");
     }
+
+    return size;
 }
 
 /** \brief Forward propagate through a recurrent weight matrix.
@@ -358,7 +362,9 @@ void forwardPropRecurrent(matrix::Matrix& outputActivations,
 
         auto xDescriptor = getPrnnInputDescriptor(inputActivations);
         auto yDescriptor = getPrnnInputDescriptor(outputActivations);
-        auto workspace   = getPrnnWorkspace(handle);
+        auto workspace   = getWorkspace(handle);
+
+        auto weightsDescriptor = getPrnnFilterDescriptor(weights);
 
         auto hxDescriptor = getPrnnSingleDescriptor(handle);
         auto cxDescriptor = getPrnnSingleDescriptor(handle);
@@ -367,7 +373,7 @@ void forwardPropRecurrent(matrix::Matrix& outputActivations,
 
         PrnnLibrary::prnnRNNForward(descriptor.descriptor(),
                                     handle.timesteps,
-                                    xDescriptor.descriptor(),
+                                    &xDescriptor.descriptor(),
                                     xDescriptor.data(),
                                     hxDescriptor.descriptor(),
                                     nullptr,
@@ -375,7 +381,7 @@ void forwardPropRecurrent(matrix::Matrix& outputActivations,
                                     nullptr,
                                     weightsDescriptor.descriptor(),
                                     nullptr,
-                                    yDescriptor.descriptor(),
+                                    &yDescriptor.descriptor(),
                                     yDescriptor.data(),
                                     hyDescriptor.descriptor(),
                                     nullptr,
@@ -389,37 +395,39 @@ void forwardPropRecurrent(matrix::Matrix& outputActivations,
     }
     else if(CudnnLibrary::loaded())
     {
-        PrnnRNNDescriptor descriptor(handle);
+        CudnnRNNDescriptor descriptor(handle);
 
         auto xDescriptor = getCudnnInputDescriptor(inputActivations);
         auto yDescriptor = getCudnnInputDescriptor(outputActivations);
-        auto workspace   = getCudnnWorkspace(handle);
+        auto workspace   = getWorkspace(handle);
+
+        auto weightsDescriptor = getCudnnFilterDescriptor(weights);
 
         auto hxDescriptor = getCudnnSingleDescriptor(handle);
         auto cxDescriptor = getCudnnSingleDescriptor(handle);
         auto hyDescriptor = getCudnnSingleDescriptor(handle);
         auto cyDescriptor = getCudnnSingleDescriptor(handle);
 
-        PrnnLibrary::prnnRNNForward(descriptor.descriptor(),
-                                    handle.timesteps,
-                                    xDescriptor.descriptor(),
-                                    xDescriptor.data(),
-                                    hxDescriptor.descriptor(),
-                                    nullptr,
-                                    cxDescriptor.descriptor(),
-                                    nullptr,
-                                    weightsDescriptor.descriptor(),
-                                    nullptr,
-                                    yDescriptor.descriptor(),
-                                    yDescriptor.data(),
-                                    hyDescriptor.descriptor(),
-                                    nullptr,
-                                    cyDescriptor.descriptor(),
-                                    nullptr,
-                                    workspace.data(),
-                                    workspace.elements() * workspace.precision().size(),
-                                    reserve.data(),
-                                    reserve.elements() * reserve.precision().size());
+        CudnnLibrary::cudnnRNNForwardTraining(descriptor.descriptor(),
+                                              handle.timesteps,
+                                              &xDescriptor.descriptor(),
+                                              xDescriptor.data(),
+                                              hxDescriptor.descriptor(),
+                                              nullptr,
+                                              cxDescriptor.descriptor(),
+                                              nullptr,
+                                              weightsDescriptor.descriptor(),
+                                              nullptr,
+                                              &yDescriptor.descriptor(),
+                                              yDescriptor.data(),
+                                              hyDescriptor.descriptor(),
+                                              nullptr,
+                                              cyDescriptor.descriptor(),
+                                              nullptr,
+                                              workspace.data(),
+                                              workspace.elements() * workspace.precision().size(),
+                                              reserve.data(),
+                                              reserve.elements() * reserve.precision().size());
 
     }
     else
@@ -451,8 +459,9 @@ void backPropDeltasRecurrent(matrix::Matrix& inputDeltas,
         auto yDescriptor  = getPrnnInputDescriptor(outputActivations);
         auto dyDescriptor = getPrnnInputDescriptor(outputDeltas);
         auto dxDescriptor = getPrnnInputDescriptor(inputDeltas);
-        auto workspace    = getPrnnWorkspace(handle);
-        auto weights      = getPrnnFilterDescriptor(weights);
+        auto workspace    = getWorkspace(handle);
+
+        auto weightsDescriptor = getPrnnFilterDescriptor(weights);
 
         auto hxDescriptor  = getPrnnSingleDescriptor(handle);
         auto cxDescriptor  = getPrnnSingleDescriptor(handle);
@@ -463,16 +472,16 @@ void backPropDeltasRecurrent(matrix::Matrix& inputDeltas,
 
         PrnnLibrary::prnnRNNBackwardData(descriptor.descriptor(),
                                          handle.timesteps,
-                                         yDescriptor.descriptor(),
+                                         &yDescriptor.descriptor(),
                                          yDescriptor.data(),
-                                         dyDescriptor.descriptor(),
+                                         &dyDescriptor.descriptor(),
                                          dyDescriptor.data(),
                                          dhyDescriptor.descriptor(),
                                          nullptr,
                                          dcyDescriptor.descriptor(),
                                          nullptr,
-                                         weightDescriptor.descriptor(),
-                                         weightDescriptor.data(),
+                                         weightsDescriptor.descriptor(),
+                                         weightsDescriptor.data(),
                                          hxDescriptor.descriptor(),
                                          hxDescriptor.data(),
                                          cxDescriptor.descriptor(),
@@ -496,8 +505,9 @@ void backPropDeltasRecurrent(matrix::Matrix& inputDeltas,
         auto yDescriptor  = getCudnnInputDescriptor(outputActivations);
         auto dyDescriptor = getCudnnInputDescriptor(outputDeltas);
         auto dxDescriptor = getCudnnInputDescriptor(inputDeltas);
-        auto workspace    = getCudnnWorkspace(handle);
-        auto weights      = getCudnnFilterDescriptor(weights);
+        auto workspace    = getWorkspace(handle);
+
+        auto weightsDescriptor = getCudnnFilterDescriptor(weights);
 
         auto hxDescriptor  = getCudnnSingleDescriptor(handle);
         auto cxDescriptor  = getCudnnSingleDescriptor(handle);
@@ -506,32 +516,32 @@ void backPropDeltasRecurrent(matrix::Matrix& inputDeltas,
         auto dhyDescriptor = getCudnnSingleDescriptor(handle);
         auto dcyDescriptor = getCudnnSingleDescriptor(handle);
 
-        PrnnLibrary::cudnnRNNBackwardData(descriptor.descriptor(),
-                                          handle.timesteps,
-                                          yDescriptor.descriptor(),
-                                          yDescriptor.data(),
-                                          dyDescriptor.descriptor(),
-                                          dyDescriptor.data(),
-                                          dhyDescriptor.descriptor(),
-                                          nullptr,
-                                          dcyDescriptor.descriptor(),
-                                          nullptr,
-                                          weightDescriptor.descriptor(),
-                                          weightDescriptor.data(),
-                                          hxDescriptor.descriptor(),
-                                          hxDescriptor.data(),
-                                          cxDescriptor.descriptor(),
-                                          cxDescriptor.data(),
-                                          &dxDescriptor.descriptor(),
-                                          dxDescriptor.data(),
-                                          dhxDescriptor.descriptor(),
-                                          dhxDescriptor.data(),
-                                          dcxDescriptor.descriptor(),
-                                          dcxDescriptor.data(),
-                                          workspace.data(),
-                                          workspace.elements() * workspace.precision().size(),
-                                          reserve.data(),
-                                          reserve.elements() * reserve.precision().size());
+        CudnnLibrary::cudnnRNNBackwardData(descriptor.descriptor(),
+                                           handle.timesteps,
+                                           &yDescriptor.descriptor(),
+                                           yDescriptor.data(),
+                                           &dyDescriptor.descriptor(),
+                                           dyDescriptor.data(),
+                                           dhyDescriptor.descriptor(),
+                                           nullptr,
+                                           dcyDescriptor.descriptor(),
+                                           nullptr,
+                                           weightsDescriptor.descriptor(),
+                                           weightsDescriptor.data(),
+                                           hxDescriptor.descriptor(),
+                                           hxDescriptor.data(),
+                                           cxDescriptor.descriptor(),
+                                           cxDescriptor.data(),
+                                           &dxDescriptor.descriptor(),
+                                           dxDescriptor.data(),
+                                           dhxDescriptor.descriptor(),
+                                           dhxDescriptor.data(),
+                                           dcxDescriptor.descriptor(),
+                                           dcxDescriptor.data(),
+                                           workspace.data(),
+                                           workspace.elements() * workspace.precision().size(),
+                                           reserve.data(),
+                                           reserve.elements() * reserve.precision().size());
 
     }
     else
@@ -561,23 +571,24 @@ void backPropGradientsRecurrent(matrix::Matrix& dWeights,
 
         auto yDescriptor = getPrnnInputDescriptor(outputActivations);
         auto xDescriptor = getPrnnInputDescriptor(inputActivations);
-        auto workspace   = getPrnnWorkspace(handle);
-        auto dWeights    = getPrnnFilterDescriptor(dWeights);
+        auto workspace   = getWorkspace(handle);
+
+        auto dWeightsDescriptor = getPrnnFilterDescriptor(dWeights);
 
         auto hxDescriptor = getPrnnSingleDescriptor(handle);
 
         PrnnLibrary::prnnRNNBackwardWeights(descriptor.descriptor(),
                                             handle.timesteps,
-                                            xDescriptor.descriptor(),
+                                            &xDescriptor.descriptor(),
                                             xDescriptor.data(),
                                             hxDescriptor.descriptor(),
                                             hxDescriptor.data(),
-                                            yDescriptor.descriptor(),
+                                            &yDescriptor.descriptor(),
                                             yDescriptor.data(),
                                             workspace.data(),
                                             workspace.elements() * workspace.precision().size(),
-                                            dWeights.descriptor(),
-                                            dWeights.data(),
+                                            dWeightsDescriptor.descriptor(),
+                                            dWeightsDescriptor.data(),
                                             reserve.data(),
                                             reserve.elements() * reserve.precision().size());
 
@@ -588,25 +599,26 @@ void backPropGradientsRecurrent(matrix::Matrix& dWeights,
 
         auto yDescriptor = getCudnnInputDescriptor(outputActivations);
         auto xDescriptor = getCudnnInputDescriptor(inputActivations);
-        auto workspace   = getCudnnWorkspace(handle);
-        auto dWeights    = getCudnnFilterDescriptor(dWeights);
+        auto workspace   = getWorkspace(handle);
+
+        auto dWeightsDescriptor = getCudnnFilterDescriptor(dWeights);
 
         auto hxDescriptor = getCudnnSingleDescriptor(handle);
 
-        PrnnLibrary::cudnnRNNBackwardWeights(descriptor.descriptor(),
-                                             handle.timesteps,
-                                             xDescriptor.descriptor(),
-                                             xDescriptor.data(),
-                                             hxDescriptor.descriptor(),
-                                             hxDescriptor.data(),
-                                             yDescriptor.descriptor(),
-                                             yDescriptor.data(),
-                                             workspace.data(),
-                                             workspace.elements() * workspace.precision().size(),
-                                             dWeights.descriptor(),
-                                             dWeights.data(),
-                                             reserve.data(),
-                                             reserve.elements() * reserve.precision().size());
+        CudnnLibrary::cudnnRNNBackwardWeights(descriptor.descriptor(),
+                                              handle.timesteps,
+                                              &xDescriptor.descriptor(),
+                                              xDescriptor.data(),
+                                              hxDescriptor.descriptor(),
+                                              hxDescriptor.data(),
+                                              &yDescriptor.descriptor(),
+                                              yDescriptor.data(),
+                                              workspace.data(),
+                                              workspace.elements() * workspace.precision().size(),
+                                              dWeightsDescriptor.descriptor(),
+                                              dWeightsDescriptor.data(),
+                                              reserve.data(),
+                                              reserve.elements() * reserve.precision().size());
 
     }
     else

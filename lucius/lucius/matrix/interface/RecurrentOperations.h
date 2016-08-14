@@ -93,7 +93,7 @@ void forwardPropRecurrent(matrix::Matrix& outputActivations,
 void backPropDeltasRecurrent(matrix::Matrix& inputDeltas,
     const matrix::Matrix& outputDeltas,
     const matrix::Matrix& weights,
-    const matrix::Matrix& activations,
+    const matrix::Matrix& outputActivations,
     matrix::Matrix& reserve,
     const RecurrentOpsHandle& handle);
 
