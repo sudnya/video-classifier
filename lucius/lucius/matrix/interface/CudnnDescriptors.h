@@ -58,7 +58,8 @@ class CudnnTensorDescriptor
 public:
     CudnnTensorDescriptor(CudnnTensorDescriptor&&);
     CudnnTensorDescriptor(const Matrix& tensor);
-    CudnnTensorDescriptor(const Dimension& size);
+    CudnnTensorDescriptor(const Dimension& size, const Dimension& stride,
+        const Precision& precision);
     ~CudnnTensorDescriptor();
 
 public:
@@ -174,7 +175,7 @@ private:
 class CudnnRNNDescriptor
 {
 public:
-    CudnnRNNDescriptor(const RecurrentOpsHandle&);
+    CudnnRNNDescriptor(const RecurrentOpsHandle&, const Precision& precision);
     ~CudnnRNNDescriptor();
 
 public:

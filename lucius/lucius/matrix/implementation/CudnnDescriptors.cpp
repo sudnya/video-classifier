@@ -11,11 +11,14 @@
 #include <lucius/matrix/interface/Matrix.h>
 #include <lucius/matrix/interface/Dimension.h>
 #include <lucius/matrix/interface/Allocation.h>
+#include <lucius/matrix/interface/RecurrentOperations.h>
 
 #include <lucius/util/interface/memory.h>
+#include <lucius/util/interface/debug.h>
 
 // Standard Library Includes
 #include <cassert>
+#include <vector>
 
 namespace lucius
 {
@@ -58,37 +61,35 @@ cudnnFilterDescriptor_t CudnnFilterDescriptor::descriptor() const
     return _descriptor;
 }
 
+Dimension CudnnFilterDescriptor::dimensions() const
+{
+    return _filter->size();
+}
+
 void* CudnnFilterDescriptor::data()
 {
     return _filter->data();
 }
 
 CudnnTensorDescriptor::CudnnTensorDescriptor(const Matrix& tensor)
-: _tensor(std::make_unique<Matrix>(tensor))
+: CudnnTensorDescriptor(tensor.size(), tensor.stride(), tensor.precision())
 {
-    CudnnLibrary::cudnnCreateTensorDescriptor(&_descriptor);
-
-    CudnnLibrary::cudnnSetTensor4dDescriptor(_descriptor,
-        CudnnLibrary::CUDNN_TENSOR_NCHW,
-        getCudnnDataType(_tensor->precision()), // image data type
-        _tensor->size()[3],        // number of inputs (batch size)
-        _tensor->size()[2],        // number of input feature maps
-        _tensor->size()[1],        // height of input section
-        _tensor->size()[0]         // width of input section
-    );
+    _tensor = std::make_unique<Matrix>(tensor);
 }
 
-CudnnTensorDescriptor::CudnnTensorDescriptor(const Dimension& size)
+CudnnTensorDescriptor::CudnnTensorDescriptor(const Dimension& size, const Dimension& stride,
+    const Precision& precision)
 {
     CudnnLibrary::cudnnCreateTensorDescriptor(&_descriptor);
 
-    CudnnLibrary::cudnnSetTensor4dDescriptor(_descriptor,
-        CudnnLibrary::CUDNN_TENSOR_NCHW,
-        CudnnLibrary::CUDNN_DATA_FLOAT, // image data type
-        size[3],        // number of inputs (batch size)
-        size[2],        // number of input feature maps
-        size[1],        // height of input section
-        size[0]         // width of input section
+    std::vector<int> sizeArray(size.begin(), size.end());
+    std::vector<int> strideArray(stride.begin(), stride.end());
+
+    CudnnLibrary::cudnnSetTensorNdDescriptor(_descriptor,
+        getCudnnDataType(precision),
+        size.size(),
+        sizeArray.data(),
+        strideArray.data()
     );
 }
 
@@ -98,6 +99,11 @@ CudnnTensorDescriptor::~CudnnTensorDescriptor()
 }
 
 cudnnTensorDescriptor_t CudnnTensorDescriptor::descriptor() const
+{
+    return _descriptor;
+}
+
+cudnnTensorDescriptor_t& CudnnTensorDescriptor::descriptor()
 {
     return _descriptor;
 }
@@ -294,6 +300,92 @@ CudnnPooling2dDescriptor::~CudnnPooling2dDescriptor()
 }
 
 cudnnPoolingDescriptor_t CudnnPooling2dDescriptor::descriptor() const
+{
+    return _descriptor;
+}
+
+static CudnnLibrary::cudnnRNNInputMode_t getInputMode(const RecurrentOpsHandle& handle)
+{
+    switch(handle.inputMode)
+    {
+        case RECURRENT_LINEAR_INPUT:
+        {
+            return CudnnLibrary::CUDNN_LINEAR_INPUT;
+        }
+        case RECURRENT_SKIP_INPUT:
+        {
+            return CudnnLibrary::CUDNN_SKIP_INPUT;
+        }
+        default: break;
+    }
+
+    assertM(false, "Invalid input mode.");
+}
+
+static CudnnLibrary::cudnnDirectionMode_t getDirection(const RecurrentOpsHandle& handle)
+{
+    switch(handle.direction)
+    {
+    case RECURRENT_FORWARD:
+    {
+        return CudnnLibrary::CUDNN_UNIDIRECTIONAL;
+    }
+    case RECURRENT_REVERSE:
+    {
+        return CudnnLibrary::CUDNN_REVERSE;
+    }
+    case RECURRENT_BIDIRECTIONAL:
+    {
+        return CudnnLibrary::CUDNN_BIDIRECTIONAL;
+    }
+    default: break;
+    }
+
+    assertM(false, "Invalid direction.");
+}
+
+static CudnnLibrary::cudnnRNNMode_t getLayerType(const RecurrentOpsHandle& handle)
+{
+    switch(handle.layerType)
+    {
+    case RECURRENT_SIMPLE_TYPE:
+    {
+        return CudnnLibrary::CUDNN_RNN_RELU;
+    }
+    case RECURRENT_GRU_TYPE:
+    {
+        return CudnnLibrary::CUDNN_GRU;
+    }
+    case RECURRENT_LSTM_TYPE:
+    {
+        return CudnnLibrary::CUDNN_LSTM;
+    }
+    default: break;
+    }
+
+    assertM(false, "Invalid layer type.");
+}
+
+CudnnRNNDescriptor::CudnnRNNDescriptor(const RecurrentOpsHandle& handle,
+    const Precision& precision)
+{
+    CudnnLibrary::cudnnCreateRNNDescriptor(&_descriptor);
+    CudnnLibrary::cudnnSetRNNDescriptor(_descriptor,
+                                      handle.layerSize,
+                                      handle.layers,
+                                      nullptr,
+                                      getInputMode(handle),
+                                      getDirection(handle),
+                                      getLayerType(handle),
+                                      getCudnnDataType(precision));
+}
+
+CudnnRNNDescriptor::~CudnnRNNDescriptor()
+{
+    CudnnLibrary::cudnnDestroyRNNDescriptor(descriptor());
+}
+
+cudnnRNNDescriptor_t CudnnRNNDescriptor::descriptor() const
 {
     return _descriptor;
 }

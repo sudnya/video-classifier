@@ -10,15 +10,17 @@
 #include <memory>
 
 // Forward Declarations
-namespace lucius { namespace matrix { class Matrix;     } }
-namespace lucius { namespace matrix { class Dimension;  } }
-namespace lucius { namespace matrix { class Precision;  } }
-namespace lucius { namespace matrix { class Allocation; } }
+namespace lucius { namespace matrix { class Matrix;             } }
+namespace lucius { namespace matrix { class Dimension;          } }
+namespace lucius { namespace matrix { class Precision;          } }
+namespace lucius { namespace matrix { class Allocation;         } }
+namespace lucius { namespace matrix { class RecurrentOpsHandle; } }
 
 typedef struct prnnTensorStruct*      prnnTensorDescriptor_t;
 typedef struct prnnTensorStruct*      prnnFilterDescriptor_t;
 typedef struct prnnConvolutionStruct* prnnConvolutionDescriptor_t;
 typedef struct prnnPoolingStruct*     prnnPoolingDescriptor_t;
+typedef struct prnnRNNStruct*         prnnRNNDescriptor_t;
 
 namespace lucius
 {
@@ -26,37 +28,13 @@ namespace lucius
 namespace matrix
 {
 
-class PrnnFilterDescriptor
-{
-public:
-    PrnnFilterDescriptor(PrnnFilterDescriptor&& );
-    PrnnFilterDescriptor(const Matrix& filter);
-
-    ~PrnnFilterDescriptor();
-
-public:
-    prnnFilterDescriptor_t descriptor() const;
-
-public:
-    Dimension dimensions() const;
-
-public:
-    void* data();
-
-private:
-    prnnFilterDescriptor_t _descriptor;
-
-private:
-    std::unique_ptr<Matrix> _filter;
-
-};
-
 class PrnnTensorDescriptor
 {
 public:
     PrnnTensorDescriptor(PrnnTensorDescriptor&&);
     PrnnTensorDescriptor(const Matrix& tensor);
-    PrnnTensorDescriptor(const Dimension& size);
+    PrnnTensorDescriptor(const Dimension& size, const Dimension& strides,
+        const Precision& precision);
     ~PrnnTensorDescriptor();
 
 public:
@@ -65,6 +43,8 @@ public:
 
     void* data();
     size_t bytes() const;
+
+    Dimension dimensions() const;
 
 private:
     prnnTensorDescriptor_t _descriptor;
@@ -77,8 +57,12 @@ private:
 class PrnnRNNDescriptor
 {
 public:
-    PrnnRNNDescriptor(const RecurrentOpsHandle&);
+    PrnnRNNDescriptor(const RecurrentOpsHandle&, const Precision& precision);
     ~PrnnRNNDescriptor();
+
+public:
+    PrnnRNNDescriptor(const PrnnRNNDescriptor& descriptor) = delete;
+    PrnnRNNDescriptor& operator=(const PrnnRNNDescriptor& descriptor) = delete;
 
 public:
     prnnRNNDescriptor_t descriptor() const;

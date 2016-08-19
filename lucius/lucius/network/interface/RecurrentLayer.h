@@ -1,7 +1,7 @@
-/*  \file   BidirectionalRecurrentLayer.h
+/*  \file   RecurrentLayer.h
     \author Sudnya Diamos
     \date   May 9, 2016
-    \brief  The interface for the BidirectionalRecurrentLayer class.
+    \brief  The interface for the RecurrentLayer class.
 */
 
 #pragma once
@@ -15,19 +15,19 @@ namespace network
 {
 
 /* \brief An implementation of a generic recurrent layer. */
-class BidirectionalRecurrentLayer : public Layer
+class RecurrentLayer : public Layer
 {
 public:
-    BidirectionalRecurrentLayer();
-    BidirectionalRecurrentLayer(size_t layerSize, size_t expectedMiniBatchSize, size_t layers,
+    RecurrentLayer();
+    RecurrentLayer(size_t layerSize, size_t expectedMiniBatchSize, size_t layers,
         int direction, int layerType, int inputMode);
-    BidirectionalRecurrentLayer(size_t layerSize, size_t expectedMiniBatchSize, size_t layers,
+    RecurrentLayer(size_t layerSize, size_t expectedMiniBatchSize, size_t layers,
         int direction, int layerType, int inputMode, const matrix::Precision&);
-    virtual ~BidirectionalRecurrentLayer();
+    virtual ~RecurrentLayer();
 
 public:
-    BidirectionalRecurrentLayer(const BidirectionalRecurrentLayer& );
-    BidirectionalRecurrentLayer& operator=(const BidirectionalRecurrentLayer&);
+    RecurrentLayer(const RecurrentLayer& );
+    RecurrentLayer& operator=(const RecurrentLayer&);
 
 public:
     virtual void initialize();
@@ -76,7 +76,7 @@ private:
     std::unique_ptr<MatrixVector> _parameters;
 
 private:
-    matrix::Matrix& _matrix;
+    matrix::Matrix& _weights;
 
 private:
     size_t _layerSize;

@@ -67,8 +67,11 @@ matrix::Matrix createReserveRecurrent(const RecurrentOpsHandle& handle,
 matrix::Matrix createWeightsRecurrent(const RecurrentOpsHandle& handle,
     const matrix::Precision& precision);
 matrix::Matrix sliceLayerWeights(const matrix::Matrix& weights, const RecurrentOpsHandle& handle,
-    size_t index);
+    size_t layer, size_t offsetInLayer);
+matrix::Matrix sliceLayerWeights(const matrix::Matrix& weights, const RecurrentOpsHandle& handle,
+    size_t offset);
 size_t getTotalWeightMatrices(const RecurrentOpsHandle& handle);
+bool isBiasMatrix(const RecurrentOpsHandle& handle, size_t index);
 
 /** \brief Forward propagate through a recurrent weight matrix.
  *  \param weights The recurrent weight matrix.

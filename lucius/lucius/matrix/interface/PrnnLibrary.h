@@ -11,10 +11,10 @@
 #include <string>
 
 // Forward Declarations
-typedef struct prnnTensorStruct* prnnTensorDescriptor_t;
-typedef struct prnnTensorStruct* prnnFilterDescriptor_t;
+typedef struct prnnTensorStruct*  prnnTensorDescriptor_t;
+typedef struct prnnTensorStruct*  prnnFilterDescriptor_t;
 typedef struct prnnDropoutStruct* prnnDropoutDescriptor_t;
-typedef struct prnnRNNStruct* prnnRNNDescriptor_t;
+typedef struct prnnRNNStruct*     prnnRNNDescriptor_t;
 
 namespace lucius
 {

@@ -1,11 +1,11 @@
-/*  \file   BidirectionalRecurrentLayer.cpp
+/*  \file   RecurrentLayer.cpp
     \author Sudnya Diamos
      \date   May 9, 2016
-     \brief  The implementation of the BidirectionalRecurrentLayer class.
+     \brief  The implementation of the RecurrentLayer class.
 */
 
 // Lucius Includes
-#include <lucius/network/interface/BidirectionalRecurrentLayer.h>
+#include <lucius/network/interface/RecurrentLayer.h>
 
 #include <lucius/network/interface/ActivationFunction.h>
 #include <lucius/network/interface/ActivationCostFunction.h>
@@ -40,35 +40,38 @@ typedef matrix::MatrixVector MatrixVector;
 typedef matrix::IndexVector IndexVector;
 typedef matrix::Dimension Dimension;
 
-BidirectionalRecurrentLayer::BidirectionalRecurrentLayer()
-: BidirectionalRecurrentLayer(1, 1, 1, RECURRENT_FORWARD, RECURRENT_SIMPLE_TYPE,
-    RECURRENT_LINEAR_INPUT)
+RecurrentLayer::RecurrentLayer()
+: RecurrentLayer(1, 1, 1, matrix::RECURRENT_FORWARD, matrix::RECURRENT_SIMPLE_TYPE,
+    matrix::RECURRENT_LINEAR_INPUT)
 {
 
 }
 
-BidirectionalRecurrentLayer::BidirectionalRecurrentLayer(
+RecurrentLayer::RecurrentLayer(
     size_t layerSize, size_t expectedMiniBatchSize, size_t layers,
     int direction, int layerType, int inputMode)
-: BidirectionalRecurrentLayer(layerSize, expectedMiniBatchSize, layers,
+: RecurrentLayer(layerSize, expectedMiniBatchSize, layers,
     direction, layerType, inputMode, matrix::SinglePrecision())
 {
 
 }
 
-static RecurrentOpsHandle getHandle(size_t layerSize, size_t expectedMiniBatchSize, size_t layers,
-    int direction, int layerType, int inputMode)
+static matrix::RecurrentOpsHandle getHandle(size_t layerSize, size_t expectedMiniBatchSize,
+    size_t timesteps, size_t layers, int direction, int layerType, int inputMode)
 {
-    return RecurrentOpsHandle(layerSize, expectedMiniBatchSize, layers,
-        directions, layerType, inputMode);
+    return matrix::RecurrentOpsHandle(layerSize, expectedMiniBatchSize, timesteps, layers,
+        static_cast<matrix::RecurrentLayerDirection>(direction),
+        static_cast<matrix::RecurrentLayerType>(layerType),
+        static_cast<matrix::RecurrentLayerInputMode>(inputMode));
 }
 
-BidirectionalRecurrentLayer::BidirectionalRecurrentLayer(
+RecurrentLayer::RecurrentLayer(
     size_t layerSize, size_t expectedMiniBatchSize, size_t layers,
     int direction, int layerType, int inputMode,
     const matrix::Precision& precision)
 : _parameters(new MatrixVector({createWeightsRecurrent(
-  getHandle(layerSize, expectedMiniBatchSize, layers, direction, layerType, inputMode))})),
+    getHandle(layerSize, expectedMiniBatchSize, 1, layers, direction, layerType, inputMode),
+    precision)})),
   _weights((*_parameters)[0]),
   _layerSize(layerSize),
   _expectedMiniBatchSize(expectedMiniBatchSize),
@@ -80,12 +83,12 @@ BidirectionalRecurrentLayer::BidirectionalRecurrentLayer(
 
 }
 
-BidirectionalRecurrentLayer::~BidirectionalRecurrentLayer()
+RecurrentLayer::~RecurrentLayer()
 {
 
 }
 
-BidirectionalRecurrentLayer::BidirectionalRecurrentLayer(const BidirectionalRecurrentLayer& l)
+RecurrentLayer::RecurrentLayer(const RecurrentLayer& l)
 : Layer(l),
   _parameters(std::make_unique<MatrixVector>(*l._parameters)),
   _weights((*_parameters)[0]),
@@ -99,8 +102,8 @@ BidirectionalRecurrentLayer::BidirectionalRecurrentLayer(const BidirectionalRecu
 
 }
 
-BidirectionalRecurrentLayer& BidirectionalRecurrentLayer::operator=(
-    const BidirectionalRecurrentLayer& l)
+RecurrentLayer& RecurrentLayer::operator=(
+    const RecurrentLayer& l)
 {
     Layer::operator=(l);
 
@@ -122,19 +125,19 @@ BidirectionalRecurrentLayer& BidirectionalRecurrentLayer::operator=(
     return *this;
 }
 
-void BidirectionalRecurrentLayer::initialize()
+void RecurrentLayer::initialize()
 {
     auto initializationType = util::KnobDatabase::getKnobValue(
-        "BidirectionalRecurrentLayer::InitializationType", "glorot");
+        "RecurrentLayer::InitializationType", "glorot");
 
-    auto handle = getHandle(_layerSize, _expectedMiniBatchSize, _layers,
+    auto handle = getHandle(_layerSize, _expectedMiniBatchSize, 1, _layers,
         _direction, _layerType, _inputMode);
 
-    for(size_t m = 0; m < getTotalWeightMatrices(); ++m)
+    for(size_t m = 0; m < getTotalWeightMatrices(handle); ++m)
     {
         auto slice = sliceLayerWeights(_weights, handle, m);
 
-        if(isBiasLayer(handle, m))
+        if(isBiasMatrix(handle, m))
         {
             zeros(slice);
         }
@@ -144,7 +147,7 @@ void BidirectionalRecurrentLayer::initialize()
             {
                 //Glorot
                 double e = util::KnobDatabase::getKnobValue(
-                    "BidirectionalRecurrentLayer::RandomInitializationEpsilon", 6);
+                    "RecurrentLayer::RandomInitializationEpsilon", 6);
 
                 double epsilon = std::sqrt((e) / (getInputCount() + getOutputCount() + 1));
 
@@ -161,7 +164,7 @@ void BidirectionalRecurrentLayer::initialize()
             {
                 // He
                 double e = util::KnobDatabase::getKnobValue(
-                    "BidirectionalRecurrentLayer::RandomInitializationEpsilon", 1);
+                    "RecurrentLayer::RandomInitializationEpsilon", 1);
 
                 double epsilon = std::sqrt((2.*e) / (getInputCount() * 2));
 
@@ -203,7 +206,7 @@ static matrix::Matrix unfoldTimeAndBatch(const Matrix& input, size_t batchSize)
     return reshape(input, {activationCount, miniBatch, timesteps});
 }
 
-void BidirectionalRecurrentLayer::runForwardImplementation(Bundle& bundle)
+void RecurrentLayer::runForwardImplementation(Bundle& bundle)
 {
     auto& inputActivationsVector  = bundle[ "inputActivations"].get<matrix::MatrixVector>();
     auto& outputActivationsVector = bundle["outputActivations"].get<matrix::MatrixVector>();
@@ -212,19 +215,20 @@ void BidirectionalRecurrentLayer::runForwardImplementation(Bundle& bundle)
 
     saveMatrix("inputActivations", inputActivationsVector.back());
 
-    auto inputActivations = unfoldTimeAndBatch(inputActivationsVector.back(), _expectedBatchSize);
+    auto inputActivations = unfoldTimeAndBatch(inputActivationsVector.back(),
+        _expectedMiniBatchSize);
 
-    if(util::isLogEnabled("BidirectionalRecurrentLayer"))
+    if(util::isLogEnabled("RecurrentLayer"))
     {
-        util::log("BidirectionalRecurrentLayer") << " Running forward propagation through layer: "
-            << _forwardWeights.shapeString() << "\n";
+        util::log("RecurrentLayer") << " Running forward propagation through layer: "
+            << _weights.shapeString() << "\n";
     }
 
-    if(util::isLogEnabled("BidirectionalRecurrentLayer::Detail"))
+    if(util::isLogEnabled("RecurrentLayer::Detail"))
     {
-        util::log("BidirectionalRecurrentLayer::Detail") << "  input: "
+        util::log("RecurrentLayer::Detail") << "  input: "
             << inputActivations.debugString();
-        util::log("BidirectionalRecurrentLayer::Detail") << "  weights: "
+        util::log("RecurrentLayer::Detail") << "  weights: "
             << _weights.debugString();
     }
 
@@ -232,69 +236,69 @@ void BidirectionalRecurrentLayer::runForwardImplementation(Bundle& bundle)
     size_t miniBatch       = inputActivations.size()[inputActivations.size().size() - 2];
     size_t timesteps       = inputActivations.size().back();
 
-    auto handle = getHandle(_layerSize, _expectedMiniBatchSize, _layers,
+    auto handle = getHandle(_layerSize, _expectedMiniBatchSize, timesteps, _layers,
         _direction, _layerType, _inputMode);
 
     Matrix outputActivations({activationCount, miniBatch, timesteps}, precision());
     auto reserve = createReserveRecurrent(handle, precision());
 
+    if(bundle.contains("inputTimesteps") && _direction == matrix::RECURRENT_REVERSE)
+    {
+        recurrentZeroEnds(inputActivations, bundle["inputTimesteps"].get<IndexVector>());
+    }
+
     forwardPropRecurrent(outputActivations,
                          inputActivations,
                          reserve,
-                         weights,
+                         _weights,
                          handle);
 
-    saveMatrix("outputActivations", activation);
-
-    if(bundle.contains("inputTimesteps"))
-    {
-        recurrentZeroEnds(reverseActivation, bundle["inputTimesteps"].get<IndexVector>());
-    }
+    saveMatrix("outputActivations", outputActivations);
 
     saveMatrix("reserve", reserve);
 
-    if(util::isLogEnabled("BidirectionalRecurrentLayer::Detail"))
+    if(util::isLogEnabled("RecurrentLayer::Detail"))
     {
-        util::log("BidirectionalRecurrentLayer::Detail") << "  activation: "
+        util::log("RecurrentLayer::Detail") << "  activation: "
             << outputActivations.debugString();
     }
     else
     {
-        util::log("BidirectionalRecurrentLayer") << "  activation: "
+        util::log("RecurrentLayer") << "  activation: "
             << outputActivations.shapeString() << "\n";
     }
 
     outputActivationsVector.push_back(std::move(outputActivations));
 }
 
-void BidirectionalRecurrentLayer::runReverseImplementation(Bundle& bundle)
+void RecurrentLayer::runReverseImplementation(Bundle& bundle)
 {
     auto& gradients         = bundle[   "gradients"].get<matrix::MatrixVector>();
     auto& inputDeltaVector  = bundle[ "inputDeltas"].get<matrix::MatrixVector>();
     auto& outputDeltaVector = bundle["outputDeltas"].get<matrix::MatrixVector>();
 
-    assert(outputDeltas.size() == 1);
+    assert(outputDeltaVector.size() == 1);
 
-    auto outputDeltas = unfoldTimeAndBatch(outputDeltaVector.back(), _expectedBatchSize);
+    auto outputDeltas = unfoldTimeAndBatch(outputDeltaVector.back(), _expectedMiniBatchSize);
 
-    if(util::isLogEnabled("BidirectionalRecurrentLayer"))
+    if(util::isLogEnabled("RecurrentLayer"))
     {
-        util::log("BidirectionalRecurrentLayer") << " Running reverse propagation on matrix ("
+        util::log("RecurrentLayer") << " Running reverse propagation on matrix ("
             << outputDeltas.shapeString() << ") through layer with dimensions ("
             << getInputCount() << " inputs, " << getOutputCount() << " outputs).\n";
-        util::log("BidirectionalRecurrentLayer") << "  layer: "
+        util::log("RecurrentLayer") << "  layer: "
             << _weights.shapeString() << "\n";
     }
 
-    if(util::isLogEnabled("BidirectionalRecurrentLayer"))
+    if(util::isLogEnabled("RecurrentLayer"))
     {
-        util::log("BidirectionalRecurrentLayer") << "  output deltas size: "
+        util::log("RecurrentLayer") << "  output deltas size: "
             << outputDeltas.shapeString() << "\n";
     }
 
-    if(util::isLogEnabled("BidirectionalRecurrentLayer::Detail"))
+    if(util::isLogEnabled("RecurrentLayer::Detail"))
     {
-        util::log("BidirectionalRecurrentLayer::Detail") << "  output deltas: "
+        util::log("RecurrentLayer::Detail") << "  output deltas: "
             << outputDeltas.debugString();
     }
 
@@ -306,11 +310,14 @@ void BidirectionalRecurrentLayer::runReverseImplementation(Bundle& bundle)
         unfoldedOutputActivations.size().size() - 2];
     size_t timesteps = unfoldedOutputActivations.size().back();
 
+    auto handle = getHandle(_layerSize, _expectedMiniBatchSize, timesteps, _layers,
+        _direction, _layerType, _inputMode);
+
     Matrix inputDeltas({activationCount, miniBatch, timesteps}, precision());
 
     backPropDeltasRecurrent(inputDeltas,
                             outputDeltas,
-                            weights,
+                            _weights,
                             unfoldedOutputActivations,
                             reserve,
                             handle);
@@ -327,15 +334,15 @@ void BidirectionalRecurrentLayer::runReverseImplementation(Bundle& bundle)
                                handle);
 
     // Compute recurrent weight gradients
-    if(util::isLogEnabled("BidirectionalRecurrentLayer"))
+    if(util::isLogEnabled("RecurrentLayer"))
     {
-        util::log("BidirectionalRecurrentLayer") << "  input deltas size: "
+        util::log("RecurrentLayer") << "  input deltas size: "
             << inputDeltas.shapeString() << "\n";
     }
 
-    if(util::isLogEnabled("BidirectionalRecurrentLayer::Detail"))
+    if(util::isLogEnabled("RecurrentLayer::Detail"))
     {
-        util::log("BidirectionalRecurrentLayer::Detail") << "  input deltas: "
+        util::log("RecurrentLayer::Detail") << "  input deltas: "
             << inputDeltas.debugString();
     }
 
@@ -346,15 +353,15 @@ void BidirectionalRecurrentLayer::runReverseImplementation(Bundle& bundle)
             getWeightCostFunction()->getGradient(_weights), matrix::Add());
     }
 
-    if(util::isLogEnabled("BidirectionalRecurrentLayer"))
+    if(util::isLogEnabled("RecurrentLayer"))
     {
-        util::log("BidirectionalRecurrentLayer") << "  weight grad shape: "
+        util::log("RecurrentLayer") << "  weight grad shape: "
             << weightGradients.shapeString() << "\n";
     }
 
-    if(util::isLogEnabled("BidirectionalRecurrentLayer::Detail"))
+    if(util::isLogEnabled("RecurrentLayer::Detail"))
     {
-        util::log("BidirectionalRecurrentLayer::Detail") << "  weight grad: "
+        util::log("RecurrentLayer::Detail") << "  weight grad: "
             << weightGradients.debugString();
     }
 
@@ -363,67 +370,67 @@ void BidirectionalRecurrentLayer::runReverseImplementation(Bundle& bundle)
     inputDeltaVector.push_back(reshape(inputDeltas, {getInputCount(), miniBatch, timesteps}));
 }
 
-MatrixVector& BidirectionalRecurrentLayer::weights()
+MatrixVector& RecurrentLayer::weights()
 {
     return *_parameters;
 }
 
-const MatrixVector& BidirectionalRecurrentLayer::weights() const
+const MatrixVector& RecurrentLayer::weights() const
 {
     return *_parameters;
 }
 
-const matrix::Precision& BidirectionalRecurrentLayer::precision() const
+const matrix::Precision& RecurrentLayer::precision() const
 {
     return _weights.precision();
 }
 
-double BidirectionalRecurrentLayer::computeWeightCost() const
+double RecurrentLayer::computeWeightCost() const
 {
     return getWeightCostFunction()->getCost(_weights);
 }
 
-Dimension BidirectionalRecurrentLayer::getInputSize() const
+Dimension RecurrentLayer::getInputSize() const
 {
     return {_layerSize, 1, 1};
 }
 
-Dimension BidirectionalRecurrentLayer::getOutputSize() const
+Dimension RecurrentLayer::getOutputSize() const
 {
     return getInputSize();
 }
 
-size_t BidirectionalRecurrentLayer::getInputCount() const
+size_t RecurrentLayer::getInputCount() const
 {
     return getInputSize().product();
 }
 
-size_t BidirectionalRecurrentLayer::getOutputCount() const
+size_t RecurrentLayer::getOutputCount() const
 {
     return getInputCount();
 }
 
-size_t BidirectionalRecurrentLayer::totalNeurons() const
+size_t RecurrentLayer::totalNeurons() const
 {
     return getInputCount() * _layers;
 }
 
-size_t BidirectionalRecurrentLayer::totalConnections() const
+size_t RecurrentLayer::totalConnections() const
 {
     return _weights.elements();
 }
 
-size_t BidirectionalRecurrentLayer::getFloatingPointOperationCount() const
+size_t RecurrentLayer::getFloatingPointOperationCount() const
 {
     return 2 * totalConnections();
 }
 
-size_t BidirectionalRecurrentLayer::getActivationMemory() const
+size_t RecurrentLayer::getActivationMemory() const
 {
     return getOutputCount() * precision().size();
 }
 
-void BidirectionalRecurrentLayer::save(util::OutputTarArchive& archive,
+void RecurrentLayer::save(util::OutputTarArchive& archive,
     util::PropertyTree& properties) const
 {
     properties["weights"] = properties.path() + "." + properties.key() + ".weights.npy";
@@ -441,14 +448,14 @@ void BidirectionalRecurrentLayer::save(util::OutputTarArchive& archive,
     saveLayer(archive, properties);
 }
 
-void BidirectionalRecurrentLayer::load(util::InputTarArchive& archive,
+void RecurrentLayer::load(util::InputTarArchive& archive,
     const util::PropertyTree& properties)
 {
     _weights = matrix::loadFromArchive(archive, properties["weights"]);
 
-    _layerSize         = properties.get<size_t>("layer-size");
-    _expectedBatchSize = properties.get<size_t>("batch-size");
-    _layers            = properties.get<size_t>("layers");
+    _layerSize             = properties.get<size_t>("layer-size");
+    _expectedMiniBatchSize = properties.get<size_t>("batch-size");
+    _layers                = properties.get<size_t>("layers");
 
     _direction = properties.get<int>("direction");
     _layerType = properties.get<int>("layer-type");
@@ -457,14 +464,14 @@ void BidirectionalRecurrentLayer::load(util::InputTarArchive& archive,
     loadLayer(archive, properties);
 }
 
-std::unique_ptr<Layer> BidirectionalRecurrentLayer::clone() const
+std::unique_ptr<Layer> RecurrentLayer::clone() const
 {
-    return std::make_unique<BidirectionalRecurrentLayer>(*this);
+    return std::make_unique<RecurrentLayer>(*this);
 }
 
-std::string BidirectionalRecurrentLayer::getTypeName() const
+std::string RecurrentLayer::getTypeName() const
 {
-    return "BidirectionalRecurrentLayer";
+    return "RecurrentLayer";
 }
 
 }

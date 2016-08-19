@@ -7,7 +7,6 @@
 // Lucius Includes
 #include <lucius/network/interface/NeuralNetwork.h>
 #include <lucius/network/interface/FeedForwardLayer.h>
-#include <lucius/network/interface/BidirectionalRecurrentLayer.h>
 #include <lucius/network/interface/RecurrentLayer.h>
 #include <lucius/network/interface/SoftmaxLayer.h>
 #include <lucius/network/interface/BatchNormalizationLayer.h>
@@ -172,8 +171,9 @@ static NeuralNetwork createRecurrentNetwork(size_t layerSize, size_t layerCount)
 
     for(size_t layer = 0; layer < layerCount; ++layer)
     {
-        network.addLayer(std::make_unique<RecurrentLayer>(layerSize, 1,
-            matrix::RECURRENT_FORWARD_TIME, DoublePrecision()));
+        network.addLayer(std::make_unique<RecurrentLayer>(layerSize, 1, 1,
+            matrix::RECURRENT_FORWARD, matrix::RECURRENT_SIMPLE_TYPE,
+            matrix::RECURRENT_LINEAR_INPUT, matrix::DoublePrecision()));
         network.back()->setActivationFunction(
             ActivationFunctionFactory::create("SigmoidActivationFunction"));
     }
@@ -189,8 +189,9 @@ static NeuralNetwork createBidirectionalRecurrentNetwork(size_t layerSize, size_
 
     for(size_t layer = 0; layer < layerCount; ++layer)
     {
-        network.addLayer(std::make_unique<BidirectionalRecurrentLayer>(
-            layerSize, 1, DoublePrecision()));
+        network.addLayer(std::make_unique<RecurrentLayer>(layerSize, 1, 1,
+            matrix::RECURRENT_BIDIRECTIONAL, matrix::RECURRENT_SIMPLE_TYPE,
+            matrix::RECURRENT_LINEAR_INPUT, matrix::DoublePrecision()));
         network.back()->setActivationFunction(
             ActivationFunctionFactory::create("SigmoidActivationFunction"));
     }

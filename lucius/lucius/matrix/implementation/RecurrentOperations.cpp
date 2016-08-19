@@ -5,6 +5,7 @@
 #include <lucius/matrix/interface/Matrix.h>
 #include <lucius/matrix/interface/Dimension.h>
 #include <lucius/matrix/interface/MatrixTransformations.h>
+#include <lucius/matrix/interface/DimensionTransformations.h>
 #include <lucius/matrix/interface/MatrixOperations.h>
 
 #include <lucius/matrix/interface/CudnnLibrary.h>
@@ -82,36 +83,35 @@ std::string RecurrentOpsHandle::toString() const
     return stream.str();
 }
 
-CudnnTensorDescriptor getCudnnInputDescriptor(const matrix::Matrix& input)
+CudnnTensorDescriptor getCudnnTensorDescriptor(const matrix::Matrix& input)
 {
     return CudnnTensorDescriptor(input);
 }
 
-CudnnTensorDescriptor getCudnnInputDescriptor(const RecurrentOpsHandle& handle)
+CudnnTensorDescriptor getCudnnTensorDescriptor(const RecurrentOpsHandle& handle,
+    const Precision& precision)
 {
-    return CudnnTensorDescriptor(
-        Dimension(handle.layerSize, handle.miniBatchSize, handle.timesteps));
+    auto size = Dimension(handle.layerSize, handle.miniBatchSize, handle.timesteps);
+
+    return CudnnTensorDescriptor(size, linearStride(size), precision);
 }
 
-PrnnTensorDescriptor getPrnnInputDescriptor(const matrix::Matrix& input)
+PrnnTensorDescriptor getPrnnTensorDescriptor()
+{
+    return PrnnTensorDescriptor({});
+}
+
+PrnnTensorDescriptor getPrnnTensorDescriptor(const matrix::Matrix& input)
 {
     return PrnnTensorDescriptor(input);
 }
 
-PrnnTensorDescriptor getPrnnInputDescriptor(const RecurrentOpsHandle& handle)
+PrnnTensorDescriptor getPrnnTensorDescriptor(const RecurrentOpsHandle& handle,
+    const Precision& precision)
 {
-    return PrnnTensorDescriptor(
-        Dimension(handle.layerSize, handle.miniBatchSize, handle.timesteps));
-}
+    auto size = Dimension(handle.layerSize, handle.miniBatchSize, handle.timesteps);
 
-PrnnFilterDescriptor getPrnnFilterDescriptor(const matrix::Matrix& weights)
-{
-    return PrnnFilterDescriptor(weights);
-}
-
-PrnnFilterDescriptor getPrnnFilterDescriptor()
-{
-    return PrnnFilterDescriptor({});
+    return PrnnTensorDescriptor(size, linearStride(size), precision);
 }
 
 CudnnFilterDescriptor getCudnnFilterDescriptor(const matrix::Matrix& weights)
@@ -124,14 +124,20 @@ CudnnFilterDescriptor getCudnnFilterDescriptor()
     return CudnnFilterDescriptor({});
 }
 
-PrnnTensorDescriptor getPrnnSingleDescriptor(const RecurrentOpsHandle& handle)
+PrnnTensorDescriptor getPrnnSingleDescriptor(const RecurrentOpsHandle& handle,
+    const Precision& precision)
 {
-    return PrnnTensorDescriptor(Dimension(1, handle.miniBatchSize, handle.timesteps));
+    auto size = Dimension(handle.layerSize, handle.miniBatchSize, handle.timesteps);
+
+    return PrnnTensorDescriptor(size, linearStride(size), precision);
 }
 
-CudnnTensorDescriptor getCudnnSingleDescriptor(const RecurrentOpsHandle& handle)
+CudnnTensorDescriptor getCudnnSingleDescriptor(const RecurrentOpsHandle& handle,
+    const Precision& precision)
 {
-    return CudnnTensorDescriptor(Dimension(1, handle.miniBatchSize, handle.timesteps));
+    auto size = Dimension(1, handle.miniBatchSize, handle.timesteps);
+
+    return CudnnTensorDescriptor(size, linearStride(size), precision);
 }
 
 CudnnLibrary::cudnnDataType_t getCudnnDataType(const Precision& precision)
@@ -157,8 +163,8 @@ matrix::Matrix createReserveRecurrent(const RecurrentOpsHandle& handle,
 
     if(PrnnLibrary::loaded())
     {
-        PrnnRNNDescriptor descriptor(handle);
-        PrnnTensorDescriptor inputDescriptor = getPrnnInputDescriptor(handle);
+        PrnnRNNDescriptor descriptor(handle, precision);
+        PrnnTensorDescriptor inputDescriptor = getPrnnTensorDescriptor(handle, precision);
 
         PrnnLibrary::prnnGetRNNTrainingReserveSize(descriptor.descriptor(),
                                                    handle.timesteps,
@@ -167,8 +173,8 @@ matrix::Matrix createReserveRecurrent(const RecurrentOpsHandle& handle,
     }
     else if(CudnnLibrary::loaded())
     {
-        CudnnRNNDescriptor descriptor(handle);
-        CudnnTensorDescriptor inputDescriptor = getCudnnInputDescriptor(handle);
+        CudnnRNNDescriptor descriptor(handle, precision);
+        CudnnTensorDescriptor inputDescriptor = getCudnnTensorDescriptor(handle, precision);
 
         CudnnLibrary::cudnnGetRNNTrainingReserveSize(descriptor.descriptor(),
                                                      handle.timesteps,
@@ -191,8 +197,8 @@ matrix::Matrix createWeightsRecurrent(const RecurrentOpsHandle& handle,
 
     if(PrnnLibrary::loaded())
     {
-        PrnnRNNDescriptor descriptor(handle);
-        PrnnTensorDescriptor inputDescriptor = getPrnnInputDescriptor(handle);
+        PrnnRNNDescriptor descriptor(handle, precision);
+        PrnnTensorDescriptor inputDescriptor = getPrnnTensorDescriptor(handle, precision);
 
         PrnnLibrary::prnnGetRNNParamsSize(descriptor.descriptor(),
                                           inputDescriptor.descriptor(),
@@ -200,8 +206,8 @@ matrix::Matrix createWeightsRecurrent(const RecurrentOpsHandle& handle,
     }
     else if(CudnnLibrary::loaded())
     {
-        CudnnRNNDescriptor descriptor(handle);
-        CudnnTensorDescriptor inputDescriptor = getCudnnInputDescriptor(handle);
+        CudnnRNNDescriptor descriptor(handle, precision);
+        CudnnTensorDescriptor inputDescriptor = getCudnnTensorDescriptor(handle, precision);
 
         CudnnLibrary::cudnnGetRNNParamsSize(descriptor.descriptor(),
                                             inputDescriptor.descriptor(),
@@ -217,18 +223,18 @@ matrix::Matrix createWeightsRecurrent(const RecurrentOpsHandle& handle,
     return matrix::Matrix({weightsSize / precision.size()}, precision);
 }
 
-matrix::Matrix sliceLayerWeights(const matrix::Matrix& weights, const RecurrentOpsHandle& handle,
-    size_t layer, size_t offsetInLayer)
+static matrix::Matrix sliceLayerLinearMatrix(const matrix::Matrix& weights,
+    const RecurrentOpsHandle& handle, size_t layer, size_t offsetInLayer)
 {
     size_t size   = 0;
     size_t offset = 0;
 
     if(PrnnLibrary::loaded())
     {
-        PrnnRNNDescriptor descriptor(handle);
-        PrnnTensorDescriptor inputDescriptor = getPrnnInputDescriptor(handle);
-        auto weightDescriptor = getPrnnFilterDescriptor(weights);
-        PrnnFilterDescriptor filterDescriptor = getPrnnFilterDescriptor();
+        PrnnRNNDescriptor descriptor(handle, weights.precision());
+        auto inputDescriptor = getPrnnTensorDescriptor(handle, weights.precision());
+        auto weightDescriptor = getPrnnTensorDescriptor(weights);
+        PrnnTensorDescriptor filterDescriptor = getPrnnTensorDescriptor();
 
         PrnnLibrary::prnnGetRNNLinLayerMatrixParams(descriptor.descriptor(),
                                                     layer,
@@ -244,8 +250,8 @@ matrix::Matrix sliceLayerWeights(const matrix::Matrix& weights, const RecurrentO
     }
     else if(CudnnLibrary::loaded())
     {
-        CudnnRNNDescriptor descriptor(handle);
-        CudnnTensorDescriptor inputDescriptor = getCudnnInputDescriptor(handle);
+        CudnnRNNDescriptor descriptor(handle, weights.precision());
+        auto inputDescriptor = getCudnnTensorDescriptor(handle, weights.precision());
         auto weightDescriptor = getCudnnFilterDescriptor(weights);
         CudnnFilterDescriptor filterDescriptor = getCudnnFilterDescriptor();
 
@@ -268,6 +274,72 @@ matrix::Matrix sliceLayerWeights(const matrix::Matrix& weights, const RecurrentO
     }
 
     return slice(weights, {offset}, {offset + size});
+}
+
+static matrix::Matrix sliceLayerBiasMatrix(const matrix::Matrix& weights,
+    const RecurrentOpsHandle& handle, size_t layer, size_t offsetInLayer)
+{
+    size_t size   = 0;
+    size_t offset = 0;
+
+    if(PrnnLibrary::loaded())
+    {
+        PrnnRNNDescriptor descriptor(handle, weights.precision());
+        auto inputDescriptor = getPrnnTensorDescriptor(handle, weights.precision());
+        auto weightDescriptor = getPrnnTensorDescriptor(weights);
+        PrnnTensorDescriptor filterDescriptor = getPrnnTensorDescriptor();
+
+        PrnnLibrary::prnnGetRNNLinLayerBiasParams(descriptor.descriptor(),
+                                                  layer,
+                                                  inputDescriptor.descriptor(),
+                                                  weightDescriptor.descriptor(),
+                                                  nullptr,
+                                                  offsetInLayer,
+                                                  filterDescriptor.descriptor(),
+                                                  reinterpret_cast<void**>(&offset)
+                                                  );
+
+        size = filterDescriptor.dimensions().product();
+    }
+    else if(CudnnLibrary::loaded())
+    {
+        CudnnRNNDescriptor descriptor(handle, weights.precision());
+        auto inputDescriptor = getCudnnTensorDescriptor(handle, weights.precision());
+        auto weightDescriptor = getCudnnFilterDescriptor(weights);
+        CudnnFilterDescriptor filterDescriptor = getCudnnFilterDescriptor();
+
+        CudnnLibrary::cudnnGetRNNLinLayerBiasParams(descriptor.descriptor(),
+                                                    layer,
+                                                    inputDescriptor.descriptor(),
+                                                    weightDescriptor.descriptor(),
+                                                    nullptr,
+                                                    offsetInLayer,
+                                                    filterDescriptor.descriptor(),
+                                                    reinterpret_cast<void**>(&offset)
+                                                    );
+
+        size = filterDescriptor.dimensions().product();
+    }
+    else
+    {
+        throw std::runtime_error("Tried to create slice out layer bias "
+            "without CUDNN or Prnn libraries.");
+    }
+
+    return slice(weights, {offset}, {offset + size});
+}
+
+matrix::Matrix sliceLayerWeights(const matrix::Matrix& weights, const RecurrentOpsHandle& handle,
+    size_t layer, size_t offsetInLayer)
+{
+    if(isBiasMatrix(handle, offsetInLayer))
+    {
+        return sliceLayerLinearMatrix(weights, handle, layer, offsetInLayer / 2);
+    }
+    else
+    {
+        return sliceLayerBiasMatrix(weights, handle, layer, offsetInLayer / 2);
+    }
 }
 
 size_t getCudnnMatricesPerLayer(const RecurrentOpsHandle& handle)
@@ -302,20 +374,32 @@ size_t getMatricesPerLayer(const RecurrentOpsHandle& handle)
     }
 }
 
+matrix::Matrix sliceLayerWeights(const matrix::Matrix& weights, const RecurrentOpsHandle& handle,
+    size_t offset)
+{
+    return sliceLayerWeights(weights, handle, offset / getMatricesPerLayer(handle),
+        offset % getMatricesPerLayer(handle));
+}
+
 size_t getTotalWeightMatrices(const RecurrentOpsHandle& handle)
 {
     return handle.layers * getMatricesPerLayer(handle);
 }
 
-static matrix::Matrix getWorkspace(const RecurrentOpsHandle& handle)
+bool isBiasMatrix(const RecurrentOpsHandle& handle, size_t index)
+{
+    return index % 2 == 1;
+}
+
+static matrix::Matrix getWorkspace(const RecurrentOpsHandle& handle, const Precision& precision)
 {
     size_t size = 0;
 
     if(PrnnLibrary::loaded())
     {
-        PrnnRNNDescriptor descriptor(handle);
+        PrnnRNNDescriptor descriptor(handle, precision);
 
-        auto inputDescriptor = getPrnnInputDescriptor(handle);
+        auto inputDescriptor = getPrnnTensorDescriptor(handle, precision);
 
         PrnnLibrary::prnnGetRNNWorkspaceSize(descriptor.descriptor(),
                                              handle.timesteps,
@@ -324,9 +408,9 @@ static matrix::Matrix getWorkspace(const RecurrentOpsHandle& handle)
     }
     else if(CudnnLibrary::loaded())
     {
-        CudnnRNNDescriptor descriptor(handle);
+        CudnnRNNDescriptor descriptor(handle, precision);
 
-        auto inputDescriptor = getCudnnInputDescriptor(handle);
+        auto inputDescriptor = getCudnnTensorDescriptor(handle, precision);
 
         CudnnLibrary::cudnnGetRNNWorkspaceSize(descriptor.descriptor(),
                                                handle.timesteps,
@@ -358,18 +442,18 @@ void forwardPropRecurrent(matrix::Matrix& outputActivations,
 {
     if(PrnnLibrary::loaded())
     {
-        PrnnRNNDescriptor descriptor(handle);
+        PrnnRNNDescriptor descriptor(handle, weights.precision());
 
-        auto xDescriptor = getPrnnInputDescriptor(inputActivations);
-        auto yDescriptor = getPrnnInputDescriptor(outputActivations);
-        auto workspace   = getWorkspace(handle);
+        auto xDescriptor = getPrnnTensorDescriptor(inputActivations);
+        auto yDescriptor = getPrnnTensorDescriptor(outputActivations);
+        auto workspace   = getWorkspace(handle, weights.precision());
 
-        auto weightsDescriptor = getPrnnFilterDescriptor(weights);
+        auto weightsDescriptor = getPrnnTensorDescriptor(weights);
 
-        auto hxDescriptor = getPrnnSingleDescriptor(handle);
-        auto cxDescriptor = getPrnnSingleDescriptor(handle);
-        auto hyDescriptor = getPrnnSingleDescriptor(handle);
-        auto cyDescriptor = getPrnnSingleDescriptor(handle);
+        auto hxDescriptor = getPrnnSingleDescriptor(handle, weights.precision());
+        auto cxDescriptor = getPrnnSingleDescriptor(handle, weights.precision());
+        auto hyDescriptor = getPrnnSingleDescriptor(handle, weights.precision());
+        auto cyDescriptor = getPrnnSingleDescriptor(handle, weights.precision());
 
         PrnnLibrary::prnnRNNForward(descriptor.descriptor(),
                                     handle.timesteps,
@@ -395,18 +479,18 @@ void forwardPropRecurrent(matrix::Matrix& outputActivations,
     }
     else if(CudnnLibrary::loaded())
     {
-        CudnnRNNDescriptor descriptor(handle);
+        CudnnRNNDescriptor descriptor(handle, weights.precision());
 
-        auto xDescriptor = getCudnnInputDescriptor(inputActivations);
-        auto yDescriptor = getCudnnInputDescriptor(outputActivations);
-        auto workspace   = getWorkspace(handle);
+        auto xDescriptor = getCudnnTensorDescriptor(inputActivations);
+        auto yDescriptor = getCudnnTensorDescriptor(outputActivations);
+        auto workspace   = getWorkspace(handle, weights.precision());
 
         auto weightsDescriptor = getCudnnFilterDescriptor(weights);
 
-        auto hxDescriptor = getCudnnSingleDescriptor(handle);
-        auto cxDescriptor = getCudnnSingleDescriptor(handle);
-        auto hyDescriptor = getCudnnSingleDescriptor(handle);
-        auto cyDescriptor = getCudnnSingleDescriptor(handle);
+        auto hxDescriptor = getCudnnSingleDescriptor(handle, weights.precision());
+        auto cxDescriptor = getCudnnSingleDescriptor(handle, weights.precision());
+        auto hyDescriptor = getCudnnSingleDescriptor(handle, weights.precision());
+        auto cyDescriptor = getCudnnSingleDescriptor(handle, weights.precision());
 
         CudnnLibrary::cudnnRNNForwardTraining(descriptor.descriptor(),
                                               handle.timesteps,
@@ -454,21 +538,21 @@ void backPropDeltasRecurrent(matrix::Matrix& inputDeltas,
 {
     if(PrnnLibrary::loaded())
     {
-        PrnnRNNDescriptor descriptor(handle);
+        PrnnRNNDescriptor descriptor(handle, weights.precision());
 
-        auto yDescriptor  = getPrnnInputDescriptor(outputActivations);
-        auto dyDescriptor = getPrnnInputDescriptor(outputDeltas);
-        auto dxDescriptor = getPrnnInputDescriptor(inputDeltas);
-        auto workspace    = getWorkspace(handle);
+        auto yDescriptor  = getPrnnTensorDescriptor(outputActivations);
+        auto dyDescriptor = getPrnnTensorDescriptor(outputDeltas);
+        auto dxDescriptor = getPrnnTensorDescriptor(inputDeltas);
+        auto workspace    = getWorkspace(handle, weights.precision());
 
-        auto weightsDescriptor = getPrnnFilterDescriptor(weights);
+        auto weightsDescriptor = getPrnnTensorDescriptor(weights);
 
-        auto hxDescriptor  = getPrnnSingleDescriptor(handle);
-        auto cxDescriptor  = getPrnnSingleDescriptor(handle);
-        auto dhxDescriptor = getPrnnSingleDescriptor(handle);
-        auto dcxDescriptor = getPrnnSingleDescriptor(handle);
-        auto dhyDescriptor = getPrnnSingleDescriptor(handle);
-        auto dcyDescriptor = getPrnnSingleDescriptor(handle);
+        auto hxDescriptor  = getPrnnSingleDescriptor(handle, weights.precision());
+        auto cxDescriptor  = getPrnnSingleDescriptor(handle, weights.precision());
+        auto dhxDescriptor = getPrnnSingleDescriptor(handle, weights.precision());
+        auto dcxDescriptor = getPrnnSingleDescriptor(handle, weights.precision());
+        auto dhyDescriptor = getPrnnSingleDescriptor(handle, weights.precision());
+        auto dcyDescriptor = getPrnnSingleDescriptor(handle, weights.precision());
 
         PrnnLibrary::prnnRNNBackwardData(descriptor.descriptor(),
                                          handle.timesteps,
@@ -500,21 +584,21 @@ void backPropDeltasRecurrent(matrix::Matrix& inputDeltas,
     }
     else if(CudnnLibrary::loaded())
     {
-        CudnnRNNDescriptor descriptor(handle);
+        CudnnRNNDescriptor descriptor(handle, weights.precision());
 
-        auto yDescriptor  = getCudnnInputDescriptor(outputActivations);
-        auto dyDescriptor = getCudnnInputDescriptor(outputDeltas);
-        auto dxDescriptor = getCudnnInputDescriptor(inputDeltas);
-        auto workspace    = getWorkspace(handle);
+        auto yDescriptor  = getCudnnTensorDescriptor(outputActivations);
+        auto dyDescriptor = getCudnnTensorDescriptor(outputDeltas);
+        auto dxDescriptor = getCudnnTensorDescriptor(inputDeltas);
+        auto workspace    = getWorkspace(handle, weights.precision());
 
         auto weightsDescriptor = getCudnnFilterDescriptor(weights);
 
-        auto hxDescriptor  = getCudnnSingleDescriptor(handle);
-        auto cxDescriptor  = getCudnnSingleDescriptor(handle);
-        auto dhxDescriptor = getCudnnSingleDescriptor(handle);
-        auto dcxDescriptor = getCudnnSingleDescriptor(handle);
-        auto dhyDescriptor = getCudnnSingleDescriptor(handle);
-        auto dcyDescriptor = getCudnnSingleDescriptor(handle);
+        auto hxDescriptor  = getCudnnSingleDescriptor(handle, weights.precision());
+        auto cxDescriptor  = getCudnnSingleDescriptor(handle, weights.precision());
+        auto dhxDescriptor = getCudnnSingleDescriptor(handle, weights.precision());
+        auto dcxDescriptor = getCudnnSingleDescriptor(handle, weights.precision());
+        auto dhyDescriptor = getCudnnSingleDescriptor(handle, weights.precision());
+        auto dcyDescriptor = getCudnnSingleDescriptor(handle, weights.precision());
 
         CudnnLibrary::cudnnRNNBackwardData(descriptor.descriptor(),
                                            handle.timesteps,
@@ -567,15 +651,15 @@ void backPropGradientsRecurrent(matrix::Matrix& dWeights,
 {
     if(PrnnLibrary::loaded())
     {
-        PrnnRNNDescriptor descriptor(handle);
+        PrnnRNNDescriptor descriptor(handle, dWeights.precision());
 
-        auto yDescriptor = getPrnnInputDescriptor(outputActivations);
-        auto xDescriptor = getPrnnInputDescriptor(inputActivations);
-        auto workspace   = getWorkspace(handle);
+        auto yDescriptor = getPrnnTensorDescriptor(outputActivations);
+        auto xDescriptor = getPrnnTensorDescriptor(inputActivations);
+        auto workspace   = getWorkspace(handle, dWeights.precision());
 
-        auto dWeightsDescriptor = getPrnnFilterDescriptor(dWeights);
+        auto dWeightsDescriptor = getPrnnTensorDescriptor(dWeights);
 
-        auto hxDescriptor = getPrnnSingleDescriptor(handle);
+        auto hxDescriptor = getPrnnSingleDescriptor(handle, dWeights.precision());
 
         PrnnLibrary::prnnRNNBackwardWeights(descriptor.descriptor(),
                                             handle.timesteps,
@@ -595,15 +679,15 @@ void backPropGradientsRecurrent(matrix::Matrix& dWeights,
     }
     else if(CudnnLibrary::loaded())
     {
-        CudnnRNNDescriptor descriptor(handle);
+        CudnnRNNDescriptor descriptor(handle, dWeights.precision());
 
-        auto yDescriptor = getCudnnInputDescriptor(outputActivations);
-        auto xDescriptor = getCudnnInputDescriptor(inputActivations);
-        auto workspace   = getWorkspace(handle);
+        auto yDescriptor = getCudnnTensorDescriptor(outputActivations);
+        auto xDescriptor = getCudnnTensorDescriptor(inputActivations);
+        auto workspace   = getWorkspace(handle, dWeights.precision());
 
         auto dWeightsDescriptor = getCudnnFilterDescriptor(dWeights);
 
-        auto hxDescriptor = getCudnnSingleDescriptor(handle);
+        auto hxDescriptor = getCudnnSingleDescriptor(handle, dWeights.precision());
 
         CudnnLibrary::cudnnRNNBackwardWeights(descriptor.descriptor(),
                                               handle.timesteps,
