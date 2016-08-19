@@ -239,7 +239,14 @@ void RecurrentLayer::runForwardImplementation(Bundle& bundle)
     auto handle = getHandle(_layerSize, _expectedMiniBatchSize, timesteps, _layers,
         _direction, _layerType, _inputMode);
 
-    Matrix outputActivations({activationCount, miniBatch, timesteps}, precision());
+    size_t outputActivationCount = activationCount;
+
+    if(_direction == matrix::RECURRENT_BIDIRECTIONAL)
+    {
+        outputActivationCount *= 2;
+    }
+
+    Matrix outputActivations({outputActivationCount, miniBatch, timesteps}, precision());
     auto reserve = createReserveRecurrent(handle, precision());
 
     if(bundle.contains("inputTimesteps") && _direction == matrix::RECURRENT_REVERSE)
@@ -313,7 +320,14 @@ void RecurrentLayer::runReverseImplementation(Bundle& bundle)
     auto handle = getHandle(_layerSize, _expectedMiniBatchSize, timesteps, _layers,
         _direction, _layerType, _inputMode);
 
-    Matrix inputDeltas({activationCount, miniBatch, timesteps}, precision());
+    size_t inputActivationCount = activationCount;
+
+    if(_direction == matrix::RECURRENT_BIDIRECTIONAL)
+    {
+        inputActivationCount /= 2;
+    }
+
+    Matrix inputDeltas({inputActivationCount, miniBatch, timesteps}, precision());
 
     backPropDeltasRecurrent(inputDeltas,
                             outputDeltas,
@@ -397,7 +411,14 @@ Dimension RecurrentLayer::getInputSize() const
 
 Dimension RecurrentLayer::getOutputSize() const
 {
-    return getInputSize();
+    if(_direction == matrix::RECURRENT_BIDIRECTIONAL)
+    {
+        return getInputCount() * 2;
+    }
+    else
+    {
+        return {2 * _layerSize, 1, 1};
+    }
 }
 
 size_t RecurrentLayer::getInputCount() const
@@ -407,7 +428,14 @@ size_t RecurrentLayer::getInputCount() const
 
 size_t RecurrentLayer::getOutputCount() const
 {
-    return getInputCount();
+    if(_direction == matrix::RECURRENT_BIDIRECTIONAL)
+    {
+        return getInputCount() * 2;
+    }
+    else
+    {
+        return getInputCount();
+    }
 }
 
 size_t RecurrentLayer::totalNeurons() const
