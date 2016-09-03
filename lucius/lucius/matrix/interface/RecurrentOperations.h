@@ -55,9 +55,9 @@ public:
     size_t layers;
 
 public:
-    RecurrentLayerDirection     direction;
-    RecurrentLayerType          layerType;
-    RecurrentLayerInputMode     inputMode;
+    RecurrentLayerDirection direction;
+    RecurrentLayerType      layerType;
+    RecurrentLayerInputMode inputMode;
 };
 
 
@@ -101,7 +101,6 @@ void backPropDeltasRecurrent(matrix::Matrix& inputDeltas,
     const RecurrentOpsHandle& handle);
 
 /** \brief Compute gradient for the recurrent weight matrix.
- *  \param deltas Deltas for the layer.
  *  \param dWeights The output gradients.
  *   \param reserve Memory allocated for storing data needed for back propagation
  *                  (storage format determined by implementation)
@@ -109,7 +108,6 @@ void backPropDeltasRecurrent(matrix::Matrix& inputDeltas,
 void backPropGradientsRecurrent(matrix::Matrix& dWeights,
     const matrix::Matrix& inputActivations,
     const matrix::Matrix& outputActivations,
-    const matrix::Matrix& deltas,
     const matrix::Matrix& reserve,
     const RecurrentOpsHandle& handle);
 

@@ -112,7 +112,7 @@ RecurrentLayer& RecurrentLayer::operator=(
         return *this;
     }
 
-    _parameters = std::make_unique<MatrixVector>(*l._parameters);
+    std::copy(l._parameters->begin(), l._parameters->end(), _parameters->begin());
 
     _layerSize  = l._layerSize;
     _layers     = l._layers;
@@ -135,11 +135,11 @@ void RecurrentLayer::initialize()
 
     for(size_t m = 0; m < getTotalWeightMatrices(handle); ++m)
     {
-        auto slice = sliceLayerWeights(_weights, handle, m);
+        auto weightSlice = sliceLayerWeights(_weights, handle, m);
 
         if(isBiasMatrix(handle, m))
         {
-            zeros(slice);
+            zeros(weightSlice);
         }
         else
         {
@@ -152,13 +152,13 @@ void RecurrentLayer::initialize()
                 double epsilon = std::sqrt((e) / (getInputCount() + getOutputCount() + 1));
 
                 // generate uniform random values between [0, 1]
-                matrix::rand(_weights);
+                matrix::rand(weightSlice);
 
                 // shift to center on 0, the range is now [-0.5, 0.5]
-                apply(_weights, _weights, matrix::Add(-0.5));
+                apply(weightSlice, weightSlice, matrix::Add(-0.5));
 
                 // scale, the range is now [-epsilon, epsilon]
-                apply(_weights, _weights, matrix::Multiply(2.0 * epsilon));
+                apply(weightSlice, weightSlice, matrix::Multiply(2.0 * epsilon));
             }
             else if(initializationType == "he")
             {
@@ -169,10 +169,10 @@ void RecurrentLayer::initialize()
                 double epsilon = std::sqrt((2.*e) / (getInputCount() * 2));
 
                 // generate normal random values with N(0,1)
-                matrix::randn(_weights);
+                matrix::randn(weightSlice);
 
                 // scale, the range is now [-epsilon, epsilon]
-                apply(_weights, _weights, matrix::Multiply(epsilon));
+                apply(weightSlice, weightSlice, matrix::Multiply(epsilon));
             }
         }
     }
@@ -343,7 +343,6 @@ void RecurrentLayer::runReverseImplementation(Bundle& bundle)
     backPropGradientsRecurrent(weightGradients,
                                unfoldedInputActivations,
                                unfoldedOutputActivations,
-                               outputDeltas,
                                reserve,
                                handle);
 
@@ -413,11 +412,11 @@ Dimension RecurrentLayer::getOutputSize() const
 {
     if(_direction == matrix::RECURRENT_BIDIRECTIONAL)
     {
-        return getInputCount() * 2;
+        return {2 * _layerSize, 1, 1};
     }
     else
     {
-        return {2 * _layerSize, 1, 1};
+        return getInputSize();
     }
 }
 

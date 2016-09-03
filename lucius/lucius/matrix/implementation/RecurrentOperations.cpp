@@ -7,11 +7,14 @@
 #include <lucius/matrix/interface/MatrixTransformations.h>
 #include <lucius/matrix/interface/DimensionTransformations.h>
 #include <lucius/matrix/interface/MatrixOperations.h>
+#include <lucius/matrix/interface/NativeRecurrentOperations.h>
 
 #include <lucius/matrix/interface/CudnnLibrary.h>
 #include <lucius/matrix/interface/PrnnLibrary.h>
 #include <lucius/matrix/interface/PrnnDescriptors.h>
 #include <lucius/matrix/interface/CudnnDescriptors.h>
+
+#include <lucius/parallel/interface/Synchronization.h>
 
 namespace lucius
 {
@@ -183,8 +186,7 @@ matrix::Matrix createReserveRecurrent(const RecurrentOpsHandle& handle,
     }
     else
     {
-        throw std::runtime_error("Tried to create recurrent ops reserve "
-            "without CUDNN or Prnn libraries.");
+        reserveSize = nativeRNNGetTrainingReserveSize(handle, precision);
     }
 
     return matrix::Matrix({reserveSize / precision.size()}, precision);
@@ -216,8 +218,7 @@ matrix::Matrix createWeightsRecurrent(const RecurrentOpsHandle& handle,
     }
     else
     {
-        throw std::runtime_error("Tried to create recurrent ops weights "
-            "without CUDNN or Prnn libraries.");
+        weightsSize = nativeRNNGetWeightsSize(handle, precision);
     }
 
     return matrix::Matrix({weightsSize / precision.size()}, precision);
@@ -269,9 +270,12 @@ static matrix::Matrix sliceLayerLinearMatrix(const matrix::Matrix& weights,
     }
     else
     {
-        throw std::runtime_error("Tried to create slice out layer weights "
-            "without CUDNN or Prnn libraries.");
+        std::tie(size, offset) = nativeRNNGetLinearLayerMatrixSizeAndOffset(
+            handle, weights.precision(), layer, offsetInLayer);
     }
+
+    offset /= weights.precision().size();
+    size   /= weights.precision().size();
 
     return slice(weights, {offset}, {offset + size});
 }
@@ -322,9 +326,12 @@ static matrix::Matrix sliceLayerBiasMatrix(const matrix::Matrix& weights,
     }
     else
     {
-        throw std::runtime_error("Tried to create slice out layer bias "
-            "without CUDNN or Prnn libraries.");
+        std::tie(size, offset) = nativeRNNGetBiasLayerMatrixSizeAndOffset(
+            handle, weights.precision(), layer, offsetInLayer);
     }
+
+    offset /= weights.precision().size();
+    size   /= weights.precision().size();
 
     return slice(weights, {offset}, {offset + size});
 }
@@ -334,11 +341,11 @@ matrix::Matrix sliceLayerWeights(const matrix::Matrix& weights, const RecurrentO
 {
     if(isBiasMatrix(handle, offsetInLayer))
     {
-        return sliceLayerLinearMatrix(weights, handle, layer, offsetInLayer / 2);
+        return sliceLayerBiasMatrix(weights, handle, layer, offsetInLayer / 2);
     }
     else
     {
-        return sliceLayerBiasMatrix(weights, handle, layer, offsetInLayer / 2);
+        return sliceLayerLinearMatrix(weights, handle, layer, offsetInLayer / 2);
     }
 }
 
@@ -420,8 +427,7 @@ static matrix::Matrix getWorkspace(const RecurrentOpsHandle& handle, const Preci
     }
     else
     {
-        throw std::runtime_error("Tried to call forwardPropRecurrent "
-            "without CUDNN or Prnn libraries.");
+        return 0;
     }
 
     return size;
@@ -442,6 +448,8 @@ void forwardPropRecurrent(matrix::Matrix& outputActivations,
 {
     if(PrnnLibrary::loaded())
     {
+        parallel::setNotSynchronized();
+
         PrnnRNNDescriptor descriptor(handle, weights.precision());
 
         auto xDescriptor = getPrnnTensorDescriptor(inputActivations);
@@ -479,6 +487,8 @@ void forwardPropRecurrent(matrix::Matrix& outputActivations,
     }
     else if(CudnnLibrary::loaded())
     {
+        parallel::setNotSynchronized();
+
         CudnnRNNDescriptor descriptor(handle, weights.precision());
 
         auto xDescriptor = getCudnnTensorDescriptor(inputActivations);
@@ -516,8 +526,11 @@ void forwardPropRecurrent(matrix::Matrix& outputActivations,
     }
     else
     {
-        throw std::runtime_error("Tried to call forwardPropRecurrent "
-            "without CUDNN or Prnn libraries.");
+        nativeRNNForwardPropRecurrent(outputActivations,
+                                      inputActivations,
+                                      reserve,
+                                      weights,
+                                      handle);
     }
 
 }
@@ -538,6 +551,8 @@ void backPropDeltasRecurrent(matrix::Matrix& inputDeltas,
 {
     if(PrnnLibrary::loaded())
     {
+        parallel::setNotSynchronized();
+
         PrnnRNNDescriptor descriptor(handle, weights.precision());
 
         auto yDescriptor  = getPrnnTensorDescriptor(outputActivations);
@@ -584,6 +599,8 @@ void backPropDeltasRecurrent(matrix::Matrix& inputDeltas,
     }
     else if(CudnnLibrary::loaded())
     {
+        parallel::setNotSynchronized();
+
         CudnnRNNDescriptor descriptor(handle, weights.precision());
 
         auto yDescriptor  = getCudnnTensorDescriptor(outputActivations);
@@ -630,14 +647,16 @@ void backPropDeltasRecurrent(matrix::Matrix& inputDeltas,
     }
     else
     {
-        throw std::runtime_error("Tried to call backPropDeltasRecurrent "
-            "without CUDNN or Prnn libraries.");
+        nativeRNNBackPropDeltasRecurrent(inputDeltas,
+                                         outputDeltas,
+                                         weights,
+                                         outputActivations,
+                                         reserve,
+                                         handle);
     }
-
 }
 
 /** \brief Compute gradient for the recurrent weight matrix.
- *  \param deltas Deltas for the layer.
  *  \param dWeights The output gradients.
  *   \param reserve Memory allocated for storing data needed for back propagation
  *                  (storage format determined by implementation)
@@ -645,12 +664,13 @@ void backPropDeltasRecurrent(matrix::Matrix& inputDeltas,
 void backPropGradientsRecurrent(matrix::Matrix& dWeights,
     const matrix::Matrix& inputActivations,
     const matrix::Matrix& outputActivations,
-    const matrix::Matrix& deltas,
     const matrix::Matrix& reserve,
     const RecurrentOpsHandle& handle)
 {
     if(PrnnLibrary::loaded())
     {
+        parallel::setNotSynchronized();
+
         PrnnRNNDescriptor descriptor(handle, dWeights.precision());
 
         auto yDescriptor = getPrnnTensorDescriptor(outputActivations);
@@ -679,6 +699,8 @@ void backPropGradientsRecurrent(matrix::Matrix& dWeights,
     }
     else if(CudnnLibrary::loaded())
     {
+        parallel::setNotSynchronized();
+
         CudnnRNNDescriptor descriptor(handle, dWeights.precision());
 
         auto yDescriptor = getCudnnTensorDescriptor(outputActivations);
@@ -707,8 +729,11 @@ void backPropGradientsRecurrent(matrix::Matrix& dWeights,
     }
     else
     {
-        throw std::runtime_error("Tried to call backPropDeltasRecurrent "
-            "without CUDNN or PRNN libraries.");
+        nativeRNNBackPropGradientsRecurrent(dWeights,
+                                            inputActivations,
+                                            outputActivations,
+                                            reserve,
+                                            handle);
     }
 
 }

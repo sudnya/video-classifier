@@ -719,14 +719,14 @@ static void runTest(size_t layerSize, size_t layerCount, size_t batchSize,
 {
     bool result = true;
 
-    result &= runTestBidirectionalRecurrent(layerSize, layerCount, timesteps, seed);
+    result &= runTestRecurrent(layerSize, layerCount, timesteps, seed);
 
     if(!result)
     {
         return;
     }
 
-    result &= runTestRecurrent(layerSize, layerCount, timesteps, seed);
+    result &= runTestBidirectionalRecurrent(layerSize, layerCount, timesteps, seed);
 
     if(!result)
     {

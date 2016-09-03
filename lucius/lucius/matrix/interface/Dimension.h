@@ -83,6 +83,7 @@ public:
 public:
     CUDA_DECORATOR inline bool operator==(const Dimension& ) const;
     CUDA_DECORATOR inline bool operator!=(const Dimension& ) const;
+    CUDA_DECORATOR inline bool operator<=( const Dimension& ) const;
 
 private:
     template<typename T>
