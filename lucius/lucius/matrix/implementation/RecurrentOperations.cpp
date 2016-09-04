@@ -52,9 +52,10 @@ static std::string toString(RecurrentLayerType type)
 {
     switch(type)
     {
-    case RECURRENT_SIMPLE_TYPE: return "relu";
-    case RECURRENT_GRU_TYPE:    return "gru";
-    case RECURRENT_LSTM_TYPE:   return "lstm";
+    case RECURRENT_SIMPLE_TYPE:      return "relu";
+    case RECURRENT_SIMPLE_TANH_TYPE: return "tanh";
+    case RECURRENT_GRU_TYPE:         return "gru";
+    case RECURRENT_LSTM_TYPE:        return "lstm";
     }
 
     return "invalid";
@@ -349,35 +350,27 @@ matrix::Matrix sliceLayerWeights(const matrix::Matrix& weights, const RecurrentO
     }
 }
 
-size_t getCudnnMatricesPerLayer(const RecurrentOpsHandle& handle)
-{
-    if(handle.layerType == RECURRENT_SIMPLE_TYPE)
-    {
-        return 4;
-    }
-    else if(handle.layerType == RECURRENT_GRU_TYPE)
-    {
-        return 12;
-    }
-    else
-    {
-        return 16;
-    }
-}
-
 size_t getMatricesPerLayer(const RecurrentOpsHandle& handle)
 {
-    if(handle.layerType == RECURRENT_SIMPLE_TYPE)
+    size_t multiplier = 1;
+
+    if(handle.direction == RECURRENT_BIDIRECTIONAL)
     {
-        return 4;
+        multiplier = 2;
+    }
+
+    if(handle.layerType == RECURRENT_SIMPLE_TYPE ||
+        handle.layerType == RECURRENT_SIMPLE_TANH_TYPE)
+    {
+        return 4 * multiplier;
     }
     else if(handle.layerType == RECURRENT_GRU_TYPE)
     {
-        return 12;
+        return 12 * multiplier;
     }
     else
     {
-        return 16;
+        return 16 * multiplier;
     }
 }
 

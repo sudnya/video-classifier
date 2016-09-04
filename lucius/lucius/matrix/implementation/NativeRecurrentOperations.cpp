@@ -37,11 +37,6 @@ static size_t getMultiplier(const RecurrentOpsHandle& handle)
         multiplier *= 4;
     }
 
-    if(handle.direction == RECURRENT_BIDIRECTIONAL)
-    {
-        multiplier *= 2;
-    }
-
     return multiplier;
 }
 
@@ -55,12 +50,22 @@ static size_t getInputMultiplier(const RecurrentOpsHandle& handle)
     return 1;
 }
 
+static size_t getDirectionMultiplier(const RecurrentOpsHandle& handle)
+{
+    if(handle.direction == RECURRENT_BIDIRECTIONAL)
+    {
+        return 2;
+    }
+
+    return 1;
+}
+
 static size_t getReserveSections(const RecurrentOpsHandle& handle)
 {
     size_t savedActivations = getMultiplier(handle) *
         (getInputMultiplier(handle) * handle.layers - 1);
-    size_t savedDeltas      = getMultiplier(handle) *
-        (getInputMultiplier(handle) * handle.layers);
+
+    size_t savedDeltas = getMultiplier(handle) * handle.layers;
 
     return savedActivations + savedDeltas;
 }
@@ -68,15 +73,15 @@ static size_t getReserveSections(const RecurrentOpsHandle& handle)
 size_t nativeRNNGetTrainingReserveSize(const RecurrentOpsHandle& handle,
     const Precision& precision)
 {
-
-    return precision.size() * (getReserveSections(handle)) *
+    return precision.size() * getReserveSections(handle) * getDirectionMultiplier(handle) *
         handle.layerSize * handle.miniBatchSize * handle.timesteps;
 }
 
 size_t nativeRNNGetWeightsSize(const RecurrentOpsHandle& handle,
     const Precision& precision)
 {
-    size_t multiplier = getMultiplier(handle) * getInputMultiplier(handle);
+    size_t multiplier = getMultiplier(handle) * getInputMultiplier(handle) *
+        getDirectionMultiplier(handle);
 
     size_t linearMatrixSize = handle.layers * handle.layerSize * handle.layerSize * multiplier;
     size_t biasSize         = handle.layers * handle.layerSize * multiplier;
@@ -91,7 +96,8 @@ std::tuple<size_t, size_t> nativeRNNGetLinearLayerMatrixSizeAndOffset(
     size_t matrixSize = handle.layerSize * handle.layerSize * precision.size();
     size_t biasSize   = handle.layerSize * precision.size();
 
-    size_t multiplier = getMultiplier(handle) * getInputMultiplier(handle);
+    size_t multiplier = getMultiplier(handle) * getInputMultiplier(handle) *
+        getDirectionMultiplier(handle);
 
     assert(offsetInLayer < multiplier);
 
@@ -110,7 +116,8 @@ std::tuple<size_t, size_t> nativeRNNGetBiasLayerMatrixSizeAndOffset(
     size_t matrixSize = handle.layerSize * handle.layerSize * precision.size();
     size_t biasSize   = handle.layerSize * precision.size();
 
-    size_t multiplier = getMultiplier(handle) * getInputMultiplier(handle);
+    size_t multiplier = getMultiplier(handle) * getInputMultiplier(handle) *
+        getDirectionMultiplier(handle);
 
     assert(offsetInLayer < multiplier);
 
@@ -131,18 +138,61 @@ static void simpleRNNForwardPropRecurrentLinear(matrix::Matrix& expandedOutputs,
     auto outputs = reshape(expandedOutputs, {expandedOutputs.size()[0]});
     auto inputs  = reshape(expandedInputs,  {expandedInputs.size()[0] });
 
+    if(util::isLogEnabled("NativeRecurrentOperations::Detail"))
+    {
+        util::log("NativeRecurrentOperations::Detail") << "  forward input:   "
+            << inputs.debugString();
+        util::log("NativeRecurrentOperations::Detail") << "  forward weights: "
+            << weights.debugString();
+        util::log("NativeRecurrentOperations::Detail") << "  forward bias:    "
+            << bias.debugString();
+    }
+    else
+    {
+        util::log("NativeRecurrentOperations") << "  forward input shape: "
+            << inputs.shapeString() << "\n";
+    }
+
     gemm(outputs,       0.0,
          weights,                              false, 1.0,
          reshape(inputs, {inputs.size()[0]}),  false);
 
     broadcast(outputs, outputs, bias, {}, matrix::Add());
+
+    if(util::isLogEnabled("NativeRecurrentOperations::Detail"))
+    {
+        util::log("NativeRecurrentOperations::Detail") << "  forward output: "
+            << outputs.debugString();
+    }
+    else
+    {
+        util::log("NativeRecurrentOperations") << "  forward output shape: "
+            << outputs.shapeString() << "\n";
+    }
 }
 
 static void simpleRNNForwardPropRecurrentThroughTime(matrix::Matrix& output,
                                                      const matrix::Matrix& recurrentWeights,
                                                      const matrix::Matrix& recurrentBias,
-                                                     bool reversed)
+                                                     bool reversed,
+                                                     const matrix::Operation& activationFunction)
 {
+
+    if(util::isLogEnabled("NativeRecurrentOperations::Detail"))
+    {
+        util::log("NativeRecurrentOperations::Detail") << "  recurrent input:   "
+            << output.debugString();
+        util::log("NativeRecurrentOperations::Detail") << "  recurrent weights: "
+            << recurrentWeights.debugString();
+        util::log("NativeRecurrentOperations::Detail") << "  recurrent bias:    "
+            << recurrentBias.debugString();
+    }
+    else
+    {
+        util::log("NativeRecurrentOperations") << "  recurrent input shape: "
+            << output.shapeString() << "\n";
+    }
+
     double scale = util::KnobDatabase::getKnobValue(
         "NativeRecurrentOperations::SkipConnectionScale", 0.5);
 
@@ -156,7 +206,7 @@ static void simpleRNNForwardPropRecurrentThroughTime(matrix::Matrix& output,
     auto currentInput = slice(output, {0, 0, currentTimestep},
         {layerSize, miniBatchSize, currentTimestep + 1});
 
-    apply(currentInput, currentInput, matrix::RectifiedLinear());
+    apply(currentInput, currentInput, activationFunction);
 
     // Propagate through time
     for(size_t timestep = 1; timestep < timesteps; ++timestep)
@@ -179,7 +229,18 @@ static void simpleRNNForwardPropRecurrentThroughTime(matrix::Matrix& output,
 
         currentInput = nextInput;
 
-        apply(currentInput, currentInput, matrix::RectifiedLinear());
+        apply(currentInput, currentInput, activationFunction);
+    }
+
+    if(util::isLogEnabled("NativeRecurrentOperations::Detail"))
+    {
+        util::log("NativeRecurrentOperations::Detail") << "  recurrent forward output: "
+            << output.debugString();
+    }
+    else
+    {
+        util::log("NativeRecurrentOperations") << "  recurrent forward output shape: "
+            << output.shapeString() << "\n";
     }
 }
 
@@ -192,9 +253,12 @@ static matrix::Matrix getForwardInput(const matrix::Matrix& inputs, const matrix
     }
 
     auto reshapedReserve = reshape(reserve,
-        {handle.layerSize, handle.miniBatchSize, handle.timesteps, handle.layers - 1});
+        {handle.layerSize * getDirectionMultiplier(handle),
+         handle.miniBatchSize,
+         handle.timesteps,
+         getReserveSections(handle)});
 
-    auto slicedReserve = slice(reserve,
+    auto slicedReserve = slice(reshapedReserve,
         {      offset * handle.layerSize,                    0,                0, layer - 1},
         {(offset + 1) * handle.layerSize, handle.miniBatchSize, handle.timesteps, layer});
 
@@ -212,9 +276,12 @@ static matrix::Matrix getForwardOutput(const matrix::Matrix& outputs,
     }
 
     auto reshapedReserve = reshape(reserve,
-        {handle.layerSize, handle.miniBatchSize, handle.timesteps, handle.layers - 1});
+        {handle.layerSize * getDirectionMultiplier(handle),
+         handle.miniBatchSize,
+         handle.timesteps,
+         getReserveSections(handle)});
 
-    auto slicedReserve = slice(reserve,
+    auto slicedReserve = slice(reshapedReserve,
         {      offset * handle.layerSize,                     0,                0, layer},
         {(offset + 1) * handle.layerSize,  handle.miniBatchSize, handle.timesteps, layer + 1});
 
@@ -226,9 +293,8 @@ static matrix::Matrix getForwardWeights(const matrix::Matrix& allWeights,
                                         size_t logicalLayer,
                                         size_t offsetInLayer)
 {
-    auto actualLayer   = logicalLayer + handle.layers * offsetInLayer;
     auto sizeAndOffset = nativeRNNGetLinearLayerMatrixSizeAndOffset(
-        handle, allWeights.precision(), actualLayer, 0);
+        handle, allWeights.precision(), logicalLayer, offsetInLayer * 2);
 
     size_t size   = std::get<0>(sizeAndOffset) / allWeights.precision().size();
     size_t offset = std::get<1>(sizeAndOffset) / allWeights.precision().size();
@@ -243,9 +309,8 @@ static matrix::Matrix getForwardBias(const matrix::Matrix& allWeights,
                                      size_t logicalLayer,
                                      size_t offsetInLayer)
 {
-    auto actualLayer   = logicalLayer + handle.layers * offsetInLayer;
     auto sizeAndOffset = nativeRNNGetBiasLayerMatrixSizeAndOffset(
-        handle, allWeights.precision(), actualLayer, 0);
+        handle, allWeights.precision(), logicalLayer, offsetInLayer * 2);
 
     size_t size   = std::get<0>(sizeAndOffset) / allWeights.precision().size();
     size_t offset = std::get<1>(sizeAndOffset) / allWeights.precision().size();
@@ -260,9 +325,8 @@ static matrix::Matrix getRecurrentWeights(const matrix::Matrix& allWeights,
                                           size_t logicalLayer,
                                           size_t offsetInLayer)
 {
-    auto actualLayer   = logicalLayer + handle.layers * offsetInLayer;
     auto sizeAndOffset = nativeRNNGetLinearLayerMatrixSizeAndOffset(
-        handle, allWeights.precision(), actualLayer, 1);
+        handle, allWeights.precision(), logicalLayer, 1 + offsetInLayer * 2);
 
     size_t size   = std::get<0>(sizeAndOffset) / allWeights.precision().size();
     size_t offset = std::get<1>(sizeAndOffset) / allWeights.precision().size();
@@ -277,9 +341,8 @@ static matrix::Matrix getRecurrentBias(const matrix::Matrix& allWeights,
                                        size_t logicalLayer,
                                        size_t offsetInLayer)
 {
-    auto actualLayer   = logicalLayer + handle.layers * offsetInLayer;
     auto sizeAndOffset = nativeRNNGetBiasLayerMatrixSizeAndOffset(
-        handle, allWeights.precision(), actualLayer, 1);
+        handle, allWeights.precision(), logicalLayer, 1 + offsetInLayer * 2);
 
     size_t size   = std::get<0>(sizeAndOffset) / allWeights.precision().size();
     size_t offset = std::get<1>(sizeAndOffset) / allWeights.precision().size();
@@ -287,6 +350,18 @@ static matrix::Matrix getRecurrentBias(const matrix::Matrix& allWeights,
     auto slicedWeights = slice(allWeights, {offset}, {offset + size});
 
     return reshape(slicedWeights, {handle.layerSize});
+}
+
+static matrix::Operation getSimpleRNNActivationFunction(const RecurrentOpsHandle& handle)
+{
+    if(handle.layerType == RECURRENT_SIMPLE_TYPE)
+    {
+        return matrix::RectifiedLinear();
+    }
+    else
+    {
+        return matrix::Tanh();
+    }
 }
 
 static void simpleRNNForwardPropRecurrent(matrix::Matrix& allOutputActivations,
@@ -325,7 +400,7 @@ static void simpleRNNForwardPropRecurrent(matrix::Matrix& allOutputActivations,
         auto recurrentBias    = getRecurrentBias(   allWeights, handle, layer, offset);
 
         simpleRNNForwardPropRecurrentThroughTime(output, recurrentWeights,
-            recurrentBias, reversed);
+            recurrentBias, reversed, getSimpleRNNActivationFunction(handle));
     }
 }
 
@@ -398,7 +473,8 @@ void nativeRNNForwardPropRecurrent(matrix::Matrix& outputActivations,
                                    const matrix::Matrix& weights,
                                    const RecurrentOpsHandle& handle)
 {
-    if(handle.layerType == RECURRENT_SIMPLE_TYPE)
+    if(handle.layerType == RECURRENT_SIMPLE_TYPE ||
+        handle.layerType == RECURRENT_SIMPLE_TANH_TYPE)
     {
         simpleRNNForwardPropRecurrent(outputActivations,
                                       inputActivations,
@@ -429,9 +505,22 @@ void nativeRNNForwardPropRecurrent(matrix::Matrix& outputActivations,
 static void simpleRNNBackPropRecurrentThroughTime(matrix::Matrix& recurrentDeltas,
                                                   const matrix::Matrix& outputActivations,
                                                   const matrix::Matrix& recurrentWeights,
-                                                  const matrix::Matrix& recurrentBias,
-                                                  bool reversed)
+                                                  bool reversed,
+                                                  const matrix::Operation& activationDerivative)
 {
+    if(util::isLogEnabled("NativeRecurrentOperations::Detail"))
+    {
+        util::log("NativeRecurrentOperations::Detail") << "  recurrent output deltas:   "
+            << recurrentDeltas.debugString();
+        util::log("NativeRecurrentOperations::Detail") << "  recurrent weights: "
+            << recurrentWeights.debugString();
+    }
+    else
+    {
+        util::log("NativeRecurrentOperations") << "  recurrent output deltas shape: "
+            << recurrentDeltas.shapeString() << "\n";
+    }
+
     double scale = util::KnobDatabase::getKnobValue(
         "NativeRecurrentOperations::SkipConnectionScale", 0.5);
 
@@ -447,7 +536,7 @@ static void simpleRNNBackPropRecurrentThroughTime(matrix::Matrix& recurrentDelta
         {layerSize, miniBatchSize, currentTimestep + 1});
 
     apply(currentDeltas, currentDeltas,
-        apply(currentActivations, matrix::RectifiedLinearDerivative()), matrix::Multiply());
+        apply(currentActivations, activationDerivative), matrix::Multiply());
 
     //go over all timesteps in reverse
     for(size_t t = 1; t < maxTimesteps; ++t)
@@ -476,7 +565,19 @@ static void simpleRNNBackPropRecurrentThroughTime(matrix::Matrix& recurrentDelta
             {layerSize, miniBatchSize, timestep + 1});
 
         apply(currentDeltas, currentDeltas,
-            apply(currentActivations, matrix::RectifiedLinearDerivative()), matrix::Multiply());
+            apply(currentActivations, activationDerivative),
+            matrix::Multiply());
+    }
+
+    if(util::isLogEnabled("NativeRecurrentOperations::Detail"))
+    {
+        util::log("NativeRecurrentOperations::Detail") << "  recurrent input deltas:   "
+            << recurrentDeltas.debugString();
+    }
+    else
+    {
+        util::log("NativeRecurrentOperations") << "  recurrent input deltas shape: "
+            << recurrentDeltas.shapeString() << "\n";
     }
 }
 
@@ -490,9 +591,33 @@ static void simpleRNNBackPropDeltasRecurrentLinear(matrix::Matrix& expandedForwa
     auto recurrentDeltas = reshape(expandedRecurrentDeltas,
                                   {expandedRecurrentDeltas.size()[0] });
 
+    if(util::isLogEnabled("NativeRecurrentOperations::Detail"))
+    {
+        util::log("NativeRecurrentOperations::Detail") << "  forward output deltas:   "
+            << recurrentDeltas.debugString();
+        util::log("NativeRecurrentOperations::Detail") << "  forward weights: "
+            << forwardWeights.debugString();
+    }
+    else
+    {
+        util::log("NativeRecurrentOperations") << "  forward output deltas shape: "
+            << recurrentDeltas.shapeString() << "\n";
+    }
+
     gemm(forwardInputDeltas,       0.0,
          forwardWeights,     true, 1.0,
          recurrentDeltas,    false);
+
+    if(util::isLogEnabled("NativeRecurrentOperations::Detail"))
+    {
+        util::log("NativeRecurrentOperations::Detail") << "  forward input deltas:   "
+            << forwardInputDeltas.debugString();
+    }
+    else
+    {
+        util::log("NativeRecurrentOperations") << "  forward input deltas shape: "
+            << forwardInputDeltas.shapeString() << "\n";
+    }
 }
 
 static matrix::Matrix getInputDeltas(const matrix::Matrix& inputs, const matrix::Matrix& reserve,
@@ -504,7 +629,10 @@ static matrix::Matrix getInputDeltas(const matrix::Matrix& inputs, const matrix:
     }
 
     auto reshapedReserve = reshape(reserve,
-        {handle.layerSize, handle.miniBatchSize, handle.timesteps, getReserveSections(handle)});
+        {handle.layerSize * getDirectionMultiplier(handle),
+         handle.miniBatchSize,
+         handle.timesteps,
+         getReserveSections(handle)});
 
     size_t position = layer - 1 + (getInputMultiplier(handle) * handle.layers - 1);
 
@@ -515,14 +643,16 @@ static matrix::Matrix getInputDeltas(const matrix::Matrix& inputs, const matrix:
     return reshape(slicedReserve, {handle.layerSize, handle.miniBatchSize, handle.timesteps});
 }
 
-static matrix::Matrix getForwardOutputDeltas(const matrix::Matrix& reserve,
+static matrix::Matrix getOutputDeltas(const matrix::Matrix& reserve,
     const RecurrentOpsHandle& handle, size_t layer, size_t offset)
 {
     auto reshapedReserve = reshape(reserve,
-        {handle.layerSize, handle.miniBatchSize, handle.timesteps, getReserveSections(handle)});
+        {handle.layerSize * getDirectionMultiplier(handle),
+         handle.miniBatchSize,
+         handle.timesteps,
+         getReserveSections(handle)});
 
-    size_t position = getInputMultiplier(handle) * layer +
-        (getInputMultiplier(handle) * handle.layers - 1);
+    size_t position = layer + (getInputMultiplier(handle) * handle.layers - 1);
 
     auto slicedReserve = slice(reshapedReserve,
         {      offset * handle.layerSize,                     0,                0, position},
@@ -531,20 +661,17 @@ static matrix::Matrix getForwardOutputDeltas(const matrix::Matrix& reserve,
     return reshape(slicedReserve, {handle.layerSize, handle.miniBatchSize, handle.timesteps});
 }
 
-static matrix::Matrix getRecurrentOutputDeltas(const matrix::Matrix& reserve,
-    const RecurrentOpsHandle& handle, size_t layer, size_t offset)
+static matrix::Operation getSimpleRNNActivationDerivative(const RecurrentOpsHandle& handle)
 {
-    auto reshapedReserve = reshape(reserve,
-        {handle.layerSize, handle.miniBatchSize, handle.timesteps, getReserveSections(handle)});
+    if(handle.layerType == RECURRENT_SIMPLE_TYPE)
+    {
+        return matrix::RectifiedLinearDerivative();
+    }
+    else
+    {
+        return matrix::TanhDerivative();
+    }
 
-    size_t position = getInputMultiplier(handle) * layer + 1 +
-        (getInputMultiplier(handle) * handle.layers - 1);
-
-    auto slicedReserve = slice(reshapedReserve,
-        {      offset * handle.layerSize,                     0,                0, position},
-        {(offset + 1) * handle.layerSize,  handle.miniBatchSize, handle.timesteps, position + 1});
-
-    return reshape(slicedReserve, {handle.layerSize, handle.miniBatchSize, handle.timesteps});
 }
 
 static void simpleRNNBackPropDeltasRecurrent(matrix::Matrix& inputDeltas,
@@ -557,7 +684,7 @@ static void simpleRNNBackPropDeltasRecurrent(matrix::Matrix& inputDeltas,
                                              size_t offset)
 {
     // Save the output deltas in the reserve
-    auto reserveDeltas = getRecurrentOutputDeltas(reserve, handle, handle.layers - 1, offset);
+    auto reserveDeltas = getOutputDeltas(reserve, handle, handle.layers - 1, offset);
     copy(reserveDeltas, allOutputDeltas);
 
     for(size_t l = 0; l < handle.layers; ++l)
@@ -565,17 +692,15 @@ static void simpleRNNBackPropDeltasRecurrent(matrix::Matrix& inputDeltas,
         size_t layer = handle.layers - l - 1;
 
         auto recurrentWeights = getRecurrentWeights(allWeights, handle, layer, offset);
-        auto recurrentBias    = getRecurrentBias(   allWeights, handle, layer, offset);
 
-        auto recurrentDeltas = getRecurrentOutputDeltas(reserve, handle, layer, offset);
+        auto recurrentDeltas = getOutputDeltas(reserve, handle, layer, offset);
         auto forwardOutput   = getForwardOutput(allOutputActivations, reserve,
             handle, layer, offset);
 
         simpleRNNBackPropRecurrentThroughTime(recurrentDeltas, forwardOutput, recurrentWeights,
-            recurrentBias, reversed);
+            reversed, getSimpleRNNActivationDerivative(handle));
 
-        auto forwardInputDeltas = getInputDeltas(inputDeltas, reserve,
-            handle, layer, offset);
+        auto forwardInputDeltas = getInputDeltas(inputDeltas, reserve, handle, layer, offset);
 
         if(handle.inputMode == RECURRENT_LINEAR_INPUT)
         {
@@ -670,7 +795,8 @@ void nativeRNNBackPropDeltasRecurrent(matrix::Matrix& inputDeltas,
                                       matrix::Matrix& reserve,
                                       const RecurrentOpsHandle& handle)
 {
-    if(handle.layerType == RECURRENT_SIMPLE_TYPE)
+    if(handle.layerType == RECURRENT_SIMPLE_TYPE ||
+        handle.layerType == RECURRENT_SIMPLE_TANH_TYPE)
     {
         simpleRNNBackPropDeltasRecurrent(inputDeltas,
                                          outputDeltas,
@@ -707,6 +833,27 @@ static void simpleRNNBackPropGradientsLinear(matrix::Matrix& dWeights,
                                              const matrix::Matrix& expandedInputActivations)
 {
 
+    if(util::isLogEnabled("NativeRecurrentOperations::Detail"))
+    {
+        util::log("NativeRecurrentOperations::Detail") << "  forward output deltas: "
+            << expandedOutputDeltas.debugString();
+    }
+    else
+    {
+        util::log("NativeRecurrentOperations") << "  forward output deltas size: "
+            << expandedOutputDeltas.shapeString() << "\n";
+    }
+
+    if(util::isLogEnabled("NativeRecurrentOperations::Detail"))
+    {
+        util::log("NativeRecurrentOperations::Detail") << "  forward output: "
+            << expandedInputActivations.debugString();
+    }
+    else
+    {
+        util::log("NativeRecurrentOperations") << "  forward output size: "
+            << expandedInputActivations.shapeString() << "\n";
+    }
 
     size_t miniBatchSize = expandedInputActivations.size()[1];
 
@@ -720,6 +867,28 @@ static void simpleRNNBackPropGradientsLinear(matrix::Matrix& dWeights,
          inputActivations, true);
 
     reduce(dBias, apply(outputDeltas, matrix::Divide(miniBatchSize)), {1}, matrix::Add());
+
+    if(util::isLogEnabled("NativeRecurrentOperations::Detail"))
+    {
+        util::log("NativeRecurrentOperations::Detail") << "  forward weight gradients: "
+            << dWeights.debugString();
+    }
+    else
+    {
+        util::log("NativeRecurrentOperations") << "  forward weight gradient size: "
+            << dWeights.shapeString() << "\n";
+    }
+
+    if(util::isLogEnabled("NativeRecurrentOperations::Detail"))
+    {
+        util::log("NativeRecurrentOperations::Detail") << "  forward bias gradients: "
+            << dBias.debugString();
+    }
+    else
+    {
+        util::log("NativeRecurrentOperations") << "  forward bias gradient size: "
+            << dBias.shapeString() << "\n";
+    }
 }
 
 static void simpleRNNBackPropGradientsThroughTime(matrix::Matrix& dWeights,
@@ -738,10 +907,12 @@ static void simpleRNNBackPropGradientsThroughTime(matrix::Matrix& dWeights,
     size_t activationStart = reversed ?            1 : 0;
     size_t activationEnd   = reversed ? maxTimesteps : maxTimesteps - 1;
 
-    auto expandedCurrentDeltas = slice(outputDeltas, {0, 0, deltaStart},
-        {layerSize, miniBatchSize, deltaEnd});
-    auto expandedCurrentActivations = slice(inputActivations, {0, 0, activationStart},
-        {layerSize, miniBatchSize, activationEnd});
+    auto expandedCurrentDeltas = slice(outputDeltas,
+        {        0,             0, deltaStart},
+        {layerSize, miniBatchSize, deltaEnd  });
+    auto expandedCurrentActivations = slice(inputActivations,
+        {        0,             0, activationStart},
+        {layerSize, miniBatchSize, activationEnd  });
 
     auto currentDeltas = reshape(expandedCurrentDeltas,
                                  {layerSize, miniBatchSize * (maxTimesteps - 1)});
@@ -772,8 +943,7 @@ static void simpleRNNBackPropGradientsRecurrent(matrix::Matrix& dWeights,
     {
         auto forwardInput = getForwardInput(allInputActivations, reserve,
             handle, layer, offset);
-        auto forwardOutputDeltas = getForwardOutputDeltas(reserve,
-            handle, layer, offset);
+        auto forwardOutputDeltas = getOutputDeltas(reserve, handle, layer, offset);
 
         if(handle.inputMode == RECURRENT_LINEAR_INPUT)
         {
@@ -789,8 +959,7 @@ static void simpleRNNBackPropGradientsRecurrent(matrix::Matrix& dWeights,
         auto outputActivations = getForwardOutput(allOutputActivations, reserve,
             handle, layer, offset);
 
-        auto recurrentOutputDeltas = getRecurrentOutputDeltas(reserve,
-            handle, layer, offset);
+        auto recurrentOutputDeltas = getOutputDeltas(reserve, handle, layer, offset);
 
         auto recurrentDWeights = getRecurrentWeights(dWeights, handle, layer, offset);
         auto recurrentDBias    = getRecurrentBias(   dWeights, handle, layer, offset);
@@ -871,7 +1040,8 @@ void nativeRNNBackPropGradientsRecurrent(matrix::Matrix& dWeights,
                                          const matrix::Matrix& reserve,
                                          const RecurrentOpsHandle& handle)
 {
-    if(handle.layerType == RECURRENT_SIMPLE_TYPE)
+    if(handle.layerType == RECURRENT_SIMPLE_TYPE ||
+        handle.layerType == RECURRENT_SIMPLE_TANH_TYPE)
     {
         return simpleRNNBackPropGradientsRecurrent(dWeights,
                                                    inputActivations,

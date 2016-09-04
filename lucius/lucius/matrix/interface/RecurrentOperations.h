@@ -24,6 +24,7 @@ enum RecurrentLayerDirection
 enum RecurrentLayerType
 {
     RECURRENT_SIMPLE_TYPE,
+    RECURRENT_SIMPLE_TANH_TYPE,
     RECURRENT_GRU_TYPE,
     RECURRENT_LSTM_TYPE
 };

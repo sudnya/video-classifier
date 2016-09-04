@@ -187,6 +187,10 @@ static PrnnLibrary::prnnRNNMode_t getLayerType(const RecurrentOpsHandle& handle)
     {
         return PrnnLibrary::PRNN_RNN_RELU;
     }
+    case RECURRENT_SIMPLE_TANH_TYPE:
+    {
+        return PrnnLibrary::PRNN_RNN_TANH;
+    }
     case RECURRENT_GRU_TYPE:
     {
         return PrnnLibrary::PRNN_GRU;

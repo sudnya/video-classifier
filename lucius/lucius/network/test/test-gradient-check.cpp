@@ -172,10 +172,8 @@ static NeuralNetwork createRecurrentNetwork(size_t layerSize, size_t layerCount)
     for(size_t layer = 0; layer < layerCount; ++layer)
     {
         network.addLayer(std::make_unique<RecurrentLayer>(layerSize, 1, 1,
-            matrix::RECURRENT_FORWARD, matrix::RECURRENT_SIMPLE_TYPE,
+            matrix::RECURRENT_FORWARD, matrix::RECURRENT_SIMPLE_TANH_TYPE,
             matrix::RECURRENT_LINEAR_INPUT, matrix::DoublePrecision()));
-        network.back()->setActivationFunction(
-            ActivationFunctionFactory::create("SigmoidActivationFunction"));
     }
 
     network.initialize();
@@ -190,10 +188,8 @@ static NeuralNetwork createBidirectionalRecurrentNetwork(size_t layerSize, size_
     for(size_t layer = 0; layer < layerCount; ++layer)
     {
         network.addLayer(std::make_unique<RecurrentLayer>(layerSize, 1, 1,
-            matrix::RECURRENT_BIDIRECTIONAL, matrix::RECURRENT_SIMPLE_TYPE,
+            matrix::RECURRENT_BIDIRECTIONAL, matrix::RECURRENT_SIMPLE_TANH_TYPE,
             matrix::RECURRENT_LINEAR_INPUT, matrix::DoublePrecision()));
-        network.back()->setActivationFunction(
-            ActivationFunctionFactory::create("SigmoidActivationFunction"));
     }
 
     network.initialize();
@@ -719,14 +715,14 @@ static void runTest(size_t layerSize, size_t layerCount, size_t batchSize,
 {
     bool result = true;
 
-    result &= runTestRecurrent(layerSize, layerCount, timesteps, seed);
+    result &= runTestBidirectionalRecurrent(layerSize, layerCount, timesteps, seed);
 
     if(!result)
     {
         return;
     }
 
-    result &= runTestBidirectionalRecurrent(layerSize, layerCount, timesteps, seed);
+    result &= runTestRecurrent(layerSize, layerCount, timesteps, seed);
 
     if(!result)
     {

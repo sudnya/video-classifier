@@ -41,6 +41,8 @@ public:
         SigmoidDerivative,
         RectifiedLinear,
         RectifiedLinearDerivative,
+        Tanh,
+        TanhDerivative,
         KLDivergence,
         KLDivergenceDerivative,
         Negate,
@@ -380,6 +382,40 @@ public:
     CUDA_DECORATOR T operator()(const T& l) const
     {
         return (l >= 20.0) ? 0.0 : ((l <= 0.0) ? 0.0 : 1.0);
+    }
+
+};
+
+class Tanh : public Operation
+{
+public:
+    CUDA_DECORATOR Tanh() : Operation(Operation::Tanh)
+    {
+
+    }
+
+public:
+    template<typename T>
+    CUDA_DECORATOR T operator()(const T& l) const
+    {
+        return std::tanh(l);
+    }
+
+};
+
+class TanhDerivative : public Operation
+{
+public:
+    CUDA_DECORATOR TanhDerivative() : Operation(Operation::TanhDerivative)
+    {
+
+    }
+
+public:
+    template<typename T>
+    CUDA_DECORATOR T operator()(const T& l) const
+    {
+        return 1.0 - std::pow(l, 2.0);
     }
 
 };
@@ -924,20 +960,21 @@ public:
 };
 
 
-typedef std::tuple<Add, Subtract, Multiply, Divide, Log, Exp, Pow, Abs, Sqrt, RectifiedLinear,
-                   RectifiedLinearDerivative, Sigmoid, SigmoidDerivative, Negate, Maximum,
-                   Minimum, Equal, LessThan, NotEqual, Fill, Square, SquareAndScale, Inverse,
-                    Nop, NopDerivative, Cos> AllOperations;
+typedef std::tuple<Add, Subtract, Multiply, Divide, Log, Exp, Pow, Abs, Sqrt, Tanh, TanhDerivative,
+                   RectifiedLinear, RectifiedLinearDerivative, Sigmoid, SigmoidDerivative, Negate,
+                   Maximum, Minimum, Equal, LessThan, NotEqual, Fill, Square, SquareAndScale,
+                   Inverse, Nop, NopDerivative, Cos> AllOperations;
 
 typedef std::tuple<Add, Subtract, Multiply, Divide, Maximum, Minimum,
                    Equal, LessThan, NotEqual, CopyRight> AllBinaryOperations;
 
-typedef std::tuple<Add, Subtract, Multiply, Divide, Log, Exp, Pow, Abs, Sqrt, RectifiedLinear,
-                   RectifiedLinearDerivative, Sigmoid, SigmoidDerivative, Negate, Maximum,
-                   Minimum, Equal, LessThan, NotEqual, Fill, Square, SquareAndScale, Inverse,
-                   Nop, NopDerivative, Cos> AllUnaryOperations;
+typedef std::tuple<Add, Subtract, Multiply, Divide, Log, Exp, Pow, Abs, Sqrt, Tanh, TanhDerivative,
+                   RectifiedLinear, RectifiedLinearDerivative, Sigmoid, SigmoidDerivative, Negate,
+                   Maximum, Minimum, Equal, LessThan, NotEqual, Fill, Square, SquareAndScale,
+                   Inverse, Nop, NopDerivative, Cos> AllUnaryOperations;
 
-typedef std::tuple<Pool2DGather, Pool2DGatherInverse, PermuteDimensionGather, HanningGather> AllGatherOperations;
+typedef std::tuple<Pool2DGather, Pool2DGatherInverse, PermuteDimensionGather, HanningGather>
+    AllGatherOperations;
 
 }
 }

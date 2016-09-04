@@ -352,6 +352,10 @@ static CudnnLibrary::cudnnRNNMode_t getLayerType(const RecurrentOpsHandle& handl
     {
         return CudnnLibrary::CUDNN_RNN_RELU;
     }
+    case RECURRENT_SIMPLE_TANH_TYPE:
+    {
+        return CudnnLibrary::CUDNN_RNN_TANH;
+    }
     case RECURRENT_GRU_TYPE:
     {
         return CudnnLibrary::CUDNN_GRU;
