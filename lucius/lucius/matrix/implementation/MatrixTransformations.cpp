@@ -82,7 +82,7 @@ static Dimension fillInStride(const Dimension& newSize,
     {
         spacingMultiplier *= inputSpacing[i];
 
-        inputSpacing[i] *= spacingMultiplier;
+        newStride[i] *= spacingMultiplier;
     }
 
     return newStride;

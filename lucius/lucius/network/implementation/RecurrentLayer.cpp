@@ -427,14 +427,7 @@ size_t RecurrentLayer::getInputCount() const
 
 size_t RecurrentLayer::getOutputCount() const
 {
-    if(_direction == matrix::RECURRENT_BIDIRECTIONAL)
-    {
-        return getInputCount() * 2;
-    }
-    else
-    {
-        return getInputCount();
-    }
+    return getOutputSize().product();
 }
 
 size_t RecurrentLayer::totalNeurons() const

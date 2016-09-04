@@ -112,6 +112,8 @@ static NeuralNetwork createFeedForwardFullyConnectedSoftmaxNetwork(
     {
         network.addLayer(std::make_unique<FeedForwardLayer>(layerSize,
             layerSize, DoublePrecision()));
+        network.back()->setActivationFunction(
+            ActivationFunctionFactory::create("SigmoidActivationFunction"));
     }
 
     network.setCostFunction(CostFunctionFactory::create("SoftmaxCostFunction"));
@@ -130,6 +132,8 @@ static NeuralNetwork createFeedForwardFullyConnectedSoftmaxLayerNetwork(
     {
         network.addLayer(std::make_unique<FeedForwardLayer>(layerSize,
             layerSize, DoublePrecision()));
+        network.back()->setActivationFunction(
+            ActivationFunctionFactory::create("SigmoidActivationFunction"));
     }
 
     network.addLayer(std::make_unique<SoftmaxLayer>(
@@ -158,6 +162,8 @@ static NeuralNetwork createConvolutionalNetwork(size_t layerSize, size_t layerCo
     {
         network.addLayer(std::make_unique<ConvolutionalLayer>(inputSize, filterSize,
             filterStride, padding, DoublePrecision()));
+        network.back()->setActivationFunction(
+            ActivationFunctionFactory::create("SigmoidActivationFunction"));
     }
 
     network.initialize();
@@ -190,6 +196,10 @@ static NeuralNetwork createBidirectionalRecurrentNetwork(size_t layerSize, size_
         network.addLayer(std::make_unique<RecurrentLayer>(layerSize, 1, 1,
             matrix::RECURRENT_BIDIRECTIONAL, matrix::RECURRENT_SIMPLE_TANH_TYPE,
             matrix::RECURRENT_LINEAR_INPUT, matrix::DoublePrecision()));
+        network.addLayer(std::make_unique<FeedForwardLayer>(2 * layerSize,
+            layerSize, DoublePrecision()));
+        network.back()->setActivationFunction(
+            ActivationFunctionFactory::create("SigmoidActivationFunction"));
     }
 
     network.initialize();

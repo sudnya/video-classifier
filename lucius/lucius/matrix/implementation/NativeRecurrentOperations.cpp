@@ -604,7 +604,7 @@ static void simpleRNNBackPropDeltasRecurrentLinear(matrix::Matrix& expandedForwa
             << recurrentDeltas.shapeString() << "\n";
     }
 
-    gemm(forwardInputDeltas,       0.0,
+    gemm(forwardInputDeltas,       1.0,
          forwardWeights,     true, 1.0,
          recurrentDeltas,    false);
 
@@ -685,7 +685,12 @@ static void simpleRNNBackPropDeltasRecurrent(matrix::Matrix& inputDeltas,
 {
     // Save the output deltas in the reserve
     auto reserveDeltas = getOutputDeltas(reserve, handle, handle.layers - 1, offset);
-    copy(reserveDeltas, allOutputDeltas);
+
+    auto outputDeltas  = slice(allOutputDeltas,
+        {      offset * handle.layerSize,                    0,                0},
+        {(offset + 1) * handle.layerSize, handle.miniBatchSize, handle.timesteps});
+
+    copy(reserveDeltas, outputDeltas);
 
     for(size_t l = 0; l < handle.layers; ++l)
     {
@@ -712,7 +717,7 @@ static void simpleRNNBackPropDeltasRecurrent(matrix::Matrix& inputDeltas,
         }
         else
         {
-            copy(forwardInputDeltas, recurrentDeltas);
+            apply(forwardInputDeltas, forwardInputDeltas, recurrentDeltas, matrix::Add());
         }
     }
 }
@@ -724,6 +729,8 @@ static void simpleRNNBackPropDeltasRecurrent(matrix::Matrix& inputDeltas,
                                           matrix::Matrix& reserve,
                                           const RecurrentOpsHandle& handle)
 {
+    zeros(inputDeltas);
+
     if(handle.direction == RECURRENT_BIDIRECTIONAL)
     {
         simpleRNNBackPropDeltasRecurrent(inputDeltas,
