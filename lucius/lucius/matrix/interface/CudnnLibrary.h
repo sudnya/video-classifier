@@ -77,7 +77,11 @@ public:
         CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_GEMM         = 0,
         CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_PRECOMP_GEMM = 1,
         CUDNN_CONVOLUTION_FWD_ALGO_GEMM                  = 2,
-        CUDNN_CONVOLUTION_FWD_ALGO_DIRECT                = 3
+        CUDNN_CONVOLUTION_FWD_ALGO_DIRECT                = 3,
+        CUDNN_CONVOLUTION_FWD_ALGO_FFT                   = 4,
+        CUDNN_CONVOLUTION_FWD_ALGO_FFT_TILING            = 5,
+        CUDNN_CONVOLUTION_FWD_ALGO_WINOGRAD              = 6,
+        CUDNN_CONVOLUTION_FWD_ALGO_WINOGRAD_NONFUSED     = 7
     } cudnnConvolutionFwdAlgo_t;
 
     typedef enum
@@ -89,10 +93,12 @@ public:
 
     typedef enum
     {
-        CUDNN_CONVOLUTION_BWD_DATA_ALGO_0          = 0, // non-deterministic
-        CUDNN_CONVOLUTION_BWD_DATA_ALGO_1          = 1,
-        CUDNN_CONVOLUTION_BWD_DATA_ALGO_FFT        = 2,
-        CUDNN_CONVOLUTION_BWD_DATA_ALGO_FFT_TILING = 3
+        CUDNN_CONVOLUTION_BWD_DATA_ALGO_0                 = 0, // non-deterministic
+        CUDNN_CONVOLUTION_BWD_DATA_ALGO_1                 = 1,
+        CUDNN_CONVOLUTION_BWD_DATA_ALGO_FFT               = 2,
+        CUDNN_CONVOLUTION_BWD_DATA_ALGO_FFT_TILING        = 3,
+        CUDNN_CONVOLUTION_BWD_DATA_ALGO_WINOGRAD          = 4,
+        CUDNN_CONVOLUTION_BWD_DATA_ALGO_WINOGRAD_NONFUSED = 5
     } cudnnConvolutionBwdDataAlgo_t;
 
     typedef enum
@@ -107,7 +113,9 @@ public:
         CUDNN_CONVOLUTION_BWD_FILTER_ALGO_0         = 0,  // non-deterministic
         CUDNN_CONVOLUTION_BWD_FILTER_ALGO_1         = 1,
         CUDNN_CONVOLUTION_BWD_FILTER_ALGO_FFT       = 2,
-        CUDNN_CONVOLUTION_BWD_FILTER_ALGO_3         = 3   // non-deterministic, algo0 with workspace
+        CUDNN_CONVOLUTION_BWD_FILTER_ALGO_3         = 3,  // non-deterministic, algo0 with workspace
+        // CUDNN_CONVOLUTION_BWD_FILTER_ALGO_WINOGRAD  = 4, // not implemented
+        CUDNN_CONVOLUTION_BWD_FILTER_ALGO_WINOGRAD_NONFUSED = 5
     } cudnnConvolutionBwdFilterAlgo_t;
 
     typedef enum
@@ -134,8 +142,7 @@ public:
     typedef enum
     {
        CUDNN_UNIDIRECTIONAL = 0,
-       CUDNN_BIDIRECTIONAL  = 1,  // Using output concatination at each step. Do we also want to support output sum?
-       CUDNN_REVERSE        = 2
+       CUDNN_BIDIRECTIONAL  = 1  // Using output concatination at each step. Do we also want to support output sum?
     } cudnnDirectionMode_t;
 
     typedef enum
@@ -169,7 +176,7 @@ public:
 
     static void cudnnGetTensorNdDescriptor(const cudnnTensorDescriptor_t tensorDesc,
                                            int                          nbDimsRequested,
-                                           cudnnDataType_t*              dataType,
+                                           cudnnDataType_t*             dataType,
                                            int*                         nbDims,
                                            int*                         dimA,
                                            int*                         strideA);
@@ -193,6 +200,20 @@ public:
                                            int h,        // height of each input filter
                                            int w         // width of  each input fitler
                                            );
+
+    static void cudnnSetFilterNdDescriptor(cudnnFilterDescriptor_t filterDesc,
+                                           cudnnDataType_t dataType,
+                                           cudnnTensorFormat_t  format,
+                                           int nbDims,
+                                           int* dimA
+                                           );
+
+    static void cudnnGetFilterNdDescriptor(const cudnnFilterDescriptor_t   filterDesc,
+                                           int                             nbDimsRequested,
+                                           cudnnDataType_t*                dataType,
+                                           cudnnTensorFormat_t*            format,
+                                           int*                            nbDims,
+                                           int*                            filterDimA);
 
     static void cudnnDestroyFilterDescriptor(cudnnFilterDescriptor_t filterDesc);
 
@@ -349,6 +370,16 @@ public:
                                      const cudnnTensorDescriptor_t   destDiffDesc,
                                      void*                           destDiffData
                                      );
+
+public:
+    static void cudnnCreateDropoutDescriptor(cudnnDropoutDescriptor_t * dropoutDesc);
+    static void cudnnDestroyDropoutDescriptor(cudnnDropoutDescriptor_t dropoutDesc);
+
+    static void cudnnSetDropoutDescriptor(cudnnDropoutDescriptor_t dropoutDesc,
+                                          float dropout,
+                                          void* states,
+                                          size_t stateSizeInBytes,
+                                          unsigned long long seed);
 
 public:
     static void cudnnCreateRNNDescriptor(cudnnRNNDescriptor_t * rnnDesc);
@@ -534,6 +565,20 @@ private:
                                                     int w         // width of  each input fitler
                                                       );
 
+        cudnnStatus_t (*cudnnSetFilterNdDescriptor)(cudnnFilterDescriptor_t filterDesc,
+                                                    cudnnDataType_t dataType,
+                                                    cudnnTensorFormat_t  format,
+                                                    int nbDims,
+                                                    int* dimA
+                                                    );
+
+        cudnnStatus_t (*cudnnGetFilterNdDescriptor)(const cudnnFilterDescriptor_t filterDesc,
+                                                    int                           nbDimsRequested,
+                                                    cudnnDataType_t*              dataType,
+                                                    cudnnTensorFormat_t*          format,
+                                                    int*                          nbDims,
+                                                    int*                          filterDimA);
+
         cudnnStatus_t (*cudnnDestroyFilterDescriptor)(cudnnFilterDescriptor_t filterDesc);
 
     public:
@@ -699,6 +744,16 @@ private:
                                                   );
 
     public:
+        cudnnStatus_t (*cudnnCreateDropoutDescriptor)(cudnnDropoutDescriptor_t * dropoutDesc);
+        cudnnStatus_t (*cudnnDestroyDropoutDescriptor)(cudnnDropoutDescriptor_t dropoutDesc);
+        cudnnStatus_t (*cudnnSetDropoutDescriptor)(cudnnDropoutDescriptor_t dropoutDesc,
+                                                   cudnnHandle_t handle,
+                                                   float dropout,
+                                                   void* states,
+                                                   size_t stateSizeInBytes,
+                                                   unsigned long long seed);
+
+    public:
         cudnnStatus_t (*cudnnCreateRNNDescriptor)(cudnnRNNDescriptor_t * rnnDesc);
         cudnnStatus_t (*cudnnDestroyRNNDescriptor)(cudnnRNNDescriptor_t rnnDesc);
 
@@ -719,12 +774,12 @@ private:
                                                             size_t                     *sizeInBytes
                                                             );
 
-        cudnnStatus_t (*cudnnGetRNNTrainingReserveSize)( cudnnHandle_t              handle,
-                                                                  const cudnnRNNDescriptor_t rnnDesc,
-                                                                  const int seqLength,
-                                                                  const cudnnTensorDescriptor_t    *xDesc,
-                                                                  size_t                     *sizeInBytes
-                                                            );
+        cudnnStatus_t (*cudnnGetRNNTrainingReserveSize)(cudnnHandle_t              handle,
+                                                        const cudnnRNNDescriptor_t rnnDesc,
+                                                        const int seqLength,
+                                                        const cudnnTensorDescriptor_t    *xDesc,
+                                                        size_t                     *sizeInBytes
+                                                        );
 
 
         cudnnStatus_t (*cudnnGetRNNParamsSize)(cudnnHandle_t              handle,

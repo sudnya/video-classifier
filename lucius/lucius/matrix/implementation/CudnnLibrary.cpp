@@ -171,6 +171,50 @@ void CudnnLibrary::cudnnSetFilter4dDescriptor(cudnnFilterDescriptor_t filterDesc
     }
 }
 
+void CudnnLibrary::cudnnSetFilterNdDescriptor(cudnnFilterDescriptor_t filterDesc,
+                                              cudnnDataType_t dataType,
+                                              cudnnTensorFormat_t  format,
+                                              int nbDims,
+                                              int* dimA)
+{
+    _check();
+
+    auto status = (*_interface.cudnnSetFilterNdDescriptor)(filterDesc,
+                                                           dataType,
+                                                           format,
+                                                           nbDims,
+                                                           dimA);
+
+    if(status != CUDNN_STATUS_SUCCESS)
+    {
+        throw std::runtime_error("cudnnSetFilterNdDescriptor failed: " +
+            _interface.getErrorString(status));
+    }
+}
+
+void CudnnLibrary::cudnnGetFilterNdDescriptor(const cudnnFilterDescriptor_t filterDesc,
+                                              int                           nbDimsRequested,
+                                              cudnnDataType_t*              dataType,
+                                              cudnnTensorFormat_t*          format,
+                                              int*                          nbDims,
+                                              int*                          filterDimA)
+{
+    _check();
+
+    auto status = (*_interface.cudnnGetFilterNdDescriptor)(filterDesc,
+                                                           nbDimsRequested,
+                                                           dataType,
+                                                           format,
+                                                           nbDims,
+                                                           filterDimA);
+
+    if(status != CUDNN_STATUS_SUCCESS)
+    {
+        throw std::runtime_error("cudnnGetFilterNdDescriptor failed: " +
+            _interface.getErrorString(status));
+    }
+}
+
 void CudnnLibrary::cudnnDestroyFilterDescriptor(cudnnFilterDescriptor_t filterDesc)
 {
     _check();
@@ -610,6 +654,55 @@ void CudnnLibrary::cudnnPoolingBackward(const cudnnPoolingDescriptor_t  poolingD
     }
 }
 
+void CudnnLibrary::cudnnCreateDropoutDescriptor(cudnnDropoutDescriptor_t* dropoutDesc)
+{
+    _check();
+
+    auto status = (*_interface.cudnnCreateDropoutDescriptor)(dropoutDesc);
+
+    if(status != CUDNN_STATUS_SUCCESS)
+    {
+        throw std::runtime_error("cudnnCreateDropoutDescriptor failed: " +
+            _interface.getErrorString(status));
+    }
+}
+
+void CudnnLibrary::cudnnDestroyDropoutDescriptor(cudnnDropoutDescriptor_t dropoutDesc)
+{
+    _check();
+
+    auto status = (*_interface.cudnnDestroyDropoutDescriptor)(dropoutDesc);
+
+    if(status != CUDNN_STATUS_SUCCESS)
+    {
+        throw std::runtime_error("cudnnDestroyDropoutDescriptor failed: " +
+            _interface.getErrorString(status));
+    }
+}
+
+void CudnnLibrary::cudnnSetDropoutDescriptor(cudnnDropoutDescriptor_t dropoutDesc,
+                                             float dropout,
+                                             void* states,
+                                             size_t stateSizeInBytes,
+                                             unsigned long long seed)
+{
+    _check();
+
+    auto status = (*_interface.cudnnSetDropoutDescriptor)(dropoutDesc,
+                                                          _interface.getHandle(),
+                                                          dropout,
+                                                          states,
+                                                          stateSizeInBytes,
+                                                          seed);
+
+    if(status != CUDNN_STATUS_SUCCESS)
+    {
+        throw std::runtime_error("cudnnSetDropoutDescriptor failed: " +
+            _interface.getErrorString(status));
+    }
+
+}
+
 void CudnnLibrary::cudnnCreateRNNDescriptor(cudnnRNNDescriptor_t* rnnDesc)
 {
     _check();
@@ -693,16 +786,16 @@ void CudnnLibrary::cudnnGetRNNTrainingReserveSize(const cudnnRNNDescriptor_t rnn
 {
     _check();
 
-    auto status = (*_interface.cudnnGetRNNWorkspaceSize)(_interface.getHandle(),
-                                                         rnnDesc,
-                                                         seqLength,
-                                                         xDesc,
-                                                         sizeInBytes
-                                                         );
+    auto status = (*_interface.cudnnGetRNNTrainingReserveSize)(_interface.getHandle(),
+                                                               rnnDesc,
+                                                               seqLength,
+                                                               xDesc,
+                                                               sizeInBytes
+                                                               );
 
     if(status != CUDNN_STATUS_SUCCESS)
     {
-        throw std::runtime_error("cudnnGetRNNWorkspaceSize failed: " +
+        throw std::runtime_error("cudnnGetRNNTrainingReserveSize failed: " +
             _interface.getErrorString(status));
     }
 }
@@ -752,7 +845,7 @@ void CudnnLibrary::cudnnGetRNNLinLayerMatrixParams(const cudnnRNNDescriptor_t rn
 
     if(status != CUDNN_STATUS_SUCCESS)
     {
-        throw std::runtime_error("cudnnGetRNNParamsSize failed: " +
+        throw std::runtime_error("cudnnGetRNNLinLayerMatrixParams failed: " +
             _interface.getErrorString(status));
     }
 }
@@ -1016,6 +1109,8 @@ void CudnnLibrary::Interface::load()
 
         DynLink(cudnnCreateFilterDescriptor);
         DynLink(cudnnSetFilter4dDescriptor);
+        DynLink(cudnnSetFilterNdDescriptor);
+        DynLink(cudnnGetFilterNdDescriptor);
         DynLink(cudnnDestroyFilterDescriptor);
 
         DynLink(cudnnCreateConvolutionDescriptor);
@@ -1041,6 +1136,10 @@ void CudnnLibrary::Interface::load()
 
         DynLink(cudnnPoolingForward);
         DynLink(cudnnPoolingBackward);
+
+        DynLink(cudnnCreateDropoutDescriptor);
+        DynLink(cudnnDestroyDropoutDescriptor);
+        DynLink(cudnnSetDropoutDescriptor);
 
         DynLink(cudnnCreateRNNDescriptor);
         DynLink(cudnnDestroyRNNDescriptor);

@@ -43,12 +43,15 @@ CudnnFilterDescriptor::CudnnFilterDescriptor(const Matrix& filter)
 {
     CudnnLibrary::cudnnCreateFilterDescriptor(&_descriptor);
 
-    CudnnLibrary::cudnnSetFilter4dDescriptor(_descriptor,
+    std::vector<int> sizes(filter.size().begin(), filter.size().end());
+
+    std::reverse(sizes.begin(), sizes.end());
+
+    CudnnLibrary::cudnnSetFilterNdDescriptor(_descriptor,
         getCudnnDataType(filter.precision()),
-        filter.size()[3],
-        filter.size()[2],
-        filter.size()[1],
-        filter.size()[0]);
+        CudnnLibrary::CUDNN_TENSOR_NCHW,
+        sizes.size(),
+        sizes.data());
 }
 
 CudnnFilterDescriptor::~CudnnFilterDescriptor()
@@ -61,9 +64,30 @@ cudnnFilterDescriptor_t CudnnFilterDescriptor::descriptor() const
     return _descriptor;
 }
 
-Dimension CudnnFilterDescriptor::dimensions() const
+Dimension CudnnFilterDescriptor::getDimensions() const
 {
-    return _filter->size();
+    int dimensions = 8;
+
+    int sizes[dimensions];
+
+    CudnnLibrary::cudnnDataType_t dataType;
+    CudnnLibrary::cudnnTensorFormat_t format;
+
+    CudnnLibrary::cudnnGetFilterNdDescriptor(descriptor(),
+                                             dimensions,
+                                             &dataType,
+                                             &format,
+                                             &dimensions,
+                                             sizes);
+
+    Dimension result;
+
+    for(int i = 0; i < dimensions; ++i)
+    {
+        result.push_back(sizes[i]);
+    }
+
+    return result;
 }
 
 void* CudnnFilterDescriptor::data()
@@ -84,6 +108,9 @@ CudnnTensorDescriptor::CudnnTensorDescriptor(const Dimension& size, const Dimens
 
     std::vector<int> sizeArray(size.begin(), size.end());
     std::vector<int> strideArray(stride.begin(), stride.end());
+
+    std::reverse(sizeArray.begin(),   sizeArray.end());
+    std::reverse(strideArray.begin(), strideArray.end());
 
     CudnnLibrary::cudnnSetTensorNdDescriptor(_descriptor,
         getCudnnDataType(precision),
@@ -116,6 +143,122 @@ void* CudnnTensorDescriptor::data()
 size_t CudnnTensorDescriptor::bytes() const
 {
     return _tensor->elements() * _tensor->precision().size();
+}
+
+Dimension CudnnTensorDescriptor::getDimensions() const
+{
+    int dimensions = 8;
+
+    int sizes[dimensions];
+    int strides[dimensions];
+
+    CudnnLibrary::cudnnDataType_t dataType;
+
+    CudnnLibrary::cudnnGetTensorNdDescriptor(descriptor(),
+                                             dimensions,
+                                             &dataType,
+                                             &dimensions,
+                                             sizes,
+                                             strides);
+
+    Dimension result;
+
+    for(int i = 0; i < dimensions; ++i)
+    {
+        result.push_back(sizes[i]);
+    }
+
+    return result;
+}
+
+static std::vector<int> getDimensions(const Dimension& size)
+{
+    return std::vector<int>(size.begin(), size.end());
+}
+
+static std::vector<int> getStrides(const Dimension& strides)
+{
+    return getDimensions(strides);
+}
+
+CudnnTensorDescriptorArray::CudnnTensorDescriptorArray(void* data, const Dimension& size,
+    const Dimension& stride, size_t timesteps, const Precision& precision)
+: _data(data)
+{
+    _descriptors.resize(timesteps);
+
+    auto dimensions = matrix::getDimensions(size);
+    auto strides    = getStrides(stride);
+
+    std::reverse(dimensions.begin(), dimensions.end());
+    std::reverse(strides.begin(),    strides.end());
+
+    for(size_t i = 0; i < timesteps; ++i)
+    {
+        CudnnLibrary::cudnnCreateTensorDescriptor(&_descriptors[i]);
+        CudnnLibrary::cudnnSetTensorNdDescriptor(_descriptors[i],
+            getCudnnDataType(precision),
+            size.size(),
+            dimensions.data(),
+            strides.data()
+        );
+    }
+}
+
+CudnnTensorDescriptorArray::CudnnTensorDescriptorArray(const Dimension& size,
+    const Dimension& stride, size_t timesteps, const Precision& precision)
+: CudnnTensorDescriptorArray(nullptr, size, stride, timesteps, precision)
+{
+
+}
+
+CudnnTensorDescriptorArray::~CudnnTensorDescriptorArray()
+{
+    for(auto descriptor : _descriptors)
+    {
+        CudnnLibrary::cudnnDestroyTensorDescriptor(descriptor);
+    }
+}
+
+cudnnTensorDescriptor_t* CudnnTensorDescriptorArray::descriptors()
+{
+    return _descriptors.data();
+}
+
+Dimension CudnnTensorDescriptorArray::getDimensions() const
+{
+    int dimensions = 8;
+
+    int sizes[dimensions];
+    int strides[dimensions];
+
+    CudnnLibrary::cudnnDataType_t dataType;
+
+    CudnnLibrary::cudnnGetTensorNdDescriptor(_descriptors[0],
+                                             dimensions,
+                                             &dataType,
+                                             &dimensions,
+                                             sizes,
+                                             strides);
+
+    Dimension result;
+
+    for(int i = 0; i < dimensions; ++i)
+    {
+        result.push_back(sizes[i]);
+    }
+
+    return result;
+}
+
+std::string CudnnTensorDescriptorArray::toString() const
+{
+    return getDimensions().toString();
+}
+
+void* CudnnTensorDescriptorArray::data() const
+{
+    return _data;
 }
 
 CudnnScalar::CudnnScalar(double value, const Precision& p)
@@ -330,10 +473,6 @@ static CudnnLibrary::cudnnDirectionMode_t getDirection(const RecurrentOpsHandle&
     {
         return CudnnLibrary::CUDNN_UNIDIRECTIONAL;
     }
-    case RECURRENT_REVERSE:
-    {
-        return CudnnLibrary::CUDNN_REVERSE;
-    }
     case RECURRENT_BIDIRECTIONAL:
     {
         return CudnnLibrary::CUDNN_BIDIRECTIONAL;
@@ -373,11 +512,19 @@ static CudnnLibrary::cudnnRNNMode_t getLayerType(const RecurrentOpsHandle& handl
 CudnnRNNDescriptor::CudnnRNNDescriptor(const RecurrentOpsHandle& handle,
     const Precision& precision)
 {
+    CudnnLibrary::cudnnCreateDropoutDescriptor(&_dropoutDescriptor);
+
+    CudnnLibrary::cudnnSetDropoutDescriptor(_dropoutDescriptor,
+                                            1.0f,
+                                            nullptr,
+                                            0,
+                                            0);
+
     CudnnLibrary::cudnnCreateRNNDescriptor(&_descriptor);
     CudnnLibrary::cudnnSetRNNDescriptor(_descriptor,
                                       handle.layerSize,
                                       handle.layers,
-                                      nullptr,
+                                      _dropoutDescriptor,
                                       getInputMode(handle),
                                       getDirection(handle),
                                       getLayerType(handle),
@@ -386,6 +533,7 @@ CudnnRNNDescriptor::CudnnRNNDescriptor(const RecurrentOpsHandle& handle,
 
 CudnnRNNDescriptor::~CudnnRNNDescriptor()
 {
+    CudnnLibrary::cudnnDestroyDropoutDescriptor(_dropoutDescriptor);
     CudnnLibrary::cudnnDestroyRNNDescriptor(descriptor());
 }
 

@@ -8,6 +8,7 @@
 
 // Standard Library Includes
 #include <memory>
+#include <vector>
 
 // Forward Declarations
 namespace lucius { namespace matrix { class Matrix;             } }
@@ -21,6 +22,7 @@ typedef struct cudnnFilterStruct*      cudnnFilterDescriptor_t;
 typedef struct cudnnConvolutionStruct* cudnnConvolutionDescriptor_t;
 typedef struct cudnnPoolingStruct*     cudnnPoolingDescriptor_t;
 typedef struct cudnnRNNStruct*         cudnnRNNDescriptor_t;
+typedef struct cudnnDropoutStruct*     cudnnDropoutDescriptor_t;
 
 namespace lucius
 {
@@ -40,7 +42,7 @@ public:
     cudnnFilterDescriptor_t descriptor() const;
 
 public:
-    Dimension dimensions() const;
+    Dimension getDimensions() const;
 
 public:
     void* data();
@@ -68,11 +70,48 @@ public:
     void* data();
     size_t bytes() const;
 
+public:
+    Dimension getDimensions() const;
+
 private:
     cudnnTensorDescriptor_t _descriptor;
 
 private:
     std::unique_ptr<Matrix> _tensor;
+
+};
+
+class CudnnTensorDescriptorArray
+{
+public:
+    CudnnTensorDescriptorArray(CudnnTensorDescriptorArray&&) = default;
+    CudnnTensorDescriptorArray(void* data, const Dimension& size, const Dimension& strides,
+        size_t timesteps, const Precision& precision);
+    CudnnTensorDescriptorArray(const Dimension& size, const Dimension& strides,
+        size_t timesteps, const Precision& precision);
+    ~CudnnTensorDescriptorArray();
+
+public:
+    cudnnTensorDescriptor_t* descriptors();
+
+public:
+    void* data() const;
+
+public:
+    Dimension getDimensions() const;
+
+public:
+    std::string toString() const;
+
+public:
+    CudnnTensorDescriptorArray& operator=(const CudnnTensorDescriptorArray&) = delete;
+    CudnnTensorDescriptorArray(const CudnnTensorDescriptorArray&) = delete;
+
+private:
+    std::vector<cudnnTensorDescriptor_t> _descriptors;
+
+private:
+    void* _data;
 
 };
 
@@ -183,6 +222,7 @@ public:
 
 public:
     cudnnRNNDescriptor_t _descriptor;
+    cudnnDropoutDescriptor_t _dropoutDescriptor;
 };
 
 }

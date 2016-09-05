@@ -8,6 +8,7 @@
 
 // Standard Library Includes
 #include <memory>
+#include <vector>
 
 // Forward Declarations
 namespace lucius { namespace matrix { class Matrix;             } }
@@ -51,6 +52,40 @@ private:
 
 private:
     std::unique_ptr<Matrix> _tensor;
+
+};
+
+class PrnnTensorDescriptorArray
+{
+public:
+    PrnnTensorDescriptorArray(PrnnTensorDescriptorArray&&) = default;
+    PrnnTensorDescriptorArray(void* data, const Dimension& size, const Dimension& strides,
+        size_t timesteps, const Precision& precision);
+    PrnnTensorDescriptorArray(const Dimension& size, const Dimension& strides,
+        size_t timesteps, const Precision& precision);
+    ~PrnnTensorDescriptorArray();
+
+public:
+    prnnTensorDescriptor_t* descriptors();
+
+public:
+    void* data() const;
+
+public:
+    Dimension getDimensions() const;
+
+public:
+    std::string toString() const;
+
+public:
+    PrnnTensorDescriptorArray& operator=(const PrnnTensorDescriptorArray&) = delete;
+    PrnnTensorDescriptorArray(const PrnnTensorDescriptorArray&) = delete;
+
+private:
+    std::vector<prnnTensorDescriptor_t> _descriptors;
+
+private:
+    void* _data;
 
 };
 

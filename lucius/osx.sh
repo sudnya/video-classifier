@@ -13,4 +13,5 @@ export CXX=clang++
 export CC=clang
 export CPP=clang
 
+alias lldb="/Library/Developer/CommandLineTools/usr/bin/lldb"
 

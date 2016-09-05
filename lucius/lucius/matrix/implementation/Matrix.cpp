@@ -69,7 +69,8 @@ Matrix::Matrix(const Dimension& size, const Dimension& stride, const Precision& 
 
 }
 
-Matrix::Matrix(const Dimension& size, const Dimension& stride, const Precision& precision, const std::shared_ptr<Allocation>& allocation)
+Matrix::Matrix(const Dimension& size, const Dimension& stride, const Precision& precision,
+               const std::shared_ptr<Allocation>& allocation)
 : _allocation(allocation),
   _data_begin(_allocation->data()),
   _size(size), _stride(stride), _precision(precision)

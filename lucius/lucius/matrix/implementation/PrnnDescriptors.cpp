@@ -59,6 +59,9 @@ PrnnTensorDescriptor::PrnnTensorDescriptor(const Dimension& size, const Dimensio
     std::vector<int> dims(size.begin(), size.end());
     std::vector<int> strides(inputStrides.begin(), inputStrides.end());
 
+    std::reverse(dims.begin(),    dims.end());
+    std::reverse(strides.begin(), strides.end());
+
     PrnnLibrary::prnnSetTensorNdDescriptor(descriptor(),
                                            getDatatype(precision),
                                            size.size(),
@@ -137,6 +140,95 @@ size_t PrnnTensorDescriptor::bytes() const
 Dimension PrnnTensorDescriptor::dimensions() const
 {
     return std::get<0>(getSizeAndStride(descriptor()));
+}
+
+static std::vector<int> getDimensions(const Dimension& size)
+{
+    return std::vector<int>(size.begin(), size.end());
+}
+
+static std::vector<int> getStrides(const Dimension& strides)
+{
+    return getDimensions(strides);
+}
+
+PrnnTensorDescriptorArray::PrnnTensorDescriptorArray(void* data, const Dimension& size,
+    const Dimension& stride, size_t timesteps, const Precision& precision)
+: _data(data)
+{
+    _descriptors.resize(timesteps);
+
+    auto dimensions = matrix::getDimensions(size);
+    auto strides    = getStrides(stride);
+
+    std::reverse(dimensions.begin(), dimensions.end());
+    std::reverse(strides.begin(),    strides.end());
+
+    for(size_t i = 0; i < timesteps; ++i)
+    {
+        PrnnLibrary::prnnCreateTensorDescriptor(&_descriptors[i]);
+        PrnnLibrary::prnnSetTensorNdDescriptor(_descriptors[i],
+            getDatatype(precision),
+            size.size(),
+            dimensions.data(),
+            strides.data()
+        );
+    }
+}
+
+PrnnTensorDescriptorArray::PrnnTensorDescriptorArray(const Dimension& size,
+    const Dimension& stride, size_t timesteps, const Precision& precision)
+: PrnnTensorDescriptorArray(nullptr, size, stride, timesteps, precision)
+{
+
+}
+
+PrnnTensorDescriptorArray::~PrnnTensorDescriptorArray()
+{
+    for(auto descriptor : _descriptors)
+    {
+        PrnnLibrary::prnnDestroyTensorDescriptor(descriptor);
+    }
+}
+
+prnnTensorDescriptor_t* PrnnTensorDescriptorArray::descriptors()
+{
+    return _descriptors.data();
+}
+
+Dimension PrnnTensorDescriptorArray::getDimensions() const
+{
+    int sizes[4];
+    int strides[4];
+    int dimensions = 0;
+
+    PrnnLibrary::prnnDataType_t dataType;
+
+    PrnnLibrary::prnnGetTensorNdDescriptor(_descriptors[0],
+                                             4,
+                                             &dataType,
+                                             &dimensions,
+                                             sizes,
+                                             strides);
+
+    Dimension result;
+
+    for(int i = 0; i < dimensions; ++i)
+    {
+        result.push_back(sizes[i]);
+    }
+
+    return result;
+}
+
+std::string PrnnTensorDescriptorArray::toString() const
+{
+    return getDimensions().toString();
+}
+
+void* PrnnTensorDescriptorArray::data() const
+{
+    return _data;
 }
 
 static PrnnLibrary::prnnRNNInputMode_t getInputMode(const RecurrentOpsHandle& handle)
