@@ -27,7 +27,7 @@ env['path_to_root_dir'] = os.path.abspath(lucius_path_to_root_dir)
 directories = ['lucius/audio', 'lucius/driver', 'lucius/util', 'lucius/engine',
     'lucius/matrix', 'lucius/matrix/ctc', 'lucius/model', 'lucius/network', 'lucius/configuration',
     'lucius/optimizer', 'lucius/parallel', 'lucius/video', 'lucius/visualization',
-    'lucius/database', 'lucius/input', 'lucius/results']
+    'lucius/database', 'lucius/input', 'lucius/results', 'lucius/api']
 
 source_directories = [os.path.join(i, 'implementation') for i in directories]
 
