@@ -6,7 +6,7 @@ import StringIO
 from pydub import AudioSegment
 import base64
 
-app = Flask(__name__)
+application = Flask(__name__)
 api = Api(app)
 
 class DescribeAudio(Resource):
@@ -91,7 +91,7 @@ class DescribeAudio(Resource):
 api.add_resource(DescribeAudio, "/audio/describe")
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    application.run(debug=True)
 
 
 
