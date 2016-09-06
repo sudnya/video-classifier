@@ -3,7 +3,7 @@
 PROJECT_NAME="artifacts"
 
 apt-get update
-apt-get install --assume-yes python-pip python-dev nginx
+apt-get install --assume-yes python-pip python-dev nginx libav-tools
 pip install virtualenv
 
 virtualenv $PROJECT_NAME/env
@@ -13,11 +13,12 @@ source $PROJECT_NAME/env/bin/activate
 pip install uwsgi flask flask-restful pydub requests
 
 IP=$(dig +short myip.opendns.com @resolver1.opendns.com)
+HOSTNAME=($curl -s http://169.254.169.254/latest/meta-data/public-hostname)
 
 cat > /etc/nginx/sites-available/$PROJECT_NAME << EOF
 server {
     listen 80;
-    server_name $IP;
+    server_name $HOSTNAME;
 
     location / {
         include uwsgi_params;
@@ -50,7 +51,7 @@ stop on runlevel [!2345]
 setuid ubuntu
 setgid www-data
 
-env PATH=/home/ubuntu/$PROJECT_NAME/env/bin
+env PATH=/home/ubuntu/$PROJECT_NAME/env/bin:/usr/bin
 chdir /home/ubuntu/$PROJECT_NAME
 exec uwsgi --ini $PROJECT_NAME.ini
 EOF
