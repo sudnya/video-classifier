@@ -1,7 +1,7 @@
 /*  \file   FeedForwardLayer.h
     \author Gregory Diamos
-     \date   Dec 24, 2014
-     \brief  The implementation of the FeedForwardLayer class.
+    \date   Dec 24, 2014
+    \brief  The implementation of the FeedForwardLayer class.
 */
 
 // Lucius Includes
@@ -51,9 +51,12 @@ FeedForwardLayer::FeedForwardLayer(size_t inputs, size_t outputs)
 
 }
 
-FeedForwardLayer::FeedForwardLayer(size_t inputs, size_t outputs, const matrix::Precision& precision)
-: _parameters(new MatrixVector({Matrix({outputs, inputs}, precision), Matrix({outputs}, precision)})),
-  _weights((*_parameters)[0]), _bias((*_parameters)[1])
+FeedForwardLayer::FeedForwardLayer(size_t inputs, size_t outputs,
+    const matrix::Precision& precision)
+: _parameters(new MatrixVector({Matrix({outputs, inputs}, precision),
+                                Matrix({outputs},         precision)})),
+  _weights((*_parameters)[0]),
+  _bias((*_parameters)[1])
 {
 
 }
@@ -79,7 +82,7 @@ FeedForwardLayer& FeedForwardLayer::operator=(const FeedForwardLayer& l)
         return *this;
     }
 
-    _parameters = std::make_unique<MatrixVector>(*l._parameters);
+    std::copy(l._parameters->begin(), l._parameters->end(), _parameters->begin());
 
     return *this;
 }
@@ -109,7 +112,7 @@ void FeedForwardLayer::initialize()
     {
         // He
         double e = util::KnobDatabase::getKnobValue(
-            "FeedForwardLayer::RandomInitializationEpsilon", 6);
+            "FeedForwardLayer::RandomInitializationEpsilon", 1);
 
         double epsilon = std::sqrt((2.*e) / (getInputCount()));
         // generate normal random values with N(0,1)

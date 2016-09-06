@@ -45,7 +45,8 @@ void CudnnLibrary::cudnnCreateTensorDescriptor(cudnnTensorDescriptor_t* tensorDe
 
     if(status != CUDNN_STATUS_SUCCESS)
     {
-        throw std::runtime_error("cudnnCreateTensorDescriptor failed: " + _interface.getErrorString(status));
+        throw std::runtime_error("cudnnCreateTensorDescriptor failed: " +
+            _interface.getErrorString(status));
     }
 }
 
@@ -60,11 +61,50 @@ void CudnnLibrary::cudnnSetTensor4dDescriptor(cudnnTensorDescriptor_t   tensorDe
 {
     _check();
 
-    auto status = (*_interface.cudnnSetTensor4dDescriptor)(tensorDesc, format, dataType, n, c, h, w);
+    auto status = (*_interface.cudnnSetTensor4dDescriptor)(
+        tensorDesc, format, dataType, n, c, h, w);
 
     if(status != CUDNN_STATUS_SUCCESS)
     {
-        throw std::runtime_error("cudnnSetTensor4dDescriptor failed: " + _interface.getErrorString(status));
+        throw std::runtime_error("cudnnSetTensor4dDescriptor failed: " +
+            _interface.getErrorString(status));
+    }
+}
+
+void CudnnLibrary::cudnnSetTensorNdDescriptor(cudnnTensorDescriptor_t tensorDesc,
+                                              cudnnDataType_t         dataType,
+                                              int                     nbDims,
+                                              const int*              dimA,
+                                              const int*              strideA)
+{
+    _check();
+
+    auto status = (*_interface.cudnnSetTensorNdDescriptor)(
+        tensorDesc, dataType, nbDims, dimA, strideA);
+
+    if(status != CUDNN_STATUS_SUCCESS)
+    {
+        throw std::runtime_error("cudnnSetTensorNdDescriptor failed: " +
+            _interface.getErrorString(status));
+    }
+}
+
+void CudnnLibrary::cudnnGetTensorNdDescriptor(const cudnnTensorDescriptor_t tensorDesc,
+                                              int                           nbDimsRequested,
+                                              cudnnDataType_t*              dataType,
+                                              int*                          nbDims,
+                                              int*                          dimA,
+                                              int*                          strideA)
+{
+    _check();
+
+    auto status = (*_interface.cudnnGetTensorNdDescriptor)(
+        tensorDesc, nbDimsRequested, dataType, nbDims, dimA, strideA);
+
+    if(status != CUDNN_STATUS_SUCCESS)
+    {
+        throw std::runtime_error("cudnnGetTensorNdDescriptor failed: " +
+            _interface.getErrorString(status));
     }
 }
 
@@ -76,7 +116,8 @@ void CudnnLibrary::cudnnDestroyTensorDescriptor(cudnnTensorDescriptor_t tensorDe
 
     if(status != CUDNN_STATUS_SUCCESS)
     {
-        throw std::runtime_error("cudnnDestroyTensorDescriptor failed: " + _interface.getErrorString(status));
+        throw std::runtime_error("cudnnDestroyTensorDescriptor failed: " +
+            _interface.getErrorString(status));
     }
 }
 
@@ -93,7 +134,8 @@ void CudnnLibrary::cudnnTransformTensor(const void*                      alpha,
 
     if(status != CUDNN_STATUS_SUCCESS)
     {
-        throw std::runtime_error("cudnnTransformTensor failed: " + _interface.getErrorString(status));
+        throw std::runtime_error("cudnnTransformTensor failed: " +
+            _interface.getErrorString(status));
     }
 }
 
@@ -105,7 +147,8 @@ void CudnnLibrary::cudnnCreateFilterDescriptor(cudnnFilterDescriptor_t* filterDe
 
     if(status != CUDNN_STATUS_SUCCESS)
     {
-        throw std::runtime_error("cudnnCreateFilterDescriptor failed: " + _interface.getErrorString(status));
+        throw std::runtime_error("cudnnCreateFilterDescriptor failed: " +
+            _interface.getErrorString(status));
     }
 }
 
@@ -123,7 +166,52 @@ void CudnnLibrary::cudnnSetFilter4dDescriptor(cudnnFilterDescriptor_t filterDesc
 
     if(status != CUDNN_STATUS_SUCCESS)
     {
-        throw std::runtime_error("cudnnSetFilter4dDescriptor failed: " + _interface.getErrorString(status));
+        throw std::runtime_error("cudnnSetFilter4dDescriptor failed: " +
+            _interface.getErrorString(status));
+    }
+}
+
+void CudnnLibrary::cudnnSetFilterNdDescriptor(cudnnFilterDescriptor_t filterDesc,
+                                              cudnnDataType_t dataType,
+                                              cudnnTensorFormat_t  format,
+                                              int nbDims,
+                                              int* dimA)
+{
+    _check();
+
+    auto status = (*_interface.cudnnSetFilterNdDescriptor)(filterDesc,
+                                                           dataType,
+                                                           format,
+                                                           nbDims,
+                                                           dimA);
+
+    if(status != CUDNN_STATUS_SUCCESS)
+    {
+        throw std::runtime_error("cudnnSetFilterNdDescriptor failed: " +
+            _interface.getErrorString(status));
+    }
+}
+
+void CudnnLibrary::cudnnGetFilterNdDescriptor(const cudnnFilterDescriptor_t filterDesc,
+                                              int                           nbDimsRequested,
+                                              cudnnDataType_t*              dataType,
+                                              cudnnTensorFormat_t*          format,
+                                              int*                          nbDims,
+                                              int*                          filterDimA)
+{
+    _check();
+
+    auto status = (*_interface.cudnnGetFilterNdDescriptor)(filterDesc,
+                                                           nbDimsRequested,
+                                                           dataType,
+                                                           format,
+                                                           nbDims,
+                                                           filterDimA);
+
+    if(status != CUDNN_STATUS_SUCCESS)
+    {
+        throw std::runtime_error("cudnnGetFilterNdDescriptor failed: " +
+            _interface.getErrorString(status));
     }
 }
 
@@ -135,7 +223,8 @@ void CudnnLibrary::cudnnDestroyFilterDescriptor(cudnnFilterDescriptor_t filterDe
 
     if(status != CUDNN_STATUS_SUCCESS)
     {
-        throw std::runtime_error("cudnnDestroyFilterDescriptor failed: " + _interface.getErrorString(status));
+        throw std::runtime_error("cudnnDestroyFilterDescriptor failed: " +
+            _interface.getErrorString(status));
     }
 
 }
@@ -148,7 +237,8 @@ void CudnnLibrary::cudnnCreateConvolutionDescriptor(cudnnConvolutionDescriptor_t
 
     if(status != CUDNN_STATUS_SUCCESS)
     {
-        throw std::runtime_error("cudnnCreateConvolutionDescriptor failed: " + _interface.getErrorString(status));
+        throw std::runtime_error("cudnnCreateConvolutionDescriptor failed: " +
+            _interface.getErrorString(status));
     }
 
 }
@@ -164,11 +254,13 @@ void CudnnLibrary::cudnnSetConvolution2dDescriptor(cudnnConvolutionDescriptor_t 
 {
     _check();
 
-    auto status = (*_interface.cudnnSetConvolution2dDescriptor)(convDesc, pad_h, pad_w, u, v, upscalex, upscaley, mode);
+    auto status = (*_interface.cudnnSetConvolution2dDescriptor)(
+        convDesc, pad_h, pad_w, u, v, upscalex, upscaley, mode);
 
     if(status != CUDNN_STATUS_SUCCESS)
     {
-        throw std::runtime_error("cudnnSetConvolution2dDescriptor failed: " + _interface.getErrorString(status));
+        throw std::runtime_error("cudnnSetConvolution2dDescriptor failed: " +
+            _interface.getErrorString(status));
     }
 }
 
@@ -562,6 +654,387 @@ void CudnnLibrary::cudnnPoolingBackward(const cudnnPoolingDescriptor_t  poolingD
     }
 }
 
+void CudnnLibrary::cudnnCreateDropoutDescriptor(cudnnDropoutDescriptor_t* dropoutDesc)
+{
+    _check();
+
+    auto status = (*_interface.cudnnCreateDropoutDescriptor)(dropoutDesc);
+
+    if(status != CUDNN_STATUS_SUCCESS)
+    {
+        throw std::runtime_error("cudnnCreateDropoutDescriptor failed: " +
+            _interface.getErrorString(status));
+    }
+}
+
+void CudnnLibrary::cudnnDestroyDropoutDescriptor(cudnnDropoutDescriptor_t dropoutDesc)
+{
+    _check();
+
+    auto status = (*_interface.cudnnDestroyDropoutDescriptor)(dropoutDesc);
+
+    if(status != CUDNN_STATUS_SUCCESS)
+    {
+        throw std::runtime_error("cudnnDestroyDropoutDescriptor failed: " +
+            _interface.getErrorString(status));
+    }
+}
+
+void CudnnLibrary::cudnnSetDropoutDescriptor(cudnnDropoutDescriptor_t dropoutDesc,
+                                             float dropout,
+                                             void* states,
+                                             size_t stateSizeInBytes,
+                                             unsigned long long seed)
+{
+    _check();
+
+    auto status = (*_interface.cudnnSetDropoutDescriptor)(dropoutDesc,
+                                                          _interface.getHandle(),
+                                                          dropout,
+                                                          states,
+                                                          stateSizeInBytes,
+                                                          seed);
+
+    if(status != CUDNN_STATUS_SUCCESS)
+    {
+        throw std::runtime_error("cudnnSetDropoutDescriptor failed: " +
+            _interface.getErrorString(status));
+    }
+
+}
+
+void CudnnLibrary::cudnnCreateRNNDescriptor(cudnnRNNDescriptor_t* rnnDesc)
+{
+    _check();
+
+    auto status = (*_interface.cudnnCreateRNNDescriptor)(rnnDesc);
+
+    if(status != CUDNN_STATUS_SUCCESS)
+    {
+        throw std::runtime_error("cudnnCreateRnnDescriptor failed: " +
+            _interface.getErrorString(status));
+    }
+}
+
+void CudnnLibrary::cudnnDestroyRNNDescriptor(cudnnRNNDescriptor_t rnnDesc)
+{
+    _check();
+
+    auto status = (*_interface.cudnnDestroyRNNDescriptor)(rnnDesc);
+
+    if(status != CUDNN_STATUS_SUCCESS)
+    {
+        throw std::runtime_error("cudnnDestroyRnnDescriptor failed: " +
+            _interface.getErrorString(status));
+    }
+}
+
+void CudnnLibrary::cudnnSetRNNDescriptor(cudnnRNNDescriptor_t rnnDesc,
+                                         int hiddenSize,
+                                         int numLayers,
+                                         cudnnDropoutDescriptor_t dropoutDesc,
+                                         cudnnRNNInputMode_t inputMode,
+                                         cudnnDirectionMode_t direction,
+                                         cudnnRNNMode_t mode,
+                                         cudnnDataType_t dataType)
+{
+    _check();
+
+    auto status = (*_interface.cudnnSetRNNDescriptor)(rnnDesc,
+                                                      hiddenSize,
+                                                      numLayers,
+                                                      dropoutDesc,
+                                                      inputMode,
+                                                      direction,
+                                                      mode,
+                                                      dataType);
+
+    if(status != CUDNN_STATUS_SUCCESS)
+    {
+        throw std::runtime_error("cudnnSetRnnDescriptor failed: " +
+            _interface.getErrorString(status));
+    }
+}
+
+void CudnnLibrary::cudnnGetRNNWorkspaceSize(const cudnnRNNDescriptor_t rnnDesc,
+                                            const int seqLength,
+                                            const cudnnTensorDescriptor_t* xDesc,
+                                            size_t* sizeInBytes
+                                            )
+{
+    _check();
+
+    auto status = (*_interface.cudnnGetRNNWorkspaceSize)(_interface.getHandle(),
+                                                         rnnDesc,
+                                                         seqLength,
+                                                         xDesc,
+                                                         sizeInBytes
+                                                         );
+
+    if(status != CUDNN_STATUS_SUCCESS)
+    {
+        throw std::runtime_error("cudnnGetRNNWorkspaceSize failed: " +
+            _interface.getErrorString(status));
+    }
+}
+
+void CudnnLibrary::cudnnGetRNNTrainingReserveSize(const cudnnRNNDescriptor_t rnnDesc,
+                                                  const int seqLength,
+                                                  const cudnnTensorDescriptor_t* xDesc,
+                                                  size_t* sizeInBytes
+                                                  )
+{
+    _check();
+
+    auto status = (*_interface.cudnnGetRNNTrainingReserveSize)(_interface.getHandle(),
+                                                               rnnDesc,
+                                                               seqLength,
+                                                               xDesc,
+                                                               sizeInBytes
+                                                               );
+
+    if(status != CUDNN_STATUS_SUCCESS)
+    {
+        throw std::runtime_error("cudnnGetRNNTrainingReserveSize failed: " +
+            _interface.getErrorString(status));
+    }
+}
+
+void CudnnLibrary::cudnnGetRNNParamsSize(const cudnnRNNDescriptor_t rnnDesc,
+                                         const cudnnTensorDescriptor_t xDesc,
+                                         size_t* sizeInBytes,
+                                         cudnnDataType_t dataType
+                                         )
+{
+    _check();
+
+    auto status = (*_interface.cudnnGetRNNParamsSize)(_interface.getHandle(),
+                                                      rnnDesc,
+                                                      xDesc,
+                                                      sizeInBytes,
+                                                      dataType);
+
+    if(status != CUDNN_STATUS_SUCCESS)
+    {
+        throw std::runtime_error("cudnnGetRNNParamsSize failed: " +
+            _interface.getErrorString(status));
+    }
+}
+
+void CudnnLibrary::cudnnGetRNNLinLayerMatrixParams(const cudnnRNNDescriptor_t rnnDesc,
+                                                   const int layer,
+                                                   const cudnnTensorDescriptor_t xDesc,
+                                                   const cudnnFilterDescriptor_t wDesc,
+                                                   const void* w,
+                                                   const int linLayerID,
+                                                   cudnnFilterDescriptor_t linLayerMatDesc,
+                                                   void** linLayerMat
+                                                   )
+{
+    _check();
+
+    auto status = (*_interface.cudnnGetRNNLinLayerMatrixParams)(_interface.getHandle(),
+                                                                rnnDesc,
+                                                                layer,
+                                                                xDesc,
+                                                                wDesc,
+                                                                w,
+                                                                linLayerID,
+                                                                linLayerMatDesc,
+                                                                linLayerMat);
+
+    if(status != CUDNN_STATUS_SUCCESS)
+    {
+        throw std::runtime_error("cudnnGetRNNLinLayerMatrixParams failed: " +
+            _interface.getErrorString(status));
+    }
+}
+
+void CudnnLibrary::cudnnGetRNNLinLayerBiasParams(const cudnnRNNDescriptor_t rnnDesc,
+                                                 const int layer,
+                                                 const cudnnTensorDescriptor_t xDesc,
+                                                 const cudnnFilterDescriptor_t wDesc,
+                                                 const void* w,
+                                                 const int linLayerID,
+                                                 cudnnFilterDescriptor_t linLayerBiasDesc,
+                                                 void** linLayerBias
+                                                 )
+{
+    _check();
+
+    auto status = (*_interface.cudnnGetRNNLinLayerBiasParams)(_interface.getHandle(),
+                                                              rnnDesc,
+                                                              layer,
+                                                              xDesc,
+                                                              wDesc,
+                                                              w,
+                                                              linLayerID,
+                                                              linLayerBiasDesc,
+                                                              linLayerBias);
+
+    if(status != CUDNN_STATUS_SUCCESS)
+    {
+        throw std::runtime_error("cudnnGetRNNLinLayerBiasParams failed: " +
+            _interface.getErrorString(status));
+    }
+}
+
+void CudnnLibrary::cudnnRNNForwardTraining(const cudnnRNNDescriptor_t rnnDesc,
+                                           const int seqLength,
+                                           const cudnnTensorDescriptor_t* xDesc,
+                                           const void* x,
+                                           const cudnnTensorDescriptor_t hxDesc,
+                                           const void* hx,
+                                           const cudnnTensorDescriptor_t cxDesc,
+                                           const void* cx,
+                                           const cudnnFilterDescriptor_t wDesc,
+                                           const void* w,
+                                           const cudnnTensorDescriptor_t* yDesc,
+                                           void* y,
+                                           const cudnnTensorDescriptor_t hyDesc,
+                                           void* hy,
+                                           const cudnnTensorDescriptor_t cyDesc,
+                                           void* cy,
+                                           void* workspace,
+                                           size_t workSpaceSizeInBytes,
+                                           void* reserveSpace,
+                                           size_t reserveSpaceSizeInBytes)
+{
+    _check();
+
+    auto status = (*_interface.cudnnRNNForwardTraining)(_interface.getHandle(),
+                                                        rnnDesc,
+                                                        seqLength,
+                                                        xDesc,
+                                                        x,
+                                                        hxDesc,
+                                                        hx,
+                                                        cxDesc,
+                                                        cx,
+                                                        wDesc,
+                                                        w,
+                                                        yDesc,
+                                                        y,
+                                                        hyDesc,
+                                                        hy,
+                                                        cyDesc,
+                                                        cy,
+                                                        workspace,
+                                                        workSpaceSizeInBytes,
+                                                        reserveSpace,
+                                                        reserveSpaceSizeInBytes);
+
+    if(status != CUDNN_STATUS_SUCCESS)
+    {
+        throw std::runtime_error("cudnnRNNForward failed: " +
+            _interface.getErrorString(status));
+    }
+}
+
+void CudnnLibrary::cudnnRNNBackwardData(const cudnnRNNDescriptor_t rnnDesc,
+                                        const int seqLength,
+                                        const cudnnTensorDescriptor_t* yDesc,
+                                        const void* y,
+                                        const cudnnTensorDescriptor_t* dyDesc,
+                                        const void* dy,
+                                        const cudnnTensorDescriptor_t dhyDesc,
+                                        const void* dhy,
+                                        const cudnnTensorDescriptor_t dcyDesc,
+                                        const void* dcy,
+                                        const cudnnFilterDescriptor_t wDesc,
+                                        const void* w,
+                                        const cudnnTensorDescriptor_t hxDesc,
+                                        const void* hx,
+                                        const cudnnTensorDescriptor_t cxDesc,
+                                        const void* cx,
+                                        const cudnnTensorDescriptor_t* dxDesc,
+                                        void* dx,
+                                        const cudnnTensorDescriptor_t dhxDesc,
+                                        void* dhx,
+                                        const cudnnTensorDescriptor_t dcxDesc,
+                                        void* dcx,
+                                        void* workspace,
+                                        size_t workSpaceSizeInBytes,
+                                        const void* reserveSpace,
+                                        size_t reserveSpaceSizeInBytes)
+{
+    _check();
+
+    auto status = (*_interface.cudnnRNNBackwardData)(_interface.getHandle(),
+                                                     rnnDesc,
+                                                     seqLength,
+                                                     yDesc,
+                                                     y,
+                                                     dyDesc,
+                                                     dy,
+                                                     dhyDesc,
+                                                     dhy,
+                                                     dcyDesc,
+                                                     dcy,
+                                                     wDesc,
+                                                     w,
+                                                     hxDesc,
+                                                     hx,
+                                                     cxDesc,
+                                                     cx,
+                                                     dxDesc,
+                                                     dx,
+                                                     dhxDesc,
+                                                     dhx,
+                                                     dcxDesc,
+                                                     dcx,
+                                                     workspace,
+                                                     workSpaceSizeInBytes,
+                                                     reserveSpace,
+                                                     reserveSpaceSizeInBytes);
+
+    if(status != CUDNN_STATUS_SUCCESS)
+    {
+        throw std::runtime_error("cudnnRNNBackwardData failed: " +
+            _interface.getErrorString(status));
+    }
+}
+
+void CudnnLibrary::cudnnRNNBackwardWeights(const cudnnRNNDescriptor_t rnnDesc,
+                                           const int seqLength,
+                                           const cudnnTensorDescriptor_t* xDesc,
+                                           const void* x,
+                                           const cudnnTensorDescriptor_t hxDesc,
+                                           const void* hx,
+                                           const cudnnTensorDescriptor_t* yDesc,
+                                           const void* y,
+                                           const void* workspace,
+                                           size_t workSpaceSizeInBytes,
+                                           const cudnnFilterDescriptor_t dwDesc,
+                                           void* dw,
+                                           const void* reserveSpace,
+                                           size_t reserveSpaceSizeInBytes)
+{
+    _check();
+
+    auto status = (*_interface.cudnnRNNBackwardWeights)(_interface.getHandle(),
+                                                        rnnDesc,
+                                                        seqLength,
+                                                        xDesc,
+                                                        x,
+                                                        hxDesc,
+                                                        hx,
+                                                        yDesc,
+                                                        y,
+                                                        workspace,
+                                                        workSpaceSizeInBytes,
+                                                        dwDesc,
+                                                        dw,
+                                                        reserveSpace,
+                                                        reserveSpaceSizeInBytes);
+
+    if(status != CUDNN_STATUS_SUCCESS)
+    {
+        throw std::runtime_error("cudnnRNNBackwardWeights failed: " +
+            _interface.getErrorString(status));
+    }
+}
+
 void CudnnLibrary::_check()
 {
     load();
@@ -629,11 +1102,15 @@ void CudnnLibrary::Interface::load()
 
         DynLink(cudnnCreateTensorDescriptor);
         DynLink(cudnnSetTensor4dDescriptor);
+        DynLink(cudnnSetTensorNdDescriptor);
+        DynLink(cudnnGetTensorNdDescriptor);
         DynLink(cudnnDestroyTensorDescriptor);
         DynLink(cudnnTransformTensor);
 
         DynLink(cudnnCreateFilterDescriptor);
         DynLink(cudnnSetFilter4dDescriptor);
+        DynLink(cudnnSetFilterNdDescriptor);
+        DynLink(cudnnGetFilterNdDescriptor);
         DynLink(cudnnDestroyFilterDescriptor);
 
         DynLink(cudnnCreateConvolutionDescriptor);
@@ -659,6 +1136,25 @@ void CudnnLibrary::Interface::load()
 
         DynLink(cudnnPoolingForward);
         DynLink(cudnnPoolingBackward);
+
+        DynLink(cudnnCreateDropoutDescriptor);
+        DynLink(cudnnDestroyDropoutDescriptor);
+        DynLink(cudnnSetDropoutDescriptor);
+
+        DynLink(cudnnCreateRNNDescriptor);
+        DynLink(cudnnDestroyRNNDescriptor);
+        DynLink(cudnnSetRNNDescriptor);
+
+        DynLink(cudnnGetRNNWorkspaceSize);
+        DynLink(cudnnGetRNNTrainingReserveSize);
+        DynLink(cudnnGetRNNParamsSize);
+
+        DynLink(cudnnGetRNNLinLayerMatrixParams);
+        DynLink(cudnnGetRNNLinLayerBiasParams);
+
+        DynLink(cudnnRNNForwardTraining);
+        DynLink(cudnnRNNBackwardData);
+        DynLink(cudnnRNNBackwardWeights);
 
         #undef DynLink
 

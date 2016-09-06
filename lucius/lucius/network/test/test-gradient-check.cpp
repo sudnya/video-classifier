@@ -7,7 +7,6 @@
 // Lucius Includes
 #include <lucius/network/interface/NeuralNetwork.h>
 #include <lucius/network/interface/FeedForwardLayer.h>
-#include <lucius/network/interface/BidirectionalRecurrentLayer.h>
 #include <lucius/network/interface/RecurrentLayer.h>
 #include <lucius/network/interface/SoftmaxLayer.h>
 #include <lucius/network/interface/BatchNormalizationLayer.h>
@@ -113,6 +112,8 @@ static NeuralNetwork createFeedForwardFullyConnectedSoftmaxNetwork(
     {
         network.addLayer(std::make_unique<FeedForwardLayer>(layerSize,
             layerSize, DoublePrecision()));
+        network.back()->setActivationFunction(
+            ActivationFunctionFactory::create("SigmoidActivationFunction"));
     }
 
     network.setCostFunction(CostFunctionFactory::create("SoftmaxCostFunction"));
@@ -131,6 +132,8 @@ static NeuralNetwork createFeedForwardFullyConnectedSoftmaxLayerNetwork(
     {
         network.addLayer(std::make_unique<FeedForwardLayer>(layerSize,
             layerSize, DoublePrecision()));
+        network.back()->setActivationFunction(
+            ActivationFunctionFactory::create("SigmoidActivationFunction"));
     }
 
     network.addLayer(std::make_unique<SoftmaxLayer>(
@@ -159,6 +162,8 @@ static NeuralNetwork createConvolutionalNetwork(size_t layerSize, size_t layerCo
     {
         network.addLayer(std::make_unique<ConvolutionalLayer>(inputSize, filterSize,
             filterStride, padding, DoublePrecision()));
+        network.back()->setActivationFunction(
+            ActivationFunctionFactory::create("SigmoidActivationFunction"));
     }
 
     network.initialize();
@@ -172,10 +177,9 @@ static NeuralNetwork createRecurrentNetwork(size_t layerSize, size_t layerCount)
 
     for(size_t layer = 0; layer < layerCount; ++layer)
     {
-        network.addLayer(std::make_unique<RecurrentLayer>(layerSize, 1,
-            matrix::RECURRENT_FORWARD_TIME, DoublePrecision()));
-        network.back()->setActivationFunction(
-            ActivationFunctionFactory::create("SigmoidActivationFunction"));
+        network.addLayer(std::make_unique<RecurrentLayer>(layerSize, 1, 1,
+            matrix::RECURRENT_FORWARD, matrix::RECURRENT_SIMPLE_TANH_TYPE,
+            matrix::RECURRENT_LINEAR_INPUT, matrix::DoublePrecision()));
     }
 
     network.initialize();
@@ -189,8 +193,11 @@ static NeuralNetwork createBidirectionalRecurrentNetwork(size_t layerSize, size_
 
     for(size_t layer = 0; layer < layerCount; ++layer)
     {
-        network.addLayer(std::make_unique<BidirectionalRecurrentLayer>(
-            layerSize, 1, DoublePrecision()));
+        network.addLayer(std::make_unique<RecurrentLayer>(layerSize, 1, 1,
+            matrix::RECURRENT_BIDIRECTIONAL, matrix::RECURRENT_SIMPLE_TANH_TYPE,
+            matrix::RECURRENT_LINEAR_INPUT, matrix::DoublePrecision()));
+        network.addLayer(std::make_unique<FeedForwardLayer>(2 * layerSize,
+            layerSize, DoublePrecision()));
         network.back()->setActivationFunction(
             ActivationFunctionFactory::create("SigmoidActivationFunction"));
     }

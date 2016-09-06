@@ -8,7 +8,7 @@
 #include <lucius/network/interface/LayerFactory.h>
 
 #include <lucius/network/interface/FeedForwardLayer.h>
-#include <lucius/network/interface/BidirectionalRecurrentLayer.h>
+#include <lucius/network/interface/RecurrentLayer.h>
 #include <lucius/network/interface/RecurrentLayer.h>
 #include <lucius/network/interface/ConvolutionalLayer.h>
 #include <lucius/network/interface/AudioConvolutionalLayer.h>
@@ -108,17 +108,6 @@ std::unique_ptr<Layer> LayerFactory::create(const std::string& name,
         layer = std::make_unique<BatchNormalizationLayer>(
             matrix::Dimension({inputWidth, inputHeight, inputColors, inputBatch, 1}), precision);
     }
-    else if ("BidirectionalRecurrentLayer" == name)
-    {
-        size_t size      = parameters.get("Size",      inputSizeAggregate);
-        size_t batchSize = parameters.get("BatchSize", 1);
-
-        auto precision = *matrix::Precision::fromString(parameters.get("Precision",
-                    matrix::Precision::getDefaultPrecision().toString()));
-
-        layer = std::make_unique<BidirectionalRecurrentLayer>(size, batchSize, precision);
-
-    }
     else if("ConvolutionalLayer" == name)
     {
         size_t inputWidth  = parameters.get("InputWidth",  inputSizeWidth);
@@ -178,29 +167,73 @@ std::unique_ptr<Layer> LayerFactory::create(const std::string& name,
     else if("RecurrentLayer" == name)
     {
         size_t size      = parameters.get("Size",      inputSizeAggregate);
+        size_t layers    = parameters.get("Layers",    1);
         size_t batchSize = parameters.get("BatchSize", 1);
-        auto direction   = parameters.get<std::string>("Direction", "forward");
+        auto direction     = parameters.get<std::string>("Direction", "forward");
+        auto layerTypeName = parameters.get<std::string>("LayerType", "simple");
+        auto inputModeName = parameters.get<std::string>("InputMode", "linear");
 
-        matrix::RecurrentTimeDirection timeDirection = matrix::RECURRENT_FORWARD_TIME;
+        matrix::RecurrentLayerDirection timeDirection = matrix::RECURRENT_FORWARD;
 
         if(direction == "forward")
         {
-            timeDirection = matrix::RECURRENT_FORWARD_TIME;
+            timeDirection = matrix::RECURRENT_FORWARD;
         }
         else if(direction == "reverse")
         {
-            timeDirection = matrix::RECURRENT_REVERSE_TIME;
+            timeDirection = matrix::RECURRENT_REVERSE;
+        }
+        else if(direction == "bidirectional")
+        {
+            timeDirection = matrix::RECURRENT_BIDIRECTIONAL;
         }
         else
         {
             throw std::runtime_error("Invalid recurrent layer direction '" + direction +
-                "' (should be 'forward' or 'reverse')");
+                "' (should be 'forward' or 'reverse' or 'bidirectional')");
+        }
+
+        matrix::RecurrentLayerType layerType = matrix::RECURRENT_SIMPLE_TYPE;
+
+        if(layerTypeName == "simple")
+        {
+            layerType = matrix::RECURRENT_SIMPLE_TYPE;
+        }
+        else if(layerTypeName == "gru")
+        {
+            layerType = matrix::RECURRENT_GRU_TYPE;
+        }
+        else if(layerTypeName == "lstm")
+        {
+            layerType = matrix::RECURRENT_LSTM_TYPE;
+        }
+        else
+        {
+            throw std::runtime_error("Invalid recurrent layer type '" + layerTypeName +
+                "' (should be 'simple' or 'gru' or 'lstm')");
+        }
+
+        matrix::RecurrentLayerInputMode inputMode = matrix::RECURRENT_LINEAR_INPUT;
+
+        if(inputModeName == "linear")
+        {
+            inputMode = matrix::RECURRENT_LINEAR_INPUT;
+        }
+        else if(inputModeName == "skip")
+        {
+            inputMode = matrix::RECURRENT_SKIP_INPUT;
+        }
+        else
+        {
+            throw std::runtime_error("Invalid recurrent layer input mode '" + inputModeName +
+                "' (should be 'linear' or 'skip')");
         }
 
         auto precision = *matrix::Precision::fromString(parameters.get("Precision",
             matrix::Precision::getDefaultPrecision().toString()));
 
-        layer = std::make_unique<RecurrentLayer>(size, batchSize, timeDirection, precision);
+        layer = std::make_unique<RecurrentLayer>(
+            size, batchSize, layers, timeDirection, layerType, inputMode, precision);
     }
     else if("SoftmaxLayer" == name)
     {

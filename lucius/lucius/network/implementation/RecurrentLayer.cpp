@@ -1,6 +1,6 @@
 /*  \file   RecurrentLayer.cpp
-    \author Gregory Diamos
-     \date   Dec 24, 2014
+    \author Sudnya Diamos
+     \date   May 9, 2016
      \brief  The implementation of the RecurrentLayer class.
 */
 
@@ -41,24 +41,44 @@ typedef matrix::IndexVector IndexVector;
 typedef matrix::Dimension Dimension;
 
 RecurrentLayer::RecurrentLayer()
-: RecurrentLayer(1, 1, matrix::RECURRENT_FORWARD_TIME)
+: RecurrentLayer(1, 1, 1, matrix::RECURRENT_FORWARD, matrix::RECURRENT_SIMPLE_TYPE,
+    matrix::RECURRENT_LINEAR_INPUT)
 {
 
 }
 
-RecurrentLayer::RecurrentLayer(size_t size, size_t batchSize, int direction)
-: RecurrentLayer(size, batchSize, direction, matrix::SinglePrecision())
+RecurrentLayer::RecurrentLayer(
+    size_t layerSize, size_t expectedMiniBatchSize, size_t layers,
+    int direction, int layerType, int inputMode)
+: RecurrentLayer(layerSize, expectedMiniBatchSize, layers,
+    direction, layerType, inputMode, matrix::SinglePrecision())
 {
 
 }
 
-RecurrentLayer::RecurrentLayer(size_t size, size_t batchSize,
-    int direction, const matrix::Precision& precision)
-: _parameters(new MatrixVector({Matrix({size, size}, precision),
-    Matrix({size}, precision), Matrix({size, size}, precision)})),
-  _forwardWeights((*_parameters)[0]), _bias((*_parameters)[1]),
-  _recurrentWeights((*_parameters)[2]), _expectedBatchSize(batchSize),
-  _direction(direction)
+static matrix::RecurrentOpsHandle getHandle(size_t layerSize, size_t expectedMiniBatchSize,
+    size_t timesteps, size_t layers, int direction, int layerType, int inputMode)
+{
+    return matrix::RecurrentOpsHandle(layerSize, expectedMiniBatchSize, timesteps, layers,
+        static_cast<matrix::RecurrentLayerDirection>(direction),
+        static_cast<matrix::RecurrentLayerType>(layerType),
+        static_cast<matrix::RecurrentLayerInputMode>(inputMode));
+}
+
+RecurrentLayer::RecurrentLayer(
+    size_t layerSize, size_t expectedMiniBatchSize, size_t layers,
+    int direction, int layerType, int inputMode,
+    const matrix::Precision& precision)
+: _parameters(new MatrixVector({createWeightsRecurrent(
+    getHandle(layerSize, expectedMiniBatchSize, 1, layers, direction, layerType, inputMode),
+    precision)})),
+  _weights((*_parameters)[0]),
+  _layerSize(layerSize),
+  _expectedMiniBatchSize(expectedMiniBatchSize),
+  _layers(layers),
+  _direction(direction),
+  _layerType(layerType),
+  _inputMode(inputMode)
 {
 
 }
@@ -69,17 +89,21 @@ RecurrentLayer::~RecurrentLayer()
 }
 
 RecurrentLayer::RecurrentLayer(const RecurrentLayer& l)
-: Layer(l), _parameters(std::make_unique<MatrixVector>(*l._parameters)),
- _forwardWeights((*_parameters)[0]),
- _bias((*_parameters)[1]),
- _recurrentWeights((*_parameters)[2]),
- _expectedBatchSize(l._expectedBatchSize),
- _direction(l._direction)
+: Layer(l),
+  _parameters(std::make_unique<MatrixVector>(*l._parameters)),
+  _weights((*_parameters)[0]),
+  _layerSize(l._layerSize),
+  _expectedMiniBatchSize(l._expectedMiniBatchSize),
+  _layers(l._layers),
+  _direction(l._direction),
+  _layerType(l._layerType),
+  _inputMode(l._inputMode)
 {
 
 }
 
-RecurrentLayer& RecurrentLayer::operator=(const RecurrentLayer& l)
+RecurrentLayer& RecurrentLayer::operator=(
+    const RecurrentLayer& l)
 {
     Layer::operator=(l);
 
@@ -88,9 +112,15 @@ RecurrentLayer& RecurrentLayer::operator=(const RecurrentLayer& l)
         return *this;
     }
 
-    _parameters = std::make_unique<MatrixVector>(*l._parameters);
-    _expectedBatchSize = l._expectedBatchSize;
-    _direction = l._direction;
+    std::copy(l._parameters->begin(), l._parameters->end(), _parameters->begin());
+
+    _layerSize  = l._layerSize;
+    _layers     = l._layers;
+    _direction  = l._direction;
+    _layerType  = l._layerType;
+    _inputMode  = l._inputMode;
+
+    _expectedMiniBatchSize = l._expectedMiniBatchSize;
 
     return *this;
 }
@@ -100,45 +130,52 @@ void RecurrentLayer::initialize()
     auto initializationType = util::KnobDatabase::getKnobValue(
         "RecurrentLayer::InitializationType", "glorot");
 
-    if(initializationType == "glorot")
+    auto handle = getHandle(_layerSize, _expectedMiniBatchSize, 1, _layers,
+        _direction, _layerType, _inputMode);
+
+    for(size_t m = 0; m < getTotalWeightMatrices(handle); ++m)
     {
-        //Glorot
-        double e = util::KnobDatabase::getKnobValue(
-            "RecurrentLayer::RandomInitializationEpsilon", 6);
+        auto weightSlice = sliceLayerWeights(_weights, handle, m);
 
-        double epsilon = std::sqrt((e) / (getInputCount() + getOutputCount() + 1));
+        if(isBiasMatrix(handle, m))
+        {
+            zeros(weightSlice);
+        }
+        else
+        {
+            if(initializationType == "glorot")
+            {
+                //Glorot
+                double e = util::KnobDatabase::getKnobValue(
+                    "RecurrentLayer::RandomInitializationEpsilon", 6);
 
-        // generate uniform random values between [0, 1]
-        matrix::rand(_forwardWeights);
-        matrix::rand(_recurrentWeights);
+                double epsilon = std::sqrt((e) / (getInputCount() + getOutputCount() + 1));
 
-        // shift to center on 0, the range is now [-0.5, 0.5]
-        apply(_forwardWeights, _forwardWeights, matrix::Add(-0.5));
-        apply(_recurrentWeights, _recurrentWeights, matrix::Add(-0.5));
+                // generate uniform random values between [0, 1]
+                matrix::rand(weightSlice);
 
-        // scale, the range is now [-epsilon, epsilon]
-        apply(_forwardWeights, _forwardWeights, matrix::Multiply(2.0 * epsilon));
-        apply(_recurrentWeights, _recurrentWeights, matrix::Multiply(2.0 * epsilon));
+                // shift to center on 0, the range is now [-0.5, 0.5]
+                apply(weightSlice, weightSlice, matrix::Add(-0.5));
+
+                // scale, the range is now [-epsilon, epsilon]
+                apply(weightSlice, weightSlice, matrix::Multiply(2.0 * epsilon));
+            }
+            else if(initializationType == "he")
+            {
+                // He
+                double e = util::KnobDatabase::getKnobValue(
+                    "RecurrentLayer::RandomInitializationEpsilon", 1);
+
+                double epsilon = std::sqrt((2.*e) / (getInputCount() * 2));
+
+                // generate normal random values with N(0,1)
+                matrix::randn(weightSlice);
+
+                // scale, the range is now [-epsilon, epsilon]
+                apply(weightSlice, weightSlice, matrix::Multiply(epsilon));
+            }
+        }
     }
-    else if(initializationType == "he")
-    {
-        // He
-        double e = util::KnobDatabase::getKnobValue(
-            "RecurrentLayer::RandomInitializationEpsilon", 1);
-
-        double epsilon = std::sqrt((2.*e) / (getInputCount() * 2));
-
-        // generate normal random values with N(0,1)
-        matrix::randn(_forwardWeights);
-        matrix::randn(_recurrentWeights);
-
-        // scale, the range is now [-epsilon, epsilon]
-        apply(_forwardWeights, _forwardWeights, matrix::Multiply(epsilon));
-        apply(_recurrentWeights, _recurrentWeights, matrix::Multiply(epsilon));
-    }
-
-    // assign bias to 0.0f
-    apply(_bias, _bias, matrix::Fill(0.0f));
 }
 
 static matrix::Matrix unfoldTimeAndBatch(const Matrix& input, size_t batchSize)
@@ -171,227 +208,179 @@ static matrix::Matrix unfoldTimeAndBatch(const Matrix& input, size_t batchSize)
 
 void RecurrentLayer::runForwardImplementation(Bundle& bundle)
 {
-    auto& inputActivationsVector  = bundle[ "inputActivations"].get<MatrixVector>();
-    auto& outputActivationsVector = bundle["outputActivations"].get<MatrixVector>();
+    auto& inputActivationsVector  = bundle[ "inputActivations"].get<matrix::MatrixVector>();
+    auto& outputActivationsVector = bundle["outputActivations"].get<matrix::MatrixVector>();
 
     assert(inputActivationsVector.size() == 1);
 
     saveMatrix("inputActivations", inputActivationsVector.back());
 
-    auto inputActivations = unfoldTimeAndBatch(inputActivationsVector.back(), _expectedBatchSize);
+    auto inputActivations = unfoldTimeAndBatch(inputActivationsVector.back(),
+        _expectedMiniBatchSize);
 
     if(util::isLogEnabled("RecurrentLayer"))
     {
         util::log("RecurrentLayer") << " Running forward propagation through layer: "
-            << _forwardWeights.shapeString() << "\n";
+            << _weights.shapeString() << "\n";
     }
 
     if(util::isLogEnabled("RecurrentLayer::Detail"))
     {
-        util::log("RecurrentLayer::Detail") << "  input: " << inputActivations.debugString();
-        util::log("RecurrentLayer::Detail") << "  forward-weights: "
-            << _forwardWeights.debugString();
-        util::log("RecurrentLayer::Detail") << "  recurrent-weights: "
-            << _recurrentWeights.debugString();
-        util::log("RecurrentLayer::Detail") << "  bias:  " << _bias.debugString();
+        util::log("RecurrentLayer::Detail") << "  input: "
+            << inputActivations.debugString();
+        util::log("RecurrentLayer::Detail") << "  weights: "
+            << _weights.debugString();
     }
 
     size_t activationCount = inputActivations.size()[0];
     size_t miniBatch       = inputActivations.size()[inputActivations.size().size() - 2];
     size_t timesteps       = inputActivations.size().back();
 
-    auto unbiasedOutput = gemm(Matrix(_forwardWeights), false, 1.0, reshape(inputActivations,
-        {activationCount, miniBatch * timesteps}), false);
+    auto handle = getHandle(_layerSize, _expectedMiniBatchSize, timesteps, _layers,
+        _direction, _layerType, _inputMode);
 
-    auto activation = broadcast(unbiasedOutput, _bias, {}, matrix::Add());
+    size_t outputActivationCount = activationCount;
 
-    if(_direction == matrix::RECURRENT_REVERSE_TIME && bundle.contains("inputTimesteps"))
+    if(_direction == matrix::RECURRENT_BIDIRECTIONAL)
     {
-        recurrentZeroEnds(activation, bundle["inputTimesteps"].get<IndexVector>());
+        outputActivationCount *= 2;
     }
+
+    Matrix outputActivations({outputActivationCount, miniBatch, timesteps}, precision());
+    auto reserve = createReserveRecurrent(handle, precision());
+
+    if(bundle.contains("inputTimesteps") && _direction == matrix::RECURRENT_REVERSE)
+    {
+        recurrentZeroEnds(inputActivations, bundle["inputTimesteps"].get<IndexVector>());
+    }
+
+    forwardPropRecurrent(outputActivations,
+                         inputActivations,
+                         reserve,
+                         _weights,
+                         handle);
+
+    saveMatrix("outputActivations", outputActivations);
+
+    saveMatrix("reserve", reserve);
 
     if(util::isLogEnabled("RecurrentLayer::Detail"))
     {
-        util::log("RecurrentLayer::Detail") << "  before-recurrent activation: "
-            << activation.debugString();
+        util::log("RecurrentLayer::Detail") << "  activation: "
+            << outputActivations.debugString();
     }
     else
     {
-        util::log("RecurrentLayer") << "  before-recurrent activation: "
-            << activation.shapeString() << "\n";
+        util::log("RecurrentLayer") << "  activation: "
+            << outputActivations.shapeString() << "\n";
     }
 
-    activation = reshape(activation, {activationCount, miniBatch, timesteps});
-
-    forwardRecurrentActivations(activation, _recurrentWeights,
-        static_cast<lucius::matrix::RecurrentTimeDirection>(_direction),
-        getActivationFunction()->getOperation());
-
-    if(util::isLogEnabled("RecurrentLayer::Detail"))
-    {
-        util::log("RecurrentLayer::Detail") << "  activation: " << activation.debugString();
-    }
-    else
-    {
-        util::log("RecurrentLayer") << "  activation: " << activation.shapeString() << "\n";
-    }
-
-    saveMatrix("outputActivations", activation);
-
-    outputActivationsVector.push_back(std::move(activation));
+    outputActivationsVector.push_back(std::move(outputActivations));
 }
 
 void RecurrentLayer::runReverseImplementation(Bundle& bundle)
 {
-    auto& gradients    = bundle[   "gradients"].get<MatrixVector>();
-    auto& inputDeltas  = bundle[ "inputDeltas"].get<MatrixVector>();
-    auto& outputDeltas = bundle["outputDeltas"].get<MatrixVector>();
+    auto& gradients         = bundle[   "gradients"].get<matrix::MatrixVector>();
+    auto& inputDeltaVector  = bundle[ "inputDeltas"].get<matrix::MatrixVector>();
+    auto& outputDeltaVector = bundle["outputDeltas"].get<matrix::MatrixVector>();
 
-    assert(outputDeltas.size() == 1);
+    assert(outputDeltaVector.size() == 1);
 
-    auto deltas = unfoldTimeAndBatch(outputDeltas.back(), _expectedBatchSize);
+    auto outputDeltas = unfoldTimeAndBatch(outputDeltaVector.back(), _expectedMiniBatchSize);
 
     if(util::isLogEnabled("RecurrentLayer"))
     {
         util::log("RecurrentLayer") << " Running reverse propagation on matrix ("
-            << deltas.shapeString() << ") through layer with dimensions ("
+            << outputDeltas.shapeString() << ") through layer with dimensions ("
             << getInputCount() << " inputs, " << getOutputCount() << " outputs).\n";
-        util::log("RecurrentLayer") << "  layer: " << _forwardWeights.shapeString() << "\n";
+        util::log("RecurrentLayer") << "  layer: "
+            << _weights.shapeString() << "\n";
     }
 
     if(util::isLogEnabled("RecurrentLayer"))
     {
-        util::log("RecurrentLayer") << "  deltas size: " << deltas.shapeString() << "\n";
+        util::log("RecurrentLayer") << "  output deltas size: "
+            << outputDeltas.shapeString() << "\n";
     }
 
     if(util::isLogEnabled("RecurrentLayer::Detail"))
     {
-        util::log("RecurrentLayer::Detail") << "  deltas: " << deltas.debugString();
+        util::log("RecurrentLayer::Detail") << "  output deltas: "
+            << outputDeltas.debugString();
     }
 
-    // Compute deltas for intermediate time steps and the feed forward activations
-    auto outputActivations = unfoldTimeAndBatch(loadMatrix("outputActivations"),
-        _expectedBatchSize);
+    auto unfoldedOutputActivations = loadMatrix("outputActivations");
+    auto reserve = loadMatrix("reserve");
 
-    auto forwardDeltas = reverseRecurrentDeltas(Matrix(deltas), _recurrentWeights,
-        outputActivations, static_cast<lucius::matrix::RecurrentTimeDirection>(_direction),
-        getActivationFunction()->getDerivativeOperation());
+    size_t activationCount = unfoldedOutputActivations.size()[0];
+    size_t miniBatch = unfoldedOutputActivations.size()[
+        unfoldedOutputActivations.size().size() - 2];
+    size_t timesteps = unfoldedOutputActivations.size().back();
+
+    auto handle = getHandle(_layerSize, _expectedMiniBatchSize, timesteps, _layers,
+        _direction, _layerType, _inputMode);
+
+    size_t inputActivationCount = activationCount;
+
+    if(_direction == matrix::RECURRENT_BIDIRECTIONAL)
+    {
+        inputActivationCount /= 2;
+    }
+
+    Matrix inputDeltas({inputActivationCount, miniBatch, timesteps}, precision());
+
+    backPropDeltasRecurrent(inputDeltas,
+                            outputDeltas,
+                            _weights,
+                            unfoldedOutputActivations,
+                            reserve,
+                            handle);
+
+    auto unfoldedInputActivations = loadMatrix("inputActivations");
+
+    Matrix weightGradients(_weights.size(), precision());
+
+    backPropGradientsRecurrent(weightGradients,
+                               unfoldedInputActivations,
+                               unfoldedOutputActivations,
+                               reserve,
+                               handle);
 
     // Compute recurrent weight gradients
     if(util::isLogEnabled("RecurrentLayer"))
     {
-        util::log("RecurrentLayer") << "  forward deltas size: "
-            << forwardDeltas.shapeString() << "\n";
+        util::log("RecurrentLayer") << "  input deltas size: "
+            << inputDeltas.shapeString() << "\n";
     }
 
     if(util::isLogEnabled("RecurrentLayer::Detail"))
     {
-        util::log("RecurrentLayer::Detail") << "  forward deltas: "
-            << forwardDeltas.debugString();
+        util::log("RecurrentLayer::Detail") << "  input deltas: "
+            << inputDeltas.debugString();
     }
-
-    if(util::isLogEnabled("RecurrentLayer"))
-    {
-        util::log("RecurrentLayer") << "  output size: "
-            << outputActivations.shapeString() << "\n";
-    }
-
-    if(util::isLogEnabled("RecurrentLayer::Detail"))
-    {
-        util::log("RecurrentLayer::Detail") << "  output: "
-            << outputActivations.debugString();
-    }
-
-    auto recurrentWeightGradients = reverseRecurrentGradients(outputActivations,
-        forwardDeltas, static_cast<lucius::matrix::RecurrentTimeDirection>(_direction));
-
-    if(util::isLogEnabled("RecurrentLayer"))
-    {
-        util::log("RecurrentLayer") << "  recurrent weight grad shape: "
-            << recurrentWeightGradients.shapeString() << "\n";
-    }
-
-    if(util::isLogEnabled("RecurrentLayer::Detail"))
-    {
-        util::log("RecurrentLayer::Detail") << "  recurrent weight grad: "
-            << recurrentWeightGradients.debugString();
-    }
-
-    auto unfoldedInputActivations = loadMatrix("inputActivations");
-
-    size_t activationCount = unfoldedInputActivations.size()[0];
-    size_t miniBatch       = unfoldedInputActivations.size()[unfoldedInputActivations.size().size() - 2];
-    size_t timesteps       = unfoldedInputActivations.size().back();
-
-    auto forwardInputActivations = reshape(unfoldedInputActivations,
-        {activationCount, miniBatch * timesteps});
-
-    forwardDeltas = reshape(forwardDeltas, {activationCount, miniBatch * timesteps});
-
-    // compute gradient for the forward weights
-    auto samples = miniBatch;
-
-    auto weightGradient = gemm(Matrix(forwardDeltas), false, 1.0 / samples,
-        forwardInputActivations, true);
 
     // add in the weight cost function term
     if(getWeightCostFunction() != nullptr)
     {
-        apply(weightGradient, weightGradient,
-            getWeightCostFunction()->getGradient(_forwardWeights), matrix::Add());
+        apply(weightGradients, weightGradients,
+            getWeightCostFunction()->getGradient(_weights), matrix::Add());
     }
-
-    gradients.push_back(std::move(weightGradient));
 
     if(util::isLogEnabled("RecurrentLayer"))
     {
-        util::log("RecurrentLayer") << "  forward weight grad shape: "
-            << weightGradient.shapeString() << "\n";
+        util::log("RecurrentLayer") << "  weight grad shape: "
+            << weightGradients.shapeString() << "\n";
     }
 
     if(util::isLogEnabled("RecurrentLayer::Detail"))
     {
-        util::log("RecurrentLayer::Detail") << "  forward weight grad: "
-            << weightGradient.debugString();
+        util::log("RecurrentLayer::Detail") << "  weight grad: "
+            << weightGradients.debugString();
     }
 
-    // compute gradient for the bias
-    auto biasGradient = reduce(apply(forwardDeltas, matrix::Divide(samples)),
-        {1}, matrix::Add());
+    gradients.push_back(std::move(weightGradients));
 
-    if(util::isLogEnabled("RecurrentLayer"))
-    {
-        util::log("RecurrentLayer") << "  bias grad shape: " << biasGradient.shapeString() << "\n";
-    }
-
-    if(util::isLogEnabled("RecurrentLayer::Detail"))
-    {
-        util::log("RecurrentLayer::Detail") << "  bias grad: " << biasGradient.debugString();
-    }
-
-    assert(biasGradient.size() == _bias.size());
-
-    gradients.push_back(std::move(biasGradient));
-
-    gradients.push_back(std::move(recurrentWeightGradients));
-
-    // compute deltas for previous layer
-    auto deltasPropagatedReverse = gemm(_forwardWeights, true, forwardDeltas, false);
-
-    Matrix previousLayerDeltas = std::move(deltasPropagatedReverse);
-
-    if(util::isLogEnabled("RecurrentLayer"))
-    {
-        util::log("RecurrentLayer") << "  output shape: "
-            << previousLayerDeltas.shapeString() << "\n";
-    }
-
-    if(util::isLogEnabled("RecurrentLayer::Detail"))
-    {
-        util::log("RecurrentLayer::Detail") << "  output: " << previousLayerDeltas.debugString();
-    }
-
-    inputDeltas.push_back(reshape(previousLayerDeltas, {getInputCount(), miniBatch, timesteps}));
+    inputDeltaVector.push_back(reshape(inputDeltas, {getInputCount(), miniBatch, timesteps}));
 }
 
 MatrixVector& RecurrentLayer::weights()
@@ -406,23 +395,29 @@ const MatrixVector& RecurrentLayer::weights() const
 
 const matrix::Precision& RecurrentLayer::precision() const
 {
-    return _forwardWeights.precision();
+    return _weights.precision();
 }
 
 double RecurrentLayer::computeWeightCost() const
 {
-    return getWeightCostFunction()->getCost(_forwardWeights) +
-        getWeightCostFunction()->getCost(_recurrentWeights);
+    return getWeightCostFunction()->getCost(_weights);
 }
 
 Dimension RecurrentLayer::getInputSize() const
 {
-    return {_forwardWeights.size()[1], 1, 1};
+    return {_layerSize, 1, 1};
 }
 
 Dimension RecurrentLayer::getOutputSize() const
 {
-    return getInputSize();
+    if(_direction == matrix::RECURRENT_BIDIRECTIONAL)
+    {
+        return {2 * _layerSize, 1, 1};
+    }
+    else
+    {
+        return getInputSize();
+    }
 }
 
 size_t RecurrentLayer::getInputCount() const
@@ -432,17 +427,17 @@ size_t RecurrentLayer::getInputCount() const
 
 size_t RecurrentLayer::getOutputCount() const
 {
-    return getInputCount();
+    return getOutputSize().product();
 }
 
 size_t RecurrentLayer::totalNeurons() const
 {
-    return 2 * getInputCount();
+    return getInputCount() * _layers;
 }
 
 size_t RecurrentLayer::totalConnections() const
 {
-    return 2 * _forwardWeights.elements() + _bias.elements();
+    return _weights.elements();
 }
 
 size_t RecurrentLayer::getFloatingPointOperationCount() const
@@ -455,33 +450,36 @@ size_t RecurrentLayer::getActivationMemory() const
     return getOutputCount() * precision().size();
 }
 
-void RecurrentLayer::save(util::OutputTarArchive& archive, util::PropertyTree& properties) const
+void RecurrentLayer::save(util::OutputTarArchive& archive,
+    util::PropertyTree& properties) const
 {
-    properties["forward-weights"] =
-        properties.path() + "." + properties.key() + ".forward-weights.npy";
-    properties["recurrent-weights"] =
-        properties.path() + "." + properties.key() + ".recurrent-weights.npy";
+    properties["weights"] = properties.path() + "." + properties.key() + ".weights.npy";
 
-    properties["bias"] = properties.path() + "." + properties.key() + ".bias.npy";
+    properties["layer-size"] = std::to_string(_layerSize);
+    properties["batch-size"] = std::to_string(_expectedMiniBatchSize);
+    properties["layers"]     = std::to_string(_layers);
 
-    properties["batch-size"] = std::to_string(_expectedBatchSize);
-    properties["direction"] = std::to_string(_direction);
+    properties["direction"]  = std::to_string(_direction);
+    properties["layer-type"] = std::to_string(_layerType);
+    properties["input-mode"] = std::to_string(_inputMode);
 
-    saveToArchive(archive, properties["forward-weights"],   _forwardWeights);
-    saveToArchive(archive, properties["recurrent-weights"], _recurrentWeights);
-    saveToArchive(archive, properties["bias"],    _bias);
+    saveToArchive(archive, properties["weights"], _weights);
 
     saveLayer(archive, properties);
 }
 
-void RecurrentLayer::load(util::InputTarArchive& archive, const util::PropertyTree& properties)
+void RecurrentLayer::load(util::InputTarArchive& archive,
+    const util::PropertyTree& properties)
 {
-    _forwardWeights   = matrix::loadFromArchive(archive, properties["forward-weights"]);
-    _recurrentWeights = matrix::loadFromArchive(archive, properties["recurrent-weights"]);
-    _bias             = matrix::loadFromArchive(archive, properties["bias"]);
+    _weights = matrix::loadFromArchive(archive, properties["weights"]);
 
-    _expectedBatchSize = properties.get<size_t>("batch-size");
+    _layerSize             = properties.get<size_t>("layer-size");
+    _expectedMiniBatchSize = properties.get<size_t>("batch-size");
+    _layers                = properties.get<size_t>("layers");
+
     _direction = properties.get<int>("direction");
+    _layerType = properties.get<int>("layer-type");
+    _inputMode = properties.get<int>("input-mode");
 
     loadLayer(archive, properties);
 }
@@ -499,5 +497,6 @@ std::string RecurrentLayer::getTypeName() const
 }
 
 }
+
 
 
