@@ -14,6 +14,8 @@
 
 #include <lucius/matrix/interface/Matrix.h>
 #include <lucius/matrix/interface/MatrixOperations.h>
+#include <lucius/matrix/interface/MatrixVector.h>
+#include <lucius/matrix/interface/MatrixTransformations.h>
 
 #include <lucius/util/interface/debug.h>
 #include <lucius/util/interface/Knobs.h>
@@ -21,25 +23,29 @@
 
 #include <fstream>
 
+
 namespace lucius
 {
 
 namespace input
 {
 
-InputTextDataProducer::InputTextDataProducer(const std::string& textDatabaseFilename) : _sampleDatabasePath(textDatabaseFilename),_sampleDatabase(nullptr), _initialized(false), _poppedCount(0)
+InputTextDataProducer::InputTextDataProducer(const std::string& textDatabaseFilename) : _sampleDatabasePath(textDatabaseFilename),_sampleDatabaseStream(nullptr), _initialized(false), _segmentSize(0), _poppedCount(0), _outputCount(0)
 {
-    
 }
 
-InputTextDataProducer::InputTextDataProducer(std::istream& textDatabase) : _sampleDatabase(&textDatabase), _initialized(false), _poppedCount(0)
+InputTextDataProducer::InputTextDataProducer(std::istream& textDatabase) : _sampleDatabaseStream(&textDatabase), _initialized(false), _segmentSize(0), _poppedCount(0), _outputCount(0)
 {
-    
 }
 
 InputTextDataProducer::~InputTextDataProducer()
 {
 
+}
+
+size_t InputTextDataProducer::getSegmentSize()
+{
+    return _segmentSize;
 }
 
 void InputTextDataProducer::initialize()
@@ -49,37 +55,92 @@ void InputTextDataProducer::initialize()
         return;
     }
     util::log("InputTextDataProducer") << "Initializing from text database '" << _sampleDatabasePath << "'\n";
-    
-    _segmentSize = util::KnobDatabase::getKnobValue("InputTextDataProducer::SegmentSize", 200);
 
     createTextDatabase();
 
     _initialized = true;    
 }
 
+std::string InputTextDataProducer::getDataFromDescriptor(const FileDescriptor& descriptor)
+{
+    if(descriptor.getType() == FileDescriptor::FILE_DESCRIPTOR)
+    {
+        std::ifstream stream(descriptor.getFilename());
+
+        std::string result(' ', descriptor.getSizeInFile());
+
+        stream.read(const_cast<char*>(result.data()), descriptor.getSizeInFile());
+
+        return result;
+    }
+    else
+    {
+        return descriptor.getLabel();
+    }
+}
+
+void InputTextDataProducer::getReferenceActivationsForString(const std::string& sample, Matrix& referenceActivations, size_t miniBatch)
+{
+    if(sample.empty())
+    {
+        return;
+    }
+
+    for(size_t sampleIndex = 1; sampleIndex < sample.size(); ++sampleIndex)
+    {
+        size_t characterPositionInGraphemeSet = getModel()->getOutputCount();
+
+        for(size_t index = 0; index < _model->getOutputCount(); ++index)
+        {
+            if(sample.substr(sampleIndex, 1) == getModel()->getOutputLabel(index))
+            {
+                characterPositionInGraphemeSet = index;
+                break;
+            }
+        }
+
+        if(characterPositionInGraphemeSet == _model->getOutputCount())
+        {
+            throw std::runtime_error("Could not match loaded grapheme '" + sample.substr(sampleIndex, 1) +
+                "' against any known grapheme.");
+        }
+
+        referenceActivations[{characterPositionInGraphemeSet, miniBatch, sampleIndex - 1}] = 1.0;
+    }
+}
+
 network::Bundle InputTextDataProducer::pop()
 {
+    assert(!empty());
+
     // get minibatch size
-    auto miniBatchSize = this->getBatchSize();
+    auto miniBatchSize = getBatchSize();
 
-    Matrix inputActivations = matrix::zeros({this->getModel()->getInputCount(), miniBatchSize, _segmentSize},
+    Matrix inputActivations = matrix::zeros({getModel()->getInputCount(), miniBatchSize, _segmentSize-1},
            matrix::Precision::getDefaultPrecision());
-
+    Matrix referenceActivations = matrix::zeros({getModel()->getInputCount(), miniBatchSize, _segmentSize-1},
+           matrix::Precision::getDefaultPrecision());
     // get minibatch number of descriptors (key)
     for (size_t i = 0; i < miniBatchSize; ++i)
     {
+        auto data = getDataFromDescriptor(_descriptors[_poppedCount+i]);
+
         // one hot encoded the samples within descriptors
-        convertChunkToOneHot(_descriptors[_poppedCount+i].getFilename(), _descriptors[_poppedCount+i].getOffsetInFile(), inputActivations, i);
+        convertChunkToOneHot(data, inputActivations, i);
+        getReferenceActivationsForString(data, referenceActivations, i);
     }
     // add one hot encoded matrix to bundle
     // add one hot encoded reference matrix (shifted to next char) to bundle 
     _poppedCount += miniBatchSize;
-    return Bundle();
+
+    return Bundle(
+        std::make_pair("inputActivations", matrix::MatrixVector({inputActivations})),
+        std::make_pair("referenceActivations", matrix::MatrixVector({referenceActivations})));
 }
 
 bool InputTextDataProducer::empty() const
 {
-    return (_descriptors.size() - _poppedCount) == 0;
+    return _poppedCount >= getUniqueSampleCount();
 }
 
 void InputTextDataProducer::reset()
@@ -90,37 +151,51 @@ void InputTextDataProducer::reset()
 
 size_t InputTextDataProducer::getUniqueSampleCount() const
 {
-    return _descriptors.size();
+    return _descriptors.size() - (_descriptors.size() % getBatchSize());
 }
 
-void InputTextDataProducer::convertChunkToOneHot(const std::string& filename, size_t offsetInFile, Matrix inputActivations, size_t miniBatch)
+void InputTextDataProducer::setSampleLength(size_t length)
 {
-    std::ifstream file(filename);
+    _segmentSize = length;
+}
 
-    file.seekg(offsetInFile);
+void InputTextDataProducer::setModel(model::Model* model)
+{
+    _model = model;
 
-    for(size_t charPosInFile = 0; charPosInFile < _segmentSize; ++charPosInFile)
+    _outputCount = getModel()->getOutputCount();
+
+    _outputLabels.clear();
+
+    for(size_t i = 0; i < _outputCount; ++i)
     {
-        std::string c;
-        
-        c.push_back(file.get());
+        _outputLabels[getModel()->getOutputLabel(i)] = i;
+    }
 
-        // TODO check for file read errors
+    _segmentSize = model->getAttribute<size_t>("SegmentSize");
+}
 
-        size_t characterPositionInGraphemeSet = getModel()->getOutputCount();
+void InputTextDataProducer::convertChunkToOneHot(const std::string& data, Matrix inputActivations, size_t miniBatch)
+{
+    if(data.empty())
+    {
+        return;
+    }
 
-        for(size_t index = 0; index < getModel()->getOutputCount(); ++index)
+    for(size_t charPosInFile = 0; charPosInFile < data.size() - 1; ++charPosInFile)
+    {
+        char c = data[charPosInFile];
+
+        size_t characterPositionInGraphemeSet = _outputCount;
+
+        if(_outputLabels.count(std::string(1, c)) != 0)
         {
-            if(c == getModel()->getOutputLabel(index))
-            {
-                characterPositionInGraphemeSet = index;
-                break;
-            }
+            characterPositionInGraphemeSet = _outputLabels[std::string(1, c)];
         }
 
-        if(characterPositionInGraphemeSet == getModel()->getOutputCount())
+        if(characterPositionInGraphemeSet == _outputCount)
         {
-            throw std::runtime_error("Could not match loaded grapheme '" + c +
+            throw std::runtime_error("Could not match loaded grapheme '" + std::string(1, c) +
                 "' against any known grapheme.");
         }
 
@@ -135,13 +210,13 @@ void InputTextDataProducer::createTextDatabase()
 
     std::unique_ptr<database::SampleDatabase> sampleDatabase;
     
-    if(_sampleDatabase == nullptr)
+    if(_sampleDatabaseStream == nullptr)
     {
         sampleDatabase.reset(new database::SampleDatabase(_sampleDatabasePath));
     }
     else
     {
-        sampleDatabase.reset(new database::SampleDatabase(*_sampleDatabase));
+        sampleDatabase.reset(new database::SampleDatabase(*_sampleDatabaseStream));
     }
 
     sampleDatabase->load();
@@ -152,27 +227,44 @@ void InputTextDataProducer::createTextDatabase()
         {
             if(sample.hasLabel())
             {
-                util::log("InputTextDataProducer::Detail") << " found labeled image '" << sample.path() << "' with label '" << sample.label() << "'\n";
+                util::log("InputTextDataProducer::Detail") << " found labeled text '"
+                    << sample.path() << "' with label '" << sample.label() << "'\n";
+
+
+                size_t totalSize = sample.label().size();
+
+                size_t iterationsInLabel = totalSize / _segmentSize;
+                size_t leftOver = totalSize % _segmentSize;
+
+                for(size_t i = 0; i < iterationsInLabel; ++i)
+                {
+                    _descriptors.push_back(FileDescriptor(sample.label().substr(i*_segmentSize, _segmentSize)));
+                }
+
+                if(leftOver > 0)
+                {
+                    _descriptors.push_back(FileDescriptor(sample.label().substr(iterationsInLabel*_segmentSize)));
+                }
             }
             else
             {
-                util::log("InputTextDataProducer::Detail") << "  found unlabeled image '" << sample.path() << "'\n";
-            }
+                util::log("InputTextDataProducer::Detail") << "  found unlabeled text file '" << sample.path() << "'\n";
 
-            //get file size
-            size_t fileSize         = util::getFileSize(sample.path());
-            size_t iterationsInFile = fileSize/_segmentSize;
-            size_t leftOver         = fileSize%_segmentSize;
+                //get file size
+                size_t fileSize         = util::getFileSize(sample.path());
+                size_t iterationsInFile = fileSize/_segmentSize;
+                size_t leftOver         = fileSize%_segmentSize;
 
-            for(size_t i = 0; i < iterationsInFile; ++i) 
-            {
-                _descriptors.push_back(FileDescriptor(sample.path(), i*_segmentSize));
-            }
-            
-            //leftover
-            if(leftOver > 0)
-            {
-                _descriptors.push_back(FileDescriptor(sample.path(), iterationsInFile*_segmentSize));
+                for(size_t i = 0; i < iterationsInFile; ++i) 
+                {
+                    _descriptors.push_back(FileDescriptor(sample.path(), i*_segmentSize, _segmentSize));
+                }
+                
+                //leftover
+                if(leftOver > 0)
+                {
+                    _descriptors.push_back(FileDescriptor(sample.path(), iterationsInFile*_segmentSize, leftOver));
+                }
             }
         }
     }

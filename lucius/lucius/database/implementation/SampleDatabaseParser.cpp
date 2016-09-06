@@ -116,7 +116,7 @@ static void parseLabeledPath(SampleDatabase* database, const std::string& line,
 
     auto label = util::strip(toLower(removeWhitespace(components[1])), "\"");
 
-    if(video::Image::isPathAnImage(filePath) || audio::Audio::isPathAnAudio(filePath))
+    if(video::Image::isPathAnImage(filePath) || audio::Audio::isPathAnAudio(filePath) || util::isPathText(filePath))
     {
         if(components.size() != 2)
         {

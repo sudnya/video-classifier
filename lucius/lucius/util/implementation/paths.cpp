@@ -299,6 +299,13 @@ void copyFile(const std::string& outputPath, const std::string& inputPath)
     }
 }
 
+bool isPathText(const std::string& path)
+{
+    auto extension = util::getExtension(path);
+
+    return (extension == ".txt");
+}
+
 }
 
 }
