@@ -24,7 +24,8 @@
 namespace lucius
 {
 
-static void createDirectories(const std::string& outputPath, const std::string& setName, const util::StringVector& labels)
+static void createDirectories(const std::string& outputPath, const std::string& setName,
+    const util::StringVector& labels)
 {
     for(auto& label : labels)
     {
@@ -32,22 +33,25 @@ static void createDirectories(const std::string& outputPath, const std::string& 
     }
 }
 
-static void copySampleToDatabase(database::SampleDatabase& outputDatabase, const database::Sample& sample)
+static void copySampleToDatabase(database::SampleDatabase& outputDatabase,
+    const database::Sample& sample)
 {
     auto directory = util::getDirectory(outputDatabase.path());
 
-    auto path = util::joinPaths(directory, util::joinPaths(sample.label(), util::getFile(sample.path())));
+    auto path = util::joinPaths(directory, util::joinPaths(sample.label(),
+        util::getFile(sample.path())));
 
     util::log("LuciusMakeDataset") << "Copying sample '" + sample.path() + "' to '" + path + "'\n";
 
     util::copyFile(path, sample.path());
 
-    outputDatabase.addSample(database::Sample(util::joinPaths(sample.label(), util::getFile(sample.path())), sample.label()));
+    outputDatabase.addSample(database::Sample(util::joinPaths(sample.label(),
+        util::getFile(sample.path())), sample.label()));
 }
 
 static bool validateSample(const database::Sample& sample)
 {
-    if(sample.isImageSample() && video::Image::isPathAnImage(sample.path()))
+    if(sample.isImageSample() && video::Image::isPathAnImageFile(sample.path()))
     {
         video::Image image(sample.path());
 
@@ -106,7 +110,8 @@ static void randomlyShuffleSamples(database::SampleDatabase& trainingDatabase,
     }
 }
 
-static void splitDatabase(const std::string& outputPath, const std::string& inputFileName, size_t validationSamples)
+static void splitDatabase(const std::string& outputPath, const std::string& inputFileName,
+    size_t validationSamples)
 {
     database::SampleDatabase inputDatabase(inputFileName);
 
@@ -115,8 +120,10 @@ static void splitDatabase(const std::string& outputPath, const std::string& inpu
     createDirectories(outputPath, "training", inputDatabase.getAllPossibleLabels());
     createDirectories(outputPath, "validation", inputDatabase.getAllPossibleLabels());
 
-    database::SampleDatabase trainingDatabase(util::joinPaths(outputPath, util::joinPaths("training", "database.txt")));
-    database::SampleDatabase validationDatabase(util::joinPaths(outputPath, util::joinPaths("validation", "database.txt")));
+    database::SampleDatabase trainingDatabase(util::joinPaths(outputPath,
+        util::joinPaths("training", "database.txt")));
+    database::SampleDatabase validationDatabase(util::joinPaths(outputPath,
+        util::joinPaths("validation", "database.txt")));
 
     randomlyShuffleSamples(trainingDatabase, validationDatabase, inputDatabase, validationSamples);
 

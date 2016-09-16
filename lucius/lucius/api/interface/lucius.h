@@ -1,6 +1,9 @@
 
 #pragma once
 
+// Standard Library Includes
+#include <cstddef>
+
 typedef void* Model;
 typedef void* DataItem;
 typedef const char* CString;
@@ -109,6 +112,12 @@ extern "C" int luciusInfer(DataItem* output, Model model, DataItem input);
     \returns Status indicating success or failure.
  */
 extern "C" int luciusDestroyModel(Model model);
+
+/*! \brief Enable all logs.
+
+    \returns Status indicating success or failure.
+*/
+extern "C" int luciusEnableAllLogs();
 
 
 

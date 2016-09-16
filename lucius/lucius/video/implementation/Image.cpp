@@ -321,7 +321,7 @@ size_t Image::getPosition(size_t x, size_t y, size_t color) const
         x * colorComponents() + color;
 }
 
-bool Image::isPathAnImage(const std::string& path)
+bool Image::isPathAnImageFile(const std::string& path)
 {
     auto extension = util::getExtension(path);
 

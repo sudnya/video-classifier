@@ -13,6 +13,7 @@
 #include <lucius/model/interface/Model.h>
 
 #include <lucius/results/interface/ResultProcessorFactory.h>
+#include <lucius/results/interface/ResultProcessor.h>
 #include <lucius/results/interface/LabelMatchResult.h>
 #include <lucius/results/interface/LabelResult.h>
 #include <lucius/results/interface/CostResult.h>
@@ -32,7 +33,7 @@ namespace engine
 {
 
 ClassifierEngine::ClassifierEngine()
-: _shouldUseLabeledData(true)
+: _shouldUseLabeledData(false)
 {
     setResultProcessor(results::ResultProcessorFactory::create("LabelMatchResultProcessor"));
     setEpochs(1);
@@ -47,7 +48,8 @@ void ClassifierEngine::setModel(Model* model)
 {
     if(model->hasAttribute("UsesGraphemes") && model->getAttribute<bool>("UsesGraphemes"))
     {
-        setResultProcessor(results::ResultProcessorFactory::create("GraphemeMatchResultProcessor"));
+        setResultProcessor(results::ResultProcessorFactory::create(
+            "GraphemeMatchResultProcessor"));
     }
 
     Engine::setModel(model);

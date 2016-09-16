@@ -14,8 +14,8 @@ lucius_libs = env['LUCIUS_LIBS']
 
 programs = []
 
-programs.append(env.Program('lucius-classifier', \
-    ['tools/lucius-classifier.cpp'], LIBS=lucius_libs))
+programs.append(env.Program('lucius-inference-engine', \
+    ['tools/lucius-inference-engine.cpp'], LIBS=lucius_libs))
 
 programs.append(env.Command("lucius-train-model.py",
     "tools/lucius-train-model.py", Copy("$TARGET", "$SOURCE")))

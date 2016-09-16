@@ -48,6 +48,11 @@ public:
     /*! \brief Get the total number of unique samples that can be produced. */
     virtual size_t getUniqueSampleCount() const;
 
+public:
+    /*! \brief Add a new sample to the producer directly. */
+    virtual void addRawSample(const void* data, size_t size, const std::string& type,
+        const std::string& label);
+
 private:
     std::unique_ptr<InputAudioDataProducerImplementation> _implementation;
 

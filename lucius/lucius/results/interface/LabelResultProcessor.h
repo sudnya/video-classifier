@@ -1,4 +1,4 @@
-/*    \file   LabelResultProcessor.h
+/*  \file   LabelResultProcessor.h
     \date   Saturday August 10, 2014
     \author Gregory Diamos <solusstultus@gmail.com>
     \brief  The header file for the LabelResultProcessor class.
@@ -6,7 +6,11 @@
 
 #pragma once
 
+// Lucius Includes
 #include <lucius/results/interface/ResultProcessor.h>
+
+// Forward Declartions
+namespace lucius { namespace results { class LabelResultProcessorImplementation; } }
 
 namespace lucius
 {
@@ -18,6 +22,7 @@ namespace results
 class LabelResultProcessor : public ResultProcessor
 {
 public:
+    LabelResultProcessor();
     virtual ~LabelResultProcessor();
 
 public:
@@ -27,6 +32,9 @@ public:
 public:
     /*! \brief Return a description of the results. */
     virtual std::string toString() const;
+
+private:
+    std::unique_ptr<LabelResultProcessorImplementation> _implementation;
 
 };
 

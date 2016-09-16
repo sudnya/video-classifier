@@ -17,56 +17,58 @@
 
 #include <lucius/util/interface/ParameterPack.h>
 
+#include <lucius/util/interface/memory.h>
+
 namespace lucius
 {
 
 namespace results
 {
 
-ResultProcessor* ResultProcessorFactory::create(const std::string& name)
+std::unique_ptr<ResultProcessor> ResultProcessorFactory::create(const std::string& name)
 {
     return create(name, util::ParameterPack());
 }
 
 
-ResultProcessor* ResultProcessorFactory::create(const std::string& name,
+std::unique_ptr<ResultProcessor> ResultProcessorFactory::create(const std::string& name,
     const util::ParameterPack& parameters)
 {
     if(name == "NullResultProcessor")
     {
-        return new NullResultProcessor;
+        return std::make_unique<NullResultProcessor>();
     }
     else if(name == "LabelResultProcessor")
     {
-        return new LabelResultProcessor;
+        return std::make_unique<LabelResultProcessor>();
     }
     else if(name == "LabelMatchResultProcessor")
     {
-        return new LabelMatchResultProcessor;
+        return std::make_unique<LabelMatchResultProcessor>();
     }
     else if(name == "GraphemeMatchResultProcessor")
     {
-        return new GraphemeMatchResultProcessor;
+        return std::make_unique<GraphemeMatchResultProcessor>();
     }
     else if(name == "FeatureResultProcessor")
     {
-        return new FeatureResultProcessor;
+        return std::make_unique<FeatureResultProcessor>();
     }
     else if(name == "VideoDisplayResultProcessor")
     {
-        return new VideoDisplayResultProcessor;
+        return std::make_unique<VideoDisplayResultProcessor>();
     }
     else if(name == "CostLoggingResultProcessor")
     {
         auto outputPath = parameters.get<std::string>("OutputPath", "");
 
-        return new CostLoggingResultProcessor(outputPath);
+        return std::make_unique<CostLoggingResultProcessor>(outputPath);
     }
 
-    return nullptr;
+    return std::unique_ptr<ResultProcessor>(nullptr);
 }
 
-ResultProcessor* ResultProcessorFactory::create()
+std::unique_ptr<ResultProcessor> ResultProcessorFactory::create()
 {
     return create("NullResultProcessor");
 }
