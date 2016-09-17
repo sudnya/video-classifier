@@ -110,7 +110,6 @@ def enableAllLogs(liblucius, logger):
 
     checkStatus(status, liblucius)
 
-
 class Model:
     def __init__(self, modelPath, isVerbose=False):
         self.path = modelPath
