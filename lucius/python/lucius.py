@@ -112,7 +112,7 @@ def enableAllLogs(liblucius, logger):
 
 
 class Model:
-    def __init__(self, modelPath, isVerbose):
+    def __init__(self, modelPath, isVerbose=False):
         self.path = modelPath
         self.isVerbose = isVerbose
 

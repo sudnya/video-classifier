@@ -86,7 +86,7 @@ class DescribeAudio(Resource):
     def describeAudio(self, audioSegment):
         audioData = self.getWavData(audioSegment)
 
-        return model.infer(audioData, 'wav')
+        return self.model.infer(audioData, '.wav')
 
     def formResponse(self, description, dataType):
         response = {}
@@ -96,21 +96,24 @@ class DescribeAudio(Resource):
 
         return response
 
+    @classmethod
+    def create(cls, model):
+        cls.model = model
+        return cls
+
+
 class ArtifactsApplication:
     def __init__(self):
         self.application = Flask(__name__)
-        self.api = Api(application)
+        self.api = Api(self.application)
         self.defaultModelPath = "model.tar.gz"
 
-
     def run(self, debug=False):
-        with Model(defaultModelPath) as model:
-            describer = DescribeAudio()
-            describer.setModel(model)
+        with Model(self.defaultModelPath) as model:
+            DescribeAudioWithModel = DescribeAudio.create(model)
+            self.api.add_resource(DescribeAudioWithModel, "/audio/describe")
 
-            self.api.add_resource(describer, "/audio/describe")
-
-            self.application.run(debug)
+            self.application.run(debug=debug)
 
 if __name__ == '__main__':
     ArtifactsApplication().run(debug=True)
