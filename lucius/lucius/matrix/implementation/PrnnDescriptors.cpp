@@ -15,6 +15,9 @@
 #include <lucius/util/interface/memory.h>
 #include <lucius/util/interface/debug.h>
 
+// Standard Library Includes
+#include <algorithm>
+
 namespace lucius
 {
 

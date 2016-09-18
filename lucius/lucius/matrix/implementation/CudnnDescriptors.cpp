@@ -19,6 +19,7 @@
 // Standard Library Includes
 #include <cassert>
 #include <vector>
+#include <algorithm>
 
 namespace lucius
 {

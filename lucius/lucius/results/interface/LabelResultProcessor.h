@@ -9,6 +9,9 @@
 // Lucius Includes
 #include <lucius/results/interface/ResultProcessor.h>
 
+// Standard Library Includes
+#include <memory>
+
 // Forward Declartions
 namespace lucius { namespace results { class LabelResultProcessorImplementation; } }
 

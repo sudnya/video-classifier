@@ -24,13 +24,13 @@
 
 #include <lucius/util/interface/debug.h>
 
-
 // Standard Library Includes
 #include <string>
 #include <thread>
 #include <mutex>
 #include <map>
 #include <vector>
+#include <cstring>
 
 static std::mutex messageMutex;
 static std::map<std::thread::id, std::string> lastErrorMessage;

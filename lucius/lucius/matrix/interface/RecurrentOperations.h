@@ -3,6 +3,7 @@
 // Standard Library Includes
 #include <vector>
 #include <cstddef>
+#include <string>
 
 // Forward Declarations
 namespace lucius { namespace matrix { class Matrix;    } }
