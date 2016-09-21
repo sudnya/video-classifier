@@ -185,28 +185,45 @@ static void appendInputSize(util::ParameterPack& parameters, const matrix::Dimen
 static void setupOutputLayerParameters(model::Model& model,
     util::ParameterPack& layerParameters, const util::PropertyTree& specification)
 {
+    database::SampleDatabase::StringVector labels;
+
     if(!specification.exists("infer-outputs-from"))
     {
-        return;
-    }
-
-    auto datasetPath = specification.get<std::string>("infer-outputs-from");
-
-    database::SampleDatabase inputDatabase(datasetPath);
-
-    if(specification.exists("model-attributes.Graphemes"))
-    {
-        for(auto& grapheme : specification.get("model-attributes.Graphemes"))
+        if(specification.exists("model-attributes.Graphemes"))
         {
-            inputDatabase.addGrapheme(grapheme.key());
+            for(auto& grapheme : specification.get("model-attributes.Graphemes"))
+            {
+                labels.push_back(grapheme.key());
+            }
+
+            model.setAttribute("UsesGraphemes", "1");
+        }
+    }
+    else
+    {
+        auto datasetPath = specification.get<std::string>("infer-outputs-from");
+
+        database::SampleDatabase inputDatabase(datasetPath);
+
+        if(specification.exists("model-attributes.Graphemes"))
+        {
+            for(auto& grapheme : specification.get("model-attributes.Graphemes"))
+            {
+                inputDatabase.addGrapheme(grapheme.key());
+            }
+
+            model.setAttribute("UsesGraphemes", "1");
         }
 
-        model.setAttribute("UsesGraphemes", "1");
+        inputDatabase.load();
+
+        labels = inputDatabase.getAllPossibleLabels();
+
+        if(specification.exists("model-attributes.Graphemes"))
+        {
+            inputDatabase.addGrapheme("-SEPARATOR-");
+        }
     }
-
-    inputDatabase.load();
-
-    auto labels = inputDatabase.getAllPossibleLabels();
 
     size_t labelCount = labels.size();
     size_t index = 0;
@@ -215,7 +232,6 @@ static void setupOutputLayerParameters(model::Model& model,
     if(specification.exists("model-attributes.Graphemes"))
     {
         model.setOutputLabel(index++, "-SEPARATOR-");
-        inputDatabase.addGrapheme("-SEPARATOR-");
         labelCount++;
     }
 

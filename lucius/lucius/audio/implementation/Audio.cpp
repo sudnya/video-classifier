@@ -30,8 +30,8 @@ Audio::Audio(const std::string& path, const std::string& label)
 
 }
 
-Audio::Audio(std::istream& stream, const std::string& format)
-: _isLoaded(false), _isHeaderLoaded(false), _unpaddedSequenceLength(0)
+Audio::Audio(std::istream& stream, const std::string& format, const std::string& label)
+: _isLoaded(false), _isHeaderLoaded(false), _defaultLabel(label), _unpaddedSequenceLength(0)
 {
     _load(stream, format);
 }
@@ -81,10 +81,13 @@ void Audio::cacheHeader()
 
 void Audio::invalidateCache()
 {
-    _isLoaded = false;
-    _isHeaderLoaded = false;
+    if(!path().empty())
+    {
+        _isLoaded = false;
+        _isHeaderLoaded = false;
 
-   _data = ByteVector();
+       _data = ByteVector();
+    }
 }
 
 bool Audio::isCached() const
@@ -333,9 +336,11 @@ bool Audio::operator!=(const Audio& audio) const
     return !(*this == audio);
 }
 
-bool Audio::isPathAnAudio(const std::string& path)
+bool Audio::isPathAnAudioFile(const std::string& path)
 {
     auto extension = util::getExtension(path);
+
+    util::log("Audio") << "Checking extension '" + extension + "' from path '" + path + "'\n";
 
     return AudioLibraryInterface::isAudioTypeSupported(extension);
 }

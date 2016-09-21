@@ -76,7 +76,7 @@ public:
     const std::string& path() const;
 
 public:
-    static bool isPathAVideo(const std::string& path);
+    static bool isPathAVideoFile(const std::string& path);
 
 private:
     void _seek(unsigned int frame);

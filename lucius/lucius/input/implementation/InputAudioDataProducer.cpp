@@ -152,12 +152,28 @@ public:
         _sampleCache.reset();
     }
 
+public:
+    void addRawSample(const void* data, size_t size,
+        const std::string& type, const std::string& label)
+    {
+        util::log("InputAudioDataProducer::Detail") << " adding raw sample type '"
+            << type << "' and label '" << label << "'\n";
+        std::stringstream stream;
+
+        stream.write(reinterpret_cast<const char*>(data), size);
+
+        _sampleCache.addAudio(Audio(stream, type, label));
+    }
+
 private:
     AudioVector _getBatch()
     {
         AudioVector batch;
 
         auto batchSize = _producer->getBatchSize();
+
+        util::log("InputAudioDataProducer::Detail") << "Getting next mini batch with size '"
+            << batchSize << "'\n";
 
         for(size_t i = 0; i < batchSize; ++i)
         {
@@ -287,6 +303,11 @@ private:
 
     StringVector _toGraphemes(const std::string& label)
     {
+        if(label.empty())
+        {
+            return StringVector();
+        }
+
         if(_graphemes.empty())
         {
             throw std::runtime_error("Could not match remaining label '" + label +
@@ -364,6 +385,12 @@ private:
 private:
     void _parseAudioDatabase()
     {
+        if(_databaseFilename.empty())
+        {
+            util::log("InputAudioDataProducer") << " audio database not specified, skipping.\n";
+            return;
+        }
+
         util::log("InputAudioDataProducer") << " scanning audio database '"
             << _databaseFilename << "'\n";
 
@@ -592,10 +619,20 @@ private:
 
             size_t frameCount = _audio.back().duration() * frequency / _getFrameSize();
 
+            util::log("InputAudioDataProducer::Detail") << "Adding audio sample with frameCount "
+                << frameCount << "\n";
+
             if(frameCount <= _totalTimestepsPerUtterance)
             {
+                util::log("InputAudioDataProducer::Detail") << " Adding it with index " << index
+                    << ".\n";
                 _descriptors.push_back(AudioDescriptor(AudioDescriptor::AudioType,
                     index, frameCount));
+            }
+            else
+            {
+                util::log("InputAudioDataProducer::Detail") << " Skipping it because it is "
+                    "longer than the max audio size '" << _totalTimestepsPerUtterance << "'.\n";
             }
         }
 
@@ -832,7 +869,12 @@ private:
 
         void _updateCache(AudioVector& audio, CacheSet& cacheSet)
         {
-            CacheSet newCacheSet = _samples[_nextSample].cacheSet;
+            CacheSet newCacheSet;
+
+            if(!empty())
+            {
+                newCacheSet = _samples[_nextSample].cacheSet;
+            }
 
             for(auto& element : cacheSet)
             {
@@ -944,6 +986,11 @@ size_t InputAudioDataProducer::getUniqueSampleCount() const
     return _implementation->getUniqueSampleCount();
 }
 
+void InputAudioDataProducer::addRawSample(const void* data, size_t size, const std::string& type,
+    const std::string& label)
+{
+    _implementation->addRawSample(data, size, type, label);
+}
 
 }
 

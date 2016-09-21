@@ -41,16 +41,16 @@ typedef matrix::IndexVector IndexVector;
 typedef matrix::Dimension Dimension;
 
 RecurrentLayer::RecurrentLayer()
-: RecurrentLayer(1, 1, 1, matrix::RECURRENT_FORWARD, matrix::RECURRENT_SIMPLE_TYPE,
+: RecurrentLayer(1, 1, matrix::RECURRENT_FORWARD, matrix::RECURRENT_SIMPLE_TYPE,
     matrix::RECURRENT_LINEAR_INPUT)
 {
 
 }
 
 RecurrentLayer::RecurrentLayer(
-    size_t layerSize, size_t expectedMiniBatchSize, size_t layers,
+    size_t layerSize, size_t layers,
     int direction, int layerType, int inputMode)
-: RecurrentLayer(layerSize, expectedMiniBatchSize, layers,
+: RecurrentLayer(layerSize, layers,
     direction, layerType, inputMode, matrix::SinglePrecision())
 {
 
@@ -66,15 +66,14 @@ static matrix::RecurrentOpsHandle getHandle(size_t layerSize, size_t expectedMin
 }
 
 RecurrentLayer::RecurrentLayer(
-    size_t layerSize, size_t expectedMiniBatchSize, size_t layers,
+    size_t layerSize, size_t layers,
     int direction, int layerType, int inputMode,
     const matrix::Precision& precision)
 : _parameters(new MatrixVector({createWeightsRecurrent(
-    getHandle(layerSize, expectedMiniBatchSize, 1, layers, direction, layerType, inputMode),
+    getHandle(layerSize, 1, 1, layers, direction, layerType, inputMode),
     precision)})),
   _weights((*_parameters)[0]),
   _layerSize(layerSize),
-  _expectedMiniBatchSize(expectedMiniBatchSize),
   _layers(layers),
   _direction(direction),
   _layerType(layerType),
@@ -93,7 +92,6 @@ RecurrentLayer::RecurrentLayer(const RecurrentLayer& l)
   _parameters(std::make_unique<MatrixVector>(*l._parameters)),
   _weights((*_parameters)[0]),
   _layerSize(l._layerSize),
-  _expectedMiniBatchSize(l._expectedMiniBatchSize),
   _layers(l._layers),
   _direction(l._direction),
   _layerType(l._layerType),
@@ -120,8 +118,6 @@ RecurrentLayer& RecurrentLayer::operator=(
     _layerType  = l._layerType;
     _inputMode  = l._inputMode;
 
-    _expectedMiniBatchSize = l._expectedMiniBatchSize;
-
     return *this;
 }
 
@@ -130,7 +126,7 @@ void RecurrentLayer::initialize()
     auto initializationType = util::KnobDatabase::getKnobValue(
         "RecurrentLayer::InitializationType", "glorot");
 
-    auto handle = getHandle(_layerSize, _expectedMiniBatchSize, 1, _layers,
+    auto handle = getHandle(_layerSize, 1, 1, _layers,
         _direction, _layerType, _inputMode);
 
     for(size_t m = 0; m < getTotalWeightMatrices(handle); ++m)
@@ -178,7 +174,7 @@ void RecurrentLayer::initialize()
     }
 }
 
-static matrix::Matrix unfoldTimeAndBatch(const Matrix& input, size_t batchSize)
+static matrix::Matrix unfoldTimeAndBatch(const Matrix& input)
 {
     size_t activationCount = input.size()[0];
 
@@ -192,16 +188,10 @@ static matrix::Matrix unfoldTimeAndBatch(const Matrix& input, size_t batchSize)
     size_t miniBatch = 1;
     size_t timesteps = 1;
 
-    if(input.size().size() == 2)
-    {
-        miniBatch = batchSize;
-        timesteps = input.size()[1] / miniBatch;
-    }
-    else
-    {
-        miniBatch = input.size()[input.size().size() - 2];
-        timesteps = input.size()[input.size().size() - 1];
-    }
+    assert(input.size().size() > 2);
+
+    miniBatch = input.size()[input.size().size() - 2];
+    timesteps = input.size()[input.size().size() - 1];
 
     return reshape(input, {activationCount, miniBatch, timesteps});
 }
@@ -213,10 +203,9 @@ void RecurrentLayer::runForwardImplementation(Bundle& bundle)
 
     assert(inputActivationsVector.size() == 1);
 
-    saveMatrix("inputActivations", inputActivationsVector.back());
+    auto inputActivations = unfoldTimeAndBatch(inputActivationsVector.back());
 
-    auto inputActivations = unfoldTimeAndBatch(inputActivationsVector.back(),
-        _expectedMiniBatchSize);
+    saveMatrix("inputActivations", inputActivations);
 
     if(util::isLogEnabled("RecurrentLayer"))
     {
@@ -236,7 +225,7 @@ void RecurrentLayer::runForwardImplementation(Bundle& bundle)
     size_t miniBatch       = inputActivations.size()[inputActivations.size().size() - 2];
     size_t timesteps       = inputActivations.size().back();
 
-    auto handle = getHandle(_layerSize, _expectedMiniBatchSize, timesteps, _layers,
+    auto handle = getHandle(_layerSize, miniBatch, timesteps, _layers,
         _direction, _layerType, _inputMode);
 
     size_t outputActivationCount = activationCount;
@@ -286,7 +275,7 @@ void RecurrentLayer::runReverseImplementation(Bundle& bundle)
 
     assert(outputDeltaVector.size() == 1);
 
-    auto outputDeltas = unfoldTimeAndBatch(outputDeltaVector.back(), _expectedMiniBatchSize);
+    auto outputDeltas = unfoldTimeAndBatch(outputDeltaVector.back());
 
     if(util::isLogEnabled("RecurrentLayer"))
     {
@@ -317,7 +306,7 @@ void RecurrentLayer::runReverseImplementation(Bundle& bundle)
         unfoldedOutputActivations.size().size() - 2];
     size_t timesteps = unfoldedOutputActivations.size().back();
 
-    auto handle = getHandle(_layerSize, _expectedMiniBatchSize, timesteps, _layers,
+    auto handle = getHandle(_layerSize, miniBatch, timesteps, _layers,
         _direction, _layerType, _inputMode);
 
     size_t inputActivationCount = activationCount;
@@ -338,13 +327,15 @@ void RecurrentLayer::runReverseImplementation(Bundle& bundle)
 
     auto unfoldedInputActivations = loadMatrix("inputActivations");
 
-    Matrix weightGradients(_weights.size(), precision());
+    Matrix weightGradients = zeros(_weights.size(), precision());
 
     backPropGradientsRecurrent(weightGradients,
                                unfoldedInputActivations,
                                unfoldedOutputActivations,
                                reserve,
                                handle);
+
+    apply(weightGradients, weightGradients, matrix::Divide(miniBatch));
 
     // Compute recurrent weight gradients
     if(util::isLogEnabled("RecurrentLayer"))
@@ -456,7 +447,6 @@ void RecurrentLayer::save(util::OutputTarArchive& archive,
     properties["weights"] = properties.path() + "." + properties.key() + ".weights.npy";
 
     properties["layer-size"] = std::to_string(_layerSize);
-    properties["batch-size"] = std::to_string(_expectedMiniBatchSize);
     properties["layers"]     = std::to_string(_layers);
 
     properties["direction"]  = std::to_string(_direction);
@@ -474,7 +464,6 @@ void RecurrentLayer::load(util::InputTarArchive& archive,
     _weights = matrix::loadFromArchive(archive, properties["weights"]);
 
     _layerSize             = properties.get<size_t>("layer-size");
-    _expectedMiniBatchSize = properties.get<size_t>("batch-size");
     _layers                = properties.get<size_t>("layers");
 
     _direction = properties.get<int>("direction");

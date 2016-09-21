@@ -90,7 +90,7 @@ public:
     size_t getPosition(size_t x, size_t y, size_t color) const;
 
 public:
-    static bool isPathAnImage(const std::string& path);
+    static bool isPathAnImageFile(const std::string& path);
 
 private:
     void _loadImageHeader();

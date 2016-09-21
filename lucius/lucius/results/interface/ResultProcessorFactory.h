@@ -8,6 +8,7 @@
 
 // Standard Library Includes
 #include <string>
+#include <memory>
 
 // Forward Declarations
 namespace lucius { namespace results { class ResultProcessor; } }
@@ -25,13 +26,14 @@ class ResultProcessorFactory
 {
 public:
     /*! \brief Create a new instance of the named processor with parameters. */
-    static ResultProcessor* create(const std::string& , const util::ParameterPack& pack);
+    static std::unique_ptr<ResultProcessor>
+        create(const std::string& , const util::ParameterPack& pack);
 
     /*! \brief Create a new instance of the named processor. */
-    static ResultProcessor* create(const std::string& );
+    static std::unique_ptr<ResultProcessor> create(const std::string& );
 
     /*! \brief Create a new instance of the default processor. */
-    static ResultProcessor* create();
+    static std::unique_ptr<ResultProcessor> create();
 
 };
 

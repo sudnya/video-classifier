@@ -53,7 +53,7 @@ public:
     virtual void setModel(Model* model);
 
     /*! \brief Set the result handler, the engine takes ownership. */
-    void setResultProcessor(ResultProcessor* processor);
+    void setResultProcessor(std::unique_ptr<ResultProcessor>&& processor);
 
     /*! \brief Set the output file name */
     void setOutputFilename(const std::string& filename);
@@ -66,17 +66,13 @@ public:
     void runOnDataProducer(InputDataProducer& producer);
 
 public:
-    /*! \brief Get the result handler, the caller takes ownership */
-    ResultProcessor* extractResultProcessor();
-
-public:
     /*! \brief Get the model, the caller retains ownership */
     Model* getModel();
 
     /*! \brief Get the model, the caller retains ownership */
     const Model* getModel() const;
 
-    /*! \brief Get the result handler, the enginer retains ownership */
+    /*! \brief Get the result handler, the engine retains ownership */
     ResultProcessor* getResultProcessor();
 
 public:

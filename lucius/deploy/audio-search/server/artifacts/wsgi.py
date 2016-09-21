@@ -1,5 +1,5 @@
 
-from artifacts import application
+from artifacts import ArtifactsApplication
 
 if __name__ == "__main__":
-    application.run()
+    ArtifactsApplication().run()

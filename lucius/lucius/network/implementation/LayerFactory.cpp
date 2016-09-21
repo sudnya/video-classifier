@@ -9,7 +9,6 @@
 
 #include <lucius/network/interface/FeedForwardLayer.h>
 #include <lucius/network/interface/RecurrentLayer.h>
-#include <lucius/network/interface/RecurrentLayer.h>
 #include <lucius/network/interface/ConvolutionalLayer.h>
 #include <lucius/network/interface/AudioConvolutionalLayer.h>
 #include <lucius/network/interface/BatchNormalizationLayer.h>
@@ -168,7 +167,6 @@ std::unique_ptr<Layer> LayerFactory::create(const std::string& name,
     {
         size_t size      = parameters.get("Size",      inputSizeAggregate);
         size_t layers    = parameters.get("Layers",    1);
-        size_t batchSize = parameters.get("BatchSize", 1);
         auto direction     = parameters.get<std::string>("Direction", "forward");
         auto layerTypeName = parameters.get<std::string>("LayerType", "simple");
         auto inputModeName = parameters.get<std::string>("InputMode", "linear");
@@ -233,7 +231,7 @@ std::unique_ptr<Layer> LayerFactory::create(const std::string& name,
             matrix::Precision::getDefaultPrecision().toString()));
 
         layer = std::make_unique<RecurrentLayer>(
-            size, batchSize, layers, timeDirection, layerType, inputMode, precision);
+            size, layers, timeDirection, layerType, inputMode, precision);
     }
     else if("SoftmaxLayer" == name)
     {

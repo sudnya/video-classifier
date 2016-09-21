@@ -19,9 +19,9 @@ class RecurrentLayer : public Layer
 {
 public:
     RecurrentLayer();
-    RecurrentLayer(size_t layerSize, size_t expectedMiniBatchSize, size_t layers,
+    RecurrentLayer(size_t layerSize, size_t layers,
         int direction, int layerType, int inputMode);
-    RecurrentLayer(size_t layerSize, size_t expectedMiniBatchSize, size_t layers,
+    RecurrentLayer(size_t layerSize, size_t layers,
         int direction, int layerType, int inputMode, const matrix::Precision&);
     virtual ~RecurrentLayer();
 
@@ -80,7 +80,6 @@ private:
 
 private:
     size_t _layerSize;
-    size_t _expectedMiniBatchSize;
     size_t _layers;
 
 private:

@@ -31,7 +31,7 @@ namespace engine
 
 FeatureExtractorEngine::FeatureExtractorEngine()
 {
-    setResultProcessor(new results::FeatureResultProcessor);
+    setResultProcessor(std::make_unique<results::FeatureResultProcessor>());
 }
 
 FeatureExtractorEngine::ResultVector FeatureExtractorEngine::runOnBatch(const Bundle& input)

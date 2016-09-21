@@ -22,7 +22,7 @@ class Audio
 {
 public:
     Audio(const std::string& path, const std::string& defaultLabel);
-    Audio(std::istream& stream, const std::string& format);
+    Audio(std::istream& stream, const std::string& format, const std::string& defaultLabel);
 
     Audio(size_t samples, size_t bytesPerSample, size_t frequency, const std::string& path = "");
     Audio();
@@ -87,7 +87,7 @@ public:
     bool operator!=(const Audio& ) const;
 
 public:
-    static bool isPathAnAudio(const std::string& );
+    static bool isPathAnAudioFile(const std::string& );
 
 private:
     std::string _path;

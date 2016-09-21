@@ -25,6 +25,7 @@ class InputDataProducerFactory
 public:
     static std::unique_ptr<InputDataProducer> create(const std::string& producerName,
         const std::string& databaseName);
+    static std::unique_ptr<InputDataProducer> create(const std::string& producerName);
     static std::unique_ptr<InputDataProducer> create();
     static std::unique_ptr<InputDataProducer> createForDatabase(const std::string& databaseName);
 
