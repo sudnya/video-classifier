@@ -335,6 +335,8 @@ void RecurrentLayer::runReverseImplementation(Bundle& bundle)
                                reserve,
                                handle);
 
+    apply(weightGradients, weightGradients, matrix::Divide(miniBatch));
+
     // Compute recurrent weight gradients
     if(util::isLogEnabled("RecurrentLayer"))
     {
