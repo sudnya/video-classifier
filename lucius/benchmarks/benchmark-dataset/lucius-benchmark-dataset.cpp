@@ -88,7 +88,8 @@ static void trainNetwork(Model& model, const Configuration& config)
         std::make_tuple("Path", config.getModelSavePath())));
     engine->addObserver(EngineObserverFactory::create("ValidationErrorObserver",
         std::make_tuple("InputPath", config.getValidationPath()),
-        std::make_tuple("OutputPath", config.getValidationReportPath())));
+        std::make_tuple("OutputPath", config.getValidationReportPath()),
+        std::make_tuple("MaximumSamples", config.getMaximumValidationSamples())));
 
     // read from database and use model to train
     engine->runOnDatabaseFile(config.getTrainingPath());
@@ -104,6 +105,7 @@ static double testNetwork(Model& model, const Configuration& config)
     engine->setBatchSize(config.getBatchSize());
     engine->setModel(&model);
     engine->setStandardizeInput(true);
+    engine->setUseLabeledData(true);
     engine->setMaximumSamplesToRun(config.getMaximumSamples());
 
     // read from database and use model to test
