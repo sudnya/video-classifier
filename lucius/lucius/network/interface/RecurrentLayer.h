@@ -1,6 +1,6 @@
 /*  \file   RecurrentLayer.h
-    \author Gregory Diamos
-    \date   Dec 24, 2014
+    \author Sudnya Diamos
+    \date   May 9, 2016
     \brief  The interface for the RecurrentLayer class.
 */
 
@@ -19,8 +19,10 @@ class RecurrentLayer : public Layer
 {
 public:
     RecurrentLayer();
-    RecurrentLayer(size_t size, size_t batchSize, int direction);
-    RecurrentLayer(size_t size, size_t batchSize, int direction, const matrix::Precision&);
+    RecurrentLayer(size_t layerSize, size_t layers,
+        int direction, int layerType, int inputMode);
+    RecurrentLayer(size_t layerSize, size_t layers,
+        int direction, int layerType, int inputMode, const matrix::Precision&);
     virtual ~RecurrentLayer();
 
 public:
@@ -74,21 +76,22 @@ private:
     std::unique_ptr<MatrixVector> _parameters;
 
 private:
-    Matrix& _forwardWeights;
-    Matrix& _bias;
+    matrix::Matrix& _weights;
 
 private:
-    Matrix& _recurrentWeights;
-
-private:
-    size_t _expectedBatchSize;
+    size_t _layerSize;
+    size_t _layers;
 
 private:
     int _direction;
+    int _layerType;
+    int _inputMode;
+
 };
 }
 
 }
+
 
 
 

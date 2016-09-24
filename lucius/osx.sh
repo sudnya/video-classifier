@@ -8,9 +8,11 @@ export LD_LIBRARY_PATH=/usr/local/cuda/lib:/opt/local/lib:$LUCIUS_INSTALL_PATH/l
 export DYLD_LIBRARY_PATH=$LUCIUS_INSTALL_PATH/lib:/usr/local/cuda/lib
 
 export LUCIUS_KNOB_FILE=$SCRIPTPATH/scripts/lucius.config
+export PYTHONPATH=$LUCIUS_INSTALL_PATH/python
 
 export CXX=clang++
 export CC=clang
 export CPP=clang
 
+alias lldb="/Library/Developer/CommandLineTools/usr/bin/lldb"
 

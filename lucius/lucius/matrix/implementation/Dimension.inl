@@ -243,6 +243,24 @@ CUDA_DECORATOR bool Dimension::operator==(const Dimension& d) const
     return true;
 }
 
+CUDA_DECORATOR bool Dimension::operator<=(const Dimension& d) const
+{
+    if(d.size() != size())
+    {
+        return false;
+    }
+
+    for(auto l = begin(), r = d.begin(); l != end(); ++l, ++r)
+    {
+        if(!(*l <= *r))
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 CUDA_DECORATOR bool Dimension::operator!=(const Dimension& d) const
 {
     return !(d == *this);

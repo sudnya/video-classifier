@@ -32,6 +32,11 @@ char separator()
 
 std::string getExtension(const std::string& path)
 {
+    if(!path.empty() && path[0] == '.')
+    {
+        return path;
+    }
+
     auto components = split(path, ".");
 
     if(components.size() < 2)

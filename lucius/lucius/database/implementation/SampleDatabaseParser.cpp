@@ -107,7 +107,7 @@ static void parseLabeledPath(SampleDatabase* database, const std::string& line,
 
     auto label = util::strip(toLower(removeWhitespace(components[1])), "\"");
 
-    if(video::Image::isPathAnImage(filePath) || audio::Audio::isPathAnAudio(filePath))
+    if(video::Image::isPathAnImageFile(filePath) || audio::Audio::isPathAnAudioFile(filePath))
     {
         if(components.size() != 2)
         {
@@ -117,7 +117,7 @@ static void parseLabeledPath(SampleDatabase* database, const std::string& line,
 
         database->addSample(Sample(filePath, label));
     }
-    else if(video::Video::isPathAVideo(filePath))
+    else if(video::Video::isPathAVideoFile(filePath))
     {
         if(components.size() != 4)
         {
@@ -125,8 +125,8 @@ static void parseLabeledPath(SampleDatabase* database, const std::string& line,
                 line + "', should be (path, label, startFrame, endFrame).");
         }
 
-        unsigned int startFrame = parseInteger(components[2]);
-        unsigned int endFrame   = parseInteger(components[3]);
+        size_t startFrame = parseInteger(components[2]);
+        size_t endFrame   = parseInteger(components[3]);
 
         database->addSample(Sample(filePath, label, startFrame, endFrame));
     }

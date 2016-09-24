@@ -27,11 +27,11 @@ static void displayImage(const std::string& inputPath, size_t xPixels,
     Image image(inputPath);
 
     image.load();
-    
+
     auto downsampledImage = image.downsample(xPixels, yPixels, colors);
-    
+
     downsampledImage.displayOnScreen();
-    downsampledImage.addTextToDisplay(text);    
+    downsampledImage.addTextToDisplay(text);
 
     //ImageLibraryInterface::waitForKey();
 
@@ -46,11 +46,11 @@ static void displayVideo(const std::string& inputPath, size_t xPixels,
 static void runTest(const std::string& inputPath, size_t xPixels,
     size_t yPixels, size_t colors, const std::string& displayText)
 {
-    if(Image::isPathAnImage(inputPath))
+    if(Image::isPathAnImageFile(inputPath))
     {
         displayImage(inputPath, xPixels, yPixels, colors, displayText);
     }
-    else if(Video::isPathAVideo(inputPath))
+    else if(Video::isPathAVideoFile(inputPath))
     {
         displayVideo(inputPath, xPixels, yPixels, colors, displayText);
     }
@@ -59,7 +59,7 @@ static void runTest(const std::string& inputPath, size_t xPixels,
         throw std::runtime_error("Input path '" + inputPath +
             "' is neither an image or a video.");
     }
-    
+
     std::cout << "Test Passed\n";
 }
 
@@ -71,12 +71,12 @@ static void runTest(const std::string& inputPath, size_t xPixels,
 int main(int argc, char** argv)
 {
     lucius::util::ArgumentParser parser(argc, argv);
-    
+
     bool verbose = false;
     std::string loggingEnabledModules;
 
     std::string imagePath;
-    std::string displayText;    
+    std::string displayText;
 
     size_t xPixels = 0;
     size_t yPixels = 0;
@@ -110,9 +110,9 @@ int main(int argc, char** argv)
     {
         lucius::util::enableSpecificLogs(loggingEnabledModules);
     }
-    
+
     lucius::util::log("TestDisplay") << "Test begins\n";
-    
+
     try
     {
         lucius::video::runTest(imagePath, xPixels, yPixels, colors, displayText);

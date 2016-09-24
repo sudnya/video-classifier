@@ -31,7 +31,7 @@ class Matrix
 {
 public:
     Matrix();
-    Matrix(std::initializer_list<size_t>);
+    explicit Matrix(std::initializer_list<size_t>);
     explicit Matrix(const Dimension& size);
     Matrix(const Dimension& size, const Precision& precision);
     Matrix(const Dimension& size, const Dimension& stride);

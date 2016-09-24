@@ -40,9 +40,14 @@ std::unique_ptr<InputDataProducer> InputDataProducerFactory::create(
     return std::unique_ptr<InputDataProducer>();
 }
 
+std::unique_ptr<InputDataProducer> InputDataProducerFactory::create(const std::string& name)
+{
+    return create(name, "");
+}
+
 std::unique_ptr<InputDataProducer> InputDataProducerFactory::create()
 {
-    return create("InputVisualDataProducer", "");
+    return create("InputVisualDataProducer");
 }
 
 std::unique_ptr<InputDataProducer> InputDataProducerFactory::createForDatabase(

@@ -27,7 +27,7 @@ env['path_to_root_dir'] = os.path.abspath(lucius_path_to_root_dir)
 directories = ['lucius/audio', 'lucius/driver', 'lucius/util', 'lucius/engine',
     'lucius/matrix', 'lucius/matrix/ctc', 'lucius/model', 'lucius/network', 'lucius/configuration',
     'lucius/optimizer', 'lucius/parallel', 'lucius/video', 'lucius/visualization',
-    'lucius/database', 'lucius/input', 'lucius/results']
+    'lucius/database', 'lucius/input', 'lucius/results', 'lucius/api', 'lucius/text']
 
 source_directories = [os.path.join(i, 'implementation') for i in directories]
 
@@ -94,6 +94,23 @@ if env['install']:
             os.path.relpath(str(header), env['path_to_root_dir']))
         installed.append(env.Install(os.path.join( \
             env['install_path'], "include", directoryPath), header))
+
+    # install python
+    python_directories = ['python']
+    python_extensions  = ['*.py']
+
+    python_files = []
+    for dir in python_directories:
+        for ext in python_extensions:
+            regexp = os.path.join(dir, ext)
+            python_files.extend(env.Glob(regexp))
+
+    for python_file in python_files:
+        (directoryPath, fileName) = os.path.split( \
+            os.path.relpath(str(python_file), env['path_to_root_dir']))
+        installed.append(env.Install(os.path.join( \
+            env['install_path'], directoryPath), python_file))
+
 
     # set permissions
     for i in executables:

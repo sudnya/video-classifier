@@ -61,9 +61,9 @@ void Engine::setModel(Model* model)
     _dataProducer->setModel(model);
 }
 
-void Engine::setResultProcessor(ResultProcessor* processor)
+void Engine::setResultProcessor(std::unique_ptr<ResultProcessor>&& processor)
 {
-    _resultProcessor.reset(processor);
+    _resultProcessor = std::move(processor);
 }
 
 void Engine::setOutputFilename(const std::string& filename)
@@ -142,11 +142,6 @@ void Engine::runOnDataProducer(InputDataProducer& producer)
 
     // close
     closeModel();
-}
-
-Engine::ResultProcessor* Engine::extractResultProcessor()
-{
-    return _resultProcessor.release();
 }
 
 Engine::Model* Engine::getModel()
