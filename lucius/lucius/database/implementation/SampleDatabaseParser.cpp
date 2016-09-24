@@ -14,6 +14,8 @@
 #include <lucius/video/interface/Video.h>
 #include <lucius/video/interface/Image.h>
 
+#include <lucius/text/interface/Text.h>
+
 #include <lucius/util/interface/paths.h>
 #include <lucius/util/interface/string.h>
 
