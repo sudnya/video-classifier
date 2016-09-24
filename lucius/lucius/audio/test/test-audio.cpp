@@ -35,7 +35,7 @@ static bool testGenericLossless(const std::string& format)
 
     simpleTone.save(stream, format);
 
-    lucius::audio::Audio loadedTone(stream, format);
+    lucius::audio::Audio loadedTone(stream, format, "");
 
     if(loadedTone.size() > simpleTone.size())
     {

@@ -50,17 +50,17 @@ size_t Sample::endFrame() const
 
 bool Sample::isVideoSample() const
 {
-    return video::Video::isPathAVideo(path());
+    return video::Video::isPathAVideoFile(path());
 }
 
 bool Sample::isImageSample() const
 {
-    return video::Image::isPathAnImage(path());
+    return video::Image::isPathAnImageFile(path());
 }
 
 bool Sample::isAudioSample() const
 {
-    return audio::Audio::isPathAnAudio(path());
+    return audio::Audio::isPathAnAudioFile(path());
 }
 
 bool Sample::isTextSample() const

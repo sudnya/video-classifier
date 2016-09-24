@@ -1,7 +1,7 @@
-/*    \file   lucius-classifier.cpp
+/*  \file   lucius-inference-engine.cpp
     \date   Saturday August 10, 2013
     \author Gregory Diamos <solusstultus@gmail.com>
-    \brief  The interface to the video classifier tool.
+    \brief  A tool for running model inference.
 */
 
 // Lucius Includes
@@ -9,6 +9,8 @@
 #include <lucius/engine/interface/Engine.h>
 
 #include <lucius/visualization/interface/NeuronVisualizer.h>
+
+#include <lucius/configuration/interface/Configuration.h>
 
 #include <lucius/model/interface/ModelBuilder.h>
 #include <lucius/model/interface/Model.h>
@@ -36,30 +38,26 @@ static void setOptions(const std::string& options);
 
 static void checkInputs(const std::string& inputFileNames,
     const std::string& modelFileName, bool& shouldClassify,
-    bool& shouldTrain, bool& shouldLearnFeatures,
     bool& shouldExtractFeatures);
 
 static std::unique_ptr<engine::Engine> createEngine(
     const std::string& outputFilename, bool shouldClassify,
-    bool shouldTrain, bool shouldLearnFeatures,
     bool shouldExtractFeatures);
 
-static std::string loadFile(const std::string& path);
-
 static void createNewModel(const std::string& modelFileName,
-    const std::string& modelSpecificationPath)
+    const std::string& configurationPath)
 {
     std::unique_ptr<model::Model> model;
 
-    if(modelSpecificationPath.empty())
+    if(configurationPath.empty())
     {
-        throw std::runtime_error("Missing model specification.");
+        throw std::runtime_error("Missing configuration file.");
     }
     else
     {
-        auto specification = loadFile(modelSpecificationPath);
+        auto config = configuration::Configuration::create(configurationPath);
 
-        model = model::ModelBuilder::create(specification);
+        model = model::ModelBuilder::create(config.getModelSpecification());
 
         model->setPath(modelFileName);
     }
@@ -90,17 +88,15 @@ static void visualizeNeurons(const std::string& modelFileName,
 
 static void runClassifier(const std::string& outputFilename,
     const std::string& inputFileNames, const std::string& modelFileName,
-    bool shouldClassify, bool shouldTrain, bool shouldLearnFeatures, bool shouldExtractFeatures)
+    bool shouldClassify, bool shouldExtractFeatures)
 {
     util::log("lucius-classifier") << "Loading classifier.\n";
 
     try
     {
-        checkInputs(inputFileNames, modelFileName, shouldClassify,
-            shouldTrain, shouldLearnFeatures, shouldExtractFeatures);
+        checkInputs(inputFileNames, modelFileName, shouldClassify, shouldExtractFeatures);
 
-        auto engine = createEngine(outputFilename, shouldClassify, shouldTrain,
-            shouldLearnFeatures, shouldExtractFeatures);
+        auto engine = createEngine(outputFilename, shouldClassify, shouldExtractFeatures);
 
         if(engine == nullptr)
         {
@@ -115,7 +111,7 @@ static void runClassifier(const std::string& outputFilename,
     }
     catch(const std::exception& e)
     {
-        std::cout << "Lucius Classifier Failed:\n";
+        std::cout << "Lucius Inference Engine Failed:\n";
         std::cout << "Message: " << e.what() << "\n\n";
     }
 
@@ -141,14 +137,11 @@ static void setOptions(const std::string& options)
 
 static void checkInputs(const std::string& inputFileNames,
     const std::string& modelFileName, bool& shouldClassify,
-    bool& shouldTrain, bool& shouldLearnFeatures,
     bool& shouldExtractFeatures)
 {
     unsigned int count = 0;
 
     if(shouldClassify)        count += 1;
-    if(shouldTrain)           count += 1;
-    if(shouldLearnFeatures)   count += 1;
     if(shouldExtractFeatures) count += 1;
 
     if(count == 0)
@@ -159,25 +152,17 @@ static void checkInputs(const std::string& inputFileNames,
     if(count > 1)
     {
         throw std::runtime_error("Only one operation "
-            "(learn, classify, or train) can be specified at a time.");
+            "(classify or extract features) can be specified at a time.");
     }
 }
 
 static std::unique_ptr<engine::Engine> createEngine(
     const std::string& outputFilename, bool shouldClassify,
-    bool shouldTrain, bool shouldLearnFeatures, bool shouldExtractFeatures)
+    bool shouldExtractFeatures)
 {
     typedef std::unique_ptr<engine::Engine> EnginePointer;
 
-    if(shouldTrain)
-    {
-        return EnginePointer(engine::EngineFactory::create("LearnerEngine"));
-    }
-    else if(shouldLearnFeatures)
-    {
-        return EnginePointer(engine::EngineFactory::create("UnsupervisedLearnerEngine"));
-    }
-    else if(shouldExtractFeatures)
+    if(shouldExtractFeatures)
     {
         auto engine = EnginePointer(engine::EngineFactory::create("FeatureExtractorEngine"));
 
@@ -197,28 +182,6 @@ static std::unique_ptr<engine::Engine> createEngine(
     }
 
     return engine;
-}
-
-static std::string loadFile(const std::string& path)
-{
-    std::ifstream stream(path);
-
-    if(!stream.good())
-    {
-        throw std::runtime_error("Failed to open file '" + path + "' for reading.");
-    }
-
-    stream.seekg(0, std::ios::end);
-
-    size_t size = stream.tellg();
-
-    std::string contents(size, ' ');
-
-    stream.seekg(0, std::ios::beg);
-
-    stream.read((char*)contents.data(), size);
-
-    return contents;
 }
 
 static void enableSpecificLogs(const std::string& modules)
@@ -263,13 +226,11 @@ int main(int argc, char** argv)
 
     std::string inputFileNames;
     std::string modelFileName;
-    std::string modelSpecificationPath;
+    std::string modelConfigurationPath;
     std::string outputPath;
     std::string options;
 
     bool shouldClassify        = false;
-    bool shouldTrain           = false;
-    bool shouldLearnFeatures   = false;
     bool shouldExtractFeatures = false;
     bool createNewModel        = false;
     bool visualizeNetwork      = false;
@@ -281,10 +242,10 @@ int main(int argc, char** argv)
 
     bool verbose = false;
 
-    parser.description("The Lucius image and video classifier.");
+    parser.description("The Lucius inference engine.");
 
     parser.parse("-i", "--input",  inputFileNames,
-        "", "The input image or video database path.");
+        "", "The input database path.");
     parser.parse("-o", "--output",  outputPath,
         "", "The output path to store generated files "
             "(for visualization or feature extraction).");
@@ -298,10 +259,6 @@ int main(int argc, char** argv)
         "Perform classification (report accuracy if labeled data is given).");
     parser.parse("-e", "--extract-features", shouldExtractFeatures, false,
         "Extract features and store them to the output file.");
-    parser.parse("-t", "--train", shouldTrain, false,
-        "Perform supervised learning and labeled input data.");
-    parser.parse("-l", "--learn", shouldLearnFeatures, false,
-        "Perform unsupervised learning on unlabeled input data.");
     parser.parse("-V", "--visualize-network", visualizeNetwork, false,
         "Produce visualization for each neuron.");
     parser.parse("", "--options", options, "",
@@ -309,8 +266,8 @@ int main(int argc, char** argv)
 
     parser.parse("-s", "--maximum-samples", maximumSamples, 0, "Override the maximum "
         "number of samples to process, otherwise it will process all samples.");
-    parser.parse("-S", "--model-specification", modelSpecificationPath, "",
-        "The path to the specification for the new model.");
+    parser.parse("-C", "--model-configuration", modelConfigurationPath, "",
+        "The path to the configuration for the new model.");
     parser.parse("-b", "--batch-size", batchSize, 0, "Override the number of samples "
         "to process in one training batch.");
 
@@ -338,7 +295,7 @@ int main(int argc, char** argv)
 
         if(createNewModel)
         {
-            lucius::createNewModel(modelFileName, modelSpecificationPath);
+            lucius::createNewModel(modelFileName, modelConfigurationPath);
         }
         else if(visualizeNetwork)
         {
@@ -347,13 +304,12 @@ int main(int argc, char** argv)
         else
         {
             lucius::runClassifier(outputPath, inputFileNames, modelFileName,
-                shouldClassify, shouldTrain, shouldLearnFeatures,
-                shouldExtractFeatures);
+                shouldClassify, shouldExtractFeatures);
         }
     }
     catch(const std::exception& e)
     {
-        std::cout << "Lucius Classifier Failed:\n";
+        std::cout << "Lucius Inference Engine Failed:\n";
         std::cout << "Message: " << e.what() << "\n\n";
     }
 

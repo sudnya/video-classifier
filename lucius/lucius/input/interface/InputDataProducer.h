@@ -57,6 +57,11 @@ public:
     virtual size_t getUniqueSampleCount() const = 0;
 
 public:
+    /*! \brief Add a new sample to the producer directly. */
+    virtual void addRawSample(const void* data, size_t size, const std::string& type,
+        const std::string& label);
+
+public:
     void   setEpochs(size_t epochs);
     size_t getEpochs() const;
 

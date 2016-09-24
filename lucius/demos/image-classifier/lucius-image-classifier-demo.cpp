@@ -12,6 +12,7 @@
 #include <lucius/input/interface/InputCameraDataProducer.h>
 
 #include <lucius/results/interface/ResultProcessorFactory.h>
+#include <lucius/results/interface/ResultProcessor.h>
 
 #include <lucius/model/interface/Model.h>
 

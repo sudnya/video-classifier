@@ -128,6 +128,14 @@ database::SampleDatabase::StringVector getAllPossibleGraphemes(const util::Prope
     
     if(!specification.exists("infer-outputs-from"))
     {
+        if(specification.exists("model-attributes.Graphemes"))
+        {
+            for(auto& grapheme : specification.get("model-attributes.Graphemes"))
+            {
+                labels.push_back(grapheme.key());
+            }
+        }
+        
         return labels;
     }
 

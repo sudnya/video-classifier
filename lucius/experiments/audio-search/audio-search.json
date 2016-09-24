@@ -88,9 +88,8 @@
             "DelimiterGrapheme" : "END"
 
 
-        },
+        }
 
-        "infer-outputs-from" : "/data/1tb-ssd/libri-speech-100/development/database.txt"
 
     },
 

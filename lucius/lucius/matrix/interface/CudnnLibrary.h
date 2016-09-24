@@ -15,6 +15,9 @@ typedef struct cudnnTensorStruct*        cudnnTensorDescriptor_t;
 typedef struct cudnnConvolutionStruct*   cudnnConvolutionDescriptor_t;
 typedef struct cudnnPoolingStruct*       cudnnPoolingDescriptor_t;
 typedef struct cudnnFilterStruct*        cudnnFilterDescriptor_t;
+typedef struct cudnnDropoutStruct*       cudnnDropoutDescriptor_t;
+typedef struct cudnnRNNStruct*           cudnnRNNDescriptor_t;
+
 
 namespace lucius
 {
@@ -74,7 +77,11 @@ public:
         CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_GEMM         = 0,
         CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_PRECOMP_GEMM = 1,
         CUDNN_CONVOLUTION_FWD_ALGO_GEMM                  = 2,
-        CUDNN_CONVOLUTION_FWD_ALGO_DIRECT                = 3
+        CUDNN_CONVOLUTION_FWD_ALGO_DIRECT                = 3,
+        CUDNN_CONVOLUTION_FWD_ALGO_FFT                   = 4,
+        CUDNN_CONVOLUTION_FWD_ALGO_FFT_TILING            = 5,
+        CUDNN_CONVOLUTION_FWD_ALGO_WINOGRAD              = 6,
+        CUDNN_CONVOLUTION_FWD_ALGO_WINOGRAD_NONFUSED     = 7
     } cudnnConvolutionFwdAlgo_t;
 
     typedef enum
@@ -86,10 +93,12 @@ public:
 
     typedef enum
     {
-        CUDNN_CONVOLUTION_BWD_DATA_ALGO_0          = 0, // non-deterministic
-        CUDNN_CONVOLUTION_BWD_DATA_ALGO_1          = 1,
-        CUDNN_CONVOLUTION_BWD_DATA_ALGO_FFT        = 2,
-        CUDNN_CONVOLUTION_BWD_DATA_ALGO_FFT_TILING = 3
+        CUDNN_CONVOLUTION_BWD_DATA_ALGO_0                 = 0, // non-deterministic
+        CUDNN_CONVOLUTION_BWD_DATA_ALGO_1                 = 1,
+        CUDNN_CONVOLUTION_BWD_DATA_ALGO_FFT               = 2,
+        CUDNN_CONVOLUTION_BWD_DATA_ALGO_FFT_TILING        = 3,
+        CUDNN_CONVOLUTION_BWD_DATA_ALGO_WINOGRAD          = 4,
+        CUDNN_CONVOLUTION_BWD_DATA_ALGO_WINOGRAD_NONFUSED = 5
     } cudnnConvolutionBwdDataAlgo_t;
 
     typedef enum
@@ -104,7 +113,9 @@ public:
         CUDNN_CONVOLUTION_BWD_FILTER_ALGO_0         = 0,  // non-deterministic
         CUDNN_CONVOLUTION_BWD_FILTER_ALGO_1         = 1,
         CUDNN_CONVOLUTION_BWD_FILTER_ALGO_FFT       = 2,
-        CUDNN_CONVOLUTION_BWD_FILTER_ALGO_3         = 3   // non-deterministic, algo0 with workspace
+        CUDNN_CONVOLUTION_BWD_FILTER_ALGO_3         = 3,  // non-deterministic, algo0 with workspace
+        // CUDNN_CONVOLUTION_BWD_FILTER_ALGO_WINOGRAD  = 4, // not implemented
+        CUDNN_CONVOLUTION_BWD_FILTER_ALGO_WINOGRAD_NONFUSED = 5
     } cudnnConvolutionBwdFilterAlgo_t;
 
     typedef enum
@@ -120,6 +131,25 @@ public:
         CUDNN_PROPAGATE_NAN      = 1,
     } cudnnNanPropagation_t;
 
+    typedef enum
+    {
+        CUDNN_RNN_RELU = 0, // Stock RNN with ReLu activation
+        CUDNN_RNN_TANH = 1, // Stock RNN with tanh activation
+        CUDNN_LSTM     = 2, // LSTM with no peephole connections
+        CUDNN_GRU      = 3  // Using h' = tanh(r * Uh(t-1) + Wx) and h = (1 - z) * h' + z * h(t-1);
+    } cudnnRNNMode_t;
+
+    typedef enum
+    {
+       CUDNN_UNIDIRECTIONAL = 0,
+       CUDNN_BIDIRECTIONAL  = 1  // Using output concatination at each step. Do we also want to support output sum?
+    } cudnnDirectionMode_t;
+
+    typedef enum
+    {
+       CUDNN_LINEAR_INPUT = 0,
+       CUDNN_SKIP_INPUT   = 1
+    } cudnnRNNInputMode_t;
 
 public:
     static void load();
@@ -137,6 +167,19 @@ public:
                                            int h,        // height of input section
                                            int w         // width of input section
                                            );
+
+    static void cudnnSetTensorNdDescriptor(cudnnTensorDescriptor_t tensorDesc,
+                                           cudnnDataType_t         dataType,
+                                           int                    nbDims,
+                                           const int*             dimA,
+                                           const int*             strideA);
+
+    static void cudnnGetTensorNdDescriptor(const cudnnTensorDescriptor_t tensorDesc,
+                                           int                          nbDimsRequested,
+                                           cudnnDataType_t*             dataType,
+                                           int*                         nbDims,
+                                           int*                         dimA,
+                                           int*                         strideA);
 
     static void cudnnDestroyTensorDescriptor(cudnnTensorDescriptor_t tensorDesc);
 
@@ -157,6 +200,20 @@ public:
                                            int h,        // height of each input filter
                                            int w         // width of  each input fitler
                                            );
+
+    static void cudnnSetFilterNdDescriptor(cudnnFilterDescriptor_t filterDesc,
+                                           cudnnDataType_t dataType,
+                                           cudnnTensorFormat_t  format,
+                                           int nbDims,
+                                           int* dimA
+                                           );
+
+    static void cudnnGetFilterNdDescriptor(const cudnnFilterDescriptor_t   filterDesc,
+                                           int                             nbDimsRequested,
+                                           cudnnDataType_t*                dataType,
+                                           cudnnTensorFormat_t*            format,
+                                           int*                            nbDims,
+                                           int*                            filterDimA);
 
     static void cudnnDestroyFilterDescriptor(cudnnFilterDescriptor_t filterDesc);
 
@@ -292,29 +349,160 @@ public:
                                                void*                               gradData);
 
 public:
-    static void cudnnPoolingForward(
-                                        const cudnnPoolingDescriptor_t   poolingDesc,
-                                        const void*                      alpha,
-                                        const cudnnTensorDescriptor_t    srcDesc,
-                                        const void*                      srcData,
-                                        const void*                      beta,
-                                        const cudnnTensorDescriptor_t    destDesc,
-                                        void*                            destData
+    static void cudnnPoolingForward(const cudnnPoolingDescriptor_t   poolingDesc,
+                                    const void*                      alpha,
+                                    const cudnnTensorDescriptor_t    srcDesc,
+                                    const void*                      srcData,
+                                    const void*                      beta,
+                                    const cudnnTensorDescriptor_t    destDesc,
+                                    void*                            destData
                                      );
 
-    static void cudnnPoolingBackward(
-                                       const cudnnPoolingDescriptor_t  poolingDesc,
-                                       const void*                     alpha,
-                                       const cudnnTensorDescriptor_t   srcDesc,
-                                       const void*                     srcData,
-                                       const cudnnTensorDescriptor_t   srcDiffDesc,
-                                       const void*                     srcDiffData,
-                                       const cudnnTensorDescriptor_t   destDesc,
-                                       const void*                     destData,
-                                       const void*                     beta,
-                                       const cudnnTensorDescriptor_t   destDiffDesc,
-                                       void*                           destDiffData
+    static void cudnnPoolingBackward(const cudnnPoolingDescriptor_t  poolingDesc,
+                                     const void*                     alpha,
+                                     const cudnnTensorDescriptor_t   srcDesc,
+                                     const void*                     srcData,
+                                     const cudnnTensorDescriptor_t   srcDiffDesc,
+                                     const void*                     srcDiffData,
+                                     const cudnnTensorDescriptor_t   destDesc,
+                                     const void*                     destData,
+                                     const void*                     beta,
+                                     const cudnnTensorDescriptor_t   destDiffDesc,
+                                     void*                           destDiffData
                                      );
+
+public:
+    static void cudnnCreateDropoutDescriptor(cudnnDropoutDescriptor_t * dropoutDesc);
+    static void cudnnDestroyDropoutDescriptor(cudnnDropoutDescriptor_t dropoutDesc);
+
+    static void cudnnSetDropoutDescriptor(cudnnDropoutDescriptor_t dropoutDesc,
+                                          float dropout,
+                                          void* states,
+                                          size_t stateSizeInBytes,
+                                          unsigned long long seed);
+
+public:
+    static void cudnnCreateRNNDescriptor(cudnnRNNDescriptor_t * rnnDesc);
+    static void cudnnDestroyRNNDescriptor(cudnnRNNDescriptor_t rnnDesc);
+
+    static void cudnnSetRNNDescriptor(cudnnRNNDescriptor_t rnnDesc,
+                                      int hiddenSize,
+                                      int numLayers,
+                                      cudnnDropoutDescriptor_t dropoutDesc,
+                                      cudnnRNNInputMode_t inputMode,
+                                      cudnnDirectionMode_t direction,
+                                      cudnnRNNMode_t mode,
+                                      cudnnDataType_t dataType);
+
+public:
+    static void cudnnGetRNNWorkspaceSize(const cudnnRNNDescriptor_t rnnDesc,
+                                         const int seqLength,
+                                         const cudnnTensorDescriptor_t* xDesc,
+                                         size_t* sizeInBytes
+                                         );
+
+    static void cudnnGetRNNTrainingReserveSize(const cudnnRNNDescriptor_t rnnDesc,
+                                               const int seqLength,
+                                               const cudnnTensorDescriptor_t* xDesc,
+                                               size_t* sizeInBytes
+                                               );
+
+
+    static void cudnnGetRNNParamsSize(const cudnnRNNDescriptor_t rnnDesc,
+                                      const cudnnTensorDescriptor_t    xDesc,
+                                      size_t* sizeInBytes,
+                                      cudnnDataType_t dataType
+                                      );
+
+
+public:
+    static void cudnnGetRNNLinLayerMatrixParams(const cudnnRNNDescriptor_t rnnDesc,
+                                                const int layer,
+                                                const cudnnTensorDescriptor_t xDesc,
+                                                const cudnnFilterDescriptor_t wDesc,
+                                                const void* w,
+                                                const int linLayerID,
+                                                cudnnFilterDescriptor_t linLayerMatDesc,
+                                                void** linLayerMat
+                                                );
+
+    static void cudnnGetRNNLinLayerBiasParams(const cudnnRNNDescriptor_t rnnDesc,
+                                              const int layer,
+                                              const cudnnTensorDescriptor_t xDesc,
+                                              const cudnnFilterDescriptor_t wDesc,
+                                              const void* w,
+                                              const int linLayerID,
+                                              cudnnFilterDescriptor_t linLayerBiasDesc,
+                                              void** linLayerBias
+                                              );
+
+
+public:
+    static void cudnnRNNForwardTraining(const cudnnRNNDescriptor_t rnnDesc,
+                                                       const int seqLength,
+                                                       const cudnnTensorDescriptor_t *xDesc,
+                                                       const void * x,
+                                                       const cudnnTensorDescriptor_t hxDesc,
+                                                       const void * hx,
+                                                       const cudnnTensorDescriptor_t cxDesc,
+                                                       const void * cx,
+                                                       const cudnnFilterDescriptor_t wDesc,
+                                                       const void * w,
+                                                       const cudnnTensorDescriptor_t *yDesc,
+                                                       void * y,
+                                                       const cudnnTensorDescriptor_t hyDesc,
+                                                       void * hy,
+                                                       const cudnnTensorDescriptor_t cyDesc,
+                                                       void * cy,
+                                                       void * workspace,
+                                                       size_t workSpaceSizeInBytes,
+                                                       void * reserveSpace,
+                                                       size_t reserveSpaceSizeInBytes);
+
+    static void cudnnRNNBackwardData(const cudnnRNNDescriptor_t rnnDesc,
+                                     const int seqLength,
+                                     const cudnnTensorDescriptor_t * yDesc,
+                                     const void * y,
+                                     const cudnnTensorDescriptor_t * dyDesc,
+                                     const void * dy,
+                                     const cudnnTensorDescriptor_t dhyDesc,
+                                     const void * dhy,
+                                     const cudnnTensorDescriptor_t dcyDesc,
+                                     const void * dcy,
+                                     const cudnnFilterDescriptor_t wDesc,
+                                     const void * w,
+                                     const cudnnTensorDescriptor_t hxDesc,
+                                     const void * hx,
+                                     const cudnnTensorDescriptor_t cxDesc,
+                                     const void * cx,
+                                     const cudnnTensorDescriptor_t * dxDesc,
+                                     void * dx,
+                                     const cudnnTensorDescriptor_t dhxDesc,
+                                     void * dhx,
+                                     const cudnnTensorDescriptor_t dcxDesc,
+                                     void * dcx,
+                                     void * workspace,
+                                     size_t workSpaceSizeInBytes,
+                                     const void * reserveSpace,
+                                     size_t reserveSpaceSizeInBytes );
+
+
+    static void cudnnRNNBackwardWeights(const cudnnRNNDescriptor_t rnnDesc,
+                                        const int seqLength,
+                                        const cudnnTensorDescriptor_t * xDesc,
+                                        const void * x,
+                                        const cudnnTensorDescriptor_t hxDesc,
+                                        const void * hx,
+                                        const cudnnTensorDescriptor_t * yDesc,
+                                        const void * y,
+                                        const void * workspace,
+                                        size_t workSpaceSizeInBytes,
+                                        const cudnnFilterDescriptor_t dwDesc,
+                                        void * dw,
+                                        const void * reserveSpace,
+                                        size_t reserveSpaceSizeInBytes );
+
+
 
 private:
     static void _check();
@@ -343,6 +531,19 @@ private:
                                             int w         // width of input section
                                         );
 
+        cudnnStatus_t (*cudnnSetTensorNdDescriptor)(cudnnTensorDescriptor_t tensorDesc,
+                                               cudnnDataType_t         dataType,
+                                               int                    nbDims,
+                                               const int*             dimA,
+                                               const int*             strideA);
+
+        cudnnStatus_t (*cudnnGetTensorNdDescriptor)(const cudnnTensorDescriptor_t tensorDesc,
+                                               int                          nbDimsRequested,
+                                               cudnnDataType_t*              dataType,
+                                               int*                         nbDims,
+                                               int*                         dimA,
+                                               int*                         strideA);
+
         cudnnStatus_t (*cudnnDestroyTensorDescriptor)( cudnnTensorDescriptor_t tensorDesc );
 
         cudnnStatus_t (*cudnnTransformTensor)(cudnnHandle_t                    handle,
@@ -363,6 +564,20 @@ private:
                                                     int h,        // height of each input filter
                                                     int w         // width of  each input fitler
                                                       );
+
+        cudnnStatus_t (*cudnnSetFilterNdDescriptor)(cudnnFilterDescriptor_t filterDesc,
+                                                    cudnnDataType_t dataType,
+                                                    cudnnTensorFormat_t  format,
+                                                    int nbDims,
+                                                    int* dimA
+                                                    );
+
+        cudnnStatus_t (*cudnnGetFilterNdDescriptor)(const cudnnFilterDescriptor_t filterDesc,
+                                                    int                           nbDimsRequested,
+                                                    cudnnDataType_t*              dataType,
+                                                    cudnnTensorFormat_t*          format,
+                                                    int*                          nbDims,
+                                                    int*                          filterDimA);
 
         cudnnStatus_t (*cudnnDestroyFilterDescriptor)(cudnnFilterDescriptor_t filterDesc);
 
@@ -505,13 +720,13 @@ private:
 
     public:
         cudnnStatus_t (*cudnnPoolingForward)(cudnnHandle_t handle,
-                                                    const cudnnPoolingDescriptor_t   poolingDesc,
-                                                    const void*                      alpha,
-                                                    const cudnnTensorDescriptor_t    srcDesc,
-                                                    const void*                      srcData,
-                                                    const void*                      beta,
-                                                    const cudnnTensorDescriptor_t    destDesc,
-                                                    void*                            destData
+                                             const cudnnPoolingDescriptor_t   poolingDesc,
+                                             const void*                      alpha,
+                                             const cudnnTensorDescriptor_t    srcDesc,
+                                             const void*                      srcData,
+                                             const void*                      beta,
+                                             const cudnnTensorDescriptor_t    destDesc,
+                                             void*                            destData
                                                  );
 
         cudnnStatus_t (*cudnnPoolingBackward)(cudnnHandle_t  handle,
@@ -527,6 +742,144 @@ private:
                                                     const cudnnTensorDescriptor_t   destDiffDesc,
                                                     void*                           destDiffData
                                                   );
+
+    public:
+        cudnnStatus_t (*cudnnCreateDropoutDescriptor)(cudnnDropoutDescriptor_t * dropoutDesc);
+        cudnnStatus_t (*cudnnDestroyDropoutDescriptor)(cudnnDropoutDescriptor_t dropoutDesc);
+        cudnnStatus_t (*cudnnSetDropoutDescriptor)(cudnnDropoutDescriptor_t dropoutDesc,
+                                                   cudnnHandle_t handle,
+                                                   float dropout,
+                                                   void* states,
+                                                   size_t stateSizeInBytes,
+                                                   unsigned long long seed);
+
+    public:
+        cudnnStatus_t (*cudnnCreateRNNDescriptor)(cudnnRNNDescriptor_t * rnnDesc);
+        cudnnStatus_t (*cudnnDestroyRNNDescriptor)(cudnnRNNDescriptor_t rnnDesc);
+
+        cudnnStatus_t (*cudnnSetRNNDescriptor)(cudnnRNNDescriptor_t rnnDesc,
+                                               int hiddenSize,
+                                               int numLayers,
+                                               cudnnDropoutDescriptor_t dropoutDesc,
+                                               cudnnRNNInputMode_t inputMode,
+                                               cudnnDirectionMode_t direction,
+                                               cudnnRNNMode_t mode,
+                                               cudnnDataType_t dataType);
+
+    public:
+        cudnnStatus_t (*cudnnGetRNNWorkspaceSize)( cudnnHandle_t              handle,
+                                                            const cudnnRNNDescriptor_t rnnDesc,
+                                                            const int seqLength,
+                                                            const cudnnTensorDescriptor_t    *xDesc,
+                                                            size_t                     *sizeInBytes
+                                                            );
+
+        cudnnStatus_t (*cudnnGetRNNTrainingReserveSize)(cudnnHandle_t              handle,
+                                                        const cudnnRNNDescriptor_t rnnDesc,
+                                                        const int seqLength,
+                                                        const cudnnTensorDescriptor_t    *xDesc,
+                                                        size_t                     *sizeInBytes
+                                                        );
+
+
+        cudnnStatus_t (*cudnnGetRNNParamsSize)(cudnnHandle_t              handle,
+                                               const cudnnRNNDescriptor_t rnnDesc,
+                                               const cudnnTensorDescriptor_t    xDesc,
+                                               size_t                     *sizeInBytes,
+                                               cudnnDataType_t dataType
+                                               );
+
+        cudnnStatus_t (*cudnnGetRNNLinLayerMatrixParams)(cudnnHandle_t              handle,
+                                                         const cudnnRNNDescriptor_t rnnDesc,
+                                                         const int layer,
+                                                         const cudnnTensorDescriptor_t xDesc,
+                                                         const cudnnFilterDescriptor_t wDesc,
+                                                         const void * w,
+                                                         const int linLayerID,
+                                                         cudnnFilterDescriptor_t linLayerMatDesc,
+                                                         void ** linLayerMat
+                                                         );
+
+        cudnnStatus_t (*cudnnGetRNNLinLayerBiasParams)(cudnnHandle_t              handle,
+                                                       const cudnnRNNDescriptor_t rnnDesc,
+                                                       const int layer,
+                                                       const cudnnTensorDescriptor_t xDesc,
+                                                       const cudnnFilterDescriptor_t wDesc,
+                                                       const void * w,
+                                                       const int linLayerID,
+                                                       cudnnFilterDescriptor_t linLayerBiasDesc,
+                                                       void ** linLayerBias
+                                                       );
+
+
+    public:
+        cudnnStatus_t (*cudnnRNNForwardTraining)(cudnnHandle_t              handle,
+                                                 const cudnnRNNDescriptor_t rnnDesc,
+                                                 const int seqLength,
+                                                 const cudnnTensorDescriptor_t *xDesc,
+                                                 const void * x,
+                                                 const cudnnTensorDescriptor_t hxDesc,
+                                                 const void * hx,
+                                                 const cudnnTensorDescriptor_t cxDesc,
+                                                 const void * cx,
+                                                 const cudnnFilterDescriptor_t wDesc,
+                                                 const void * w,
+                                                 const cudnnTensorDescriptor_t *yDesc,
+                                                 void * y,
+                                                 const cudnnTensorDescriptor_t hyDesc,
+                                                 void * hy,
+                                                 const cudnnTensorDescriptor_t cyDesc,
+                                                 void * cy,
+                                                 void * workspace,
+                                                 size_t workSpaceSizeInBytes,
+                                                 void * reserveSpace,
+                                                 size_t reserveSpaceSizeInBytes);
+
+        cudnnStatus_t (*cudnnRNNBackwardData)(cudnnHandle_t              handle,
+                                              const cudnnRNNDescriptor_t rnnDesc,
+                                              const int seqLength,
+                                              const cudnnTensorDescriptor_t * yDesc,
+                                              const void * y,
+                                              const cudnnTensorDescriptor_t * dyDesc,
+                                              const void * dy,
+                                              const cudnnTensorDescriptor_t dhyDesc,
+                                              const void * dhy,
+                                              const cudnnTensorDescriptor_t dcyDesc,
+                                              const void * dcy,
+                                              const cudnnFilterDescriptor_t wDesc,
+                                              const void * w,
+                                              const cudnnTensorDescriptor_t hxDesc,
+                                              const void * hx,
+                                              const cudnnTensorDescriptor_t cxDesc,
+                                              const void * cx,
+                                              const cudnnTensorDescriptor_t * dxDesc,
+                                              void * dx,
+                                              const cudnnTensorDescriptor_t dhxDesc,
+                                              void * dhx,
+                                              const cudnnTensorDescriptor_t dcxDesc,
+                                              void * dcx,
+                                              void * workspace,
+                                              size_t workSpaceSizeInBytes,
+                                              const void * reserveSpace,
+                                              size_t reserveSpaceSizeInBytes );
+
+
+        cudnnStatus_t (*cudnnRNNBackwardWeights)(cudnnHandle_t              handle,
+                                                 const cudnnRNNDescriptor_t rnnDesc,
+                                                 const int seqLength,
+                                                 const cudnnTensorDescriptor_t * xDesc,
+                                                 const void * x,
+                                                 const cudnnTensorDescriptor_t hxDesc,
+                                                 const void * hx,
+                                                 const cudnnTensorDescriptor_t * yDesc,
+                                                 const void * y,
+                                                 const void * workspace,
+                                                 size_t workSpaceSizeInBytes,
+                                                 const cudnnFilterDescriptor_t dwDesc,
+                                                 void * dw,
+                                                 const void * reserveSpace,
+                                                 size_t reserveSpaceSizeInBytes );
+
 
     public:
         /*! \brief The constructor zeros out all of the pointers */

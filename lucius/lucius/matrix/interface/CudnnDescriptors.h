@@ -8,17 +8,21 @@
 
 // Standard Library Includes
 #include <memory>
+#include <vector>
 
 // Forward Declarations
-namespace lucius { namespace matrix { class Matrix;     } }
-namespace lucius { namespace matrix { class Dimension;  } }
-namespace lucius { namespace matrix { class Precision;  } }
-namespace lucius { namespace matrix { class Allocation; } }
+namespace lucius { namespace matrix { class Matrix;             } }
+namespace lucius { namespace matrix { class Dimension;          } }
+namespace lucius { namespace matrix { class Precision;          } }
+namespace lucius { namespace matrix { class Allocation;         } }
+namespace lucius { namespace matrix { class RecurrentOpsHandle; } }
 
 typedef struct cudnnTensorStruct*      cudnnTensorDescriptor_t;
 typedef struct cudnnFilterStruct*      cudnnFilterDescriptor_t;
 typedef struct cudnnConvolutionStruct* cudnnConvolutionDescriptor_t;
 typedef struct cudnnPoolingStruct*     cudnnPoolingDescriptor_t;
+typedef struct cudnnRNNStruct*         cudnnRNNDescriptor_t;
+typedef struct cudnnDropoutStruct*     cudnnDropoutDescriptor_t;
 
 namespace lucius
 {
@@ -29,12 +33,16 @@ namespace matrix
 class CudnnFilterDescriptor
 {
 public:
+    CudnnFilterDescriptor(CudnnFilterDescriptor&&);
     CudnnFilterDescriptor(const Matrix& filter);
 
     ~CudnnFilterDescriptor();
 
 public:
     cudnnFilterDescriptor_t descriptor() const;
+
+public:
+    Dimension getDimensions() const;
 
 public:
     void* data();
@@ -50,20 +58,60 @@ private:
 class CudnnTensorDescriptor
 {
 public:
+    CudnnTensorDescriptor(CudnnTensorDescriptor&&);
     CudnnTensorDescriptor(const Matrix& tensor);
-    CudnnTensorDescriptor(const Dimension& size);
+    CudnnTensorDescriptor(const Dimension& size, const Dimension& stride,
+        const Precision& precision);
     ~CudnnTensorDescriptor();
 
 public:
     cudnnTensorDescriptor_t descriptor() const;
+    cudnnTensorDescriptor_t& descriptor();
     void* data();
     size_t bytes() const;
+
+public:
+    Dimension getDimensions() const;
 
 private:
     cudnnTensorDescriptor_t _descriptor;
 
 private:
     std::unique_ptr<Matrix> _tensor;
+
+};
+
+class CudnnTensorDescriptorArray
+{
+public:
+    CudnnTensorDescriptorArray(CudnnTensorDescriptorArray&&) = default;
+    CudnnTensorDescriptorArray(void* data, const Dimension& size, const Dimension& strides,
+        size_t timesteps, const Precision& precision);
+    CudnnTensorDescriptorArray(const Dimension& size, const Dimension& strides,
+        size_t timesteps, const Precision& precision);
+    ~CudnnTensorDescriptorArray();
+
+public:
+    cudnnTensorDescriptor_t* descriptors();
+
+public:
+    void* data() const;
+
+public:
+    Dimension getDimensions() const;
+
+public:
+    std::string toString() const;
+
+public:
+    CudnnTensorDescriptorArray& operator=(const CudnnTensorDescriptorArray&) = delete;
+    CudnnTensorDescriptorArray(const CudnnTensorDescriptorArray&) = delete;
+
+private:
+    std::vector<cudnnTensorDescriptor_t> _descriptors;
+
+private:
+    void* _data;
 
 };
 
@@ -161,6 +209,20 @@ public:
 private:
     cudnnPoolingDescriptor_t _descriptor;
 
+};
+
+class CudnnRNNDescriptor
+{
+public:
+    CudnnRNNDescriptor(const RecurrentOpsHandle&, const Precision& precision);
+    ~CudnnRNNDescriptor();
+
+public:
+    cudnnRNNDescriptor_t descriptor() const;
+
+public:
+    cudnnRNNDescriptor_t _descriptor;
+    cudnnDropoutDescriptor_t _dropoutDescriptor;
 };
 
 }

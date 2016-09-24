@@ -40,6 +40,12 @@ InputDataProducer::~InputDataProducer()
 
 }
 
+void InputDataProducer::addRawSample(const void* data, size_t size, const std::string& type,
+    const std::string& label)
+{
+    assertM(false, "Not implemented for this producer");
+}
+
 void InputDataProducer::setEpochs(size_t e)
 {
     _epochs = e;

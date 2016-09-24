@@ -82,7 +82,7 @@ static Dimension fillInStride(const Dimension& newSize,
     {
         spacingMultiplier *= inputSpacing[i];
 
-        inputSpacing[i] *= spacingMultiplier;
+        newStride[i] *= spacingMultiplier;
     }
 
     return newStride;
@@ -105,6 +105,12 @@ Matrix flatten(const Matrix& matrix)
 
 Matrix slice(const Matrix& input, const Dimension& begin, const Dimension& end)
 {
+    assert(begin.size() == input.size().size());
+    assert(end.size()   == input.size().size());
+
+    assert(begin <= input.size());
+    assert(end   <= input.size());
+
     auto size = end - begin;
 
     Matrix tempInput(input);
@@ -116,6 +122,12 @@ Matrix slice(const Matrix& input, const Dimension& begin, const Dimension& end)
 Matrix slice(const Matrix& input, const Dimension& begin,
     const Dimension& end, const Dimension& stride)
 {
+    assert(begin.size() == input.size().size());
+    assert(end.size()   == input.size().size());
+
+    assert(begin <= input.size());
+    assert(end   <= input.size());
+
     auto size = (end - begin) / stride;
 
     Matrix tempInput(input);
