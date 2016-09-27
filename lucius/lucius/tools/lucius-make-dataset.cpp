@@ -110,11 +110,6 @@ static void randomlyShuffleSamples(database::SampleDatabase& trainingDatabase,
 
     for(auto& sample : inputDatabase)
     {
-        if(!validateSample(sample))
-        {
-            continue;
-        }
-
         samples.push_back(sample);
     }
 
@@ -125,19 +120,33 @@ static void randomlyShuffleSamples(database::SampleDatabase& trainingDatabase,
     validationSamples = std::min(samples.size() - 1, validationSamples);
 
     size_t sampleIndex = 0;
+    size_t nextSample  = 0;
 
-    for(; sampleIndex < validationSamples; ++sampleIndex)
+    for(; sampleIndex < validationSamples && nextSample < samples.size(); ++nextSample)
     {
-        copySampleToDatabase(validationDatabase, samples[sampleIndex], groupByLabel);
+        if(!validateSample(samples[nextSample]))
+        {
+            continue;
+        }
+
+        copySampleToDatabase(validationDatabase, samples[nextSample], groupByLabel);
+        ++sampleIndex;
     }
 
     trainingSamples = std::min(trainingSamples, samples.size() - validationSamples);
 
     size_t totalSamples = validationSamples + trainingSamples;
 
-    for(; sampleIndex < totalSamples; ++sampleIndex)
+    for(; sampleIndex < totalSamples && nextSample < samples.size(); ++nextSample)
     {
-        copySampleToDatabase(trainingDatabase, samples[sampleIndex], groupByLabel);
+        if(!validateSample(samples[nextSample]))
+        {
+            continue;
+        }
+
+        copySampleToDatabase(trainingDatabase, samples[nextSample], groupByLabel);
+
+        ++sampleIndex;
     }
 }
 
