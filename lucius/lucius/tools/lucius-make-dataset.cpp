@@ -8,6 +8,8 @@
 #include <lucius/database/interface/SampleDatabase.h>
 #include <lucius/database/interface/Sample.h>
 
+#include <lucius/audio/interface/Audio.h>
+
 #include <lucius/video/interface/Image.h>
 
 #include <lucius/util/interface/ArgumentParser.h>
@@ -81,6 +83,17 @@ static bool validateSample(const database::Sample& sample)
     }
     else if(sample.isAudioSample())
     {
+        audio::Audio waveform(sample.path());
+
+        try
+        {
+            waveform.cacheHeader();
+        }
+        catch(const std::exception& e)
+        {
+            return false;
+        }
+
         return true;
     }
 
