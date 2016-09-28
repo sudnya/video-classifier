@@ -87,7 +87,7 @@ static bool validateSample(const database::Sample& sample)
 
         try
         {
-            waveform.cacheHeader();
+            waveform.cache();
         }
         catch(const std::exception& e)
         {
