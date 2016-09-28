@@ -28,7 +28,7 @@ public:
     virtual void setModel(Model* model);
 
 public:
-    void setUseLabeledData(bool useIt);
+    virtual void setUseLabeledData(bool useIt);
 
 protected:
     virtual ResultVector runOnBatch(const Bundle& bundle);

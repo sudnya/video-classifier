@@ -21,7 +21,7 @@ namespace audio
 class Audio
 {
 public:
-    Audio(const std::string& path, const std::string& defaultLabel);
+    Audio(const std::string& path, const std::string& defaultLabel = "");
     Audio(std::istream& stream, const std::string& format, const std::string& defaultLabel);
 
     Audio(size_t samples, size_t bytesPerSample, size_t frequency, const std::string& path = "");

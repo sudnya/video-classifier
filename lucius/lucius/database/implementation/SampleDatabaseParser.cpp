@@ -90,10 +90,29 @@ void SampleDatabaseParser::parse()
 static unsigned int parseInteger(const std::string& s);
 static std::string toLower(const std::string& s);
 
+static util::StringVector getComponents(const std::string& line)
+{
+    util::StringVector components;
+
+    auto position = line.find(",");
+
+    if(position == std::string::npos)
+    {
+        components.push_back(line);
+    }
+    else
+    {
+        components.push_back(line.substr(0, position));
+        components.push_back(line.substr(position + 1, line.size()));
+    }
+
+    return components;
+}
+
 static void parseLabeledPath(SampleDatabase* database, const std::string& line,
     const std::string& databaseDirectory)
 {
-    auto components = util::split(line, ",");
+    auto components = getComponents(line);
 
     if(components.size() < 2)
     {

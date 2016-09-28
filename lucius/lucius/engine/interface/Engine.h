@@ -52,6 +52,10 @@ public:
     /*! \brief Add model directly, the caller retains takes ownership. */
     virtual void setModel(Model* model);
 
+    /*! \brief Indicate that the engine should use labels if they exist. */
+    virtual void setUseLabeledData(bool shouldUse);
+
+public:
     /*! \brief Set the result handler, the engine takes ownership. */
     void setResultProcessor(std::unique_ptr<ResultProcessor>&& processor);
 

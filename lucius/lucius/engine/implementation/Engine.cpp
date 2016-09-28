@@ -61,6 +61,11 @@ void Engine::setModel(Model* model)
     _dataProducer->setModel(model);
 }
 
+void Engine::setUseLabeledData(bool shouldUse)
+{
+    // intentionally blank
+}
+
 void Engine::setResultProcessor(std::unique_ptr<ResultProcessor>&& processor)
 {
     _resultProcessor = std::move(processor);
