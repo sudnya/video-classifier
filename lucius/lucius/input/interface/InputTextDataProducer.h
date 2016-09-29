@@ -45,7 +45,7 @@ public:
 
     /*! \brief Get the total number of unique samples that can be produced. */
     virtual size_t getUniqueSampleCount() const;
-    
+
     /*! \brief Set the size of the input sample */
     virtual void setSampleLength(size_t length);
 
@@ -54,7 +54,8 @@ public:
 
 private:
     void createTextDatabase();
-    void getReferenceActivationsForString(const std::string& sample, Matrix& referenceActivations, size_t miniBatch);
+    void getReferenceActivationsForString(const std::string& sample,
+        Matrix& referenceActivations, size_t miniBatch);
 
 private:
     class FileDescriptor
@@ -67,10 +68,11 @@ private:
             };
 
         public:
-            FileDescriptor(std::string filename, size_t offset, size_t size) : _type(FILE_DESCRIPTOR), _filename(filename), _offsetInFile(offset), _sizeInFile(size)
+            FileDescriptor(std::string filename, size_t offset, size_t size)
+            : _type(FILE_DESCRIPTOR), _filename(filename), _offsetInFile(offset), _sizeInFile(size)
             {
             }
-            
+
             FileDescriptor(std::string label) : _type(STRING_DESCRIPTOR), _label(label)
             {
             }

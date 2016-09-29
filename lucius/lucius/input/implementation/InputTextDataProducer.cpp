@@ -30,11 +30,15 @@ namespace lucius
 namespace input
 {
 
-InputTextDataProducer::InputTextDataProducer(const std::string& textDatabaseFilename) : _sampleDatabasePath(textDatabaseFilename),_sampleDatabaseStream(nullptr), _initialized(false), _segmentSize(0), _poppedCount(0), _outputCount(0)
+InputTextDataProducer::InputTextDataProducer(const std::string& textDatabaseFilename)
+: _sampleDatabasePath(textDatabaseFilename),_sampleDatabaseStream(nullptr), _initialized(false),
+  _segmentSize(0), _poppedCount(0), _outputCount(0)
 {
 }
 
-InputTextDataProducer::InputTextDataProducer(std::istream& textDatabase) : _sampleDatabaseStream(&textDatabase), _initialized(false), _segmentSize(0), _poppedCount(0), _outputCount(0)
+InputTextDataProducer::InputTextDataProducer(std::istream& textDatabase)
+: _sampleDatabaseStream(&textDatabase), _initialized(false), _segmentSize(0),
+  _poppedCount(0), _outputCount(0)
 {
 }
 
@@ -54,11 +58,13 @@ void InputTextDataProducer::initialize()
     {
         return;
     }
-    util::log("InputTextDataProducer") << "Initializing from text database '" << _sampleDatabasePath << "'\n";
+
+    util::log("InputTextDataProducer") << "Initializing from text database '"
+        << _sampleDatabasePath << "'\n";
 
     createTextDatabase();
 
-    _initialized = true;    
+    _initialized = true;
 }
 
 std::string InputTextDataProducer::getDataFromDescriptor(const FileDescriptor& descriptor)
@@ -67,11 +73,11 @@ std::string InputTextDataProducer::getDataFromDescriptor(const FileDescriptor& d
     {
         std::ifstream stream(descriptor.getFilename());
 
-        std::string result(' ', descriptor.getSizeInFile());
+        std::vector<int8_t> result(descriptor.getSizeInFile());
 
-        stream.read(const_cast<char*>(result.data()), descriptor.getSizeInFile());
+        stream.read(reinterpret_cast<char*>(result.data()), descriptor.getSizeInFile());
 
-        return result;
+        return std::string(result.begin(), result.end());
     }
     else
     {
@@ -79,13 +85,14 @@ std::string InputTextDataProducer::getDataFromDescriptor(const FileDescriptor& d
     }
 }
 
-void InputTextDataProducer::getReferenceActivationsForString(const std::string& sample, Matrix& referenceActivations, size_t miniBatch)
+void InputTextDataProducer::getReferenceActivationsForString(const std::string& sample,
+    Matrix& referenceActivations, size_t miniBatch)
 {
     if(sample.empty())
     {
         return;
     }
-    
+
     bool ignoreMissingGraphemes = util::KnobDatabase::getKnobValue(
         "InputTextDataProducer::IgnoreMissingGraphemes", false);
 
@@ -140,9 +147,9 @@ network::Bundle InputTextDataProducer::pop()
         getReferenceActivationsForString(data, referenceActivations, i);
     }
     // add one hot encoded matrix to bundle
-    // add one hot encoded reference matrix (shifted to next char) to bundle 
+    // add one hot encoded reference matrix (shifted to next char) to bundle
     _poppedCount += miniBatchSize;
-    
+
     util::log("InputTextDataProducer") << "Loaded batch of '" << miniBatchSize
         <<  "' samples samples (" << inputActivations.size()[2] << " timesteps), "
         << (getUniqueSampleCount() - _poppedCount) << " remaining in this epoch.\n";
@@ -166,7 +173,7 @@ void InputTextDataProducer::reset()
 size_t InputTextDataProducer::getUniqueSampleCount() const
 {
     size_t samples = std::min(getMaximumSamplesToRun(), _descriptors.size());
-    
+
     return samples - (samples % getBatchSize());
 }
 
@@ -191,13 +198,14 @@ void InputTextDataProducer::setModel(model::Model* model)
     _segmentSize = model->getAttribute<size_t>("SegmentSize");
 }
 
-void InputTextDataProducer::convertChunkToOneHot(const std::string& data, Matrix inputActivations, size_t miniBatch)
+void InputTextDataProducer::convertChunkToOneHot(const std::string& data,
+    Matrix inputActivations, size_t miniBatch)
 {
     if(data.empty())
     {
         return;
     }
-    
+
     bool ignoreMissingGraphemes = util::KnobDatabase::getKnobValue(
         "InputTextDataProducer::IgnoreMissingGraphemes", false);
 
@@ -235,7 +243,7 @@ void InputTextDataProducer::createTextDatabase()
     util::log("InputTextDataProducer") << " scanning text database '" << _sampleDatabasePath << "'\n";
 
     std::unique_ptr<database::SampleDatabase> sampleDatabase;
-    
+
     if(_sampleDatabaseStream == nullptr)
     {
         sampleDatabase.reset(new database::SampleDatabase(_sampleDatabasePath));
@@ -281,11 +289,11 @@ void InputTextDataProducer::createTextDatabase()
                 size_t iterationsInFile = fileSize/_segmentSize;
                 size_t leftOver         = fileSize%_segmentSize;
 
-                for(size_t i = 0; i < iterationsInFile; ++i) 
+                for(size_t i = 0; i < iterationsInFile; ++i)
                 {
                     _descriptors.push_back(FileDescriptor(sample.path(), i*_segmentSize, _segmentSize));
                 }
-                
+
                 //leftover
                 if(leftOver > 0)
                 {

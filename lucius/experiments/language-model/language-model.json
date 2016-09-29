@@ -5,7 +5,7 @@
     {
         "type" : "NesterovAcceleratedGradientSolver",
 
-        "batch-size"      : "8",
+        "batch-size"      : "64",
         "maximum-samples" : "1e9",
         "standardization-samples" : "1024",
 
@@ -31,12 +31,12 @@
             {
                 "Type" : "RecurrentLayer",
                 "Direction" : "forward",
-                "Size" : "1024"
+                "Size" : "256"
             },
             "input":
             {
                 "Type" : "FeedForwardLayer",
-                "OutputSize" : "1024"
+                "OutputSize" : "256"
             },
             "output":
             {
@@ -51,7 +51,6 @@
                 "layers" :
                 [
                     "input",
-                    "recurrent",
                     "recurrent",
                     "recurrent",
                     "recurrent",
@@ -75,18 +74,18 @@
 
         },
 
-        "infer-outputs-from" : "/mnt/dataset/billion/training/database.txt"
+        "infer-outputs-from" : "/Users/gregorydiamos/Downloads/dataset/billion/training/database.txt"
 
     },
 
     "dataset" :
     {
-        "training-dataset-path"   : "/mnt/dataset/billion/training/database.txt",
-        "validation-dataset-path" : "/mnt/dataset/billion/validation/database.txt",
+        "training-dataset-path"   : "/Users/gregorydiamos/Downloads/dataset/billion/training/database.txt",
+        "validation-dataset-path" : "/Users/gregorydiamos/Downloads/dataset/billion/validation/database.txt",
 
         "required-accuracy" : "99.0"
     },
-    
+
     "attributes" :
     {
         "InputTextDataProducer::IgnoreMissingGraphemes" : "1"
