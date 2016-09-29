@@ -1,0 +1,121 @@
+{
+    "name" : "language-model",
+
+    "optimization" :
+    {
+        "type" : "NesterovAcceleratedGradientSolver",
+
+        "batch-size"      : "8",
+        "maximum-samples" : "1e9",
+        "standardization-samples" : "1024",
+
+        "epochs" : "200",
+
+        "parameters" :
+        {
+            "NesterovAcceleratedGradient::LearningRate"       : "1.0e-4",
+            "NesterovAcceleratedGradient::Momentum"           : "0.99",
+            "NesterovAcceleratedGradient::AnnealingRate"      : "1.000000",
+            "NesterovAcceleratedGradient::MaxGradNorm"        : "40.0",
+            "NesterovAcceleratedGradient::IterationsPerBatch" : "1"
+        }
+    },
+
+    "model" :
+    {
+        "engine" : "LearnerEngine",
+
+        "layer-types" :
+        {
+            "recurrent" :
+            {
+                "Type" : "RecurrentLayer",
+                "Direction" : "forward",
+                "Size" : "1024"
+            },
+            "input":
+            {
+                "Type" : "FeedForwardLayer",
+                "OutputSize" : "1024"
+            },
+            "output":
+            {
+                "Type" : "FeedForwardLayer"
+            }
+        },
+
+        "networks" :
+        {
+            "Classifier" :
+            {
+                "layers" :
+                [
+                    "input",
+                    "recurrent",
+                    "recurrent",
+                    "recurrent",
+                    "recurrent",
+                    "output"
+                ]
+            }
+        },
+
+        "cost-function" :
+        {
+            "name" : "SoftmaxCostFunction"
+        },
+
+        "model-attributes" :
+        {
+            "SegmentSize"  : "100",
+            "Graphemes": [" ", "$", "(", ",", "0", "4", "8", "<", "@", "D", "H", "L", "P", "T", "X", "\\", "d", "h", "l", "p", "t", "x", "|", "#", "\"", "+", "/", "3", "7", ";", "?", "C", "G", "K", "O", "S", "W", "[", "_", "c", "g", "k", "o", "s", "w", "{", "\n", "&", "*", ".", "2", "6", ":", ">", "B", "F", "J", "N", "R", "V", "Z", "^", "b", "f", "j", "n", "r", "v", "z", "~", "!", "%", ")", "-", "1", "5", "9", "=", "A", "E", "I", "M", "Q", "U", "Y", "]", "a", "e", "i", "m", "q", "u", "y", "}"],
+
+            "DelimiterGrapheme" : "END"
+
+
+        },
+
+        "infer-outputs-from" : "/mnt/dataset/billion/training/database.txt"
+
+    },
+
+    "dataset" :
+    {
+        "training-dataset-path"   : "/mnt/dataset/billion/training/database.txt",
+        "validation-dataset-path" : "/mnt/dataset/billion/validation/database.txt",
+
+        "required-accuracy" : "99.0"
+    },
+    
+    "attributes" :
+    {
+        "InputTextDataProducer::IgnoreMissingGraphemes" : "1"
+    },
+
+    "checkpointing" :
+    {
+        "use-log-file" : "1",
+        "base-directory" : "language-model"
+    },
+
+    "logging" :
+    {
+        "enabled-loggers" :
+        [
+            "NesterovAcceleratedGradientSolver",
+            "BenchmarkDataset",
+            "GraphemeMatchResultProcessor",
+            "GraphemeMatchResultProcessor::Detail",
+            "InputTextDataProducer"
+        ]
+    },
+
+    "system" :
+    {
+        "use-cuda"    : "0",
+        "cuda-device" : "0",
+        "precision"   : "SinglePrecision"
+    }
+
+}
+
