@@ -152,6 +152,14 @@ bool SampleDatabase::containsAudioSamples() const
 
 bool SampleDatabase::containsTextSamples() const
 {
+    for(auto& sample : _samples)
+    {
+        if(sample.isTextSample())
+        {
+            return true;
+        }
+    }
+
     return false;
 }
 

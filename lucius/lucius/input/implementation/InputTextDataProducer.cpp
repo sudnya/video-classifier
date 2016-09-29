@@ -18,8 +18,8 @@
 #include <lucius/matrix/interface/MatrixTransformations.h>
 
 #include <lucius/util/interface/debug.h>
-#include <lucius/util/interface/Knobs.h>
 #include <lucius/util/interface/paths.h>
+#include <lucius/util/interface/Knobs.h>
 
 #include <fstream>
 
@@ -85,6 +85,11 @@ void InputTextDataProducer::getReferenceActivationsForString(const std::string& 
     {
         return;
     }
+    
+    bool ignoreMissingGraphemes = util::KnobDatabase::getKnobValue(
+        "InputTextDataProducer::IgnoreMissingGraphemes", false);
+
+    size_t outputIndex = 0;
 
     for(size_t sampleIndex = 1; sampleIndex < sample.size(); ++sampleIndex)
     {
@@ -101,11 +106,16 @@ void InputTextDataProducer::getReferenceActivationsForString(const std::string& 
 
         if(characterPositionInGraphemeSet == _model->getOutputCount())
         {
+            if(ignoreMissingGraphemes)
+            {
+                continue;
+            }
             throw std::runtime_error("Could not match loaded grapheme '" + sample.substr(sampleIndex, 1) +
                 "' against any known grapheme.");
         }
 
-        referenceActivations[{characterPositionInGraphemeSet, miniBatch, sampleIndex - 1}] = 1.0;
+        referenceActivations[{characterPositionInGraphemeSet, miniBatch, outputIndex}] = 1.0;
+        ++outputIndex;
     }
 }
 
@@ -132,6 +142,10 @@ network::Bundle InputTextDataProducer::pop()
     // add one hot encoded matrix to bundle
     // add one hot encoded reference matrix (shifted to next char) to bundle 
     _poppedCount += miniBatchSize;
+    
+    util::log("InputTextDataProducer") << "Loaded batch of '" << miniBatchSize
+        <<  "' samples samples (" << inputActivations.size()[2] << " timesteps), "
+        << (getUniqueSampleCount() - _poppedCount) << " remaining in this epoch.\n";
 
     return Bundle(
         std::make_pair("inputActivations", matrix::MatrixVector({inputActivations})),
@@ -151,7 +165,9 @@ void InputTextDataProducer::reset()
 
 size_t InputTextDataProducer::getUniqueSampleCount() const
 {
-    return _descriptors.size() - (_descriptors.size() % getBatchSize());
+    size_t samples = std::min(getMaximumSamplesToRun(), _descriptors.size());
+    
+    return samples - (samples % getBatchSize());
 }
 
 void InputTextDataProducer::setSampleLength(size_t length)
@@ -181,6 +197,11 @@ void InputTextDataProducer::convertChunkToOneHot(const std::string& data, Matrix
     {
         return;
     }
+    
+    bool ignoreMissingGraphemes = util::KnobDatabase::getKnobValue(
+        "InputTextDataProducer::IgnoreMissingGraphemes", false);
+
+    size_t outputPosition = 0;
 
     for(size_t charPosInFile = 0; charPosInFile < data.size() - 1; ++charPosInFile)
     {
@@ -195,11 +216,16 @@ void InputTextDataProducer::convertChunkToOneHot(const std::string& data, Matrix
 
         if(characterPositionInGraphemeSet == _outputCount)
         {
+            if(ignoreMissingGraphemes)
+            {
+                continue;
+            }
             throw std::runtime_error("Could not match loaded grapheme '" + std::string(1, c) +
                 "' against any known grapheme.");
         }
 
-        inputActivations[{characterPositionInGraphemeSet, miniBatch, charPosInFile}] = 1.0;
+        inputActivations[{characterPositionInGraphemeSet, miniBatch, outputPosition}] = 1.0;
+        ++outputPosition;
     }
 }
 

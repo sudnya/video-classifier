@@ -303,6 +303,9 @@ private:
 
     StringVector _toGraphemes(const std::string& label)
     {
+        bool ignoreMissingGraphemes = util::KnobDatabase::getKnobValue(
+            "InputAudioDataProducer::IgnoreMissingGraphemes", false);
+        
         if(label.empty())
         {
             return StringVector();
@@ -332,8 +335,16 @@ private:
             // ordered before first grapheme
             if(insertPosition == _graphemes.begin())
             {
-                throw std::runtime_error("Could not match remaining label '" + remainingLabel +
-                    "' against a grapheme.");
+                if(ignoreMissingGraphemes)
+                {
+                    remainingLabel = remainingLabel.substr(1);
+                    continue;
+                }
+                else
+                {
+                    throw std::runtime_error("Could not match remaining label '" + remainingLabel +
+                        "' against a grapheme.");
+                }
             }
 
             --insertPosition;
@@ -342,8 +353,16 @@ private:
 
             if(grapheme != *insertPosition)
             {
-                throw std::runtime_error("Could not match remaining label '" + remainingLabel +
-                    "' against best grapheme '" + *insertPosition + "'.");
+                if(ignoreMissingGraphemes)
+                {
+                    remainingLabel = remainingLabel.substr(1);
+                    continue;
+                }
+                else
+                {
+                    throw std::runtime_error("Could not match remaining label '" + remainingLabel +
+                        "' against best grapheme '" + *insertPosition + "'.");
+                }
             }
 
             graphemes.push_back(grapheme);
