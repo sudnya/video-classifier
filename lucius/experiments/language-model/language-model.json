@@ -40,7 +40,8 @@
             },
             "output":
             {
-                "Type" : "FeedForwardLayer"
+                "Type" : "FeedForwardLayer",
+                "ActivationFunction" : "NullActivationFunction"
             }
         },
 
@@ -74,14 +75,14 @@
 
         },
 
-        "infer-outputs-from" : "/Users/gregorydiamos/Downloads/dataset/billion/training/database.txt"
+        "infer-outputs-from" : "/data/4tb/billion/training/database.txt"
 
     },
 
     "dataset" :
     {
-        "training-dataset-path"   : "/Users/gregorydiamos/Downloads/dataset/billion/training/database.txt",
-        "validation-dataset-path" : "/Users/gregorydiamos/Downloads/dataset/billion/validation/database.txt",
+        "training-dataset-path"   : "/data/4tb/billion/training/database.txt",
+        "validation-dataset-path" : "/data/4tb/billion/validation/database.txt",
 
         "required-accuracy" : "99.0"
     },

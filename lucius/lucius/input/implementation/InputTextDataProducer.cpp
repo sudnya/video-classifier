@@ -96,8 +96,6 @@ void InputTextDataProducer::getReferenceActivationsForString(const std::string& 
     bool ignoreMissingGraphemes = util::KnobDatabase::getKnobValue(
         "InputTextDataProducer::IgnoreMissingGraphemes", false);
 
-    size_t outputIndex = 0;
-
     for(size_t sampleIndex = 1; sampleIndex < sample.size(); ++sampleIndex)
     {
         size_t characterPositionInGraphemeSet = getModel()->getOutputCount();
@@ -115,15 +113,17 @@ void InputTextDataProducer::getReferenceActivationsForString(const std::string& 
         {
             if(ignoreMissingGraphemes)
             {
+                referenceActivations[{0, miniBatch, sampleIndex - 1}] = 1.0;
                 continue;
             }
-            throw std::runtime_error("Could not match loaded grapheme '" + sample.substr(sampleIndex, 1) +
-                "' against any known grapheme.");
+            throw std::runtime_error("Could not match loaded grapheme '" +
+                sample.substr(sampleIndex, 1) + "' against any known grapheme.");
         }
 
-        referenceActivations[{characterPositionInGraphemeSet, miniBatch, outputIndex}] = 1.0;
-        ++outputIndex;
+        referenceActivations[{characterPositionInGraphemeSet, miniBatch, sampleIndex - 1}] = 1.0;
     }
+
+    referenceActivations[{0, miniBatch, sample.size() - 1}] = 0.0;
 }
 
 network::Bundle InputTextDataProducer::pop()
@@ -209,8 +209,6 @@ void InputTextDataProducer::convertChunkToOneHot(const std::string& data,
     bool ignoreMissingGraphemes = util::KnobDatabase::getKnobValue(
         "InputTextDataProducer::IgnoreMissingGraphemes", false);
 
-    size_t outputPosition = 0;
-
     for(size_t charPosInFile = 0; charPosInFile < data.size() - 1; ++charPosInFile)
     {
         char c = data[charPosInFile];
@@ -226,14 +224,14 @@ void InputTextDataProducer::convertChunkToOneHot(const std::string& data,
         {
             if(ignoreMissingGraphemes)
             {
+                inputActivations[{0, miniBatch, charPosInFile}] = 1.0;
                 continue;
             }
             throw std::runtime_error("Could not match loaded grapheme '" + std::string(1, c) +
                 "' against any known grapheme.");
         }
 
-        inputActivations[{characterPositionInGraphemeSet, miniBatch, outputPosition}] = 1.0;
-        ++outputPosition;
+        inputActivations[{characterPositionInGraphemeSet, miniBatch, charPosInFile}] = 1.0;
     }
 }
 

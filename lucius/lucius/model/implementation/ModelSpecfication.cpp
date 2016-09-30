@@ -247,6 +247,15 @@ static void setupOutputLayerParameters(model::Model& model,
             model.setOutputLabel(index++, "-SEPARATOR-");
         }
     }
+    
+    if(specification.exists("cost-function") &&
+        specification.get<std::string>("cost-function") == "SoftmaxCostFunction")
+    {
+        if(specification.exists("model-attributes.Graphemes"))
+        {
+            model.setOutputLabel(index++, "UNKOWN");
+        }
+    }
 
     for(auto& label : labels)
     {
@@ -257,6 +266,12 @@ static void setupOutputLayerParameters(model::Model& model,
         specification.get<std::string>("cost-function") == "CTCCostFunction")
     {
         labels.push_back("-SEPARATOR-");
+    }
+
+    if(specification.exists("cost-function") &&
+        specification.get<std::string>("cost-function") == "SoftmaxCostFunction")
+    {
+        labels.push_back("UNKOWN");
     }
 
     layerParameters.insert("OutputSize", labels.size());
