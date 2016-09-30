@@ -122,8 +122,6 @@ void InputTextDataProducer::getReferenceActivationsForString(const std::string& 
 
         referenceActivations[{characterPositionInGraphemeSet, miniBatch, sampleIndex - 1}] = 1.0;
     }
-
-    referenceActivations[{0, miniBatch, sample.size() - 1}] = 0.0;
 }
 
 network::Bundle InputTextDataProducer::pop()
