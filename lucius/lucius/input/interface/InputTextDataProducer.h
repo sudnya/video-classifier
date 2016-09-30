@@ -1,4 +1,4 @@
-/*    \file   InputTextDataProducer.h
+/*  \file   InputTextDataProducer.h
     \date   Saturday August 10, 2014
     \author Gregory Diamos <solusstultus@gmail.com>
     \brief  The header file for the InputTextDataProducer class.

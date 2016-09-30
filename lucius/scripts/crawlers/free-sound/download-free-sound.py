@@ -18,42 +18,40 @@ def touchFile(path, times=None):
 def sanitize(path):
     return path.replace(",", "")
 
-class Track:
-    def __init__(self, url, curator="unkown", album = "unknown",
-            title = "unknown", artist = "unknown", date = "unknown", genre = "",
-            filename = "unknown"):
+class Sound:
+    def __init__(self, url, user="unkown",
+            title = "unknown", date = "unknown", description = "",
+            tags = "", filename = "unknown"):
         self.url = url.encode('ascii', errors='ignore')
-        self.curator = curator.encode('ascii', errors='ignore')
-        self.album = album.encode('ascii', errors='ignore')
+        self.user = user.encode('ascii', errors='ignore')
         self.title = title.encode('ascii', errors='ignore')
-        self.artist = artist.encode('ascii', errors='ignore')
         self.date = date.encode('ascii', errors='ignore')
-        self.genre = genre.encode('ascii', errors='ignore')
+        self.description = description.encode('ascii', errors='ignore')
+        self.tags = tags.encode('ascii', errors='ignore')
         self.filename = sanitize(filename.encode('ascii', errors='ignore'))
 
     def getMetadataLine(self):
         return str(self.url + ", " +
-                   self.curator + ", " +
-                   self.album + ", " +
+                   self.user + ", " +
                    self.title + ", " +
-                   self.artist + ", " +
                    self.date + ", " +
-                   self.genre + ", " +
+                   self.description + ", " +
+                   self.tags + ", " +
                    self.filename + "\n")
 
     def getDatabaseLine(self):
         return self.getRelativePath() + ", \"" + self.getLabel() + "\"\n"
 
     def getLabel(self):
-        return str("music by the artist " + self.artist + " on the album " + self.album +
-            " with the title " + self.title + " in the genres " +
-            " and ".join(self.genre.split(":")))
+        return str(" ".join(self.tags.split(":")))
 
     def getRelativePath(self):
         return os.path.join(self.getRelativeDirectory(), self.filename)
 
+    def getLeadingTag(self):
+
     def getRelativeDirectory(self):
-        return os.path.join(self.curator, self.artist, self.album)
+        return self.getLeadingTag()
 
 
 class FileLimitReached:
@@ -136,142 +134,51 @@ class Downloader:
         metadata = Track(splitLine[0])
 
         if len(splitLine) >= 2:
-            metadata.curator = splitLine[1]
+            metadata.user = splitLine[1]
 
         if len(splitLine) >= 3:
-            metadata.album = splitLine[2]
+            metadata.title = splitLine[2]
 
         if len(splitLine) >= 4:
-            metadata.title = splitLine[3]
+            metadata.date = splitLine[3]
 
         if len(splitLine) >= 5:
-            metadata.artist = splitLine[4]
+            metadata.description = splitLine[4]
 
         if len(splitLine) >= 6:
-            metadata.date = splitLine[5]
+            metadata.tags = splitLine[5]
 
         if len(splitLine) >= 7:
-            metadata.genre = splitLine[6]
-
-        if len(splitLine) >= 8:
-            metadata.filename = splitLine[7]
+            metadata.filename = splitLine[6]
 
         return metadata
-
 
     def downloadFiles(self):
         self.filesDownloadedSoFar = 0
 
-        pages = self.getCuratorPageCount()
+        searchPages = {}
 
-        self.logger.debug("Got curator page count of " + str(pages))
+        pageCount = self.getSearchPageCount(searchPages)
+
+        self.logger.debug("Got sound page count of " + str(pageCount))
 
         try:
             pageRange = range(pages)
             random.shuffle(pageRange)
             for pageNumber in pageRange:
                 try:
-                    curators = self.getCuratorsOnPage(pageNumber)
+                    songs = self.getSongsOnPage(searchPages, pageNumber)
                 except Exception:
-                    self.logger.warn("Failed to get curator page " + str(pageNumber))
+                    self.logger.warn("Failed to get songs on page " + str(pageNumber))
                     pass
 
-                self.logger.debug("Got curator page " + str(pageNumber) + " with " + str(curators))
+                self.logger.debug("Got songs on page " + str(pageNumber))
 
-                random.shuffle(curators)
-
-                for curator in curators:
-                    self.downloadFilesFromCurator(curator)
+                for song in songs:
+                    self.downloadSong(song)
 
         except FileLimitReached as e:
             pass
-
-    def getCuratorPageCount(self):
-        request = requests.get("https://freemusicarchive.org/api/get/curators.json?api_key=" +
-            self.apiKey, timeout=self.timeout)
-
-        request.raise_for_status()
-
-        pages = 0
-
-        if 'total_pages' in request.json():
-            pages = int(request.json()['total_pages'])
-
-        return pages
-
-    def getCuratorsOnPage(self, page):
-        request = requests.get("https://freemusicarchive.org/api/get/curators.json?api_key=" +
-            self.apiKey + "&page=" + str(page), timeout=self.timeout)
-
-        request.raise_for_status()
-
-        if not 'dataset' in request.json():
-            return []
-
-        curators = []
-
-        for curator in request.json()['dataset']:
-            curators.append(curator['curator_handle'])
-
-        return curators
-
-    def downloadFilesFromCurator(self, curator):
-        self.logger.debug(" for curator " + curator)
-
-        try:
-            pages = self.getAlbumPageCount(curator)
-        except Exception:
-            self.logger.debug(" Failed to get album page count ")
-            return
-
-        self.logger.debug(" Got album page count of " + str(pages))
-
-        pageRange = range(pages)
-        random.shuffle(pageRange)
-
-        for pageNumber in pageRange:
-            try:
-                albums = self.getAlbumsOnPage(curator, pageNumber)
-            except Exception:
-                self.logger.warn(" Failed to get album page " + str(pageNumber))
-                continue
-
-            self.logger.debug(" Got album page " + str(pageNumber) + " with " + str(albums))
-
-            random.shuffle(albums)
-
-            for album in albums:
-                self.downloadFilesFromAlbum(curator, album)
-
-    def getAlbumPageCount(self, curator):
-        request = requests.get("https://freemusicarchive.org/api/get/albums.json?api_key=" +
-            self.apiKey + "&curator_handle=" + curator, timeout=self.timeout)
-
-        request.raise_for_status()
-
-        pages = 0
-
-        if 'total_pages' in request.json():
-            pages = int(request.json()['total_pages'])
-
-        return pages
-
-    def getAlbumsOnPage(self, curator, page):
-        request = requests.get("https://freemusicarchive.org/api/get/albums.json?api_key=" +
-            self.apiKey + "&page=" + str(page) + "&curator_handle=" + curator,
-            timeout=self.timeout)
-
-        request.raise_for_status()
-
-        if not 'dataset' in request.json():
-            return []
-
-        albums = []
-
-        for album in request.json()['dataset']:
-            albums.append(album['album_handle'])
-
-        return albums
 
     def downloadFilesFromAlbum(self, curator, album):
         self.logger.debug("  for album " + album)
@@ -300,7 +207,6 @@ class Downloader:
 
                 if self.isTrackAlreadyDownloaded(track):
                     self.logger.debug("  Skipping track, already downloaded")
-                    self.downloadedFiles += 1
                     continue
 
                 self.downloadTrack(track)
@@ -314,20 +220,6 @@ class Downloader:
 
     def isTrackAlreadyDownloaded(self, track):
         return track.url in self.metadata
-
-    def getTrackPageCount(self, curator, album):
-        request = requests.get("https://freemusicarchive.org/api/get/tracks.json?api_key=" +
-            self.apiKey + "&curator_handle=" + curator + "&album_handle=" + album,
-            timeout=self.timeout)
-
-        request.raise_for_status()
-
-        pages = 0
-
-        if 'total_pages' in request.json():
-            pages = int(request.json()['total_pages'])
-
-        return pages
 
     def getTracksOnPage(self, curator, album, page):
 
