@@ -415,7 +415,7 @@ public:
     template<typename T>
     CUDA_DECORATOR T operator()(const T& l) const
     {
-        return 1.0 - std::pow(l, 2.0);
+        return 1.0 - (l * l);
     }
 
 };
