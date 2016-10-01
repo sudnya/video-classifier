@@ -73,6 +73,8 @@ std::string InputTextDataProducer::getDataFromDescriptor(const FileDescriptor& d
     {
         std::ifstream stream(descriptor.getFilename());
 
+        stream.seekg(descriptor.getOffsetInFile());
+
         std::vector<int8_t> result(descriptor.getSizeInFile());
 
         stream.read(reinterpret_cast<char*>(result.data()), descriptor.getSizeInFile());
