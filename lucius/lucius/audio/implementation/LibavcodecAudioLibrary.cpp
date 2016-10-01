@@ -271,6 +271,10 @@ LibavcodecAudioLibrary::HeaderAndData LibavcodecAudioLibrary::loadAudio(std::ist
 
     if(status < 0)
     {
+        // the library frees the format context on error
+        avFormat.release();
+        buffer.release();
+
         throw std::runtime_error("Failed to find stream info with error " +
             LibavcodecLibrary::getErrorCode(status) + ".");
     }
@@ -304,6 +308,10 @@ LibavcodecAudioLibrary::HeaderAndData LibavcodecAudioLibrary::loadAudio(std::ist
 
         if(length < 0)
         {
+            // the library frees the format context on error
+            avFormat.release();
+            buffer.release();
+
             throw std::runtime_error("Error while decoding " + format);
         }
 
@@ -398,6 +406,9 @@ LibavcodecAudioLibrary::Header LibavcodecAudioLibrary::loadAudioHeader(std::istr
 
     if(!avFormat)
     {
+        // the library frees the buffer on error
+        buffer.release();
+
         throw std::runtime_error("Failed to allocate avformat context.");
     }
 
@@ -422,6 +433,10 @@ LibavcodecAudioLibrary::Header LibavcodecAudioLibrary::loadAudioHeader(std::istr
 
     if(status < 0)
     {
+        // the library frees the format context on error
+        avFormat.release();
+        buffer.release();
+
         throw std::runtime_error("Failed to find stream info with error " +
             LibavcodecLibrary::getErrorCode(status) + ".");
     }

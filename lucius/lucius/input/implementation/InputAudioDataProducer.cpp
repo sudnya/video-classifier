@@ -305,7 +305,7 @@ private:
     {
         bool ignoreMissingGraphemes = util::KnobDatabase::getKnobValue(
             "InputAudioDataProducer::IgnoreMissingGraphemes", false);
-        
+
         if(label.empty())
         {
             return StringVector();

@@ -91,6 +91,11 @@ size_t Configuration::getMaximumStandardizationSamples() const
     return _properties->get<double>("optimization.standardization-samples", 1024.0);
 }
 
+size_t Configuration::getMaximumValidationSamples() const
+{
+    return _properties->get<double>("optimization.validation-samples", 1024.0);
+}
+
 size_t Configuration::getEpochs() const
 {
     if(!(*_properties)["optimization"].exists("epochs"))

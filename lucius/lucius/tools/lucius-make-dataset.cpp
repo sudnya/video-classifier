@@ -1,4 +1,4 @@
-/*    \file   lucius-make-dataset.cpp
+/*  \file   lucius-make-dataset.cpp
     \date   Saturday August 10, 2015
     \author Gregory Diamos <solusstultus@gmail.com>
     \brief  A tool for splitting a dataset into training/validation sets.
@@ -7,6 +7,8 @@
 // Lucius Includes
 #include <lucius/database/interface/SampleDatabase.h>
 #include <lucius/database/interface/Sample.h>
+
+#include <lucius/audio/interface/Audio.h>
 
 #include <lucius/video/interface/Image.h>
 
@@ -34,19 +36,27 @@ static void createDirectories(const std::string& outputPath, const std::string& 
 }
 
 static void copySampleToDatabase(database::SampleDatabase& outputDatabase,
-    const database::Sample& sample)
+    const database::Sample& sample, bool groupByLabel)
 {
     auto directory = util::getDirectory(outputDatabase.path());
 
-    auto path = util::joinPaths(directory, util::joinPaths(sample.label(),
-        util::getFile(sample.path())));
+    std::string path;
 
-    util::log("LuciusMakeDataset") << "Copying sample '" + sample.path() + "' to '" + path + "'\n";
+    if(groupByLabel)
+    {
+        path = sample.label();
+    }
 
-    util::copyFile(path, sample.path());
+    path = util::joinPaths(path, util::getFile(sample.path()));
 
-    outputDatabase.addSample(database::Sample(util::joinPaths(sample.label(),
-        util::getFile(sample.path())), sample.label()));
+    auto completePath = util::joinPaths(directory, path);
+
+    util::log("LuciusMakeDataset") << "Copying sample '" + sample.path() + "' to '" +
+        completePath + "'\n";
+
+    util::copyFile(completePath, sample.path());
+
+    outputDatabase.addSample(database::Sample(path, sample.label()));
 }
 
 static bool validateSample(const database::Sample& sample)
@@ -71,23 +81,35 @@ static bool validateSample(const database::Sample& sample)
 
         return true;
     }
+    else if(sample.isAudioSample())
+    {
+        audio::Audio waveform(sample.path());
+
+        try
+        {
+            waveform.cache();
+        }
+        catch(const std::exception& e)
+        {
+            return false;
+        }
+
+        return true;
+    }
 
     return false;
 }
 
 static void randomlyShuffleSamples(database::SampleDatabase& trainingDatabase,
     database::SampleDatabase& validationDatabase,
-    const database::SampleDatabase& inputDatabase, size_t validationSamples)
+    const database::SampleDatabase& inputDatabase,
+    size_t trainingSamples, size_t validationSamples,
+    bool groupByLabel)
 {
     database::SampleDatabase::SampleVector samples;
 
     for(auto& sample : inputDatabase)
     {
-        if(!validateSample(sample))
-        {
-            continue;
-        }
-
         samples.push_back(sample);
     }
 
@@ -98,34 +120,61 @@ static void randomlyShuffleSamples(database::SampleDatabase& trainingDatabase,
     validationSamples = std::min(samples.size() - 1, validationSamples);
 
     size_t sampleIndex = 0;
+    size_t nextSample  = 0;
 
-    for(; sampleIndex < validationSamples; ++sampleIndex)
+    for(; sampleIndex < validationSamples && nextSample < samples.size(); ++nextSample)
     {
-        copySampleToDatabase(validationDatabase, samples[sampleIndex]);
+        if(!validateSample(samples[nextSample]))
+        {
+            continue;
+        }
+
+        copySampleToDatabase(validationDatabase, samples[nextSample], groupByLabel);
+        ++sampleIndex;
     }
 
-    for(; sampleIndex < samples.size(); ++sampleIndex)
+    trainingSamples = std::min(trainingSamples, samples.size() - validationSamples);
+
+    size_t totalSamples = validationSamples + trainingSamples;
+
+    for(; sampleIndex < totalSamples && nextSample < samples.size(); ++nextSample)
     {
-        copySampleToDatabase(trainingDatabase, samples[sampleIndex]);
+        if(!validateSample(samples[nextSample]))
+        {
+            continue;
+        }
+
+        copySampleToDatabase(trainingDatabase, samples[nextSample], groupByLabel);
+
+        ++sampleIndex;
     }
 }
 
 static void splitDatabase(const std::string& outputPath, const std::string& inputFileName,
-    size_t validationSamples)
+    size_t trainingSamples, size_t validationSamples, bool groupByLabel)
 {
     database::SampleDatabase inputDatabase(inputFileName);
 
     inputDatabase.load();
 
-    createDirectories(outputPath, "training", inputDatabase.getAllPossibleLabels());
-    createDirectories(outputPath, "validation", inputDatabase.getAllPossibleLabels());
+    if(groupByLabel)
+    {
+        createDirectories(outputPath, "training", inputDatabase.getAllPossibleLabels());
+        createDirectories(outputPath, "validation", inputDatabase.getAllPossibleLabels());
+    }
+    else
+    {
+        util::makeDirectory(util::joinPaths(outputPath, "training"));
+        util::makeDirectory(util::joinPaths(outputPath, "validation"));
+    }
 
     database::SampleDatabase trainingDatabase(util::joinPaths(outputPath,
         util::joinPaths("training", "database.txt")));
     database::SampleDatabase validationDatabase(util::joinPaths(outputPath,
         util::joinPaths("validation", "database.txt")));
 
-    randomlyShuffleSamples(trainingDatabase, validationDatabase, inputDatabase, validationSamples);
+    randomlyShuffleSamples(trainingDatabase, validationDatabase, inputDatabase,
+        trainingSamples, validationSamples, groupByLabel);
 
     trainingDatabase.save();
     validationDatabase.save();
@@ -149,7 +198,9 @@ int main(int argc, char** argv)
 
     std::string inputFileName;
     std::string outputPath;
-    size_t validationSamples;
+    size_t validationSamples = 0;
+    size_t trainingSamples = 0;
+    bool groupByLabel = false;
 
     std::string loggingEnabledModules;
 
@@ -157,13 +208,15 @@ int main(int argc, char** argv)
 
     parser.description("A tool for splitting a dataset into training/validation sets.");
 
-    parser.parse("-i", "--input",  inputFileName,
-        "", "The input database path.");
-    parser.parse("-o", "--output",  outputPath,
-        "", "The output path to store generated files "
+    parser.parse("-i", "--input", inputFileName, "", "The input database path.");
+    parser.parse("-o", "--output", outputPath, "", "The output path to store generated files "
             "(the training/validation datasets).");
-    parser.parse("-S", "--validation-samples",  validationSamples,
+    parser.parse("-S", "--validation-samples", validationSamples,
         1000, "The number of samples to withold for validation.");
+    parser.parse("-T", "--training-samples", trainingSamples, 1e9,
+        "The maximum number of samples to use for validation.");
+    parser.parse("-g", "--group-by-label", groupByLabel,
+        false, "Group samples together by labels.");
 
     parser.parse("-v", "--verbose", verbose, false,
         "Print out log messages during execution");
@@ -183,7 +236,8 @@ int main(int argc, char** argv)
 
     try
     {
-        lucius::splitDatabase(outputPath, inputFileName, validationSamples);
+        lucius::splitDatabase(outputPath, inputFileName, trainingSamples, validationSamples,
+            groupByLabel);
     }
     catch(const std::exception& e)
     {

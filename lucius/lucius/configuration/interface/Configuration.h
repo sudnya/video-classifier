@@ -47,6 +47,7 @@ public:
     size_t getBatchSize() const;
     size_t getMaximumSamples() const;
     size_t getMaximumStandardizationSamples() const;
+    size_t getMaximumValidationSamples() const;
     size_t getEpochs() const;
 
 public:

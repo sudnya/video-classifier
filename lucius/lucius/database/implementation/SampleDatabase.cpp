@@ -199,7 +199,7 @@ void SampleDatabase::save() const
 
     for(auto& sample : *this)
     {
-        auto entry = sample.path() + ", " + sample.label() + "\n";
+        auto entry = sample.path() + ", \"" + sample.label() + "\"\n";
 
         output.write(entry.c_str(), entry.size());
 

@@ -15,6 +15,9 @@ def touchFile(path, times=None):
     with open(path, 'a'):
         os.utime(path, times)
 
+def sanitize(path):
+    return path.replace(",", "")
+
 class Track:
     def __init__(self, url, curator="unkown", album = "unknown",
             title = "unknown", artist = "unknown", date = "unknown", genre = "",
@@ -26,7 +29,7 @@ class Track:
         self.artist = artist.encode('ascii', errors='ignore')
         self.date = date.encode('ascii', errors='ignore')
         self.genre = genre.encode('ascii', errors='ignore')
-        self.filename = filename.encode('ascii', errors='ignore')
+        self.filename = sanitize(filename.encode('ascii', errors='ignore'))
 
     def getMetadataLine(self):
         return str(self.url + ", " +
