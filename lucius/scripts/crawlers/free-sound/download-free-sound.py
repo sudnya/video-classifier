@@ -49,6 +49,10 @@ class Sound:
         return os.path.join(self.getRelativeDirectory(), self.filename)
 
     def getLeadingTag(self):
+        if len(self.tags) == 0:
+            return "unknown"
+
+        return self.tags[0]
 
     def getRelativeDirectory(self):
         return self.getLeadingTag()
@@ -156,18 +160,16 @@ class Downloader:
     def downloadFiles(self):
         self.filesDownloadedSoFar = 0
 
-        searchPages = {}
-
         pageCount = self.getSearchPageCount(searchPages)
 
         self.logger.debug("Got sound page count of " + str(pageCount))
 
         try:
-            pageRange = range(pages)
+            pageRange = range(pageCount)
             random.shuffle(pageRange)
             for pageNumber in pageRange:
                 try:
-                    songs = self.getSongsOnPage(searchPages, pageNumber)
+                    songs = self.getSongsOnPage(pageNumber)
                 except Exception:
                     self.logger.warn("Failed to get songs on page " + str(pageNumber))
                     pass
@@ -180,78 +182,47 @@ class Downloader:
         except FileLimitReached as e:
             pass
 
-    def downloadFilesFromAlbum(self, curator, album):
-        self.logger.debug("  for album " + album)
+    def getSearchPageCount(self):
+        result = self.getSearchPageResult(0)
 
-        try:
-            pages = self.getTrackPageCount(curator, album)
-        except Exception:
-            self.logger.warn("  Failed to get track page count")
-            return
+        if not 'count' in result:
+            raise KeyError("Field 'count' not found in search request response.")
 
-        self.logger.debug("  Got track page count of " + str(pages))
+        return result['count']
 
-        for pageNumber in range(pages):
-            try:
-                tracks = self.getTracksOnPage(curator, album, pageNumber)
-            except Exception:
-                continue
+    def getSearchPageResult(self, page):
+        request = requests.get("http://www.freesound.org/apiv2/search/text/?token=" +
+            self.apiKey + "&query=&page=" + str(page) + "sort=downloads_desc&page_size=150" +
+            "&fields=id,user,title,date,description,tags,download",
+            timeout=self.timeout)
 
-            self.logger.debug("  Got track page " + str(pageNumber) + " with " +
-                str([track.title for track in tracks]))
+        request.raise_for_status()
 
-            for track in tracks:
-                if self.downloadedFiles >= self.fileLimit:
-                    self.logger.debug("  Skipping track, file limit reached")
-                    raise FileLimitReached()
-
-                if self.isTrackAlreadyDownloaded(track):
-                    self.logger.debug("  Skipping track, already downloaded")
-                    continue
-
-                self.downloadTrack(track)
-
-                if track.data != None:
-                    self.logger.debug("  Downloaded track")
-                    self.downloadedFiles += 1
-                    self.saveTrack(track)
-                else:
-                    self.logger.warn("  Download failed!")
+        return result.json()
 
     def isTrackAlreadyDownloaded(self, track):
         return track.url in self.metadata
 
-    def getTracksOnPage(self, curator, album, page):
+    def getSongsOnPage(self, pageNumber):
+        pageResult = self.getSearchPageResult(pageNumber)
 
-        request = requests.get("https://freemusicarchive.org/api/get/tracks.json?api_key=" +
-            self.apiKey + "&page=" + str(page) + "&curator_handle=" + curator +
-            "&album_handle=" + album, timeout=self.timeout)
+        if not 'results' in pageResult:
+            raise KeyError("Missing field 'results' in search page response.")
 
-        request.raise_for_status()
+        songs =
 
-        if not 'dataset' in request.json():
-            return []
+        for sound in page:
 
-        tracks = []
+            newSound = Sound(url, user, title, date, description, tag, filename)
 
-        for track in request.json()['dataset']:
-            url = 'https://freemusicarchive.org/file/' + track['track_file']
-            title = track['track_title']
-            artist = track['artist_name']
-            date = track['track_date_created']
-            if 'track_genres' in track:
-                genres = ":".join([genre['genre_title'] for genre in track['track_genres']])
-            else:
-                genres = ""
-            filename = self.getFilename(track['track_file'])
+            self.logger.info("  Get got '" + repr(newSound.getMetadataLine()) + "'")
 
-            newTrack = Track(url, curator, album, title, artist, date, genres, filename)
+            sounds.append(newSound)
 
-            self.logger.info("  Get track '" + repr(newTrack.getMetadataLine()) + "'")
+        return sounds
 
-            tracks.append(newTrack)
-
-        return tracks
+    def downloadSound(self, song):
+        pass
 
     def getFilename(self, path):
         return os.path.split(path)[1]
@@ -297,12 +268,14 @@ class Downloader:
 def main():
     parser = ArgumentParser(description="A program to download audio from freesound.org")
 
-    parser.add_argument("-k", "--api-key", default = "IEXBC4ZZ7EA0KR4R",
+    parser.add_argument("-c", "--client=id", default = "ODMmGFX8FAtrlT5bSTRZ",
+        help="Free sound client id.")
+    parser.add_argument("-k", "--api-key", default = "mkKYBUgk6Gqxm7nMWV6dge4IgOwSbq6prIFKL7ef",
         help="Free sound api key.")
     parser.add_argument("-t", "--timeout", default = 10.0, help="Timeout for requests.")
     parser.add_argument("-l", "--file-limit", default = 1,
         help="A limit on the maximum number of files to download.")
-    parser.add_argument("-o", "--output-path", default = "free-music-archive",
+    parser.add_argument("-o", "--output-path", default = "free-sounds",
         help = "The path to a directory to store downloaded audio and metadata.")
     parser.add_argument("-v", "--verbose", default = False, action="store_true",
         help = "Print out verbose logging info.")
