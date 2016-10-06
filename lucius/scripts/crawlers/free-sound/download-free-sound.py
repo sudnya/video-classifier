@@ -18,6 +18,11 @@ def touchFile(path, times=None):
 def sanitize(path):
     return path.replace(",", "")
 
+def getExtension(path):
+    filename, extension = os.path.splitext(path)
+
+    return extension
+
 class Sound:
     def __init__(self, url, user="unkown",
             title = "unknown", date = "unknown", description = "",
@@ -52,7 +57,7 @@ class Sound:
         if len(self.tags) == 0:
             return "unknown"
 
-        return self.tags[0]
+        return self.tags.split(":")[0]
 
     def getRelativeDirectory(self):
         return self.getLeadingTag()
@@ -65,14 +70,44 @@ class FileLimitReached:
 
 class Downloader:
     def __init__(self, options):
+        self.clientId = options["client_id"]
         self.apiKey = options["api_key"]
+        self.authorizationCode = options["authorization_code"]
         self.fileLimit = int(options["file_limit"])
         self.outputPath = options["output_path"]
         self.timeout = float(options['timeout'])
+        self.accessToken = options["access_token"]
 
         self.downloadedFiles = 0
 
         self.createLogger(options["verbose"])
+
+        self.getAccessToken()
+
+    def getAccessToken(self):
+
+        if len(self.accessToken) != 0:
+            self.logger.info("Using access token '" + self.accessToken + "'")
+            return
+
+        self.logger.info("Getting access token...")
+
+        params = {"client_id" : self.clientId,
+                  "client_secret" : self.apiKey,
+                  "grant_type" : "authorization_code",
+                  "code" : self.authorizationCode}
+
+        request = requests.post("https://www.freesound.org/apiv2/oauth2/access_token/",
+            params=params, timeout=self.timeout)
+
+        request.raise_for_status()
+
+        if not 'access_token' in request.json():
+            raise KeyError('Could not find field "access_token" in access request response')
+
+        self.accessToken = request.json()['access_token']
+
+        print "Got access token '" + self.accessToken + "'"
 
     def createLogger(self, is_verbose):
         self.logger = logging.getLogger("Downloader")
@@ -135,7 +170,7 @@ class Downloader:
         if len(splitLine) == 0:
             return None
 
-        metadata = Track(splitLine[0])
+        metadata = Sound(splitLine[0])
 
         if len(splitLine) >= 2:
             metadata.user = splitLine[1]
@@ -160,24 +195,46 @@ class Downloader:
     def downloadFiles(self):
         self.filesDownloadedSoFar = 0
 
-        pageCount = self.getSearchPageCount(searchPages)
+        pageCount = self.getSearchPageCount()
 
         self.logger.debug("Got sound page count of " + str(pageCount))
+
+        pageCount = min(pageCount, self.fileLimit / 75)
+
+        self.logger.debug("Using page count of " + str(pageCount))
 
         try:
             pageRange = range(pageCount)
             random.shuffle(pageRange)
             for pageNumber in pageRange:
+                sounds = []
+
                 try:
-                    songs = self.getSongsOnPage(pageNumber)
-                except Exception:
-                    self.logger.warn("Failed to get songs on page " + str(pageNumber))
+                    sounds = self.getSoundsOnPage(pageNumber)
+                except Exception as e:
+                    self.logger.warn("Failed to get sounds on page " + str(pageNumber))
+                    self.logger.warn(" with error " + str(e))
                     pass
 
-                self.logger.debug("Got songs on page " + str(pageNumber))
+                self.logger.debug("Got sounds on page " + str(pageNumber))
 
-                for song in songs:
-                    self.downloadSong(song)
+                for sound in sounds:
+                    if self.downloadedFiles >= self.fileLimit:
+                        self.logger.debug("  Skipping track, file limit reached")
+                        raise FileLimitReached()
+
+                    if self.isSoundAlreadyDownloaded(sound):
+                        self.logger.debug("  Skipping track, already downloaded")
+                        continue
+
+                    self.downloadSound(sound)
+
+                    if sound.data != None:
+                        self.logger.debug("  Downloaded sound")
+                        self.downloadedFiles += 1
+                        self.saveSound(sound)
+                    else:
+                        self.logger.warn("  Download failed!")
 
         except FileLimitReached as e:
             pass
@@ -191,27 +248,35 @@ class Downloader:
         return result['count']
 
     def getSearchPageResult(self, page):
-        request = requests.get("http://www.freesound.org/apiv2/search/text/?token=" +
+        request = requests.get("https://www.freesound.org/apiv2/search/text/?token=" +
             self.apiKey + "&query=&page=" + str(page) + "sort=downloads_desc&page_size=150" +
-            "&fields=id,user,title,date,description,tags,download",
+            "&fields=id,username,url,name,created,description,tags,download",
             timeout=self.timeout)
 
         request.raise_for_status()
 
-        return result.json()
+        return request.json()
 
-    def isTrackAlreadyDownloaded(self, track):
-        return track.url in self.metadata
+    def isSoundAlreadyDownloaded(self, sound):
+        return sound.url in self.metadata
 
-    def getSongsOnPage(self, pageNumber):
+    def getSoundsOnPage(self, pageNumber):
         pageResult = self.getSearchPageResult(pageNumber)
 
         if not 'results' in pageResult:
             raise KeyError("Missing field 'results' in search page response.")
 
-        songs =
+        sounds = []
 
-        for sound in page:
+        for sound in pageResult['results']:
+
+            url = sound['download']
+            user = sound['username']
+            title = sound['name']
+            date = sound['created']
+            description = sound['description']
+            tag = ':'.join(sound['tags'])
+            filename = str(sound['id']) + getExtension(title)
 
             newSound = Sound(url, user, title, date, description, tag, filename)
 
@@ -221,46 +286,46 @@ class Downloader:
 
         return sounds
 
-    def downloadSound(self, song):
-        pass
+    def downloadSound(self, sound):
+        url = sound.url
+
+        sound.data = None
+
+        try:
+            sound.data = self.downloadData(url)
+        except Exception as e:
+            self.logger.warning("Downloading sound from URL '" + url + "' failed with '" +
+                str(e) + "'.")
+
 
     def getFilename(self, path):
         return os.path.split(path)[1]
 
-    def downloadTrack(self, track):
-        url = track.url
-
-        track.data = None
-
-        try:
-            track.data = self.downloadData(url)
-        except Exception as e:
-            self.logger.warning("Downloading track from URL '" + url + "' failed with '" +
-                str(e) + "'.")
-
     def downloadData(self, url):
-        self.logger.debug("   Downloading track from url \'" + url + "\'")
-        request = requests.get(url, timeout=self.timeout)
+        self.logger.debug("   Downloading sound data from url \'" + url + "\'")
+
+        request = requests.get(url, headers={'Authorization' : "Bearer " + self.accessToken},
+            timeout=self.timeout)
 
         request.raise_for_status()
 
         return request.content
 
-    def saveTrack(self, track):
+    def saveSound(self, sound):
         with open(self.metadataPath, 'a') as metadataFile:
-            metadataFile.write(track.getMetadataLine())
+            metadataFile.write(sound.getMetadataLine())
 
         with open(self.databasePath, 'a') as databaseFile:
-            databaseFile.write(track.getDatabaseLine())
+            databaseFile.write(sound.getDatabaseLine())
 
-        directory = os.path.join(self.outputPath, track.getRelativeDirectory())
-        path = os.path.join(self.outputPath, track.getRelativePath())
+        directory = os.path.join(self.outputPath, sound.getRelativeDirectory())
+        path = os.path.join(self.outputPath, sound.getRelativePath())
 
         mkdir(directory)
 
         self.logger.info('Writing data to \'' + path + '\'')
         with open(path, 'wb') as dataFile:
-            dataFile.write(track.data)
+            dataFile.write(sound.data)
 
 
 
@@ -268,10 +333,14 @@ class Downloader:
 def main():
     parser = ArgumentParser(description="A program to download audio from freesound.org")
 
-    parser.add_argument("-c", "--client=id", default = "ODMmGFX8FAtrlT5bSTRZ",
+    parser.add_argument("-c", "--client-id", default = "ODMmGFX8FAtrlT5bSTRZ",
         help="Free sound client id.")
     parser.add_argument("-k", "--api-key", default = "mkKYBUgk6Gqxm7nMWV6dge4IgOwSbq6prIFKL7ef",
         help="Free sound api key.")
+    parser.add_argument("-a", "--authorization-code", default="", help="Free sound OAuth2 "
+        "authorization code used for generating an access token.")
+    parser.add_argument("-T", "--access-token", default="", help="Free sound OAuth2 "
+        "access token if it has already been obtained.")
     parser.add_argument("-t", "--timeout", default = 10.0, help="Timeout for requests.")
     parser.add_argument("-l", "--file-limit", default = 1,
         help="A limit on the maximum number of files to download.")
