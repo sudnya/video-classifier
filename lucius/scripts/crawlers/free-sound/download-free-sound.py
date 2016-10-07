@@ -16,7 +16,7 @@ def touchFile(path, times=None):
         os.utime(path, times)
 
 def sanitize(path):
-    return path.replace(",", "")
+    return path.replace(",", "").strip()
 
 def getExtension(path):
     filename, extension = os.path.splitext(path)
@@ -89,6 +89,11 @@ class Downloader:
         if len(self.accessToken) != 0:
             self.logger.info("Using access token '" + self.accessToken + "'")
             return
+
+        if len(self.authorizationCode) == 0:
+            raise ValueError("Run the following command to get an access code: " +
+                "'https://www.freesound.org/apiv2/oauth2/authorize/?client_id=" + self.clientId +
+                "&response_type=code&state=xyz'")
 
         self.logger.info("Getting access token...")
 
@@ -249,8 +254,8 @@ class Downloader:
 
     def getSearchPageResult(self, page):
         request = requests.get("https://www.freesound.org/apiv2/search/text/?token=" +
-            self.apiKey + "&query=&page=" + str(page) + "sort=downloads_desc&page_size=150" +
-            "&fields=id,username,url,name,created,description,tags,download",
+            self.apiKey + "&query=&page=" + str(1+page) + "&sort=downloads_desc&page_size=150" +
+            "&fields=id,username,url,name,created,description,tags,download,type",
             timeout=self.timeout)
 
         request.raise_for_status()
@@ -274,9 +279,9 @@ class Downloader:
             user = sound['username']
             title = sound['name']
             date = sound['created']
-            description = sound['description']
+            description = sanitize(sound['description'])
             tag = ':'.join(sound['tags'])
-            filename = str(sound['id']) + getExtension(title)
+            filename = str(sound['id']) + "." + sound['type']
 
             newSound = Sound(url, user, title, date, description, tag, filename)
 
@@ -292,7 +297,7 @@ class Downloader:
         sound.data = None
 
         try:
-            sound.data = self.downloadData(url)
+            sound.data = self.downloadData(url, sound.getLabel())
         except Exception as e:
             self.logger.warning("Downloading sound from URL '" + url + "' failed with '" +
                 str(e) + "'.")
@@ -301,8 +306,9 @@ class Downloader:
     def getFilename(self, path):
         return os.path.split(path)[1]
 
-    def downloadData(self, url):
-        self.logger.debug("   Downloading sound data from url \'" + url + "\'")
+    def downloadData(self, url, typename):
+        self.logger.debug("   Downloading sound data from url \'" + url
+            + "\' with type '" + typename + "'")
 
         request = requests.get(url, headers={'Authorization' : "Bearer " + self.accessToken},
             timeout=self.timeout)
