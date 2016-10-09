@@ -776,6 +776,8 @@ private:
 
             CacheSet cachedFiles;
 
+            size_t startingDescriptor = descriptorIndex;
+
             while(timestepsSoFar < timestepsToCache)
             {
                 if(!_findValidSample(descriptorIndex, sampleOffsetInDescriptor))
@@ -790,10 +792,22 @@ private:
                 sampleOffsetInDescriptor += samples.back().audioClipDuration;
             }
 
-            std::sort(samples.begin(), samples.end(), [](const Sample& left, const Sample& right)
-                {
-                    return left.audioClipDuration < right.audioClipDuration;
-                });
+            util::log("InputAudioDataProducer") << "Creating cache segment with "
+                << samples.size() << " samples and "
+                << (descriptorIndex - startingDescriptor) << " files.\n";
+
+            std::shuffle(samples.begin(), samples.end(), _generator);
+
+            for(size_t start = 0; start < samples.size(); start += _randomWindow)
+            {
+                size_t end = std::min(samples.size(), start + _randomWindow);
+
+                std::sort(samples.begin() + start, samples.begin() + end,
+                    [](const Sample& left, const Sample& right)
+                    {
+                        return left.audioClipDuration < right.audioClipDuration;
+                    });
+            }
 
             for(auto& sample : samples)
             {
