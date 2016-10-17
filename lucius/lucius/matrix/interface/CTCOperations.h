@@ -17,6 +17,13 @@ typedef std::vector<size_t> IndexVector;
 
 void computeCtc(Matrix& costs, Matrix& gradients, const Matrix& inputActivations,
     const LabelVector& labels, const IndexVector& timestepsPerSample);
+
+void ctcBeamSearch(Matrix& outputActivationWeights, Matrix& inputPaths, Matrix& outputActivations,
+    const Matrix& inputActivations, size_t beamSize);
+
+void ctcBeamSearchInputGradients(Matrix& inputDeltas, const Matrix& outputActivationWeights,
+    const Matrix& inputPaths, const Matrix& outputDeltas, size_t beamSize);
+
 }
 }
 
