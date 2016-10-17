@@ -31,8 +31,11 @@ CTCDecoderLayer::CTCDecoderLayer(const Dimension& inputSize, size_t beamSize)
 }
 
 CTCDecoderLayer::CTCDecoderLayer(const Dimension& inputSize, size_t beamSize,
+    const std::string& costFunctionName, double costFunctionWeight,
     const matrix::Precision& precision)
 : _beamSize(beamSize),
+  _costFunctionName(costFunctionName),
+  _costFunctionWeight(costFunctionWeight),
   _inputSize(std::make_unique<matrix::Dimension>(inputSize)),
   _precision(std::make_unique<matrix::Dimension>(precision))
 {
@@ -45,7 +48,11 @@ CTCDecoderLayer::~CTCDecoderLayer()
 }
 
 CTCDecoderLayer::CTCDecoderLayer(const CTCDecoderLayer& l)
-: Layer(l), _beamSize(l._beamSize), _inputSize(std::make_unique<matrix::Dimension>(*l._inputSize)),
+: Layer(l),
+  _beamSize(l._beamSize),
+  _costFunctionName(l._costFunctionName),
+  _costFunctionWeight(l._costFunctionWeight),
+  _inputSize(std::make_unique<matrix::Dimension>(*l._inputSize)),
   _precision(std::make_unique<matrix::Precision>(*l._precision))
 {
 
@@ -61,9 +68,11 @@ CTCDecoderLayer& CTCDecoderLayer::operator=(const CTCDecoderLayer& layer)
         return *this;
     }
 
-    _beamSize   = l._beamSize;
-    _inputSize  = std::make_unique<matrix::Dimension>(*l._inputSize);
-    _precision  = std::make_unique<matrix::Precision>(*l._precision);
+    _beamSize           = l._beamSize;
+    _costFunctionName   = l._costFunctionName;
+    _costFunctionWeight = l._costFunctionWeight;
+    _inputSize          = std::make_unique<matrix::Dimension>(*l._inputSize);
+    _precision          = std::make_unique<matrix::Precision>(*l._precision);
 
     return *this;
 }

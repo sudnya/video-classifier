@@ -24,7 +24,9 @@ public:
     CTCDecoderLayer();
     CTCDecoderLayer(const Dimension& inputSize);
     CTCDecoderLayer(const Dimension& inputSize, size_t beamSize);
-    CTCDecoderLayer(const Dimension& inputSize, size_t beamSize, const matrix::Precision&);
+    CTCDecoderLayer(const Dimension& inputSize, size_t beamSize,
+        const std::string& costFunctionName, double costFunctionWeight,
+        const matrix::Precision&);
     virtual ~CTCDecoderLayer();
 
 public:
@@ -65,8 +67,10 @@ public:
     virtual size_t getActivationMemory() const;
 
 public:
-    virtual void save(util::OutputTarArchive& archive, util::PropertyTree& properties) const;
-    virtual void load(util::InputTarArchive& archive, const util::PropertyTree& properties);
+    virtual void save(util::OutputTarArchive& archive,
+        util::PropertyTree& properties) const;
+    virtual void load(util::InputTarArchive& archive,
+        const util::PropertyTree& properties);
 
 public:
     virtual std::unique_ptr<Layer> clone() const;
@@ -76,6 +80,10 @@ public:
 
 private:
     size_t _beamSize;
+
+private:
+    std::string _costFunctionName;
+    double      _costFunctionWeight;
 
 private:
     std::unique_ptr<matrix::Dimension> _inputSize;
