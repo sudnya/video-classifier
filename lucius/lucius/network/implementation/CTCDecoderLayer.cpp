@@ -85,17 +85,22 @@ void CTCDecoderLayer::runForwardImplementation(Bundle& bundle)
     auto beamSearchOutputSize = matrix::getBeamSearchOutputSize(
         inputActivations.size(), _beamSize);
 
+    Matrix inputPaths(beamSearchOutputSize, inputActivations.precision());
     Matrix outputActivations(beamSearchOutputSize, inputActivations.precision());
     Matrix outputActivationWeights({_beamSize, miniBatchSize}, inputActivations.precision());
 
-    matrix::beamSearch(outputActivationWeights, outputActivations, inputActivations, _beamSize);
+    matrix::ctcBeamSearch(outputActivationWeights, inputPaths, outputActivations,
+        inputActivations, _beamSize);
 
     saveMatrix("outputActivationWeights", outputActivationWeights);
+    saveMatrix("inputPaths",              inputPaths);
 
     if(util::isLogEnabled("CTCDecoderLayer::Detail"))
     {
         util::log("CTCDecoderLayer::Detail") << "  output activation: "
             << outputActivations.debugString();
+        util::log("CTCDecoderLayer::Detail") << "  input paths: "
+            << inputPaths.debugString();
         util::log("CTCDecoderLayer::Detail") << "  output activation weights: "
             << outputActivationWeights.debugString();
     }
@@ -103,6 +108,10 @@ void CTCDecoderLayer::runForwardImplementation(Bundle& bundle)
     {
         util::log("CTCDecoderLayer") << "  output activation size: "
             << outputActivations.shapeString() << "\n";
+        util::log("CTCDecoderLayer") << "  input paths: "
+            << inputPaths.shapeString() << "\n";
+        util::log("CTCDecoderLayer") << "  output activation weights: "
+            << outputActivationWeights.shapeString() << "\n";
     }
 
     outputActivationsVector.push_back(outputActivations);
@@ -116,6 +125,36 @@ void CTCDecoderLayer::runReverseImplementation(Bundle& bundle)
 
     assert(outputDeltaVector.size() == 1);
 
+    auto outputDeltas = outputDeltasVector.front();
+    outputActivationWeights = loadMatrix("outputActivationWeights");
+    inputPaths = loadMatrix("inputPaths");
+
+    if(util::isLogEnabled("CTCDecoderLayer::Detail"))
+    {
+        util::log("CTCDecoderLayer::Detail") << "  output deltas: "
+            << outputDeltas.debugString();
+    }
+    else
+    {
+        util::log("CTCDecoderLayer") << "  output deltas size: "
+            << outputDeltas.shapeString() << "\n";
+    }
+
+    auto inputDeltas = matrix::ctcBeamSearchInputGradients(outputActivationWeights, inputPaths,
+        outputDeltas, _beamSize);
+
+    if(util::isLogEnabled("CTCDecoderLayer::Detail"))
+    {
+        util::log("CTCDecoderLayer::Detail") << "  input deltas: "
+            << inputDeltas.debugString();
+    }
+    else
+    {
+        util::log("CTCDecoderLayer") << "  input deltas size: "
+            << inputDeltas.shapeString() << "\n";
+    }
+
+    inputDeltaVector.push_back(inputDeltas);
 }
 
 MatrixVector& CTCDecoderLayer::weights()
