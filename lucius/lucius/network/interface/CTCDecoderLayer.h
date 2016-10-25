@@ -79,15 +79,7 @@ public:
     virtual std::string getTypeName() const;
 
 private:
-    size_t _beamSize;
-
-private:
-    std::string _costFunctionName;
-    double      _costFunctionWeight;
-
-private:
-    std::unique_ptr<matrix::Dimension> _inputSize;
-    std::unique_ptr<matrix::Precision> _precision;
+    std::unique_ptr<CTCDecoderLayerImplementation> _implementation;
 
 };
 

@@ -20,13 +20,15 @@ namespace lucius
 
 namespace matrix
 {
-void hanningWindow(Matrix& result, const Matrix& signal, const Dimension& dimensionsToTransform, const size_t windowSize)
+
+void hanningWindow(Matrix& result, const Matrix& signal,
+    const Dimension& dimensionsToTransform, const size_t windowSize)
 {
     assert(dimensionsToTransform.size() == 1);
     assert(signal.size().size() == 3);
 
     auto outputFrameSize  = signal.size()[0];
-    
+
     HanningGather hg(signal.size(), signal.stride(), result.size());
     gather(result, signal, hg);
 
@@ -42,7 +44,8 @@ void hanningWindow(Matrix& result, const Matrix& signal, const Dimension& dimens
 }
 
 
-Matrix hanningWindow(const Matrix& signal, const Dimension& dimensionsToTransform, const size_t windowSize)
+Matrix hanningWindow(const Matrix& signal, const Dimension& dimensionsToTransform,
+    const size_t windowSize)
 {
     Dimension outputDimensions = signal.size();
     for (auto i : dimensionsToTransform)

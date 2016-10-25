@@ -99,7 +99,7 @@ void computeCtc(Matrix& costs, Matrix& gradients,
     const IndexVector& timestepsPerSample)
 {
     if(costs.precision() == SinglePrecision())
-    {
+    {`
         computeCtcOnSinglePrecisionSequence(costs, gradients, inputActivations,
             labels, timestepsPerSample);
     }

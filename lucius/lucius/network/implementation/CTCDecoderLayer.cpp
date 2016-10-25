@@ -12,6 +12,41 @@ namespace lucius
 namespace network
 {
 
+class CTCDecoderLayerImplementation
+{
+public:
+    CTCDecoderLayerImplementation(const Dimension& inputSize, size_t beamSize,
+        const std::string& costFunctionName, double costFunctionWeight,
+        const matrix::Precision& precision)
+    : _beamSize(beamSize),
+      _costFunctionName(costFunctioName),
+      _costFunctionWeight(costFunctionWeight),
+      _inputSize(inputSize),
+      _precision(precision)
+    {
+
+    }
+
+public:
+    void setLabels(const LabelVector& labels);
+    void setTimesteps(const IndexVector& timesteps);
+
+private:
+    LabelVector _labels;
+    IndexVector _timesteps;
+
+private:
+    size_t _beamSize;
+
+private:
+    std::string _costFunctionName;
+    double      _costFunctionWeight;
+
+private:
+    matrix::Dimension _inputSize;
+    matrix::Precision _precision;
+};
+
 CTCDecoderLayer::CTCDecoderLayer()
 : CTCDecoderLayer({1, 1, 1})
 {
@@ -33,11 +68,8 @@ CTCDecoderLayer::CTCDecoderLayer(const Dimension& inputSize, size_t beamSize)
 CTCDecoderLayer::CTCDecoderLayer(const Dimension& inputSize, size_t beamSize,
     const std::string& costFunctionName, double costFunctionWeight,
     const matrix::Precision& precision)
-: _beamSize(beamSize),
-  _costFunctionName(costFunctionName),
-  _costFunctionWeight(costFunctionWeight),
-  _inputSize(std::make_unique<matrix::Dimension>(inputSize)),
-  _precision(std::make_unique<matrix::Dimension>(precision))
+: _implementation(std::make_unique<CTCDecoderLayerImplementation>(
+    inputSize, beamSize, costFunctionName, costFunctionWeight, precision))
 {
 
 }
@@ -48,12 +80,7 @@ CTCDecoderLayer::~CTCDecoderLayer()
 }
 
 CTCDecoderLayer::CTCDecoderLayer(const CTCDecoderLayer& l)
-: Layer(l),
-  _beamSize(l._beamSize),
-  _costFunctionName(l._costFunctionName),
-  _costFunctionWeight(l._costFunctionWeight),
-  _inputSize(std::make_unique<matrix::Dimension>(*l._inputSize)),
-  _precision(std::make_unique<matrix::Precision>(*l._precision))
+: Layer(l), _implementation(std::make_unique<CTCDeoderLayerImplementation>(*l._implementation))
 {
 
 
@@ -68,11 +95,7 @@ CTCDecoderLayer& CTCDecoderLayer::operator=(const CTCDecoderLayer& layer)
         return *this;
     }
 
-    _beamSize           = l._beamSize;
-    _costFunctionName   = l._costFunctionName;
-    _costFunctionWeight = l._costFunctionWeight;
-    _inputSize          = std::make_unique<matrix::Dimension>(*l._inputSize);
-    _precision          = std::make_unique<matrix::Precision>(*l._precision);
+    *_implementation = *l._implementation;
 
     return *this;
 }
@@ -80,6 +103,42 @@ CTCDecoderLayer& CTCDecoderLayer::operator=(const CTCDecoderLayer& layer)
 void CTCDecoderLayer::initialize()
 {
     // intentionally blank
+}
+
+// Note that the convention here is for the 0th char to be the start/stop
+static void expandLabels(Bundle& bundle, size_t beamSize)
+{
+    auto& outputActivationsVector = bundle["outputActivations"].get<MatrixVector>();
+
+    auto& outputActivations = outputActivationsVector.back();
+
+    auto& labels = bundle["referenceLabels"].get<LabelVector>();
+
+    size_t miniBatchSize = outputActivations.size()[outputActivations.size().size() - 2];
+    size_t maxTimesteps  = outputActivations.size()[outputActivations.size().size() - 1];
+
+    auto referenceActivations = matrix::zeros({characters, miniBatchSize, maxTimesteps},
+        inputActivations.precision());
+
+    for(size_t miniBatch = 0; miniBatch < miniBatchSize; ++miniBatch)
+    {
+        referenceActivations(0, miniBatch, 0) = 1.0;
+
+        for(size_t timestep = 0; timestep < maxTimesteps; ++timestep)
+        {
+            if(timestep < labels[miniBatch/beamSize].size())
+            {
+                referenceActivations(timestep + 1, miniBatch,
+                    labels[miniBatch/beamSize][timestep]) = 1.0;
+            }
+            else
+            {
+                referenceActivations(timestep + 1, miniBatch, 0) = 1.0;
+            }
+        }
+    }
+
+    bundle["referenceActivations"] = referenceActivations;
 }
 
 void CTCDecoderLayer::runForwardImplementation(Bundle& bundle)
@@ -124,6 +183,8 @@ void CTCDecoderLayer::runForwardImplementation(Bundle& bundle)
     }
 
     outputActivationsVector.push_back(outputActivations);
+
+    expandLabels(bundle, _beamSize);
 }
 
 void CTCDecoderLayer::runReverseImplementation(Bundle& bundle)
@@ -135,8 +196,8 @@ void CTCDecoderLayer::runReverseImplementation(Bundle& bundle)
     assert(outputDeltaVector.size() == 1);
 
     auto outputDeltas = outputDeltasVector.front();
-    outputActivationWeights = loadMatrix("outputActivationWeights");
-    inputPaths = loadMatrix("inputPaths");
+    auto outputActivationWeights = loadMatrix("outputActivationWeights");
+    auto inputPaths = loadMatrix("inputPaths");
 
     if(util::isLogEnabled("CTCDecoderLayer::Detail"))
     {
@@ -149,19 +210,28 @@ void CTCDecoderLayer::runReverseImplementation(Bundle& bundle)
             << outputDeltas.shapeString() << "\n";
     }
 
-    auto inputDeltas = matrix::ctcBeamSearchInputGradients(outputActivationWeights, inputPaths,
-        outputDeltas, _beamSize);
+    auto beamSearchInputDeltas = matrix::ctcBeamSearchInputGradients(outputActivationWeights,
+        inputPaths, outputDeltas, _beamSize);
 
     if(util::isLogEnabled("CTCDecoderLayer::Detail"))
     {
-        util::log("CTCDecoderLayer::Detail") << "  input deltas: "
+        util::log("CTCDecoderLayer::Detail") << "  beam search input deltas: "
             << inputDeltas.debugString();
     }
     else
     {
-        util::log("CTCDecoderLayer") << "  input deltas size: "
+        util::log("CTCDecoderLayer") << "  beam search input deltas size: "
             << inputDeltas.shapeString() << "\n";
     }
+
+    auto inputActivations = loadMatrix("inputActivations");
+    auto inputLabels = loadInputLabels();
+    auto inputTimesteps = loadInputTimesteps();
+
+    auto ctcInputDeltas = computeCtcInputDeltas(_costFunctionName, _costFunctionWeight,
+        inputActivations, inputLabels, inputTimesteps);
+
+    auto inputDeltas = apply(beamSearchInputDeltas, ctcInputDeltas, matrix::Add());
 
     inputDeltaVector.push_back(inputDeltas);
 }
