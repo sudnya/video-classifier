@@ -46,14 +46,15 @@ static void sortBeam(Matrix& workspace)
 {
     Matrix augmentedWorkspace({2, alphabet, beamSize, miniBatchSize}, workspace.precision());
 
-    copy(slice(augmentedWorkspace, {0, 0, 0, 0}, {1, alphabet, beamSize, miniBatchSize}),
-        workspace);
+    auto keys = slice(augmentedWorkspace, {0, 0, 0, 0}, {1, alphabet, beamSize, miniBatchSize});
+
+    copy(keys, workspace);
 
     auto path = slice(augmentedWorkspace, {1, 0, 0, 0}, {2, alphabet, beamSize, miniBatchSize});
     zero(path);
     broadcast(path, path, range({alphabetSize}, workspace.precision()), Add());
 
-    sort(augmentedWorkspace, {3}); // TODO
+    sortByKey(keys, values, {0, 1, 2});
 
     return augmentedWorkspace;
 }
@@ -112,20 +113,21 @@ void ctcBeamSearch(Matrix& outputActivationWeights, Matrix& inputPaths, Matrix& 
 
 Matrix computeFactors(const Matrix& scanPositions)
 {
-    auto factors = reduceByKey(ones(scanPositions.size(), scanPositions.precision()),
-        scanPositions, Add()); // TODO
+    auto factors = reduceByKey(scanPositions,
+        ones(scanPositions.size(), scanPositions.precision()), Add());
 
-    return indirectGather(apply(factors, Divide(1.0)), Index()); // TODO
+    return indirectGather(scanPositions, apply(factors, Divide(1.0)),
+        MapOutputToIndexDimension({0, 1, 2}, {0}, {1, 2, 3}));
 }
 
 void ctcBeamSearchInputGradients(Matrix& inputDeltas, const Matrix& outputActivationWeights,
     const Matrix& inputPaths, const Matrix& outputDeltas, size_t beamSize)
 {
     // {beamSize, miniBatchSize, timesteps}
-    auto transitionPositions = applyToAdjacentElements(inputPaths, {2}, NotEqual(), 0.0); // TODO
+    auto transitionPositions = applyToAdjacentElements(inputPaths, {2}, NotEqual(), 0.0);
 
     // {beamSize, miniBatchSize, timesteps}
-    auto scanPositions = exclusiveScan(transitionPositions, {2}, Add()); // TODO
+    auto scanPositions = exclusiveScan(transitionPositions, {2}, Add());
 
     auto factors = computeFactors(scanPositions);
 
@@ -133,7 +135,7 @@ void ctcBeamSearchInputGradients(Matrix& inputDeltas, const Matrix& outputActiva
     // scan positions {beamSize, miniBatchSize, timesteps}
     // selected output deltas size is {beamSize, miniBatchSize, timesteps}
     auto selectedOutputDeltas = indirectGather(outputDeltas, scanPositions,
-        MapOutputToIndexDimension({0, 1, 2}, {0}, {1, 2, 3})); // TODO
+        MapOutputToIndexDimension({0, 1, 2}, {0}, {1, 2, 3}));
 
     auto scaledOutputDeltas = apply(factors, selectedOutputDeltas, Multiply());
 
@@ -141,7 +143,7 @@ void ctcBeamSearchInputGradients(Matrix& inputDeltas, const Matrix& outputActiva
     // input paths is {beamSize, miniBatchSize, timesteps}
     // expanded input deltas {alphabet, beamSize, miniBatchSize, timesteps}
     auto expandedInputDeltas = indirectGather(scaledOutputDeltas, inputPaths,
-        MapOutputToMatchingIndexDimension({1, 2, 3}, {0}, {1, 2, 3})); // TODO
+        MapOutputToMatchingIndexDimension({1, 2, 3}, {0}, {1, 2, 3}));
 
     reduce(inputDeltas, expandedInputDeltas, {1}, Add());
 }

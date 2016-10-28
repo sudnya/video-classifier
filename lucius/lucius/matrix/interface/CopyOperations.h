@@ -22,6 +22,10 @@ Matrix gather(const Matrix& input, const Operation& op);
 void permuteDimensions(Matrix& result, const Matrix& input, const Dimension& newOrder);
 Matrix permuteDimensions(const Matrix& input, const Dimension& newOrder);
 
+void indirectGather(Matrix& result, const Matrix& input, const Matrix& indices,
+    const Operation& mapper);
+Matrix indirectGather(const Matrix& input, const Matrix& indices, const Operation& mapper);
+
 }
 }
 
