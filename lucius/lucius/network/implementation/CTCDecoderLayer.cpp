@@ -6,6 +6,20 @@
 
 // Lucius Includes
 #include <lucius/network/interface/CTCDecoderLayer.h>
+#include <lucius/network/interface/Bundle.h>
+
+#include <lucius/matrix/interface/CTCOperations.h>
+
+#include <lucius/matrix/interface/Dimension.h>
+#include <lucius/matrix/interface/Precision.h>
+#include <lucius/matrix/interface/Matrix.h>
+#include <lucius/matrix/interface/MatrixVector.h>
+#include <lucius/matrix/interface/MatrixOperations.h>
+
+#include <lucius/util/interface/Knobs.h>
+#include <lucius/util/interface/PropertyTree.h>
+#include <lucius/util/interface/memory.h>
+#include <lucius/util/interface/debug.h>
 
 namespace lucius
 {
@@ -13,6 +27,10 @@ namespace network
 {
 
 typedef matrix::Dimension Dimension;
+typedef matrix::Precision Precision;
+typedef matrix::LabelVector LabelVector;
+typedef matrix::IndexVector IndexVector;
+typedef matrix::MatrixVector MatrixVector;
 
 class CTCDecoderLayerImplementation
 {
@@ -21,7 +39,7 @@ public:
         const std::string& costFunctionName, double costFunctionWeight,
         const matrix::Precision& precision)
     : _beamSize(beamSize),
-      _costFunctionName(costFunctioName),
+      _costFunctionName(costFunctionName),
       _costFunctionWeight(costFunctionWeight),
       _inputSize(inputSize),
       _precision(precision)
@@ -32,6 +50,22 @@ public:
 public:
     void setLabels(const LabelVector& labels);
     void setTimesteps(const IndexVector& timesteps);
+
+public:
+    size_t getBeamSize() const
+    {
+        return _beamSize;
+    }
+
+    const Dimension& getInputSize() const
+    {
+        return _inputSize;
+    }
+
+    const Precision& getPrecision() const
+    {
+        return _precision;
+    }
 
 private:
     LabelVector _labels;
@@ -45,8 +79,8 @@ private:
     double      _costFunctionWeight;
 
 private:
-    matrix::Dimension _inputSize;
-    matrix::Precision _precision;
+    Dimension _inputSize;
+    Precision _precision;
 };
 
 CTCDecoderLayer::CTCDecoderLayer()
@@ -62,7 +96,8 @@ CTCDecoderLayer::CTCDecoderLayer(const Dimension& inputSize)
 }
 
 CTCDecoderLayer::CTCDecoderLayer(const Dimension& inputSize, size_t beamSize)
-: CTCDecoderLayer(inputSize, beamSize, matrix::Precision::getDefaultPrecision())
+: CTCDecoderLayer(inputSize, beamSize, "CTCCostFunction", 1.0,
+  matrix::Precision::getDefaultPrecision())
 {
 
 }
@@ -82,7 +117,8 @@ CTCDecoderLayer::~CTCDecoderLayer()
 }
 
 CTCDecoderLayer::CTCDecoderLayer(const CTCDecoderLayer& l)
-: Layer(l), _implementation(std::make_unique<CTCDeoderLayerImplementation>(*l._implementation))
+: Layer(l),
+  _implementation(std::make_unique<CTCDecoderLayerImplementation>(*l._implementation))
 {
 
 
@@ -90,14 +126,14 @@ CTCDecoderLayer::CTCDecoderLayer(const CTCDecoderLayer& l)
 
 CTCDecoderLayer& CTCDecoderLayer::operator=(const CTCDecoderLayer& layer)
 {
-    Layer::operator=(l);
+    Layer::operator=(layer);
 
     if(this == &layer)
     {
         return *this;
     }
 
-    *_implementation = *l._implementation;
+    *_implementation = *layer._implementation;
 
     return *this;
 }
@@ -116,11 +152,12 @@ static void expandLabels(Bundle& bundle, size_t beamSize)
 
     auto& labels = bundle["referenceLabels"].get<LabelVector>();
 
+    size_t characters    = outputActivations.size().front();
     size_t miniBatchSize = outputActivations.size()[outputActivations.size().size() - 2];
     size_t maxTimesteps  = outputActivations.size()[outputActivations.size().size() - 1];
 
     auto referenceActivations = matrix::zeros({characters, miniBatchSize, maxTimesteps},
-        inputActivations.precision());
+        outputActivations.precision());
 
     for(size_t miniBatch = 0; miniBatch < miniBatchSize; ++miniBatch)
     {
@@ -153,14 +190,17 @@ void CTCDecoderLayer::runForwardImplementation(Bundle& bundle)
     auto inputActivations = inputActivationsVector.back();
 
     auto beamSearchOutputSize = matrix::getBeamSearchOutputSize(
-        inputActivations.size(), _beamSize);
+        inputActivations.size(), _implementation->getBeamSize());
+
+    size_t miniBatchSize = inputActivations.size()[inputActivations.size().size() - 2];
 
     Matrix inputPaths(beamSearchOutputSize, inputActivations.precision());
     Matrix outputActivations(beamSearchOutputSize, inputActivations.precision());
-    Matrix outputActivationWeights({_beamSize, miniBatchSize}, inputActivations.precision());
+    Matrix outputActivationWeights({_implementation->getBeamSize(), miniBatchSize},
+        inputActivations.precision());
 
     matrix::ctcBeamSearch(outputActivationWeights, inputPaths, outputActivations,
-        inputActivations, _beamSize);
+        inputActivations, _implementation->getBeamSize());
 
     saveMatrix("outputActivationWeights", outputActivationWeights);
     saveMatrix("inputPaths",              inputPaths);
@@ -186,7 +226,7 @@ void CTCDecoderLayer::runForwardImplementation(Bundle& bundle)
 
     outputActivationsVector.push_back(outputActivations);
 
-    expandLabels(bundle, _beamSize);
+    expandLabels(bundle, _implementation->getBeamSize());
 }
 
 void CTCDecoderLayer::runReverseImplementation(Bundle& bundle)
@@ -213,7 +253,7 @@ void CTCDecoderLayer::runReverseImplementation(Bundle& bundle)
     }
 
     auto beamSearchInputDeltas = matrix::ctcBeamSearchInputGradients(outputActivationWeights,
-        inputPaths, outputDeltas, _beamSize);
+        inputPaths, outputDeltas, _implementation->getBeamSize());
 
     if(util::isLogEnabled("CTCDecoderLayer::Detail"))
     {
@@ -311,18 +351,18 @@ size_t CTCDecoderLayer::getActivationMemory() const
 
 void CTCDecoderLayer::save(util::OutputTarArchive& archive, util::PropertyTree& properties) const
 {
-    properties["beam-size"]  = std::to_string(_beamSize);
-    properties["input-size"] = _inputSize->toString();
-    properties["precision"]  = _precision->toString();
+    properties["beam-size"]  = std::to_string(_implementation->getBeamSize());
+    properties["input-size"] = _implementation->getInputSize()->toString();
+    properties["precision"]  = _implementation->getPrecision()->toString();
 
     saveLayer(archive, properties);
 }
 
 void CTCDecoderLayer::load(util::InputTarArchive& archive, const util::PropertyTree& properties)
 {
-    *_inputSize  = Dimension::fromString(properties["input-size"]);
-    _precision   = matrix::Precision::fromString(properties["precision"]);
-    _beamSize    = properties.get<size_t>("beam-size");
+    _implementation->setInputSize(Dimension::fromString(properties["input-size"]));
+    _implementation->setPrecision(matrix::Precision::fromString(properties["precision"]));
+    _implementation->setBeamSize(properties.get<size_t>("beam-size"));
 
     loadLayer(archive, properties);
 }
