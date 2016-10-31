@@ -6,6 +6,7 @@
 #include <lucius/matrix/interface/CopyOperations.h>
 #include <lucius/matrix/interface/MatrixTransformations.h>
 #include <lucius/matrix/interface/Operation.h>
+#include <lucius/matrix/interface/GatherOperation.h>
 #include <lucius/matrix/interface/CudnnLibrary.h>
 #include <lucius/matrix/interface/CudnnDescriptors.h>
 

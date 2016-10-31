@@ -1790,7 +1790,6 @@ bool testSort()
     }
 
     return reference == result;
-
 }
 
 bool runTests()
@@ -1835,7 +1834,8 @@ bool runTests()
 
     engine.addTest("hanning window", testHanningWindow);
 
-    engine.addTest("sort", testSort);
+    engine.addTest("adjacent compare", testAdjacentCompare);
+    /*engine.addTest("sort", testSort);
     engine.addTest("sort 2d", testSort2d);
     engine.addTest("sort 3d", testSort3d);
 
@@ -1843,12 +1843,11 @@ bool runTests()
     engine.addTest("sort by key 2d", testSortByKey2d);
 
     engine.addTest("reduce by key", testReduceByKey);
-    engine.addTest("adjacent compare", testAdjacentCompare);
 
     engine.addTest("inclusive scan", testInclusiveScan);
     engine.addTest("exclusive scan", testExclusiveScan);
 
-    engine.addTest("indirect gather", testIndirectGather);
+    engine.addTest("indirect gather", testIndirectGather);*/
 
     return engine.run();
 }

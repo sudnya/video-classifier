@@ -5,12 +5,14 @@
 */
 
 // Lucius Includes
-#include <lucius/interface/network/CTCDecoderLayer.h>
+#include <lucius/network/interface/CTCDecoderLayer.h>
 
 namespace lucius
 {
 namespace network
 {
+
+typedef matrix::Dimension Dimension;
 
 class CTCDecoderLayerImplementation
 {

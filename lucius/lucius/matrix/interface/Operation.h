@@ -1,4 +1,4 @@
-/*    \file   Operation.h
+/*  \file   Operation.h
     \date   Sunday August 11, 2013
     \author Gregory Diamos <solusstultus@gmail.com>
     \brief  The header file for the Operation classes.
@@ -60,10 +60,6 @@ public:
         CopyRight,
         Nop,
         NopDerivative,
-        Pool2DGather,
-        Pool2DGatherInverse,
-        PermuteDimensionGather,
-        HanningGather,
         Cos
     };
 
@@ -779,169 +775,6 @@ public:
 
 };
 
-class Pool2DGather : public Operation
-{
-public:
-    CUDA_DECORATOR Pool2DGather()
-    : Operation(Operation::Pool2DGather)
-    {}
-
-    CUDA_DECORATOR Pool2DGather(size_t w, size_t h, size_t inputW, size_t inputH)
-    : Operation(Operation::Pool2DGather),
-      width(w), height(h), inputWidth(inputW), inputHeight(inputH)
-    {
-
-    }
-
-public:
-    CUDA_DECORATOR size_t operator()(size_t outputPosition) const
-    {
-        size_t outputTilesW = inputWidth / width;
-
-        size_t inputOffset = outputPosition % (inputWidth * inputHeight);
-        size_t inputBase   = outputPosition - inputOffset;
-
-        size_t outputTile = inputOffset / (width * height);
-        size_t tileOffset = inputOffset % (width * height);
-
-        size_t outputTileW = outputTile % outputTilesW;
-        size_t outputTileH = outputTile / outputTilesW;
-
-        size_t outputTileWOffset = tileOffset % width;
-        size_t outputTileHOffset = tileOffset / width;
-
-        size_t outputOffset = (outputTileW * width + outputTileWOffset) +
-            (outputTileH * height + outputTileHOffset) * inputWidth;
-
-        return outputOffset + inputBase;
-    }
-
-public:
-    size_t width;
-    size_t height;
-
-    size_t inputWidth;
-    size_t inputHeight;
-
-};
-
-class Pool2DGatherInverse : public Operation
-{
-public:
-    CUDA_DECORATOR Pool2DGatherInverse()
-    : Operation(Operation::Pool2DGatherInverse)
-    {}
-
-    CUDA_DECORATOR Pool2DGatherInverse(size_t w, size_t h, size_t inputW, size_t inputH)
-    : Operation(Operation::Pool2DGatherInverse),
-      width(w), height(h), inputWidth(inputW), inputHeight(inputH)
-    {
-
-    }
-
-public:
-    CUDA_DECORATOR size_t operator()(size_t outputPosition) const
-    {
-        size_t inputOffset = outputPosition % (inputWidth * inputHeight);
-        size_t inputBase   = outputPosition - inputOffset;
-
-        size_t tileSize = width * height;
-
-        size_t inputW = inputOffset % inputWidth;
-        size_t inputH = inputOffset / inputWidth;
-
-        size_t tileW = inputW / width;
-        size_t tileWOffset = inputW % width;
-
-        size_t tileH = inputH / height;
-        size_t tileHOffset = inputH % height;
-
-        size_t inputWidthInTiles = inputWidth / width;
-
-        size_t tileId = tileW + tileH * inputWidthInTiles;
-
-        size_t tileOffset = tileWOffset + tileHOffset * width;
-
-        return inputBase + tileId * tileSize + tileOffset;
-    }
-
-public:
-    size_t width;
-    size_t height;
-
-    size_t inputWidth;
-    size_t inputHeight;
-
-};
-
-class PermuteDimensionGather : public Operation
-{
-public:
-    CUDA_DECORATOR PermuteDimensionGather()
-    : Operation(Operation::PermuteDimensionGather)
-    {}
-
-    CUDA_DECORATOR PermuteDimensionGather(const Dimension& inputStride,
-        const Dimension& outputSize, const Dimension& order)
-    : Operation(Operation::PermuteDimensionGather), inputStride(inputStride),
-      outputSize(outputSize), order(order)
-    {
-
-    }
-
-public:
-    CUDA_DECORATOR size_t operator()(size_t outputPosition) const
-    {
-        auto outputDimension = linearToDimension(outputPosition, outputSize);
-
-        auto inputDimension = selectReverseMappingDimensions(outputDimension, order);
-
-        return dotProduct(inputDimension, inputStride);
-    }
-
-public:
-    Dimension inputStride;
-    Dimension outputSize;
-    Dimension order;
-
-};
-
-class HanningGather : public Operation
-{
-public:
-    CUDA_DECORATOR HanningGather()
-    : Operation(Operation::HanningGather)
-    {}
-
-    CUDA_DECORATOR HanningGather(const Dimension& inputSize, const Dimension& inputStride,
-        const Dimension& outputSize)
-    : Operation(Operation::HanningGather), inputSize(inputSize), inputStride(inputStride),
-        outputSize(outputSize)
-    {
-
-    }
-
-public:
-    CUDA_DECORATOR size_t operator()(size_t outputPosition) const
-    {
-        auto outputCoordinate = linearToDimension(outputPosition, outputSize);
-
-        Dimension retVal = outputCoordinate;
-        auto frameSize   = inputSize[0];
-
-        retVal[0] = outputCoordinate[0] % frameSize;
-        retVal[2] = outputCoordinate[2] + (outputCoordinate[0]/frameSize);
-
-        return dotProduct(retVal, inputStride);
-    }
-
-public:
-    Dimension inputSize;
-    Dimension inputStride;
-    Dimension outputSize;
-
-};
-
 class Cos : public Operation
 {
 public:
@@ -959,7 +792,6 @@ public:
     }
 };
 
-
 typedef std::tuple<Add, Subtract, Multiply, Divide, Log, Exp, Pow, Abs, Sqrt, Tanh, TanhDerivative,
                    RectifiedLinear, RectifiedLinearDerivative, Sigmoid, SigmoidDerivative, Negate,
                    Maximum, Minimum, Equal, LessThan, NotEqual, Fill, Square, SquareAndScale,
@@ -972,9 +804,6 @@ typedef std::tuple<Add, Subtract, Multiply, Divide, Log, Exp, Pow, Abs, Sqrt, Ta
                    RectifiedLinear, RectifiedLinearDerivative, Sigmoid, SigmoidDerivative, Negate,
                    Maximum, Minimum, Equal, LessThan, NotEqual, Fill, Square, SquareAndScale,
                    Inverse, Nop, NopDerivative, Cos> AllUnaryOperations;
-
-typedef std::tuple<Pool2DGather, Pool2DGatherInverse, PermuteDimensionGather, HanningGather>
-    AllGatherOperations;
 
 }
 }

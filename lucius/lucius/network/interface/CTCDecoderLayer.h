@@ -7,12 +7,14 @@
 #pragma once
 
 // Lucius Includes
-#include <lucius/interface/network/Layer.h>
+#include <lucius/network/interface/Layer.h>
 
 namespace lucius
 {
 namespace network
 {
+
+class CTCDecoderLayerImplementation;
 
 /*! \brief A class for decoding the output of a CTC network.
 
