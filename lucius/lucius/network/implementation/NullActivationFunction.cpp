@@ -12,6 +12,8 @@
 #include <lucius/matrix/interface/CopyOperations.h>
 #include <lucius/matrix/interface/Operation.h>
 
+#include <lucius/util/interface/memory.h>
+
 namespace lucius
 {
 
@@ -46,9 +48,9 @@ Operation NullActivationFunction::getDerivativeOperation() const
     return matrix::NopDerivative();
 }
 
-ActivationFunction* NullActivationFunction::clone() const
+std::unique_ptr<ActivationFunction> NullActivationFunction::clone() const
 {
-    return new NullActivationFunction(*this);
+    return std::make_unique<NullActivationFunction>(*this);
 }
 
 std::string NullActivationFunction::typeName() const

@@ -144,7 +144,7 @@ public:
 
 public:
     /*! \brief Set the network cost function, the network takes ownership */
-    void setCostFunction(CostFunction*);
+    void setCostFunction(std::unique_ptr<CostFunction>&&);
     /*! \brief Get the network cost function, the network retains ownership */
     CostFunction* getCostFunction();
     /*! \brief Get the network cost function, the network retains ownership */

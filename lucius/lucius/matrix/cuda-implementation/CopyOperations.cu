@@ -4,7 +4,7 @@
 #include <lucius/matrix/interface/MatrixTransformations.h>
 #include <lucius/matrix/interface/Matrix.h>
 #include <lucius/matrix/interface/MatrixView.h>
-#include <lucius/matrix/interface/Operation.h>
+#include <lucius/matrix/interface/GatherOperation.h>
 
 #include <lucius/parallel/interface/MultiBulkSynchronousParallel.h>
 
@@ -188,31 +188,6 @@ namespace detail
 {
 
 template<typename NativeType, typename OperationType>
-class GatherLambda
-{
-public:
-    CUDA_DECORATOR void operator()(parallel::ThreadGroup threadGroup)
-    {
-        for(size_t i = threadGroup.id(), step = threadGroup.size(); i < elements; i += step)
-        {
-            size_t newIndex = nativeOperation(i);
-
-            resultBase[i] = inputBase[newIndex];
-        }
-    }
-
-public:
-          NativeType* resultBase;
-    const NativeType* inputBase;
-
-public:
-    size_t elements;
-
-public:
-    OperationType nativeOperation;
-};
-
-template<typename NativeType, typename OperationType>
 class NoncontiguousGatherLambda
 {
 public:
@@ -220,10 +195,10 @@ public:
     {
         for(size_t i = threadGroup.id(), step = threadGroup.size(); i < elements; i += step)
         {
-            auto dimension = linearToDimension(i, resultView.size());
-            auto inputDimension = linearToDimension(nativeOperation(i), inputView.size());
+            auto resultDimension = linearToDimension(i, resultView.size());
 
-            resultView(dimension) = inputView(inputDimension);
+            resultView(resultDimension) = nativeOperation.runOperation(
+                resultDimension, ConstMatrixView<NativeType>(resultView), inputView);
         }
     }
 
@@ -240,7 +215,7 @@ public:
 
 template<typename OperationType, typename T>
 void gatherOverPrecisions(Matrix& result, const Matrix& input,
-    const Operation& op, const Precision& precision, std::tuple<T> precisions)
+    const GatherOperation& op, const Precision& precision, std::tuple<T> precisions)
 {
     typedef T PrecisionPrimitive;
     typedef typename PrecisionPrimitive::type NativeType;
@@ -251,30 +226,17 @@ void gatherOverPrecisions(Matrix& result, const Matrix& input,
 
     size_t elements = result.elements();
 
-    if(input.isContiguous() && result.isContiguous())
-    {
-        auto resultBase = static_cast<NativeType*>(result.data());
-        auto inputBase  = static_cast<const NativeType*>(input.data());
+    MatrixView<NativeType>      resultView(result);
+    ConstMatrixView<NativeType> inputView(input);
 
-        auto lambda = GatherLambda<NativeType, OperationType>
-            {resultBase, inputBase, elements, nativeOperation};
+    auto lambda = NoncontiguousGatherLambda<NativeType, OperationType>
+        {resultView, inputView, elements, nativeOperation};
 
-        parallel::multiBulkSynchronousParallel(lambda);
-    }
-    else
-    {
-        MatrixView<NativeType>      resultView(result);
-        ConstMatrixView<NativeType> inputView(input);
-
-        auto lambda = NoncontiguousGatherLambda<NativeType, OperationType>
-            {resultView, inputView, elements, nativeOperation};
-
-        parallel::multiBulkSynchronousParallel(lambda);
-    }
+    parallel::multiBulkSynchronousParallel(lambda);
 }
 
 template<typename OperationType, typename PossiblePrecisions>
-void gatherOverPrecisions(Matrix& result, const Matrix& input, const Operation& op,
+void gatherOverPrecisions(Matrix& result, const Matrix& input, const GatherOperation& op,
     const Precision& precision, PossiblePrecisions precisions)
 {
     typedef typename std::tuple_element<0, PossiblePrecisions>::type PossiblePrecisionType;
@@ -294,7 +256,7 @@ void gatherOverPrecisions(Matrix& result, const Matrix& input, const Operation& 
 
 
 template<typename T>
-void gatherOverOperations(Matrix& result, const Matrix& input, const Operation& op,
+void gatherOverOperations(Matrix& result, const Matrix& input, const GatherOperation& op,
     const Precision& precision, const std::tuple<T>& operations)
 {
     typedef T PossibleOperationType;
@@ -307,7 +269,7 @@ void gatherOverOperations(Matrix& result, const Matrix& input, const Operation& 
 
 template<typename PossibleOperations>
 void gatherOverOperations(Matrix& result, const Matrix& input,
-    const Operation& op, const Precision& precision, const PossibleOperations& operations)
+    const GatherOperation& op, const Precision& precision, const PossibleOperations& operations)
 {
     typedef typename std::tuple_element<0, PossibleOperations>::type PossibleOperationType;
 
@@ -324,19 +286,19 @@ void gatherOverOperations(Matrix& result, const Matrix& input,
 }
 
 void gatherOverOperations(Matrix& result, const Matrix& input,
-    const Operation& op, const Precision& precision)
+    const GatherOperation& op, const Precision& precision)
 {
     gatherOverOperations<AllGatherOperations>(result, input, op, precision, AllGatherOperations());
 }
 
 }
 
-void gather(Matrix& result, const Matrix& input, const Operation& op)
+void gather(Matrix& result, const Matrix& input, const GatherOperation& op)
 {
     detail::gatherOverOperations(result, input, op, input.precision());
 }
 
-Matrix gather(const Matrix& input, const Operation& op)
+Matrix gather(const Matrix& input, const GatherOperation& op)
 {
     Matrix result(input.size(), input.precision());
 

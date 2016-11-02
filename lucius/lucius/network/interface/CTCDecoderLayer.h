@@ -75,6 +75,9 @@ public:
         const util::PropertyTree& properties);
 
 public:
+    virtual void clearReversePropagationData();
+
+public:
     virtual std::unique_ptr<Layer> clone() const;
 
 public:

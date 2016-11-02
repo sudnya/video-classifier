@@ -463,9 +463,9 @@ NeuralNetwork::const_reverse_iterator NeuralNetwork::rend() const
     return _layers.rend();
 }
 
-void NeuralNetwork::setCostFunction(CostFunction* f)
+void NeuralNetwork::setCostFunction(std::unique_ptr<CostFunction>&& f)
 {
-    _costFunction.reset(f);
+    _costFunction = std::move(f);
 }
 
 CostFunction* NeuralNetwork::getCostFunction()

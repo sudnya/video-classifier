@@ -11,6 +11,8 @@
 #include <lucius/matrix/interface/MatrixOperations.h>
 #include <lucius/matrix/interface/Operation.h>
 
+#include <lucius/util/interface/memory.h>
+
 namespace lucius
 {
 
@@ -45,9 +47,9 @@ Operation RectifiedLinearActivationFunction::getDerivativeOperation() const
     return matrix::RectifiedLinearDerivative();
 }
 
-ActivationFunction* RectifiedLinearActivationFunction::clone() const
+std::unique_ptr<ActivationFunction> RectifiedLinearActivationFunction::clone() const
 {
-    return new RectifiedLinearActivationFunction(*this);
+    return std::make_unique<RectifiedLinearActivationFunction>(*this);
 }
 
 std::string RectifiedLinearActivationFunction::typeName() const

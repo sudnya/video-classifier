@@ -32,7 +32,7 @@ public:
     virtual std::string typeName() const;
 
 public:
-    virtual ActivationCostFunction* clone() const;
+    virtual std::unique_ptr<ActivationCostFunction> clone() const;
 
 };
 

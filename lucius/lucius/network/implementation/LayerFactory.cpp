@@ -17,6 +17,7 @@
 #include <lucius/network/interface/SubgraphLayer.h>
 #include <lucius/network/interface/SoftmaxLayer.h>
 #include <lucius/network/interface/ActivationFunctionFactory.h>
+#include <lucius/network/interface/ActivationFunction.h>
 
 #include <lucius/matrix/interface/Dimension.h>
 #include <lucius/matrix/interface/Precision.h>

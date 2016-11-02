@@ -31,7 +31,7 @@ public:
     virtual std::string typeName() const;
 
 public:
-    virtual WeightCostFunction* clone() const;
+    virtual std::unique_ptr<WeightCostFunction> clone() const;
 
 };
 

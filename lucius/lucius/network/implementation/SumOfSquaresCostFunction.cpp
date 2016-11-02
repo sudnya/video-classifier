@@ -47,9 +47,9 @@ void SumOfSquaresCostFunction::computeDelta(Bundle& bundle) const
     bundle["outputDeltas"] = MatrixVector({apply(Matrix(output), reference, matrix::Subtract())});
 }
 
-CostFunction* SumOfSquaresCostFunction::clone() const
+std::unique_ptr<CostFunction> SumOfSquaresCostFunction::clone() const
 {
-    return new SumOfSquaresCostFunction;
+    return std::make_unique<SumOfSquaresCostFunction>();
 }
 
 std::string SumOfSquaresCostFunction::typeName() const

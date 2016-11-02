@@ -8,6 +8,7 @@
 #include <lucius/network/interface/NullActivationCostFunction.h>
 
 #include <lucius/matrix/interface/Matrix.h>
+#include <lucius/util/interface/memory.h>
 #include <lucius/util/interface/debug.h>
 
 namespace lucius
@@ -32,9 +33,9 @@ NullActivationCostFunction::Matrix NullActivationCostFunction::getGradient(
     assertM(false, "Not implemented");
 }
 
-ActivationCostFunction* NullActivationCostFunction::clone() const
+std::unique_ptr<ActivationCostFunction> NullActivationCostFunction::clone() const
 {
-    return new NullActivationCostFunction(*this);
+    return std::make_unique<NullActivationCostFunction>(*this);
 }
 
 std::string NullActivationCostFunction::typeName() const

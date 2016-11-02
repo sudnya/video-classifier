@@ -39,9 +39,9 @@ WeightRegularizationCostFunction::Matrix WeightRegularizationCostFunction::getGr
     return apply(weights, matrix::Multiply(lambda));
 }
 
-WeightCostFunction* WeightRegularizationCostFunction::clone() const
+std::unique_ptr<WeightCostFunction> WeightRegularizationCostFunction::clone() const
 {
-    return new WeightRegularizationCostFunction;
+    return std::unique_ptr<WeightRegularizationCostFunction>();
 }
 
 std::string WeightRegularizationCostFunction::typeName() const

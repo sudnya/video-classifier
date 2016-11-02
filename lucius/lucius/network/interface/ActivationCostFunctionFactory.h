@@ -22,8 +22,8 @@ namespace network
 class ActivationCostFunctionFactory
 {
 public:
-    static ActivationCostFunction* create(const std::string& costFunctionName);
-    static ActivationCostFunction* create();
+    static std::unique_ptr<ActivationCostFunction> create(const std::string& costFunctionName);
+    static std::unique_ptr<ActivationCostFunction> create();
 
 };
 

@@ -22,8 +22,8 @@ namespace network
 class WeightCostFunctionFactory
 {
 public:
-    static WeightCostFunction* create(const std::string& costFunctionName);
-    static WeightCostFunction* create();
+    static std::unique_ptr<WeightCostFunction> create(const std::string& costFunctionName);
+    static std::unique_ptr<WeightCostFunction> create();
 
 };
 

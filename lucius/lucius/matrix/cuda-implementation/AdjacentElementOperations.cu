@@ -1,6 +1,12 @@
 
 // Lucius Includes
 #include <lucius/matrix/interface/AdjacentElementOperations.h>
+#include <lucius/matrix/interface/MatrixView.h>
+#include <lucius/matrix/interface/Operation.h>
+
+#include <lucius/parallel/interface/MultiBulkSynchronousParallel.h>
+
+#include <lucius/util/interface/Metaprogramming.h>
 
 namespace lucius
 {
@@ -11,14 +17,14 @@ namespace detail
 
 
 template<typename NativeType, typename ActualOperation>
-class GenericReduceGetPositionsLambda
+class ApplyToAdjacentElementsLambda
 {
 public:
     CUDA_DECORATOR void operator()(parallel::ThreadGroup threadGroup) const
     {
         for(size_t i = threadGroup.id(); i < elements; i += threadGroup.size())
         {
-            auto position = linearToDimension(i);
+            auto position = linearToDimension(i, outputView.size());
 
             auto leftPosition  = position;
             auto rightPosition = position;
@@ -38,7 +44,7 @@ public:
 
             NativeType rightValue = inputView(rightPosition);
 
-            outputView(position) = op(leftValue, rightValue);
+            outputView(position) = nativeOperation(leftValue, rightValue);
         }
     }
 
@@ -139,7 +145,7 @@ void applyToAdjacentElements(Matrix& output, const Matrix& input,
 }
 
 Matrix applyToAdjacentElements(const Matrix& input, size_t dimensionToApplyTo,
-    const Operation& op, double initialValue);
+    const Operation& op, double initialValue)
 {
     Matrix result(input.size(), input.precision());
 

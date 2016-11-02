@@ -25,9 +25,11 @@ public:
     virtual ~AudioConvolutionalLayer();
 
 public:
-    AudioConvolutionalLayer(const matrix::Dimension& inputSize, const matrix::Dimension& filterSize,
+    AudioConvolutionalLayer(const matrix::Dimension& inputSize,
+        const matrix::Dimension& filterSize,
         const matrix::Dimension& filterStride, const matrix::Dimension& inputPadding);
-    AudioConvolutionalLayer(const matrix::Dimension& inputSize, const matrix::Dimension& filterSize,
+    AudioConvolutionalLayer(const matrix::Dimension& inputSize,
+        const matrix::Dimension& filterSize,
         const matrix::Dimension& filterStride, const matrix::Dimension& inputPadding,
         const matrix::Precision&);
 

@@ -98,7 +98,7 @@ public:
 
 public:
     /*! \brief Set the activation function, the layer takes ownership. */
-    void setActivationFunction(ActivationFunction*);
+    void setActivationFunction(std::unique_ptr<ActivationFunction>&&);
     /*! \brief Get the activation function, the layer retains ownership. */
     ActivationFunction* getActivationFunction();
     /*! \brief Get the activation function, the layer retains ownership. */
@@ -106,7 +106,7 @@ public:
 
 public:
     /*! \brief Set the activation cost function component, the layer takes ownership. */
-    void setActivationCostFunction(ActivationCostFunction*);
+    void setActivationCostFunction(std::unique_ptr<ActivationCostFunction>&&);
     /*! \brief Get the activation cost function component, the layer retains ownership. */
     ActivationCostFunction* getActivationCostFunction();
     /*! \brief Get the activation cost function component, the layer retains ownership. */
@@ -114,7 +114,7 @@ public:
 
 public:
     /*! \brief Set the weight cost function component, the layer takes ownership. */
-    void setWeightCostFunction(WeightCostFunction*);
+    void setWeightCostFunction(std::unique_ptr<WeightCostFunction>&&);
     /*! \brief Get the weight cost function component, the layer retains ownership. */
     WeightCostFunction* getWeightCostFunction();
     /*! \brief Get the weight cost function component, the layer retains ownership. */

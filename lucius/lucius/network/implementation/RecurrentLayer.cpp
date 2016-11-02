@@ -51,7 +51,7 @@ RecurrentLayer::RecurrentLayer(
     size_t layerSize, size_t layers,
     int direction, int layerType, int inputMode)
 : RecurrentLayer(layerSize, layers,
-    direction, layerType, inputMode, matrix::Precision::getDefaulPrecision())
+    direction, layerType, inputMode, matrix::Precision::getDefaultPrecision())
 {
 
 }

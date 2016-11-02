@@ -1,6 +1,9 @@
 
 #pragma once
 
+// Standard Library Includes
+#include <cstddef>
+
 // Forward Declarations
 namespace lucius { namespace matrix { class Matrix;    } }
 namespace lucius { namespace matrix { class Dimension; } }

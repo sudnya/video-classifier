@@ -259,6 +259,7 @@ public:
 public:
     template <typename NativeType>
     CUDA_DECORATOR NativeType runOperation(const Dimension& outputDimension,
+        const ConstMatrixView<NativeType>& outputView,
         const ConstMatrixView<NativeType>& inputView) const
     {
         Dimension inputDimension;

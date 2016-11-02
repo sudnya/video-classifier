@@ -7,6 +7,8 @@
 // Lucius Includes
 #include <lucius/network/interface/CTCDecoderLayer.h>
 #include <lucius/network/interface/Bundle.h>
+#include <lucius/network/interface/CostFunctionFactory.h>
+#include <lucius/network/interface/CostFunction.h>
 
 #include <lucius/matrix/interface/CTCOperations.h>
 
@@ -15,6 +17,7 @@
 #include <lucius/matrix/interface/Matrix.h>
 #include <lucius/matrix/interface/MatrixVector.h>
 #include <lucius/matrix/interface/MatrixOperations.h>
+#include <lucius/matrix/interface/Operation.h>
 
 #include <lucius/util/interface/Knobs.h>
 #include <lucius/util/interface/PropertyTree.h>
@@ -31,6 +34,7 @@ typedef matrix::Precision Precision;
 typedef matrix::LabelVector LabelVector;
 typedef matrix::IndexVector IndexVector;
 typedef matrix::MatrixVector MatrixVector;
+typedef matrix::Matrix Matrix;
 
 class CTCDecoderLayerImplementation
 {
@@ -48,8 +52,15 @@ public:
     }
 
 public:
-    void setLabels(const LabelVector& labels);
-    void setTimesteps(const IndexVector& timesteps);
+    void setLabels(const LabelVector& labels)
+    {
+        _labels = labels;
+    }
+
+    void setTimesteps(const IndexVector& timesteps)
+    {
+        _timesteps = timesteps;
+    }
 
 public:
     size_t getBeamSize() const
@@ -65,6 +76,62 @@ public:
     const Precision& getPrecision() const
     {
         return _precision;
+    }
+
+public:
+    void setBeamSize(size_t beamSize)
+    {
+        _beamSize = beamSize;
+    }
+
+    void setInputSize(const Dimension& d)
+    {
+        _inputSize = d;
+    }
+
+    void setPrecision(const Precision& p)
+    {
+        _precision = p;
+    }
+
+public:
+    const std::string& getCostFunctionName() const
+    {
+        return _costFunctionName;
+    }
+
+    double getCostFunctionWeight() const
+    {
+        return _costFunctionWeight;
+    }
+
+public:
+    void clearReversePropagationData()
+    {
+        _labels.clear();
+        _timesteps.clear();
+    }
+
+public:
+    void saveInputLabels(const LabelVector& labels)
+    {
+        _labels = labels;
+    }
+
+    void saveInputTimesteps(const IndexVector& timesteps)
+    {
+        _timesteps = timesteps;
+    }
+
+public:
+    const LabelVector& getInputLabels() const
+    {
+        return _labels;
+    }
+
+    const IndexVector& getInputTimesteps() const
+    {
+        return _timesteps;
     }
 
 private:
@@ -224,20 +291,43 @@ void CTCDecoderLayer::runForwardImplementation(Bundle& bundle)
             << outputActivationWeights.shapeString() << "\n";
     }
 
+    _implementation->saveInputLabels(bundle["referenceLabels"].get<LabelVector>());
+    _implementation->saveInputTimesteps(bundle["inputTimesteps"].get<IndexVector>());
+
     outputActivationsVector.push_back(outputActivations);
 
     expandLabels(bundle, _implementation->getBeamSize());
 }
 
+Matrix computeCtcInputDeltas(const std::string& costFunctionName,
+    double costFunctionWeight, const Matrix& inputActivations, const LabelVector& inputLabels,
+    const IndexVector& inputTimesteps)
+{
+    auto costFunction = CostFunctionFactory::create(costFunctionName);
+
+    Bundle bundle;
+
+    bundle["outputActivations"] = MatrixVector({inputActivations});
+    bundle["referenceLabels"]   = inputLabels;
+    bundle["inputTimesteps"]    = inputTimesteps;
+
+    costFunction->computeDelta(bundle);
+
+    auto& outputDeltasVector = bundle["outputDeltas"].get<MatrixVector>();
+
+    auto& outputDeltas = outputDeltasVector.front();
+
+    return apply(outputDeltas, matrix::Multiply(costFunctionWeight));
+}
+
 void CTCDecoderLayer::runReverseImplementation(Bundle& bundle)
 {
-    auto& gradients         = bundle[   "gradients"].get<matrix::MatrixVector>();
     auto& inputDeltaVector  = bundle[ "inputDeltas"].get<matrix::MatrixVector>();
     auto& outputDeltaVector = bundle["outputDeltas"].get<matrix::MatrixVector>();
 
     assert(outputDeltaVector.size() == 1);
 
-    auto outputDeltas = outputDeltasVector.front();
+    auto outputDeltas = outputDeltaVector.front();
     auto outputActivationWeights = loadMatrix("outputActivationWeights");
     auto inputPaths = loadMatrix("inputPaths");
 
@@ -252,28 +342,32 @@ void CTCDecoderLayer::runReverseImplementation(Bundle& bundle)
             << outputDeltas.shapeString() << "\n";
     }
 
-    auto beamSearchInputDeltas = matrix::ctcBeamSearchInputGradients(outputActivationWeights,
+    auto inputActivations = loadMatrix("inputActivations");
+
+    Matrix beamSearchInputDeltas(inputActivations.size(), inputActivations.precision());
+
+    matrix::ctcBeamSearchInputGradients(beamSearchInputDeltas, outputActivationWeights,
         inputPaths, outputDeltas, _implementation->getBeamSize());
 
     if(util::isLogEnabled("CTCDecoderLayer::Detail"))
     {
-        util::log("CTCDecoderLayer::Detail") << "  beam search input deltas: "
-            << inputDeltas.debugString();
+        util::log("CTCDecoderLayer::Detail") << "  beam search output deltas: "
+            << outputDeltas.debugString();
     }
     else
     {
-        util::log("CTCDecoderLayer") << "  beam search input deltas size: "
-            << inputDeltas.shapeString() << "\n";
+        util::log("CTCDecoderLayer") << "  beam search output deltas size: "
+            << outputDeltas.shapeString() << "\n";
     }
 
-    auto inputActivations = loadMatrix("inputActivations");
-    auto inputLabels = loadInputLabels();
-    auto inputTimesteps = loadInputTimesteps();
+    auto inputLabels = _implementation->getInputLabels();
+    auto inputTimesteps = _implementation->getInputTimesteps();
 
-    auto ctcInputDeltas = computeCtcInputDeltas(_costFunctionName, _costFunctionWeight,
+    auto ctcInputDeltas = computeCtcInputDeltas(_implementation->getCostFunctionName(),
+        _implementation->getCostFunctionWeight(),
         inputActivations, inputLabels, inputTimesteps);
 
-    auto inputDeltas = apply(beamSearchInputDeltas, ctcInputDeltas, matrix::Add());
+    auto inputDeltas = apply(Matrix(beamSearchInputDeltas), ctcInputDeltas, matrix::Add());
 
     inputDeltaVector.push_back(inputDeltas);
 }
@@ -292,7 +386,7 @@ const MatrixVector& CTCDecoderLayer::weights() const
 
 const matrix::Precision& CTCDecoderLayer::precision() const
 {
-    return *_precision;
+    return _implementation->getPrecision();
 }
 
 double CTCDecoderLayer::computeWeightCost() const
@@ -302,7 +396,7 @@ double CTCDecoderLayer::computeWeightCost() const
 
 Dimension CTCDecoderLayer::getInputSize() const
 {
-    return *_inputSize;
+    return _implementation->getInputSize();
 }
 
 Dimension CTCDecoderLayer::getOutputSize() const
@@ -352,8 +446,8 @@ size_t CTCDecoderLayer::getActivationMemory() const
 void CTCDecoderLayer::save(util::OutputTarArchive& archive, util::PropertyTree& properties) const
 {
     properties["beam-size"]  = std::to_string(_implementation->getBeamSize());
-    properties["input-size"] = _implementation->getInputSize()->toString();
-    properties["precision"]  = _implementation->getPrecision()->toString();
+    properties["input-size"] = _implementation->getInputSize().toString();
+    properties["precision"]  = _implementation->getPrecision().toString();
 
     saveLayer(archive, properties);
 }
@@ -361,10 +455,17 @@ void CTCDecoderLayer::save(util::OutputTarArchive& archive, util::PropertyTree& 
 void CTCDecoderLayer::load(util::InputTarArchive& archive, const util::PropertyTree& properties)
 {
     _implementation->setInputSize(Dimension::fromString(properties["input-size"]));
-    _implementation->setPrecision(matrix::Precision::fromString(properties["precision"]));
+    _implementation->setPrecision(*matrix::Precision::fromString(properties["precision"]));
     _implementation->setBeamSize(properties.get<size_t>("beam-size"));
 
     loadLayer(archive, properties);
+}
+
+void CTCDecoderLayer::clearReversePropagationData()
+{
+    _implementation->clearReversePropagationData();
+
+    Layer::clearReversePropagationData();
 }
 
 std::unique_ptr<Layer> CTCDecoderLayer::clone() const

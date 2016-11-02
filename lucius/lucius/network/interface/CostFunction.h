@@ -39,7 +39,7 @@ public:
 
 public:
     /*! \brief Clone */
-    virtual CostFunction* clone() const = 0;
+    virtual std::unique_ptr<CostFunction> clone() const = 0;
 
 };
 

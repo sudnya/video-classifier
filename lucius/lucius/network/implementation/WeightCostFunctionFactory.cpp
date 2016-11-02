@@ -10,27 +10,30 @@
 #include <lucius/network/interface/WeightRegularizationCostFunction.h>
 #include <lucius/network/interface/NullWeightRegularizationCostFunction.h>
 
+#include <lucius/util/interface/memory.h>
+
 namespace lucius
 {
 
 namespace network
 {
 
-WeightCostFunction* WeightCostFunctionFactory::create(const std::string& costFunctionName)
+std::unique_ptr<WeightCostFunction> WeightCostFunctionFactory::create(
+    const std::string& costFunctionName)
 {
     if(costFunctionName == "WeightRegularizationCostFunction")
     {
-        return new WeightRegularizationCostFunction;
+        return std::make_unique<WeightRegularizationCostFunction>();
     }
     else if(costFunctionName == "NullWeightRegularizationCostFunction")
     {
-        return new NullWeightRegularizationCostFunction;
+        return std::make_unique<NullWeightRegularizationCostFunction>();
     }
 
-    return nullptr;
+    return std::unique_ptr<WeightCostFunction>();
 }
 
-WeightCostFunction* WeightCostFunctionFactory::create()
+std::unique_ptr<WeightCostFunction> WeightCostFunctionFactory::create()
 {
     return create("NullWeightRegularizationCostFunction");
 }

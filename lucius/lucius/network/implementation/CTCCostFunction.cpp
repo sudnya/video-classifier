@@ -68,9 +68,9 @@ void CTCCostFunction::computeDelta(Bundle& bundle) const
     bundle["outputDeltas"] = MatrixVector({apply(gradients, matrix::Divide(miniBatchSize))});
 }
 
-CostFunction* CTCCostFunction::clone() const
+std::unique_ptr<CostFunction> CTCCostFunction::clone() const
 {
-    return new CTCCostFunction;
+    return std::make_unique<CTCCostFunction>();
 }
 
 std::string CTCCostFunction::typeName() const

@@ -33,7 +33,7 @@ public:
     virtual std::string typeName() const;
 
 public:
-    virtual CostFunction* clone() const;
+    virtual std::unique_ptr<CostFunction> clone() const;
 
 };
 
