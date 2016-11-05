@@ -50,6 +50,18 @@ CUDA_DECORATOR Dimension ones(const Dimension& size)
     return result;
 }
 
+CUDA_DECORATOR Dimension range(const Dimension& size)
+{
+    Dimension result;
+
+    for(size_t i = 0, arity = size.size(); i < arity; ++i)
+    {
+        result.push_back(i);
+    }
+
+    return result;
+}
+
 CUDA_DECORATOR static bool isContained(const Dimension& set, size_t element)
 {
     for (auto i : set)
@@ -179,6 +191,42 @@ CUDA_DECORATOR Dimension selectNamedDimensions(const Dimension& selectedDimensio
         {
             result.push_back(left[leftIndex]);
             ++leftIndex;
+        }
+    }
+
+    return result;
+}
+
+CUDA_DECORATOR inline Dimension mergeNamedDimensions(const Dimension& selectedLeftDimensions,
+    const Dimension& left, const Dimension& right)
+{
+    assert(selectedLeftDimensions.size() == left.size());
+
+    Dimension result;
+
+    size_t leftIndex = 0;
+    size_t rightIndex = 0;
+    size_t currentSelectedIndex = 0;
+
+    for(size_t currentIndex = 0; currentIndex < left.size() + right.size(); ++currentIndex)
+    {
+        bool isLeftValid = currentSelectedIndex < selectedLeftDimensions.size();
+        bool isLeft = true;
+
+        if(isLeftValid)
+        {
+            isLeft = selectedLeftDimensions[currentSelectedIndex] == currentIndex;
+        }
+
+        if(isLeft)
+        {
+            result.push_back(left[leftIndex++]);
+            ++currentSelectedIndex;
+        }
+        else
+        {
+            assert(rightIndex < right.size());
+            result.push_back(right[rightIndex++]);
         }
     }
 

@@ -8,6 +8,7 @@
 
 #include <functional>
 #include <memory>
+#include <string>
 
 namespace lucius
 {
@@ -31,7 +32,10 @@ public:
     void addTest(const std::string& name, TestFunction);
 
 public:
-    bool run();
+    std::string listTests() const;
+
+public:
+    bool run(const std::string& filter);
 
 private:
     std::unique_ptr<TestEngineImplementation> _implementation;

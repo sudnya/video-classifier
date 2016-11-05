@@ -12,7 +12,9 @@
 #include <lucius/network/interface/BatchNormalizationLayer.h>
 #include <lucius/network/interface/ConvolutionalLayer.h>
 #include <lucius/network/interface/CostFunctionFactory.h>
+#include <lucius/network/interface/CostFunction.h>
 #include <lucius/network/interface/ActivationFunctionFactory.h>
+#include <lucius/network/interface/ActivationFunction.h>
 #include <lucius/network/interface/Bundle.h>
 
 #include <lucius/matrix/interface/Matrix.h>

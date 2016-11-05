@@ -3,6 +3,7 @@
 #include <lucius/matrix/interface/CTCOperations.h>
 #include <lucius/matrix/interface/Matrix.h>
 #include <lucius/matrix/interface/MatrixOperations.h>
+#include <lucius/matrix/interface/GatherOperations.h>
 #include <lucius/matrix/interface/CopyOperations.h>
 #include <lucius/matrix/interface/SortOperations.h>
 #include <lucius/matrix/interface/ScanOperations.h>
@@ -110,6 +111,15 @@ static void pruneBeam(Matrix& workspace, Matrix& outputActivations, Matrix& inpu
     broadcast(workspace, workspace, augmentedWorkspaceProbabilities, {}, CopyRight());
 }
 
+Dimension getBeamSearchOutputSize(const Dimension& inputSize, size_t beamSize)
+{
+    size_t alphabet      = inputSize[0];
+    size_t miniBatchSize = inputSize[1];
+    size_t timesteps     = inputSize[2];
+
+    return {alphabet, beamSize, miniBatchSize, timesteps};
+}
+
 void ctcBeamSearch(Matrix& outputActivationWeights, Matrix& inputPaths, Matrix& outputActivations,
     const Matrix& inputActivations, size_t beamSize)
 {
@@ -150,7 +160,7 @@ void ctcBeamSearchInputGradients(Matrix& inputDeltas, const Matrix& outputActiva
     auto transitionPositions = applyToAdjacentElements(inputPaths, 2, NotEqual(), 0.0);
 
     // {beamSize, miniBatchSize, timesteps}
-    auto scanPositions = inclusiveScan(transitionPositions, {2}, Add());
+    auto scanPositions = inclusiveScan(transitionPositions, 2, Add(), 0.0);
 
     auto factors = computeFactors(scanPositions);
 
@@ -167,7 +177,9 @@ void ctcBeamSearchInputGradients(Matrix& inputDeltas, const Matrix& outputActiva
     // scaled output deltas size is {beamSize, miniBatchSize, timesteps}
     // input paths is {beamSize, miniBatchSize, timesteps}
     // expanded input deltas {alphabet, beamSize, miniBatchSize, timesteps}
-    auto expandedInputDeltas = indirectGather(scaledOutputDeltas, inputPaths,
+    Matrix expandedInputDeltas(outputDeltas.size(), outputDeltas.precision());
+
+    indirectGather(expandedInputDeltas, scaledOutputDeltas, inputPaths,
         MapOutputToMatchingIndexDimension({1, 2, 3}, 0, {1, 2, 3}));
 
     reduce(inputDeltas, expandedInputDeltas, {1}, Add());

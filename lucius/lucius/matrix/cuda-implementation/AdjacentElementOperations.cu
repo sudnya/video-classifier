@@ -33,13 +33,10 @@ public:
 
             size_t index = leftPosition[dimensionToApplyTo];
 
-            if(0 == index)
-            {
-                leftValue = inputView(leftPosition);
-            }
-            else
+            if(0 != index)
             {
                 leftPosition[dimensionToApplyTo] -= 1;
+                leftValue = inputView(leftPosition);
             }
 
             NativeType rightValue = inputView(rightPosition);

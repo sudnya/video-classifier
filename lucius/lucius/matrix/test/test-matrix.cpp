@@ -11,13 +11,19 @@
 #include <lucius/matrix/interface/RandomOperations.h>
 #include <lucius/matrix/interface/FileOperations.h>
 #include <lucius/matrix/interface/PoolingOperations.h>
+#include <lucius/matrix/interface/AdjacentElementOperations.h>
 #include <lucius/matrix/interface/WindowOperations.h>
 #include <lucius/matrix/interface/ConvolutionalOperations.h>
 #include <lucius/matrix/interface/MatrixTransformations.h>
+#include <lucius/matrix/interface/SortOperations.h>
+#include <lucius/matrix/interface/GatherOperations.h>
+#include <lucius/matrix/interface/ScanOperations.h>
+#include <lucius/matrix/interface/GatherOperation.h>
 #include <lucius/matrix/interface/Operation.h>
 #include <lucius/matrix/interface/Matrix.h>
 
 #include <lucius/util/interface/debug.h>
+#include <lucius/util/interface/ArgumentParser.h>
 #include <lucius/util/interface/TestEngine.h>
 
 // Standard Library Includes
@@ -50,13 +56,13 @@ bool testSaveLoad()
 
     if(reference != result)
     {
-        util::log("test-matrix") << " Matrix Save Load Test Failed:\n";
-        util::log("test-matrix") << "  result matrix " << result.toString();
-        util::log("test-matrix") << "  does not match reference matrix " << reference.toString();
+        lucius::util::log("test-matrix") << " Matrix Save Load Test Failed:\n";
+        lucius::util::log("test-matrix") << "  result matrix " << result.toString();
+        lucius::util::log("test-matrix") << "  does not match reference matrix " << reference.toString();
     }
     else
     {
-        util::log("test-matrix") << " Matrix Save Load Test Passed\n";
+        lucius::util::log("test-matrix") << " Matrix Save Load Test Passed\n";
     }
 
     return reference == result;
@@ -107,13 +113,13 @@ bool testMultiply()
 
     if(computed != c)
     {
-        util::log("test-matrix") << " Matrix Multiply Test Failed:\n";
-        util::log("test-matrix") << "  result matrix " << computed.toString();
-        util::log("test-matrix") << "  does not match reference matrix " << c.toString();
+        lucius::util::log("test-matrix") << " Matrix Multiply Test Failed:\n";
+        lucius::util::log("test-matrix") << "  result matrix " << computed.toString();
+        lucius::util::log("test-matrix") << "  does not match reference matrix " << c.toString();
     }
     else
     {
-        util::log("test-matrix") << " Matrix Multiply Test Passed\n";
+        lucius::util::log("test-matrix") << " Matrix Multiply Test Passed\n";
     }
 
     return computed == c;
@@ -170,13 +176,13 @@ bool testMultiplySlice()
 
     if(computed != c)
     {
-        util::log("test-matrix") << " Matrix Multiply Slice Test Failed:\n";
-        util::log("test-matrix") << "  result matrix " << computed.toString();
-        util::log("test-matrix") << "  does not match reference matrix " << c.toString();
+        lucius::util::log("test-matrix") << " Matrix Multiply Slice Test Failed:\n";
+        lucius::util::log("test-matrix") << "  result matrix " << computed.toString();
+        lucius::util::log("test-matrix") << "  does not match reference matrix " << c.toString();
     }
     else
     {
-        util::log("test-matrix") << " Matrix Multiply Slice Test Passed\n";
+        lucius::util::log("test-matrix") << " Matrix Multiply Slice Test Passed\n";
     }
 
     return computed == c;
@@ -218,13 +224,13 @@ bool testAddition()
 
     if(computed != c)
     {
-        util::log("test-matrix") << " Matrix Addition Test Failed:\n";
-        util::log("test-matrix") << "  result matrix " << computed.toString();
-        util::log("test-matrix") << "  does not match reference matrix " << c.toString();
+        lucius::util::log("test-matrix") << " Matrix Addition Test Failed:\n";
+        lucius::util::log("test-matrix") << "  result matrix " << computed.toString();
+        lucius::util::log("test-matrix") << "  does not match reference matrix " << c.toString();
     }
     else
     {
-        util::log("test-matrix") << " Matrix Addition Test Passed\n";
+        lucius::util::log("test-matrix") << " Matrix Addition Test Passed\n";
     }
 
     return computed == c;
@@ -261,13 +267,13 @@ bool testScalarAddition()
 
     if(computed != c)
     {
-        util::log("test-matrix") << " Matrix Scalar Addition Test Failed:\n";
-        util::log("test-matrix") << "  result matrix " << computed.toString();
-        util::log("test-matrix") << "  does not match reference matrix " << c.toString();
+        lucius::util::log("test-matrix") << " Matrix Scalar Addition Test Failed:\n";
+        lucius::util::log("test-matrix") << "  result matrix " << computed.toString();
+        lucius::util::log("test-matrix") << "  does not match reference matrix " << c.toString();
     }
     else
     {
-        util::log("test-matrix") << " Matrix Scalar Addition Test Passed\n";
+        lucius::util::log("test-matrix") << " Matrix Scalar Addition Test Passed\n";
     }
 
     return computed == c;
@@ -296,13 +302,13 @@ bool testReduce()
 
     if(computed[0] != 21.0)
     {
-        util::log("test-matrix") << " Matrix Reduction Test Failed:\n";
-        util::log("test-matrix") << "  result matrix " << computed.toString();
-        util::log("test-matrix") << "  does not match reference matrix " << 21.0;
+        lucius::util::log("test-matrix") << " Matrix Reduction Test Failed:\n";
+        lucius::util::log("test-matrix") << "  result matrix " << computed.toString();
+        lucius::util::log("test-matrix") << "  does not match reference matrix " << 21.0;
     }
     else
     {
-        util::log("test-matrix") << " Matrix Reduction Test Passed\n";
+        lucius::util::log("test-matrix") << " Matrix Reduction Test Passed\n";
     }
 
     return computed[0] == 21.0;
@@ -337,13 +343,13 @@ bool test2dReduce()
 
     if(computed != c)
     {
-        util::log("test-matrix") << " Matrix 2D Reduction 2nd Dimension Test Failed:\n";
-        util::log("test-matrix") << "  result matrix " << computed.toString();
-        util::log("test-matrix") << "  does not match reference matrix " << c.toString();
+        lucius::util::log("test-matrix") << " Matrix 2D Reduction 2nd Dimension Test Failed:\n";
+        lucius::util::log("test-matrix") << "  result matrix " << computed.toString();
+        lucius::util::log("test-matrix") << "  does not match reference matrix " << c.toString();
     }
     else
     {
-        util::log("test-matrix") << " Matrix 2D Reduction 2nd Dimension Test Passed\n";
+        lucius::util::log("test-matrix") << " Matrix 2D Reduction 2nd Dimension Test Passed\n";
     }
 
     return computed == c;
@@ -377,13 +383,13 @@ bool test2dReduce2()
 
     if(computed != c)
     {
-        util::log("test-matrix") << " Matrix 2D Reduction 1st Dimension Test Failed:\n";
-        util::log("test-matrix") << "  result matrix " << computed.toString();
-        util::log("test-matrix") << "  does not match reference matrix " << c.toString();
+        lucius::util::log("test-matrix") << " Matrix 2D Reduction 1st Dimension Test Failed:\n";
+        lucius::util::log("test-matrix") << "  result matrix " << computed.toString();
+        lucius::util::log("test-matrix") << "  does not match reference matrix " << c.toString();
     }
     else
     {
-        util::log("test-matrix") << " Matrix 2D Reduction 1st Dimension Test Passed\n";
+        lucius::util::log("test-matrix") << " Matrix 2D Reduction 1st Dimension Test Passed\n";
     }
 
     return computed == c;
@@ -436,13 +442,13 @@ bool testBroadcast()
 
     if(computed != ref)
     {
-        util::log("test-matrix") << " Matrix Broadcast 1st Dimension Test Failed:\n";
-        util::log("test-matrix") << "  result matrix " << computed.toString();
-        util::log("test-matrix") << "  does not match reference matrix " << ref.toString();
+        lucius::util::log("test-matrix") << " Matrix Broadcast 1st Dimension Test Failed:\n";
+        lucius::util::log("test-matrix") << "  result matrix " << computed.toString();
+        lucius::util::log("test-matrix") << "  does not match reference matrix " << ref.toString();
     }
     else
     {
-        util::log("test-matrix") << " Matrix Broadcast 1st Dimension Test Passed\n";
+        lucius::util::log("test-matrix") << " Matrix Broadcast 1st Dimension Test Passed\n";
     }
 
     return computed == ref;
@@ -494,13 +500,13 @@ bool test4dReduce()
 
     if(computed != c)
     {
-        util::log("test-matrix") << " Matrix 4D Reduction 1st 3 Dimension Test Failed:\n";
-        util::log("test-matrix") << "  result matrix " << computed.toString();
-        util::log("test-matrix") << "  does not match reference matrix " << c.toString();
+        lucius::util::log("test-matrix") << " Matrix 4D Reduction 1st 3 Dimension Test Failed:\n";
+        lucius::util::log("test-matrix") << "  result matrix " << computed.toString();
+        lucius::util::log("test-matrix") << "  does not match reference matrix " << c.toString();
     }
     else
     {
-        util::log("test-matrix") << " Matrix 4D Reduction 1st 3 Dimension Test Passed\n";
+        lucius::util::log("test-matrix") << " Matrix 4D Reduction 1st 3 Dimension Test Passed\n";
     }
 
     return computed == c;
@@ -555,13 +561,13 @@ bool test2dBroadcast()
 
     if(computed != ref)
     {
-        util::log("test-matrix") << " Matrix Broadcast 0th Dimension Test Failed:\n";
-        util::log("test-matrix") << "  result matrix " << computed.toString();
-        util::log("test-matrix") << "  does not match reference matrix " << ref.toString();
+        lucius::util::log("test-matrix") << " Matrix Broadcast 0th Dimension Test Failed:\n";
+        lucius::util::log("test-matrix") << "  result matrix " << computed.toString();
+        lucius::util::log("test-matrix") << "  does not match reference matrix " << ref.toString();
     }
     else
     {
-        util::log("test-matrix") << " Matrix Broadcast 0th Dimension Test Passed\n";
+        lucius::util::log("test-matrix") << " Matrix Broadcast 0th Dimension Test Passed\n";
     }
 
     return computed == ref;
@@ -589,13 +595,13 @@ bool testZeros()
 
     if(computed != ref)
     {
-        util::log("test-matrix") << " Matrix Zeros Test Failed:\n";
-        util::log("test-matrix") << "  result matrix " << computed.toString();
-        util::log("test-matrix") << "  does not match reference matrix " << ref.toString();
+        lucius::util::log("test-matrix") << " Matrix Zeros Test Failed:\n";
+        lucius::util::log("test-matrix") << "  result matrix " << computed.toString();
+        lucius::util::log("test-matrix") << "  does not match reference matrix " << ref.toString();
     }
     else
     {
-        util::log("test-matrix") << " Matrix Zeros Test Passed\n";
+        lucius::util::log("test-matrix") << " Matrix Zeros Test Passed\n";
     }
 
     return computed == ref;
@@ -636,13 +642,13 @@ bool testReshape()
 
     if(computed != c)
     {
-        util::log("test-matrix") << " Matrix Reshape Test Failed:\n";
-        util::log("test-matrix") << "  result matrix " << computed.toString();
-        util::log("test-matrix") << "  does not match reference matrix " << c.toString();
+        lucius::util::log("test-matrix") << " Matrix Reshape Test Failed:\n";
+        lucius::util::log("test-matrix") << "  result matrix " << computed.toString();
+        lucius::util::log("test-matrix") << "  does not match reference matrix " << c.toString();
     }
     else
     {
-        util::log("test-matrix") << " Matrix Reshape Test Passed\n";
+        lucius::util::log("test-matrix") << " Matrix Reshape Test Passed\n";
     }
 
     return computed == c;
@@ -689,13 +695,13 @@ bool testReshapeSlice()
 
     if(computed != c)
     {
-        util::log("test-matrix") << " Matrix Reshape Slice Test Failed:\n";
-        util::log("test-matrix") << "  result matrix " << computed.toString();
-        util::log("test-matrix") << "  does not match reference matrix " << c.toString();
+        lucius::util::log("test-matrix") << " Matrix Reshape Slice Test Failed:\n";
+        lucius::util::log("test-matrix") << "  result matrix " << computed.toString();
+        lucius::util::log("test-matrix") << "  does not match reference matrix " << c.toString();
     }
     else
     {
-        util::log("test-matrix") << " Matrix Reshape Slice Test Passed\n";
+        lucius::util::log("test-matrix") << " Matrix Reshape Slice Test Passed\n";
     }
 
     return computed == c;
@@ -724,13 +730,13 @@ bool testCopy()
 
     if(computed != a)
     {
-        util::log("test-matrix") << " Matrix Copy Test Failed:\n";
-        util::log("test-matrix") << "  result matrix " << computed.toString();
-        util::log("test-matrix") << "  does not match reference matrix " << a.toString();
+        lucius::util::log("test-matrix") << " Matrix Copy Test Failed:\n";
+        lucius::util::log("test-matrix") << "  result matrix " << computed.toString();
+        lucius::util::log("test-matrix") << "  does not match reference matrix " << a.toString();
     }
     else
     {
-        util::log("test-matrix") << " Matrix Copy Test Passed\n";
+        lucius::util::log("test-matrix") << " Matrix Copy Test Passed\n";
     }
 
     return computed == a;
@@ -768,13 +774,13 @@ bool testCopyBetweenPrecisions()
 
     if(computed != c)
     {
-        util::log("test-matrix") << " Matrix Copy Between Precisions Test Failed:\n";
-        util::log("test-matrix") << "  result matrix " << computed.toString();
-        util::log("test-matrix") << "  does not match reference matrix " << c.toString();
+        lucius::util::log("test-matrix") << " Matrix Copy Between Precisions Test Failed:\n";
+        lucius::util::log("test-matrix") << "  result matrix " << computed.toString();
+        lucius::util::log("test-matrix") << "  does not match reference matrix " << c.toString();
     }
     else
     {
-        util::log("test-matrix") << " Matrix Copy Between Precisions Test Passed\n";
+        lucius::util::log("test-matrix") << " Matrix Copy Between Precisions Test Passed\n";
     }
 
     return computed == c;
@@ -798,12 +804,12 @@ bool testUniformRandom()
 
     if(!passed)
     {
-        util::log("test-matrix") << " Matrix Uniform Random Test Failed:\n";
-        util::log("test-matrix") << "  result mean " << mean << " is out of bounds.\n";
+        lucius::util::log("test-matrix") << " Matrix Uniform Random Test Failed:\n";
+        lucius::util::log("test-matrix") << "  result mean " << mean << " is out of bounds.\n";
     }
     else
     {
-        util::log("test-matrix") << " Matrix Uniform Random Test Passed\n";
+        lucius::util::log("test-matrix") << " Matrix Uniform Random Test Passed\n";
     }
 
     return passed;
@@ -827,12 +833,12 @@ bool testNormalRandom()
 
     if(!passed)
     {
-        util::log("test-matrix") << " Matrix Normal Random Test Failed:\n";
-        util::log("test-matrix") << "  result mean " << mean << " is out of bounds.\n";
+        lucius::util::log("test-matrix") << " Matrix Normal Random Test Failed:\n";
+        lucius::util::log("test-matrix") << "  result mean " << mean << " is out of bounds.\n";
     }
     else
     {
-        util::log("test-matrix") << " Matrix Normal Random Test Passed\n";
+        lucius::util::log("test-matrix") << " Matrix Normal Random Test Passed\n";
     }
 
     return passed;
@@ -886,13 +892,13 @@ bool test1dForwardConvolution()
 
     if(reference != computed)
     {
-        util::log("test-matrix") << " Matrix 1D Forward Convolution Test Failed:\n";
-        util::log("test-matrix") << "  result matrix " << computed.toString();
-        util::log("test-matrix") << "  does not match reference matrix " << reference.toString();
+        lucius::util::log("test-matrix") << " Matrix 1D Forward Convolution Test Failed:\n";
+        lucius::util::log("test-matrix") << "  result matrix " << computed.toString();
+        lucius::util::log("test-matrix") << "  does not match reference matrix " << reference.toString();
     }
     else
     {
-        util::log("test-matrix") << " Matrix 1D Forward Convolution Test Passed\n";
+        lucius::util::log("test-matrix") << " Matrix 1D Forward Convolution Test Passed\n";
     }
 
     return reference == computed;
@@ -952,13 +958,13 @@ bool test2dForwardConvolution()
 
     if(reference != computed)
     {
-        util::log("test-matrix") << " Matrix 2D Forward Convolution Test Failed:\n";
-        util::log("test-matrix") << "  result matrix " << computed.toString();
-        util::log("test-matrix") << "  does not match reference matrix " << reference.toString();
+        lucius::util::log("test-matrix") << " Matrix 2D Forward Convolution Test Failed:\n";
+        lucius::util::log("test-matrix") << "  result matrix " << computed.toString();
+        lucius::util::log("test-matrix") << "  does not match reference matrix " << reference.toString();
     }
     else
     {
-        util::log("test-matrix") << " Matrix 2D Forward Convolution Test Passed\n";
+        lucius::util::log("test-matrix") << " Matrix 2D Forward Convolution Test Passed\n";
     }
 
     return reference == computed;
@@ -1032,13 +1038,13 @@ bool test2dStridedForwardConvolution()
 
     if(reference != computed)
     {
-        util::log("test-matrix") << " Matrix 2D Strided Forward Convolution Test Failed:\n";
-        util::log("test-matrix") << "  result matrix " << computed.toString();
-        util::log("test-matrix") << "  does not match reference matrix " << reference.toString();
+        lucius::util::log("test-matrix") << " Matrix 2D Strided Forward Convolution Test Failed:\n";
+        lucius::util::log("test-matrix") << "  result matrix " << computed.toString();
+        lucius::util::log("test-matrix") << "  does not match reference matrix " << reference.toString();
     }
     else
     {
-        util::log("test-matrix") << " Matrix 2D Strided Forward Convolution Test Passed\n";
+        lucius::util::log("test-matrix") << " Matrix 2D Strided Forward Convolution Test Passed\n";
     }
 
     return reference == computed;
@@ -1093,13 +1099,13 @@ bool test1dBackwardConvolution()
 
     if(reference != computed)
     {
-        util::log("test-matrix") << " Matrix 1D Backward Convolution Test Failed:\n";
-        util::log("test-matrix") << "  result matrix " << computed.toString();
-        util::log("test-matrix") << "  does not match reference matrix " << reference.toString();
+        lucius::util::log("test-matrix") << " Matrix 1D Backward Convolution Test Failed:\n";
+        lucius::util::log("test-matrix") << "  result matrix " << computed.toString();
+        lucius::util::log("test-matrix") << "  does not match reference matrix " << reference.toString();
     }
     else
     {
-        util::log("test-matrix") << " Matrix 1D Backward Convolution Test Passed\n";
+        lucius::util::log("test-matrix") << " Matrix 1D Backward Convolution Test Passed\n";
     }
 
     return reference == computed;
@@ -1172,13 +1178,13 @@ bool test2dBackwardConvolution()
 
     if(reference != computed)
     {
-        util::log("test-matrix") << " Matrix 2D Backward Convolution Test Failed:\n";
-        util::log("test-matrix") << "  result matrix " << computed.toString();
-        util::log("test-matrix") << "  does not match reference matrix " << reference.toString();
+        lucius::util::log("test-matrix") << " Matrix 2D Backward Convolution Test Failed:\n";
+        lucius::util::log("test-matrix") << "  result matrix " << computed.toString();
+        lucius::util::log("test-matrix") << "  does not match reference matrix " << reference.toString();
     }
     else
     {
-        util::log("test-matrix") << " Matrix 2D Backward Convolution Test Passed\n";
+        lucius::util::log("test-matrix") << " Matrix 2D Backward Convolution Test Passed\n";
     }
 
     return reference == computed;
@@ -1235,13 +1241,13 @@ bool test2dStridedBackwardConvolution()
 
     if(reference != computed)
     {
-        util::log("test-matrix") << " Matrix 2D Strided Backward Convolution Test Failed:\n";
-        util::log("test-matrix") << "  result matrix " << computed.toString();
-        util::log("test-matrix") << "  does not match reference matrix " << reference.toString();
+        lucius::util::log("test-matrix") << " Matrix 2D Strided Backward Convolution Test Failed:\n";
+        lucius::util::log("test-matrix") << "  result matrix " << computed.toString();
+        lucius::util::log("test-matrix") << "  does not match reference matrix " << reference.toString();
     }
     else
     {
-        util::log("test-matrix") << " Matrix 2D Strided Backward Convolution Test Passed\n";
+        lucius::util::log("test-matrix") << " Matrix 2D Strided Backward Convolution Test Passed\n";
     }
 
     return reference == computed;
@@ -1292,13 +1298,13 @@ bool test1dConvolutionGradient()
 
     if(reference != computed)
     {
-        util::log("test-matrix") << " Matrix 1D Convolution Gradients Test Failed:\n";
-        util::log("test-matrix") << "  result matrix " << computed.toString();
-        util::log("test-matrix") << "  does not match reference matrix " << reference.toString();
+        lucius::util::log("test-matrix") << " Matrix 1D Convolution Gradients Test Failed:\n";
+        lucius::util::log("test-matrix") << "  result matrix " << computed.toString();
+        lucius::util::log("test-matrix") << "  does not match reference matrix " << reference.toString();
     }
     else
     {
-        util::log("test-matrix") << " Matrix 1D Convolution Gradients Test Passed\n";
+        lucius::util::log("test-matrix") << " Matrix 1D Convolution Gradients Test Passed\n";
     }
 
     return reference == computed;
@@ -1355,13 +1361,13 @@ bool test2dConvolutionGradient()
 
     if(reference != computed)
     {
-        util::log("test-matrix") << " Matrix 2D Convolution Gradients Test Failed:\n";
-        util::log("test-matrix") << "  result matrix " << computed.toString();
-        util::log("test-matrix") << "  does not match reference matrix " << reference.toString();
+        lucius::util::log("test-matrix") << " Matrix 2D Convolution Gradients Test Failed:\n";
+        lucius::util::log("test-matrix") << "  result matrix " << computed.toString();
+        lucius::util::log("test-matrix") << "  does not match reference matrix " << reference.toString();
     }
     else
     {
-        util::log("test-matrix") << " Matrix 2D Convolution Gradients Test Passed\n";
+        lucius::util::log("test-matrix") << " Matrix 2D Convolution Gradients Test Passed\n";
     }
 
     return reference == computed;
@@ -1431,13 +1437,13 @@ bool test2dReduceGetPositions()
 
     if(reference != computed)
     {
-        util::log("test-matrix") << " Matrix 2D Reduce Get Positions Test Failed:\n";
-        util::log("test-matrix") << "  result matrix " << computed.toString();
-        util::log("test-matrix") << "  does not match reference matrix " << reference.toString();
+        lucius::util::log("test-matrix") << " Matrix 2D Reduce Get Positions Test Failed:\n";
+        lucius::util::log("test-matrix") << "  result matrix " << computed.toString();
+        lucius::util::log("test-matrix") << "  does not match reference matrix " << reference.toString();
     }
     else
     {
-        util::log("test-matrix") << " Matrix 2D Reduce Get Positions Test Passed\n";
+        lucius::util::log("test-matrix") << " Matrix 2D Reduce Get Positions Test Passed\n";
     }
 
     return reference == computed;
@@ -1494,13 +1500,13 @@ bool testForwardMaxPooling()
 
     if(reference != computed)
     {
-        util::log("test-matrix") << " Matrix 2D Max Pooling Test Failed:\n";
-        util::log("test-matrix") << "  result matrix " << computed.toString();
-        util::log("test-matrix") << "  does not match reference matrix " << reference.toString();
+        lucius::util::log("test-matrix") << " Matrix 2D Max Pooling Test Failed:\n";
+        lucius::util::log("test-matrix") << "  result matrix " << computed.toString();
+        lucius::util::log("test-matrix") << "  does not match reference matrix " << reference.toString();
     }
     else
     {
-        util::log("test-matrix") << " Matrix 2D Max Pooling Test Passed\n";
+        lucius::util::log("test-matrix") << " Matrix 2D Max Pooling Test Passed\n";
     }
 
     return reference == computed;
@@ -1591,13 +1597,13 @@ bool testBackwardMaxPooling()
 
     if(reference != computed)
     {
-        util::log("test-matrix") << " Matrix 2D Backward Max Pooling Test Failed:\n";
-        util::log("test-matrix") << "  result matrix " << computed.toString();
-        util::log("test-matrix") << "  does not match reference matrix " << reference.toString();
+        lucius::util::log("test-matrix") << " Matrix 2D Backward Max Pooling Test Failed:\n";
+        lucius::util::log("test-matrix") << "  result matrix " << computed.toString();
+        lucius::util::log("test-matrix") << "  does not match reference matrix " << reference.toString();
     }
     else
     {
-        util::log("test-matrix") << " Matrix 2D Backward Max Pooling Test Passed\n";
+        lucius::util::log("test-matrix") << " Matrix 2D Backward Max Pooling Test Passed\n";
     }
 
     return reference == computed;
@@ -1687,13 +1693,13 @@ bool testPermuteDimensions()
 
     if(reference != computed)
     {
-        util::log("test-matrix") << " Matrix Permute Dimensions Test Failed:\n";
-        util::log("test-matrix") << "  result matrix " << computed.toString();
-        util::log("test-matrix") << "  does not match reference matrix " << reference.toString();
+        lucius::util::log("test-matrix") << " Matrix Permute Dimensions Test Failed:\n";
+        lucius::util::log("test-matrix") << "  result matrix " << computed.toString();
+        lucius::util::log("test-matrix") << "  does not match reference matrix " << reference.toString();
     }
     else
     {
-        util::log("test-matrix") << " Matrix Permute Dimensions Test Passed\n";
+        lucius::util::log("test-matrix") << " Matrix Permute Dimensions Test Passed\n";
     }
 
     return reference == computed;
@@ -1743,13 +1749,13 @@ bool testHanningWindow()
 
     if(!isApproximatelyEqual(reference, computed, 1e-6))
     {
-        util::log("test-matrix") << " Matrix Hanning Window Test Failed:\n";
-        util::log("test-matrix") << "  result matrix " << computed.toString();
-        util::log("test-matrix") << "  does not match reference matrix " << reference.toString();
+        lucius::util::log("test-matrix") << " Matrix Hanning Window Test Failed:\n";
+        lucius::util::log("test-matrix") << "  result matrix " << computed.toString();
+        lucius::util::log("test-matrix") << "  does not match reference matrix " << reference.toString();
     }
     else
     {
-        util::log("test-matrix") << " Matrix Hanning Window Test Passed\n";
+        lucius::util::log("test-matrix") << " Matrix Hanning Window Test Passed\n";
     }
 
     return isApproximatelyEqual(reference, computed, 1e-6);
@@ -1776,25 +1782,199 @@ bool testSort()
     reference(5) = 6;
 
     //compare reference Matrix to loaded Matrix
-    auto result = lucius::matrix::sort(input);
+    auto result = lucius::matrix::copy(input);
+
+    lucius::matrix::sort(result);
 
     if(reference != result)
     {
-        util::log("test-matrix") << " Matrix Sort Test Failed:\n";
-        util::log("test-matrix") << "  result matrix " << result.toString();
-        util::log("test-matrix") << "  does not match reference matrix " << reference.toString();
+        lucius::util::log("test-matrix") << " Matrix Sort Test Failed:\n";
+        lucius::util::log("test-matrix") << "  result matrix " << result.toString();
+        lucius::util::log("test-matrix") << "  does not match reference matrix "
+            << reference.toString();
     }
     else
     {
-        util::log("test-matrix") << " Matrix Sort Test Passed\n";
+        lucius::util::log("test-matrix") << " Matrix Sort Test Passed\n";
     }
 
     return reference == result;
 }
 
-bool runTests()
+bool testAdjacentCompare()
 {
-    util::TestEngine engine;
+    // create an increasing matrix
+    Matrix input(6);
+    input(0) = 0;
+    input(1) = 0;
+    input(2) = 1;
+    input(3) = 1;
+    input(4) = 1;
+    input(5) = 2;
+
+    // we should detect the transitions
+    Matrix reference(6);
+    reference(0) = 0;
+    reference(1) = 0;
+    reference(2) = 1;
+    reference(3) = 0;
+    reference(4) = 0;
+    reference(5) = 1;
+
+    //compare reference Matrix to loaded Matrix
+    auto result = lucius::matrix::applyToAdjacentElements(input, 0, lucius::matrix::NotEqual(), 0);
+
+    if(reference != result)
+    {
+        lucius::util::log("test-matrix") << " Matrix Apply To Adjacent Elements Test Failed:\n";
+        lucius::util::log("test-matrix") << "  result matrix " << result.toString();
+        lucius::util::log("test-matrix") << "  does not match reference matrix "
+            << reference.toString();
+    }
+    else
+    {
+        lucius::util::log("test-matrix") << " Matrix Apply To Adjacent Elements Test Passed\n";
+    }
+
+    return reference == result;
+}
+
+bool testIndirectGather()
+{
+    // create an out of order matrix
+    Matrix input(6);
+    input(0) = 3;
+    input(1) = 2;
+    input(2) = 5;
+    input(3) = 6;
+    input(4) = 4;
+    input(5) = 1;
+
+    // indices
+    Matrix indices(6);
+    indices(0) = 0;
+    indices(1) = 0;
+    indices(2) = 1;
+    indices(3) = 1;
+    indices(4) = 1;
+    indices(5) = 2;
+
+    // we should pick the corresponding inputs[indices]
+    Matrix reference(6);
+    reference(0) = 3;
+    reference(1) = 3;
+    reference(2) = 2;
+    reference(3) = 2;
+    reference(4) = 2;
+    reference(5) = 5;
+
+    //compare reference Matrix to loaded Matrix
+    Matrix result(6);
+
+    lucius::matrix::indirectGather(result, input, indices,
+        lucius::matrix::MapOutputToIndexDimension({0}, 0, {}));
+
+    if(reference != result)
+    {
+        lucius::util::log("test-matrix") << " Matrix Indirect Gather Test Failed:\n";
+        lucius::util::log("test-matrix") << "  result matrix " << result.toString();
+        lucius::util::log("test-matrix") << "  does not match reference matrix "
+            << reference.toString();
+    }
+    else
+    {
+        lucius::util::log("test-matrix") << " Matrix Indirect Gather Test Passed\n";
+    }
+
+    return reference == result;
+}
+
+bool testInclusiveScan()
+{
+    // create an out of order matrix
+    Matrix input(6);
+    input(0) = 3;
+    input(1) = 2;
+    input(2) = 5;
+    input(3) = 6;
+    input(4) = 4;
+    input(5) = 1;
+
+    // prefix sum
+    Matrix reference(6);
+    reference(0) = 3;
+    reference(1) = 5;
+    reference(2) = 10;
+    reference(3) = 16;
+    reference(4) = 20;
+    reference(5) = 21;
+
+    //compare reference Matrix to loaded Matrix
+    auto result = lucius::matrix::inclusiveScan(input, 0, lucius::matrix::Add(), 0.0);
+
+    if(reference != result)
+    {
+        lucius::util::log("test-matrix") << " Matrix Inclusive Scan Test Failed:\n";
+        lucius::util::log("test-matrix") << "  result matrix " << result.toString();
+        lucius::util::log("test-matrix") << "  does not match reference matrix "
+            << reference.toString();
+    }
+    else
+    {
+        lucius::util::log("test-matrix") << " Matrix Inclusive Scan Test Passed\n";
+    }
+
+    return reference == result;
+}
+
+bool testExclusiveScan()
+{
+    // create an out of order matrix
+    Matrix input(9);
+    input(0) = 3;
+    input(1) = 2;
+    input(2) = 5;
+    input(3) = 6;
+    input(4) = 4;
+    input(5) = 1;
+    input(6) = 5;
+    input(7) = 6;
+    input(8) = 4;
+
+    // prefix sum
+    Matrix reference(9);
+    reference(0) = 0;
+    reference(1) = 3;
+    reference(2) = 5;
+    reference(3) = 10;
+    reference(4) = 16;
+    reference(5) = 20;
+    reference(6) = 21;
+    reference(7) = 26;
+    reference(8) = 32;
+
+
+    //compare reference Matrix to loaded Matrix
+    auto result = lucius::matrix::exclusiveScan(input, 0, lucius::matrix::Add(), 0.0);
+
+    if(reference != result)
+    {
+        lucius::util::log("test-matrix") << " Matrix Exclusive Scan Test Failed:\n";
+        lucius::util::log("test-matrix") << "  result matrix " << result.toString();
+        lucius::util::log("test-matrix") << "  does not match reference matrix "
+            << reference.toString();
+    }
+    else
+    {
+        lucius::util::log("test-matrix") << " Matrix Exclusive Scan Test Passed\n";
+    }
+
+    return reference == result;
+}
+
+bool runTests(bool listTests, const std::string& testFilter)
+{
+    lucius::util::TestEngine engine;
 
     engine.addTest("save and load", testSaveLoad);
 
@@ -1835,7 +2015,13 @@ bool runTests()
     engine.addTest("hanning window", testHanningWindow);
 
     engine.addTest("adjacent compare", testAdjacentCompare);
-    /*engine.addTest("sort", testSort);
+    engine.addTest("indirect gather", testIndirectGather);
+
+    engine.addTest("inclusive scan", testInclusiveScan);
+    engine.addTest("exclusive scan", testExclusiveScan);
+
+    engine.addTest("sort", testSort);
+    /*
     engine.addTest("sort 2d", testSort2d);
     engine.addTest("sort 3d", testSort3d);
 
@@ -1844,12 +2030,28 @@ bool runTests()
 
     engine.addTest("reduce by key", testReduceByKey);
 
-    engine.addTest("inclusive scan", testInclusiveScan);
-    engine.addTest("exclusive scan", testExclusiveScan);
+    */
 
-    engine.addTest("indirect gather", testIndirectGather);*/
+    if(listTests)
+    {
+        std::cout << engine.listTests();
 
-    return engine.run();
+        return true;
+    }
+    else
+    {
+        return engine.run(testFilter);
+    }
+}
+
+static void enableSpecificLogs(const std::string& modules)
+{
+    auto individualModules = lucius::util::split(modules, ",");
+
+    for(auto& module : individualModules)
+    {
+        lucius::util::enableLog(module);
+    }
 }
 
 int main(int argc, char** argv)
@@ -1861,12 +2063,18 @@ int main(int argc, char** argv)
     std::string loggingEnabledModules = "test-matrix";
 
     bool verbose = false;
+    bool listTests = false;
+    std::string testFilter;
 
     parser.parse("-v", "--verbose", verbose, false,
-        "Print out log messages during execution");
-    parser.parse("-L", "--log-module", loggingEnabledModules, "",
+        "Print out log messages during execution.");
+    parser.parse("-l", "--list-tests", listTests, false,
+        "List all possible tests.");
+    parser.parse("-L", "--log-module", loggingEnabledModules, loggingEnabledModules,
         "Print out log messages during execution for specified modules "
         "(comma-separated list of modules, e.g. NeuralNetwork, Layer, ...).");
+    parser.parse("-t", "--test-filter", testFilter, "",
+        "Only run tests that match the regular expression.");
     parser.parse();
 
     if(verbose)
@@ -1875,12 +2083,12 @@ int main(int argc, char** argv)
     }
     else
     {
-        lucius::enableSpecificLogs(loggingEnabledModules);
+        enableSpecificLogs(loggingEnabledModules);
     }
 
-    util::log("test-matrix") << "Running matrix unit tests\n";
+    lucius::util::log("test-matrix") << "Running matrix unit tests\n";
 
-    bool passed = runTests();
+    bool passed = runTests(listTests, testFilter);
 
     if(!passed)
     {

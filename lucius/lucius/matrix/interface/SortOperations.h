@@ -9,8 +9,11 @@ namespace lucius
 namespace matrix
 {
 
-void sort(Matrix& values, const Dimension& dimensionsToSort = Dimension());
-void sortByKey(Matrix& keys, Matrix& values, const Dimension& dimensionsToSort = Dimension());
+void sort(Matrix& values, const Dimension& dimensionsToSort);
+void sort(Matrix& values);
+
+void sortByKey(Matrix& keys, Matrix& values);
+void sortByKey(Matrix& keys, Matrix& values, const Dimension& dimensionsToSort);
 
 }
 }

@@ -6,7 +6,7 @@
 
 // Lucius Includes
 #include <lucius/matrix/interface/WindowOperations.h>
-#include <lucius/matrix/interface/CopyOperations.h>
+#include <lucius/matrix/interface/GatherOperations.h>
 #include <lucius/matrix/interface/MatrixOperations.h>
 #include <lucius/matrix/interface/Operation.h>
 #include <lucius/matrix/interface/GatherOperation.h>
