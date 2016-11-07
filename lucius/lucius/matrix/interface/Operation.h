@@ -795,15 +795,17 @@ public:
 typedef std::tuple<Add, Subtract, Multiply, Divide, Log, Exp, Pow, Abs, Sqrt, Tanh, TanhDerivative,
                    RectifiedLinear, RectifiedLinearDerivative, Sigmoid, SigmoidDerivative, Negate,
                    Maximum, Minimum, Equal, LessThan, NotEqual, Fill, Square, SquareAndScale,
-                   Inverse, Nop, NopDerivative, Cos> AllOperations;
+                   Inverse, Nop, NopDerivative, Cos, GreaterThanOrEqual> AllOperations;
 
 typedef std::tuple<Add, Subtract, Multiply, Divide, Maximum, Minimum,
-                   Equal, LessThan, NotEqual, CopyRight> AllBinaryOperations;
+                   Equal, LessThan, NotEqual, CopyRight, GreaterThanOrEqual> AllBinaryOperations;
 
 typedef std::tuple<Add, Subtract, Multiply, Divide, Log, Exp, Pow, Abs, Sqrt, Tanh, TanhDerivative,
                    RectifiedLinear, RectifiedLinearDerivative, Sigmoid, SigmoidDerivative, Negate,
                    Maximum, Minimum, Equal, LessThan, NotEqual, Fill, Square, SquareAndScale,
                    Inverse, Nop, NopDerivative, Cos> AllUnaryOperations;
+
+typedef std::tuple<Equal, NotEqual, LessThan, GreaterThanOrEqual> AllComparisonOperations;
 
 }
 }
