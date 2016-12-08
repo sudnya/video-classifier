@@ -1,4 +1,4 @@
-/*    \file   NesterovAcceleratedGradientSolver.cpp
+/*  \file   NesterovAcceleratedGradientSolver.cpp
     \date   Saturday August 10, 2013
     \author Gregory Diamos <solusstultus@gmail.com>
     \brief  The source file for the NesterovAcceleratedGradientSolver class.
