@@ -18,7 +18,6 @@
 #include <lucius/util/interface/Knobs.h>
 
 // Standard Library Includes
-#include <fstream>
 #include <memory>
 
 namespace lucius
