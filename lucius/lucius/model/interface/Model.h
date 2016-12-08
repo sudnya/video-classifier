@@ -51,7 +51,7 @@ public:
     std::string getOutputLabel(size_t output) const;
 
 public:
-    template<typename T>
+    template <typename T>
     void setAttribute(const std::string& name, const T& value);
 
     template<typename T>
