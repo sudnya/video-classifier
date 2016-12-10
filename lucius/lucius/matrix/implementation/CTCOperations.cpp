@@ -71,7 +71,7 @@ static Matrix sortBeam(Matrix& workspace)
     zeros(path);
     broadcast(path, path, range({alphabet}, workspace.precision()), {}, Add());
 
-    sortByKey(keys, path, {0, 1, 2});
+    sortByKey(keys, path, {0, 1, 2}, matrix::GreaterThan());
 
     return augmentedWorkspace;
 }
@@ -143,7 +143,7 @@ void ctcBeamSearch(Matrix& outputActivationWeights, Matrix& inputPaths, Matrix& 
 Matrix computeFactors(const Matrix& scanPositions)
 {
     auto factors = reduceByKey(scanPositions,
-        ones(scanPositions.size(), scanPositions.precision()), Add());
+        ones(scanPositions.size(), scanPositions.precision()), {2}, Add());
 
     Matrix selectedFactors(scanPositions.size(), scanPositions.precision());
 

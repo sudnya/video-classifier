@@ -79,7 +79,7 @@ void scan(Matrix& result, const Matrix& input, size_t dimensionToReduce,
 
     typedef typename PrecisionType::type NativeType;
 
-    auto nativeOperation = static_cast<const OperationType&>(op);
+    auto& nativeOperation = static_cast<const OperationType&>(op);
 
     Dimension notReducedDimensions = removeDimensions(result.size(), {dimensionToReduce});
     size_t elements = notReducedDimensions.product();
@@ -97,7 +97,7 @@ void scan(Matrix& result, const Matrix& input, size_t dimensionToReduce,
 
 template<bool isInclusive, typename OperationType, typename PossiblePrecisions>
 void scan(Matrix& result, const Matrix& input, size_t dimensionToReduce,
-    const Operation& op, double initialValue, PossiblePrecisions precisions)
+    const Operation& op, double initialValue, const PossiblePrecisions& precisions)
 {
     typedef typename std::tuple_element<0, PossiblePrecisions>::type PossiblePrecisionType;
 

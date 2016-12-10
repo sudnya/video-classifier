@@ -53,6 +53,7 @@ public:
         NotEqual,
         LessThanOrEqual,
         GreaterThanOrEqual,
+        GreaterThan,
         Fill,
         Square,
         SquareAndScale,
@@ -612,6 +613,37 @@ public:
     CUDA_DECORATOR T operator()(const T& r) const
     {
         return T(r >= _value);
+    }
+
+private:
+    double _value;
+
+};
+
+class GreaterThan : public Operation
+{
+public:
+    CUDA_DECORATOR GreaterThan() : Operation(Operation::GreaterThan), _value(0.0)
+    {
+
+    }
+
+    CUDA_DECORATOR GreaterThan(double d) : Operation(Operation::GreaterThan), _value(d)
+    {
+
+    }
+
+public:
+    template<typename T>
+    CUDA_DECORATOR T operator()(const T& l, const T& r) const
+    {
+        return T(l > r);
+    }
+
+    template<typename T>
+    CUDA_DECORATOR T operator()(const T& r) const
+    {
+        return T(r > _value);
     }
 
 private:

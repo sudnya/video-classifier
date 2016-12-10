@@ -3,17 +3,19 @@
 // Forward Declarations
 namespace lucius { namespace matrix { class Matrix;    } }
 namespace lucius { namespace matrix { class Dimension; } }
+namespace lucius { namespace matrix { class Operation; } }
 
 namespace lucius
 {
 namespace matrix
 {
 
-void sort(Matrix& values, const Dimension& dimensionsToSort);
-void sort(Matrix& values);
+void sort(Matrix& values, const Dimension& dimensionsToSort, const Operation& comparisonOperation);
+void sort(Matrix& values, const Operation& comparisonOperation);
 
-void sortByKey(Matrix& keys, Matrix& values);
-void sortByKey(Matrix& keys, Matrix& values, const Dimension& dimensionsToSort);
+void sortByKey(Matrix& keys, Matrix& values, const Operation& comparisonOperation);
+void sortByKey(Matrix& keys, Matrix& values, const Dimension& dimensionsToSort,
+    const Operation& comparisonOperation);
 
 }
 }

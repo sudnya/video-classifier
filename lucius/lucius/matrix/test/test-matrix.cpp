@@ -12,6 +12,7 @@
 #include <lucius/matrix/interface/FileOperations.h>
 #include <lucius/matrix/interface/PoolingOperations.h>
 #include <lucius/matrix/interface/AdjacentElementOperations.h>
+#include <lucius/matrix/interface/ReduceByKeyOperations.h>
 #include <lucius/matrix/interface/WindowOperations.h>
 #include <lucius/matrix/interface/ConvolutionalOperations.h>
 #include <lucius/matrix/interface/MatrixTransformations.h>
@@ -1778,46 +1779,6 @@ bool testHanningWindow()
     return isApproximatelyEqual(reference, computed, 1e-6);
 }
 
-bool testSort()
-{
-    // create an out of order matrix
-    Matrix input(6);
-    input(0) = 2;
-    input(1) = 1;
-    input(2) = 6;
-    input(3) = 4;
-    input(4) = 5;
-    input(5) = 3;
-
-    // we should produce the sorted version
-    Matrix reference(6);
-    reference(0) = 1;
-    reference(1) = 2;
-    reference(2) = 3;
-    reference(3) = 4;
-    reference(4) = 5;
-    reference(5) = 6;
-
-    //compare reference Matrix to loaded Matrix
-    auto result = lucius::matrix::copy(input);
-
-    lucius::matrix::sort(result);
-
-    if(reference != result)
-    {
-        lucius::util::log("test-matrix") << " Matrix Sort Test Failed:\n";
-        lucius::util::log("test-matrix") << "  result matrix " << result.toString();
-        lucius::util::log("test-matrix") << "  does not match reference matrix "
-            << reference.toString();
-    }
-    else
-    {
-        lucius::util::log("test-matrix") << " Matrix Sort Test Passed\n";
-    }
-
-    return reference == result;
-}
-
 bool testAdjacentCompare()
 {
     // create an increasing matrix
@@ -1858,7 +1819,7 @@ bool testAdjacentCompare()
 
 bool testIndirectGather()
 {
-    // create an out of order matrix
+     // create an out of order matrix
     Matrix input(6);
     input(0) = 3;
     input(1) = 2;
@@ -1893,14 +1854,14 @@ bool testIndirectGather()
 
     if(reference != result)
     {
-        lucius::util::log("test-matrix") << " Matrix Indirect Gather Test Failed:\n";
+       lucius::util::log("test-matrix") << " Matrix Indirect Gather Test Failed:\n";
         lucius::util::log("test-matrix") << "  result matrix " << result.toString();
         lucius::util::log("test-matrix") << "  does not match reference matrix "
             << reference.toString();
     }
     else
     {
-        lucius::util::log("test-matrix") << " Matrix Indirect Gather Test Passed\n";
+       lucius::util::log("test-matrix") << " Matrix Indirect Gather Test Passed\n";
     }
 
     return reference == result;
@@ -1989,6 +1950,371 @@ bool testExclusiveScan()
     return reference == result;
 }
 
+bool testSort()
+{
+    // create an out of order matrix
+    Matrix input(6);
+    input(0) = 2;
+    input(1) = 1;
+    input(2) = 6;
+    input(3) = 4;
+    input(4) = 5;
+    input(5) = 3;
+
+    // we should produce the sorted version
+    Matrix reference(6);
+    reference(0) = 1;
+    reference(1) = 2;
+    reference(2) = 3;
+    reference(3) = 4;
+    reference(4) = 5;
+    reference(5) = 6;
+
+    //compare reference Matrix to loaded Matrix
+    auto result = lucius::matrix::copy(input);
+
+    lucius::matrix::sort(result, lucius::matrix::LessThan());
+
+    if(reference != result)
+    {
+        lucius::util::log("test-matrix") << " Matrix Sort Test Failed:\n";
+        lucius::util::log("test-matrix") << "  result matrix " << result.toString();
+        lucius::util::log("test-matrix") << "  does not match reference matrix "
+            << reference.toString();
+    }
+    else
+    {
+        lucius::util::log("test-matrix") << " Matrix Sort Test Passed\n";
+    }
+
+    return reference == result;
+}
+
+bool testSort2d()
+{
+    // create an out of order matrix
+    Matrix input(2, 3);
+    input(0, 0) = 2;
+    input(0, 1) = 1;
+    input(0, 2) = 6;
+    input(1, 0) = 4;
+    input(1, 1) = 5;
+    input(1, 2) = 3;
+
+    // we should produce the sorted version
+    Matrix reference(input.size());
+    reference(0, 0) = 2;
+    reference(0, 1) = 1;
+    reference(0, 2) = 3;
+
+    reference(1, 0) = 4;
+    reference(1, 1) = 5;
+    reference(1, 2) = 6;
+
+    //compare reference Matrix to loaded Matrix
+    auto result = lucius::matrix::copy(input);
+
+    lucius::matrix::sort(result, {0}, lucius::matrix::LessThan());
+
+    if(reference != result)
+    {
+        lucius::util::log("test-matrix") << " Matrix Sort 2D Test Failed:\n";
+        lucius::util::log("test-matrix") << "  result matrix " << result.toString();
+        lucius::util::log("test-matrix") << "  does not match reference matrix "
+            << reference.toString();
+    }
+    else
+    {
+        lucius::util::log("test-matrix") << " Matrix Sort 2D Test Passed\n";
+    }
+
+    return reference == result;
+}
+
+bool testSort3d()
+{
+    // create an out of order matrix
+    Matrix input(2, 3, 2);
+    input(0, 0, 0) = 2;
+    input(0, 1, 0) = 1;
+    input(0, 2, 0) = 6;
+    input(1, 0, 0) = 4;
+    input(1, 1, 0) = 5;
+    input(1, 2, 0) = 3;
+
+    input(0, 0, 1) = 10;
+    input(0, 1, 1) = 9;
+    input(0, 2, 1) = 8;
+    input(1, 0, 1) = 7;
+    input(1, 1, 1) = 6;
+    input(1, 2, 1) = 5;
+
+    // we should produce the sorted version
+    Matrix reference(input.size());
+    reference(0, 0, 0) = 1;
+    reference(1, 0, 0) = 2;
+    reference(0, 1, 0) = 3;
+    reference(1, 1, 0) = 4;
+    reference(0, 2, 0) = 5;
+    reference(1, 2, 0) = 6;
+
+    reference(0, 0, 1) = 5;
+    reference(1, 0, 1) = 6;
+    reference(0, 1, 1) = 7;
+    reference(1, 1, 1) = 8;
+    reference(0, 2, 1) = 9;
+    reference(1, 2, 1) = 10;
+
+    //compare reference Matrix to loaded Matrix
+    auto result = lucius::matrix::copy(input);
+
+    lucius::matrix::sort(result, {0, 1}, lucius::matrix::LessThan());
+
+    if(reference != result)
+    {
+        lucius::util::log("test-matrix") << " Matrix Sort 3D Test Failed:\n";
+        lucius::util::log("test-matrix") << "  result matrix " << result.toString();
+        lucius::util::log("test-matrix") << "  does not match reference matrix "
+            << reference.toString();
+    }
+    else
+    {
+        lucius::util::log("test-matrix") << " Matrix Sort 3D Test Passed\n";
+    }
+
+    return reference == result;
+}
+
+bool testSortByKey()
+{
+    // create an out of order matrix
+    Matrix input(6);
+    input(0) = 2;
+    input(1) = 1;
+    input(2) = 6;
+    input(3) = 4;
+    input(4) = 5;
+    input(5) = 3;
+
+    Matrix keys(6);
+    keys(0) = 5;
+    keys(1) = 4;
+    keys(2) = 3;
+    keys(3) = 0;
+    keys(4) = 1;
+    keys(5) = 2;
+
+    // we should produce the sorted version
+    Matrix reference(input.size());
+
+    reference(0) = 4;
+    reference(1) = 5;
+    reference(2) = 3;
+    reference(3) = 6;
+    reference(4) = 1;
+    reference(5) = 2;
+
+    //compare reference Matrix to loaded Matrix
+    auto result = lucius::matrix::copy(input);
+
+    lucius::matrix::sortByKey(keys, result, lucius::matrix::LessThan());
+
+    if(reference != result)
+    {
+        lucius::util::log("test-matrix") << " Matrix Sort By Key Test Failed:\n";
+        lucius::util::log("test-matrix") << "  result matrix " << result.toString();
+        lucius::util::log("test-matrix") << "  does not match reference matrix "
+            << reference.toString();
+    }
+    else
+    {
+        lucius::util::log("test-matrix") << " Matrix Sort By Key Test Passed\n";
+    }
+
+    return reference == result;
+}
+
+bool testSortByKey2d()
+{
+    // create an out of order matrix
+    Matrix input(3, 2);
+    input(0, 0) = 2;
+    input(1, 0) = 1;
+    input(2, 0) = 6;
+    input(0, 1) = 4;
+    input(1, 1) = 5;
+    input(2, 1) = 3;
+
+    Matrix keys(3, 2);
+    keys(0, 0) = 5;
+    keys(1, 0) = 4;
+    keys(2, 0) = 3;
+    keys(0, 1) = 0;
+    keys(1, 1) = 1;
+    keys(2, 1) = 2;
+
+    // we should produce the sorted version
+    Matrix reference(input.size());
+
+    reference(0, 0) = 4;
+    reference(1, 0) = 5;
+    reference(2, 0) = 3;
+    reference(0, 1) = 6;
+    reference(1, 1) = 1;
+    reference(2, 1) = 2;
+
+    //compare reference Matrix to loaded Matrix
+    auto result = lucius::matrix::copy(input);
+
+    lucius::matrix::sortByKey(keys, result, lucius::matrix::LessThan());
+
+    if(reference != result)
+    {
+        lucius::util::log("test-matrix") << " Matrix Sort By Key 2D Test Failed:\n";
+        lucius::util::log("test-matrix") << "  result matrix " << result.toString();
+        lucius::util::log("test-matrix") << "  does not match reference matrix "
+            << reference.toString();
+    }
+    else
+    {
+        lucius::util::log("test-matrix") << " Matrix Sort By Key 2D Test Passed\n";
+    }
+
+    return reference == result;
+}
+
+bool testReduceByKey()
+{
+    // create an out of order matrix
+    Matrix input(6);
+
+    input(0) = 2;
+    input(1) = 1;
+    input(2) = 6;
+    input(3) = 4;
+    input(4) = 5;
+    input(5) = 3;
+
+    Matrix keys(6);
+
+    keys(0) = 0;
+    keys(1) = 0;
+    keys(2) = 1;
+    keys(3) = 1;
+    keys(4) = 1;
+    keys(5) = 2;
+
+    // we should produce the sorted version
+    Matrix reference(6);
+
+    reference(0) = 3;
+    reference(1) = 15;
+    reference(2) = 3;
+    reference(3) = 0;
+    reference(4) = 0;
+    reference(5) = 0;
+
+    //compare reference Matrix to loaded Matrix
+    auto result = lucius::matrix::reduceByKey(keys, input, {0}, lucius::matrix::Add());
+
+    if(reference != result)
+    {
+        lucius::util::log("test-matrix") << " Matrix Reduce By Key Test Failed:\n";
+        lucius::util::log("test-matrix") << "  result matrix " << result.toString();
+        lucius::util::log("test-matrix") << "  does not match reference matrix "
+            << reference.toString();
+    }
+    else
+    {
+        lucius::util::log("test-matrix") << " Matrix Reduce By Key Test Passed\n";
+    }
+
+    return reference == result;
+}
+
+bool testReduceByKey2d()
+{
+    // create an out of order matrix
+    Matrix input(6, 2);
+
+    input(0, 0) = 2;
+    input(0, 1) = 1;
+
+    input(1, 0) = 1;
+    input(1, 1) = 2;
+
+    input(2, 0) = 6;
+    input(2, 1) = 3;
+
+    input(3, 0) = 4;
+    input(3, 1) = 4;
+
+    input(4, 0) = 5;
+    input(4, 1) = 5;
+
+    input(5, 0) = 3;
+    input(5, 1) = 6;
+
+    Matrix keys(6, 2);
+
+    keys(0, 0) = 0;
+    keys(0, 1) = 0;
+
+    keys(1, 0) = 2;
+    keys(1, 1) = 2;
+
+    keys(2, 0) = 0;
+    keys(2, 1) = 1;
+
+    keys(3, 0) = 1;
+    keys(3, 1) = 5;
+
+    keys(4, 0) = 0;
+    keys(4, 1) = 4;
+
+    keys(5, 0) = 7;
+    keys(5, 1) = 7;
+
+    // we should produce the locally reduced version
+    Matrix reference(6, 2);
+
+    reference(0, 0) = 3;
+    reference(0, 1) = 0;
+
+    reference(1, 0) = 3;
+    reference(1, 1) = 0;
+
+    reference(2, 0) = 6;
+    reference(2, 1) = 3;
+
+    reference(3, 0) = 4;
+    reference(3, 1) = 4;
+
+    reference(4, 0) = 5;
+    reference(4, 1) = 5;
+
+    reference(5, 0) = 9;
+    reference(5, 1) = 0;
+
+    //compare reference Matrix to loaded Matrix
+    auto result = lucius::matrix::reduceByKey(keys, input, {1}, lucius::matrix::Add());
+
+    if(reference != result)
+    {
+        lucius::util::log("test-matrix") << " Matrix Reduce By Key Test Failed:\n";
+        lucius::util::log("test-matrix") << "  result matrix " << result.toString();
+        lucius::util::log("test-matrix") << "  does not match reference matrix "
+            << reference.toString();
+    }
+    else
+    {
+        lucius::util::log("test-matrix") << " Matrix Reduce By Key Test Passed\n";
+    }
+
+    return reference == result;
+}
+
+
 bool runTests(bool listTests, const std::string& testFilter)
 {
     lucius::util::TestEngine engine;
@@ -2038,7 +2364,6 @@ bool runTests(bool listTests, const std::string& testFilter)
     engine.addTest("exclusive scan", testExclusiveScan);
 
     engine.addTest("sort", testSort);
-    /*
     engine.addTest("sort 2d", testSort2d);
     engine.addTest("sort 3d", testSort3d);
 
@@ -2046,8 +2371,7 @@ bool runTests(bool listTests, const std::string& testFilter)
     engine.addTest("sort by key 2d", testSortByKey2d);
 
     engine.addTest("reduce by key", testReduceByKey);
-
-    */
+    engine.addTest("reduce by key 2d", testReduceByKey2d);
 
     if(listTests)
     {

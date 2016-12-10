@@ -22,7 +22,14 @@ public:
     Allocation(size_t size);
 
 public:
+    Allocation(Allocation&& a);
+    Allocation& operator=(Allocation&& a);
+
+public:
     ~Allocation();
+
+public:
+    void clear();
 
 public:
           pointer data();

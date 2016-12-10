@@ -11,8 +11,10 @@ namespace lucius
 namespace matrix
 {
 
-Matrix reduceByKey(const Matrix& keys, const Matrix& values, const Operation& op);
-void reduceByKey(Matrix& result, const Matrix& keys, const Matrix& values, const Operation& op);
+Matrix reduceByKey(const Matrix& keys, const Matrix& values, const Dimension& dimensionsToReduce,
+    const Operation& op);
+void reduceByKey(Matrix& result, const Matrix& keys, const Matrix& values,
+    const Dimension& dimensionsToReduce, const Operation& op);
 
 }
 }

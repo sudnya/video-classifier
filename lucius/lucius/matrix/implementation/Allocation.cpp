@@ -3,6 +3,9 @@
 #include <lucius/matrix/interface/Allocation.h>
 #include <lucius/parallel/interface/Memory.h>
 
+// Standard Library Includes
+#include <algorithm>
+
 namespace lucius
 {
 namespace matrix
@@ -21,9 +24,39 @@ Allocation::Allocation(size_t size)
     _end   = _begin + size;
 }
 
+Allocation::Allocation(Allocation&& allocation)
+: _begin(allocation.data()), _end(allocation.data() + allocation.size())
+{
+    allocation._begin = nullptr;
+    allocation._end   = nullptr;
+}
+
+Allocation& Allocation::operator=(Allocation&& allocation)
+{
+    if(this == &allocation)
+    {
+        return *this;
+    }
+
+    clear();
+
+    std::swap(_begin, allocation._begin);
+    std::swap(_end,   allocation._end);
+
+    return *this;
+}
+
 Allocation::~Allocation()
 {
     parallel::free(_begin);
+}
+
+void Allocation::clear()
+{
+    parallel::free(_begin);
+
+    _begin = nullptr;
+    _end   = nullptr;
 }
 
 Allocation::pointer Allocation::data()
