@@ -260,8 +260,10 @@ void CTCDecoderLayer::runForwardImplementation(Bundle& bundle)
         inputActivations.size(), _implementation->getBeamSize());
 
     size_t miniBatchSize = inputActivations.size()[inputActivations.size().size() - 2];
+    size_t timesteps     = inputActivations.size()[inputActivations.size().size() - 1];
 
-    Matrix inputPaths(beamSearchOutputSize, inputActivations.precision());
+    Matrix inputPaths({_implementation->getBeamSize(), miniBatchSize, timesteps},
+        inputActivations.precision());
     Matrix outputActivations(beamSearchOutputSize, inputActivations.precision());
     Matrix outputActivationWeights({_implementation->getBeamSize(), miniBatchSize},
         inputActivations.precision());
@@ -403,12 +405,14 @@ Dimension CTCDecoderLayer::getOutputSize() const
 {
     auto outputSize = getInputSize();
 
+    assert(outputSize.size() >= 3);
+
     size_t timesteps = outputSize[outputSize.size() - 1];
     size_t minibatch = outputSize[outputSize.size() - 2];
 
     outputSize.push_back(timesteps);
-    outputSize[outputSize[outputSize.size() - 3]] = 1;
-    outputSize[outputSize[outputSize.size() - 2]] = minibatch;
+    outputSize[outputSize.size() - 3] = _implementation->getBeamSize();
+    outputSize[outputSize.size() - 2] = minibatch;
 
     return outputSize;
 }

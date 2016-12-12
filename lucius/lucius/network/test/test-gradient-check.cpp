@@ -12,6 +12,7 @@
 #include <lucius/network/interface/BatchNormalizationLayer.h>
 #include <lucius/network/interface/ConvolutionalLayer.h>
 #include <lucius/network/interface/CostFunctionFactory.h>
+#include <lucius/network/interface/LayerFactory.h>
 #include <lucius/network/interface/CostFunction.h>
 #include <lucius/network/interface/ActivationFunctionFactory.h>
 #include <lucius/network/interface/ActivationFunction.h>
@@ -31,6 +32,7 @@
 #include <lucius/util/interface/Knobs.h>
 #include <lucius/util/interface/Timer.h>
 #include <lucius/util/interface/SystemCompatibility.h>
+#include <lucius/util/interface/TestEngine.h>
 
 // Standard Library Includes
 #include <random>
@@ -218,16 +220,46 @@ static NeuralNetwork createRecurrentCtcNetwork(size_t layerSize, size_t layerCou
     return network;
 }
 
+static NeuralNetwork createCtcDecoderNetwork(size_t layerSize, size_t layerCount,
+    size_t batchSize)
+{
+    NeuralNetwork network;
+
+    for(size_t layer = 0; layer < layerCount; ++layer)
+    {
+        network.addLayer(LayerFactory::create("FeedForwardLayer",
+            util::ParameterPack(std::make_tuple("InputSizeAggregate", layerSize),
+            std::make_tuple("InputSizeBatch", batchSize),
+            std::make_tuple("Precision", "DoublePrecision"))));
+        network.back()->setActivationFunction(
+            ActivationFunctionFactory::create("SigmoidActivationFunction"));
+    }
+
+    network.addLayer(LayerFactory::create("CTCDecoderLayer",
+        util::ParameterPack(std::make_tuple("InputSize", layerSize),
+        std::make_tuple("BatchSize", batchSize),
+        std::make_tuple("BeamSearchSize", 4),
+        std::make_tuple("Precision", "DoublePrecision"))));
+    network.back()->setActivationFunction(
+        ActivationFunctionFactory::create("NullActivationFunction"));
+
+    network.initialize();
+
+    return network;
+}
+
 static Matrix generateInput(NeuralNetwork& network)
 {
     return matrix::rand(network.getInputSize(), DoublePrecision());
 }
 
-static Matrix generateInputWithTimeSeries(NeuralNetwork& network, size_t timesteps)
+static Matrix generateInputWithTimeSeries(NeuralNetwork& network, size_t batchSize,
+    size_t timesteps)
 {
     auto size = network.getInputSize();
 
     size.back() = timesteps;
+    size[size.size() - 2] = batchSize;
 
     return matrix::rand(size, DoublePrecision());
 }
@@ -265,11 +297,13 @@ static Matrix generateReference(NeuralNetwork& network)
     return matrix::rand(network.getOutputSize(), DoublePrecision());
 }
 
-static Matrix generateReferenceWithTimeSeries(NeuralNetwork& network, size_t timesteps)
+static Matrix generateReferenceWithTimeSeries(NeuralNetwork& network, size_t batchSize,
+    size_t timesteps)
 {
     auto size = network.getOutputSize();
 
     size.back() = timesteps;
+    size[size.size() - 2] = batchSize;
 
     return matrix::rand(size, DoublePrecision());
 }
@@ -405,10 +439,10 @@ static bool gradientCheckOneHot(NeuralNetwork& network)
     return gradientCheck(network, bundle);
 }
 
-static bool gradientCheckTimeSeries(NeuralNetwork& network, size_t timesteps)
+static bool gradientCheckTimeSeries(NeuralNetwork& network, size_t batchSize, size_t timesteps)
 {
-    auto input     = generateInputWithTimeSeries(network, timesteps);
-    auto reference = generateReferenceWithTimeSeries(network, timesteps);
+    auto input     = generateInputWithTimeSeries(    network, batchSize, timesteps);
+    auto reference = generateReferenceWithTimeSeries(network, batchSize, timesteps);
 
     Bundle bundle(
         std::make_pair("inputActivations",     MatrixVector({input})),
@@ -462,11 +496,12 @@ static LabelVector generateReferenceLabels(size_t networkOutputs, size_t timeste
     return labels;
 }
 
-static bool gradientCheckCtc(NeuralNetwork& network, size_t timesteps)
+static bool gradientCheckCtc(NeuralNetwork& network, size_t batchSize, size_t timesteps)
 {
-    auto input = generateInputWithTimeSeries(network, timesteps);
+    auto input = generateInputWithTimeSeries(network, batchSize, timesteps);
     auto inputTimesteps = generateInputTimesteps(timesteps, input.size()[1]);
-    auto labels = generateReferenceLabels(network.getOutputCount(), timesteps, input.size()[1]);
+    auto labels = generateReferenceLabels(network.getOutputCount(),
+        timesteps, input.size()[1]);
 
     Bundle bundle(
         std::make_pair("inputActivations", MatrixVector({input})),
@@ -654,7 +689,7 @@ static bool runTestRecurrent(size_t layerSize, size_t layerCount, size_t timeste
 
     auto network = createRecurrentNetwork(layerSize, layerCount);
 
-    if(gradientCheckTimeSeries(network, timesteps))
+    if(gradientCheckTimeSeries(network, 1, timesteps))
     {
         std::cout << "Recurrent Network Test Passed\n";
 
@@ -668,7 +703,8 @@ static bool runTestRecurrent(size_t layerSize, size_t layerCount, size_t timeste
     }
 }
 
-static bool runTestBidirectionalRecurrent(size_t layerSize, size_t layerCount, size_t timesteps, bool seed)
+static bool runTestBidirectionalRecurrent(size_t layerSize, size_t layerCount,
+    size_t timesteps, bool seed)
 {
     if(seed)
     {
@@ -681,7 +717,7 @@ static bool runTestBidirectionalRecurrent(size_t layerSize, size_t layerCount, s
 
     auto network = createBidirectionalRecurrentNetwork(layerSize, layerCount);
 
-    if(gradientCheckTimeSeries(network, timesteps))
+    if(gradientCheckTimeSeries(network, 1, timesteps))
     {
         std::cout << "BidirectionalRecurrent Network Test Passed\n";
 
@@ -708,7 +744,7 @@ static bool runTestRecurrentCtc(size_t layerSize, size_t layerCount, size_t time
 
     auto network = createRecurrentCtcNetwork(layerSize, 1);
 
-    if(gradientCheckCtc(network, timesteps))
+    if(gradientCheckCtc(network, 1, timesteps))
     {
         std::cout << "Recurrent Network CTC Test Passed\n";
 
@@ -722,69 +758,100 @@ static bool runTestRecurrentCtc(size_t layerSize, size_t layerCount, size_t time
     }
 }
 
-static void runTest(size_t layerSize, size_t layerCount, size_t batchSize,
+static bool runTestCtcDecoderLayer(size_t layerSize, size_t layerCount, size_t batchSize,
     size_t timesteps, bool seed)
 {
-    bool result = true;
-
-    result &= runTestBidirectionalRecurrent(layerSize, layerCount, timesteps, seed);
-
-    if(!result)
+    if(seed)
     {
-        return;
+        matrix::srand(std::time(0));
+    }
+    else
+    {
+        matrix::srand(1456212655);
     }
 
-    result &= runTestRecurrent(layerSize, layerCount, timesteps, seed);
+    auto network = createCtcDecoderNetwork(layerSize, layerCount, batchSize);
 
-    if(!result)
+    if(gradientCheckTimeSeries(network, batchSize, timesteps))
     {
-        return;
+        std::cout << "CTC Decoder Layer Test Passed\n";
+
+        return true;
     }
-
-    result &= runTestFeedForwardFullyConnectedSoftmaxLayer(layerSize, layerCount, batchSize, seed);
-
-    if(!result)
+    else
     {
-        return;
+        std::cout << "CTC Decoder Layer Test Failed\n";
+
+        return false;
     }
+}
 
-    result &= runTestRecurrentCtc(layerSize, layerCount, timesteps, seed);
+static bool runTest(size_t layerSize, size_t layerCount, size_t batchSize,
+    size_t timesteps, bool listTests, const std::string& testFilter, bool seed)
+{
+    lucius::util::TestEngine engine;
 
-    if(!result)
+    engine.addTest("bidirectional recurrent", [=]()
     {
-        return;
-    }
+        return runTestBidirectionalRecurrent(layerSize, layerCount, timesteps, seed);
+    });
 
-    result &= runTestConvolutional(layerSize, layerCount, seed);
-
-    if(!result)
+    engine.addTest("recurrent", [=]()
     {
-        return;
-    }
+        return runTestRecurrent(layerSize, layerCount, timesteps, seed);
+    });
 
-    result &= runTestFeedForwardFullyConnected(layerSize, layerCount, seed);
-
-    if(!result)
+    engine.addTest("fully connected softmax layer", [=]()
     {
-        return;
-    }
+        return runTestFeedForwardFullyConnectedSoftmaxLayer(
+            layerSize, layerCount, batchSize, seed);
+    });
 
-    result &= runTestFeedForwardFullyConnectedSigmoid(layerSize, layerCount, seed);
-
-    if(!result)
+    engine.addTest("recurrent ctc", [=]()
     {
-        return;
-    }
+        return runTestRecurrentCtc(layerSize, layerCount, timesteps, seed);
+    });
 
-    result &= runTestFeedForwardFullyConnectedSoftmax(layerSize, layerCount, seed);
-
-    if(!result)
+    engine.addTest("convolutional", [=]()
     {
-        return;
+        return runTestConvolutional(layerSize, layerCount, seed);
+    });
+
+    engine.addTest("fully connected", [=]()
+    {
+        return runTestFeedForwardFullyConnected(layerSize, layerCount, seed);
+    });
+
+    engine.addTest("fully connected sigmoid", [=]()
+    {
+        return runTestFeedForwardFullyConnectedSigmoid(layerSize, layerCount, seed);
+    });
+
+    engine.addTest("fully connected softmax", [=]()
+    {
+        return runTestFeedForwardFullyConnectedSoftmax(layerSize, layerCount, seed);
+    });
+
+    engine.addTest("batch normalization", [=]()
+    {
+        return runTestBatchNormalizationNetwork(layerSize, layerCount, batchSize, seed);
+    });
+
+    engine.addTest("ctc decoder", [=]()
+    {
+        return runTestCtcDecoderLayer(layerSize, layerCount, batchSize, timesteps, seed);
+    });
+
+    if(listTests)
+    {
+        std::cout << engine.listTests();
+
+        return true;
     }
-
-    result &= runTestBatchNormalizationNetwork(layerSize, layerCount, batchSize, seed);
-
+    else
+    {
+        return engine.run(testFilter);
+    }
 }
 
 }
@@ -799,20 +866,23 @@ int main(int argc, char** argv)
     bool seed = false;
     std::string loggingEnabledModules;
 
-    size_t layerSize  = 0;
-    size_t layerCount = 0;
-    size_t timesteps  = 0;
+    size_t layerSize  = 16;
+    size_t layerCount = 5;
+    size_t timesteps  = 10;
     size_t batchSize  = 10;
+
+    bool listTests = false;
+    std::string testFilter;
 
     parser.description("The lucius neural network gradient check.");
 
-    parser.parse("-S", "--layer-size", layerSize, 16,
+    parser.parse("-S", "--layer-size", layerSize, layerSize,
         "The number of neurons per layer.");
-    parser.parse("-l", "--layer-count", layerCount, 5,
+    parser.parse("-l", "--layer-count", layerCount, layerCount,
         "The number of layers.");
-    parser.parse("-t", "--timesteps", timesteps, 10,
+    parser.parse("-t", "--timesteps", timesteps, timesteps,
         "The number of timesteps for recurrent layers.");
-    parser.parse("-b", "--batch-size", batchSize, 10,
+    parser.parse("-b", "--batch-size", batchSize, batchSize,
         "The number of samples in a minibatch.");
 
     parser.parse("-L", "--log-module", loggingEnabledModules, "",
@@ -820,6 +890,10 @@ int main(int argc, char** argv)
         "(comma-separated list of modules, e.g. NeuralNetwork, Layer, ...).");
     parser.parse("-s", "--seed", seed, false,
         "Seed with time.");
+    parser.parse("-f", "--test-filter", testFilter, "",
+        "Only run tests that match the regular expression.");
+    parser.parse("", "--list-tests", listTests, false,
+        "List all possible tests.");
     parser.parse("-v", "--verbose", verbose, false,
         "Print out log messages during execution");
 
@@ -838,11 +912,21 @@ int main(int argc, char** argv)
 
     try
     {
-        lucius::network::runTest(layerSize, layerCount, batchSize, timesteps, seed);
+        bool passed = lucius::network::runTest(layerSize, layerCount, batchSize, timesteps,
+            listTests, testFilter, seed);
+
+        if(!passed)
+        {
+            std::cout << "Test Failed\n";
+        }
+        else
+        {
+            std::cout << "Test Passed\n";
+        }
     }
     catch(const std::exception& e)
     {
-        std::cout << "Lucius Neural Network Performance Test Failed:\n";
+        std::cout << "Lucius Neural Network Gradient Check Test Failed:\n";
         std::cout << "Message: " << e.what() << "\n\n";
     }
 

@@ -29,18 +29,26 @@ static void initializeWorkspace(Matrix& workspace, const Matrix& inputActivation
     size_t alphabet      = inputActivations.size()[0];
     size_t miniBatchSize = inputActivations.size()[1];
 
-    auto currentInputActivations = slice(inputActivations,
-        {       0,             0, 0},
-        {alphabet, miniBatchSize, 1});
+    auto currentInputActivations = reshape(
+        slice(inputActivations,
+            {       0,             0, 0},
+            {alphabet, miniBatchSize, 1}),
+        {alphabet, miniBatchSize});
 
-    // copy max input activation into all character positions
-    auto maxValues = reduce(currentInputActivations, {0}, Maximum());
+    auto workspaceSlice = slice(workspace, {0, 0, 0}, {alphabet, 1, miniBatchSize});
 
-    broadcast(workspace, workspace, maxValues, {}, CopyRight());
+    zeros(workspace);
+    copy(workspaceSlice, currentInputActivations);
+
+    if(util::isLogEnabled("CTCOperations::Detail"))
+    {
+        util::log("CTCOperations::Detail") << "  initial workspace : "
+            << workspace.debugString();
+    }
 }
 
-static void expandBeam(Matrix& workspace, const Matrix& inputActivations,
-    size_t beamSize, size_t timestep)
+static void expandBeam(Matrix& workspace, const Matrix& inputActivations, size_t beamSize,
+    size_t timestep)
 {
     size_t alphabet      = inputActivations.size()[0];
     size_t miniBatchSize = inputActivations.size()[1];
@@ -52,7 +60,25 @@ static void expandBeam(Matrix& workspace, const Matrix& inputActivations,
 
     currentInputActivations = reshape(currentInputActivations, {alphabet, miniBatchSize});
 
+    auto workspaceSlice =
+        reshape(slice(workspace, {0, 0, 0}, {1, beamSize, miniBatchSize}),
+            {beamSize, miniBatchSize});
+
+    broadcast(workspace, workspace, copy(workspaceSlice), {0}, CopyRight());
+
+    if(util::isLogEnabled("CTCOperations::Detail"))
+    {
+        util::log("CTCOperations::Detail") << "  pruned workspace : "
+            << workspace.debugString();
+    }
+
     broadcast(workspace, workspace, currentInputActivations, {}, Multiply());
+
+    if(util::isLogEnabled("CTCOperations::Detail"))
+    {
+        util::log("CTCOperations::Detail") << "  workspace for timestep " << timestep << " : "
+            << workspace.debugString();
+    }
 }
 
 static Matrix sortBeam(Matrix& workspace)
@@ -72,6 +98,12 @@ static Matrix sortBeam(Matrix& workspace)
     broadcast(path, path, range({alphabet}, workspace.precision()), {}, Add());
 
     sortByKey(keys, path, {0, 1, 2}, matrix::GreaterThan());
+
+    if(util::isLogEnabled("CTCOperations::Detail"))
+    {
+        util::log("CTCOperations::Detail") << "  sorted augmented workspace : "
+            << augmentedWorkspace.debugString();
+    }
 
     return augmentedWorkspace;
 }
@@ -131,7 +163,13 @@ void ctcBeamSearch(Matrix& outputActivationWeights, Matrix& inputPaths, Matrix& 
 
     initializeWorkspace(workspace, inputActivations, beamSize);
 
-    for(size_t timestep = 0; timestep != timesteps; ++timestep)
+    if(util::isLogEnabled("CTCOperations::Detail"))
+    {
+        util::log("CTCOperations::Detail") << "  input activations: "
+            << inputActivations.debugString();
+    }
+
+    for(size_t timestep = 1; timestep != timesteps; ++timestep)
     {
         expandBeam(workspace, inputActivations, beamSize, timestep);
         auto augmentedWorkspace = sortBeam(workspace);

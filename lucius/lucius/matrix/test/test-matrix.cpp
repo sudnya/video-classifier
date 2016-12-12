@@ -1867,6 +1867,43 @@ bool testIndirectGather()
     return reference == result;
 }
 
+bool testGatherIndexToOneHot()
+{
+     // create an out of order matrix
+    Matrix input(1, 3);
+    input(0, 0) = 0;
+    input(0, 1) = 1;
+    input(0, 2) = 1;
+
+    // we should pick the corresponding inputs[indices]
+    Matrix reference(2, 3);
+    reference(0, 0) = 1;
+    reference(1, 0) = 0;
+    reference(0, 1) = 0;
+    reference(1, 1) = 1;
+    reference(0, 2) = 0;
+    reference(1, 2) = 1;
+
+    //compare reference Matrix to loaded Matrix
+    Matrix result(2, 3);
+
+    lucius::matrix::gather(result, input, lucius::matrix::GatherIndexToOneHot(0));
+
+    if(reference != result)
+    {
+       lucius::util::log("test-matrix") << " Matrix Gather Index To One Hot Test Failed:\n";
+        lucius::util::log("test-matrix") << "  result matrix " << result.toString();
+        lucius::util::log("test-matrix") << "  does not match reference matrix "
+            << reference.toString();
+    }
+    else
+    {
+       lucius::util::log("test-matrix") << " Matrix Gather Index To One Hot Test Passed\n";
+    }
+
+    return reference == result;
+}
+
 bool testInclusiveScan()
 {
     // create an out of order matrix
@@ -2359,6 +2396,7 @@ bool runTests(bool listTests, const std::string& testFilter)
 
     engine.addTest("adjacent compare", testAdjacentCompare);
     engine.addTest("indirect gather", testIndirectGather);
+    engine.addTest("gather index to one hot", testGatherIndexToOneHot);
 
     engine.addTest("inclusive scan", testInclusiveScan);
     engine.addTest("exclusive scan", testExclusiveScan);
@@ -2382,16 +2420,6 @@ bool runTests(bool listTests, const std::string& testFilter)
     else
     {
         return engine.run(testFilter);
-    }
-}
-
-static void enableSpecificLogs(const std::string& modules)
-{
-    auto individualModules = lucius::util::split(modules, ",");
-
-    for(auto& module : individualModules)
-    {
-        lucius::util::enableLog(module);
     }
 }
 
@@ -2424,7 +2452,7 @@ int main(int argc, char** argv)
     }
     else
     {
-        enableSpecificLogs(loggingEnabledModules);
+        lucius::util::enableSpecificLogs(loggingEnabledModules);
     }
 
     lucius::util::log("test-matrix") << "Running matrix unit tests\n";
