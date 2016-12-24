@@ -17,6 +17,7 @@
 #include <lucius/matrix/interface/Matrix.h>
 #include <lucius/matrix/interface/MatrixVector.h>
 #include <lucius/matrix/interface/MatrixOperations.h>
+#include <lucius/matrix/interface/MatrixTransformations.h>
 #include <lucius/matrix/interface/Operation.h>
 
 #include <lucius/util/interface/Knobs.h>
@@ -244,7 +245,17 @@ static void expandLabels(Bundle& bundle, size_t beamSize)
         }
     }
 
-    bundle["referenceActivations"] = referenceActivations;
+    bundle["referenceActivations"] = MatrixVector({referenceActivations});
+}
+
+static void reshapeOutputActivations(Matrix& outputActivations, const Dimension& inputSize,
+    size_t beamSize)
+{
+    Dimension outputSize = inputSize;
+
+    outputSize[inputSize.size() - 2] *= beamSize;
+
+    outputActivations = reshape(outputActivations, outputSize);
 }
 
 void CTCDecoderLayer::runForwardImplementation(Bundle& bundle)
@@ -255,6 +266,8 @@ void CTCDecoderLayer::runForwardImplementation(Bundle& bundle)
     assert(inputActivationsVector.size() == 1);
 
     auto inputActivations = inputActivationsVector.back();
+
+    saveMatrix("inputActivations", inputActivations);
 
     auto beamSearchOutputSize = matrix::getBeamSearchOutputSize(
         inputActivations.size(), _implementation->getBeamSize());
@@ -270,6 +283,9 @@ void CTCDecoderLayer::runForwardImplementation(Bundle& bundle)
 
     matrix::ctcBeamSearch(outputActivationWeights, inputPaths, outputActivations,
         inputActivations, _implementation->getBeamSize());
+
+    reshapeOutputActivations(outputActivations, inputActivations.size(),
+        _implementation->getBeamSize());
 
     saveMatrix("outputActivationWeights", outputActivationWeights);
     saveMatrix("inputPaths",              inputPaths);
@@ -407,12 +423,9 @@ Dimension CTCDecoderLayer::getOutputSize() const
 
     assert(outputSize.size() >= 3);
 
-    size_t timesteps = outputSize[outputSize.size() - 1];
-    size_t minibatch = outputSize[outputSize.size() - 2];
+    size_t& minibatch = outputSize[outputSize.size() - 2];
 
-    outputSize.push_back(timesteps);
-    outputSize[outputSize.size() - 3] = _implementation->getBeamSize();
-    outputSize[outputSize.size() - 2] = minibatch;
+    minibatch *= _implementation->getBeamSize();
 
     return outputSize;
 }

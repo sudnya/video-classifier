@@ -772,7 +772,7 @@ static bool runTestCtcDecoderLayer(size_t layerSize, size_t layerCount, size_t b
 
     auto network = createCtcDecoderNetwork(layerSize, layerCount, batchSize);
 
-    if(gradientCheckTimeSeries(network, batchSize, timesteps))
+    if(gradientCheckCtc(network, batchSize, timesteps))
     {
         std::cout << "CTC Decoder Layer Test Passed\n";
 

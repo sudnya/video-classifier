@@ -576,6 +576,65 @@ bool test2dBroadcast()
 
 }
 
+/*
+    Broadcast matrix over 1st matrix dimension
+
+    [ 5 0 ]                 [ 5 ]    [ 5 5 ]
+    [ 4 0 ] broadcast(copy) [ 4 ]  = [ 4 4 ]
+    [ 0 0 ]                 [ 0 ]    [ 0 0 ]
+    [ 0 0 ]                 [ 0 ]    [ 0 0 ]
+
+*/
+bool test3dOverDim1Broadcast()
+{
+    Matrix a(4, 2, 1);
+    Matrix b(4, 1);
+    Matrix ref(4, 2, 1);
+
+    a(0, 0, 0) = 5;
+    a(1, 0, 0) = 4;
+    a(2, 0, 0) = 0;
+    a(3, 0, 0) = 0;
+
+    a(0, 1, 0) = 0;
+    a(1, 1, 0) = 0;
+    a(2, 1, 0) = 0;
+    a(3, 1, 0) = 0;
+
+    b(0, 0) = 5;
+    b(1, 0) = 4;
+    b(2, 0) = 0;
+    b(3, 0) = 0;
+
+    ref(0, 0, 0) = 5;
+    ref(1, 0, 0) = 4;
+    ref(2, 0, 0) = 0;
+    ref(3, 0, 0) = 0;
+
+    ref(0, 1, 0) = 5;
+    ref(1, 1, 0) = 4;
+    ref(2, 1, 0) = 0;
+    ref(3, 1, 0) = 0;
+
+    Matrix computed = broadcast(a, b, {1}, lucius::matrix::CopyRight());
+
+    if(computed != ref)
+    {
+        lucius::util::log("test-matrix") << " Matrix Broadcast 3d over 1st "
+            "Dimension Test Failed:\n";
+        lucius::util::log("test-matrix") << "  result matrix " << computed.toString();
+        lucius::util::log("test-matrix") << "  does not match reference matrix " << ref.toString();
+    }
+    else
+    {
+        lucius::util::log("test-matrix") << " Matrix Broadcast 3d over "
+            "1st Dimension Test Passed\n";
+    }
+
+    return computed == ref;
+
+}
+
 bool testZeros()
 {
     Matrix ref(3,4);
@@ -710,11 +769,52 @@ bool testReshapeSlice()
 }
 
 /*
+    Test reshaping a strided slice.
+
+    [ 1 2 ] slice = [1 2] reshape = [ 1 ]
+    [ 3 4 ]                         [ 2 ]
+    [ 5 6 ]
+
+
+*/
+bool testReshapeStridedSlice()
+{
+    Matrix a(3, 2);
+
+    a(0, 0) = 1;
+    a(0, 1) = 2;
+    a(1, 0) = 3;
+    a(1, 1) = 4;
+    a(2, 0) = 5;
+    a(2, 1) = 6;
+
+    Matrix reference(2);
+
+    reference(0) = 1;
+    reference(1) = 2;
+
+    Matrix computed = reshape(slice(a, {0, 0}, {1, 2}), {2});
+
+    if(computed != reference)
+    {
+        lucius::util::log("test-matrix") << " Matrix Reshape Strided Slice Test Failed:\n";
+        lucius::util::log("test-matrix") << "  result matrix " << computed.toString();
+        lucius::util::log("test-matrix") << "  does not match reference matrix " << a.toString();
+    }
+    else
+    {
+        lucius::util::log("test-matrix") << " Matrix Reshape Strided Slice Test Passed\n";
+    }
+
+    return computed == reference;
+}
+
+/*
     Test matrix copy
 
-    [ 1 2 ]  = [ 1 2 ]
-    [ 3 4 ]    [ 3 4 ]
-    [ 5 6 ]    [ 5 6 ]
+    [ 1 2 ] copy = [ 1 2 ]
+    [ 3 4 ]        [ 3 4 ]
+    [ 5 6 ]        [ 5 6 ]
 
 */
 bool testCopy()
@@ -2368,9 +2468,12 @@ bool runTests(bool listTests, const std::string& testFilter)
 
     engine.addTest("reduce 4d", test4dReduce);
     engine.addTest("broadcast", testBroadcast);
+    engine.addTest("broadcast 2d", test2dBroadcast);
+    engine.addTest("broadcast 3d over dim 1", test3dOverDim1Broadcast);
     engine.addTest("zeros", testZeros);
     engine.addTest("reshape", testReshape);
     engine.addTest("reshape slice", testReshapeSlice);
+    engine.addTest("reshape strided slice", testReshapeStridedSlice);
     engine.addTest("copy", testCopy);
     engine.addTest("copy between precisions", testCopyBetweenPrecisions);
     engine.addTest("uniform random", testUniformRandom);

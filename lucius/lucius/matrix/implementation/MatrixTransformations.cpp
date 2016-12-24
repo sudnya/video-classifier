@@ -16,10 +16,8 @@ namespace matrix
 
 static Dimension fillInDimension(const Dimension& newSize, const Dimension& inputSize)
 {
-    if(newSize.size() > inputSize.size())
+    if(newSize.product() == inputSize.product())
     {
-        assert(newSize.product() == inputSize.product());
-
         return newSize;
     }
 
@@ -64,10 +62,38 @@ static Dimension computeSpacing(const Dimension& stride, const Dimension& size)
     return spacing;
 }
 
+static Dimension compressSpacing(const Dimension& uncompressedInputSpacing,
+    const Dimension& newSize, const Dimension& inputSize)
+{
+    Dimension inputSpacing;
+
+    size_t currentSpacing = 1;
+    size_t currentSize    = 1;
+    size_t currentIndex   = 0;
+
+    for(size_t i = 0; i < inputSize.size(); ++i)
+    {
+        currentSpacing *= uncompressedInputSpacing[i];
+        currentSize    *= inputSize[i];
+
+        if(newSize[currentIndex] == currentSize)
+        {
+            inputSpacing.push_back(currentSpacing);
+
+            currentSize    = 1;
+            currentSpacing = 1;
+        }
+    }
+
+    return inputSpacing;
+}
+
 static Dimension fillInStride(const Dimension& newSize,
     const Dimension& inputStride, const Dimension& inputSize)
 {
-    Dimension inputSpacing = computeSpacing(inputStride, inputSize);
+    Dimension uncompressedInputSpacing = computeSpacing(inputStride, inputSize);
+
+    Dimension inputSpacing = compressSpacing(uncompressedInputSpacing, newSize, inputSize);
 
     Dimension newStride = linearStride(newSize);
 

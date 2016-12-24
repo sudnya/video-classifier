@@ -264,7 +264,7 @@ public:
     {
         Dimension inputDimension;
 
-        for(size_t dimension = 0; dimension < outputDimension.size() + 1; ++dimension)
+        for(size_t dimension = 0; dimension < outputDimension.size(); ++dimension)
         {
             if(index != dimension)
             {
