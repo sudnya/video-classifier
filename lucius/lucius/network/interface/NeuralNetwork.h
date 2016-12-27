@@ -115,7 +115,7 @@ public:
 
 public:
     /*! \brief Train the network on the specified input and reference, return the cost. */
-    double train(const Matrix& input, const Matrix& output);
+    double train(const Matrix& input, const Matrix& referenceOutput);
 
     /*! \brief Train the network on the input and output activations, update the bundle. */
     Bundle train(const Bundle& bundle);

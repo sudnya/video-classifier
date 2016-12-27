@@ -49,6 +49,9 @@ programs.append(env.Program('test-ctc-cpu', \
 programs.append(env.Program('test-ctc-operations', \
     ['matrix/test/test-ctc-operations.cpp'], LIBS=lucius_libs))
 
+programs.append(env.Program('test-text-input-producer', \
+    ['input/test/test-text-input-producer.cpp'], LIBS=lucius_libs))
+
 programs.append(env.Program('test-matrix', \
     ['matrix/test/test-matrix.cpp'], LIBS=lucius_libs))
 

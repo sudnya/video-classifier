@@ -354,17 +354,34 @@ bool PropertyTree::operator<(const PropertyTree& right) const
     return key() < right.key();
 }
 
+static std::string addEscapes(const std::string& key)
+{
+    std::string result;
+
+    for(auto& c : key)
+    {
+        if(c == '\\' || c == '\"')
+        {
+            result += "\\";
+        }
+
+        result += c; 
+    }
+
+    return result;
+}
+
 static void saveJson(const PropertyTree& tree, std::ostream& json)
 {
     if(tree.empty())
     {
-        json << "\"" << tree.key() << "\"";
+        json << "\"" << addEscapes(tree.key()) << "\"";
         return;
     }
 
     if(tree.isList())
     {
-        json << "\"" << tree.key() << "\" : [ ";
+        json << "\"" << addEscapes(tree.key()) << "\" : [ ";
 
         bool first = true;
 
@@ -382,7 +399,7 @@ static void saveJson(const PropertyTree& tree, std::ostream& json)
     {
         if(!tree.key().empty())
         {
-            json << "\"" << tree.key() << "\" : ";
+            json << "\"" << addEscapes(tree.key()) << "\" : ";
 
             if(!tree.begin()->empty())
             {
@@ -404,7 +421,7 @@ static void saveJson(const PropertyTree& tree, std::ostream& json)
     {
         if(!tree.key().empty())
         {
-            json << "\"" << tree.key() << "\" : ";
+            json << "\"" << addEscapes(tree.key()) << "\" : ";
 
             json << "{ ";
         }
@@ -502,9 +519,27 @@ static std::string getNextString(std::istream& json)
 {
     std::string token;
 
-    while(json.good() && json.peek() != '\"')
+    bool alwaysAcceptNext = false;
+
+    while(json.good() && (json.peek() != '\"' || alwaysAcceptNext))
     {
-        token += json.get();
+        if(alwaysAcceptNext)
+        {
+            token += json.get();
+            alwaysAcceptNext = false;
+        }
+        else
+        {
+            if(json.peek() == '\\')
+            {
+                alwaysAcceptNext = true;
+                json.get();
+            }
+            else
+            {
+                token += json.get();
+            }
+        }
     }
 
     return token;
