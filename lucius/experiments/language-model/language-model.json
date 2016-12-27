@@ -13,10 +13,10 @@
 
         "parameters" :
         {
-            "NesterovAcceleratedGradient::LearningRate"       : "1.0e-4",
+            "NesterovAcceleratedGradient::LearningRate"       : "1.0e-3",
             "NesterovAcceleratedGradient::Momentum"           : "0.99",
             "NesterovAcceleratedGradient::AnnealingRate"      : "1.000000",
-            "NesterovAcceleratedGradient::MaxGradNorm"        : "40.0",
+            "NesterovAcceleratedGradient::MaxGradNorm"        : "80.0",
             "NesterovAcceleratedGradient::IterationsPerBatch" : "1"
         }
     },
@@ -31,12 +31,12 @@
             {
                 "Type" : "RecurrentLayer",
                 "Direction" : "forward",
-                "Size" : "256"
+                "Size" : "2048"
             },
             "input":
             {
                 "Type" : "FeedForwardLayer",
-                "OutputSize" : "256"
+                "OutputSize" : "2048"
             },
             "output":
             {
@@ -80,14 +80,14 @@
 
         },
 
-        "infer-outputs-from" : "/data/4tb/billion/training/database.txt"
+        "infer-outputs-from" : "/data/1tb-ssd/billion/training/database.txt"
 
     },
 
     "dataset" :
     {
-        "training-dataset-path"   : "/data/4tb/billion/training/database.txt",
-        "validation-dataset-path" : "/data/4tb/billion/validation/database.txt",
+        "training-dataset-path"   : "/data/1tb-ssd/billion/training/database.txt",
+        "validation-dataset-path" : "/data/1tb-ssd/billion/validation/database.txt",
 
         "required-accuracy" : "99.0"
     },
@@ -117,7 +117,7 @@
 
     "system" :
     {
-        "use-cuda"    : "0",
+        "use-cuda"    : "1",
         "cuda-device" : "0",
         "precision"   : "SinglePrecision"
     }
