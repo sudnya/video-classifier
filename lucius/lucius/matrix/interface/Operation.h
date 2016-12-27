@@ -132,7 +132,7 @@ public:
     template<typename T>
     CUDA_DECORATOR T operator()(const T& r) const
     {
-        return r - _value;
+        return _value - r;
     }
 
 private:

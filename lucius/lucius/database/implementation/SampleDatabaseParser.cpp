@@ -14,6 +14,8 @@
 #include <lucius/video/interface/Video.h>
 #include <lucius/video/interface/Image.h>
 
+#include <lucius/text/interface/Text.h>
+
 #include <lucius/util/interface/paths.h>
 #include <lucius/util/interface/string.h>
 
@@ -47,21 +49,30 @@ static std::string removeWhitespace(const std::string& line);
 
 void SampleDatabaseParser::parse()
 {
-    std::ifstream file(_database->path().c_str());
+    std::istream* stream = &_database->stream();
 
-    if(!file.is_open())
+    std::ifstream file;
+
+    if(stream == nullptr)
     {
-        throw std::runtime_error("Could not open '" +
-            _database->path() + "' for reading.");
+        file.open(_database->path().c_str());
+
+        if(!file.is_open())
+        {
+            throw std::runtime_error("Could not open '" +
+                _database->path() + "' for reading.");
+        }
+
+        stream = &file;
     }
 
     auto databaseDirectory = util::getDirectory(_database->path());
 
-    while(file.good())
+    while(stream->good())
     {
         std::string line;
 
-        std::getline(file, line);
+        std::getline(*stream, line);
 
         line = removeWhitespace(line);
 
@@ -126,7 +137,7 @@ static void parseLabeledPath(SampleDatabase* database, const std::string& line,
 
     auto label = util::strip(toLower(removeWhitespace(components[1])), "\"");
 
-    if(video::Image::isPathAnImageFile(filePath) || audio::Audio::isPathAnAudioFile(filePath))
+    if(video::Image::isPathAnImageFile(filePath) || audio::Audio::isPathAnAudioFile(filePath) || text::Text::isPathATextFile(filePath))
     {
         if(components.size() != 2)
         {

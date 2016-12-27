@@ -33,6 +33,7 @@ public:
 public:
     SampleDatabase();
     SampleDatabase(const std::string& path);
+    SampleDatabase(std::istream& stream);
     ~SampleDatabase();
 
 public:
@@ -54,6 +55,7 @@ public:
 
 public:
     const std::string& path() const;
+    std::istream& stream();
 
 public:
     bool containsVideoSamples() const;
@@ -78,6 +80,7 @@ private:
 
 private:
     std::string _path;
+    std::istream* _stream;
 
 private:
     SampleVector _samples;

@@ -82,7 +82,7 @@ public:
     bool getRequiresLabeledData() const;
 
 public:
-    void setModel(model::Model* model);
+    virtual void setModel(model::Model* model);
     const model::Model* getModel() const;
     model::Model* getModel();
 

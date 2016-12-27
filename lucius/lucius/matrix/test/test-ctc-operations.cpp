@@ -1,3 +1,7 @@
+/*  \file   test-ctc-operations.cpp
+    \author Sudnya Diamos <mailsudnya@gmail.com>
+    \brief  The source file for the ctc operations unit test class.
+*/
 #include <cmath>
 #include <random>
 #include <tuple>

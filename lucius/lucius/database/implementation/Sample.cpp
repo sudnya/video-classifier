@@ -11,6 +11,8 @@
 #include <lucius/video/interface/Video.h>
 #include <lucius/video/interface/Image.h>
 
+#include <lucius/util/interface/paths.h>
+
 namespace lucius
 {
 
@@ -59,6 +61,11 @@ bool Sample::isImageSample() const
 bool Sample::isAudioSample() const
 {
     return audio::Audio::isPathAnAudioFile(path());
+}
+
+bool Sample::isTextSample() const
+{
+    return util::isPathText(path()); 
 }
 
 bool Sample::hasLabel() const
