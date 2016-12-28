@@ -50,7 +50,6 @@ static void computeCtcOnSinglePrecisionSequence(Matrix& costs, Matrix& gradients
 
     size_t vocabularySize      = inputActivations.size().front();
     size_t samplesPerMinibatch = inputActivations.size()[inputActivations.size().size() - 2];
-    size_t labelSize           = inputActivations.size()[inputActivations.size().size() - 1];
 
     std::vector<int> timeStepsInMinibatch;
     std::vector<int> labelsInMinibatch;

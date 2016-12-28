@@ -24,7 +24,13 @@ SampleDatabase::SampleDatabase()
 }
 
 SampleDatabase::SampleDatabase(const std::string& path)
-: _path(path)
+: _path(path), _stream(nullptr)
+{
+
+}
+
+SampleDatabase::SampleDatabase(std::istream& stream)
+: _stream(&stream)
 {
 
 }
@@ -100,6 +106,11 @@ const std::string& SampleDatabase::path() const
     return _path;
 }
 
+std::istream& SampleDatabase::stream()
+{
+    return *_stream;
+}
+
 bool SampleDatabase::containsVideoSamples() const
 {
     for(auto& sample : _samples)
@@ -141,6 +152,14 @@ bool SampleDatabase::containsAudioSamples() const
 
 bool SampleDatabase::containsTextSamples() const
 {
+    for(auto& sample : _samples)
+    {
+        if(sample.isTextSample())
+        {
+            return true;
+        }
+    }
+
     return false;
 }
 

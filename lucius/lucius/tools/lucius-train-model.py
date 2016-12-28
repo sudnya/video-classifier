@@ -1,4 +1,4 @@
-#! /usr/local/bin/python
+#! /usr/bin/env python
 
 
 """Generic linux daemon base class for python 3.x."""
