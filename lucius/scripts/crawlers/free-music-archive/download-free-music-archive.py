@@ -300,7 +300,6 @@ class Downloader:
 
                 if self.isTrackAlreadyDownloaded(track):
                     self.logger.debug("  Skipping track, already downloaded")
-                    self.downloadedFiles += 1
                     continue
 
                 self.downloadTrack(track)
