@@ -1,0 +1,163 @@
+{
+    "name" : "audio-search",
+
+    "optimization" :
+    {
+        "type" : "NesterovAcceleratedGradientSolver",
+
+        "batch-size"      : "64",
+        "maximum-samples" : "32768",
+        "standardization-samples" : "512",
+
+        "epochs" : "2000",
+
+        "parameters" :
+        {
+            "NesterovAcceleratedGradient::LearningRate"       : "1e-4",
+            "NesterovAcceleratedGradient::Momentum"           : "0.99",
+            "NesterovAcceleratedGradient::AnnealingRate"      : "1.00001",
+            "NesterovAcceleratedGradient::MaxGradNorm"        : "400.0",
+            "NesterovAcceleratedGradient::IterationsPerBatch" : "1"
+        }
+    },
+
+    "model" :
+    {
+        "engine" : "LearnerEngine",
+
+        "layer-types" :
+        {
+            "recurrent" :
+            {
+                "Type" : "BidirectionalRecurrentLayer",
+                "Size" : "2048"
+            },
+            "mean-pool":
+            {
+                "Type"             : "FeedForwardLayer",
+                "InputSize"        : "4",
+                "OutputSize"       : "1"
+            },
+            "pool":
+            {
+                "Type"             : "AudioMaxPoolingLayer",
+                "FilterSamples"    : "16",
+                "FilterTimesteps"  : "1"
+            },
+            "extract-frequencies-convolution":
+            {
+                "Type"             : "AudioConvolutionalLayer",
+                "FilterSamples"    : "65",
+                "FilterTimesteps"  : "3",
+                "FilterInputs"     : "1",
+                "FilterOutputs"    : "128",
+                "StrideSamples"    : "2",
+                "StrideTimesteps"  : "1",
+                "PaddingSamples"   : "32",
+                "PaddingTimesteps" : "1",
+                "ActivationFunction" : "NullActivationFunction"
+            },
+            "forward":
+            {
+                "Type" : "FeedForwardLayer",
+                "OutputSize" : "2048"
+            },
+            "output":
+            {
+                "Type" : "FeedForwardLayer",
+                "ActivationFunction" : "NullActivationFunction"
+            },
+            "batch-norm" :
+            {
+                "Type" : "BatchNormalizationLayer"
+            }
+        },
+
+        "networks" :
+        {
+            "Classifier" :
+            {
+                "layers" :
+                [
+                    "forward",
+                    "forward",
+                    "forward",
+                    "recurrent",
+                    "recurrent",
+                    "output"
+                ]
+            }
+        },
+
+        "cost-function" :
+        {
+            "name" : "CTCCostFunction"
+        },
+
+        "model-attributes" :
+        {
+            "SamplingRate"  : "16384",
+            "FrameDuration" : "512",
+            "Graphemes" : [ "a", "b", "c", "d", "e", "f", "g", "h", "i",
+                            "j", "k", "l", "m", "n", "o", "p", "q", "r",
+                            "s", "t", "u", "v", "w", "x", "y", "z", ".",
+                            ",", "'", " "],
+            "DelimiterGrapheme" : "END"
+
+
+        },
+
+        "infer-outputs-from" : "/data/4tb/libri-speech-100/development/database.txt"
+
+    },
+
+    "attributes" :
+    {
+        "InputAudioDataProducer::SpeechScaleLower" : "1.0",
+        "InputAudioDataProducer::SpeechScaleUpper" : "1.0",
+        "InputAudioDataProducer::NoiseRateLower" : "0.0",
+        "InputAudioDataProducer::NoiseRateUpper" : "0.001",
+        "InputAudioDataProducer::TotalTimestepsPerUtterance" : "500",
+        "InputAudioDataProducer::TotalTimestepsPerRepeat" : "200",
+        "InputAudioDataProducer::TotalTimestepsPerNoise" : "200",
+        "InputAudioDataProducer::SaveSamples" : "0",
+        "InputAudioDataProducer::CacheSize" : "2048",
+        "InputAudioDataProducer::RandomShuffleWindow" : "1024"
+    },
+
+    "dataset" :
+    {
+        "training-dataset-path"   : "/data/4tb/libri-speech-100/training/database.txt",
+        "validation-dataset-path" : "/data/4tb/libri-speech-100/development/database.txt",
+
+        "required-accuracy" : "99.0"
+    },
+
+    "checkpointing" :
+    {
+        "use-log-file" : "1",
+        "base-directory" : "audio-search"
+    },
+
+    "logging" :
+    {
+        "enabled-loggers" :
+        [
+            "NesterovAcceleratedGradientSolver",
+            "BenchmarkDataset",
+            "GraphemeMatchResultProcessor",
+            "GraphemeMatchResultProcessor::Detail",
+            "InputAudioDataProducer",
+            "ModelSpecification"
+        ]
+    },
+
+    "system" :
+    {
+        "use-cuda"    : "1",
+        "cuda-device" : "0",
+        "precision"   : "SinglePrecision"
+    }
+
+}
+
