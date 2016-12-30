@@ -431,7 +431,7 @@ private:
 
             if(sample.isAudioSample())
             {
-                if(!Audio(sample.path()).isValidSample())
+                if(!Audio(sample.path()).isValid())
                 {
                     util::log("InputAudioDataProducer::Detail") << "  found invalid audio sample '"
                         << sample.path() << "'\n";

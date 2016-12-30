@@ -74,7 +74,7 @@ void Audio::cache()
     _load();
 }
 
-void Audio::cacheHeader()
+void Audio::cacheHeader() 
 {
     _loadHeader();
 }
@@ -96,7 +96,7 @@ bool Audio::isCached() const
 }
 
 
-bool Audio::isValid() const
+bool Audio::isValid() 
 {
     try
     {
