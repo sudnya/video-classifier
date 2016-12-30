@@ -71,7 +71,16 @@ void Audio::clearLabels()
 
 void Audio::cache()
 {
-    _load();
+    try
+    {
+        _load();
+    }
+    catch(const std::exception& e)
+    {
+        throw std::runtime_error("Failed to load audio sample '" + path() +
+            "' with error: '" + e.what() + "'");
+    }
+
 }
 
 void Audio::cacheHeader() 
@@ -94,7 +103,6 @@ bool Audio::isCached() const
 {
     return _isLoaded;
 }
-
 
 bool Audio::isValid() 
 {
