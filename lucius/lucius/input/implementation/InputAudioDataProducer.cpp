@@ -431,14 +431,20 @@ private:
 
             if(sample.isAudioSample())
             {
-                if(sample.hasLabel())
+                if(!Audio(sample.path()).isValidSample())
                 {
-                    util::log("InputAudioDataProducer::Detail") << "  found labeled image '"
+                    util::log("InputAudioDataProducer::Detail") << "  found invalid audio sample '"
+                        << sample.path() << "'\n";
+                    continue;
+                }
+                else if(sample.hasLabel())
+                {
+                    util::log("InputAudioDataProducer::Detail") << "  found labeled audio '"
                         << sample.path() << "' with label '" << sample.label() << "'\n";
                 }
                 else
                 {
-                    util::log("InputAudioDataProducer::Detail") << "  found unlabeled image '"
+                    util::log("InputAudioDataProducer::Detail") << "  found unlabeled audio '"
                         << sample.path() << "'\n";
                 }
 

@@ -95,6 +95,21 @@ bool Audio::isCached() const
     return _isLoaded;
 }
 
+
+bool Audio::isValid() const
+{
+    try
+    {
+        cacheHeader();
+    }
+    catch(const std::exception& e)
+    {
+        return false;
+    }
+
+    return true;
+}
+
 size_t Audio::frequency() const
 {
     assert(_isHeaderLoaded);

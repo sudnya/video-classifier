@@ -43,6 +43,7 @@ public:
     void invalidateCache();
 
     bool isCached() const;
+    bool isValid() const;
 
 public:
     size_t frequency() const;
