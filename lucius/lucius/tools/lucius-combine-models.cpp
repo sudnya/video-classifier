@@ -32,6 +32,8 @@ static void combineModels(const std::string& modelFileName1,
     model::Model model1(modelFileName1);
     model::Model model2(modelFileName2);
     model::Model combined(outputPath);
+    model1.load(modelFileName1);
+    model2.load(modelFileName2);
 
     combined.setNeuralNetwork("Classifier", network::NeuralNetwork());
     auto& network = combined.getNeuralNetwork("Classifier");
@@ -92,9 +94,9 @@ int main(int argc, char** argv)
     parser.parse("-o", "--output",  outputPath, "", "The output path to store combined model file"
             "(for visualization or feature extraction).");
 
-    parser.parse("-m1", "--model1",  modelFileName1,
+    parser.parse("-a", "--model1",  modelFileName1,
         "", "The path to the first model to use for combination.");
-    parser.parse("-m2", "--model2",  modelFileName2,
+    parser.parse("-l", "--model2",  modelFileName2,
         "", "The path to the second model to use for combination.");
 
     parser.parse("-v", "--verbose", verbose, false, "Print out log messages during execution");
