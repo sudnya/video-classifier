@@ -32,7 +32,7 @@ namespace detail
 class SortConfiguration
 {
 public:
-    static constexpr size_t LocalValueCount = 2;
+    static constexpr size_t LocalValueCount = 32;
     static constexpr size_t GroupLevel      = 2;
 };
 
@@ -432,7 +432,7 @@ public:
 
 public:
     static constexpr size_t LocalValueCount = SortConfiguration::LocalValueCount;
-    static constexpr size_t GroupLevel = SortConfiguration::GroupLevel;
+    static constexpr size_t GroupLevel      = SortConfiguration::GroupLevel;
 
 public:
     CUDA_DECORATOR void operator()(const parallel::ThreadGroup& threadGroup) const
@@ -472,13 +472,24 @@ public:
             size_t mergeGroupBEnd   = parallel::min(mergeGroupBBegin + regionToMergeSize,
                                                     elements);
 
+            size_t remainingElements = elements - mergeGroupABegin;
+            size_t regionsPerMergeGroup = totalRegionsPerMergeGroup;
+
+            if(remainingElements < mergedRegionSize)
+            {
+                regionsPerMergeGroup = (remainingElements + elementsPerInnerGroup - 1) /
+                    elementsPerInnerGroup;
+            }
+
             for(size_t innerGroupId = relativeInnerToMergeGroup.id();
-                innerGroupId < totalRegionsPerMergeGroup;
+                innerGroupId < regionsPerMergeGroup;
                 innerGroupId += relativeInnerToMergeGroup.size())
             {
                 // group merge path
-                size_t innerGroupLeftDiagonal  =  innerGroupId      * elementsPerInnerGroup;
-                size_t innerGroupRightDiagonal = (innerGroupId + 1) * elementsPerInnerGroup;
+                size_t innerGroupLeftDiagonal  =
+                    std::min( innerGroupId * elementsPerInnerGroup, remainingElements);
+                size_t innerGroupRightDiagonal =
+                    std::min((innerGroupId + 1) * elementsPerInnerGroup, remainingElements);
 
                 const SortElement* aBegin = nullptr;
                 const SortElement* aEnd   = nullptr;

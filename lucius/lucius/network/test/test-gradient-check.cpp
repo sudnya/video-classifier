@@ -873,7 +873,7 @@ int main(int argc, char** argv)
     size_t layerCount = 5;
     size_t timesteps  = 10;
     size_t batchSize  = 10;
-    size_t beamSize   = 16;
+    size_t beamSize   = 2;
 
     bool listTests = false;
     std::string testFilter;
