@@ -65,11 +65,11 @@ CUDA_DECORATOR bool compare(const PackedKeysAndIndices<NativeType>& left,
     const PackedKeysAndIndices<NativeType>& right,
     const Comparator& comparator)
 {
-    if(comparator(left.dimensionKey, right.dimensionKey))
+    if(left.dimensionKey < right.dimensionKey)
     {
         return true;
     }
-    else if(comparator(right.dimensionKey, left.dimensionKey))
+    else if(right.dimensionKey < left.dimensionKey)
     {
         return false;
     }

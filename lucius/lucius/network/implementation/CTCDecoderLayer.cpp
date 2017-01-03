@@ -23,6 +23,7 @@
 #include <lucius/util/interface/Knobs.h>
 #include <lucius/util/interface/PropertyTree.h>
 #include <lucius/util/interface/memory.h>
+#include <lucius/util/interface/string.h>
 #include <lucius/util/interface/debug.h>
 
 namespace lucius
@@ -104,6 +105,11 @@ public:
     double getCostFunctionWeight() const
     {
         return _costFunctionWeight;
+    }
+
+    bool hasCostFunction() const
+    {
+        return getCostFunctionWeight() > 0.0;
     }
 
 public:
@@ -211,7 +217,6 @@ void CTCDecoderLayer::initialize()
     // intentionally blank
 }
 
-// Note that the convention here is for the 0th char to be the start/stop
 static void expandLabels(Bundle& bundle, size_t beamSize)
 {
     auto& outputActivationsVector = bundle["outputActivations"].get<MatrixVector>();
@@ -224,25 +229,60 @@ static void expandLabels(Bundle& bundle, size_t beamSize)
     size_t miniBatchSize = outputActivations.size()[outputActivations.size().size() - 2];
     size_t maxTimesteps  = outputActivations.size()[outputActivations.size().size() - 1];
 
+    size_t originalMiniBatchSize = miniBatchSize / beamSize;
+
+    LabelVector expandedLabels;
+
+    for(size_t miniBatch = 0; miniBatch < originalMiniBatchSize; ++miniBatch)
+    {
+        for(size_t beam = 0; beam < beamSize; ++beam)
+        {
+            expandedLabels.push_back(labels[miniBatch]);
+        }
+    }
+
+    labels = std::move(expandedLabels);
+
     auto referenceActivations = matrix::zeros({characters, miniBatchSize, maxTimesteps},
         outputActivations.precision());
 
     for(size_t miniBatch = 0; miniBatch < miniBatchSize; ++miniBatch)
     {
-        referenceActivations(0, miniBatch, 0) = 1.0;
-
         for(size_t timestep = 0; timestep < maxTimesteps; ++timestep)
         {
-            if(timestep < labels[miniBatch/beamSize].size())
+            if(timestep < labels[miniBatch].size())
             {
-                referenceActivations(timestep + 1, miniBatch,
-                    labels[miniBatch/beamSize][timestep]) = 1.0;
+                size_t character = labels[miniBatch][timestep];
+
+                assert(character < characters);
+
+                referenceActivations(character, miniBatch, timestep) = 1.0;
             }
             else
             {
-                referenceActivations(timestep + 1, miniBatch, 0) = 1.0;
+                referenceActivations(0, miniBatch, timestep) = 1.0;
             }
         }
+    }
+
+    if(util::isLogEnabled("CTCDecoderLayer::Detail"))
+    {
+        util::log("CTCDecoderLayer::Detail") << "  reference labels: \n";
+        for(auto& label : labels)
+        {
+            util::log("CTCDecoderLayer::Detail") << "   reference label: "
+                << util::toString(label) << "\n";
+
+        }
+        util::log("CTCDecoderLayer::Detail") << "  reference activations: "
+            << referenceActivations.debugString();
+    }
+    else
+    {
+        util::log("CTCDecoderLayer::Detail") << "  reference labels size: "
+            << labels.size() << "\n";
+        util::log("CTCDecoderLayer") << "  reference activations size: "
+            << outputActivations.shapeString() << "\n";
     }
 
     bundle["referenceActivations"] = MatrixVector({referenceActivations});
@@ -286,6 +326,8 @@ void CTCDecoderLayer::runForwardImplementation(Bundle& bundle)
 
     reshapeOutputActivations(outputActivations, inputActivations.size(),
         _implementation->getBeamSize());
+
+    bundle["outputActivationWeights"] = outputActivationWeights;
 
     saveMatrix("outputActivationWeights", outputActivationWeights);
     saveMatrix("inputPaths",              inputPaths);
@@ -340,12 +382,21 @@ Matrix computeCtcInputDeltas(const std::string& costFunctionName,
 
 void CTCDecoderLayer::runReverseImplementation(Bundle& bundle)
 {
-    auto& inputDeltaVector  = bundle[ "inputDeltas"].get<matrix::MatrixVector>();
-    auto& outputDeltaVector = bundle["outputDeltas"].get<matrix::MatrixVector>();
+    auto& inputDeltaVector  = bundle[      "inputDeltas"].get<matrix::MatrixVector>();
+    auto& outputDeltaVector = bundle["finalOutputDeltas"].get<matrix::MatrixVector>();
 
     assert(outputDeltaVector.size() == 1);
 
-    auto outputDeltas = outputDeltaVector.front();
+    auto combinedOutputDeltas = outputDeltaVector.front();
+
+    size_t alphabet      = combinedOutputDeltas.size()[0];
+    size_t beamSize      = _implementation->getBeamSize();
+    size_t miniBatchSize = combinedOutputDeltas.size()[1] / _implementation->getBeamSize();
+    size_t timesteps     = combinedOutputDeltas.size()[2];
+
+    auto outputDeltas = reshape(combinedOutputDeltas,
+        {alphabet, beamSize, miniBatchSize, timesteps});
+
     auto outputActivationWeights = loadMatrix("outputActivationWeights");
     auto inputPaths = loadMatrix("inputPaths");
 
@@ -362,30 +413,55 @@ void CTCDecoderLayer::runReverseImplementation(Bundle& bundle)
 
     auto inputActivations = loadMatrix("inputActivations");
 
-    Matrix beamSearchInputDeltas(inputActivations.size(), inputActivations.precision());
+    Matrix inputDeltas(inputActivations.size(), inputActivations.precision());
 
-    matrix::ctcBeamSearchInputGradients(beamSearchInputDeltas, outputActivationWeights,
-        inputPaths, outputDeltas, _implementation->getBeamSize());
+    matrix::ctcBeamSearchInputGradients(inputDeltas, outputActivationWeights,
+        inputPaths, outputDeltas, inputActivations);
 
     if(util::isLogEnabled("CTCDecoderLayer::Detail"))
     {
-        util::log("CTCDecoderLayer::Detail") << "  beam search output deltas: "
-            << outputDeltas.debugString();
+        util::log("CTCDecoderLayer::Detail") << "  beam search input deltas: "
+            << inputDeltas.debugString();
     }
     else
     {
-        util::log("CTCDecoderLayer") << "  beam search output deltas size: "
-            << outputDeltas.shapeString() << "\n";
+        util::log("CTCDecoderLayer") << "  beam search input deltas size: "
+            << inputDeltas.shapeString() << "\n";
     }
 
-    auto inputLabels = _implementation->getInputLabels();
-    auto inputTimesteps = _implementation->getInputTimesteps();
+    if(_implementation->hasCostFunction())
+    {
+        auto inputTimesteps = _implementation->getInputTimesteps();
+        auto inputLabels    = _implementation->getInputLabels();
 
-    auto ctcInputDeltas = computeCtcInputDeltas(_implementation->getCostFunctionName(),
-        _implementation->getCostFunctionWeight(),
-        inputActivations, inputLabels, inputTimesteps);
+        auto ctcInputDeltas = computeCtcInputDeltas(_implementation->getCostFunctionName(),
+            _implementation->getCostFunctionWeight(),
+            inputActivations, inputLabels, inputTimesteps);
 
-    auto inputDeltas = apply(Matrix(beamSearchInputDeltas), ctcInputDeltas, matrix::Add());
+        if(util::isLogEnabled("CTCDecoderLayer::Detail"))
+        {
+            util::log("CTCDecoderLayer::Detail") << "  ctc input deltas: "
+                << ctcInputDeltas.debugString();
+        }
+        else
+        {
+            util::log("CTCDecoderLayer") << "  ctc input deltas size: "
+                << ctcInputDeltas.shapeString() << "\n";
+        }
+
+        apply(inputDeltas, inputDeltas, ctcInputDeltas, matrix::Add());
+
+        if(util::isLogEnabled("CTCDecoderLayer::Detail"))
+        {
+            util::log("CTCDecoderLayer::Detail") << "  combined input deltas: "
+                << inputDeltas.debugString();
+        }
+        else
+        {
+            util::log("CTCDecoderLayer") << "  combined input deltas size: "
+                << inputDeltas.shapeString() << "\n";
+        }
+    }
 
     inputDeltaVector.push_back(inputDeltas);
 }
@@ -414,20 +490,17 @@ double CTCDecoderLayer::computeWeightCost() const
 
 Dimension CTCDecoderLayer::getInputSize() const
 {
-    return _implementation->getInputSize();
+    auto inputSize = _implementation->getInputSize();
+
+    inputSize[inputSize.size() - 1] = 1;
+    inputSize[inputSize.size() - 2] = 1;
+
+    return inputSize;
 }
 
 Dimension CTCDecoderLayer::getOutputSize() const
 {
-    auto outputSize = getInputSize();
-
-    assert(outputSize.size() >= 3);
-
-    size_t& minibatch = outputSize[outputSize.size() - 2];
-
-    minibatch *= _implementation->getBeamSize();
-
-    return outputSize;
+    return getInputSize();
 }
 
 size_t CTCDecoderLayer::getInputCount() const

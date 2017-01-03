@@ -12,6 +12,9 @@
 #include <lucius/matrix/interface/MatrixVector.h>
 #include <lucius/matrix/interface/MatrixOperations.h>
 #include <lucius/matrix/interface/Operation.h>
+#include <lucius/matrix/interface/RecurrentOperations.h>
+
+#include <lucius/util/interface/debug.h>
 
 namespace lucius
 {
@@ -21,13 +24,15 @@ namespace network
 
 typedef matrix::MatrixVector MatrixVector;
 typedef matrix::Matrix       Matrix;
+typedef std::vector<std::vector<size_t>> LabelVector;
+typedef matrix::IndexVector IndexVector;
 
 SumOfSquaresCostFunction::~SumOfSquaresCostFunction()
 {
 
 }
 
-void SumOfSquaresCostFunction::computeCost(Bundle& bundle) const
+void SumOfSquaresCostFunction::computeCostImplementation(Bundle& bundle) const
 {
     auto& output    = bundle[   "outputActivations"].get<MatrixVector>().front();
     auto& reference = bundle["referenceActivations"].get<MatrixVector>().front();
@@ -36,15 +41,42 @@ void SumOfSquaresCostFunction::computeCost(Bundle& bundle) const
 
     size_t samples = output.size()[output.size().size() - 2];
 
-    bundle["costs"] = apply(difference, matrix::SquareAndScale(0.5 / samples));
+    auto costs = apply(difference, matrix::SquareAndScale(0.5 / samples));
+
+    if(util::isLogEnabled("SumOfSquaresCostFunction::Detail"))
+    {
+        util::log("SumOfSquaresCostFunction::Detail") << " costs : "
+            << costs.debugString();
+        util::log("SumOfSquaresCostFunction::Detail") << " samples : "
+            << samples << "\n";
+    }
+
+    bundle["costs"] = costs;
 }
 
-void SumOfSquaresCostFunction::computeDelta(Bundle& bundle) const
+void SumOfSquaresCostFunction::computeDeltaImplementation(Bundle& bundle) const
 {
     auto& output    = bundle[   "outputActivations"].get<MatrixVector>().front();
     auto& reference = bundle["referenceActivations"].get<MatrixVector>().front();
 
     bundle["outputDeltas"] = MatrixVector({apply(Matrix(output), reference, matrix::Subtract())});
+
+/*
+    if(bundle.contains("referenceLabels"))
+    {
+        auto& deltas = bundle["outputDeltas"].get<MatrixVector>().front();
+        auto& labels = bundle["referenceLabels"].get<LabelVector>();
+
+        IndexVector labelLengths;
+
+        for(auto& label : labels)
+        {
+            labelLengths.push_back(label.size());
+        }
+
+        recurrentZeroEnds(deltas, labelLengths);
+    }
+*/
 }
 
 std::unique_ptr<CostFunction> SumOfSquaresCostFunction::clone() const

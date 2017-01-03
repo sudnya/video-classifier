@@ -359,12 +359,14 @@ public:
     {}
 
     CUDA_DECORATOR MapOutputToMatchingIndexDimension(const Dimension& indexDimensionOrder,
-        size_t indexPosition,
-        const Dimension& inputDimensionOrder)
+        const Dimension& inputDimensionOrder,
+        size_t matchingOutputPosition,
+        double defaultValue)
     : GatherOperation(GatherOperation::MapOutputToMatchingIndexDimension),
-       indexDimensionOrder(indexDimensionOrder),
-       indexPosition(indexPosition),
-       inputDimensionOrder(inputDimensionOrder)
+      indexDimensionOrder(indexDimensionOrder),
+      inputDimensionOrder(inputDimensionOrder),
+      matchingOutputPosition(matchingOutputPosition),
+      defaultValue(defaultValue)
     {
 
     }
@@ -386,27 +388,31 @@ public:
 
         size_t indexValue = indexView(indexDimension);
 
-        Dimension inputDimension;
+        size_t outputIndexValue = outputDimension[matchingOutputPosition];
 
-        for(size_t i = 0, j = 0; i < inputDimensionOrder.size() + 1; ++i)
+        NativeType resultValue = defaultValue;
+
+        if(indexValue == outputIndexValue)
         {
-            if(i == indexPosition)
+            Dimension inputDimension;
+
+            for(size_t i = 0; i < indexDimensionOrder.size(); ++i)
             {
-                inputDimension.push_back(indexValue);
+                inputDimension.push_back(outputDimension[inputDimensionOrder[i]]);
             }
-            else
-            {
-                inputDimension.push_back(outputDimension[inputDimensionOrder[j++]]);
-            }
+
+            resultValue = inputView(inputDimension);
         }
 
-        return inputView(inputDimension);
+        return resultValue;
     }
 
 public:
     Dimension indexDimensionOrder;
-    size_t    indexPosition;
     Dimension inputDimensionOrder;
+
+    size_t    matchingOutputPosition;
+    double    defaultValue;
 
 };
 

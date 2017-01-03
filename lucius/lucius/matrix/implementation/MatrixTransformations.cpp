@@ -76,12 +76,17 @@ static Dimension compressSpacing(const Dimension& uncompressedInputSpacing,
         currentSpacing *= uncompressedInputSpacing[i];
         currentSize    *= inputSize[i];
 
-        if(newSize[currentIndex] == currentSize)
+        if(currentIndex >= newSize.size())
+        {
+            inputSpacing.push_back(currentSpacing);
+        }
+        else if(newSize[currentIndex] == currentSize)
         {
             inputSpacing.push_back(currentSpacing);
 
             currentSize    = 1;
             currentSpacing = 1;
+            ++currentIndex;
         }
     }
 

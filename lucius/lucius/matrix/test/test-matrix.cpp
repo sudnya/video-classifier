@@ -1967,6 +1967,75 @@ bool testIndirectGather()
     return reference == result;
 }
 
+bool testIndirectGatherToMatchingIndex()
+{
+     // create an out of order matrix
+    Matrix input(6);
+    input(0) = 3;
+    input(1) = 2;
+    input(2) = 5;
+    input(3) = 6;
+    input(4) = 4;
+    input(5) = 1;
+
+    // indices
+    Matrix indices(6);
+    indices(0) = 0;
+    indices(1) = 0;
+    indices(2) = 1;
+    indices(3) = 1;
+    indices(4) = 1;
+    indices(5) = 2;
+
+    // we should pick the corresponding inputs[indices]
+    Matrix reference(3, 6);
+    reference(0, 0) = 3;
+    reference(1, 0) = 0;
+    reference(2, 0) = 0;
+
+    reference(0, 1) = 2;
+    reference(1, 1) = 0;
+    reference(2, 1) = 0;
+
+    reference(0, 2) = 0;
+    reference(1, 2) = 5;
+    reference(2, 2) = 0;
+
+    reference(0, 3) = 0;
+    reference(1, 3) = 6;
+    reference(2, 3) = 0;
+
+    reference(0, 4) = 0;
+    reference(1, 4) = 4;
+    reference(2, 4) = 0;
+
+    reference(0, 5) = 0;
+    reference(1, 5) = 0;
+    reference(2, 5) = 1;
+
+    //compare reference Matrix to loaded Matrix
+    Matrix result(3, 6);
+
+    lucius::matrix::indirectGather(result, input, indices,
+        lucius::matrix::MapOutputToMatchingIndexDimension({1}, {1}, 0, 0.0));
+
+    if(reference != result)
+    {
+       lucius::util::log("test-matrix") << " Matrix Indirect Gather To Matching "
+            "Index Test Failed:\n";
+        lucius::util::log("test-matrix") << "  result matrix " << result.toString();
+        lucius::util::log("test-matrix") << "  does not match reference matrix "
+            << reference.toString();
+    }
+    else
+    {
+       lucius::util::log("test-matrix") << " Matrix Indirect Gather To Matching "
+            "Index Test Passed\n";
+    }
+
+    return reference == result;
+}
+
 bool testGatherIndexToOneHot()
 {
      // create an out of order matrix
@@ -2499,6 +2568,7 @@ bool runTests(bool listTests, const std::string& testFilter)
 
     engine.addTest("adjacent compare", testAdjacentCompare);
     engine.addTest("indirect gather", testIndirectGather);
+    engine.addTest("indirect gather to matching index", testIndirectGatherToMatchingIndex);
     engine.addTest("gather index to one hot", testGatherIndexToOneHot);
 
     engine.addTest("inclusive scan", testInclusiveScan);

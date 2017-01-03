@@ -33,7 +33,7 @@ SoftmaxCostFunction::~SoftmaxCostFunction()
 
 }
 
-void SoftmaxCostFunction::computeCost(Bundle& bundle) const
+void SoftmaxCostFunction::computeCostImplementation(Bundle& bundle) const
 {
     auto& output    = bundle["outputActivations"].get<MatrixVector>().front();
     auto& reference = bundle["referenceActivations"].get<MatrixVector>().front();
@@ -48,7 +48,7 @@ void SoftmaxCostFunction::computeCost(Bundle& bundle) const
         matrix::Multiply(-1.0/samples));
 }
 
-void SoftmaxCostFunction::computeDelta(Bundle& bundle) const
+void SoftmaxCostFunction::computeDeltaImplementation(Bundle& bundle) const
 {
     auto& output    = bundle["outputActivations"].get<MatrixVector>().front();
     auto& reference = bundle["referenceActivations"].get<MatrixVector>().front();

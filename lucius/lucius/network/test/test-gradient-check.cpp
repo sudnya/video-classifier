@@ -221,7 +221,7 @@ static NeuralNetwork createRecurrentCtcNetwork(size_t layerSize, size_t layerCou
 }
 
 static NeuralNetwork createCtcDecoderNetwork(size_t layerSize, size_t layerCount,
-    size_t batchSize)
+    size_t batchSize, size_t beamSize)
 {
     NeuralNetwork network;
 
@@ -238,12 +238,15 @@ static NeuralNetwork createCtcDecoderNetwork(size_t layerSize, size_t layerCount
     network.addLayer(LayerFactory::create("CTCDecoderLayer",
         util::ParameterPack(std::make_tuple("InputSize", layerSize),
         std::make_tuple("BatchSize", batchSize),
-        std::make_tuple("BeamSearchSize", 4),
+        std::make_tuple("BeamSearchSize", beamSize),
+        std::make_tuple("CostFunctionWeight", 0.0),
         std::make_tuple("Precision", "DoublePrecision"))));
     network.back()->setActivationFunction(
         ActivationFunctionFactory::create("NullActivationFunction"));
 
     network.initialize();
+
+    network.setCostFunction(CostFunctionFactory::create("SumOfSquaresCostFunction"));
 
     return network;
 }
@@ -483,7 +486,7 @@ static LabelVector generateReferenceLabels(size_t networkOutputs, size_t timeste
     {
         IndexVector label;
 
-        size_t length = generateRandomInteger(timesteps / 2);
+        size_t length = std::max(static_cast<size_t>(1), generateRandomInteger(timesteps / 2));
 
         for(size_t i = 0; i < length; ++i)
         {
@@ -759,7 +762,7 @@ static bool runTestRecurrentCtc(size_t layerSize, size_t layerCount, size_t time
 }
 
 static bool runTestCtcDecoderLayer(size_t layerSize, size_t layerCount, size_t batchSize,
-    size_t timesteps, bool seed)
+    size_t beamSize, size_t timesteps, bool seed)
 {
     if(seed)
     {
@@ -770,7 +773,7 @@ static bool runTestCtcDecoderLayer(size_t layerSize, size_t layerCount, size_t b
         matrix::srand(1456212655);
     }
 
-    auto network = createCtcDecoderNetwork(layerSize, layerCount, batchSize);
+    auto network = createCtcDecoderNetwork(layerSize, layerCount, batchSize, beamSize);
 
     if(gradientCheckCtc(network, batchSize, timesteps))
     {
@@ -787,7 +790,7 @@ static bool runTestCtcDecoderLayer(size_t layerSize, size_t layerCount, size_t b
 }
 
 static bool runTest(size_t layerSize, size_t layerCount, size_t batchSize,
-    size_t timesteps, bool listTests, const std::string& testFilter, bool seed)
+    size_t beamSize, size_t timesteps, bool listTests, const std::string& testFilter, bool seed)
 {
     lucius::util::TestEngine engine;
 
@@ -839,7 +842,7 @@ static bool runTest(size_t layerSize, size_t layerCount, size_t batchSize,
 
     engine.addTest("ctc decoder", [=]()
     {
-        return runTestCtcDecoderLayer(layerSize, layerCount, batchSize, timesteps, seed);
+        return runTestCtcDecoderLayer(layerSize, layerCount, batchSize, beamSize, timesteps, seed);
     });
 
     if(listTests)
@@ -870,6 +873,7 @@ int main(int argc, char** argv)
     size_t layerCount = 5;
     size_t timesteps  = 10;
     size_t batchSize  = 10;
+    size_t beamSize   = 16;
 
     bool listTests = false;
     std::string testFilter;
@@ -884,6 +888,8 @@ int main(int argc, char** argv)
         "The number of timesteps for recurrent layers.");
     parser.parse("-b", "--batch-size", batchSize, batchSize,
         "The number of samples in a minibatch.");
+    parser.parse("-B", "--beam-size", beamSize, beamSize,
+        "The number of samples in a beam.");
 
     parser.parse("-L", "--log-module", loggingEnabledModules, "",
         "Print out log messages during execution for specified modules "
@@ -912,8 +918,8 @@ int main(int argc, char** argv)
 
     try
     {
-        bool passed = lucius::network::runTest(layerSize, layerCount, batchSize, timesteps,
-            listTests, testFilter, seed);
+        bool passed = lucius::network::runTest(layerSize, layerCount, batchSize, beamSize,
+            timesteps, listTests, testFilter, seed);
 
         if(!passed)
         {

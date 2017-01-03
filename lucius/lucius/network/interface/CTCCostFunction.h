@@ -23,11 +23,11 @@ public:
 
 public:
     /*! \brief Run the cost function on the specified output and reference. */
-    virtual void computeCost(Bundle& bundle) const;
+    virtual void computeCostImplementation(Bundle& bundle) const;
 
     /*! \brief Determine the derivative of the cost function for the specified
                output and reference. */
-    virtual void computeDelta(Bundle& bundle) const;
+    virtual void computeDeltaImplementation(Bundle& bundle) const;
 
 public:
     virtual std::string typeName() const;

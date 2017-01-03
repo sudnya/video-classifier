@@ -42,7 +42,7 @@ static void advancePaths(Matrix& inputPaths, const Matrix& workspace, size_t tim
     }
 
     auto sortedWorkspace = copy(workspace);
-    sortByKey(sortedWorkspace, possiblePaths, {0, 1, 2}, GreaterThan());
+    sortByKey(sortedWorkspace, possiblePaths, {0, 1}, GreaterThan());
 
     auto pathSlice = reshape(
         slice(inputPaths, {0, 0, timestep}, {beamSize, miniBatchSize, timestep + 1}),
@@ -63,7 +63,7 @@ static void advancePaths(Matrix& inputPaths, const Matrix& workspace, size_t tim
 
 static void sortWorkspace(Matrix& workspace)
 {
-    sort(workspace, {0, 1, 2}, GreaterThan());
+    sort(workspace, {0, 1}, GreaterThan());
 
     if(util::isLogEnabled("CTCOperations::Detail"))
     {
@@ -124,11 +124,25 @@ static void expandBeam(Matrix& workspace, const Matrix& inputActivations,
 
     currentInputActivations = reshape(currentInputActivations, {alphabet, miniBatchSize});
 
-    auto workspaceSlice =
-        reshape(slice(workspace, {0, 0, 0}, {beamSize, 1, miniBatchSize}),
-            {beamSize, miniBatchSize});
+    if(util::isLogEnabled("CTCOperations::Detail"))
+    {
+        util::log("CTCOperations::Detail") << "  workspace : "
+            << workspace.debugString();
+    }
 
-    broadcast(workspace, workspace, copy(workspaceSlice), {1}, CopyRight());
+    auto workspaceSlice = slice(workspace, {0, 0, 0}, {beamSize, 1, miniBatchSize});
+
+    auto reshapedWorkspaceSlice = reshape(workspaceSlice, {beamSize, miniBatchSize});
+
+    if(util::isLogEnabled("CTCOperations::Detail"))
+    {
+        util::log("CTCOperations::Detail") << "  sliced workspace : "
+            << workspaceSlice.debugString();
+        util::log("CTCOperations::Detail") << "  reshaped sliced workspace : "
+            << reshapedWorkspaceSlice.debugString();
+    }
+
+    broadcast(workspace, workspace, copy(reshapedWorkspaceSlice), {1}, CopyRight());
 
     if(util::isLogEnabled("CTCOperations::Detail"))
     {
@@ -162,7 +176,7 @@ static void advanceLinks(Matrix& links, const Matrix& workspace, size_t timestep
     }
 
     auto sortedWorkspace = copy(workspace);
-    sortByKey(sortedWorkspace, possibleLinks, {0, 1, 2}, GreaterThan());
+    sortByKey(sortedWorkspace, possibleLinks, {0, 1}, GreaterThan());
 
     auto linksSlice = reshape(
         slice(links, {0, 0, timestep - 1}, {beamSize, miniBatchSize, timestep}),
@@ -318,49 +332,98 @@ void ctcBeamSearch(Matrix& outputActivationWeights, Matrix& inputPaths,
         links, workspace);
 }
 
-Matrix computeFactors(const Matrix& scanPositions)
-{
-    auto factors = reduceByKey(scanPositions,
-        ones(scanPositions.size(), scanPositions.precision()), {2}, Add());
-
-    Matrix selectedFactors(scanPositions.size(), scanPositions.precision());
-
-    indirectGather(selectedFactors, scanPositions, apply(factors, Divide(1.0)),
-        MapOutputToIndexDimension({0, 1, 2}, 0, {1, 2, 3}));
-
-    return selectedFactors;
-}
-
 void ctcBeamSearchInputGradients(Matrix& inputDeltas, const Matrix& outputActivationWeights,
-    const Matrix& inputPaths, const Matrix& outputDeltas, size_t beamSize)
+    const Matrix& inputPaths, const Matrix& outputDeltas,
+    const Matrix& inputActivations)
 {
-    // {beamSize, miniBatchSize, timesteps}
-    auto transitionPositions = applyToAdjacentElements(inputPaths, 2, NotEqual(), 0.0);
+    if(util::isLogEnabled("CTCOperations::Detail"))
+    {
+        util::log("CTCOperations::Detail") << "Running back propagation.\n";
+    }
 
-    // {beamSize, miniBatchSize, timesteps}
-    auto scanPositions = inclusiveScan(transitionPositions, 2, Add(), 0.0);
+    if(util::isLogEnabled("CTCOperations::Detail"))
+    {
+        util::log("CTCOperations::Detail") << " output deltas: " << outputDeltas.debugString();
+        util::log("CTCOperations::Detail") << " input activations: "
+            << inputActivations.debugString();
+    }
 
-    auto factors = computeFactors(scanPositions);
+    Matrix outputActivations(outputDeltas.size(), outputDeltas.precision());
 
-    // selected output deltas size is {beamSize, miniBatchSize, timesteps}
-    // output deltas {alphabet, beamSize, miniBatchSize, timesteps}
-    // scan positions {beamSize, miniBatchSize, timesteps}
-    Matrix selectedOutputDeltas(scanPositions.size(), scanPositions.precision());
+    size_t beamSize      = inputPaths.size()[0];
+    size_t miniBatchSize = inputPaths.size()[1];
+    size_t timesteps     = inputPaths.size()[2];
 
-    indirectGather(selectedOutputDeltas, outputDeltas, scanPositions,
-        MapOutputToIndexDimension({0, 1, 2}, 0, {1, 2, 3}));
+    // output activations is {alphabet, beamSize, miniBatchSize, timesteps}
+    gather(outputActivations, reshape(inputPaths, {1, beamSize, miniBatchSize, timesteps}),
+        GatherIndexToOneHot(0));
 
-    auto scaledOutputDeltas = apply(Matrix(factors), selectedOutputDeltas, Multiply());
+    if(util::isLogEnabled("CTCOperations::Detail"))
+    {
+        util::log("CTCOperations::Detail") << " output activations: "
+            << outputActivations.debugString();
+    }
 
-    // scaled output deltas size is {beamSize, miniBatchSize, timesteps}
-    // input paths is {beamSize, miniBatchSize, timesteps}
-    // expanded input deltas {alphabet, beamSize, miniBatchSize, timesteps}
-    Matrix expandedInputDeltas(outputDeltas.size(), outputDeltas.precision());
+    // output deltas is {alphabet, beamSize, miniBatchSize, timesteps}
+    // activations deltas product is {alphabet, beamSize, miniBatchSize, timesteps}
+    auto activationDeltasProduct = apply(Matrix(outputActivations), outputDeltas, Multiply());
 
-    indirectGather(expandedInputDeltas, scaledOutputDeltas, inputPaths,
-        MapOutputToMatchingIndexDimension({1, 2, 3}, 0, {1, 2, 3}));
+    if(util::isLogEnabled("CTCOperations::Detail"))
+    {
+        util::log("CTCOperations::Detail") << " activations deltas product: "
+            << activationDeltasProduct.debugString();
+    }
 
+    // reduced activations deltas product is {beamSize, miniBatchSize}
+    auto reducedActivationDeltasProduct = reduce(activationDeltasProduct, {0, 3}, Add());
+
+    if(util::isLogEnabled("CTCOperations::Detail"))
+    {
+        util::log("CTCOperations::Detail") << " reduced activations deltas product: "
+            << reducedActivationDeltasProduct.debugString();
+    }
+
+    // unweighted input deltas is {alphabet, beamSize, miniBatchSize, timesteps}
+    auto unweightedInputDeltas = broadcast(outputActivations, reducedActivationDeltasProduct,
+        {0, 3}, Multiply());
+
+    if(util::isLogEnabled("CTCOperations::Detail"))
+    {
+        util::log("CTCOperations::Detail") << " unweighted input deltas: "
+            << unweightedInputDeltas.debugString();
+    }
+
+    // unscaled input deltas is {alphabet, beamSize, miniBatchSize, timesteps}
+    auto unscaledInputDeltas = broadcast(unweightedInputDeltas, outputActivationWeights, {0, 3},
+        Multiply());
+
+    if(util::isLogEnabled("CTCOperations::Detail"))
+    {
+        util::log("CTCOperations::Detail") << " unscaled input deltas: "
+            << unscaledInputDeltas.debugString();
+    }
+
+    // expanded input deltas is {alphabet, beamSize, miniBatchSize, timesteps}
+    auto expandedInputDeltas = broadcast(Matrix(unscaledInputDeltas), inputActivations,
+        {1}, Divide());
+
+    if(util::isLogEnabled("CTCOperations::Detail"))
+    {
+        util::log("CTCOperations::Detail") << " expanded input deltas: "
+            << expandedInputDeltas.debugString();
+    }
+
+    // input deltas is {alphabet, miniBatchSize, timesteps}
     reduce(inputDeltas, expandedInputDeltas, {1}, Add());
+
+    // divide by beam size
+    apply(inputDeltas, inputDeltas, Multiply(1.0/beamSize));
+
+    if(util::isLogEnabled("CTCOperations::Detail"))
+    {
+        util::log("CTCOperations::Detail") << " input deltas: "
+            << expandedInputDeltas.debugString();
+    }
 }
 
 }

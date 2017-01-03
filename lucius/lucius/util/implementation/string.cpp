@@ -257,6 +257,22 @@ std::string join(const StringVector& strings, const std::string& delimiter)
     return result;
 }
 
+std::string toString(const std::vector<size_t>& indices)
+{
+    std::stringstream stream;
+
+    stream << "[";
+
+    for(auto& index : indices)
+    {
+        stream << " " << index;
+    }
+
+    stream << " ]";
+
+    return stream.str();
+}
+
 }
 
 }
