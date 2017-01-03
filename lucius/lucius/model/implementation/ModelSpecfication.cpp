@@ -123,6 +123,42 @@ static void loadModelAttributes(Model& model, const util::PropertyTree& specific
 
 typedef std::map<std::string, util::ParameterPack> TypeMap;
 
+database::SampleDatabase::StringVector getAllPossibleGraphemes(const util::PropertyTree& specification)
+{
+    database::SampleDatabase::StringVector labels;
+    
+    if(!specification.exists("infer-outputs-from"))
+    {
+        if(specification.exists("model-attributes.Graphemes"))
+        {
+            for(auto& grapheme : specification.get("model-attributes.Graphemes"))
+            {
+                labels.push_back(grapheme.key());
+            }
+        }
+        
+        return labels;
+    }
+
+    auto datasetPath = specification.get<std::string>("infer-outputs-from");
+
+    database::SampleDatabase inputDatabase(datasetPath);
+
+    if(specification.exists("model-attributes.Graphemes"))
+    {
+        for(auto& grapheme : specification.get("model-attributes.Graphemes"))
+        {
+            inputDatabase.addGrapheme(grapheme.key());
+        }
+    }
+
+    inputDatabase.load();
+
+    labels = inputDatabase.getAllPossibleLabels();
+
+    return labels;
+}
+
 matrix::Dimension computeInputSize(const util::PropertyTree& model)
 {
     if(!model.exists("model-attributes"))
@@ -149,6 +185,15 @@ matrix::Dimension computeInputSize(const util::PropertyTree& model)
         result.push_back(1);
         result.push_back(1);
         result.push_back(1);
+    }
+    else if(attributes.exists("SegmentSize"))
+    {
+        result.push_back(getAllPossibleGraphemes(model).size()); 
+        result.push_back(1); 
+        result.push_back(1); 
+        result.push_back(1); // minibatch
+        result.push_back(1); // timesteps
+
     }
     else
     {
@@ -186,54 +231,31 @@ static void appendInputSize(util::ParameterPack& parameters, const matrix::Dimen
 static void setupOutputLayerParameters(model::Model& model,
     util::ParameterPack& layerParameters, const util::PropertyTree& specification)
 {
-    database::SampleDatabase::StringVector labels;
-
-    if(!specification.exists("infer-outputs-from"))
-    {
-        if(specification.exists("model-attributes.Graphemes"))
-        {
-            for(auto& grapheme : specification.get("model-attributes.Graphemes"))
-            {
-                labels.push_back(grapheme.key());
-            }
-
-            model.setAttribute("UsesGraphemes", "1");
-        }
-    }
-    else
-    {
-        auto datasetPath = specification.get<std::string>("infer-outputs-from");
-
-        database::SampleDatabase inputDatabase(datasetPath);
-
-        if(specification.exists("model-attributes.Graphemes"))
-        {
-            for(auto& grapheme : specification.get("model-attributes.Graphemes"))
-            {
-                inputDatabase.addGrapheme(grapheme.key());
-            }
-
-            model.setAttribute("UsesGraphemes", "1");
-        }
-
-        inputDatabase.load();
-
-        labels = inputDatabase.getAllPossibleLabels();
-
-        if(specification.exists("model-attributes.Graphemes"))
-        {
-            inputDatabase.addGrapheme("-SEPARATOR-");
-        }
-    }
-
-    size_t labelCount = labels.size();
+    auto labels = getAllPossibleGraphemes(specification);
     size_t index = 0;
 
-    // The 0th network output must be a separator for CTC
     if(specification.exists("model-attributes.Graphemes"))
     {
-        model.setOutputLabel(index++, "-SEPARATOR-");
-        labelCount++;
+        model.setAttribute("UsesGraphemes", "1");
+    }
+        
+    // The 0th network output must be a separator for CTC
+    if(specification.exists("cost-function") &&
+        specification.get<std::string>("cost-function") == "CTCCostFunction")
+    {
+        if(specification.exists("model-attributes.Graphemes"))
+        {
+            model.setOutputLabel(index++, "-SEPARATOR-");
+        }
+    }
+    
+    if(specification.exists("cost-function") &&
+        specification.get<std::string>("cost-function") == "SoftmaxCostFunction")
+    {
+        if(specification.exists("model-attributes.Graphemes"))
+        {
+            model.setOutputLabel(index++, "UNKOWN");
+        }
     }
 
     for(auto& label : labels)
@@ -241,7 +263,19 @@ static void setupOutputLayerParameters(model::Model& model,
         model.setOutputLabel(index++, label);
     }
 
-    layerParameters.insert("OutputSize", labelCount);
+    if(specification.exists("cost-function") &&
+        specification.get<std::string>("cost-function") == "CTCCostFunction")
+    {
+        labels.push_back("-SEPARATOR-");
+    }
+
+    if(specification.exists("cost-function") &&
+        specification.get<std::string>("cost-function") == "SoftmaxCostFunction")
+    {
+        labels.push_back("UNKOWN");
+    }
+
+    layerParameters.insert("OutputSize", labels.size());
 }
 
 static void populateSubgraphLayer(std::unique_ptr<Layer>& layer,

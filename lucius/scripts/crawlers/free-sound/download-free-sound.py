@@ -16,7 +16,7 @@ def touchFile(path, times=None):
         os.utime(path, times)
 
 def sanitize(path):
-    return path.replace(",", "").strip()
+    return path.replace(",", "").replace("\r", "").replace("\n", "").strip()
 
 def getExtension(path):
     filename, extension = os.path.splitext(path)
@@ -216,10 +216,17 @@ class Downloader:
 
                 try:
                     sounds = self.getSoundsOnPage(pageNumber)
-                except Exception as e:
+                except requests.exceptions.RequestException as e:
                     self.logger.warn("Failed to get sounds on page " + str(pageNumber))
-                    self.logger.warn(" with error " + str(e))
-                    pass
+                    self.logger.warn("Error is '" + repr(e) + "'")
+                    continue
+                except requests.exceptions.HTTPError as e:
+                    self.logger.warn("Failed to download sound")
+                    self.logger.warn("Error is '" + repr(e) + "'")
+                    continue
+                except Exception:
+                    self.logger.warn("Failed to get sounds on page " + str(pageNumber))
+                    continue
 
                 self.logger.debug("Got sounds on page " + str(pageNumber))
 
@@ -298,9 +305,15 @@ class Downloader:
 
         try:
             sound.data = self.downloadData(url, sound.getLabel())
+        except requests.exceptions.RequestException as e:
+            self.logger.warn("Failed to download sound")
+            self.logger.warn("Error is '" + repr(e) + "'")
+        except requests.exceptions.HTTPError as e:
+            self.logger.warn("Failed to download sound")
+            self.logger.warn("Error is '" + repr(e) + "'")
         except Exception as e:
             self.logger.warning("Downloading sound from URL '" + url + "' failed with '" +
-                str(e) + "'.")
+                repr(e) + "'.")
 
 
     def getFilename(self, path):
