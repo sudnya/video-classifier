@@ -60,23 +60,6 @@ void SumOfSquaresCostFunction::computeDeltaImplementation(Bundle& bundle) const
     auto& reference = bundle["referenceActivations"].get<MatrixVector>().front();
 
     bundle["outputDeltas"] = MatrixVector({apply(Matrix(output), reference, matrix::Subtract())});
-
-/*
-    if(bundle.contains("referenceLabels"))
-    {
-        auto& deltas = bundle["outputDeltas"].get<MatrixVector>().front();
-        auto& labels = bundle["referenceLabels"].get<LabelVector>();
-
-        IndexVector labelLengths;
-
-        for(auto& label : labels)
-        {
-            labelLengths.push_back(label.size());
-        }
-
-        recurrentZeroEnds(deltas, labelLengths);
-    }
-*/
 }
 
 std::unique_ptr<CostFunction> SumOfSquaresCostFunction::clone() const
