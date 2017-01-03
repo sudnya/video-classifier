@@ -697,7 +697,7 @@ void LibavcodecAudioLibrary::saveAudio(std::ostream& stream, const std::string& 
 
 LibavcodecAudioLibrary::StringVector LibavcodecAudioLibrary::getSupportedExtensions() const
 {
-    return StringVector(util::split(".mp4|.mp2|.mp3|.flac", "|"));
+    return StringVector(util::split(".mp4|.mp2|.mp3|.flac|.ogg|.aiff|.aif|.wav", "|"));
 }
 
 size_t LibavcodecAudioLibrary::getBitRate() const
