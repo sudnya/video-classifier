@@ -35,10 +35,9 @@ void CostFunction::computeCost(Bundle& bundle) const
 {
     computeCostImplementation(bundle);
 
-    auto costs = bundle["costs"].get<Matrix>();
-
     if(bundle.contains("outputActivationWeights"))
     {
+        auto costs = bundle["costs"].get<Matrix>();
         auto weights = flatten(bundle["outputActivationWeights"].get<Matrix>());
 
         Dimension broadcastDimensions = removeDimensions(range(costs.size()),

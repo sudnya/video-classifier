@@ -224,6 +224,7 @@ static void expandLabels(Bundle& bundle, size_t beamSize)
     auto& outputActivations = outputActivationsVector.back();
 
     auto& labels = bundle["referenceLabels"].get<LabelVector>();
+    auto& inputTimesteps = bundle["inputTimesteps"].get<IndexVector>();
 
     size_t characters    = outputActivations.size().front();
     size_t miniBatchSize = outputActivations.size()[outputActivations.size().size() - 2];
@@ -232,16 +233,19 @@ static void expandLabels(Bundle& bundle, size_t beamSize)
     size_t originalMiniBatchSize = miniBatchSize / beamSize;
 
     LabelVector expandedLabels;
+    IndexVector expandedTimesteps;
 
     for(size_t miniBatch = 0; miniBatch < originalMiniBatchSize; ++miniBatch)
     {
         for(size_t beam = 0; beam < beamSize; ++beam)
         {
             expandedLabels.push_back(labels[miniBatch]);
+            expandedTimesteps.push_back(inputTimesteps[miniBatch]);
         }
     }
 
     labels = std::move(expandedLabels);
+    inputTimesteps = std::move(expandedTimesteps);
 
     auto referenceActivations = matrix::zeros({characters, miniBatchSize, maxTimesteps},
         outputActivations.precision());
@@ -298,6 +302,25 @@ static void reshapeOutputActivations(Matrix& outputActivations, const Dimension&
     outputActivations = reshape(outputActivations, outputSize);
 }
 
+static void computeCtcCosts(Bundle& bundle, const std::string& costFunctionName,
+    double costFunctionWeight,
+    const Matrix& inputActivations, const LabelVector& labels, const IndexVector& inputTimesteps)
+{
+    auto costFunction = CostFunctionFactory::create(costFunctionName);
+
+    Bundle inputBundle;
+
+    inputBundle["outputActivations"] = MatrixVector({inputActivations});
+    inputBundle["referenceLabels"]   = labels;
+    inputBundle["inputTimesteps"]    = inputTimesteps;
+
+    costFunction->computeCost(inputBundle);
+
+    auto costs = inputBundle["costs"].get<Matrix>();
+
+    bundle["cost"] = static_cast<double>(reduce(costs, {}, matrix::Add())[0]) * costFunctionWeight;
+}
+
 void CTCDecoderLayer::runForwardImplementation(Bundle& bundle)
 {
     auto& inputActivationsVector  = bundle[ "inputActivations"].get<MatrixVector>();
@@ -351,15 +374,25 @@ void CTCDecoderLayer::runForwardImplementation(Bundle& bundle)
             << outputActivationWeights.shapeString() << "\n";
     }
 
-    _implementation->saveInputLabels(bundle["referenceLabels"].get<LabelVector>());
-    _implementation->saveInputTimesteps(bundle["inputTimesteps"].get<IndexVector>());
+    _implementation->saveInputLabels(   bundle["referenceLabels"].get<LabelVector>());
+    _implementation->saveInputTimesteps(bundle["inputTimesteps" ].get<IndexVector>());
 
     outputActivationsVector.push_back(outputActivations);
 
     expandLabels(bundle, _implementation->getBeamSize());
+
+    if(_implementation->hasCostFunction())
+    {
+        auto inputTimesteps = _implementation->getInputTimesteps();
+        auto inputLabels    = _implementation->getInputLabels();
+
+        computeCtcCosts(bundle, _implementation->getCostFunctionName(),
+            _implementation->getCostFunctionWeight(),
+            inputActivations, inputLabels, inputTimesteps);
+    }
 }
 
-Matrix computeCtcInputDeltas(const std::string& costFunctionName,
+static Matrix computeCtcInputDeltas(const std::string& costFunctionName,
     double costFunctionWeight, const Matrix& inputActivations, const LabelVector& inputLabels,
     const IndexVector& inputTimesteps)
 {
@@ -437,6 +470,10 @@ void CTCDecoderLayer::runReverseImplementation(Bundle& bundle)
         auto ctcInputDeltas = computeCtcInputDeltas(_implementation->getCostFunctionName(),
             _implementation->getCostFunctionWeight(),
             inputActivations, inputLabels, inputTimesteps);
+
+        // TODO: see if it is possible to remove this line, it is only necessary because
+        //       by CTC can't tell the difference between a beam and a minibatch
+        apply(ctcInputDeltas, ctcInputDeltas, matrix::Multiply(miniBatchSize));
 
         if(util::isLogEnabled("CTCDecoderLayer::Detail"))
         {
