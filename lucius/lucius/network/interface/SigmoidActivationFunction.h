@@ -44,7 +44,7 @@ public:
     virtual std::string typeName() const;
 
 public:
-    virtual ActivationFunction* clone() const;
+    virtual std::unique_ptr<ActivationFunction> clone() const;
 
 };
 

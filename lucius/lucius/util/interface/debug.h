@@ -123,19 +123,10 @@ namespace util
     /*! \brief Return the stream with the current name */
     extern std::ostream& _getStream(const std::string& name);
 
-    #if 0
-    extern NullStream nullstream;
-
-    inline std::ostream& log(const std::string& path)
-    {
-            return nullstream;
-    }
-    #else
     inline std::ostream& log(const std::string& path)
     {
             return _getStream(path);
     }
-    #endif
 
     extern bool isLogEnabled(const std::string& logName);
 

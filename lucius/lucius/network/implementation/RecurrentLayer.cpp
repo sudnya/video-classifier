@@ -1,7 +1,7 @@
 /*  \file   RecurrentLayer.cpp
     \author Sudnya Diamos
-     \date   May 9, 2016
-     \brief  The implementation of the RecurrentLayer class.
+    \date   May 9, 2016
+    \brief  The implementation of the RecurrentLayer class.
 */
 
 // Lucius Includes
@@ -51,7 +51,7 @@ RecurrentLayer::RecurrentLayer(
     size_t layerSize, size_t layers,
     int direction, int layerType, int inputMode)
 : RecurrentLayer(layerSize, layers,
-    direction, layerType, inputMode, matrix::SinglePrecision())
+    direction, layerType, inputMode, matrix::Precision::getDefaultPrecision())
 {
 
 }
@@ -463,8 +463,8 @@ void RecurrentLayer::load(util::InputTarArchive& archive,
 {
     _weights = matrix::loadFromArchive(archive, properties["weights"]);
 
-    _layerSize             = properties.get<size_t>("layer-size");
-    _layers                = properties.get<size_t>("layers");
+    _layerSize = properties.get<size_t>("layer-size");
+    _layers    = properties.get<size_t>("layers");
 
     _direction = properties.get<int>("direction");
     _layerType = properties.get<int>("layer-type");

@@ -14,6 +14,7 @@
 #include <lucius/matrix/interface/Operation.h>
 #include <lucius/matrix/interface/SoftmaxOperations.h>
 
+#include <lucius/util/interface/memory.h>
 #include <lucius/util/interface/debug.h>
 
 #include <string>
@@ -32,7 +33,7 @@ SoftmaxCostFunction::~SoftmaxCostFunction()
 
 }
 
-void SoftmaxCostFunction::computeCost(Bundle& bundle) const
+void SoftmaxCostFunction::computeCostImplementation(Bundle& bundle) const
 {
     auto& output    = bundle["outputActivations"].get<MatrixVector>().front();
     auto& reference = bundle["referenceActivations"].get<MatrixVector>().front();
@@ -47,7 +48,7 @@ void SoftmaxCostFunction::computeCost(Bundle& bundle) const
         matrix::Multiply(-1.0/samples));
 }
 
-void SoftmaxCostFunction::computeDelta(Bundle& bundle) const
+void SoftmaxCostFunction::computeDeltaImplementation(Bundle& bundle) const
 {
     auto& output    = bundle["outputActivations"].get<MatrixVector>().front();
     auto& reference = bundle["referenceActivations"].get<MatrixVector>().front();
@@ -55,9 +56,9 @@ void SoftmaxCostFunction::computeDelta(Bundle& bundle) const
     bundle["outputDeltas"] = MatrixVector({apply(softmax(output), reference, matrix::Subtract())});
 }
 
-CostFunction* SoftmaxCostFunction::clone() const
+std::unique_ptr<CostFunction> SoftmaxCostFunction::clone() const
 {
-    return new SoftmaxCostFunction;
+    return std::make_unique<SoftmaxCostFunction>();
 }
 
 std::string SoftmaxCostFunction::typeName() const

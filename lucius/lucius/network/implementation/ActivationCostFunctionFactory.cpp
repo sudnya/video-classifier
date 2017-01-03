@@ -8,23 +8,26 @@
 #include <lucius/network/interface/ActivationCostFunctionFactory.h>
 #include <lucius/network/interface/NullActivationCostFunction.h>
 
+#include <lucius/util/interface/memory.h>
+
 namespace lucius
 {
 
 namespace network
 {
 
-ActivationCostFunction* ActivationCostFunctionFactory::create(const std::string& name)
+std::unique_ptr<ActivationCostFunction> ActivationCostFunctionFactory::create(
+    const std::string& name)
 {
     if(name == "NullActivationCostFunction")
     {
-        return new NullActivationCostFunction;
+        return std::make_unique<NullActivationCostFunction>();
     }
 
-    return nullptr;
+    return std::unique_ptr<ActivationCostFunction>();
 }
 
-ActivationCostFunction* ActivationCostFunctionFactory::create()
+std::unique_ptr<ActivationCostFunction> ActivationCostFunctionFactory::create()
 {
     return create("KLDivergenceActivationCostFunction");
 }

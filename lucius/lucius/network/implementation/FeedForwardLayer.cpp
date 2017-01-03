@@ -284,6 +284,7 @@ void FeedForwardLayer::runReverseImplementation(Bundle& bundle)
 
     if(util::isLogEnabled("FeedForwardLayer"))
     {
+        util::log("FeedForwardLayer::Detail") << "  samples: " << samples << "\n";
         util::log("FeedForwardLayer") << "  weight grad shape: "
             << weightGradient.shapeString() << "\n";
     }

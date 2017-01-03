@@ -381,15 +381,15 @@ size_t getMatricesPerLayer(const RecurrentOpsHandle& handle)
     if(handle.layerType == RECURRENT_SIMPLE_TYPE ||
         handle.layerType == RECURRENT_SIMPLE_TANH_TYPE)
     {
-        return 4;
+        return 4 * getDirectionMultiplier(handle);
     }
     else if(handle.layerType == RECURRENT_GRU_TYPE)
     {
-        return 12;
+        return 12 * getDirectionMultiplier(handle);
     }
     else
     {
-        return 16;
+        return 16 * getDirectionMultiplier(handle);
     }
 }
 
@@ -402,7 +402,7 @@ matrix::Matrix sliceLayerWeights(const matrix::Matrix& weights, const RecurrentO
 
 size_t getTotalWeightMatrices(const RecurrentOpsHandle& handle)
 {
-    return handle.layers * getMatricesPerLayer(handle) * getDirectionMultiplier(handle);
+    return handle.layers * getMatricesPerLayer(handle);
 }
 
 bool isBiasMatrix(const RecurrentOpsHandle& handle, size_t index)

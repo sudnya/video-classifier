@@ -10,6 +10,8 @@
 #include <lucius/matrix/interface/Matrix.h>
 #include <lucius/matrix/interface/MatrixOperations.h>
 
+#include <lucius/util/interface/memory.h>
+
 namespace lucius
 {
 
@@ -32,9 +34,9 @@ NullWeightRegularizationCostFunction::Matrix NullWeightRegularizationCostFunctio
     return zeros(weights.size(), weights.precision());
 }
 
-WeightCostFunction* NullWeightRegularizationCostFunction::clone() const
+std::unique_ptr<WeightCostFunction> NullWeightRegularizationCostFunction::clone() const
 {
-    return new NullWeightRegularizationCostFunction;
+    return std::make_unique<NullWeightRegularizationCostFunction>();
 }
 
 std::string NullWeightRegularizationCostFunction::typeName() const

@@ -11,6 +11,8 @@
 #include <lucius/matrix/interface/MatrixOperations.h>
 #include <lucius/matrix/interface/Operation.h>
 
+#include <lucius/util/interface/memory.h>
+
 namespace lucius
 {
 
@@ -45,9 +47,9 @@ Operation SigmoidActivationFunction::getDerivativeOperation() const
     return matrix::SigmoidDerivative();
 }
 
-ActivationFunction* SigmoidActivationFunction::clone() const
+std::unique_ptr<ActivationFunction> SigmoidActivationFunction::clone() const
 {
-    return new SigmoidActivationFunction(*this);
+    return std::make_unique<SigmoidActivationFunction>(*this);
 }
 
 std::string SigmoidActivationFunction::typeName() const

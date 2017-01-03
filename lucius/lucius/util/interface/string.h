@@ -56,6 +56,9 @@ namespace util
 
     /*! \brief Join a set of strings together. */
     std::string join(const StringVector& strings, const std::string& delimiter);
+
+    /*! \brief Convert an array of integers into a string representation. */
+    std::string toString(const std::vector<size_t>& indices);
 }
 
 }

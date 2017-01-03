@@ -17,7 +17,9 @@
 #include <lucius/network/interface/LayerFactory.h>
 #include <lucius/network/interface/Layer.h>
 #include <lucius/network/interface/CostFunctionFactory.h>
+#include <lucius/network/interface/CostFunction.h>
 #include <lucius/network/interface/ActivationFunctionFactory.h>
+#include <lucius/network/interface/ActivationFunction.h>
 #include <lucius/network/interface/Bundle.h>
 
 #include <lucius/input/interface/InputDataProducer.h>
@@ -271,10 +273,12 @@ static void createModel(Model& model, const Parameters& parameters)
     model.setAttribute("UsesGraphemes", true);
 }
 
-static void setSampleStatistics(Model& model, const Parameters& parameters, InputDataProducer& producer)
+static void setSampleStatistics(Model& model, const Parameters& parameters,
+    InputDataProducer& producer)
 {
     // Setup sample stats
-    std::unique_ptr<Engine> engine(lucius::engine::EngineFactory::create("SampleStatisticsEngine"));
+    std::unique_ptr<Engine> engine(lucius::engine::EngineFactory::create(
+        "SampleStatisticsEngine"));
 
     engine->setModel(&model);
     engine->setBatchSize(128);

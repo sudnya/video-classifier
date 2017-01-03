@@ -198,7 +198,7 @@ static std::string toString2D(const Matrix& m, size_t limit)
             stream << matrix(row, column) << " ";
         }
 
-        if(row + 1 != finalRow) stream << "\n ";
+        if(row + 1 != finalRow) stream << "\n  ";
     }
 
     stream << "]";

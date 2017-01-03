@@ -36,7 +36,7 @@ CTCCostFunction::~CTCCostFunction()
 
 }
 
-void CTCCostFunction::computeCost(Bundle& bundle) const
+void CTCCostFunction::computeCostImplementation(Bundle& bundle) const
 {
     auto& output    = bundle["outputActivations"].get<MatrixVector>().front();
     auto& labels    = bundle["referenceLabels"].get<LabelVector>();
@@ -52,7 +52,7 @@ void CTCCostFunction::computeCost(Bundle& bundle) const
     bundle["costs"] = apply(cost, matrix::Divide(miniBatchSize));
 }
 
-void CTCCostFunction::computeDelta(Bundle& bundle) const
+void CTCCostFunction::computeDeltaImplementation(Bundle& bundle) const
 {
     auto& output    = bundle["outputActivations"].get<MatrixVector>().front();
     auto& labels    = bundle["referenceLabels"].get<LabelVector>();
@@ -68,9 +68,9 @@ void CTCCostFunction::computeDelta(Bundle& bundle) const
     bundle["outputDeltas"] = MatrixVector({apply(gradients, matrix::Divide(miniBatchSize))});
 }
 
-CostFunction* CTCCostFunction::clone() const
+std::unique_ptr<CostFunction> CTCCostFunction::clone() const
 {
-    return new CTCCostFunction;
+    return std::make_unique<CTCCostFunction>();
 }
 
 std::string CTCCostFunction::typeName() const

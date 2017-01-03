@@ -54,7 +54,7 @@ MaxPoolingLayer::MaxPoolingLayer(const Dimension& inputSize, const Dimension& fi
 
 MaxPoolingLayer::~MaxPoolingLayer()
 {
-
+    // intentionally blank
 }
 
 MaxPoolingLayer::MaxPoolingLayer(const MaxPoolingLayer& l)
@@ -163,7 +163,6 @@ MatrixVector& MaxPoolingLayer::weights()
 const MatrixVector& MaxPoolingLayer::weights() const
 {
     static MatrixVector w;
-
     return w;
 }
 

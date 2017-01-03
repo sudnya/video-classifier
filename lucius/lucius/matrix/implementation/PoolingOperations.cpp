@@ -3,9 +3,10 @@
 #include <lucius/matrix/interface/PoolingOperations.h>
 
 #include <lucius/matrix/interface/MatrixOperations.h>
-#include <lucius/matrix/interface/CopyOperations.h>
+#include <lucius/matrix/interface/GatherOperations.h>
 #include <lucius/matrix/interface/MatrixTransformations.h>
 #include <lucius/matrix/interface/Operation.h>
+#include <lucius/matrix/interface/GatherOperation.h>
 #include <lucius/matrix/interface/CudnnLibrary.h>
 #include <lucius/matrix/interface/CudnnDescriptors.h>
 

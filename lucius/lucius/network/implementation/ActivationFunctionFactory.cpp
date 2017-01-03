@@ -11,31 +11,33 @@
 #include <lucius/network/interface/RectifiedLinearActivationFunction.h>
 #include <lucius/network/interface/NullActivationFunction.h>
 
+#include <lucius/util/interface/memory.h>
+
 namespace lucius
 {
 
 namespace network
 {
 
-ActivationFunction* ActivationFunctionFactory::create(const std::string& name)
+std::unique_ptr<ActivationFunction> ActivationFunctionFactory::create(const std::string& name)
 {
     if(name == "RectifiedLinearActivationFunction")
     {
-        return new RectifiedLinearActivationFunction;
+        return std::make_unique<RectifiedLinearActivationFunction>();
     }
     else if(name == "SigmoidActivationFunction")
     {
-        return new SigmoidActivationFunction;
+        return std::make_unique<SigmoidActivationFunction>();
     }
     else if(name == "NullActivationFunction")
     {
-        return new NullActivationFunction;
+        return std::make_unique<NullActivationFunction>();
     }
 
-    return nullptr;
+    return std::unique_ptr<ActivationFunction>();
 }
 
-ActivationFunction* ActivationFunctionFactory::create()
+std::unique_ptr<ActivationFunction> ActivationFunctionFactory::create()
 {
     return create("RectifiedLinearActivationFunction");
 }

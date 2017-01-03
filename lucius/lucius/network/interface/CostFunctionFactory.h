@@ -8,6 +8,7 @@
 
 // Standard Library Includes
 #include <string>
+#include <memory>
 
 // Forward Declarations
 namespace lucius { namespace network { class CostFunction; } }
@@ -22,10 +23,10 @@ namespace network
 class CostFunctionFactory
 {
 public:
-    static CostFunction* create(const std::string& costFunctionName);
+    static std::unique_ptr<CostFunction> create(const std::string& costFunctionName);
 
     // Create the default cost function
-    static CostFunction* create();
+    static std::unique_ptr<CostFunction> create();
 
 };
 

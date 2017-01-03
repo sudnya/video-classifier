@@ -11,31 +11,33 @@
 #include <lucius/network/interface/SumOfSquaresCostFunction.h>
 #include <lucius/network/interface/SoftmaxCostFunction.h>
 
+#include <lucius/util/interface/memory.h>
+
 namespace lucius
 {
 
 namespace network
 {
 
-CostFunction* CostFunctionFactory::create(const std::string& name)
+std::unique_ptr<CostFunction> CostFunctionFactory::create(const std::string& name)
 {
     if("SumOfSquaresCostFunction" == name)
     {
-        return new SumOfSquaresCostFunction;
+        return std::make_unique<SumOfSquaresCostFunction>();
     }
     else if("SoftmaxCostFunction" == name)
     {
-        return new SoftmaxCostFunction;
+        return std::make_unique<SoftmaxCostFunction>();
     }
     else if("CTCCostFunction" == name)
     {
-        return new CTCCostFunction;
+        return std::make_unique<CTCCostFunction>();
     }
 
-    return nullptr;
+    return std::unique_ptr<CostFunction>(nullptr);
 }
 
-CostFunction* CostFunctionFactory::create()
+std::unique_ptr<CostFunction> CostFunctionFactory::create()
 {
     return create("SumOfSquaresCostFunction");
 }

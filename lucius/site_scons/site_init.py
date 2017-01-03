@@ -45,7 +45,7 @@ gCompilerOptions = {
             'standard': ['-stdlib=libc++', '-std=c++0x', '-pthread']},
         'clang++' : {'warn_all' : '-Wall',
             'warn_errors' : '-Werror',
-            'optimization' : ['-O3'], 'debug' : ['-g'],
+            'optimization' : ['-O3'], 'debug' : ['-g', '-fsanitize=address'],
             'exception_handling' : '',
             'standard': ['-stdlib=libc++', '-std=c++11', '-pthread']},
         'cl'  : {'warn_all' : '/Wall',
@@ -65,7 +65,7 @@ gLinkerOptions = {
         'clang'  : {'debug' : '', 'libraries' : ''},
         'g++'  : {'debug' : '', 'libraries' : ''},
         'c++'  : {'debug' : '', 'libraries' : '-lc++'},
-        'clang++'  : {'debug' : '', 'libraries' : '-lc++'},
+        'clang++'  : {'debug' : ['-fsanitize=address'], 'libraries' : '-lc++'},
         'link' : {'debug' : '/debug', 'libraries' : ''}
     }
 

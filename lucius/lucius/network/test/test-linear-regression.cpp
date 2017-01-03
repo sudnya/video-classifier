@@ -6,6 +6,8 @@
 
 // Lucius Includes
 #include <lucius/network/interface/ActivationFunctionFactory.h>
+#include <lucius/network/interface/ActivationFunction.h>
+#include <lucius/network/interface/CostFunction.h>
 #include <lucius/network/interface/CostFunctionFactory.h>
 #include <lucius/network/interface/FeedForwardLayer.h>
 #include <lucius/network/interface/NeuralNetwork.h>

@@ -29,17 +29,21 @@ public:
 
 public:
     /*! \brief Run the cost function on the specified output and reference. */
-    virtual void computeCost(Bundle& bundle) const = 0;
+    void computeCost(Bundle& bundle) const;
 
     /*! \brief Determine the change in the output needed to minimize the cost function. */
-    virtual void computeDelta(Bundle& bundle) const = 0;
+    void computeDelta(Bundle& bundle) const;
+
+public:
+    virtual void computeCostImplementation(Bundle& bundle) const = 0;
+    virtual void computeDeltaImplementation(Bundle& bundle) const = 0;
 
 public:
     virtual std::string typeName() const = 0;
 
 public:
     /*! \brief Clone */
-    virtual CostFunction* clone() const = 0;
+    virtual std::unique_ptr<CostFunction> clone() const = 0;
 
 };
 

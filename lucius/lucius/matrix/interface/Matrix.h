@@ -36,8 +36,10 @@ public:
     Matrix(const Dimension& size, const Precision& precision);
     Matrix(const Dimension& size, const Dimension& stride);
     Matrix(const Dimension& size, const Dimension& stride, const Precision& precision);
-    Matrix(const Dimension& size, const Dimension& stride, const Precision& precision, const std::shared_ptr<Allocation>& allocation);
-    Matrix(const Dimension& size, const Dimension& stride, const Precision& precision, const std::shared_ptr<Allocation>& allocation, void* start);
+    Matrix(const Dimension& size, const Dimension& stride, const Precision& precision,
+        const std::shared_ptr<Allocation>& allocation);
+    Matrix(const Dimension& size, const Dimension& stride, const Precision& precision,
+        const std::shared_ptr<Allocation>& allocation, void* start);
 
 public:
     ~Matrix();

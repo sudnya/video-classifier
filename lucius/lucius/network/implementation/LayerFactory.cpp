@@ -16,7 +16,9 @@
 #include <lucius/network/interface/AudioMaxPoolingLayer.h>
 #include <lucius/network/interface/SubgraphLayer.h>
 #include <lucius/network/interface/SoftmaxLayer.h>
+#include <lucius/network/interface/CTCDecoderLayer.h>
 #include <lucius/network/interface/ActivationFunctionFactory.h>
+#include <lucius/network/interface/ActivationFunction.h>
 
 #include <lucius/matrix/interface/Dimension.h>
 #include <lucius/matrix/interface/Precision.h>
@@ -136,6 +138,25 @@ std::unique_ptr<Layer> LayerFactory::create(const std::string& name,
             precision
         );
     }
+    else if("CTCDecoderLayer" == name)
+    {
+        size_t beamSize = parameters.get("BeamSearchSize", 32);
+        double costFunctionWeight = parameters.get("CostFunctionWeight", 1.0);
+        auto costFunctionName = parameters.get<std::string>("CostFunctionName", "CTCCostFunction");
+
+        size_t inputSize  = parameters.get("InputSize", inputSizeWidth);
+        size_t inputBatch = parameters.get("BatchSize", inputSizeBatch);
+
+        auto precision = *matrix::Precision::fromString(parameters.get("Precision",
+            matrix::Precision::getDefaultPrecision().toString()));
+
+        layer = std::make_unique<CTCDecoderLayer>(
+            matrix::Dimension(inputSize, inputBatch, 1),
+            beamSize,
+            costFunctionName,
+            costFunctionWeight,
+            precision);
+    }
     else if("FeedForwardLayer" == name)
     {
         size_t inputSize  = parameters.get("InputSize",  inputSizeAggregate);
@@ -165,8 +186,8 @@ std::unique_ptr<Layer> LayerFactory::create(const std::string& name,
     }
     else if("RecurrentLayer" == name)
     {
-        size_t size      = parameters.get("Size",      inputSizeAggregate);
-        size_t layers    = parameters.get("Layers",    1);
+        size_t size      = parameters.get("Size",   inputSizeAggregate);
+        size_t layers    = parameters.get("Layers", 1);
         auto direction     = parameters.get<std::string>("Direction", "forward");
         auto layerTypeName = parameters.get<std::string>("LayerType", "simple");
         auto inputModeName = parameters.get<std::string>("InputMode", "linear");

@@ -15,7 +15,7 @@
 #include <lucius/matrix/interface/Dimension.h>
 
 #include <lucius/matrix/interface/DimensionTransformations.h>
-#include <lucius/matrix/interface/CopyOperations.h>
+#include <lucius/matrix/interface/GatherOperations.h>
 
 #include <lucius/util/interface/memory.h>
 #include <lucius/util/interface/debug.h>

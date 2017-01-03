@@ -38,6 +38,16 @@ public:
         return _stride;
     }
 
+    CUDA_DECORATOR T* data()
+    {
+        return _data;
+    }
+
+    CUDA_DECORATOR const T* data() const
+    {
+        return _data;
+    }
+
 public:
     CUDA_DECORATOR size_t linearAddress(const Dimension& d) const
     {
@@ -69,6 +79,12 @@ public:
 
     CUDA_DECORATOR ConstMatrixView(const T* data, const Dimension& size, const Dimension& stride)
     : _data(data), _size(size), _stride(stride)
+    {
+
+    }
+
+    CUDA_DECORATOR explicit ConstMatrixView(const MatrixView<T>& view)
+    : ConstMatrixView(view.data(), view.size(), view.stride())
     {
 
     }
@@ -110,13 +126,15 @@ private:
 };
 
 template<typename T>
-CUDA_DECORATOR ConstMatrixView<T> slice(const ConstMatrixView<T>& input, const Dimension& begin, const Dimension& end)
+CUDA_DECORATOR ConstMatrixView<T> slice(const ConstMatrixView<T>& input,
+    const Dimension& begin, const Dimension& end)
 {
     return ConstMatrixView<T>(&input(begin), end-begin, input.stride());
 }
 
 template<typename T>
-CUDA_DECORATOR MatrixView<T> slice(const MatrixView<T>& input, const Dimension& begin, const Dimension& end)
+CUDA_DECORATOR MatrixView<T> slice(const MatrixView<T>& input,
+    const Dimension& begin, const Dimension& end)
 {
     return MatrixView<T>(&input(begin), end-begin, input.stride());
 }

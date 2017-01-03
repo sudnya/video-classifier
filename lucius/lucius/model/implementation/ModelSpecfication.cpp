@@ -10,6 +10,7 @@
 
 #include <lucius/network/interface/NeuralNetwork.h>
 #include <lucius/network/interface/Layer.h>
+#include <lucius/network/interface/CostFunction.h>
 #include <lucius/network/interface/LayerFactory.h>
 #include <lucius/network/interface/SubgraphLayer.h>
 #include <lucius/network/interface/CostFunctionFactory.h>
@@ -482,12 +483,12 @@ static void loadCostFunction(Model& model, const util::PropertyTree& specificati
 
     auto costFunction = network::CostFunctionFactory::create(name);
 
-    if(costFunction == nullptr)
+    if(!costFunction)
     {
         throw std::runtime_error("Failed to create neural network cost function '" + name + "'.");
     }
 
-    network.setCostFunction(costFunction);
+    network.setCostFunction(std::move(costFunction));
 }
 
 void ModelSpecificationImplementation::initializeModel(Model& model)

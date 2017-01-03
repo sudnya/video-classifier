@@ -13,6 +13,7 @@
 
 #include <lucius/network/interface/ActivationCostFunctionFactory.h>
 #include <lucius/network/interface/ActivationFunctionFactory.h>
+#include <lucius/network/interface/ActivationFunction.h>
 #include <lucius/network/interface/WeightCostFunctionFactory.h>
 
 #include <lucius/matrix/interface/Matrix.h>
@@ -210,9 +211,9 @@ size_t Layer::getParameterMemory() const
     return memory;
 }
 
-void Layer::setActivationFunction(ActivationFunction* f)
+void Layer::setActivationFunction(std::unique_ptr<ActivationFunction>&& f)
 {
-    _activationFunction.reset(f);
+    _activationFunction = std::move(f);
 }
 
 ActivationFunction* Layer::getActivationFunction()
@@ -225,9 +226,9 @@ const ActivationFunction* Layer::getActivationFunction() const
     return _activationFunction.get();
 }
 
-void Layer::setActivationCostFunction(ActivationCostFunction* f)
+void Layer::setActivationCostFunction(std::unique_ptr<ActivationCostFunction>&& f)
 {
-    _activationCostFunction.reset(f);
+    _activationCostFunction = std::move(f);
 }
 
 ActivationCostFunction* Layer::getActivationCostFunction()
@@ -240,9 +241,9 @@ const ActivationCostFunction* Layer::getActivationCostFunction() const
     return _activationCostFunction.get();
 }
 
-void Layer::setWeightCostFunction(WeightCostFunction* f)
+void Layer::setWeightCostFunction(std::unique_ptr<WeightCostFunction>&& f)
 {
-    _weightCostFunction.reset(f);
+    _weightCostFunction = std::move(f);
 }
 
 WeightCostFunction* Layer::getWeightCostFunction()
