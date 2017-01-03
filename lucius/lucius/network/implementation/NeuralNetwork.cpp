@@ -58,6 +58,18 @@ void NeuralNetwork::initialize()
     }
 }
 
+static void accumulateCost(Bundle& bundle, double newCost)
+{
+    double cost = newCost;
+
+    if(bundle.contains("cost"))
+    {
+        cost += bundle["cost"].get<double>();
+    }
+
+    bundle["cost"] = cost;
+}
+
 Bundle NeuralNetwork::getCostAndGradient(const Bundle& input)
 {
     auto bundle = input;
@@ -141,7 +153,8 @@ Bundle NeuralNetwork::getCostAndGradient(const Bundle& input)
     }
 
     bundle["gradients"] = gradient;
-    bundle["cost"] = weightCost + reduce(costFunctionResult, {}, matrix::Add())[0];
+
+    accumulateCost(bundle, weightCost + reduce(costFunctionResult, {}, matrix::Add())[0]);
 
     return bundle;
 }
@@ -199,7 +212,7 @@ Bundle NeuralNetwork::getInputCostAndGradient(const Bundle& input)
         weightCost += layer->computeWeightCost();
     }
 
-    bundle["cost"] = weightCost + reduce(costFunctionResult, {}, matrix::Add())[0];
+    accumulateCost(bundle, weightCost + reduce(costFunctionResult, {}, matrix::Add())[0]);
 
     return bundle;
 }
@@ -219,8 +232,7 @@ Bundle NeuralNetwork::getCost(const Bundle& input)
 
     auto costFunctionResult = bundle["costs"].get<Matrix>();
 
-    bundle["cost"] = weightCost +
-        reduce(costFunctionResult, {}, matrix::Add())[0];
+    accumulateCost(bundle, weightCost + reduce(costFunctionResult, {}, matrix::Add())[0]);
 
     return bundle;
 }

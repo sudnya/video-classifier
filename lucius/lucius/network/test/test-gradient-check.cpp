@@ -239,7 +239,8 @@ static NeuralNetwork createCtcDecoderNetwork(size_t layerSize, size_t layerCount
         util::ParameterPack(std::make_tuple("InputSize", layerSize),
         std::make_tuple("BatchSize", batchSize),
         std::make_tuple("BeamSearchSize", beamSize),
-        std::make_tuple("CostFunctionWeight", 0.0),
+        std::make_tuple("CostFunctionWeight", 1.0),
+        std::make_tuple("CostFunctionName", "CTCCostFunction"),
         std::make_tuple("Precision", "DoublePrecision"))));
     network.back()->setActivationFunction(
         ActivationFunctionFactory::create("NullActivationFunction"));
@@ -371,7 +372,7 @@ static bool gradientCheck(NeuralNetwork& network, const Bundle& input,
 
                 weight += epsilon;
 
-                double estimatedGradient = (newCost - newCost2) / (2*epsilon);
+                double estimatedGradient = (newCost - newCost2) / (2 * epsilon);
                 double computedGradient = gradient[matrixId][weightId];
 
                 double thisDifference = std::pow(estimatedGradient - computedGradient, 2.0);
