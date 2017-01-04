@@ -333,7 +333,7 @@ void ctcBeamSearch(Matrix& outputActivationWeights, Matrix& inputPaths,
 }
 
 void ctcBeamSearchInputGradients(Matrix& inputDeltas, const Matrix& outputActivationWeights,
-    const Matrix& inputPaths, const Matrix& outputDeltas,
+    const Matrix& inputPaths, const Matrix& weightedCosts,
     const Matrix& inputActivations)
 {
     if(util::isLogEnabled("CTCOperations::Detail"))
@@ -341,83 +341,57 @@ void ctcBeamSearchInputGradients(Matrix& inputDeltas, const Matrix& outputActiva
         util::log("CTCOperations::Detail") << "Running back propagation.\n";
     }
 
-    if(util::isLogEnabled("CTCOperations::Detail"))
-    {
-        util::log("CTCOperations::Detail") << " output deltas: " << outputDeltas.debugString();
-        util::log("CTCOperations::Detail") << " input activations: "
-            << inputActivations.debugString();
-    }
-
-    Matrix outputActivations(outputDeltas.size(), outputDeltas.precision());
-
+    size_t alphabet      = inputActivations.size()[0];
     size_t beamSize      = inputPaths.size()[0];
     size_t miniBatchSize = inputPaths.size()[1];
     size_t timesteps     = inputPaths.size()[2];
 
-    // output activations is {alphabet, beamSize, miniBatchSize, timesteps}
-    gather(outputActivations, reshape(inputPaths, {1, beamSize, miniBatchSize, timesteps}),
+    auto reshapedWeightedCosts = reshape(weightedCosts,
+        {alphabet, beamSize, miniBatchSize, timesteps});
+
+    if(util::isLogEnabled("CTCOperations::Detail"))
+    {
+        util::log("CTCOperations::Detail") << " weighted costs: "
+            << reshapedWeightedCosts.debugString();
+        util::log("CTCOperations::Detail") << " input activations: "
+            << inputActivations.debugString();
+    }
+
+    auto reducedWeightedCosts = reduce(reshapedWeightedCosts, {0, 3}, Add());
+
+    if(util::isLogEnabled("CTCOperations::Detail"))
+    {
+        util::log("CTCOperations::Detail") << " reduced weighted costs: "
+            << reducedWeightedCosts.debugString();
+    }
+
+    Matrix selectedPaths(reshapedWeightedCosts.size(), reshapedWeightedCosts.precision());
+
+    //  selected paths is {alphabet, beamSize, miniBatchSize, timesteps}
+    gather(selectedPaths, reshape(inputPaths, {1, beamSize, miniBatchSize, timesteps}),
         GatherIndexToOneHot(0));
 
     if(util::isLogEnabled("CTCOperations::Detail"))
     {
-        util::log("CTCOperations::Detail") << " output activations: "
-            << outputActivations.debugString();
+        util::log("CTCOperations::Detail") << " one hot paths: "
+            << selectedPaths.debugString();
     }
 
-    // output deltas is {alphabet, beamSize, miniBatchSize, timesteps}
-    // activations deltas product is {alphabet, beamSize, miniBatchSize, timesteps}
-    auto activationDeltasProduct = apply(Matrix(outputActivations), outputDeltas, Multiply());
+    auto expandedInputDeltas = broadcast(selectedPaths, reducedWeightedCosts, {0, 3}, Multiply());
 
     if(util::isLogEnabled("CTCOperations::Detail"))
     {
-        util::log("CTCOperations::Detail") << " activations deltas product: "
-            << activationDeltasProduct.debugString();
-    }
-
-    // reduced activations deltas product is {beamSize, miniBatchSize}
-    auto reducedActivationDeltasProduct = reduce(activationDeltasProduct, {0, 3}, Add());
-
-    if(util::isLogEnabled("CTCOperations::Detail"))
-    {
-        util::log("CTCOperations::Detail") << " reduced activations deltas product: "
-            << reducedActivationDeltasProduct.debugString();
-    }
-
-    // unweighted input deltas is {alphabet, beamSize, miniBatchSize, timesteps}
-    auto unweightedInputDeltas = broadcast(outputActivations, reducedActivationDeltasProduct,
-        {0, 3}, Multiply());
-
-    if(util::isLogEnabled("CTCOperations::Detail"))
-    {
-        util::log("CTCOperations::Detail") << " unweighted input deltas: "
-            << unweightedInputDeltas.debugString();
-    }
-
-    // unscaled input deltas is {alphabet, beamSize, miniBatchSize, timesteps}
-    auto unscaledInputDeltas = broadcast(unweightedInputDeltas, outputActivationWeights, {0, 3},
-        Multiply());
-
-    if(util::isLogEnabled("CTCOperations::Detail"))
-    {
-        util::log("CTCOperations::Detail") << " unscaled input deltas: "
-            << unscaledInputDeltas.debugString();
-    }
-
-    // expanded input deltas is {alphabet, beamSize, miniBatchSize, timesteps}
-    auto expandedInputDeltas = broadcast(Matrix(unscaledInputDeltas), inputActivations,
-        {1}, Divide());
-
-    if(util::isLogEnabled("CTCOperations::Detail"))
-    {
-        util::log("CTCOperations::Detail") << " expanded input deltas: "
+        util::log("CTCOperations::Detail") << " masked expanded input deltas: "
             << expandedInputDeltas.debugString();
     }
+
+    broadcast(expandedInputDeltas, expandedInputDeltas, inputActivations, {1}, Divide());
 
     // input deltas is {alphabet, miniBatchSize, timesteps}
     reduce(inputDeltas, expandedInputDeltas, {1}, Add());
 
-    // divide by beam size
-    apply(inputDeltas, inputDeltas, Multiply(1.0/beamSize));
+    // multiply by minibatch size
+    apply(inputDeltas, inputDeltas, Multiply(miniBatchSize));
 
     if(util::isLogEnabled("CTCOperations::Detail"))
     {

@@ -3,6 +3,7 @@
 #include <lucius/matrix/interface/MatrixVectorOperations.h>
 #include <lucius/matrix/interface/MatrixVector.h>
 #include <lucius/matrix/interface/MatrixOperations.h>
+#include <lucius/matrix/interface/CopyOperations.h>
 #include <lucius/matrix/interface/Operation.h>
 #include <lucius/matrix/interface/MatrixTransformations.h>
 #include <lucius/matrix/interface/DimensionTransformations.h>
@@ -130,6 +131,23 @@ double dotProduct(const MatrixVector& left, const MatrixVector& right)
 void zeros(MatrixVector& result)
 {
     apply(result, result, Fill(0.0));
+}
+
+void copy(MatrixVector& result, const MatrixVector& input)
+{
+    for(auto& matrix : input)
+    {
+        result.push_back(copy(matrix));
+    }
+}
+
+MatrixVector copy(const MatrixVector& input)
+{
+    MatrixVector result;
+
+    copy(result, input);
+
+    return result;
 }
 
 }

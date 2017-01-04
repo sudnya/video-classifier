@@ -22,6 +22,9 @@ MatrixVector reduce(const MatrixVector& input, const Dimension& d, const Operati
 
 double dotProduct(const MatrixVector& left, const MatrixVector& right);
 
+void copy(MatrixVector& result, const MatrixVector& input);
+MatrixVector copy(const MatrixVector& input);
+
 void zeros(MatrixVector& result);
 
 }
