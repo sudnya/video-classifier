@@ -13,10 +13,10 @@
 
         "parameters" :
         {
-            "NesterovAcceleratedGradient::LearningRate"       : "1.0e-4",
+            "NesterovAcceleratedGradient::LearningRate"       : "1.0e-3",
             "NesterovAcceleratedGradient::Momentum"           : "0.99",
             "NesterovAcceleratedGradient::AnnealingRate"      : "1.000000",
-            "NesterovAcceleratedGradient::MaxGradNorm"        : "40.0",
+            "NesterovAcceleratedGradient::MaxGradNorm"        : "80.0",
             "NesterovAcceleratedGradient::IterationsPerBatch" : "1"
         }
     },
@@ -31,12 +31,12 @@
             {
                 "Type" : "RecurrentLayer",
                 "Direction" : "forward",
-                "Size" : "256"
+                "Size" : "2048"
             },
             "input":
             {
                 "Type" : "FeedForwardLayer",
-                "OutputSize" : "256"
+                "OutputSize" : "2048"
             },
             "output":
             {
@@ -68,21 +68,26 @@
         "model-attributes" :
         {
             "SegmentSize"  : "100",
-            "Graphemes": [" ", "$", "(", ",", "0", "4", "8", "<", "@", "D", "H", "L", "P", "T", "X", "\\", "d", "h", "l", "p", "t", "x", "|", "#", "\"", "+", "/", "3", "7", ";", "?", "C", "G", "K", "O", "S", "W", "[", "_", "c", "g", "k", "o", "s", "w", "{", "\n", "&", "*", ".", "2", "6", ":", ">", "B", "F", "J", "N", "R", "V", "Z", "^", "b", "f", "j", "n", "r", "v", "z", "~", "!", "%", ")", "-", "1", "5", "9", "=", "A", "E", "I", "M", "Q", "U", "Y", "]", "a", "e", "i", "m", "q", "u", "y", "}"],
-
+            "Graphemes" : [ "A", "B", "C", "D", "E", "F", "G", "H", "I",
+                            "J", "K", "L", "M", "N", "O", "P", "Q", "R",
+                            "S", "T", "U", "V", "W", "X", "Y", "Z", ",", 
+                            "a", "b", "c", "d", "e", "f", "g", "h", "i",
+                            "j", "k", "l", "m", "n", "o", "p", "q", "r",
+                            "s", "t", "u", "v", "w", "x", "y", "z", ".",
+                            "'", " ", "UNKNOWN"],
             "DelimiterGrapheme" : "END"
 
 
         },
 
-        "infer-outputs-from" : "/data/4tb/billion/training/database.txt"
+        "infer-outputs-from" : "/data/1tb-ssd/billion/training/database.txt"
 
     },
 
     "dataset" :
     {
-        "training-dataset-path"   : "/data/4tb/billion/training/database.txt",
-        "validation-dataset-path" : "/data/4tb/billion/validation/database.txt",
+        "training-dataset-path"   : "/data/1tb-ssd/billion/training/database.txt",
+        "validation-dataset-path" : "/data/1tb-ssd/billion/validation/database.txt",
 
         "required-accuracy" : "99.0"
     },
@@ -112,7 +117,7 @@
 
     "system" :
     {
-        "use-cuda"    : "0",
+        "use-cuda"    : "1",
         "cuda-device" : "0",
         "precision"   : "SinglePrecision"
     }

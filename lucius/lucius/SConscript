@@ -17,6 +17,9 @@ programs = []
 programs.append(env.Program('lucius-inference-engine', \
     ['tools/lucius-inference-engine.cpp'], LIBS=lucius_libs))
 
+programs.append(env.Program('lucius-combine-models', \
+    ['tools/lucius-combine-models.cpp'], LIBS=lucius_libs))
+
 programs.append(env.Command("lucius-train-model.py",
     "tools/lucius-train-model.py", Copy("$TARGET", "$SOURCE")))
 

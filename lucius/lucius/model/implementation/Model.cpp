@@ -98,6 +98,11 @@ bool Model::hasAttribute(const std::string& name) const
     return _attributes.count(name) != 0;
 }
 
+const Model::AttributeMap& Model::getAttributes() const
+{
+    return _attributes;
+}
+
 size_t Model::getOutputCount() const
 {
     return _outputLabels.size();

@@ -30,6 +30,7 @@ public:
     typedef NeuralNetworkList::const_iterator const_iterator;
     typedef NeuralNetworkList::reverse_iterator reverse_iterator;
     typedef NeuralNetworkList::const_reverse_iterator const_reverse_iterator;
+    typedef std::map<std::string, std::string> AttributeMap;
 
 public:
     Model(const std::string& path);
@@ -50,11 +51,13 @@ public:
     std::string getOutputLabel(size_t output) const;
 
 public:
-    template<typename T>
+    template <typename T>
     void setAttribute(const std::string& name, const T& value);
 
     template<typename T>
     T getAttribute(const std::string& name) const;
+
+    const AttributeMap& getAttributes() const;
 
 public:
     bool hasAttribute(const std::string& name) const;
@@ -101,7 +104,6 @@ private:
 private:
     typedef std::map<std::string, iterator> NeuralNetworkMap;
     typedef std::map<size_t, std::string> LabelMap;
-    typedef std::map<std::string, std::string> AttributeMap;
     typedef std::vector<std::string> StringVector;
 
 private:

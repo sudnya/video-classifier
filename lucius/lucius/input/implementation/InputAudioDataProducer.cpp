@@ -431,14 +431,20 @@ private:
 
             if(sample.isAudioSample())
             {
-                if(sample.hasLabel())
+                if(!Audio(sample.path()).isValid())
                 {
-                    util::log("InputAudioDataProducer::Detail") << "  found labeled image '"
+                    util::log("InputAudioDataProducer::Detail") << "  found invalid audio sample '"
+                        << sample.path() << "'\n";
+                    continue;
+                }
+                else if(sample.hasLabel())
+                {
+                    util::log("InputAudioDataProducer::Detail") << "  found labeled audio '"
                         << sample.path() << "' with label '" << sample.label() << "'\n";
                 }
                 else
                 {
-                    util::log("InputAudioDataProducer::Detail") << "  found unlabeled image '"
+                    util::log("InputAudioDataProducer::Detail") << "  found unlabeled audio '"
                         << sample.path() << "'\n";
                 }
 
@@ -758,7 +764,21 @@ private:
     private:
         size_t _getUniqueDescriptorCount() const
         {
-            return _descriptors.size();
+            size_t coveredSamples = 0;
+            size_t enoughDescriptorsToCoverAllSamples = 0;
+
+            for(auto& descriptor : _descriptors)
+            {
+                coveredSamples += _getSamplesPerDescriptor(descriptor);
+                ++enoughDescriptorsToCoverAllSamples;
+
+                if(coveredSamples >= getUniqueSampleCount())
+                {
+                    break;
+                }
+            }
+
+            return enoughDescriptorsToCoverAllSamples;;
         }
 
     private:
@@ -839,21 +859,33 @@ private:
             }
         }
 
-        size_t _getNextSampleSize(size_t descriptorIndex)
+        size_t _getNextSampleSize(size_t descriptorIndex) const
         {
-            if(_descriptors[descriptorIndex].type == AudioDescriptor::AudioType)
+            return _getNextSampleSize(_descriptors[descriptorIndex]);
+        }
+
+        size_t _getNextSampleSize(const AudioDescriptor& descriptor) const
+        {
+            if(descriptor.type == AudioDescriptor::AudioType)
             {
-                return _descriptors[descriptorIndex].audioClipDuration;
+                return descriptor.audioClipDuration;
             }
-            else if(_descriptors[descriptorIndex].type == AudioDescriptor::RepeatedType)
+            else if(descriptor.type == AudioDescriptor::RepeatedType)
             {
                 return _totalTimestepsPerRepeat;
             }
             else
             {
-                assert(_descriptors[descriptorIndex].type == AudioDescriptor::NoiseType);
+                assert(descriptor.type == AudioDescriptor::NoiseType);
                 return _totalTimestepsPerNoise;
             }
+        }
+
+        size_t _getSamplesPerDescriptor(const AudioDescriptor& descriptor) const
+        {
+            size_t sampleSize = _getNextSampleSize(descriptor);
+
+            return descriptor.audioClipDuration / sampleSize;
         }
 
         Sample _createSample(size_t descriptorIndex, size_t sampleOffsetInDescriptor)

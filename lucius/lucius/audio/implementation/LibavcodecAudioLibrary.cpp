@@ -296,6 +296,9 @@ LibavcodecAudioLibrary::HeaderAndData LibavcodecAudioLibrary::loadAudio(std::ist
         {
             if(headerAndData.header.samples == 0)
             {
+                // the library frees the format context on error
+                avFormat.release();
+                buffer.release();
                 throw std::runtime_error("Failed to get any samples.");
             }
             break;
@@ -336,6 +339,10 @@ LibavcodecAudioLibrary::HeaderAndData LibavcodecAudioLibrary::loadAudio(std::ist
 
         if(length != packet->size)
         {
+            // the library frees the format context on error
+            avFormat.release();
+            buffer.release();
+
             throw std::runtime_error("Did not decode the entire packet.");
         }
     }
@@ -697,7 +704,7 @@ void LibavcodecAudioLibrary::saveAudio(std::ostream& stream, const std::string& 
 
 LibavcodecAudioLibrary::StringVector LibavcodecAudioLibrary::getSupportedExtensions() const
 {
-    return StringVector(util::split(".mp4|.mp2|.mp3|.flac", "|"));
+    return StringVector(util::split(".mp4|.mp2|.mp3|.flac|.ogg|.aiff|.aif|.wav", "|"));
 }
 
 size_t LibavcodecAudioLibrary::getBitRate() const
