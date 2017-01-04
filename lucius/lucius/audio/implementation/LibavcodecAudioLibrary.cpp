@@ -336,6 +336,10 @@ LibavcodecAudioLibrary::HeaderAndData LibavcodecAudioLibrary::loadAudio(std::ist
 
         if(length != packet->size)
         {
+            // the library frees the format context on error
+            avFormat.release();
+            buffer.release();
+
             throw std::runtime_error("Did not decode the entire packet.");
         }
     }
