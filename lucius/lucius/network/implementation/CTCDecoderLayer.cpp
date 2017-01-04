@@ -415,41 +415,18 @@ static Matrix computeCtcInputDeltas(const std::string& costFunctionName,
 
 void CTCDecoderLayer::runReverseImplementation(Bundle& bundle)
 {
-    auto& inputDeltaVector  = bundle[      "inputDeltas"].get<matrix::MatrixVector>();
-    auto& outputDeltaVector = bundle["finalOutputDeltas"].get<matrix::MatrixVector>();
-
-    assert(outputDeltaVector.size() == 1);
-
-    auto combinedOutputDeltas = outputDeltaVector.front();
-
-    size_t alphabet      = combinedOutputDeltas.size()[0];
-    size_t beamSize      = _implementation->getBeamSize();
-    size_t miniBatchSize = combinedOutputDeltas.size()[1] / _implementation->getBeamSize();
-    size_t timesteps     = combinedOutputDeltas.size()[2];
-
-    auto outputDeltas = reshape(combinedOutputDeltas,
-        {alphabet, beamSize, miniBatchSize, timesteps});
+    auto& inputDeltaVector = bundle["inputDeltas"].get<matrix::MatrixVector>();
+    auto& weightedCosts = bundle["weightedCosts"].get<matrix::Matrix>();
 
     auto outputActivationWeights = loadMatrix("outputActivationWeights");
     auto inputPaths = loadMatrix("inputPaths");
-
-    if(util::isLogEnabled("CTCDecoderLayer::Detail"))
-    {
-        util::log("CTCDecoderLayer::Detail") << "  output deltas: "
-            << outputDeltas.debugString();
-    }
-    else
-    {
-        util::log("CTCDecoderLayer") << "  output deltas size: "
-            << outputDeltas.shapeString() << "\n";
-    }
 
     auto inputActivations = loadMatrix("inputActivations");
 
     Matrix inputDeltas(inputActivations.size(), inputActivations.precision());
 
     matrix::ctcBeamSearchInputGradients(inputDeltas, outputActivationWeights,
-        inputPaths, outputDeltas, inputActivations);
+        inputPaths, weightedCosts, inputActivations);
 
     if(util::isLogEnabled("CTCDecoderLayer::Detail"))
     {
@@ -473,6 +450,8 @@ void CTCDecoderLayer::runReverseImplementation(Bundle& bundle)
 
         // TODO: see if it is possible to remove this line, it is only necessary because
         //       by CTC can't tell the difference between a beam and a minibatch
+        size_t miniBatchSize = inputActivations.size()[1];
+
         apply(ctcInputDeltas, ctcInputDeltas, matrix::Multiply(miniBatchSize));
 
         if(util::isLogEnabled("CTCDecoderLayer::Detail"))

@@ -223,17 +223,24 @@ static NeuralNetwork createRecurrentCtcNetwork(size_t layerSize, size_t layerCou
 static NeuralNetwork createCtcDecoderNetwork(size_t layerSize, size_t layerCount,
     size_t batchSize, size_t beamSize)
 {
+    layerSize = std::min(layerSize, static_cast<size_t>(4));
+    batchSize = std::min(batchSize, static_cast<size_t>(4));
+
     NeuralNetwork network;
 
-    for(size_t layer = 0; layer < layerCount; ++layer)
-    {
-        network.addLayer(LayerFactory::create("FeedForwardLayer",
-            util::ParameterPack(std::make_tuple("InputSizeAggregate", layerSize),
-            std::make_tuple("InputSizeBatch", batchSize),
-            std::make_tuple("Precision", "DoublePrecision"))));
-        network.back()->setActivationFunction(
-            ActivationFunctionFactory::create("SigmoidActivationFunction"));
-    }
+    network.addLayer(LayerFactory::create("FeedForwardLayer",
+        util::ParameterPack(std::make_tuple("InputSizeAggregate", layerSize),
+        std::make_tuple("InputSizeBatch", batchSize),
+        std::make_tuple("Precision", "DoublePrecision"))));
+    network.back()->setActivationFunction(
+        ActivationFunctionFactory::create("SigmoidActivationFunction"));
+
+    network.addLayer(LayerFactory::create("SoftmaxLayer",
+        util::ParameterPack(std::make_tuple("InputSizeAggregate", layerSize),
+        std::make_tuple("InputSizeBatch", batchSize),
+        std::make_tuple("Precision", "DoublePrecision"))));
+    network.back()->setActivationFunction(
+        ActivationFunctionFactory::create("NullActivationFunction"));
 
     network.addLayer(LayerFactory::create("CTCDecoderLayer",
         util::ParameterPack(std::make_tuple("InputSize", layerSize),
@@ -244,6 +251,16 @@ static NeuralNetwork createCtcDecoderNetwork(size_t layerSize, size_t layerCount
         std::make_tuple("Precision", "DoublePrecision"))));
     network.back()->setActivationFunction(
         ActivationFunctionFactory::create("NullActivationFunction"));
+
+    for(size_t layer = 0; layer < layerCount; ++layer)
+    {
+        network.addLayer(LayerFactory::create("FeedForwardLayer",
+            util::ParameterPack(std::make_tuple("InputSizeAggregate", layerSize),
+            std::make_tuple("InputSizeBatch", batchSize),
+            std::make_tuple("Precision", "DoublePrecision"))));
+        network.back()->setActivationFunction(
+            ActivationFunctionFactory::create("SigmoidActivationFunction"));
+    }
 
     network.initialize();
 
