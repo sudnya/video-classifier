@@ -19,6 +19,12 @@
 #include <lucius/util/interface/debug.h>
 #include <lucius/util/interface/Metaprogramming.h>
 
+#ifdef __NVCC__
+#define UNROLL #pragma unroll
+#else
+#define UNROLL
+#endif
+
 // Standard Library Includes
 #include <limits>
 
@@ -169,9 +175,9 @@ public:
 
         SortElement defaultValue(std::numeric_limits<NativeType>::max(),
             std::numeric_limits<NativeType>::max(),
-            std::numeric_limits<NativeType>::max());
+            std::numeric_limits<size_t>::max());
 
-        #pragma unroll
+        UNROLL
         for(size_t value = 0; value < LocalValueCount; ++value)
         {
             if(!_isInRange(startPosition + value))
@@ -193,7 +199,7 @@ public:
     CUDA_DECORATOR void sortLocalStorage(SortElement* localStorage) const
     {
         // Even odd transposition sort (for stability)
-        #pragma unroll
+        UNROLL
         for(size_t level = 0; level < LocalValueCount; ++level)
         {
             bool isOdd = level % 2 == 1;
@@ -202,7 +208,7 @@ public:
             {
                 size_t range = (LocalValueCount - 1) / 2;
 
-                #pragma unroll
+                UNROLL
                 for(size_t index = 0; index < range; ++index)
                 {
                     size_t i = index * 2 + 1;
@@ -217,7 +223,7 @@ public:
             {
                 size_t range = (LocalValueCount) / 2;
 
-                #pragma unroll
+                UNROLL
                 for(size_t index = 0; index < range; ++index)
                 {
                     size_t i = index * 2;
@@ -235,7 +241,7 @@ public:
     CUDA_DECORATOR void mergeSortShared(SortElement* sharedMemory,
         const parallel::ThreadGroup& innerGroup) const
     {
-        #pragma unroll
+        UNROLL
         for(size_t phase = 1, phaseSize = 2;
             phaseSize < innerGroup.size(); ++phase, phaseSize *= 2)
         {
@@ -338,7 +344,7 @@ public:
         size_t aLength = aEnd - aBegin;
         size_t bLength = bEnd - bBegin;
 
-        #pragma unroll
+        UNROLL
         for(size_t index = 0; index < LocalValueCount; ++index)
         {
             bool isALegal = aIndex < aLength;
@@ -368,7 +374,7 @@ public:
     {
         size_t base = LocalValueCount * innerGroup.id();
 
-        #pragma unroll
+        UNROLL
         for(size_t index = 0; index < LocalValueCount; ++index)
         {
             sharedMemory[base + index] = localStorage[index];
@@ -381,7 +387,7 @@ public:
         size_t sharedElement = innerGroup.id();
         size_t globalElement = blockId * LocalValueCount * innerGroup.size();
 
-        #pragma unroll
+        UNROLL
         for(size_t element = 0; element < LocalValueCount; ++element)
         {
             if(globalElement < elements)
@@ -705,7 +711,7 @@ private:
         size_t aOffset = 0;
         size_t bOffset = 0;
 
-        #pragma unroll
+        UNROLL
         for(size_t index = 0; index < LocalValueCount; ++index)
         {
             SortElement currentElement;
@@ -734,7 +740,7 @@ private:
     CUDA_DECORATOR void _saveOutputs(const SortElement* localStorage, size_t outputStart,
         const parallel::ThreadGroup& innerGroup) const
     {
-        #pragma unroll
+        UNROLL
         for(size_t index = 0; index < LocalValueCount; ++index)
         {
             auto value = localStorage[index];

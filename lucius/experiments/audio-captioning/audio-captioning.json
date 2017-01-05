@@ -109,7 +109,7 @@
             {
                 "Type" : "RecurrentLayer",
                 "Direction" : "forward",
-                "Size" : 1024
+                "Size" : "1024"
             },
             "language-model-output":
             {
@@ -209,7 +209,7 @@
 
     "system" :
     {
-        "use-cuda"    : "1",
+        "use-cuda"    : "0",
         "cuda-device" : "1",
         "precision"   : "SinglePrecision"
     }

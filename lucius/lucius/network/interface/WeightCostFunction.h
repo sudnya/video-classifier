@@ -8,6 +8,7 @@
 
 // Standard Library Includes
 #include <string>
+#include <memory>
 
 // Forward Declarations
 namespace lucius { namespace matrix { class Matrix; } }
