@@ -8,9 +8,9 @@
         "batch-size"      : "64",
         "maximum-samples" : "1e9",
         "standardization-samples" : "1024",
-        "validation-samples" : "256",
+        "validation-samples" : "64",
 
-        "epochs" : "2000",
+        "epochs" : "20",
 
         "parameters" :
         {
@@ -92,7 +92,7 @@
             {
                 "Type" : "FeedForwardLayer",
                 "ActivationFunction" : "NullActivationFunction",
-                "OutputSize" : "31"
+                "OutputSize" : "34"
             },
             "ctc-decoder":
             {
@@ -151,11 +151,12 @@
         {
             "SamplingRate"  : "16384",
             "FrameDuration" : "1024",
-            "Graphemes" : [ "a", "b", "c", "d", "e", "f", "g", "h", "i",
-                            "j", "k", "l", "m", "n", "o", "p", "q", "r",
-                            "s", "t", "u", "v", "w", "x", "y", "z", ".",
-                            ",", "'", " "],
-            "DelimiterGrapheme" : "END"
+            "Graphemes" : [ "a", "b", "c", "d", "e", "f", "g", "h", "i", "j",
+                            "k", "l", "m", "n", "o", "p", "q", "r", "s", "t",
+                            "u", "v", "w", "x", "y", "z", ".", ",", "'", " ",
+                            "START-", "-END"],
+            "UsesUnknownToken" : "1",
+            "UsesSeparatorToken" : "1"
 
 
         },

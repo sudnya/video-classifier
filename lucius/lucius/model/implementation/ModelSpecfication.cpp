@@ -126,7 +126,7 @@ typedef std::map<std::string, util::ParameterPack> TypeMap;
 database::SampleDatabase::StringVector getAllPossibleGraphemes(const util::PropertyTree& specification)
 {
     database::SampleDatabase::StringVector labels;
-    
+
     if(!specification.exists("infer-outputs-from"))
     {
         if(specification.exists("model-attributes.Graphemes"))
@@ -136,7 +136,7 @@ database::SampleDatabase::StringVector getAllPossibleGraphemes(const util::Prope
                 labels.push_back(grapheme.key());
             }
         }
-        
+
         return labels;
     }
 
@@ -188,9 +188,9 @@ matrix::Dimension computeInputSize(const util::PropertyTree& model)
     }
     else if(attributes.exists("SegmentSize"))
     {
-        result.push_back(getAllPossibleGraphemes(model).size()); 
-        result.push_back(1); 
-        result.push_back(1); 
+        result.push_back(getAllPossibleGraphemes(model).size());
+        result.push_back(1);
+        result.push_back(1);
         result.push_back(1); // minibatch
         result.push_back(1); // timesteps
 
@@ -238,24 +238,29 @@ static void setupOutputLayerParameters(model::Model& model,
     {
         model.setAttribute("UsesGraphemes", "1");
     }
-        
+
+    bool needsSeparator = specification.exists("model-attributes.Graphemes") &&
+        ((specification.exists("cost-function") &&
+        specification.get<std::string>("cost-function") == "CTCCostFunction") ||
+        (specification.exists("model-attributes.Uses-separatorToken") &&
+         specification.get<bool>("model-attributes.UsesSeparatorToken")));
+
+    bool needsUnknown = specification.exists("model-attributes.Graphemes") &&
+        ((specification.exists("cost-function") &&
+        specification.get<std::string>("cost-function") == "SoftmaxCostFunction") ||
+        (specification.exists("model-attributes.UsesUnknownToken") &&
+        specification.get<bool>("model-attributes.UsesUnknownToken")));
+
+
     // The 0th network output must be a separator for CTC
-    if(specification.exists("cost-function") &&
-        specification.get<std::string>("cost-function") == "CTCCostFunction")
+    if(needsSeparator)
     {
-        if(specification.exists("model-attributes.Graphemes"))
-        {
-            model.setOutputLabel(index++, "-SEPARATOR-");
-        }
+        model.setOutputLabel(index++, "-SEPARATOR-");
     }
-    
-    if(specification.exists("cost-function") &&
-        specification.get<std::string>("cost-function") == "SoftmaxCostFunction")
+
+    if(needsUnknown)
     {
-        if(specification.exists("model-attributes.Graphemes"))
-        {
-            model.setOutputLabel(index++, "UNKOWN");
-        }
+        model.setOutputLabel(index++, "UNKOWN");
     }
 
     for(auto& label : labels)
@@ -263,16 +268,14 @@ static void setupOutputLayerParameters(model::Model& model,
         model.setOutputLabel(index++, label);
     }
 
-    if(specification.exists("cost-function") &&
-        specification.get<std::string>("cost-function") == "CTCCostFunction")
+    if(needsSeparator)
     {
         labels.push_back("-SEPARATOR-");
     }
 
-    if(specification.exists("cost-function") &&
-        specification.get<std::string>("cost-function") == "SoftmaxCostFunction")
+    if(needsUnknown)
     {
-        labels.push_back("UNKOWN");
+        labels.push_back("-UNKOWN-");
     }
 
     layerParameters.insert("OutputSize", labels.size());
