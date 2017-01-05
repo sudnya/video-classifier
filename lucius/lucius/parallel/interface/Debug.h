@@ -3,6 +3,7 @@
 
 // Lucius Includes
 #include <lucius/parallel/interface/cuda.h>
+#include <lucius/parallel/interface/String.h>
 
 // Standard Library Includes
 #include <string>
@@ -14,6 +15,7 @@ namespace lucius
 namespace parallel
 {
 
+#if ENABLE_LOGGING
 CUDA_DECORATOR bool isLogEnabled(const std::string& name);
 
 class LogStream
@@ -29,7 +31,7 @@ public:
 
 public:
     template <typename T>
-    LogStream& operator<<(T&& anything)
+    CUDA_DECORATOR LogStream& operator<<(T&& anything)
     {
         std::stringstream stream;
 
@@ -45,8 +47,33 @@ private:
     bool        _isEnabled;
 
 };
+#else
 
-inline CUDA_DECORATOR LogStream log(const std::string& name)
+class LogStream
+{
+public:
+    CUDA_DECORATOR LogStream(const parallel::string& name)
+    {
+
+    }
+
+    CUDA_DECORATOR ~LogStream()
+    {
+
+    }
+
+public:
+    template <typename T>
+    CUDA_DECORATOR LogStream& operator<<(T&& anything)
+    {
+        return *this;
+    }
+
+};
+
+#endif
+
+inline CUDA_DECORATOR LogStream log(const parallel::string& name)
 {
     return LogStream(name);
 }

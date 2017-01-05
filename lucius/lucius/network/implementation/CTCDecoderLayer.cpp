@@ -264,7 +264,7 @@ static void expandLabels(Bundle& bundle, size_t beamSize)
             }
             else
             {
-                referenceActivations(0, miniBatch, timestep) = 1.0;
+                referenceActivations(characters - 1, miniBatch, timestep) = 1.0;
             }
         }
     }

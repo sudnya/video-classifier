@@ -242,7 +242,7 @@ static void setupOutputLayerParameters(model::Model& model,
     bool needsSeparator = specification.exists("model-attributes.Graphemes") &&
         ((specification.exists("cost-function") &&
         specification.get<std::string>("cost-function") == "CTCCostFunction") ||
-        (specification.exists("model-attributes.Uses-separatorToken") &&
+        (specification.exists("model-attributes.UsesSeparatorToken") &&
          specification.get<bool>("model-attributes.UsesSeparatorToken")));
 
     bool needsUnknown = specification.exists("model-attributes.Graphemes") &&

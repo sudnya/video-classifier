@@ -19,7 +19,7 @@ template <typename OperationType, typename NativeType, bool isInclusive>
 class NoncontiguousScanLambda
 {
 public:
-    void operator()(const parallel::ThreadGroup& threadGroup) const
+    CUDA_DECORATOR void operator()(const parallel::ThreadGroup& threadGroup) const
     {
         for(size_t element = threadGroup.id(); element < elements; element += threadGroup.size())
         {

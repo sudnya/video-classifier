@@ -22,7 +22,9 @@ inline void checkCudaErrors(cudaError_t status)
 }
 
 template<typename FunctionType>
-__global__ void kernelLauncher(FunctionType function)
+__global__ void
+__launch_bounds__(256, 1)
+kernelLauncher(FunctionType function)
 {
     function(ThreadGroup(blockDim.x * gridDim.x, threadIdx.x + blockIdx.x * blockDim.x));
 }
@@ -31,7 +33,7 @@ template<typename FunctionType>
 void launchCudaKernel(FunctionType function)
 {
     int ctasPerSM = 4;
-    int threads   = 512;
+    int threads   = 256;
 
     int multiprocessorCount = 0;
 
