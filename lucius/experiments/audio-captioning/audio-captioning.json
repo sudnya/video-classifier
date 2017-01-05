@@ -108,7 +108,7 @@
             "language-model-recurrent" :
             {
                 "Type" : "RecurrentLayer",
-                "Direction" : "bidirectional",
+                "Direction" : "forward",
                 "Size" : 1024
             },
             "language-model-output":
