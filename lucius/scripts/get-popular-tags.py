@@ -20,7 +20,7 @@ logger = logging.getLogger('get-popular-tags')
 
 def getTags(tagList):
     retVal = set()
-    retVal = re.split(':|,', tagList)
+    retVal = re.split(':|,|\n', tagList)
     return retVal
 
 def reTag(inputDb, outputDb):
@@ -45,10 +45,21 @@ def reTag(inputDb, outputDb):
     
     logger.info ("Downloaded file " + str(inputDb) + " locally at " + str(outputDb))
     
+    topN = {}
+    countN = 500
     allTags.pop('')
-    for k in sorted(allTags, key=lambda k: len(allTags[k]), reverse=False):
-        print k, '\t\t\t' ,len(allTags[k])
-    
+    counter = 0
+    for k in sorted(allTags, key=lambda k: len(allTags[k]), reverse=True):
+        if counter < countN:
+            topN[k] = allTags[k]
+            counter += 1
+        else:
+            break
+   
+    for key, val in topN.iteritems():
+        for v in val:
+            outF.write("/" + v.rstrip('\n') + " , \"" + key + "\"\n")
+
     inF.close()
     outF.close()
 
