@@ -38,6 +38,7 @@ void CostFunction::computeCost(Bundle& bundle) const
 {
     computeCostImplementation(bundle);
 
+    /*
     if(bundle.contains("outputActivationWeights"))
     {
         auto& costs = bundle["costs"].get<Matrix>();
@@ -56,13 +57,14 @@ void CostFunction::computeCost(Bundle& bundle) const
             util::log("CostFunction::Detail") << " weighted costs : "
                 << costs.debugString();
         }
-    }
+    }*/
 }
 
 void CostFunction::computeDelta(Bundle& bundle) const
 {
     computeDeltaImplementation(bundle);
 
+    /*
     if(bundle.contains("outputActivationWeights"))
     {
         auto& outputDeltasVector = bundle["outputDeltas"].get<MatrixVector>();
@@ -81,7 +83,7 @@ void CostFunction::computeDelta(Bundle& bundle) const
             util::log("CostFunction::Detail") << " weighted output deltas : "
                 << outputDeltas.debugString();
         }
-    }
+    }*/
 }
 
 }
