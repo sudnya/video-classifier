@@ -23,7 +23,7 @@ def getTags(tagList):
     retVal = re.split(':|,|\n', tagList)
     return retVal
 
-def reTag(inputDb, outputDb):
+def reTag(inputDb, outputDb, countN):
     allTags = {}
     outF = open(outputDb, 'w')
     
@@ -46,7 +46,6 @@ def reTag(inputDb, outputDb):
     logger.info ("Downloaded file " + str(inputDb) + " locally at " + str(outputDb))
     
     topN = {}
-    countN = 500
     allTags.pop('')
     counter = 0
     for k in sorted(allTags, key=lambda k: len(allTags[k]), reverse=True):
@@ -69,6 +68,7 @@ def main():
     parser.add_argument("-v", "--verbose",        default = False, action = "store_true")
     parser.add_argument("-i", "--input_file",        default = "~/temp/database.txt")
     parser.add_argument("-o", "--output_file",        default = "/tmp/retagged.txt")
+    parser.add_argument("-n", "--topN",        default = "500")
     
     parsedArguments = parser.parse_args()
     arguments = vars(parsedArguments)
@@ -76,6 +76,7 @@ def main():
     isVerbose   = arguments['verbose']
     inputFile   = arguments['input_file']
     outputFile  = arguments['output_file']
+    topN        = arguments['topN']
     
     if isVerbose:
         logging.basicConfig(level=logging.DEBUG)
@@ -83,7 +84,7 @@ def main():
         logging.basicConfig(level=logging.INFO)
     
     try:
-        reTag(inputFile, outputFile)
+        reTag(inputFile, outputFile, topN)
 
     except ValueError as e:
         logger.error ("Invalid Arguments: " + str(e))
