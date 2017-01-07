@@ -416,17 +416,18 @@ static Matrix computeCtcInputDeltas(const std::string& costFunctionName,
 void CTCDecoderLayer::runReverseImplementation(Bundle& bundle)
 {
     auto& inputDeltaVector = bundle["inputDeltas"].get<matrix::MatrixVector>();
-    //auto& weightedCosts = bundle["weightedCosts"].get<matrix::Matrix>();
+    auto& outputActivationWeightDeltas =
+        bundle["outputActivationWeightDeltas"].get<matrix::Matrix>();
 
-    //auto outputActivationWeights = loadMatrix("outputActivationWeights");
+    auto outputActivationWeights = loadMatrix("outputActivationWeights");
     auto inputPaths = loadMatrix("inputPaths");
 
     auto inputActivations = loadMatrix("inputActivations");
 
     Matrix inputDeltas = zeros(inputActivations.size(), inputActivations.precision());
 
-    //matrix::ctcBeamSearchInputGradients(inputDeltas, outputActivationWeights,
-    //    inputPaths, weightedCosts, inputActivations);
+    matrix::ctcBeamSearchInputGradients(inputDeltas, outputActivationWeights,
+        inputPaths, outputActivationWeightDeltas, inputActivations);
 
     if(util::isLogEnabled("CTCDecoderLayer::Detail"))
     {
