@@ -20,7 +20,7 @@ logger = logging.getLogger('get-popular-tags')
 
 def getTags(tagList):
     retVal = set()
-    retVal = re.split(':|,|\n', tagList)
+    retVal = re.split(' |\"|\n', tagList)
     return retVal
 
 def reTag(inputDb, outputDb, countN):
@@ -30,10 +30,10 @@ def reTag(inputDb, outputDb, countN):
     if os.path.isfile(inputDb):
         inF = open(inputDb, 'r')
         for line in inF:
-            t = re.split(" ", line)
-            temp = t[-2]
+            t = re.split(",", line)
+            fileName = t[0]
+            temp = t[-1]
             tags = getTags(temp)
-            fileName = t[-1]
             for t in tags:
                 if not t in allTags:
                     allTags[t] = []
@@ -48,7 +48,9 @@ def reTag(inputDb, outputDb, countN):
     topN = {}
     allTags.pop('')
     counter = 0
+    logger.info("Consider top " + countN + " most frequent tags")
     for k in sorted(allTags, key=lambda k: len(allTags[k]), reverse=True):
+        logger.debug("Adding top tag: " + k)
         if counter < countN:
             topN[k] = allTags[k]
             counter += 1
@@ -57,7 +59,9 @@ def reTag(inputDb, outputDb, countN):
    
     for key, val in topN.iteritems():
         for v in val:
-            outF.write("/" + v.rstrip('\n') + " , \"" + key + "\"\n")
+            writeStr = v.rstrip('\n') + " , \"" + key + "\"\n"
+            logger.debug("Writing to file: " + writeStr)
+            outF.write(writeStr)
 
     inF.close()
     outF.close()
