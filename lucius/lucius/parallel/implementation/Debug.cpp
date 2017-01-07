@@ -21,6 +21,7 @@ CUDA_DECORATOR bool isLogEnabled(const std::string& name)
     #endif
 }
 
+#if LOGGING_ENABLED
 CUDA_DECORATOR void print(const std::string& message)
 {
     std::cout << message;
@@ -33,6 +34,7 @@ CUDA_DECORATOR LogStream::~LogStream()
         print(_message);
     }
 }
+#endif
 
 }
 }

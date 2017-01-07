@@ -25,7 +25,7 @@ void ctcBeamSearch(Matrix& outputActivationWeights, Matrix& inputPaths, Matrix& 
     const Matrix& inputActivations, size_t beamSize);
 
 void ctcBeamSearchInputGradients(Matrix& inputDeltas, const Matrix& outputActivationWeights,
-    const Matrix& inputPaths, const Matrix& weightedCosts,
+    const Matrix& inputPaths, const Matrix& outputActivationWeightDeltas,
     const Matrix& inputActivations);
 
 }

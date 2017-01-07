@@ -50,11 +50,19 @@ private:
 
 };
 
-class SimpleGatherOperation : public GatherOperation
+class Pool2DGather : public GatherOperation
 {
 public:
-    SimpleGatherOperation(Type t) : GatherOperation(t) {}
-    virtual ~SimpleGatherOperation() {}
+    CUDA_DECORATOR Pool2DGather()
+    : GatherOperation(GatherOperation::Pool2DGather)
+    {}
+
+    CUDA_DECORATOR Pool2DGather(size_t w, size_t h, size_t inputW, size_t inputH)
+    : GatherOperation(GatherOperation::Pool2DGather),
+      width(w), height(h), inputWidth(inputW), inputHeight(inputH)
+    {
+
+    }
 
 public:
     template <typename NativeType>
@@ -68,25 +76,6 @@ public:
         size_t inputIndex = (*this)(outputIndex);
 
         return inputView(linearToDimension(inputIndex, inputView.size()));
-    }
-
-public:
-    virtual size_t operator()(size_t) const { return 0; }
-
-};
-
-class Pool2DGather : public SimpleGatherOperation
-{
-public:
-    CUDA_DECORATOR Pool2DGather()
-    : SimpleGatherOperation(GatherOperation::Pool2DGather)
-    {}
-
-    CUDA_DECORATOR Pool2DGather(size_t w, size_t h, size_t inputW, size_t inputH)
-    : SimpleGatherOperation(GatherOperation::Pool2DGather),
-      width(w), height(h), inputWidth(inputW), inputHeight(inputH)
-    {
-
     }
 
 public:
@@ -121,18 +110,32 @@ public:
 
 };
 
-class Pool2DGatherInverse : public SimpleGatherOperation
+class Pool2DGatherInverse : public GatherOperation
 {
 public:
     CUDA_DECORATOR Pool2DGatherInverse()
-    : SimpleGatherOperation(GatherOperation::Pool2DGatherInverse)
+    : GatherOperation(GatherOperation::Pool2DGatherInverse)
     {}
 
     CUDA_DECORATOR Pool2DGatherInverse(size_t w, size_t h, size_t inputW, size_t inputH)
-    : SimpleGatherOperation(GatherOperation::Pool2DGatherInverse),
+    : GatherOperation(GatherOperation::Pool2DGatherInverse),
       width(w), height(h), inputWidth(inputW), inputHeight(inputH)
     {
 
+    }
+
+public:
+    template <typename NativeType>
+    CUDA_DECORATOR NativeType runOperation(
+        const Dimension& outputDimension,
+        const ConstMatrixView<NativeType>& outputView,
+        const ConstMatrixView<NativeType>& inputView) const
+    {
+        size_t outputIndex = dotProduct(outputDimension, outputView.stride());
+
+        size_t inputIndex = (*this)(outputIndex);
+
+        return inputView(linearToDimension(inputIndex, inputView.size()));
     }
 
 public:
@@ -170,19 +173,33 @@ public:
 
 };
 
-class PermuteDimensionGather : public SimpleGatherOperation
+class PermuteDimensionGather : public GatherOperation
 {
 public:
     CUDA_DECORATOR PermuteDimensionGather()
-    : SimpleGatherOperation(GatherOperation::PermuteDimensionGather)
+    : GatherOperation(GatherOperation::PermuteDimensionGather)
     {}
 
     CUDA_DECORATOR PermuteDimensionGather(const Dimension& inputStride,
         const Dimension& outputSize, const Dimension& order)
-    : SimpleGatherOperation(GatherOperation::PermuteDimensionGather), inputStride(inputStride),
+    : GatherOperation(GatherOperation::PermuteDimensionGather), inputStride(inputStride),
       outputSize(outputSize), order(order)
     {
 
+    }
+
+public:
+    template <typename NativeType>
+    CUDA_DECORATOR NativeType runOperation(
+        const Dimension& outputDimension,
+        const ConstMatrixView<NativeType>& outputView,
+        const ConstMatrixView<NativeType>& inputView) const
+    {
+        size_t outputIndex = dotProduct(outputDimension, outputView.stride());
+
+        size_t inputIndex = (*this)(outputIndex);
+
+        return inputView(linearToDimension(inputIndex, inputView.size()));
     }
 
 public:
@@ -202,21 +219,35 @@ public:
 
 };
 
-class HanningGather : public SimpleGatherOperation
+class HanningGather : public GatherOperation
 {
 public:
     CUDA_DECORATOR HanningGather()
-    : SimpleGatherOperation(GatherOperation::HanningGather)
+    : GatherOperation(GatherOperation::HanningGather)
     {}
 
     CUDA_DECORATOR HanningGather(const Dimension& inputSize, const Dimension& inputStride,
         const Dimension& outputSize)
-    : SimpleGatherOperation(GatherOperation::HanningGather),
+    : GatherOperation(GatherOperation::HanningGather),
       inputSize(inputSize),
       inputStride(inputStride),
       outputSize(outputSize)
     {
 
+    }
+
+public:
+    template <typename NativeType>
+    CUDA_DECORATOR NativeType runOperation(
+        const Dimension& outputDimension,
+        const ConstMatrixView<NativeType>& outputView,
+        const ConstMatrixView<NativeType>& inputView) const
+    {
+        size_t outputIndex = dotProduct(outputDimension, outputView.stride());
+
+        size_t inputIndex = (*this)(outputIndex);
+
+        return inputView(linearToDimension(inputIndex, inputView.size()));
     }
 
 public:

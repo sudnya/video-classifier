@@ -10,7 +10,7 @@
 #include <lucius/parallel/interface/MultiBulkSynchronousParallel.h>
 
 #include <lucius/util/interface/debug.h>
-#include <lucius/util/interface/MetaProgramming.h>
+#include <lucius/util/interface/Metaprogramming.h>
 
 namespace lucius
 {

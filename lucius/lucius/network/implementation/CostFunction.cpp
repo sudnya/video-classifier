@@ -14,6 +14,7 @@
 #include <lucius/matrix/interface/Operation.h>
 #include <lucius/matrix/interface/MatrixOperations.h>
 #include <lucius/matrix/interface/CopyOperations.h>
+#include <lucius/matrix/interface/SoftmaxOperations.h>
 #include <lucius/matrix/interface/DimensionTransformations.h>
 #include <lucius/matrix/interface/MatrixTransformations.h>
 
@@ -42,17 +43,23 @@ void CostFunction::computeCost(Bundle& bundle) const
     {
         auto& costs = bundle["costs"].get<Matrix>();
 
-        auto weights = flatten(bundle["outputActivationWeights"].get<Matrix>());
+        auto weights = bundle["outputActivationWeights"].get<Matrix>();
+
+        auto normalizedWeights = softmax(weights);
+
+        auto flattenedWeights = flatten(normalizedWeights);
 
         Dimension broadcastDimensions = removeDimensions(range(costs.size()),
             {costs.size().size() - 2});
 
-        broadcast(costs, costs, weights, broadcastDimensions, matrix::Multiply());
+        broadcast(costs, costs, flattenedWeights, broadcastDimensions, matrix::Multiply());
 
         bundle["weightedCosts"] = copy(costs);
 
         if(util::isLogEnabled("CostFunction::Detail"))
         {
+            util::log("CostFunction::Detail") << " normalized weights : "
+                << normalizedWeights.debugString();
             util::log("CostFunction::Detail") << " weighted costs : "
                 << costs.debugString();
         }
@@ -65,22 +72,51 @@ void CostFunction::computeDelta(Bundle& bundle) const
 
     if(bundle.contains("outputActivationWeights"))
     {
+        // compute output deltas
         auto& outputDeltasVector = bundle["outputDeltas"].get<MatrixVector>();
 
-        auto weights = flatten(bundle["outputActivationWeights"].get<Matrix>());
+        auto& outputActivationWeights = bundle["outputActivationWeights"].get<Matrix>();
+
+        auto weights = flatten(softmax(outputActivationWeights));
 
         auto& outputDeltas = outputDeltasVector.front();
+
+        //size_t beamSize      = outputActivationWeights.size()[0];
+        size_t miniBatchSize = outputActivationWeights.size()[1];
 
         Dimension broadcastDimensions = removeDimensions(range(outputDeltas.size()),
             {outputDeltas.size().size() - 2});
 
         broadcast(outputDeltas, outputDeltas, weights, broadcastDimensions, matrix::Multiply());
 
+        apply(outputDeltas, outputDeltas, matrix::Multiply(miniBatchSize));
+
         if(util::isLogEnabled("CostFunction::Detail"))
         {
             util::log("CostFunction::Detail") << " weighted output deltas : "
                 << outputDeltas.debugString();
         }
+
+        // compute weight deltas
+        auto& weightedCosts = bundle["weightedCosts"].get<Matrix>();
+
+        auto sum = reduce(apply(matrix::Matrix(weightedCosts), outputDeltas, matrix::Multiply()),
+            {0}, matrix::Add());
+
+        auto weightDeltas = apply(broadcast(outputDeltas, sum, {0}, matrix::Subtract()),
+            weightedCosts, matrix::Multiply());
+
+        auto& costs = bundle["costs"].get<Matrix>();
+
+        apply(weightDeltas, weightDeltas, costs, matrix::Multiply());
+
+        if(util::isLogEnabled("CostFunction::Detail"))
+        {
+            util::log("CostFunction::Detail") << " weight deltas : " << weightDeltas.debugString();
+        }
+
+        bundle["outputActivationWeightDeltas"] = weightDeltas;
+
     }
 }
 
