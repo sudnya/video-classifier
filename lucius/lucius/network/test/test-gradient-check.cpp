@@ -235,13 +235,6 @@ static NeuralNetwork createCtcDecoderNetwork(size_t layerSize, size_t layerCount
     network.back()->setActivationFunction(
         ActivationFunctionFactory::create("SigmoidActivationFunction"));
 
-    network.addLayer(LayerFactory::create("SoftmaxLayer",
-        util::ParameterPack(std::make_tuple("InputSizeAggregate", layerSize),
-        std::make_tuple("InputSizeBatch", batchSize),
-        std::make_tuple("Precision", "DoublePrecision"))));
-    network.back()->setActivationFunction(
-        ActivationFunctionFactory::create("NullActivationFunction"));
-
     network.addLayer(LayerFactory::create("CTCDecoderLayer",
         util::ParameterPack(std::make_tuple("InputSize", layerSize),
         std::make_tuple("BatchSize", batchSize),

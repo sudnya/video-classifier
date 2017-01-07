@@ -15,6 +15,7 @@
 #include <lucius/matrix/interface/MatrixOperations.h>
 #include <lucius/matrix/interface/CopyOperations.h>
 #include <lucius/matrix/interface/SoftmaxOperations.h>
+#include <lucius/matrix/interface/RecurrentOperations.h>
 #include <lucius/matrix/interface/DimensionTransformations.h>
 #include <lucius/matrix/interface/MatrixTransformations.h>
 
@@ -29,10 +30,24 @@ namespace network
 typedef matrix::Matrix Matrix;
 typedef matrix::MatrixVector MatrixVector;
 typedef matrix::Dimension Dimension;
+typedef std::vector<std::vector<size_t>> LabelVector;
+typedef std::vector<size_t> IndexVector;
 
 CostFunction::~CostFunction()
 {
 
+}
+
+static void zeroEnds(Matrix& data, const LabelVector& labels)
+{
+    IndexVector lengths;
+
+    for(auto& label : labels)
+    {
+        lengths.push_back(label.size());
+    }
+
+    recurrentZeroEnds(data, lengths);
 }
 
 void CostFunction::computeCost(Bundle& bundle) const
@@ -42,8 +57,13 @@ void CostFunction::computeCost(Bundle& bundle) const
     if(bundle.contains("outputActivationWeights"))
     {
         auto& costs = bundle["costs"].get<Matrix>();
+        auto& labels = bundle["referenceLabels"].get<LabelVector>();
 
-        auto weights = bundle["outputActivationWeights"].get<Matrix>();
+        zeroEnds(costs, labels);
+
+        bundle["originalCosts"] = copy(costs);
+
+        auto& weights = bundle["outputActivationWeights"].get<Matrix>();
 
         auto normalizedWeights = softmax(weights);
 
@@ -53,8 +73,6 @@ void CostFunction::computeCost(Bundle& bundle) const
             {costs.size().size() - 2});
 
         broadcast(costs, costs, flattenedWeights, broadcastDimensions, matrix::Multiply());
-
-        bundle["weightedCosts"] = copy(costs);
 
         if(util::isLogEnabled("CostFunction::Detail"))
         {
@@ -74,22 +92,26 @@ void CostFunction::computeDelta(Bundle& bundle) const
     {
         // compute output deltas
         auto& outputDeltasVector = bundle["outputDeltas"].get<MatrixVector>();
+        auto& labels = bundle["referenceLabels"].get<LabelVector>();
 
         auto& outputActivationWeights = bundle["outputActivationWeights"].get<Matrix>();
 
-        auto weights = flatten(softmax(outputActivationWeights));
+        auto normalizedWeights = softmax(outputActivationWeights);
+
+        auto flattenedWeights = flatten(normalizedWeights);
 
         auto& outputDeltas = outputDeltasVector.front();
 
-        //size_t beamSize      = outputActivationWeights.size()[0];
+        size_t beamSize      = outputActivationWeights.size()[0];
         size_t miniBatchSize = outputActivationWeights.size()[1];
 
         Dimension broadcastDimensions = removeDimensions(range(outputDeltas.size()),
             {outputDeltas.size().size() - 2});
 
-        broadcast(outputDeltas, outputDeltas, weights, broadcastDimensions, matrix::Multiply());
+        broadcast(outputDeltas, outputDeltas, flattenedWeights,
+            broadcastDimensions, matrix::Multiply());
 
-        apply(outputDeltas, outputDeltas, matrix::Multiply(miniBatchSize));
+        zeroEnds(outputDeltas, labels);
 
         if(util::isLogEnabled("CostFunction::Detail"))
         {
@@ -98,17 +120,29 @@ void CostFunction::computeDelta(Bundle& bundle) const
         }
 
         // compute weight deltas
-        auto& weightedCosts = bundle["weightedCosts"].get<Matrix>();
+        auto& costs = bundle["originalCosts"].get<Matrix>();
 
-        auto sum = reduce(apply(matrix::Matrix(weightedCosts), outputDeltas, matrix::Multiply()),
-            {0}, matrix::Add());
+        if(util::isLogEnabled("CostFunction::Detail"))
+        {
+            util::log("CostFunction::Detail") << " original costs : "
+                << costs.debugString();
+        }
 
-        auto weightDeltas = apply(broadcast(outputDeltas, sum, {0}, matrix::Subtract()),
-            weightedCosts, matrix::Multiply());
+        auto outputDeltasScaledWithCosts = reshape(
+            reduce(costs, broadcastDimensions, matrix::Add()), {beamSize, miniBatchSize});
 
-        auto& costs = bundle["costs"].get<Matrix>();
+        if(util::isLogEnabled("CostFunction::Detail"))
+        {
+            util::log("CostFunction::Detail") << " cost scaled output deltas : "
+                << outputDeltasScaledWithCosts.debugString();
+        }
 
-        apply(weightDeltas, weightDeltas, costs, matrix::Multiply());
+        auto sum = reduce(apply(matrix::Matrix(normalizedWeights), outputDeltasScaledWithCosts,
+            matrix::Multiply()), {0}, matrix::Add());
+
+        auto weightDeltas = apply(
+            broadcast(outputDeltasScaledWithCosts, sum, {0}, matrix::Subtract()),
+            normalizedWeights, matrix::Multiply());
 
         if(util::isLogEnabled("CostFunction::Detail"))
         {
