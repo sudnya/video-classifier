@@ -7,6 +7,7 @@
 #include <lucius/matrix/interface/CopyOperations.h>
 #include <lucius/matrix/interface/SortOperations.h>
 #include <lucius/matrix/interface/ScanOperations.h>
+#include <lucius/matrix/interface/SoftmaxOperations.h>
 #include <lucius/matrix/interface/ReduceByKeyOperations.h>
 #include <lucius/matrix/interface/AdjacentElementOperations.h>
 #include <lucius/matrix/interface/MatrixTransformations.h>
@@ -300,8 +301,10 @@ static void finalizeWorkspace(Matrix& outputActivationWeights, Matrix& outputAct
 }
 
 void ctcBeamSearch(Matrix& outputActivationWeights, Matrix& inputPaths,
-    Matrix& outputActivations, const Matrix& inputActivations, size_t beamSize)
+    Matrix& outputActivations, const Matrix& unscaledInputActivations, size_t beamSize)
 {
+    auto inputActivations = softmax(unscaledInputActivations);
+
     size_t alphabet      = inputActivations.size().front();
     size_t miniBatchSize = inputActivations.size()[1];
     size_t timesteps     = inputActivations.size().back();
@@ -334,8 +337,10 @@ void ctcBeamSearch(Matrix& outputActivationWeights, Matrix& inputPaths,
 
 void ctcBeamSearchInputGradients(Matrix& inputDeltas, const Matrix& outputActivationWeights,
     const Matrix& inputPaths, const Matrix& reducedWeightDeltas,
-    const Matrix& inputActivations)
+    const Matrix& unscaledInputActivations)
 {
+    auto inputActivations = softmax(unscaledInputActivations);
+
     if(util::isLogEnabled("CTCOperations::Detail"))
     {
         util::log("CTCOperations::Detail") << "Running back propagation.\n";
@@ -391,6 +396,13 @@ void ctcBeamSearchInputGradients(Matrix& inputDeltas, const Matrix& outputActiva
         util::log("CTCOperations::Detail") << " input deltas: "
             << inputDeltas.debugString();
     }
+
+    // compute softmax deltas
+    auto sum = reduce(apply(matrix::Matrix(inputActivations), inputDeltas, matrix::Multiply()),
+        {0}, matrix::Add());
+
+    apply(inputDeltas, broadcast(inputDeltas, sum, {0}, matrix::Subtract()),
+        inputActivations, matrix::Multiply());
 }
 
 }
