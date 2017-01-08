@@ -213,6 +213,11 @@ static void advanceBeam(Matrix& workspace, Matrix& inputPaths, Matrix& links,
     }
 }
 
+static void compactPaths(Matrix& inputPaths)
+{
+
+}
+
 static void createFullPaths(Matrix& inputPaths, const Matrix& links)
 {
     Matrix pathLookupTable(inputPaths.size(), inputPaths.precision());
@@ -254,7 +259,7 @@ static void createFullPaths(Matrix& inputPaths, const Matrix& links)
             << inputPaths.debugString();
     }
 
-    // TODO: compactPaths(inputPaths);
+    compactPaths(inputPaths);
 }
 
 static void setOutputActivationWeights(Matrix& outputActivationWeights,
