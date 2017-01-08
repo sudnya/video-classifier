@@ -137,12 +137,7 @@ void CostFunction::computeDelta(Bundle& bundle) const
                 << outputDeltasScaledWithCosts.debugString();
         }
 
-        auto sum = reduce(apply(matrix::Matrix(normalizedWeights), outputDeltasScaledWithCosts,
-            matrix::Multiply()), {0}, matrix::Add());
-
-        auto weightDeltas = apply(
-            broadcast(outputDeltasScaledWithCosts, sum, {0}, matrix::Subtract()),
-            normalizedWeights, matrix::Multiply());
+        auto weightDeltas = softmaxGradient(normalizedWeights, outputDeltasScaledWithCosts);
 
         if(util::isLogEnabled("CostFunction::Detail"))
         {

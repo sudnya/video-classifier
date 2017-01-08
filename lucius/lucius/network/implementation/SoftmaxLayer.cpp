@@ -160,11 +160,7 @@ void SoftmaxLayer::runReverseImplementation(Bundle& bundle)
     // Get the output deltas
     auto outputDeltas = foldTime(outputDeltasVector.front());
 
-    auto sum = reduce(apply(matrix::Matrix(outputActivations), outputDeltas, matrix::Multiply()),
-        {0}, matrix::Add());
-
-    auto inputDeltas = apply(broadcast(outputDeltas, sum, {0}, matrix::Subtract()),
-        outputActivations, matrix::Multiply());
+    auto inputDeltas = softmaxGradient(outputActivations, outputDeltas);
 
     inputDeltasVector.push_back(unfoldTime(inputDeltas, outputDeltasVector.front().size()));
 }
