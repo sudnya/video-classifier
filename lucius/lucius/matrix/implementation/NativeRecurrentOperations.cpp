@@ -96,8 +96,7 @@ std::tuple<size_t, size_t> nativeRNNGetLinearLayerMatrixSizeAndOffset(
     size_t matrixSize = handle.layerSize * handle.layerSize * precision.size();
     size_t biasSize   = handle.layerSize * precision.size();
 
-    size_t multiplier = getMultiplier(handle) * getInputMultiplier(handle) *
-        getDirectionMultiplier(handle);
+    size_t multiplier = getMultiplier(handle) * getInputMultiplier(handle);
 
     assert(offsetInLayer < multiplier);
 
@@ -116,8 +115,7 @@ std::tuple<size_t, size_t> nativeRNNGetBiasLayerMatrixSizeAndOffset(
     size_t matrixSize = handle.layerSize * handle.layerSize * precision.size();
     size_t biasSize   = handle.layerSize * precision.size();
 
-    size_t multiplier = getMultiplier(handle) * getInputMultiplier(handle) *
-        getDirectionMultiplier(handle);
+    size_t multiplier = getMultiplier(handle) * getInputMultiplier(handle);
 
     assert(offsetInLayer < multiplier);
 

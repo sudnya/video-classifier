@@ -169,7 +169,8 @@ class ExperimentDaemon(daemon):
                 if 'system' in self.configuration and 'cuda-device' in self.configuration['system']:
                     environment['CUDA_VISIBLE_DEVICES'] = self.configuration['system']['cuda-device']
 
-                daemonfile.write('Launching training program with ' + str(command) + "\n")
+                daemonfile.write('Launching training program with ' + str(' '.join(command)) +
+                    "\n")
                 process = subprocess.Popen(command, stdout=logfile, stderr=logfile,
                     env=environment)
                 process.poll()

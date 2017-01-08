@@ -7,6 +7,7 @@
 #include <lucius/matrix/interface/CopyOperations.h>
 #include <lucius/matrix/interface/SortOperations.h>
 #include <lucius/matrix/interface/ScanOperations.h>
+#include <lucius/matrix/interface/SoftmaxOperations.h>
 #include <lucius/matrix/interface/ReduceByKeyOperations.h>
 #include <lucius/matrix/interface/AdjacentElementOperations.h>
 #include <lucius/matrix/interface/MatrixTransformations.h>
@@ -88,7 +89,7 @@ static void initializeWorkspace(Matrix& workspace, Matrix& inputPaths,
         slice(workspace, {0, 0, 0}, {1, alphabet, miniBatchSize}),
         {alphabet, miniBatchSize});
 
-    zeros(workspace);
+    apply(workspace, workspace, Fill(-10000.0));
     copy(workspaceSlice, currentInputActivations);
 
     if(util::isLogEnabled("CTCOperations::Detail"))
@@ -150,7 +151,7 @@ static void expandBeam(Matrix& workspace, const Matrix& inputActivations,
             << workspace.debugString();
     }
 
-    broadcast(workspace, workspace, currentInputActivations, {0}, Multiply());
+    broadcast(workspace, workspace, currentInputActivations, {0}, Add());
 
     if(util::isLogEnabled("CTCOperations::Detail"))
     {
@@ -252,6 +253,8 @@ static void createFullPaths(Matrix& inputPaths, const Matrix& links)
         util::log("CTCOperations::Detail") << "  final paths: "
             << inputPaths.debugString();
     }
+
+    // TODO: compactPaths(inputPaths);
 }
 
 static void setOutputActivationWeights(Matrix& outputActivationWeights,
@@ -300,8 +303,10 @@ static void finalizeWorkspace(Matrix& outputActivationWeights, Matrix& outputAct
 }
 
 void ctcBeamSearch(Matrix& outputActivationWeights, Matrix& inputPaths,
-    Matrix& outputActivations, const Matrix& inputActivations, size_t beamSize)
+    Matrix& outputActivations, const Matrix& unscaledInputActivations, size_t beamSize)
 {
+    auto inputActivations = logsoftmax(unscaledInputActivations);
+
     size_t alphabet      = inputActivations.size().front();
     size_t miniBatchSize = inputActivations.size()[1];
     size_t timesteps     = inputActivations.size().back();
@@ -333,9 +338,11 @@ void ctcBeamSearch(Matrix& outputActivationWeights, Matrix& inputPaths,
 }
 
 void ctcBeamSearchInputGradients(Matrix& inputDeltas, const Matrix& outputActivationWeights,
-    const Matrix& inputPaths, const Matrix& outputActivationWeightDeltas,
-    const Matrix& inputActivations)
+    const Matrix& inputPaths, const Matrix& reducedWeightDeltas,
+    const Matrix& unscaledInputActivations)
 {
+    auto inputActivations = logsoftmax(unscaledInputActivations);
+
     if(util::isLogEnabled("CTCOperations::Detail"))
     {
         util::log("CTCOperations::Detail") << "Running back propagation.\n";
@@ -346,26 +353,16 @@ void ctcBeamSearchInputGradients(Matrix& inputDeltas, const Matrix& outputActiva
     size_t miniBatchSize = inputPaths.size()[1];
     size_t timesteps     = inputPaths.size()[2];
 
-    auto reshapedWeightDeltas = reshape(outputActivationWeightDeltas,
-        {alphabet, beamSize, miniBatchSize, timesteps});
-
     if(util::isLogEnabled("CTCOperations::Detail"))
     {
         util::log("CTCOperations::Detail") << " output deltas: "
-            << outputActivationWeightDeltas.debugString();
+            << reducedWeightDeltas.debugString();
         util::log("CTCOperations::Detail") << " input activations: "
             << inputActivations.debugString();
     }
 
-    auto reducedWeightDeltas = reduce(reshapedWeightDeltas, {0, 3}, Add());
-
-    if(util::isLogEnabled("CTCOperations::Detail"))
-    {
-        util::log("CTCOperations::Detail") << " reduced weighted costs: "
-            << reducedWeightDeltas.debugString();
-    }
-
-    Matrix selectedPaths(reshapedWeightDeltas.size(), reshapedWeightDeltas.precision());
+    Matrix selectedPaths({alphabet, beamSize, miniBatchSize, timesteps},
+        inputActivations.precision());
 
     //  selected paths is {alphabet, beamSize, miniBatchSize, timesteps}
     gather(selectedPaths, reshape(inputPaths, {1, beamSize, miniBatchSize, timesteps}),
@@ -377,7 +374,11 @@ void ctcBeamSearchInputGradients(Matrix& inputDeltas, const Matrix& outputActiva
             << selectedPaths.debugString();
     }
 
-    auto expandedInputDeltas = broadcast(selectedPaths, reducedWeightDeltas, {0, 3}, Multiply());
+    //auto scaledReducedWeightDeltas = apply(reducedWeightDeltas,
+    //    outputActivationWeights, Multiply());
+
+    auto expandedInputDeltas = broadcast(selectedPaths, reducedWeightDeltas,
+        {0, 3}, Multiply());
 
     if(util::isLogEnabled("CTCOperations::Detail"))
     {
@@ -385,19 +386,22 @@ void ctcBeamSearchInputGradients(Matrix& inputDeltas, const Matrix& outputActiva
             << expandedInputDeltas.debugString();
     }
 
-    broadcast(expandedInputDeltas, expandedInputDeltas, inputActivations, {1}, Divide());
+    //broadcast(expandedInputDeltas, expandedInputDeltas, inputActivations,
+    //    {1}, Divide());
+
+    //apply(expandedInputDeltas, expandedInputDeltas, Multiply(miniBatchSize));
 
     // input deltas is {alphabet, miniBatchSize, timesteps}
     reduce(inputDeltas, expandedInputDeltas, {1}, Add());
-
-    // multiply by minibatch size
-    apply(inputDeltas, inputDeltas, Multiply(1.0));
 
     if(util::isLogEnabled("CTCOperations::Detail"))
     {
         util::log("CTCOperations::Detail") << " input deltas: "
             << inputDeltas.debugString();
     }
+
+    // compute softmax deltas
+    inputDeltas = logsoftmaxGradient(inputActivations, inputDeltas);
 }
 
 }
