@@ -267,7 +267,7 @@ static void setOutputActivationWeights(Matrix& outputActivationWeights,
         slice(workspace, {0, 0, 0}, {beamSize, 1, miniBatchSize}),
         {beamSize, miniBatchSize});
 
-    copy(outputActivationWeights, workspaceSlice);
+    apply(outputActivationWeights, workspaceSlice, Exp());
 
     if(util::isLogEnabled("CTCOperations::Detail"))
     {
@@ -374,10 +374,11 @@ void ctcBeamSearchInputGradients(Matrix& inputDeltas, const Matrix& outputActiva
             << selectedPaths.debugString();
     }
 
-    //auto scaledReducedWeightDeltas = apply(reducedWeightDeltas,
-    //    outputActivationWeights, Multiply());
+    auto scaledReducedWeightDeltas = apply(reducedWeightDeltas,
+        outputActivationWeights, Multiply());
+    //auto squaredReducedWeightDeltas = apply(reducedWeightDeltas, Square());
 
-    auto expandedInputDeltas = broadcast(selectedPaths, reducedWeightDeltas,
+    auto expandedInputDeltas = broadcast(selectedPaths, scaledReducedWeightDeltas,
         {0, 3}, Multiply());
 
     if(util::isLogEnabled("CTCOperations::Detail"))
@@ -389,7 +390,7 @@ void ctcBeamSearchInputGradients(Matrix& inputDeltas, const Matrix& outputActiva
     //broadcast(expandedInputDeltas, expandedInputDeltas, inputActivations,
     //    {1}, Divide());
 
-    //apply(expandedInputDeltas, expandedInputDeltas, Multiply(miniBatchSize));
+    apply(expandedInputDeltas, expandedInputDeltas, Multiply(miniBatchSize));
 
     // input deltas is {alphabet, miniBatchSize, timesteps}
     reduce(inputDeltas, expandedInputDeltas, {1}, Add());
