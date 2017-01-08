@@ -215,7 +215,7 @@ static void advanceBeam(Matrix& workspace, Matrix& inputPaths, Matrix& links,
 
 static void compactPaths(Matrix& inputPaths)
 {
-
+    //unique(inputPaths, inputPaths, {2}, 0.0);
 }
 
 static void createFullPaths(Matrix& inputPaths, const Matrix& links)
