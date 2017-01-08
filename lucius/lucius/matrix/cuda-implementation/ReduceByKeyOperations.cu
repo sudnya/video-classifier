@@ -207,6 +207,22 @@ void reduceByKey(Matrix& result, const Matrix& keys, const Matrix& values,
     detail::reduceByKey(result, keys, values, dimensionsToReduce, op, AllBinaryOperations());
 }
 
+void unique(Matrix& output, const Matrix& input, const Dimension& dimensionsToReduce,
+    double defaultValue)
+{
+    apply(output, output, Fill(defaultValue));
+    reduceByKey(output, input, input, dimensionsToReduce, CopyRight());
+}
+
+Matrix unique(const Matrix& input, const Dimension& dimensionsToReduce, double defaultValue)
+{
+    Matrix output(input.size(), input.precision());
+
+    unique(output, input, dimensionsToReduce, defaultValue);
+
+    return output;
+}
+
 } // namespace matrix
 } // namespace lucius
 

@@ -23,7 +23,6 @@ void exclusiveScan(Matrix& output, const Matrix& input, size_t dimensionToReduce
 Matrix exclusiveScan(const Matrix& input, size_t dimensionToReduce,
     const Operation& op, double initialValue);
 
-
 }
 }
 

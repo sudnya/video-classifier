@@ -213,11 +213,6 @@ static void advanceBeam(Matrix& workspace, Matrix& inputPaths, Matrix& links,
     }
 }
 
-static void compactPaths(Matrix& inputPaths)
-{
-    //unique(inputPaths, inputPaths, {2}, 0.0);
-}
-
 static void createFullPaths(Matrix& inputPaths, const Matrix& links)
 {
     Matrix pathLookupTable(inputPaths.size(), inputPaths.precision());
@@ -258,8 +253,6 @@ static void createFullPaths(Matrix& inputPaths, const Matrix& links)
         util::log("CTCOperations::Detail") << "  final paths: "
             << inputPaths.debugString();
     }
-
-    compactPaths(inputPaths);
 }
 
 static void setOutputActivationWeights(Matrix& outputActivationWeights,
@@ -281,14 +274,28 @@ static void setOutputActivationWeights(Matrix& outputActivationWeights,
     }
 }
 
+static Matrix compactPaths(const Matrix& inputPaths)
+{
+    auto compactedPaths = unique(inputPaths, {2}, 0.0);
+
+    if(util::isLogEnabled("CTCOperations::Detail"))
+    {
+        util::log("CTCOperations::Detail") << "  compacted paths: "
+            << compactedPaths.debugString();
+    }
+
+    return compactedPaths;
+}
+
 static void setOutputActivations(Matrix& outputActivations, const Matrix& inputPaths)
 {
+    auto compactedPaths = compactPaths(inputPaths);
 
-    size_t beamSize      = inputPaths.size()[0];
-    size_t miniBatchSize = inputPaths.size()[1];
-    size_t timesteps     = inputPaths.size()[2];
+    size_t beamSize      = compactedPaths.size()[0];
+    size_t miniBatchSize = compactedPaths.size()[1];
+    size_t timesteps     = compactedPaths.size()[2];
 
-    auto reshapedInputPaths = reshape(inputPaths, {1, beamSize, miniBatchSize, timesteps});
+    auto reshapedInputPaths = reshape(compactedPaths, {1, beamSize, miniBatchSize, timesteps});
 
     gather(outputActivations, reshapedInputPaths, GatherIndexToOneHot(0));
 
@@ -381,7 +388,6 @@ void ctcBeamSearchInputGradients(Matrix& inputDeltas, const Matrix& outputActiva
 
     auto scaledReducedWeightDeltas = apply(reducedWeightDeltas,
         outputActivationWeights, Multiply());
-    //auto squaredReducedWeightDeltas = apply(reducedWeightDeltas, Square());
 
     auto expandedInputDeltas = broadcast(selectedPaths, scaledReducedWeightDeltas,
         {0, 3}, Multiply());
@@ -391,9 +397,6 @@ void ctcBeamSearchInputGradients(Matrix& inputDeltas, const Matrix& outputActiva
         util::log("CTCOperations::Detail") << " masked expanded input deltas: "
             << expandedInputDeltas.debugString();
     }
-
-    //broadcast(expandedInputDeltas, expandedInputDeltas, inputActivations,
-    //    {1}, Divide());
 
     apply(expandedInputDeltas, expandedInputDeltas, Multiply(miniBatchSize));
 
