@@ -281,13 +281,15 @@ public:
 public:
     CUDA_DECORATOR size_t power(size_t base, size_t exponent) const
     {
-        while(exponent > 1)
+        size_t result = 1;
+
+        while(exponent > 0)
         {
-            base *= base;
+            result *= base;
             exponent -= 1;
         }
 
-        return base;
+        return result;
     }
 
     CUDA_DECORATOR void mergePath(SortElement*& aBegin, SortElement*& aEnd,
