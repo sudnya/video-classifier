@@ -254,13 +254,16 @@ public:
         auto relativeGroup = getRelativeGroup(localGroup, innerGroup);
 
         size_t segmentSize = LocalValueCount * localGroup.size();
-        size_t segmentId   = 2 * relativeGroup.id();
 
-        SortElement* a = sharedMemory + segmentId * segmentSize;
-        SortElement* b = sharedMemory + (segmentId + 1) * segmentSize;
+        size_t idInSegment     = localGroup.id();
+        size_t halfSegmentSize = segmentSize / 2;
+        size_t halfSegmentId   = 2 * relativeGroup.id();
+
+        SortElement* a = sharedMemory +  halfSegmentId      * halfSegmentSize;
+        SortElement* b = sharedMemory + (halfSegmentId + 1) * halfSegmentSize;
 
         // Merge path
-        mergePath(aBegin, aEnd, bBegin, bEnd, a, b, segmentId, segmentSize);
+        mergePath(aBegin, aEnd, bBegin, bEnd, a, b, idInSegment, halfSegmentSize);
 
         // Serial merge
         SortElement outputs[LocalValueCount];
