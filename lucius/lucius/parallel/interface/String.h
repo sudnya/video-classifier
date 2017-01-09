@@ -12,7 +12,7 @@ namespace parallel
 class string
 {
 public:
-    CUDA_DECORATOR string(const char*) {}
+    CUDA_DECORATOR string(const char* s) {}
     CUDA_DECORATOR ~string() {}
 
 };

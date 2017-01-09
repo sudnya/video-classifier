@@ -4,9 +4,12 @@
     \brief Function sources for common C string manipulations
 */
 
-
+// Lucius Includes
 #include <lucius/util/interface/string.h>
 #include <lucius/util/interface/debug.h>
+
+// Standard Library Includes
+#include <stdexcept>
 
 namespace lucius
 {
@@ -271,6 +274,66 @@ std::string toString(const std::vector<size_t>& indices)
     stream << " ]";
 
     return stream.str();
+}
+
+StringVector toGraphemes(const std::string& label, const StringSet& graphemeDictionary,
+    bool ignoreMissingGraphemes)
+{
+    auto remainingLabel = label;
+
+    StringVector graphemes;
+
+    while(!remainingLabel.empty())
+    {
+        auto insertPosition = graphemeDictionary.lower_bound(remainingLabel);
+
+        // exact match
+        if(insertPosition != graphemeDictionary.end() && *insertPosition == remainingLabel)
+        {
+            graphemes.push_back(remainingLabel);
+            break;
+        }
+
+        // ordered before first grapheme
+        if(insertPosition == graphemeDictionary.begin())
+        {
+            if(ignoreMissingGraphemes)
+            {
+                remainingLabel = remainingLabel.substr(1);
+                continue;
+            }
+            else
+            {
+                throw std::runtime_error("Could not match remaining label '" + remainingLabel +
+                    "' against a grapheme.");
+            }
+        }
+
+        --insertPosition;
+
+        auto grapheme = remainingLabel.substr(0, insertPosition->size());
+
+        if(grapheme != *insertPosition)
+        {
+            if(ignoreMissingGraphemes)
+            {
+                remainingLabel = remainingLabel.substr(1);
+                continue;
+            }
+            else
+            {
+                throw std::runtime_error("Could not match remaining label '" + remainingLabel +
+                    "' against best grapheme '" + *insertPosition + "'.");
+            }
+        }
+
+        graphemes.push_back(grapheme);
+
+        remainingLabel = remainingLabel.substr(grapheme.size());
+    }
+
+    return graphemes;
+
 }
 
 }

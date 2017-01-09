@@ -251,9 +251,10 @@ public:
         size_t threadsPerResult = power(2, phase);
 
         auto localGroup = partitionThreadGroup(innerGroup, threadsPerResult);
+        auto relativeGroup = getRelativeGroup(localGroup, innerGroup);
 
         size_t segmentSize = LocalValueCount * localGroup.size();
-        size_t segmentId   = 2 * localGroup.id();
+        size_t segmentId   = 2 * relativeGroup.id();
 
         SortElement* a = sharedMemory + segmentId * segmentSize;
         SortElement* b = sharedMemory + (segmentId + 1) * segmentSize;
