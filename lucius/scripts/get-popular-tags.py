@@ -50,7 +50,7 @@ def reTag(inputDb, outputDb, countN):
     counter = 0
     logger.info("Consider top " + countN + " most frequent tags")
     for k in sorted(allTags, key=lambda k: len(allTags[k]), reverse=True):
-        logger.debug("Adding top tag: " + k)
+        logger.debug("Adding top tag: " + k + " count " + str(len(allTags[k])))
         if counter < countN:
             topN[k] = allTags[k]
             counter += 1
