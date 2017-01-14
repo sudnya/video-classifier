@@ -35,7 +35,7 @@ public:
     {
         #ifdef __CUDA_ARCH__
         return level == 0 ? 1  :
-               ((level == 1) ? 32 : 512);
+               ((level == 1) ? 32 : 256);
         #else
         return 1;
         #endif

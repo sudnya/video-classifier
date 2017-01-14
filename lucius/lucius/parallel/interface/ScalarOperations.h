@@ -50,6 +50,18 @@ CUDA_DECORATOR inline size_t max(const size_t& left, const size_t& right)
     #endif
 }
 
+template <typename T>
+CUDA_DECORATOR inline void swap(T& left, T& right)
+{
+    #ifdef __NVCC__
+    T temp = std::move(left);
+    left = std::move(right);
+    right = std::move(temp);
+    #else
+    std::swap(left, right);
+    #endif
+}
+
 }
 }
 

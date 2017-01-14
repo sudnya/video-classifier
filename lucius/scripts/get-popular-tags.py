@@ -45,6 +45,7 @@ def reTag(inputDb, outputDb, countN):
     
     logger.info ("Downloaded file " + str(inputDb) + " locally at " + str(outputDb))
     
+    alreadyWritten = set()
     topN = {}
     allTags.pop('')
     counter = 0
@@ -59,9 +60,11 @@ def reTag(inputDb, outputDb, countN):
    
     for key, val in topN.iteritems():
         for v in val:
-            writeStr = v.rstrip('\n') + " , \"" + key + "\"\n"
-            logger.debug("Writing to file: " + writeStr)
-            outF.write(writeStr)
+            if v not in alreadyWritten:
+                writeStr = v.rstrip('\n') + " , \"" + key + "\"\n"
+                logger.debug("Writing to file: " + writeStr)
+                outF.write(writeStr)
+                alreadyWritten.add(v)
 
     inF.close()
     outF.close()

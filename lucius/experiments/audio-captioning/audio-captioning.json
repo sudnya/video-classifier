@@ -6,11 +6,11 @@
         "type" : "NesterovAcceleratedGradientSolver",
 
         "batch-size"      : "64",
-        "maximum-samples" : "1e9",
+        "maximum-samples" : "2048",
         "standardization-samples" : "1024",
-        "validation-samples" : "256",
+        "validation-samples" : "64",
 
-        "epochs" : "2000",
+        "epochs" : "20",
 
         "parameters" :
         {
@@ -32,7 +32,7 @@
             {
                 "Type" : "RecurrentLayer",
                 "Direction" : "bidirectional",
-                "Size" : "1024"
+                "Size" : "64"
             },
             "mean-pool":
             {
@@ -85,21 +85,25 @@
             "forward":
             {
                 "Type" : "FeedForwardLayer",
-                "OutputSize" : "1024",
+                "OutputSize" : "64"
+            },
+            "softmax":
+            {
+                "Type" : "SoftmaxLayer",
                 "ActivationFunction" : "NullActivationFunction"
             },
             "acoustic-model-output":
             {
                 "Type" : "FeedForwardLayer",
                 "ActivationFunction" : "NullActivationFunction",
-                "OutputSize" : "31"
+                "OutputSize" : "34"
             },
             "ctc-decoder":
             {
                 "Type" : "CTCDecoderLayer",
                 "CostFunction" : "CTCCostFunction",
-                "CostFunctionWeight" : "1.0",
-                "BeamSize" : "4"
+                "CostFunctionWeight" : "0.01",
+                "BeamSearchSize" : "8"
             },
             "batch-norm" :
             {
@@ -108,8 +112,8 @@
             "language-model-recurrent" :
             {
                 "Type" : "RecurrentLayer",
-                "Direction" : "bidirectional",
-                "Size" : 1024
+                "Direction" : "forward",
+                "Size" : "64"
             },
             "language-model-output":
             {
@@ -124,19 +128,15 @@
             {
                 "layers" :
                 [
-                    "extract-frequencies-convolution-0",
-                    "extract-frequencies-convolution-1",
-                    "extract-frequencies-convolution-2",
                     "forward",
-                    "batch-norm",
                     "recurrent",
                     "forward",
-                    "batch-norm",
                     "acoustic-model-output",
+                    "softmax",
                     "ctc-decoder",
+                    "forward",
                     "language-model-recurrent",
                     "forward",
-                    "batch-norm",
                     "language-model-output"
                 ]
             }
@@ -151,16 +151,15 @@
         {
             "SamplingRate"  : "16384",
             "FrameDuration" : "1024",
-            "Graphemes" : [ "a", "b", "c", "d", "e", "f", "g", "h", "i",
-                            "j", "k", "l", "m", "n", "o", "p", "q", "r",
-                            "s", "t", "u", "v", "w", "x", "y", "z", ".",
-                            ",", "'", " "],
-            "DelimiterGrapheme" : "END"
+            "Graphemes" : [ "a", "b", "c", "d", "e", "f", "g", "h", "i", "j",
+                            "k", "l", "m", "n", "o", "p", "q", "r", "s", "t",
+                            "u", "v", "w", "x", "y", "z", ".", ",", "'", " ",
+                            "START-", "-END"],
+            "UsesUnknownToken" : "1",
+            "UsesSeparatorToken" : "1"
 
 
-        },
-
-        "infer-outputs-from" : "/data/4tb/audio-search-300/development/database.txt"
+        }
 
     },
 
@@ -182,7 +181,7 @@
     "dataset" :
     {
         "training-dataset-path"   : "/data/4tb/audio-search-300/training/simple-labels-no-commercials.txt",
-        "validation-dataset-path" : "/data/4tb/audio-search-300/development/database.txt",
+        "validation-dataset-path" : "/data/4tb/audio-search-300/training/simple-labels-no-commercials.txt",
 
         "required-accuracy" : "99.0"
     },
@@ -208,7 +207,7 @@
 
     "system" :
     {
-        "use-cuda"    : "1",
+        "use-cuda"    : "0",
         "cuda-device" : "1",
         "precision"   : "SinglePrecision"
     }

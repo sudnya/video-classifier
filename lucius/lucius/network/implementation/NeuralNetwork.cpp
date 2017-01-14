@@ -420,7 +420,9 @@ Bundle NeuralNetwork::train(const Bundle& bundle)
     getSolver()->setBundle(&result);
     getSolver()->setNetwork(this);
 
-    result["cost"] = getSolver()->solve();
+    double cost = getSolver()->solve();
+
+    result["cost"] = cost;
 
     return result;
 }
