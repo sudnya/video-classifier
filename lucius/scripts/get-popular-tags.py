@@ -30,10 +30,12 @@ def reTag(inputDb, outputDb, countN):
     if os.path.isfile(inputDb):
         inF = open(inputDb, 'r')
         for line in inF:
+            #logger.debug(line)
             t = re.split(",", line)
             fileName = t[0]
             temp = t[-1]
             tags = getTags(temp)
+            #print tags
             for t in tags:
                 if not t in allTags:
                     allTags[t] = []
