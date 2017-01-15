@@ -30,10 +30,12 @@ def reTag(inputDb, outputDb, countN):
     if os.path.isfile(inputDb):
         inF = open(inputDb, 'r')
         for line in inF:
+            #logger.debug(line)
             t = re.split(",", line)
             fileName = t[0]
             temp = t[-1]
             tags = getTags(temp)
+            #print tags
             for t in tags:
                 if not t in allTags:
                     allTags[t] = []
@@ -51,7 +53,7 @@ def reTag(inputDb, outputDb, countN):
     counter = 0
     logger.info("Consider top " + str(countN) + " most frequent tags")
     for k in sorted(allTags, key=lambda k: len(allTags[k]), reverse=True):
-        logger.debug("Adding top tag: " + k)
+        logger.debug("Adding top tag: " + k + " count " + str(len(allTags[k])))
         if counter < countN:
             topN[k] = allTags[k]
             counter += 1
