@@ -49,7 +49,7 @@ def reTag(inputDb, outputDb, countN):
     topN = {}
     allTags.pop('')
     counter = 0
-    logger.info("Consider top " + countN + " most frequent tags")
+    logger.info("Consider top " + str(countN) + " most frequent tags")
     for k in sorted(allTags, key=lambda k: len(allTags[k]), reverse=True):
         logger.debug("Adding top tag: " + k)
         if counter < countN:
@@ -83,7 +83,7 @@ def main():
     isVerbose   = arguments['verbose']
     inputFile   = arguments['input_file']
     outputFile  = arguments['output_file']
-    topN        = arguments['topN']
+    topN        = int(arguments['topN'])
     
     if isVerbose:
         logging.basicConfig(level=logging.DEBUG)
