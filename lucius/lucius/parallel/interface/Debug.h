@@ -4,10 +4,18 @@
 // Lucius Includes
 #include <lucius/parallel/interface/cuda.h>
 #include <lucius/parallel/interface/String.h>
+#include <lucius/parallel/interface/Set.h>
 
 // Standard Library Includes
 #include <string>
 #include <sstream>
+
+// Preprocessor Defines
+#ifdef __NVCC__
+#define ENABLE_LOGGING 1
+#else
+#define ENABLE_LOGGING 1
+#endif
 
 namespace lucius
 {
@@ -16,24 +24,114 @@ namespace parallel
 {
 
 #if ENABLE_LOGGING
-CUDA_DECORATOR bool isLogEnabled(const std::string& name);
+class LogDatabase
+{
+public:
+    CUDA_DECORATOR bool isLogEnabled(const string& logName) const
+    {
+        if(_enableAllLogs)
+        {
+            return true;
+        }
+
+        return _logsEnabled.count(logName) != 0;
+    }
+
+    CUDA_DECORATOR void enableSpecificLog(const string& logName)
+    {
+        _logsEnabled.insert(logName);
+    }
+
+    CUDA_DECORATOR void enableAllLogs(bool shouldAllLogsBeEnabled)
+    {
+        _enableAllLogs = shouldAllLogsBeEnabled;
+    }
+
+private:
+    set<string> _logsEnabled;
+    bool        _enableAllLogs;
+};
+
+
+CUDA_MANAGED_DECORATOR extern LogDatabase* logDatabase;
+
+#if !defined(__CUDA_ARCH__) && defined(__NVCC__)
+CUDA_GLOBAL_DECORATOR void allocateLogDatabase()
+{
+    logDatabase = new LogDatabase;
+}
+
+CUDA_GLOBAL_DECORATOR void enableSpecificLogDatabaseLog(const char* logName)
+{
+    logDatabase->enableSpecificLog(logName);
+}
+#endif
+
+CUDA_DECORATOR inline LogDatabase* createAndGetLogDatabase()
+{
+    if(logDatabase != nullptr)
+    {
+        return logDatabase;
+    }
+
+    #if defined(__CUDA_ARCH__) || !defined(__NVCC__)
+    logDatabase = new LogDatabase;
+    #else
+    allocateLogDatabase<<<1, 1>>>();
+    #endif
+
+    return logDatabase;
+}
+
+CUDA_DECORATOR inline void enableAllLogs(bool shouldAllLogsBeEnabled)
+{
+    createAndGetLogDatabase()->enableAllLogs(shouldAllLogsBeEnabled);
+}
+
+CUDA_DECORATOR inline void enableSpecificLog(const string& name)
+{
+    #if defined(__CUDA_ARCH__) || !defined(__NVCC__)
+    createAndGetLogDatabase()->enableSpecificLog(name);
+    #else
+    createAndGetLogDatabase();
+
+    char* data = parallel::malloc(name.size() + 1);
+
+    std::memcpy(data, name.c_str(), name.size() + 1);
+
+    enableSpecificLogDatabaseLog<<<1, 1>>>(data);
+
+    parallel::free(data);
+    #endif
+}
+
+CUDA_DECORATOR inline bool isLogEnabled(const string& name)
+{
+    return createAndGetLogDatabase()->isLogEnabled(name);
+}
 
 class LogStream
 {
 public:
-    CUDA_DECORATOR LogStream(const std::string& name)
+    CUDA_DECORATOR inline LogStream(const string& name)
     : _message("(" + name + ") : "), _isEnabled(isLogEnabled(name))
     {
 
     }
 
-    CUDA_DECORATOR ~LogStream();
+    CUDA_DECORATOR inline ~LogStream()
+    {
+        if(_isEnabled)
+        {
+            std::printf("%s", _message.c_str());
+        }
+    }
 
 public:
     template <typename T>
     CUDA_DECORATOR LogStream& operator<<(T&& anything)
     {
-        std::stringstream stream;
+        stringstream stream;
 
         stream << _message << anything;
 
@@ -43,8 +141,8 @@ public:
     }
 
 private:
-    std::string _message;
-    bool        _isEnabled;
+    string _message;
+    bool             _isEnabled;
 
 };
 #else
@@ -52,14 +150,12 @@ private:
 class LogStream
 {
 public:
-    CUDA_DECORATOR LogStream(const parallel::string& name)
+    CUDA_DECORATOR LogStream(const string& name)
     {
-
     }
 
     CUDA_DECORATOR ~LogStream()
     {
-
     }
 
 public:
@@ -73,7 +169,7 @@ public:
 
 #endif
 
-inline CUDA_DECORATOR LogStream log(const parallel::string& name)
+inline CUDA_DECORATOR LogStream log(const string& name)
 {
     return LogStream(name);
 }
