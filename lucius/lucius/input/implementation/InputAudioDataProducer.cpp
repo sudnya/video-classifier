@@ -453,17 +453,17 @@ private:
                     if(useNoise)
                     {
                         _sampleCache.addNoise(
-                            Audio(sample.path(), "START-" + util::strip(sample.label(), "|") + "-END"));
+                            Audio(sample.path(), util::strip(sample.label(), "|")));
                     }
                     else
                     {
                         _sampleCache.addRepeatedAudio(
-                            Audio(sample.path(), "START-" + util::strip(sample.label(), "|") + "-END"));
+                            Audio(sample.path(), util::strip(sample.label(), "|")));
                     }
                 }
                 else
                 {
-                    _sampleCache.addAudio(Audio(sample.path(), "START-" + sample.label() + "-END"));
+                    _sampleCache.addAudio(Audio(sample.path(), sample.label()));
                 }
             }
         }
@@ -647,7 +647,7 @@ private:
             util::log("InputAudioDataProducer::Detail") << "Adding audio sample with frameCount "
                 << frameCount << "\n";
 
-            if(frameCount <= _totalTimestepsPerUtterance)
+            if(frameCount <= _totalTimestepsPerUtterance && frameCount > 0)
             {
                 util::log("InputAudioDataProducer::Detail") << " Adding it with index " << index
                     << ".\n";
@@ -673,8 +673,11 @@ private:
 
             size_t frameCount = _audio.back().duration() * frequency / _getFrameSize();
 
-            _descriptors.push_back(AudioDescriptor(AudioDescriptor::NoiseType,
-                index, frameCount));
+            if(frameCount > 0)
+            {
+                _descriptors.push_back(AudioDescriptor(AudioDescriptor::NoiseType,
+                    index, frameCount));
+            }
         }
 
         void addRepeatedAudio(const Audio& audio)
@@ -689,8 +692,11 @@ private:
 
             size_t frameCount = _audio.back().duration() * frequency / _getFrameSize();
 
-            _descriptors.push_back(AudioDescriptor(AudioDescriptor::RepeatedType,
-                index, frameCount));
+            if(frameCount > 0)
+            {
+                _descriptors.push_back(AudioDescriptor(AudioDescriptor::RepeatedType,
+                    index, frameCount));
+            }
         }
 
         size_t getUniqueSampleCount() const

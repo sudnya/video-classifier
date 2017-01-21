@@ -37,6 +37,7 @@ ClassifierEngine::ClassifierEngine()
 {
     setResultProcessor(results::ResultProcessorFactory::create("LabelMatchResultProcessor"));
     setEpochs(1);
+    setPassesPerEpoch(1);
 }
 
 ClassifierEngine::~ClassifierEngine()
