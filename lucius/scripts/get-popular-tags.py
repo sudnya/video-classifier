@@ -23,7 +23,7 @@ def getTags(tagList):
     retVal = re.split(' |\"|\n', tagList)
     return retVal
 
-def reTag(inputDb, outputDb, countN):
+def reTag(inputDb, outputDb, countN, blacklist):
     allTags = {}
     outF = open(outputDb, 'w')
     
@@ -35,8 +35,11 @@ def reTag(inputDb, outputDb, countN):
             fileName = t[0]
             temp = t[-1]
             tags = getTags(temp)
-            #print tags
+            
             for t in tags:
+                if t in blacklist:
+                    continue
+
                 if not t in allTags:
                     allTags[t] = []
                 allTags[t].append(fileName)
@@ -93,7 +96,9 @@ def main():
         logging.basicConfig(level=logging.INFO)
     
     try:
-        reTag(inputFile, outputFile, topN)
+        blacklist = set()
+        blacklist.add("field-recording")
+        reTag(inputFile, outputFile, topN, blacklist)
 
     except ValueError as e:
         logger.error ("Invalid Arguments: " + str(e))
