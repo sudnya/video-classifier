@@ -28,8 +28,9 @@ namespace input
 InputDataProducer::InputDataProducer()
 :  _requiresLabeledData(false), _standardizeInput(false), _model(nullptr)
 {
-    _epochs    = util::KnobDatabase::getKnobValue("InputDataProducer::Epochs",    60);
-    _batchSize = util::KnobDatabase::getKnobValue("InputDataProducer::BatchSize", 64);
+    _epochs          = util::KnobDatabase::getKnobValue("InputDataProducer::Epochs",         60);
+    _passesPerEpoch  = util::KnobDatabase::getKnobValue("InputDataProducer::PassesPerEpoch", 1);
+    _batchSize       = util::KnobDatabase::getKnobValue("InputDataProducer::BatchSize",      64);
 
     _maximumSamplesToRun = util::KnobDatabase::getKnobValue(
         "InputDataProducer::MaximumSamplesToRun", 1e9);
@@ -54,6 +55,16 @@ void InputDataProducer::setEpochs(size_t e)
 size_t InputDataProducer::getEpochs() const
 {
     return _epochs;
+}
+
+void InputDataProducer::setPassesPerEpoch(size_t e)
+{
+    _passesPerEpoch = e;
+}
+
+size_t InputDataProducer::getPassesPerEpoch() const
+{
+    return _passesPerEpoch;
 }
 
 void InputDataProducer::setBatchSize(size_t batchSize)

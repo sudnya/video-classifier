@@ -49,6 +49,7 @@ public:
     size_t getMaximumStandardizationSamples() const;
     size_t getMaximumValidationSamples() const;
     size_t getEpochs() const;
+    size_t getPassesPerEpoch() const;
 
 public:
     bool getShouldSeed() const;

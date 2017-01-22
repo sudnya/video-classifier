@@ -84,6 +84,8 @@ public:
     void setMaximumSamplesToRun(size_t samples);
     /*! \brief Set the epochs (passes over the entire training set) to be run by the engine */
     void setEpochs(size_t epochs);
+    /*! \brief Set the number of passes per epoch to be run by the engine */
+    void setPassesPerEpoch(size_t epochs);
     /*! \brief Set the number of samples to be run in a batch by the engine */
     void setBatchSize(size_t samples);
     /*! \brief Set should standardize input  */
@@ -94,6 +96,9 @@ public:
 public:
     /*! \brief Get the number of epochs to be run by the engine */
     size_t getEpochs() const;
+    
+    /*! \brief Get the number of passes per epoch to be run by the engine */
+    size_t getPassesPerEpoch() const;
 
 protected:
     /*! \brief Called before the engine starts running on a given model */

@@ -79,6 +79,7 @@ static void trainNetwork(Model& model, const Configuration& config)
 
     engine->setModel(&model);
     engine->setEpochs(config.getEpochs());
+    engine->setPassesPerEpoch(config.getPassesPerEpoch());
     engine->setBatchSize(config.getBatchSize());
     engine->setStandardizeInput(true);
     engine->setMaximumSamplesToRun(config.getMaximumSamples());

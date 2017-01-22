@@ -106,6 +106,11 @@ size_t Configuration::getEpochs() const
     return (*_properties)["optimization"].get<size_t>("epochs");
 }
 
+size_t Configuration::getPassesPerEpoch() const
+{
+    return (*_properties)["optimization"].get<size_t>("passes-per-epoch", 1);
+}
+
 bool Configuration::getShouldSeed() const
 {
     return (*_properties)["optimization"].get<size_t>("should-seed", 0);
