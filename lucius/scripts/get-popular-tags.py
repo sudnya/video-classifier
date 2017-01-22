@@ -98,6 +98,14 @@ def main():
     try:
         blacklist = set()
         blacklist.add("field-recording")
+        blacklist.add("noise")
+        blacklist.add("bass")
+        blacklist.add("loop")
+        blacklist.add("sound")
+        blacklist.add("horror")
+        blacklist.add("beat")
+        blacklist.add("effect")
+        blacklist.add("percussion")
         reTag(inputFile, outputFile, topN, blacklist)
 
     except ValueError as e:
