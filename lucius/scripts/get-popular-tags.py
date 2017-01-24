@@ -112,6 +112,25 @@ def main():
         blacklist.add("processed")
         blacklist.add("ambient")
         blacklist.add("game")
+        blacklist.add("foley")
+        blacklist.add("scary")
+        blacklist.add("dark")
+        blacklist.add("sci-fi")
+        blacklist.add("fx")
+        blacklist.add("car") #TODO: would have been nice, but 5/6 samples I tested were terrible
+        blacklist.add("movie")
+        blacklist.add("cinematic")
+        blacklist.add("vocal") #2/4 were perfect samples of people talking, rest all strange :(
+        blacklist.add("click")
+        blacklist.add("wood")
+        blacklist.add("film")
+        blacklist.add("stereo")
+        blacklist.add("environmental-sounds-research")    
+        blacklist.add("machine")
+        blacklist.add("electronic")
+        blacklist.add("reverb")
+        blacklist.add("human")
+    
         reTag(inputFile, outputFile, topN, blacklist)
 
     except ValueError as e:
