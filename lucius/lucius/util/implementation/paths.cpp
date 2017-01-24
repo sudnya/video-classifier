@@ -107,6 +107,7 @@ std::string getRelativePath(const std::string& baseDirectory,
 
 std::string joinPaths(const std::string& left, const std::string& right)
 {
+    if(left.empty()) return right;
     return left + separator() + right;
 }
 

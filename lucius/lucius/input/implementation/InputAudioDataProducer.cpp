@@ -784,7 +784,7 @@ private:
                 }
             }
 
-            return enoughDescriptorsToCoverAllSamples;;
+            return enoughDescriptorsToCoverAllSamples;
         }
 
     private:

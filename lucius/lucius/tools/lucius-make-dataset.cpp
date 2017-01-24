@@ -36,7 +36,7 @@ static void createDirectories(const std::string& outputPath, const std::string& 
 }
 
 static void copySampleToDatabase(database::SampleDatabase& outputDatabase,
-    const database::Sample& sample, bool groupByLabel)
+    const database::Sample& sample, bool groupByLabel, const std::string& labelPrefix)
 {
     auto directory = util::getDirectory(outputDatabase.path());
 
@@ -56,7 +56,7 @@ static void copySampleToDatabase(database::SampleDatabase& outputDatabase,
 
     util::copyFile(completePath, sample.path());
 
-    outputDatabase.addSample(database::Sample(path, sample.label()));
+    outputDatabase.addSample(database::Sample(path, labelPrefix + sample.label()));
 }
 
 static bool validateSample(const database::Sample& sample)
@@ -104,7 +104,7 @@ static void randomlyShuffleSamples(database::SampleDatabase& trainingDatabase,
     database::SampleDatabase& validationDatabase,
     const database::SampleDatabase& inputDatabase,
     size_t trainingSamples, size_t validationSamples,
-    bool groupByLabel)
+    bool groupByLabel, const std::string& labelPrefix)
 {
     database::SampleDatabase::SampleVector samples;
 
@@ -129,7 +129,7 @@ static void randomlyShuffleSamples(database::SampleDatabase& trainingDatabase,
             continue;
         }
 
-        copySampleToDatabase(validationDatabase, samples[nextSample], groupByLabel);
+        copySampleToDatabase(validationDatabase, samples[nextSample], groupByLabel, labelPrefix);
         ++sampleIndex;
     }
 
@@ -144,14 +144,14 @@ static void randomlyShuffleSamples(database::SampleDatabase& trainingDatabase,
             continue;
         }
 
-        copySampleToDatabase(trainingDatabase, samples[nextSample], groupByLabel);
+        copySampleToDatabase(trainingDatabase, samples[nextSample], groupByLabel, labelPrefix);
 
         ++sampleIndex;
     }
 }
 
 static void splitDatabase(const std::string& outputPath, const std::string& inputFileName,
-    size_t trainingSamples, size_t validationSamples, bool groupByLabel)
+    size_t trainingSamples, size_t validationSamples, bool groupByLabel, const std::string& labelPrefix)
 {
     database::SampleDatabase inputDatabase(inputFileName);
 
@@ -174,7 +174,7 @@ static void splitDatabase(const std::string& outputPath, const std::string& inpu
         util::joinPaths("validation", "database.txt")));
 
     randomlyShuffleSamples(trainingDatabase, validationDatabase, inputDatabase,
-        trainingSamples, validationSamples, groupByLabel);
+        trainingSamples, validationSamples, groupByLabel, labelPrefix);
 
     trainingDatabase.save();
     validationDatabase.save();
@@ -198,6 +198,7 @@ int main(int argc, char** argv)
 
     std::string inputFileName;
     std::string outputPath;
+    std::string labelPrefix;
     size_t validationSamples = 0;
     size_t trainingSamples = 0;
     bool groupByLabel = false;
@@ -217,6 +218,8 @@ int main(int argc, char** argv)
         "The maximum number of samples to use for validation.");
     parser.parse("-g", "--group-by-label", groupByLabel,
         false, "Group samples together by labels.");
+    parser.parse("-p", "--label-prefix", labelPrefix,
+        "|", "Add the following prefix to every label.");
 
     parser.parse("-v", "--verbose", verbose, false,
         "Print out log messages during execution");
@@ -237,7 +240,7 @@ int main(int argc, char** argv)
     try
     {
         lucius::splitDatabase(outputPath, inputFileName, trainingSamples, validationSamples,
-            groupByLabel);
+            groupByLabel, labelPrefix);
     }
     catch(const std::exception& e)
     {

@@ -106,6 +106,12 @@ def main():
         blacklist.add("beat")
         blacklist.add("effect")
         blacklist.add("percussion")
+        blacklist.add("ambience")
+        blacklist.add("atmosphere")
+        blacklist.add("hit")
+        blacklist.add("processed")
+        blacklist.add("ambient")
+        blacklist.add("game")
         reTag(inputFile, outputFile, topN, blacklist)
 
     except ValueError as e:
