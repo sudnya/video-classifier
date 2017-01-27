@@ -4,6 +4,7 @@
 // Lucius Includes
 #include <lucius/parallel/interface/cuda.h>
 #include <lucius/parallel/interface/String.h>
+#include <lucius/parallel/interface/StringStream.h>
 #include <lucius/parallel/interface/Set.h>
 
 // Standard Library Includes

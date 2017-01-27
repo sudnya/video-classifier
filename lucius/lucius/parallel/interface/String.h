@@ -29,6 +29,7 @@ public:
     }
 
     CUDA_DECORATOR string(const string& s)
+    : string()
     {
         resize(s.size());
 
@@ -74,6 +75,32 @@ public:
         s.clear();
 
         return *this;
+    }
+
+    CUDA_DECORATOR inline string& operator+=(const string& s);
+
+    CUDA_DECORATOR char& operator[](size_t position) const
+    {
+        return _data[position];
+    }
+
+public:
+    CUDA_DECORATOR bool operator==(const string& s) const
+    {
+        if(size() != s.size())
+        {
+            return false;
+        }
+
+        for(size_t i = 0; i < size(); ++i)
+        {
+            if((*this)[i] != s[i])
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
 public:
@@ -212,6 +239,48 @@ CUDA_DECORATOR inline string operator+(const string& lhs, const char* rhs)
 CUDA_DECORATOR inline string operator+(const char* lhs, const string& rhs)
 {
     return string(lhs) + rhs;
+}
+
+CUDA_DECORATOR inline string& string::operator+=(const string& s)
+{
+    return *this = *this + s;
+}
+
+CUDA_DECORATOR inline constexpr size_t log10(size_t val)
+{
+    return val <= 10 ? 1 : log10(val/10) + 1;
+}
+
+CUDA_DECORATOR inline string to_string(long long int val)
+{
+    constexpr int buffer_size = log10(std::numeric_limits<long long int>::max()) + 1;
+    char buffer[buffer_size];
+
+    return string(itoa(buffer, val));
+}
+
+CUDA_DECORATOR inline string to_string(unsigned long long int val)
+{
+    constexpr int buffer_size = log10(std::numeric_limits<unsigned long long int>::max()) + 1;
+    char buffer[buffer_size];
+
+    return string(itoa(buffer, val));
+}
+
+CUDA_DECORATOR inline string to_string(long double val)
+{
+    constexpr int buffer_size = 11;
+
+    char buffer[buffer_size];
+
+    return string(dtoa(buffer, val, 8, 4));
+}
+
+CUDA_DECORATOR inline string to_hex(long long int val)
+{
+    char buffer[sizeof(long long int) * 2 + 1];
+
+    return string(itoh(buffer, val));
 }
 
 }

@@ -4,6 +4,7 @@
 
 // Lucius Includes
 #include <lucius/parallel/interface/cuda.h>
+#include <lucius/parallel/interface/assert.h>
 
 namespace lucius
 {
@@ -65,6 +66,16 @@ public:
             return i._node == _node;
         }
 
+        CUDA_DECORATOR bool operator!=(const const_iterator& i) const
+        {
+            return i._node != _node;
+        }
+
+        CUDA_DECORATOR bool operator!=(const iterator& i) const
+        {
+            return i._node != _node;
+        }
+
     public:
         CUDA_DECORATOR iterator& operator++()
         {
@@ -94,6 +105,12 @@ public:
         CUDA_DECORATOR T* operator->() const
         {
             return &_node->value;
+        }
+
+    public:
+        CUDA_DECORATOR Node* getNode() const
+        {
+            return _node;
         }
 
     private:
@@ -126,8 +143,18 @@ public:
             return i._node == _node;
         }
 
+        CUDA_DECORATOR bool operator!=(const const_iterator& i) const
+        {
+            return i._node != _node;
+        }
+
+        CUDA_DECORATOR bool operator!=(const iterator& i) const
+        {
+            return i._node != _node;
+        }
+
     public:
-        CUDA_DECORATOR iterator& operator++()
+        CUDA_DECORATOR const_iterator& operator++()
         {
             if(!_node->isEnd())
             {
@@ -137,9 +164,9 @@ public:
             return *this;
         }
 
-        CUDA_DECORATOR iterator& operator++(int)
+        CUDA_DECORATOR const_iterator& operator++(int)
         {
-            iterator previous = *this;
+            const_iterator previous = *this;
 
             ++(*this);
 
@@ -155,6 +182,12 @@ public:
         CUDA_DECORATOR const T* operator->() const
         {
             return &_node->value;
+        }
+
+    public:
+        CUDA_DECORATOR const Node* getNode() const
+        {
+            return _node;
         }
 
     private:
