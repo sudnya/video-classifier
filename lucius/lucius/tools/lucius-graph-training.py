@@ -248,11 +248,18 @@ def isExperimentPath(path):
 
     return True
 
-def discoverGroups(inputs):
+def discoverGroups(inputs, combineInputs):
     if len(inputs) > 1:
         groups = []
         for input in inputs:
-            groups += discoverGroups([input])
+            groups += discoverGroups([input], False)
+        if combineInputs:
+            for i in range(1,len(groups)):
+                for experiment in groups[i].getExperiments():
+                    groups[0].addExperiment(experiment)
+        
+            return [groups[0]]
+        
         return groups
 
     path = inputs[0]
@@ -303,6 +310,7 @@ def parseTuple(text, elements):
 class Visualizer:
     def __init__(self, arguments):
         self.inputs = arguments["input_file"]
+        self.combineInputs = arguments["combine_inputs"]
         self.output = arguments["output_file"]
         self.xscale = parseTuple(arguments["x_scale"], 2)
         self.yscale = parseTuple(arguments["y_scale"], 2)
@@ -330,7 +338,7 @@ class Visualizer:
                 experiment.resize(self.maximumIterations)
 
     def loadExperiments(self):
-        return discoverGroups(self.inputs)
+        return discoverGroups(self.inputs, self.combineInputs)
 
     def plotExperiments(self, experimentGroups):
         plots = []
@@ -430,6 +438,8 @@ def main():
         help = "The scale for the x axis.")
     parser.add_argument("-y", "--y-scale", default = "",
         help = "The scale for the y axis.")
+    parser.add_argument("-c", "--combine-inputs", default = False, action="store_true",
+        help = "Combine multiple input paths into a single graph.")
     parser.add_argument("--scale", default = False, action="store_true",
         help = "Choose the y scale automatically.")
 
