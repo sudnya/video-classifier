@@ -940,12 +940,12 @@ private:
 
         void _updateCache(AudioVector& audio, CacheSet& cacheSet)
         {
-            CacheSet newCacheSet;
-
-            if(!empty())
+            if(empty())
             {
-                newCacheSet = _samples[_nextSample].cacheSet;
+                return;
             }
+
+            CacheSet newCacheSet = _samples[_nextSample].cacheSet;
 
             for(auto& element : cacheSet)
             {
