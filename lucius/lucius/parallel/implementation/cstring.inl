@@ -201,6 +201,8 @@ CUDA_DECORATOR inline char* dtoa(char* output_buff, double num,
         }
     }
 
+    *(p++) = '\0';
+
     return output_buff;
 }
 

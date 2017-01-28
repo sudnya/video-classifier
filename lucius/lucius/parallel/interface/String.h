@@ -267,9 +267,9 @@ CUDA_DECORATOR inline string to_string(unsigned long long int val)
     return string(itoa(buffer, val));
 }
 
-CUDA_DECORATOR inline string to_string(long double val)
+CUDA_DECORATOR inline string to_string(double val)
 {
-    constexpr int buffer_size = 11;
+    constexpr int buffer_size = 12;
 
     char buffer[buffer_size];
 

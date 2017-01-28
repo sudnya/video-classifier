@@ -62,12 +62,12 @@ public:
 public:
     CUDA_DECORATOR reference_type operator*() const
     {
-        return *_iterator;
+        return *(_iterator - 1);
     }
 
     CUDA_DECORATOR pointer_type operator->() const
     {
-        return &(*_iterator);
+        return &(*(_iterator - 1));
     }
 
 public:
@@ -164,6 +164,11 @@ public:
         return pointer_iterator(_pointer + right);
     }
 
+    CUDA_DECORATOR pointer_iterator operator-(diff_type right) const
+    {
+        return pointer_iterator(_pointer - right);
+    }
+
 public:
     CUDA_DECORATOR reference_type operator*() const
     {
@@ -256,6 +261,11 @@ public:
     CUDA_DECORATOR const_pointer_iterator operator+(diff_type right) const
     {
         return const_pointer_iterator(_pointer + right);
+    }
+
+    CUDA_DECORATOR const_pointer_iterator operator-(diff_type right) const
+    {
+        return const_pointer_iterator(_pointer - right);
     }
 
 public:

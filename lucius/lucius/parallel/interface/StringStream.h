@@ -92,19 +92,12 @@ public:
 
     CUDA_DECORATOR stringstream& operator<<(float val)
     {
-        _string += to_string(static_cast<long double>(val));
+        _string += to_string(static_cast<double>(val));
 
         return *this;
     }
 
     CUDA_DECORATOR stringstream& operator<<(double val)
-    {
-        _string += to_string(static_cast<long double>(val));
-
-        return *this;
-    }
-
-    CUDA_DECORATOR stringstream& operator<<(long double val)
     {
         _string += to_string(val);
 
