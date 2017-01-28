@@ -70,6 +70,12 @@ public:
         return &(*_iterator);
     }
 
+public:
+    CUDA_DECORATOR Iterator get() const
+    {
+        return _iterator;
+    }
+
 private:
     Iterator _iterator;
 };
@@ -144,6 +150,18 @@ public:
         --(*this);
 
         return previous;
+    }
+
+public:
+    CUDA_DECORATOR diff_type operator-(const pointer_iterator& i) const
+    {
+        return _pointer - i._pointer;
+    }
+
+public:
+    CUDA_DECORATOR pointer_iterator operator+(diff_type right) const
+    {
+        return pointer_iterator(_pointer + right);
     }
 
 public:
@@ -226,6 +244,18 @@ public:
         --(*this);
 
         return previous;
+    }
+
+public:
+    CUDA_DECORATOR diff_type operator-(const const_pointer_iterator& i) const
+    {
+        return _pointer - i._pointer;
+    }
+
+public:
+    CUDA_DECORATOR const_pointer_iterator operator+(diff_type right) const
+    {
+        return const_pointer_iterator(_pointer + right);
     }
 
 public:

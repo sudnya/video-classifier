@@ -245,6 +245,10 @@ public:
         {
             previous->next = newNode;
         }
+        else
+        {
+            _begin = newNode;
+        }
 
         return iterator(newNode);
     }

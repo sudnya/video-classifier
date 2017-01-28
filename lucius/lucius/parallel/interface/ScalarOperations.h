@@ -69,7 +69,7 @@ CUDA_DECORATOR inline OutputIterator copy(InputIterator begin, InputIterator end
 {
     for(auto i = begin; i != end; ++i)
     {
-        *(result++) = i;
+        *(result++) = *i;
     }
 
     return result;
@@ -79,7 +79,7 @@ template <typename InputIterator, typename OutputIterator>
 CUDA_DECORATOR inline OutputIterator copy_backward(InputIterator begin, InputIterator end,
     OutputIterator result)
 {
-    return copy(make_reverse(end), make_reverse(begin), make_reverse(result));
+    return copy(make_reverse(end), make_reverse(begin), make_reverse(result)).get();
 }
 
 template <typename Iterator>

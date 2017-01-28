@@ -8,6 +8,7 @@
 
 // Standard Library Includes
 #include <cstdint>
+#include <cmath>
 
 namespace lucius
 {
