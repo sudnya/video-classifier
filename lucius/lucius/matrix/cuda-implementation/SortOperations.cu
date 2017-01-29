@@ -268,6 +268,13 @@ public:
         // Serial merge
         SortElement outputs[LocalValueCount];
 
+        if((aEnd - aBegin) > 0 && (bEnd - bBegin) > 0)
+        {
+            parallel::log("SortOperations") << "thread " << innerGroup.id() << " serial merge a["
+                << (aBegin - a) << ", " << (aEnd - a) << "], b [" << (bBegin - b) << ", "
+                << (bEnd - b) << "]\n";
+        }
+
         serialMerge(outputs, aBegin, aEnd, bBegin, bEnd, innerGroup);
 
         barrier(innerGroup);
@@ -345,12 +352,6 @@ public:
 
         size_t aLength = aEnd - aBegin;
         size_t bLength = bEnd - bBegin;
-
-        if(aLength > 0 && bLength > 0)
-        {
-            parallel::log("SortOperations") << "thread " << innerGroup.id() << " serial merge a["
-                << aLength << "], b [" << bLength << "]\n";
-        }
 
         for(size_t index = 0; index < LocalValueCount; ++index)
         {
