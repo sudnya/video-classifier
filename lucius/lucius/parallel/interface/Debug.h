@@ -56,12 +56,14 @@ private:
 };
 
 
+#if defined(__NVCC__)
 CUDA_MANAGED_DECORATOR LogDatabase* logDatabase = nullptr;
 
-#if defined(__NVCC__)
 CUDA_GLOBAL_DECORATOR void allocateLogDatabase();
 
 CUDA_GLOBAL_DECORATOR void enableSpecificLogDatabaseLog(const char* logName);
+#else
+extern LogDatabase* logDatabase;
 #endif
 
 CUDA_DECORATOR inline LogDatabase* createAndGetLogDatabase()

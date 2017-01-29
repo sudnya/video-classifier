@@ -836,7 +836,7 @@ size_t getBlockSortTileSize(size_t elements)
 {
     size_t groupSize = parallel::GroupLevelSize<SortConfiguration::GroupLevel>::size();
 
-    if(isCudaEnabled())
+    if(parallel::isCudaEnabled())
     {
         groupSize = parallel::GroupLevelSize<SortConfiguration::GroupLevel>::cudaSize();
     }
