@@ -71,21 +71,7 @@ CUDA_GLOBAL_DECORATOR void allocateLogDatabase();
 CUDA_GLOBAL_DECORATOR void enableSpecificLogDatabaseLog(const char* logName);
 #endif
 
-CUDA_DECORATOR inline LogDatabase* createAndGetLogDatabase()
-{
-    if(logDatabase != nullptr)
-    {
-        return logDatabase;
-    }
-
-    #if defined(__CUDA_ARCH__) || !defined(__NVCC__)
-    logDatabase = new LogDatabase;
-    #else
-    allocateLogDatabase<<<1, 1>>>();
-    #endif
-
-    return logDatabase;
-}
+CUDA_DECORATOR LogDatabase* createAndGetLogDatabase();
 
 CUDA_DECORATOR inline void enableAllLogs(bool shouldAllLogsBeEnabled)
 {
