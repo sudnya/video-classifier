@@ -30,6 +30,13 @@ namespace parallel
 class LogDatabase
 {
 public:
+    CUDA_DECORATOR LogDatabase()
+    : _enableAllLogs(false)
+    {
+
+    }
+
+public:
     CUDA_DECORATOR bool isLogEnabled(const string& logName) const
     {
         if(_enableAllLogs)
