@@ -385,7 +385,7 @@ public:
         const parallel::ThreadGroup& innerGroup) const
     {
         size_t sharedElement = innerGroup.id();
-        size_t globalElement = blockId * LocalValueCount * innerGroup.size();
+        size_t globalElement = blockId * LocalValueCount * innerGroup.size() + innerGroup.id();
 
         for(size_t element = 0; element < LocalValueCount; ++element)
         {
@@ -393,8 +393,8 @@ public:
             {
                 auto value = sharedMemory[sharedElement];
 
-                parallel::log("SortOperations") << "output[" << globalElement << "] = (" <<
-                     value.dimensionKey << ", " << value.normalKey << ")\n";
+                parallel::log("SortOperations") << "block sort output[" << globalElement
+                    << "] = (" << value.dimensionKey << ", " << value.normalKey << ")\n";
                 data[globalElement] = value;
             }
 
@@ -744,7 +744,7 @@ private:
 
             if(outputStart + index < elements)
             {
-                parallel::log("SortOperations") << "output["
+                parallel::log("SortOperations") << "merge output["
                     << (outputStart + index) << "] = ("
                     << value.dimensionKey << ", " << value.normalKey << ")\n";
 

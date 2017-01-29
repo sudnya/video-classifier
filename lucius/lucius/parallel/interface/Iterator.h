@@ -81,7 +81,7 @@ private:
 };
 
 template <typename Iterator>
-reverse_iterator<Iterator> make_reverse(Iterator i)
+CUDA_DECORATOR reverse_iterator<Iterator> make_reverse(Iterator i)
 {
     return reverse_iterator<Iterator>(i);
 }
