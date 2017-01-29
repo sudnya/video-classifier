@@ -272,7 +272,8 @@ public:
         {
             parallel::log("SortOperations") << "thread " << innerGroup.id() << " serial merge a["
                 << (aBegin - a) << ", " << (aEnd - a) << "], b [" << (bBegin - b) << ", "
-                << (bEnd - b) << "]\n";
+                << (bEnd - b) << "] half segment id " << halfSegmentId
+                << " with size " << halfSegmentSize << "\n";
         }
 
         serialMerge(outputs, aBegin, aEnd, bBegin, bEnd, innerGroup);
@@ -312,8 +313,8 @@ public:
         aBegin = a + left;
         aEnd   = a + right;
 
-        bBegin = b + leftDiagonalConstraint - 1 - left;
-        bEnd   = b + rightDiagonalConstraint - 1 - right;
+        bBegin = b + leftDiagonalConstraint - left;
+        bEnd   = b + rightDiagonalConstraint - right;
     }
 
     CUDA_DECORATOR size_t mergePath(SortElement* a,
