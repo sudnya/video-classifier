@@ -346,6 +346,12 @@ public:
         size_t aLength = aEnd - aBegin;
         size_t bLength = bEnd - bBegin;
 
+        if(aLength > 0 && bLength > 0)
+        {
+            parallel::log("SortOperations") << "thread " << innerGroup.id() << " serial merge a["
+                << aLength << "], b [" << bLength << "]\n";
+        }
+
         for(size_t index = 0; index < LocalValueCount; ++index)
         {
             bool isALegal = aIndex < aLength;
@@ -362,7 +368,7 @@ public:
             {
                 outputs[index] = aBegin[aIndex++];
             }
-            else
+            else if(isBLegal)
             {
                 outputs[index] = bBegin[bIndex++];
             }
@@ -379,11 +385,6 @@ public:
         {
             auto value = localStorage[index];
 
-            if(base + index < elements)
-            {
-                parallel::log("SortOperations") << "block sort shared input[" << (base + index)
-                    << "] = (" << value.dimensionKey << ", " << value.normalKey << ")\n";
-            }
             sharedMemory[base + index] = value;
         }
     }
