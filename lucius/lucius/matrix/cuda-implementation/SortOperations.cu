@@ -834,8 +834,14 @@ void gatherResults(MatrixView<NativeType>& keysOutputView,
 template <typename NativeType>
 size_t getBlockSortTileSize(size_t elements)
 {
-    return parallel::GroupLevelSize<SortConfiguration::GroupLevel>::size() *
-        SortConfiguration::LocalValueCount;
+    size_t groupSize = parallel::GroupLevelSize<SortConfiguration::GroupLevel>::size();
+
+    if(isCudaEnabled())
+    {
+        groupSize = parallel::GroupLevelSize<SortConfiguration::GroupLevel>::cudaSize();
+    }
+
+    return groupSize * SortConfiguration::LocalValueCount;
 }
 
 template <typename OperationType, typename PrecisionType>
