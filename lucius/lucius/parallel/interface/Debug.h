@@ -63,7 +63,7 @@ private:
 };
 
 
-CUDA_MANAGED_DECORATOR LogDatabase* logDatabase = nullptr;
+CUDA_MANAGED_DECORATOR extern LogDatabase* logDatabase;
 
 #if defined(__NVCC__)
 CUDA_GLOBAL_DECORATOR void allocateLogDatabase();
