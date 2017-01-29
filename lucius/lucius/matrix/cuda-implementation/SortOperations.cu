@@ -377,7 +377,14 @@ public:
 
         for(size_t index = 0; index < LocalValueCount; ++index)
         {
-            sharedMemory[base + index] = localStorage[index];
+            auto value = localStorage[index];
+
+            if(base + index < elements)
+            {
+                parallel::log("SortOperations") << "block sort shared input[" << (base + index)
+                    << "] = (" << value.dimensionKey << ", " << value.normalKey << ")\n";
+            }
+            sharedMemory[base + index] = value;
         }
     }
 
