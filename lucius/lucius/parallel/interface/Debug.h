@@ -63,15 +63,39 @@ private:
 };
 
 
-CUDA_MANAGED_DECORATOR extern LogDatabase* logDatabase;
-
 #if defined(__NVCC__)
 CUDA_GLOBAL_DECORATOR void allocateLogDatabase();
 
 CUDA_GLOBAL_DECORATOR void enableSpecificLogDatabaseLog(const char* logName);
 #endif
 
-CUDA_DECORATOR LogDatabase* createAndGetLogDatabase();
+extern LogDatabase* hostLogDatabase;
+
+#if defined(__NVCC__)
+CUDA_MANAGED_DECORATOR LogDatabase* deviceLogDatabase = nullptr;
+#endif
+
+CUDA_DECORATOR inline LogDatabase* createAndGetLogDatabase()
+{
+    #if defined(__CUDA_ARCH__)
+    return deviceLogDatabase;
+    #else
+    if(hostLogDatabase != nullptr)
+    {
+        return hostLogDatabase;
+    }
+
+    hostLogDatabase = new LogDatabase;
+    #endif
+
+    #if defined(__NVCC__)
+    #if !defined(__CUDA_ARCH__)
+    deviceLogDatabase = hostLogDatabase;
+    #endif
+    #endif
+
+    return hostLogDatabase;
+}
 
 CUDA_DECORATOR inline void enableAllLogs(bool shouldAllLogsBeEnabled)
 {
