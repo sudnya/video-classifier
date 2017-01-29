@@ -23,18 +23,23 @@ def getTags(tagList):
     retVal = re.split(' |\"|\n', tagList)
     return retVal
 
-def reTag(inputDb, outputDb, countN):
+def reTag(inputDb, outputDb, countN, blacklist):
     allTags = {}
     outF = open(outputDb, 'w')
     
     if os.path.isfile(inputDb):
         inF = open(inputDb, 'r')
         for line in inF:
+            #logger.debug(line)
             t = re.split(",", line)
             fileName = t[0]
             temp = t[-1]
             tags = getTags(temp)
+            
             for t in tags:
+                if t in blacklist:
+                    continue
+
                 if not t in allTags:
                     allTags[t] = []
                 allTags[t].append(fileName)
@@ -45,12 +50,13 @@ def reTag(inputDb, outputDb, countN):
     
     logger.info ("Downloaded file " + str(inputDb) + " locally at " + str(outputDb))
     
+    alreadyWritten = set()
     topN = {}
     allTags.pop('')
     counter = 0
-    logger.info("Consider top " + countN + " most frequent tags")
+    logger.info("Consider top " + str(countN) + " most frequent tags")
     for k in sorted(allTags, key=lambda k: len(allTags[k]), reverse=True):
-        logger.debug("Adding top tag: " + k)
+        logger.debug("Adding top tag: " + k + " count " + str(len(allTags[k])))
         if counter < countN:
             topN[k] = allTags[k]
             counter += 1
@@ -59,9 +65,11 @@ def reTag(inputDb, outputDb, countN):
    
     for key, val in topN.iteritems():
         for v in val:
-            writeStr = v.rstrip('\n') + " , \"" + key + "\"\n"
-            logger.debug("Writing to file: " + writeStr)
-            outF.write(writeStr)
+            if v not in alreadyWritten:
+                writeStr = v.rstrip('\n') + " , \"" + key + "\"\n"
+                logger.debug("Writing to file: " + writeStr)
+                outF.write(writeStr)
+                alreadyWritten.add(v)
 
     inF.close()
     outF.close()
@@ -80,7 +88,7 @@ def main():
     isVerbose   = arguments['verbose']
     inputFile   = arguments['input_file']
     outputFile  = arguments['output_file']
-    topN        = arguments['topN']
+    topN        = int(arguments['topN'])
     
     if isVerbose:
         logging.basicConfig(level=logging.DEBUG)
@@ -88,7 +96,42 @@ def main():
         logging.basicConfig(level=logging.INFO)
     
     try:
-        reTag(inputFile, outputFile, topN)
+        blacklist = set()
+        blacklist.add("field-recording")
+        blacklist.add("noise")
+        blacklist.add("bass")
+        blacklist.add("loop")
+        blacklist.add("sound")
+        blacklist.add("horror")
+        blacklist.add("beat")
+        blacklist.add("effect")
+        blacklist.add("percussion")
+        blacklist.add("ambience")
+        blacklist.add("atmosphere")
+        blacklist.add("hit")
+        blacklist.add("processed")
+        blacklist.add("ambient")
+        blacklist.add("game")
+        blacklist.add("foley")
+        blacklist.add("scary")
+        blacklist.add("dark")
+        blacklist.add("sci-fi")
+        blacklist.add("fx")
+        blacklist.add("car") #TODO: would have been nice, but 5/6 samples I tested were terrible
+        blacklist.add("movie")
+        blacklist.add("cinematic")
+        blacklist.add("vocal") #2/4 were perfect samples of people talking, rest all strange :(
+        blacklist.add("click")
+        blacklist.add("wood")
+        blacklist.add("film")
+        blacklist.add("stereo")
+        blacklist.add("environmental-sounds-research")    
+        blacklist.add("machine")
+        blacklist.add("electronic")
+        blacklist.add("reverb")
+        blacklist.add("human")
+    
+        reTag(inputFile, outputFile, topN, blacklist)
 
     except ValueError as e:
         logger.error ("Invalid Arguments: " + str(e))

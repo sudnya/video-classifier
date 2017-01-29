@@ -30,6 +30,7 @@ namespace engine
 SampleStatisticsEngine::SampleStatisticsEngine()
 {
     setEpochs(1);
+    setPassesPerEpoch(1);
     setStandardizeInput(false);
 }
 

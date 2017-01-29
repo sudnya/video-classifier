@@ -66,6 +66,10 @@ public:
     size_t getEpochs() const;
 
 public:
+    void   setPassesPerEpoch(size_t passes);
+    size_t getPassesPerEpoch() const;
+
+public:
     void   setBatchSize(size_t batchSize);
     size_t getBatchSize() const;
 
@@ -98,6 +102,7 @@ public:
 
 private:
     size_t _epochs;
+    size_t _passesPerEpoch;
     bool   _requiresLabeledData;
     size_t _batchSize;
     size_t _maximumSamplesToRun;

@@ -28,7 +28,6 @@
 #include <lucius/util/interface/debug.h>
 #include <lucius/util/interface/paths.h>
 #include <lucius/util/interface/math.h>
-#include <lucius/util/interface/Knobs.h>
 
 // Standard Library Includes
 #include <stdexcept>
@@ -98,6 +97,7 @@ static void copyProducerParameters(input::InputDataProducer& newProducer,
 
     newProducer.setRequiresLabeledData(dataProducer.getRequiresLabeledData());
     newProducer.setEpochs(dataProducer.getEpochs());
+    newProducer.setPassesPerEpoch(dataProducer.getPassesPerEpoch());
     newProducer.setMaximumSamplesToRun(dataProducer.getMaximumSamplesToRun());
     newProducer.setBatchSize(dataProducer.getBatchSize());
     newProducer.setStandardizeInput(dataProducer.getStandardizeInput());
@@ -119,30 +119,36 @@ void Engine::runOnDataProducer(InputDataProducer& producer)
     util::log("Engine") << "Running for " << producer.getEpochs() <<  " epochs.\n";
     for(size_t epoch = 0; epoch != producer.getEpochs(); ++epoch)
     {
-        while(!producer.empty())
+        for(size_t pass = 0; pass < producer.getPassesPerEpoch(); ++pass)
         {
-            auto bundle = producer.pop();
+            assert(!producer.empty());
+            while(!producer.empty())
+            {
+                auto bundle = producer.pop();
 
-            auto& inputActivations =
-                bundle["inputActivations"].get<matrix::MatrixVector>().front();
+                auto& inputActivations =
+                    bundle["inputActivations"].get<matrix::MatrixVector>().front();
 
-            size_t batchSize = inputActivations.size()[inputActivations.size().size() - 2];
+                size_t batchSize = inputActivations.size()[inputActivations.size().size() - 2];
 
-            auto results = runOnBatch(bundle);
+                auto results = runOnBatch(bundle);
 
-            _resultProcessor->process(std::move(results));
+                _resultProcessor->process(std::move(results));
 
-            _iteration += batchSize;
+                _iteration += batchSize;
+            }
+
+            util::log("Engine") << " Finished epoch pass " << pass <<  ".\n";
+
+            producer.reset();
         }
 
+        util::log("Engine") << " Finished epoch " << epoch <<  ".\n";
+        
         for(auto& observer : _observers)
         {
             observer->epochCompleted(*this);
         }
-
-        util::log("Engine") << " Finished epoch " << epoch <<  ".\n";
-
-        producer.reset();
     }
 
     // close
@@ -179,6 +185,11 @@ void Engine::setEpochs(size_t epochs)
     _dataProducer->setEpochs(epochs);
 }
 
+void Engine::setPassesPerEpoch(size_t epochs)
+{
+    _dataProducer->setPassesPerEpoch(epochs);
+}
+
 void Engine::setStandardizeInput(bool standardize)
 {
     _dataProducer->setStandardizeInput(standardize);
@@ -192,6 +203,11 @@ void Engine::addObserver(std::unique_ptr<EngineObserver>&& observer)
 size_t Engine::getEpochs() const
 {
     return _dataProducer->getEpochs();
+}
+
+size_t Engine::getPassesPerEpoch() const
+{
+    return _dataProducer->getPassesPerEpoch();
 }
 
 void Engine::registerModel()
