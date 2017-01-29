@@ -22,8 +22,6 @@ CUDA_GLOBAL_DECORATOR void enableSpecificLogDatabaseLog(const char* logName)
 {
     logDatabase->enableSpecificLog(logName);
 }
-#else
-LogDatabase* logDatabase = nullptr;
 #endif
 
 #endif
