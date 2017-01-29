@@ -139,7 +139,7 @@ public:
 
 private:
     string _message;
-    bool             _isEnabled;
+    bool   _isEnabled;
 
 };
 #else
