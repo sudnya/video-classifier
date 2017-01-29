@@ -3,11 +3,13 @@
 
 // Lucius Includes
 #include <lucius/parallel/interface/cuda.h>
+#include <lucius/parallel/interface/Memory.h>
 #include <lucius/parallel/interface/String.h>
 #include <lucius/parallel/interface/StringStream.h>
 #include <lucius/parallel/interface/Set.h>
 
 // Standard Library Includes
+#include <cstring>
 #include <string>
 #include <sstream>
 
@@ -54,18 +56,12 @@ private:
 };
 
 
-CUDA_MANAGED_DECORATOR extern LogDatabase* logDatabase;
+CUDA_MANAGED_DECORATOR LogDatabase* logDatabase = nullptr;
 
-#if !defined(__CUDA_ARCH__) && defined(__NVCC__)
-CUDA_GLOBAL_DECORATOR void allocateLogDatabase()
-{
-    logDatabase = new LogDatabase;
-}
+#if defined(__NVCC__)
+CUDA_GLOBAL_DECORATOR void allocateLogDatabase();
 
-CUDA_GLOBAL_DECORATOR void enableSpecificLogDatabaseLog(const char* logName)
-{
-    logDatabase->enableSpecificLog(logName);
-}
+CUDA_GLOBAL_DECORATOR void enableSpecificLogDatabaseLog(const char* logName);
 #endif
 
 CUDA_DECORATOR inline LogDatabase* createAndGetLogDatabase()
@@ -96,7 +92,7 @@ CUDA_DECORATOR inline void enableSpecificLog(const string& name)
     #else
     createAndGetLogDatabase();
 
-    char* data = parallel::malloc(name.size() + 1);
+    char* data = reinterpret_cast<char*>(parallel::malloc(name.size() + 1));
 
     std::memcpy(data, name.c_str(), name.size() + 1);
 

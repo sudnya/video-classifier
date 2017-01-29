@@ -19,7 +19,7 @@ public:
     class Node
     {
     public:
-        Node(const T& value, Node* previous, Node* next)
+        CUDA_DECORATOR Node(const T& value, Node* previous, Node* next)
         : previous(previous), next(next), value(value)
         {
 

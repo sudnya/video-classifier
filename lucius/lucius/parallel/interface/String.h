@@ -251,17 +251,22 @@ CUDA_DECORATOR inline constexpr size_t log10(size_t val)
     return val <= 10 ? 1 : log10(val/10) + 1;
 }
 
+static constexpr long long int longLongIntMax = std::numeric_limits<long long int>::max();
+
 CUDA_DECORATOR inline string to_string(long long int val)
 {
-    constexpr int buffer_size = log10(std::numeric_limits<long long int>::max()) + 1;
+    constexpr int buffer_size = log10(longLongIntMax) + 1;
     char buffer[buffer_size];
 
     return string(itoa(buffer, val));
 }
 
+static constexpr unsigned long long int unsignedLongLongIntMax =
+    std::numeric_limits<unsigned long long int>::max();
+
 CUDA_DECORATOR inline string to_string(unsigned long long int val)
 {
-    constexpr int buffer_size = log10(std::numeric_limits<unsigned long long int>::max()) + 1;
+    constexpr int buffer_size = log10(unsignedLongLongIntMax) + 1;
     char buffer[buffer_size];
 
     return string(itoa(buffer, val));
