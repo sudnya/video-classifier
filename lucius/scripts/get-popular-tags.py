@@ -62,14 +62,25 @@ def reTag(inputDb, outputDb, countN, blacklist):
             counter += 1
         else:
             break
-   
-    for key, val in topN.iteritems():
+
+    for k in sorted(topN, key=lambda k: len(topN[k]), reverse=False):
+        print "Adding top tag: " + k + " count " + str(len(topN[k]))
+        val= topN[k]
         for v in val:
             if v not in alreadyWritten:
-                writeStr = v.rstrip('\n') + " , \"" + key + "\"\n"
+                writeStr = v.rstrip('\n') + " , \"" + k + "\"\n"
                 logger.debug("Writing to file: " + writeStr)
                 outF.write(writeStr)
                 alreadyWritten.add(v)
+
+#    for key, val in topN.iteritems():
+#        print "Adding top tag: " + key + " count " + str(len(topN[key]))
+#        for v in val:
+#            if v not in alreadyWritten:
+#                writeStr = v.rstrip('\n') + " , \"" + key + "\"\n"
+#                logger.debug("Writing to file: " + writeStr)
+#                outF.write(writeStr)
+#                alreadyWritten.add(v)
 
     inF.close()
     outF.close()
