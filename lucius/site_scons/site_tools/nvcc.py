@@ -133,6 +133,8 @@ def generate_dummy(env):
                   suffix = '.cpp',
                   src_suffix = '.cu')
   env['BUILDERS']['CUDASharedObject'] = bld
+  env['BUILDERS']['CUDADeviceSharedObject'] = bld
+  env['BUILDERS']['CUDADeviceLibrary'] = env['BUILDERS']['StaticLibrary']
 
 def generate(env):
   """
@@ -144,7 +146,9 @@ def generate(env):
     return
 
   # create a builder that makes PTX files from .cu files
-  ptx_builder = SCons.Builder.Builder(action = '$NVCC -ptx $NVCCFLAGS $_NVCCWRAPCFLAGS $NVCCWRAPCCFLAGS $_NVCCCOMCOM $SOURCES -o $TARGET',
+  ptx_builder = SCons.Builder.Builder(action = '$NVCC -ptx $NVCCFLAGS $_NVCCWRAPCFLAGS '
+                                               '$NVCCWRAPCCFLAGS $_NVCCCOMCOM $SOURCES '
+                                               '-o $TARGET',
                                       emitter = {},
                                       suffix = '.ptx',
                                       src_suffix = CUDASuffixes)
@@ -160,9 +164,19 @@ def generate(env):
     static_obj.add_emitter(suffix, SCons.Defaults.StaticObjectEmitter)
     shared_obj.add_emitter(suffix, SCons.Defaults.SharedObjectEmitter)
     env['BUILDERS']['CUDASharedObject'] = shared_obj
+    env['BUILDERS']['CUDAStaticObject'] = static_obj
 
     # Add this suffix to the list of things scannable
     SCons.Tool.SourceFileScanner.add_scanner(suffix, CUDAScanner)
+
+  # create a builder that makes .da files from .dso files
+  dlib_builder = SCons.Builder.Builder(action = '$NVCC --device-link $NVCCFLAGS $_NVCCWRAPCFLAGS '
+                                                '$NVCCWRAPCCFLAGS $_NVCCCOMCOM $SOURCES '
+                                                '-o $TARGET',
+                                      emitter = {},
+                                      suffix = '.da',
+                                      src_suffix = '.dso')
+  env['BUILDERS']['CUDADeviceLibrary'] = dlib_builder
 
   add_common_nvcc_variables(env)
 
@@ -174,8 +188,10 @@ def generate(env):
   add_nvcc_flags(env)
 
   # 'NVCC Command'
-  env['NVCCCOM']   = '$NVCC -o $TARGET -c $_NVCCWRAPCFLAGS $NVCCWRAPCCFLAGS $_NVCCCOMCOM $NVCCFLAGS $SOURCES'
-  env['SHNVCCCOM'] = '$SHNVCC -o $TARGET -c $SHNVCCFLAGS $_NVCCWRAPSHCFLAGS $_NVCCWRAPSHCCFLAGS $_NVCCCOMCOM $NVCCFLAGS $SOURCES'
+  env['NVCCCOM']   = ('$NVCC -o $TARGET -dc $_NVCCWRAPCFLAGS $NVCCWRAPCCFLAGS '
+                      '$_NVCCCOMCOM $NVCCFLAGS $SOURCES')
+  env['SHNVCCCOM'] = ('$SHNVCC -o $TARGET -dc $SHNVCCFLAGS $_NVCCWRAPSHCFLAGS '
+                      '$_NVCCWRAPSHCCFLAGS $_NVCCCOMCOM $NVCCFLAGS $SOURCES')
 
   # XXX add code to generate builders for other miscellaneous
   # CUDA files here, such as .gpu, etc.
