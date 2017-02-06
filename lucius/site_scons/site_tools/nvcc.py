@@ -163,8 +163,8 @@ def generate(env):
     shared_obj.add_action(suffix, '$SHNVCCCOM')
     static_obj.add_emitter(suffix, SCons.Defaults.StaticObjectEmitter)
     shared_obj.add_emitter(suffix, SCons.Defaults.SharedObjectEmitter)
-    env['BUILDERS']['CUDASharedObject'] = shared_obj
-    env['BUILDERS']['CUDAStaticObject'] = static_obj
+    env['BUILDERS']['CUDADeviceSharedObject'] = static_obj
+    env['BUILDERS']['CUDADeviceStaticObject'] = static_obj
 
     # Add this suffix to the list of things scannable
     SCons.Tool.SourceFileScanner.add_scanner(suffix, CUDAScanner)
@@ -174,8 +174,8 @@ def generate(env):
                                                 '$NVCCWRAPCCFLAGS $_NVCCCOMCOM $SOURCES '
                                                 '-o $TARGET',
                                       emitter = {},
-                                      suffix = '.da',
-                                      src_suffix = '.dso')
+                                      suffix = '.a',
+                                      src_suffix = '.o')
   env['BUILDERS']['CUDADeviceLibrary'] = dlib_builder
 
   add_common_nvcc_variables(env)

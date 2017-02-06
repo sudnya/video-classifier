@@ -12,7 +12,7 @@ namespace parallel
 
 #if ENABLE_LOGGING
 
-CUDA_MANAGED_DECORATOR LogDatabase* hostLogDatabase = nullptr;
+CUDA_MANAGED_DECORATOR LogDatabase* logDatabase = nullptr;
 
 #if defined(__NVCC__)
 CUDA_GLOBAL_DECORATOR void allocateLogDatabase()
@@ -28,12 +28,12 @@ CUDA_GLOBAL_DECORATOR void enableSpecificLogDatabaseLog(const char* logName)
 
 CUDA_DECORATOR LogDatabase* createAndGetLogDatabase()
 {
-    if(hostLogDatabase == nullptr)
+    if(logDatabase == nullptr)
     {
-        hostLogDatabase = new LogDatabase;
+        logDatabase = new LogDatabase;
     }
 
-    return hostLogDatabase;
+    return logDatabase;
 }
 
 #endif
