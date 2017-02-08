@@ -150,7 +150,8 @@ public:
 
             sortLocalStorage(localStorage);
 
-            CUDA_SHARED_DECORATOR SortElement memory[LocalValueCount * parallel::GroupLevelSize<2>::size()];
+            constexpr int sharedSize = LocalValueCount * parallel::GroupLevelSize<2>::size();
+            CUDA_SHARED_DECORATOR SortElement memory[sharedSize];
                 //parallel::SharedMemoryAllocator<SortElement,
                 //LocalValueCount * parallel::GroupLevelSize<2>::size()>().allocate();
 
@@ -471,7 +472,8 @@ public:
         auto relativeInnerToMergeGroup = parallel::getRelativeGroup(innerGroup, mergeGroup);
         auto relativeMergeToOuterGroup = parallel::getRelativeGroup(mergeGroup, threadGroup);
 
-        CUDA_SHARED_DECORATOR SortElement sharedMemory[LocalValueCount * parallel::GroupLevelSize<2>::size()];
+        constexpr int sharedSize = LocalValueCount * parallel::GroupLevelSize<2>::size();
+        CUDA_SHARED_DECORATOR SortElement sharedMemory[sharedSize];
         //auto* sharedMemory = parallel::SharedMemoryAllocator<SortElement,
         //    LocalValueCount * parallel::GroupLevelSize<2>::size()>().allocate();
 

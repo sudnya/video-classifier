@@ -4,7 +4,7 @@
 #ifdef __CUDA_ARCH__
 #define CUDA_SHARED_DECORATOR __shared__
 #else
-#define CUDA_SHARED_DECORATOR
+#define CUDA_SHARED_DECORATOR static
 #endif
 
 #ifdef __NVCC__
