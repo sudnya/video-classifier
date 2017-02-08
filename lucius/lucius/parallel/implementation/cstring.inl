@@ -59,23 +59,31 @@ CUDA_DECORATOR inline lldiv_t div(long long int n, long long int d)
     return result;
 }
 
-CUDA_DECORATOR inline long long int i2a(char* s, long long int n)
+template<typename T>
+CUDA_DECORATOR inline T i2a(char* s, T n)
 {
-    lldiv_t qr;
-    long long int pos;
+    vector<T> digits;
 
     if(n == 0)
     {
         return 0;
     }
 
-    qr = div(n, 10);
+    while(n != 0)
+    {
+        lldiv_t qr = div(n, 10);
 
-    pos = i2a(s, qr.quot);
+        digits.push_back(qr.rem);
 
-    s[pos] = qr.rem + '0';
+        n = qr.quot;
+    }
 
-    return pos + 1;
+    for(size_t i = 0; i < digits.size(); ++i)
+    {
+        s[i] = digits[i] + '0';
+    }
+
+    return digits.size() + 1;
 }
 
 CUDA_DECORATOR inline char* itoa(char* output_buff, long long int num)
@@ -95,25 +103,6 @@ CUDA_DECORATOR inline char* itoa(char* output_buff, long long int num)
     p[i2a(p, num)] = '\0';
 
     return output_buff;
-}
-
-CUDA_DECORATOR inline unsigned long long int i2a(char* s, unsigned long long int n)
-{
-    lldiv_t qr;
-    unsigned long long int pos;
-
-    if(n == 0)
-    {
-        return 0;
-    }
-
-    qr = div(n, 10);
-
-    pos = i2a(s, qr.quot);
-
-    s[pos] = qr.rem + '0';
-
-    return pos + 1;
 }
 
 CUDA_DECORATOR inline char* itoa(char* output_buff, unsigned long long int num)
