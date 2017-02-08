@@ -16,7 +16,7 @@ template <typename T, size_t capacity>
 class SharedMemoryAllocator
 {
 public:
-    static CUDA_DECORATOR T* allocate();
+    inline CUDA_DECORATOR T* allocate();
 
 };
 

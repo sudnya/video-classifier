@@ -52,6 +52,8 @@ for dir in cuda_source_directories:
 
 libculucius = env.CUDADeviceLibrary('culucius', cuda_object_sources, LIBS=env['EXTRA_LIBS'])
 sources.append(libculucius)
+if cuda_exists(env):
+    sources.append(cuda_object_sources)
 
 # create the library
 liblucius = env.SharedLibrary('lucius', sources, LIBS=env['EXTRA_LIBS'])

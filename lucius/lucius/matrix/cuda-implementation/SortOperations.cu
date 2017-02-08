@@ -32,7 +32,7 @@ namespace detail
 class SortConfiguration
 {
 public:
-    static constexpr size_t LocalValueCount = 8;
+    static constexpr size_t LocalValueCount = 4;
     static constexpr size_t GroupLevel      = 2;
 };
 
@@ -150,8 +150,9 @@ public:
 
             sortLocalStorage(localStorage);
 
-            auto* memory = parallel::SharedMemoryAllocator<SortElement,
-                LocalValueCount * parallel::GroupLevelSize<2>::size()>::allocate();
+            CUDA_SHARED_DECORATOR SortElement memory[LocalValueCount * parallel::GroupLevelSize<2>::size()];
+                //parallel::SharedMemoryAllocator<SortElement,
+                //LocalValueCount * parallel::GroupLevelSize<2>::size()>().allocate();
 
             copyFromLocalStorageIntoSharedStorage(memory, localStorage, innerGroup);
 
@@ -470,8 +471,9 @@ public:
         auto relativeInnerToMergeGroup = parallel::getRelativeGroup(innerGroup, mergeGroup);
         auto relativeMergeToOuterGroup = parallel::getRelativeGroup(mergeGroup, threadGroup);
 
-        auto* sharedMemory = parallel::SharedMemoryAllocator<SortElement,
-            LocalValueCount * parallel::GroupLevelSize<2>::size()>::allocate();
+        CUDA_SHARED_DECORATOR SortElement sharedMemory[LocalValueCount * parallel::GroupLevelSize<2>::size()];
+        //auto* sharedMemory = parallel::SharedMemoryAllocator<SortElement,
+        //    LocalValueCount * parallel::GroupLevelSize<2>::size()>().allocate();
 
         SortElement localStorage[LocalValueCount];
 

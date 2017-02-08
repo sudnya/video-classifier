@@ -63,7 +63,7 @@ gCompilerOptions = {
 gLinkerOptions = {
         'gcc'  : {'debug' : '', 'libraries' : ''},
         'clang'  : {'debug' : '', 'libraries' : ''},
-        'g++'  : {'debug' : '', 'libraries' : ''},
+        'g++'  : {'debug' : '', 'libraries' : ['']},
         'c++'  : {'debug' : '', 'libraries' : '-lc++'},
         'clang++'  : {'debug' : ['-fsanitize=address'],
             'libraries' : ['-lc++', '-Wl,-all_load']},

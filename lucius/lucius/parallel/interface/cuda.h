@@ -1,6 +1,12 @@
 
 #pragma once
 
+#ifdef __CUDA_ARCH__
+#define CUDA_SHARED_DECORATOR __shared__
+#else
+#define CUDA_SHARED_DECORATOR
+#endif
+
 #ifdef __NVCC__
 #define CUDA_DECORATOR __host__ __device__
 #define CUDA_MANAGED_DECORATOR __managed__

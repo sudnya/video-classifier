@@ -120,6 +120,7 @@ def add_nvcc_flags(env):
   env.AppendUnique(NVCCFLAGS = '-std=c++11')
   #env.AppendUnique(NVCCFLAGS = '--expt-relaxed-constexpr')
   env.AppendUnique(NVCCFLAGS = '-Xcompiler=-Wno-unused-function')
+  env.AppendUnique(NVCCFLAGS = '-Xcompiler=-fPIC')
   #env.AppendUnique(NVCCFLAGS = '-Xcompiler=-Wno-unused-local-typedef')
 
 def cuda_exists(env):
@@ -174,7 +175,7 @@ def generate(env):
                                                 '$NVCCWRAPCCFLAGS $_NVCCCOMCOM $SOURCES '
                                                 '-o $TARGET',
                                       emitter = {},
-                                      suffix = '.a',
+                                      suffix = '.o',
                                       src_suffix = '.o')
   env['BUILDERS']['CUDADeviceLibrary'] = dlib_builder
 
