@@ -272,7 +272,7 @@ public:
 
         if((aEnd - aBegin) > 0 && (bEnd - bBegin) > 0)
         {
-            #if defined(LUCIUS_DEBUG)
+            #if !defined(LUCIUS_DEBUG)
             parallel::log("SortOperations") << "thread " << innerGroup.id() << " serial merge a["
                 << (aBegin - a) << ", " << (aEnd - a) << "], b [" << (bBegin - b) << ", "
                 << (bEnd - b) << "] half segment id " << halfSegmentId
@@ -407,7 +407,7 @@ public:
             {
                 auto value = sharedMemory[sharedElement];
 
-                #if defined(LUCIUS_DEBUG)
+                #if !defined(LUCIUS_DEBUG)
                 parallel::log("SortOperations") << "block sort output[" << globalElement
                     << "] = (" << value.dimensionKey << ", " << value.normalKey << ")\n";
                 #endif
@@ -557,7 +557,7 @@ public:
                 size_t threadBBeginOffset =  threadLeftDiagonal - threadABeginOffset;
                 size_t threadBEndOffset   = threadRightDiagonal - threadAEndOffset;
 
-                #if defined(LUCIUS_DEBUG)
+                #if !defined(LUCIUS_DEBUG)
                 parallel::log("SortOperations") << "per block merge path a("
                     << aBeginOffset << ", " << aEndOffset << "), b("
                     << bBeginOffset << ", " << bEndOffset << "), per thread a("
@@ -770,7 +770,7 @@ private:
 
             if(outputStart + index < elements)
             {
-                #if defined(LUCIUS_DEBUG)
+                #if !defined(LUCIUS_DEBUG)
                 parallel::log("SortOperations") << "merge output["
                     << (outputStart + index) << "] = ("
                     << value.dimensionKey << ", " << value.normalKey << ")\n";

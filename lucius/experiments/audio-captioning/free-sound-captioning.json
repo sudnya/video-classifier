@@ -208,7 +208,7 @@
     "system" :
     {
         "use-cuda"    : "1",
-        "cuda-device" : "1",
+        "cuda-device" : "2",
         "precision"   : "SinglePrecision"
     }
 
