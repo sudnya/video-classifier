@@ -65,42 +65,19 @@ private:
 CUDA_DECORATOR LogDatabase* createAndGetLogDatabase();
 LogDatabase* createAndGetHostLogDatabase();
 
-#if defined(__NVCC__)
-CUDA_DEVICE_DECORATOR LogDatabase* createAndGetDeviceLogDatabase();
-#endif
+void enableSpecificDeviceLog(const string& name);
+void enableAllDeviceLogs(bool shouldAllLogsBeEnabled);
 
-#if defined(__NVCC__)
-CUDA_GLOBAL_DECORATOR void enableAllDeviceLogs(bool shouldAllLogsBeEnabled);
-#endif
-
-CUDA_DECORATOR inline void enableAllLogs(bool shouldAllLogsBeEnabled)
+inline void enableAllLogs(bool shouldAllLogsBeEnabled)
 {
-    #if defined(__NVCC__)
-    createAndGetDeviceLogDatabase();
-    enableAllDeviceLogs<<<1, 1>>>();
-    #endif
+    enableAllDeviceLogs(shouldAllLogsBeEnabled);
     createAndGetHostLogDatabase()->enableAllLogs(shouldAllLogsBeEnabled);
 }
 
-#if defined(__NVCC__)
-CUDA_GLOBAL_DECORATOR void enableSpecificLogDatabaseLog(const char* logName);
-#endif
-
-CUDA_DECORATOR inline void enableSpecificLog(const string& name)
+inline void enableSpecificLog(const string& name)
 {
     createAndGetHostLogDatabase()->enableSpecificLog(name);
-
-    #ifdef __NVCC__
-    createAndGetDeviceLogDatabase();
-
-    char* data = reinterpret_cast<char*>(parallel::malloc(name.size() + 1));
-
-    std::memcpy(data, name.c_str(), name.size() + 1);
-
-    enableSpecificLogDatabaseLog<<<1, 1>>>(data);
-
-    parallel::free(data);
-    #endif
+    enableSpecificDeviceLog(name);
 }
 
 CUDA_DECORATOR inline bool isLogEnabled(const string& name)
