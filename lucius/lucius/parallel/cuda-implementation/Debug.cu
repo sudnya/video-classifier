@@ -12,28 +12,65 @@ namespace parallel
 
 #if ENABLE_LOGGING
 
-CUDA_MANAGED_DECORATOR LogDatabase* logDatabase = nullptr;
+CUDA_DEVICE_DECORATOR LogDatabase* deviceLogDatabase = nullptr;
+LogDatabase* hostLogDatabase = nullptr;
 
-#if defined(__NVCC__)
-CUDA_GLOBAL_DECORATOR void allocateLogDatabase()
+LogDatabase* createAndGetHostLogDatabase()
 {
-    logDatabase = new LogDatabase;
+    if(hostLogDatabase == nullptr)
+    {
+        hostLogDatabase = new LogDatabase;
+    }
+
+    return hostLogDatabase;
 }
 
+#if defined(__NVCC__)
+CUDA_GLOBAL_DECORATOR void createDeviceLogDatabase();
+#endif
+
+CUDA_DEVICE_DECORATOR LogDatabase* createAndGetDeviceLogDatabase()
+{
+    #if defined(__CUDA_ARCH__)
+    if(deviceLogDatabase == nullptr)
+    {
+        deviceLogDatabase = new LogDatabase;
+    }
+    #elif defined(__NVCC__)
+    createDeviceLogDatabase<<<1, 1>>>();
+    #endif
+
+    return deviceLogDatabase;
+}
+
+#if defined(__NVCC__)
+CUDA_GLOBAL_DECORATOR void createDeviceLogDatabase()
+{
+    createAndGetDeviceLogDatabase();
+}
+#endif
+
+#if defined(__NVCC__)
 CUDA_GLOBAL_DECORATOR void enableSpecificLogDatabaseLog(const char* logName)
 {
-    logDatabase->enableSpecificLog(logName);
+    deviceLogDatabase->enableSpecificLog(logName);
+}
+#endif
+
+#if defined(__NVCC__)
+CUDA_GLOBAL_DECORATOR void enableAllDeviceLogs(bool shouldAllLogsBeEnabled)
+{
+    createAndGetDeviceLogDatabase()->enableAllLogs(shouldAllLogsBeEnabled);
 }
 #endif
 
 CUDA_DECORATOR LogDatabase* createAndGetLogDatabase()
 {
-    if(logDatabase == nullptr)
-    {
-        logDatabase = new LogDatabase;
-    }
-
-    return logDatabase;
+    #if defined(__CUDA_ARCH__)
+    return createAndGetDeviceLogDatabase();
+    #else
+    return createAndGetHostLogDatabase();
+    #endif
 }
 
 #endif

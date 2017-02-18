@@ -62,23 +62,36 @@ private:
     bool        _enableAllLogs;
 };
 
+CUDA_DECORATOR LogDatabase* createAndGetLogDatabase();
+LogDatabase* createAndGetHostLogDatabase();
+
+#if defined(__NVCC__)
+CUDA_DEVICE_DECORATOR LogDatabase* createAndGetDeviceLogDatabase();
+#endif
+
+#if defined(__NVCC__)
+CUDA_GLOBAL_DECORATOR void enableAllDeviceLogs(bool shouldAllLogsBeEnabled);
+#endif
+
+CUDA_DECORATOR inline void enableAllLogs(bool shouldAllLogsBeEnabled)
+{
+    #if defined(__NVCC__)
+    createAndGetDeviceLogDatabase();
+    enableAllDeviceLogs<<<1, 1>>>();
+    #endif
+    createAndGetHostLogDatabase()->enableAllLogs(shouldAllLogsBeEnabled);
+}
+
 #if defined(__NVCC__)
 CUDA_GLOBAL_DECORATOR void enableSpecificLogDatabaseLog(const char* logName);
 #endif
 
-CUDA_DECORATOR LogDatabase* createAndGetLogDatabase();
-
-CUDA_DECORATOR inline void enableAllLogs(bool shouldAllLogsBeEnabled)
-{
-    createAndGetLogDatabase()->enableAllLogs(shouldAllLogsBeEnabled);
-}
-
 CUDA_DECORATOR inline void enableSpecificLog(const string& name)
 {
-    #if defined(__CUDA_ARCH__) || !defined(__NVCC__)
-    createAndGetLogDatabase()->enableSpecificLog(name);
-    #else
-    createAndGetLogDatabase();
+    createAndGetHostLogDatabase()->enableSpecificLog(name);
+
+    #ifdef __NVCC__
+    createAndGetDeviceLogDatabase();
 
     char* data = reinterpret_cast<char*>(parallel::malloc(name.size() + 1));
 

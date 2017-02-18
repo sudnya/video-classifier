@@ -11,10 +11,12 @@
 #define CUDA_DECORATOR __host__ __device__
 #define CUDA_MANAGED_DECORATOR __managed__
 #define CUDA_GLOBAL_DECORATOR __global__
+#define CUDA_DEVICE_DECORATOR __device__
 #else
 #define CUDA_DECORATOR
 #define CUDA_MANAGED_DECORATOR
 #define CUDA_GLOBAL_DECORATOR
+#define CUDA_DEVICE_DECORATOR
 #endif
 
 namespace lucius
