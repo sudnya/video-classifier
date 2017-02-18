@@ -152,8 +152,6 @@ public:
 
             constexpr int sharedSize = LocalValueCount * parallel::GroupLevelSize<2>::size();
             CUDA_SHARED_DECORATOR SortElement memory[sharedSize];
-                //parallel::SharedMemoryAllocator<SortElement,
-                //LocalValueCount * parallel::GroupLevelSize<2>::size()>().allocate();
 
             copyFromLocalStorageIntoSharedStorage(memory, localStorage, innerGroup);
 
@@ -479,8 +477,6 @@ public:
 
         constexpr int sharedSize = LocalValueCount * parallel::GroupLevelSize<2>::size();
         CUDA_SHARED_DECORATOR SortElement sharedMemory[sharedSize];
-        //auto* sharedMemory = parallel::SharedMemoryAllocator<SortElement,
-        //    LocalValueCount * parallel::GroupLevelSize<2>::size()>().allocate();
 
         SortElement localStorage[LocalValueCount];
 
@@ -588,6 +584,8 @@ private:
             mergeGroupBBegin, mergeGroupBEnd, leftDiagonal, group);
         size_t aEndOffset   = _mergePathForEntireGroup(mergeGroupABegin, mergeGroupAEnd,
             mergeGroupBBegin, mergeGroupBEnd, rightDiagonal, group);
+
+        assert(aBeginOffset >= aEndOffset);
 
         aBegin = keysAndIndicesInput + mergeGroupABegin + aBeginOffset;
         aEnd   = keysAndIndicesInput + mergeGroupABegin +   aEndOffset;
