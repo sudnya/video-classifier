@@ -35,6 +35,11 @@ public:
 public:
     CUDA_DECORATOR bool isLogEnabled(const string& logName) const
     {
+        if(this == nullptr)
+        {
+            return false;
+        }
+
         if(_enableAllLogs)
         {
             return true;
