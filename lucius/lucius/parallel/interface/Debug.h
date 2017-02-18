@@ -14,11 +14,7 @@
 #include <sstream>
 
 // Preprocessor Defines
-#ifdef __NVCC__
 #define ENABLE_LOGGING 1
-#else
-#define ENABLE_LOGGING 1
-#endif
 
 namespace lucius
 {

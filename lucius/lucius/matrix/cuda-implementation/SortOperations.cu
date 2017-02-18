@@ -272,10 +272,12 @@ public:
 
         if((aEnd - aBegin) > 0 && (bEnd - bBegin) > 0)
         {
+            #if defined(LUCIUS_DEBUG)
             parallel::log("SortOperations") << "thread " << innerGroup.id() << " serial merge a["
                 << (aBegin - a) << ", " << (aEnd - a) << "], b [" << (bBegin - b) << ", "
                 << (bEnd - b) << "] half segment id " << halfSegmentId
                 << " with size " << halfSegmentSize << "\n";
+            #endif
         }
 
         serialMerge(outputs, aBegin, aEnd, bBegin, bEnd, innerGroup);
@@ -405,8 +407,11 @@ public:
             {
                 auto value = sharedMemory[sharedElement];
 
+                #if defined(LUCIUS_DEBUG)
                 parallel::log("SortOperations") << "block sort output[" << globalElement
                     << "] = (" << value.dimensionKey << ", " << value.normalKey << ")\n";
+                #endif
+
                 data[globalElement] = value;
             }
 
@@ -552,11 +557,13 @@ public:
                 size_t threadBBeginOffset =  threadLeftDiagonal - threadABeginOffset;
                 size_t threadBEndOffset   = threadRightDiagonal - threadAEndOffset;
 
+                #if defined(LUCIUS_DEBUG)
                 parallel::log("SortOperations") << "per block merge path a("
                     << aBeginOffset << ", " << aEndOffset << "), b("
                     << bBeginOffset << ", " << bEndOffset << "), per thread a("
                     << threadABeginOffset << ", " << threadAEndOffset << "), b("
                     << threadBBeginOffset << ", " << threadBEndOffset << ")\n";
+                #endif
 
                 _serialMerge(localStorage, sharedABegin, sharedAEnd, sharedMemory,
                     sharedMemory + aSize, threadLeftDiagonal, threadRightDiagonal, innerGroup);
@@ -763,9 +770,11 @@ private:
 
             if(outputStart + index < elements)
             {
+                #if defined(LUCIUS_DEBUG)
                 parallel::log("SortOperations") << "merge output["
                     << (outputStart + index) << "] = ("
                     << value.dimensionKey << ", " << value.normalKey << ")\n";
+                #endif
 
                 keysAndIndicesOutput[outputStart + index] = value;
             }
