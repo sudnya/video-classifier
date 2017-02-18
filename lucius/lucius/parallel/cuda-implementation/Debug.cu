@@ -1,6 +1,7 @@
 
 // Lucius Includes
 #include <lucius/parallel/interface/Debug.h>
+#include <lucius/parallel/interface/Synchronization.h>
 
 // Standard Library Includes
 #include <iostream>
@@ -28,7 +29,7 @@ CUDA_GLOBAL_DECORATOR void enableSpecificLogDatabaseLog(const char* logName)
     deviceLogDatabase->enableSpecificLog(logName);
 }
 
-CUDA_GLOBAL_DECORATOR void enableAllDeviceLogs(bool shouldAllLogsBeEnabled)
+CUDA_GLOBAL_DECORATOR void enableAllDeviceLogsKernel(bool shouldAllLogsBeEnabled)
 {
     createAndGetDeviceLogDatabase()->enableAllLogs(shouldAllLogsBeEnabled);
 }
@@ -38,7 +39,9 @@ void enableAllDeviceLogs(bool shouldAllLogsBeEnabled)
 {
     #if defined(__NVCC__)
     createAndGetDeviceLogDatabase();
+    setNotSynchronized();
     enableAllDeviceLogsKernel<<<1, 1>>>(shouldAllLogsBeEnabled);
+    synchronize();
     #endif
 }
 
@@ -51,9 +54,11 @@ void enableSpecificDeviceLog(const string& name)
 
     std::memcpy(data, name.c_str(), name.size() + 1);
 
+    setNotSynchronized();
     enableSpecificLogDatabaseLog<<<1, 1>>>(data);
 
     parallel::free(data);
+    synchronize();
     #endif
 }
 
@@ -74,11 +79,15 @@ CUDA_DECORATOR LogDatabase* createAndGetDeviceLogDatabase()
     {
         deviceLogDatabase = new LogDatabase;
     }
-    #elif defined(__NVCC__)
-    createDeviceLogDatabase<<<1, 1>>>();
-    #endif
 
     return deviceLogDatabase;
+    #elif defined(__NVCC__)
+    setNotSynchronized();
+    createDeviceLogDatabase<<<1, 1>>>();
+    synchronize();
+
+    return nullptr;
+    #endif
 }
 
 CUDA_DECORATOR LogDatabase* createAndGetLogDatabase()
