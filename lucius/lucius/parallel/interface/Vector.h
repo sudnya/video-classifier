@@ -15,6 +15,8 @@ template <typename T>
 class vector
 {
 public:
+    typedef T& reference;
+    typedef const T& const_reference;
     typedef pointer_iterator<T> iterator;
     typedef const_pointer_iterator<T> const_iterator;
     typedef parallel::reverse_iterator<iterator> reverse_iterator;
@@ -156,6 +158,17 @@ public:
         _size += newElements;
 
         return position;
+    }
+
+public:
+    CUDA_DECORATOR reference operator[](size_t index)
+    {
+        return _begin[index];
+    }
+
+    CUDA_DECORATOR const_reference operator[](size_t index) const
+    {
+        return _begin[index];
     }
 
 public:

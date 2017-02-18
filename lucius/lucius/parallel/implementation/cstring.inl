@@ -83,7 +83,7 @@ CUDA_DECORATOR inline T i2a(char* s, T n)
         s[i] = digits[i] + '0';
     }
 
-    return digits.size() + 1;
+    return digits.size();
 }
 
 CUDA_DECORATOR inline char* itoa(char* output_buff, long long int num)

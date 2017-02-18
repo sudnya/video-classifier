@@ -535,8 +535,13 @@ public:
                 SortElement* sharedABegin = nullptr;
                 SortElement* sharedAEnd   = nullptr;
 
-                size_t threadLeftDiagonal  =  innerGroup.id()      * LocalValueCount;
-                size_t threadRightDiagonal = (innerGroup.id() + 1) * LocalValueCount;
+                size_t remainingThreadElements = remainingElements -
+                    innerGroupId * elementsPerInnerGroup;
+
+                size_t threadLeftDiagonal  = parallel::min( innerGroup.id()      * LocalValueCount,
+                    remainingThreadElements);
+                size_t threadRightDiagonal = parallel::min((innerGroup.id() + 1) * LocalValueCount,
+                    remainingThreadElements);
 
                 _mergePathPerThread(sharedABegin, sharedAEnd, aEnd - aBegin, sharedMemory,
                     bSize + aSize, threadLeftDiagonal, threadRightDiagonal, innerGroup);
