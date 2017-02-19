@@ -205,7 +205,7 @@ public:
                 {
                     size_t i = index * 2 + 1;
 
-                    if(compare(localStorage[i+1], localStorage[i], comparisonOperation))
+                    if(!compare(localStorage[i], localStorage[i+1], comparisonOperation))
                     {
                         parallel::swap(localStorage[i+1], localStorage[i]);
                     }
@@ -219,7 +219,7 @@ public:
                 {
                     size_t i = index * 2;
 
-                    if(compare(localStorage[i+1], localStorage[i], comparisonOperation))
+                    if(!compare(localStorage[i], localStorage[i+1], comparisonOperation))
                     {
                         parallel::swap(localStorage[i+1], localStorage[i]);
                     }
@@ -332,7 +332,7 @@ public:
             auto aKey = a[midPoint];
             auto bKey = b[diagonalConstraint - 1 - midPoint];
 
-            bool predicate = compare(aKey, bKey, comparisonOperation);
+            bool predicate = !compare(bKey, aKey, comparisonOperation);
 
             if(predicate)
             {
@@ -365,7 +365,7 @@ public:
 
             if(isALegal && isBLegal)
             {
-                isA = compare(aBegin[aIndex], bBegin[bIndex], comparisonOperation);
+                isA = !compare(bBegin[bIndex], aBegin[aIndex], comparisonOperation);
             }
 
             if(isA)
@@ -492,7 +492,7 @@ public:
             size_t mergeGroupBEnd   = parallel::min(mergeGroupBBegin + regionToMergeSize,
                                                     elements);
 
-            size_t remainingElements = elements - mergeGroupABegin;
+            size_t remainingElements    = elements - mergeGroupABegin;
             size_t regionsPerMergeGroup = totalRegionsPerMergeGroup;
 
             if(remainingElements < mergedRegionSize)
@@ -507,7 +507,7 @@ public:
             {
                 // group merge path
                 size_t innerGroupLeftDiagonal  =
-                    parallel::min( innerGroupId * elementsPerInnerGroup, remainingElements);
+                    parallel::min( innerGroupId      * elementsPerInnerGroup, remainingElements);
                 size_t innerGroupRightDiagonal =
                     parallel::min((innerGroupId + 1) * elementsPerInnerGroup, remainingElements);
 
@@ -585,7 +585,19 @@ private:
         size_t aEndOffset   = _mergePathForEntireGroup(mergeGroupABegin, mergeGroupAEnd,
             mergeGroupBBegin, mergeGroupBEnd, rightDiagonal, group);
 
+        if(aEndOffset > aBeginOffset)
+        {
+            parallel::log("SortOperations") << "out of range group merge path"
+                << " diagonals (" << leftDiagonal << ", " << rightDiagonal << ")"
+                << " a offsets (" << aBeginOffset << ", " << aEndOffset << ")"
+                << " a (" << mergeGroupABegin << ", " << mergeGroupAEnd << ")"
+                << " b (" << mergeGroupBBegin << ", " << mergeGroupBEnd << ")"
+                << "\n";
+        }
+
+        assert(rightDiagonal - leftDiagonal <= group.size() * LocalValueCount);
         assert(aBeginOffset <= aEndOffset);
+        assert(aEndOffset - aBeginOffset <= group.size() * LocalValueCount);
 
         aBegin = keysAndIndicesInput + mergeGroupABegin + aBeginOffset;
         aEnd   = keysAndIndicesInput + mergeGroupABegin +   aEndOffset;
@@ -611,7 +623,7 @@ private:
             SortElement aKey = a[midPoint];
             SortElement bKey = b[diagonal - 1 - midPoint];
 
-            bool predicate = compare(aKey, bKey, comparisonOperation);
+            bool predicate = !compare(bKey, aKey, comparisonOperation);
 
             if(predicate)
             {
@@ -696,7 +708,7 @@ private:
             SortElement aKey = a[midPoint];
             SortElement bKey = b[diagonal - 1 - midPoint];
 
-            bool predicate = compare(aKey, bKey, comparisonOperation);
+            bool predicate = !compare(bKey, aKey, comparisonOperation);
 
             if(predicate)
             {
@@ -740,7 +752,7 @@ private:
 
             if(aOffset < aSize)
             {
-                if(bOffset < bSize && compare(b[bOffset], a[aOffset], comparisonOperation))
+                if(bOffset < bSize && !compare(a[aOffset], b[bOffset], comparisonOperation))
                 {
                     currentElement = b[bOffset++];
                 }
