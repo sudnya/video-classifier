@@ -492,7 +492,7 @@ public:
             size_t mergeGroupBEnd   = parallel::min(mergeGroupBBegin + regionToMergeSize,
                                                     elements);
 
-            size_t remainingElements = elements - mergeGroupABegin;
+            size_t remainingElements    = elements - mergeGroupABegin;
             size_t regionsPerMergeGroup = totalRegionsPerMergeGroup;
 
             if(remainingElements < mergedRegionSize)
@@ -507,7 +507,7 @@ public:
             {
                 // group merge path
                 size_t innerGroupLeftDiagonal  =
-                    parallel::min( innerGroupId * elementsPerInnerGroup, remainingElements);
+                    parallel::min( innerGroupId      * elementsPerInnerGroup, remainingElements);
                 size_t innerGroupRightDiagonal =
                     parallel::min((innerGroupId + 1) * elementsPerInnerGroup, remainingElements);
 
@@ -585,7 +585,8 @@ private:
         size_t aEndOffset   = _mergePathForEntireGroup(mergeGroupABegin, mergeGroupAEnd,
             mergeGroupBBegin, mergeGroupBEnd, rightDiagonal, group);
 
-        assert(aBeginOffset >= aEndOffset);
+        assert(aBeginOffset <= aEndOffset);
+        assert(aEndOffset - aBeginOffet < group.size() * LocalValueCount);
 
         aBegin = keysAndIndicesInput + mergeGroupABegin + aBeginOffset;
         aEnd   = keysAndIndicesInput + mergeGroupABegin +   aEndOffset;
