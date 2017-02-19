@@ -585,7 +585,7 @@ private:
         size_t aEndOffset   = _mergePathForEntireGroup(mergeGroupABegin, mergeGroupAEnd,
             mergeGroupBBegin, mergeGroupBEnd, rightDiagonal, group);
 
-        assert(aBeginOffset >= aEndOffset);
+        assert(aBeginOffset <= aEndOffset);
 
         aBegin = keysAndIndicesInput + mergeGroupABegin + aBeginOffset;
         aEnd   = keysAndIndicesInput + mergeGroupABegin +   aEndOffset;
