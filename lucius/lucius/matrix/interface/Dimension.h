@@ -81,6 +81,12 @@ public:
     CUDA_DECORATOR inline Dimension operator*(const Dimension& ) const;
 
 public:
+    CUDA_DECORATOR inline Dimension& operator-=(const Dimension& );
+    CUDA_DECORATOR inline Dimension& operator+=(const Dimension& );
+    CUDA_DECORATOR inline Dimension& operator/=(const Dimension& );
+    CUDA_DECORATOR inline Dimension& operator*=(const Dimension& );
+
+public:
     CUDA_DECORATOR inline bool operator==(const Dimension& ) const;
     CUDA_DECORATOR inline bool operator!=(const Dimension& ) const;
     CUDA_DECORATOR inline bool operator<=( const Dimension& ) const;

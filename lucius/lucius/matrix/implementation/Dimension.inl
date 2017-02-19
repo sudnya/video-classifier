@@ -225,6 +225,34 @@ CUDA_DECORATOR Dimension Dimension::operator*(const Dimension& d) const
     return result;
 }
 
+CUDA_DECORATOR Dimension& Dimension::operator-=(const Dimension& d)
+{
+    *this = *this - d;
+
+    return *this;
+}
+
+CUDA_DECORATOR Dimension& Dimension::operator+=(const Dimension& d)
+{
+    *this = *this + d;
+
+    return *this;
+}
+
+CUDA_DECORATOR Dimension& Dimension::operator*=(const Dimension& d)
+{
+    *this = *this * d;
+
+    return *this;
+}
+
+CUDA_DECORATOR Dimension& Dimension::operator/=(const Dimension& d)
+{
+    *this = *this / d;
+
+    return *this;
+}
+
 CUDA_DECORATOR bool Dimension::operator==(const Dimension& d) const
 {
     if(d.size() != size())

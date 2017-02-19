@@ -595,12 +595,14 @@ private:
                 << "\n";
         }
 
+        auto* aStart  = keysAndIndicesInput;
+
         assert(rightDiagonal - leftDiagonal <= group.size() * LocalValueCount);
         assert(aBeginOffset <= aEndOffset);
         assert(aEndOffset - aBeginOffset <= group.size() * LocalValueCount);
 
-        aBegin = keysAndIndicesInput + mergeGroupABegin + aBeginOffset;
-        aEnd   = keysAndIndicesInput + mergeGroupABegin +   aEndOffset;
+        aBegin = aStart + mergeGroupABegin + aBeginOffset;
+        aEnd   = aStart + mergeGroupABegin +   aEndOffset;
     }
 
     CUDA_DECORATOR size_t _mergePathForEntireGroup(

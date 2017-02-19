@@ -2293,11 +2293,24 @@ bool testSort3d()
 
 bool testSort23040()
 {
-    Matrix input(8, 45, 64);
+    Matrix input(8, 45, 4);
 
-    ones(input);
+    broadcast(input, input, range({input.size()[2]}, input.precision()), {0, 1},
+        lucius::matrix::CopyRight());
 
     auto reference = lucius::matrix::copy(input);
+    for(size_t dim0 = 0; dim0 < input.size()[0]; ++dim0)
+    {
+        for(size_t dim1 = 0; dim1 < input.size()[1]; ++dim1)
+        {
+            auto inputSlice = slice(reference,
+                {dim0, dim1, 0},
+                {dim0 + 1, dim1 + 1, input.size()[2]});
+
+            lucius::matrix::sort(inputSlice, {0, 1, 2}, lucius::matrix::GreaterThan());
+        }
+    }
+
     auto result = lucius::matrix::copy(input);
 
     lucius::matrix::sort(result, {0, 1}, lucius::matrix::GreaterThan());
