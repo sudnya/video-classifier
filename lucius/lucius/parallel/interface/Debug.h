@@ -35,10 +35,12 @@ public:
 public:
     CUDA_DECORATOR bool isLogEnabled(const string& logName) const
     {
+        #ifdef __NVCC__
         if(this == nullptr)
         {
             return false;
         }
+        #endif
 
         if(_enableAllLogs)
         {

@@ -2291,6 +2291,32 @@ bool testSort3d()
     return reference == result;
 }
 
+bool testSort23040()
+{
+    Matrix input(8, 45, 64);
+
+    ones(input);
+
+    auto reference = lucius::matrix::copy(input);
+    auto result = lucius::matrix::copy(input);
+
+    lucius::matrix::sort(result, {0, 1}, lucius::matrix::GreaterThan());
+
+    if(reference != result)
+    {
+        lucius::util::log("test-matrix") << " Matrix Sort 23040 Test Failed:\n";
+        lucius::util::log("test-matrix") << "  result matrix " << result.toString();
+        lucius::util::log("test-matrix") << "  does not match reference matrix "
+            << reference.toString();
+    }
+    else
+    {
+        lucius::util::log("test-matrix") << " Matrix Sort 23040 Test Passed\n";
+    }
+
+    return reference == result;
+}
+
 bool testSortByKey()
 {
     // create an out of order matrix
@@ -2580,6 +2606,8 @@ bool runTests(bool listTests, const std::string& testFilter)
 
     engine.addTest("sort by key", testSortByKey);
     engine.addTest("sort by key 2d", testSortByKey2d);
+
+    engine.addTest("sort 23040", testSort23040);
 
     engine.addTest("reduce by key", testReduceByKey);
     engine.addTest("reduce by key 2d", testReduceByKey2d);
