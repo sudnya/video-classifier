@@ -80,7 +80,7 @@ CUDA_DECORATOR inline T i2a(char* s, T n)
 
     for(size_t i = 0; i < digits.size(); ++i)
     {
-        s[i] = digits[i] + '0';
+        s[i] = digits[digits.size() - i - 1] + '0';
     }
 
     return digits.size();

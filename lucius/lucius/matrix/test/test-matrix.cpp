@@ -2293,7 +2293,7 @@ bool testSort3d()
 
 bool testSort23040()
 {
-    Matrix input(8, 45, 4);
+    Matrix input(8, 45, 64);
 
     broadcast(input, input, range({input.size()[2]}, input.precision()), {0, 1},
         lucius::matrix::CopyRight());

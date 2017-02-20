@@ -85,9 +85,10 @@ CUDA_DECORATOR LogDatabase* createAndGetDeviceLogDatabase()
     setNotSynchronized();
     createDeviceLogDatabase<<<1, 1>>>();
     synchronize();
-
-    #endif
     return nullptr;
+    #else
+    return nullptr;
+    #endif
 }
 
 CUDA_DECORATOR LogDatabase* createAndGetLogDatabase()
