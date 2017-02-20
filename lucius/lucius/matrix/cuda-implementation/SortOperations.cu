@@ -22,6 +22,9 @@
 // Standard Library Includes
 #include <limits>
 
+// Preprocessor Defines
+#define ENABLE_DEBUG_LOGS 0
+
 namespace lucius
 {
 namespace matrix
@@ -250,8 +253,8 @@ public:
 
         size_t threadsPerResult = power(2, phase);
 
-        auto localGroup = partitionThreadGroup(innerGroup, threadsPerResult);
-        auto relativeGroup = getRelativeGroup(localGroup, innerGroup);
+        auto    localGroup = partitionThreadGroup(innerGroup, threadsPerResult);
+        auto relativeGroup =     getRelativeGroup(localGroup, innerGroup);
 
         size_t segmentSize = LocalValueCount * localGroup.size();
 
@@ -268,9 +271,9 @@ public:
         // Serial merge
         SortElement outputs[LocalValueCount];
 
-        if((aEnd - aBegin) > 0 && (bEnd - bBegin) > 0)
+        //if((aEnd - aBegin) > 0 && (bEnd - bBegin) > 0)
         {
-            #if !defined(LUCIUS_DEBUG)
+            #if (LUCIUS_DEBUG == 1) && (ENABLE_DEBUG_LOGS == 1)
             parallel::log("SortOperations") << "thread " << innerGroup.id() << " serial merge a["
                 << (aBegin - a) << ", " << (aEnd - a) << "], b [" << (bBegin - b) << ", "
                 << (bEnd - b) << "] half segment id " << halfSegmentId
@@ -365,7 +368,7 @@ public:
 
             if(isALegal && isBLegal)
             {
-                isA = !compare(bBegin[bIndex], aBegin[aIndex], comparisonOperation);
+                isA = compare(bBegin[bIndex], aBegin[aIndex], comparisonOperation);
             }
 
             if(isA)
@@ -405,7 +408,7 @@ public:
             {
                 auto value = sharedMemory[sharedElement];
 
-                #if !defined(LUCIUS_DEBUG)
+                #if (LUCIUS_DEBUG == 1) && (ENABLE_DEBUG_LOGS == 1)
                 parallel::log("SortOperations") << "block sort output[" << globalElement
                     << "] = (" << value.dimensionKey << ", " << value.normalKey << ")\n";
                 #endif
@@ -522,6 +525,8 @@ public:
                     mergeGroupABegin, mergeGroupBBegin,
                     innerGroupLeftDiagonal, innerGroupRightDiagonal, innerGroup);
 
+                barrier(innerGroup);
+
                 // thread merge path
                 size_t aSize = aEnd - aBegin;
 
@@ -547,14 +552,15 @@ public:
                 _mergePathPerThread(sharedABegin, sharedAEnd, aEnd - aBegin, sharedMemory,
                     bSize + aSize, threadLeftDiagonal, threadRightDiagonal, innerGroup);
 
+                #if (LUCIUS_DEBUG == 1) && (ENABLE_DEBUG_LOGS == 1)
                 size_t threadABeginOffset = sharedABegin - sharedMemory;
                 size_t threadAEndOffset   = sharedAEnd   - sharedMemory;
 
                 size_t threadBBeginOffset =  threadLeftDiagonal - threadABeginOffset;
                 size_t threadBEndOffset   = threadRightDiagonal - threadAEndOffset;
 
-                #if !defined(LUCIUS_DEBUG)
-                parallel::log("SortOperations") << "per block merge path a("
+                parallel::log("SortOperations") << "group " << relativeGroup.id()
+                    << " thread " << innerGroup.id() << " per block merge path a("
                     << aBeginOffset << ", " << aEndOffset << "), b("
                     << bBeginOffset << ", " << bEndOffset << "), per thread a("
                     << threadABeginOffset << ", " << threadAEndOffset << "), b("
@@ -569,6 +575,8 @@ public:
                     innerGroup.id() * LocalValueCount;
 
                 _saveOutputs(localStorage, outputStart, innerGroup);
+
+                barrier(innerGroup);
             }
         }
     }
@@ -585,14 +593,17 @@ private:
         size_t aEndOffset   = _mergePathForEntireGroup(mergeGroupABegin, mergeGroupAEnd,
             mergeGroupBBegin, mergeGroupBEnd, rightDiagonal, group);
 
-        if(aEndOffset > aBeginOffset)
+        if(aEndOffset < aBeginOffset)
         {
-            parallel::log("SortOperations") << "out of range group merge path"
+            #if (LUCIUS_DEBUG == 1) && (ENABLE_DEBUG_LOGS == 1)
+            parallel::log("SortOperations") << "thread " << group.id()
+                << " out of range group merge path"
                 << " diagonals (" << leftDiagonal << ", " << rightDiagonal << ")"
                 << " a offsets (" << aBeginOffset << ", " << aEndOffset << ")"
                 << " a (" << mergeGroupABegin << ", " << mergeGroupAEnd << ")"
                 << " b (" << mergeGroupBBegin << ", " << mergeGroupBEnd << ")"
                 << "\n";
+            #endif
         }
 
         auto* aStart  = keysAndIndicesInput;
@@ -657,6 +668,12 @@ private:
         auto* bBegin = bBase + leftDiagonal   - aStartOffset;
         auto* bEnd   = bBase + rightDiagonal  - aEndOffset;
 
+        #if (LUCIUS_DEBUG == 1) && (ENABLE_DEBUG_LOGS == 1)
+        parallel::log("SortOperations")
+            << " thread " << innerGroup.id() << " copying B[" << (bBegin - keysAndIndicesInput)
+            << ", " << (bEnd - keysAndIndicesInput) << "] into shared memory\n";
+        #endif
+
         _copyIntoSharedMemory(sharedMemory,  aBegin, aEnd, innerGroup);
         _copyIntoSharedMemory(sharedMemoryB, bBegin, bEnd, innerGroup);
     }
@@ -668,6 +685,12 @@ private:
 
         for(size_t index = innerGroup.id(); index < size; index += innerGroup.size())
         {
+            #if (LUCIUS_DEBUG == 1) && (ENABLE_DEBUG_LOGS == 1)
+            parallel::log("SortOperations")
+                << " thread " << innerGroup.id() << " copying data[" << index
+                << "] into shared memory = " << begin[index].dimensionKey << ", "
+                << begin[index].normalKey << "\n";
+            #endif
             sharedMemory[index] = begin[index];
         }
     }
@@ -740,10 +763,13 @@ private:
         size_t sharedBEndOffset   = bBaseOffset + rightDiagonal - sharedAEndOffset;
 
         const SortElement* a = sharedABegin;
-        const SortElement* b = bBase;
+        const SortElement* b = sharedBase + sharedBBeginOffset;
 
         size_t aSize = sharedAEnd       - sharedABegin;
         size_t bSize = sharedBEndOffset - sharedBBeginOffset;
+
+        assert(sharedAEndOffset <= innerGroup.size() * LocalValueCount);
+        assert(sharedBEndOffset <= innerGroup.size() * LocalValueCount);
 
         size_t aOffset = 0;
         size_t bOffset = 0;
@@ -754,7 +780,7 @@ private:
 
             if(aOffset < aSize)
             {
-                if(bOffset < bSize && !compare(a[aOffset], b[bOffset], comparisonOperation))
+                if(bOffset < bSize && compare(b[bOffset], a[aOffset], comparisonOperation))
                 {
                     currentElement = b[bOffset++];
                 }
@@ -763,7 +789,7 @@ private:
                     currentElement = a[aOffset++];
                 }
             }
-            else
+            else if(bOffset < bSize)
             {
                 currentElement = b[bOffset++];
             }
@@ -782,8 +808,9 @@ private:
 
             if(outputStart + index < elements)
             {
-                #if !defined(LUCIUS_DEBUG)
-                parallel::log("SortOperations") << "merge output["
+                #if (LUCIUS_DEBUG == 1) && (ENABLE_DEBUG_LOGS == 1)
+                parallel::log("SortOperations") << "thread " << innerGroup.id()
+                    << " merge output["
                     << (outputStart + index) << "] = ("
                     << value.dimensionKey << ", " << value.normalKey << ")\n";
                 #endif
