@@ -315,7 +315,7 @@ public:
         aBegin = a + left;
         aEnd   = a + right;
 
-        bBegin = b + leftDiagonalConstraint - left;
+        bBegin = b + leftDiagonalConstraint  - left;
         bEnd   = b + rightDiagonalConstraint - right;
     }
 
@@ -529,7 +529,7 @@ public:
                 size_t aEndOffset   = aEnd   - keysAndIndicesInput - mergeGroupABegin;
 
                 size_t bBeginOffset = innerGroupLeftDiagonal  - aBeginOffset;
-                size_t bEndOffset   = innerGroupRightDiagonal - aEndOffset;
+                size_t bEndOffset   = innerGroupRightDiagonal -   aEndOffset;
 
                 size_t bSize = bEndOffset - bBeginOffset;
 
