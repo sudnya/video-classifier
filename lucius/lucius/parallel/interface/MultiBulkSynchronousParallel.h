@@ -23,7 +23,7 @@ inline void checkCudaErrors(cudaError_t status)
 
 template<typename FunctionType>
 __global__ void
-__launch_bounds__(256, 1)
+__launch_bounds__(GroupLevelSize<2>::cudaSize(), 1)
 kernelLauncher(FunctionType function)
 {
     function(ThreadGroup(blockDim.x * gridDim.x, threadIdx.x + blockIdx.x * blockDim.x));
@@ -33,7 +33,7 @@ template<typename FunctionType>
 void launchCudaKernel(FunctionType function)
 {
     int ctasPerSM = 4;
-    int threads   = 256;
+    int threads   = GroupLevelSize<2>::cudaSize();
 
     int multiprocessorCount = 0;
 
@@ -43,7 +43,7 @@ void launchCudaKernel(FunctionType function)
     checkCudaErrors(cudaOccupancyMaxActiveBlocksPerMultiprocessor(
         &ctasPerSM, kernelLauncher<FunctionType>, threads, 0));
 
-    size_t ctas = multiprocessorCount * ctasPerSM;
+    size_t ctas = std::min(multiprocessorCount * ctasPerSM, GroupLevelSize<2>::cudaMaxSize());
 
     kernelLauncher<<<ctas, threads>>>(function);
 }
