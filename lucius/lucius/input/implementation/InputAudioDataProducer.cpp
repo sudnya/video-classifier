@@ -400,12 +400,12 @@ private:
                     if(useNoise)
                     {
                         _sampleCache.addNoise(
-                            Audio(sample.path(), util::strip(sample.label(), "|")));
+                            Audio(sample.path(), "START-" + util::strip(sample.label(), "|") + "-END"));
                     }
                     else
                     {
                         _sampleCache.addRepeatedAudio(
-                            Audio(sample.path(), util::strip(sample.label(), "|")));
+                            Audio(sample.path(), "START-" + util::strip(sample.label(), "|") + "-END"));
                     }
                 }
                 else
