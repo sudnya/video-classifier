@@ -257,9 +257,9 @@ def discoverGroups(inputs, combineInputs):
             for i in range(1,len(groups)):
                 for experiment in groups[i].getExperiments():
                     groups[0].addExperiment(experiment)
-        
+
             return [groups[0]]
-        
+
         return groups
 
     path = inputs[0]
@@ -320,6 +320,8 @@ class Visualizer:
 
         self.maximumIterations = int(arguments["maximum_iterations"])
         self.autoScale = arguments["scale"]
+        self.logy = arguments["log_y"]
+        self.logx = arguments["log_x"]
 
     def run(self):
         if len(self.inputs) == 0:
@@ -369,8 +371,12 @@ class Visualizer:
             experimentLabel = formatNameForLabel(experiment.name)
 
             if useTraining:
-                axes.plot(experiment.trainingIterations, experiment.trainingError,
-                    label=experimentLabel)
+                if self.logx and self.logy:
+                    axes.loglog(experiment.trainingIterations, experiment.trainingError,
+                        label=experimentLabel)
+                else:
+                    axes.plot(experiment.trainingIterations, experiment.trainingError,
+                        label=experimentLabel)
 
             elif experiment.hasValidationError():
                 axes.plot(experiment.validationIterations, experiment.validationError,
@@ -381,6 +387,9 @@ class Visualizer:
         box = axes.get_position()
         axes.set_position([box.x0, box.y0 + box.height * percent,
                  box.width, box.height * (1.0 - percent)])
+
+        if self.logy:
+            axes.set_yscale("log")
 
         if not self.autoScale:
             if self.yscale != None:
@@ -442,6 +451,10 @@ def main():
         help = "Combine multiple input paths into a single graph.")
     parser.add_argument("--scale", default = False, action="store_true",
         help = "Choose the y scale automatically.")
+    parser.add_argument("--log-y", default = False, action="store_true",
+        help = "Use a log scale for y.")
+    parser.add_argument("--log-x", default = False, action="store_true",
+        help = "Use a log scale for x.")
 
     arguments = parser.parse_args()
 
