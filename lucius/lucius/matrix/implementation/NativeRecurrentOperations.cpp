@@ -292,7 +292,7 @@ static matrix::Matrix getForwardWeights(const matrix::Matrix& allWeights,
                                         size_t offsetInLayer)
 {
     auto sizeAndOffset = nativeRNNGetLinearLayerMatrixSizeAndOffset(
-        handle, allWeights.precision(), logicalLayer, offsetInLayer * 2);
+        handle, allWeights.precision(), logicalLayer + handle.layers * (offsetInLayer), 0);
 
     size_t size   = std::get<0>(sizeAndOffset) / allWeights.precision().size();
     size_t offset = std::get<1>(sizeAndOffset) / allWeights.precision().size();
@@ -308,7 +308,7 @@ static matrix::Matrix getForwardBias(const matrix::Matrix& allWeights,
                                      size_t offsetInLayer)
 {
     auto sizeAndOffset = nativeRNNGetBiasLayerMatrixSizeAndOffset(
-        handle, allWeights.precision(), logicalLayer, offsetInLayer * 2);
+        handle, allWeights.precision(), logicalLayer + handle.layers * (offsetInLayer), 0);
 
     size_t size   = std::get<0>(sizeAndOffset) / allWeights.precision().size();
     size_t offset = std::get<1>(sizeAndOffset) / allWeights.precision().size();
@@ -324,7 +324,7 @@ static matrix::Matrix getRecurrentWeights(const matrix::Matrix& allWeights,
                                           size_t offsetInLayer)
 {
     auto sizeAndOffset = nativeRNNGetLinearLayerMatrixSizeAndOffset(
-        handle, allWeights.precision(), logicalLayer, 1 + offsetInLayer * 2);
+        handle, allWeights.precision(), logicalLayer + handle.layers * (offsetInLayer), 1);
 
     size_t size   = std::get<0>(sizeAndOffset) / allWeights.precision().size();
     size_t offset = std::get<1>(sizeAndOffset) / allWeights.precision().size();
@@ -340,7 +340,7 @@ static matrix::Matrix getRecurrentBias(const matrix::Matrix& allWeights,
                                        size_t offsetInLayer)
 {
     auto sizeAndOffset = nativeRNNGetBiasLayerMatrixSizeAndOffset(
-        handle, allWeights.precision(), logicalLayer, 1 + offsetInLayer * 2);
+        handle, allWeights.precision(), logicalLayer + handle.layers * (offsetInLayer), 1);
 
     size_t size   = std::get<0>(sizeAndOffset) / allWeights.precision().size();
     size_t offset = std::get<1>(sizeAndOffset) / allWeights.precision().size();

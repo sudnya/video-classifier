@@ -88,8 +88,8 @@ template<typename ProbT, int NT, int VT>
 __global__
 void compute_alpha_kernel (const ProbT* probs, const int *label_sizes,
                            const int *utt_length, const int *repeats_in_labels,
-                           const int *labels_without_blanks, const int *label_offsets, 
-                           int *labels_with_blanks, ProbT *alphas, 
+                           const int *labels_without_blanks, const int *label_offsets,
+                           int *labels_with_blanks, ProbT *alphas,
                            ProbT* nll_forward, int stride, int out_dim,
                            int S_memoffset, int T_memoffset) {
 
@@ -107,15 +107,15 @@ void compute_alpha_kernel (const ProbT* probs, const int *label_sizes,
 
     if ((L + repeats) > T)
         return;
-   
+
     // Generate labels with blanks from labels without blanks
     {
         const int label_start_offset = label_offsets[blockIdx.x];
         for (int idx = tid; idx < L; idx += blockDim.x) {
-            labels_with_blanks[(blockIdx.x * S_memoffset) + 2 * idx + 1] = 
+            labels_with_blanks[(blockIdx.x * S_memoffset) + 2 * idx + 1] =
                 labels_without_blanks[label_start_offset + idx];
             // printf("%d %d\n", tid, labels_without_blanks[label_start_offset + tid]);
-        } 
+        }
     }
     __syncthreads();
 
@@ -250,7 +250,7 @@ void compute_betas_and_grad_kernel (const ProbT* probs, const int *label_sizes,
 
     // Temporaries needed for segmented reduce
     // TODO: see if we can combine the shared memory requirements
-    __shared__ int keys_shared[NV];
+    __shared__ int keys_shared[NV+1];
     __shared__ int gather_indices[NV];
     __shared__ ProbT output[NV];
 

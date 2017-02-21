@@ -3,6 +3,7 @@
 #pragma once
 
 #include <lucius/parallel/interface/cuda.h>
+#include <lucius/parallel/interface/Iterator.h>
 
 #include <cstddef>
 #include <algorithm>
@@ -60,6 +61,31 @@ CUDA_DECORATOR inline void swap(T& left, T& right)
     #else
     std::swap(left, right);
     #endif
+}
+
+template <typename InputIterator, typename OutputIterator>
+CUDA_DECORATOR inline OutputIterator copy(InputIterator begin, InputIterator end,
+    OutputIterator result)
+{
+    for(auto i = begin; i != end; ++i)
+    {
+        *(result++) = *i;
+    }
+
+    return result;
+}
+
+template <typename InputIterator, typename OutputIterator>
+CUDA_DECORATOR inline OutputIterator copy_backward(InputIterator begin, InputIterator end,
+    OutputIterator result)
+{
+    return copy(make_reverse(end), make_reverse(begin), make_reverse(result)).get();
+}
+
+template <typename Iterator>
+CUDA_DECORATOR inline typename Iterator::diff_type distance(Iterator begin, Iterator end)
+{
+    return end - begin;
 }
 
 }

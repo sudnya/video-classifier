@@ -60,6 +60,20 @@ FloatIterator::FloatIterator(const FloatIterator& ) = default;
 
 FloatIterator& FloatIterator::operator=(const FloatIterator&) = default;
 
+size_t FloatIterator::operator-(const FloatIterator& i)
+{
+    return dotProduct(_offset - i._offset, _size);
+}
+
+FloatIterator FloatIterator::operator+(size_t t)
+{
+    auto result = *this;
+
+    result._offset += linearToDimension(t, _size);
+
+    return result;
+}
+
 FloatReference FloatIterator::operator*()
 {
     return FloatReference(_precision, getAddress(_stride, _offset, _data, _precision.size()));

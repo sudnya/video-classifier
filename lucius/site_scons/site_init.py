@@ -12,11 +12,11 @@ from SCons import SConf
 def getTools():
     result = []
     if os.name == 'nt':
-        result = ['nvcc', 'default', 'msvc']
+        result = ['default', 'nvcc', 'msvc']
     elif os.name == 'posix':
-        result = [ 'nvcc', 'default','g++']
+        result = ['default', 'nvcc', 'g++']
     else:
-        result = [ 'nvcc', 'default']
+        result = ['default', 'nvcc' ]
 
     return result;
 
@@ -47,7 +47,7 @@ gCompilerOptions = {
             'warn_errors' : '-Werror',
             'optimization' : ['-O3'], 'debug' : ['-g', '-fsanitize=address'],
             'exception_handling' : '',
-            'standard': ['-stdlib=libc++', '-std=c++11', '-pthread']},
+            'standard': ['-stdlib=libc++', '-std=c++11', '-pthread', '-fPIC']},
         'cl'  : {'warn_all' : '/Wall',
                  'warn_errors' : '/WX',
                  'optimization' : ['/Ox', '/MD', '/Zi', '/DNDEBUG'],
@@ -63,9 +63,10 @@ gCompilerOptions = {
 gLinkerOptions = {
         'gcc'  : {'debug' : '', 'libraries' : ''},
         'clang'  : {'debug' : '', 'libraries' : ''},
-        'g++'  : {'debug' : '', 'libraries' : ''},
+        'g++'  : {'debug' : '', 'libraries' : ['']},
         'c++'  : {'debug' : '', 'libraries' : '-lc++'},
-        'clang++'  : {'debug' : ['-fsanitize=address'], 'libraries' : '-lc++'},
+        'clang++'  : {'debug' : ['-fsanitize=address'],
+            'libraries' : ['-lc++', '-Wl,-all_load']},
         'link' : {'debug' : '/debug', 'libraries' : ''}
     }
 

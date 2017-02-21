@@ -34,12 +34,24 @@ public:
     CUDA_DECORATOR static constexpr uint32_t size()
     {
         #ifdef __CUDA_ARCH__
-        return level == 0 ? 1  :
-               ((level == 1) ? 32 : 256);
+        return cudaSize();
         #else
         return 1;
         #endif
     }
+
+    CUDA_DECORATOR static constexpr uint32_t cudaSize()
+    {
+        return level == 0 ? 1 :
+               ((level == 1) ? 32 : 256);
+    }
+
+    CUDA_DECORATOR static constexpr uint32_t cudaMaxSize()
+    {
+        return level == 0 ? 1  :
+               ((level == 1) ? 1024 : 131072);
+    }
+
 };
 
 CUDA_DECORATOR inline ThreadGroup partitionThreadGroup(ThreadGroup g, uint32_t subgroupSize);

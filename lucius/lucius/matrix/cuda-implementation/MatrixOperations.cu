@@ -511,7 +511,7 @@ public:
         auto warpInCta   = getRelativeGroup(warp, cta);
 
         auto* memory = parallel::SharedMemoryAllocator<NativeType,
-            parallel::GroupLevelSize<2>::size()>::allocate();
+            parallel::GroupLevelSize<2>::size()>().allocate();
 
         size_t start = ctaInKernel.id() * warp.size();
 

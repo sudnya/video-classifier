@@ -6,9 +6,9 @@
         "type" : "NesterovAcceleratedGradientSolver",
 
         "batch-size"      : "64",
-        "maximum-samples" : "1e6",
+        "maximum-samples" : "16000",
         "standardization-samples" : "1024",
-        "validation-samples" : "1e5",
+        "validation-samples" : "1e2",
 
         "epochs" : "20",
 
@@ -32,7 +32,7 @@
             {
                 "Type" : "RecurrentLayer",
                 "Direction" : "bidirectional",
-                "Size" : "64"
+                "Size" : "1024"
             },
             "mean-pool":
             {
@@ -85,7 +85,14 @@
             "forward":
             {
                 "Type" : "FeedForwardLayer",
-                "OutputSize" : "64"
+                "ActivationFunction" : "NullActivationFunction",
+                "OutputSize" : "1024"
+            },
+            "language-model-forward":
+            {
+                "Type" : "FeedForwardLayer",
+                "ActivationFunction" : "NullActivationFunction",
+                "OutputSize" : "128"
             },
             "softmax":
             {
@@ -96,7 +103,7 @@
             {
                 "Type" : "FeedForwardLayer",
                 "ActivationFunction" : "NullActivationFunction",
-                "OutputSize" : "34"
+                "OutputSize" : "45"
             },
             "ctc-decoder":
             {
@@ -113,7 +120,7 @@
             {
                 "Type" : "RecurrentLayer",
                 "Direction" : "bidirectional",
-                "Size" : "64"
+                "Size" : "128"
             },
             "language-model-output":
             {
@@ -129,13 +136,17 @@
                 "layers" :
                 [
                     "forward",
+                    "batch-norm",
                     "recurrent",
                     "forward",
+                    "batch-norm",
                     "acoustic-model-output",
                     "ctc-decoder",
-                    "forward",
+                    "language-model-forward",
+                    "batch-norm",
                     "language-model-recurrent",
-                    "forward",
+                    "language-model-forward",
+                    "batch-norm",
                     "language-model-output"
                 ]
             }
@@ -153,7 +164,8 @@
             "Graphemes" : [ "a", "b", "c", "d", "e", "f", "g", "h", "i", "j",
                             "k", "l", "m", "n", "o", "p", "q", "r", "s", "t",
                             "u", "v", "w", "x", "y", "z", ".", ",", "'", " ",
-                            "START-", "-END"],
+                            "0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
+                            "-", "START-", "-END"],
             "UsesUnknownToken" : "1",
             "UsesSeparatorToken" : "1"
 
@@ -173,14 +185,14 @@
         "InputAudioDataProducer::TotalTimestepsPerNoise" : "100",
         "InputAudioDataProducer::SaveSamples" : "0",
         "InputAudioDataProducer::IgnoreMissingGraphemes" : "1",
-        "InputAudioDataProducer::SecondsToCache" : "15000.0",
-        "InputAudioDataProducer::RandomShuffleWindow" : "16384"
+        "InputAudioDataProducer::SecondsToCache" : "100000.0",
+        "InputAudioDataProducer::RandomShuffleWindow" : "16000"
     },
 
     "dataset" :
     {
-        "training-dataset-path"   : "/data/4tb/audio-search-300/training/simple-labels-no-commercials.txt",
-        "validation-dataset-path" : "/data/4tb/audio-search-300/development/database.txt",
+        "training-dataset-path"   : "/data/4tb/filtered-free-sound-100/training/database.txt",
+        "validation-dataset-path" : "/data/4tb/filtered-free-sound-100/validation/database.txt",
 
         "required-accuracy" : "99.0"
     },
@@ -206,7 +218,7 @@
 
     "system" :
     {
-        "use-cuda"    : "0",
+        "use-cuda"    : "1",
         "cuda-device" : "1",
         "precision"   : "SinglePrecision"
     }

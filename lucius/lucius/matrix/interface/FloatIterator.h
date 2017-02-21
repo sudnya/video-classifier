@@ -26,6 +26,10 @@ public:
     FloatIterator& operator=(const FloatIterator&);
 
 public:
+    size_t operator-(const FloatIterator&);
+    FloatIterator operator+(size_t);
+
+public:
     FloatReference operator*();
 
 public:

@@ -22,6 +22,9 @@
 // Standard Library Includes
 #include <limits>
 
+// Preprocessor Defines
+#define ENABLE_DEBUG_LOGS 0
+
 namespace lucius
 {
 namespace matrix
@@ -32,7 +35,7 @@ namespace detail
 class SortConfiguration
 {
 public:
-    static constexpr size_t LocalValueCount = 8;
+    static constexpr size_t LocalValueCount = 4;
     static constexpr size_t GroupLevel      = 2;
 };
 
@@ -150,8 +153,8 @@ public:
 
             sortLocalStorage(localStorage);
 
-            auto* memory = parallel::SharedMemoryAllocator<SortElement,
-                LocalValueCount * parallel::GroupLevelSize<2>::size()>::allocate();
+            constexpr int sharedSize = LocalValueCount * parallel::GroupLevelSize<2>::size();
+            CUDA_SHARED_DECORATOR SortElement memory[sharedSize];
 
             copyFromLocalStorageIntoSharedStorage(memory, localStorage, innerGroup);
 
@@ -160,6 +163,8 @@ public:
             mergeSortShared(memory, innerGroup);
 
             saveShared(memory, dataBlock, innerGroup);
+
+            barrier(innerGroup);
         }
     }
 
@@ -205,7 +210,7 @@ public:
                 {
                     size_t i = index * 2 + 1;
 
-                    if(compare(localStorage[i+1], localStorage[i], comparisonOperation))
+                    if(!compare(localStorage[i], localStorage[i+1], comparisonOperation))
                     {
                         parallel::swap(localStorage[i+1], localStorage[i]);
                     }
@@ -219,7 +224,7 @@ public:
                 {
                     size_t i = index * 2;
 
-                    if(compare(localStorage[i+1], localStorage[i], comparisonOperation))
+                    if(!compare(localStorage[i], localStorage[i+1], comparisonOperation))
                     {
                         parallel::swap(localStorage[i+1], localStorage[i]);
                     }
@@ -233,7 +238,7 @@ public:
         const parallel::ThreadGroup& innerGroup) const
     {
         for(size_t phase = 1, phaseSize = 2;
-            phaseSize < innerGroup.size(); ++phase, phaseSize *= 2)
+            phaseSize <= innerGroup.size(); ++phase, phaseSize *= 2)
         {
             mergeRegions(sharedMemory, phase, innerGroup);
         }
@@ -250,19 +255,33 @@ public:
 
         size_t threadsPerResult = power(2, phase);
 
-        auto localGroup = partitionThreadGroup(innerGroup, threadsPerResult);
+        auto    localGroup = partitionThreadGroup(innerGroup, threadsPerResult);
+        auto relativeGroup =     getRelativeGroup(localGroup, innerGroup);
 
         size_t segmentSize = LocalValueCount * localGroup.size();
-        size_t segmentId   = 2 * localGroup.id();
 
-        SortElement* a = sharedMemory + segmentId * segmentSize;
-        SortElement* b = sharedMemory + (segmentId + 1) * segmentSize;
+        size_t idInSegment     = localGroup.id();
+        size_t halfSegmentSize = segmentSize / 2;
+        size_t halfSegmentId   = 2 * relativeGroup.id();
+
+        SortElement* a = sharedMemory +  halfSegmentId      * halfSegmentSize;
+        SortElement* b = sharedMemory + (halfSegmentId + 1) * halfSegmentSize;
 
         // Merge path
-        mergePath(aBegin, aEnd, bBegin, bEnd, a, b, segmentId, segmentSize);
+        mergePath(aBegin, aEnd, bBegin, bEnd, a, b, idInSegment, halfSegmentSize);
 
         // Serial merge
         SortElement outputs[LocalValueCount];
+
+        //if((aEnd - aBegin) > 0 && (bEnd - bBegin) > 0)
+        {
+            #if (LUCIUS_DEBUG == 1) && (ENABLE_DEBUG_LOGS == 1)
+            parallel::log("SortOperations") << "thread " << innerGroup.id() << " serial merge a["
+                << (aBegin - a) << ", " << (aEnd - a) << "], b [" << (bBegin - b) << ", "
+                << (bEnd - b) << "] half segment id " << halfSegmentId
+                << " with size " << halfSegmentSize << "\n";
+            #endif
+        }
 
         serialMerge(outputs, aBegin, aEnd, bBegin, bEnd, innerGroup);
 
@@ -277,13 +296,15 @@ public:
 public:
     CUDA_DECORATOR size_t power(size_t base, size_t exponent) const
     {
-        while(exponent > 1)
+        size_t result = 1;
+
+        while(exponent > 0)
         {
-            base *= base;
+            result *= base;
             exponent -= 1;
         }
 
-        return base;
+        return result;
     }
 
     CUDA_DECORATOR void mergePath(SortElement*& aBegin, SortElement*& aEnd,
@@ -299,8 +320,8 @@ public:
         aBegin = a + left;
         aEnd   = a + right;
 
-        bBegin = b + leftDiagonalConstraint - 1 - left;
-        bEnd   = b + rightDiagonalConstraint - 1 - right;
+        bBegin = b + leftDiagonalConstraint  - left;
+        bEnd   = b + rightDiagonalConstraint - right;
     }
 
     CUDA_DECORATOR size_t mergePath(SortElement* a,
@@ -316,7 +337,7 @@ public:
             auto aKey = a[midPoint];
             auto bKey = b[diagonalConstraint - 1 - midPoint];
 
-            bool predicate = compare(aKey, bKey, comparisonOperation);
+            bool predicate = !compare(bKey, aKey, comparisonOperation);
 
             if(predicate)
             {
@@ -349,14 +370,14 @@ public:
 
             if(isALegal && isBLegal)
             {
-                isA = compare(aBegin[aIndex], bBegin[bIndex], comparisonOperation);
+                isA = !compare(bBegin[bIndex], aBegin[aIndex], comparisonOperation);
             }
 
             if(isA)
             {
                 outputs[index] = aBegin[aIndex++];
             }
-            else
+            else if(isBLegal)
             {
                 outputs[index] = bBegin[bIndex++];
             }
@@ -371,7 +392,9 @@ public:
 
         for(size_t index = 0; index < LocalValueCount; ++index)
         {
-            sharedMemory[base + index] = localStorage[index];
+            auto value = localStorage[index];
+
+            sharedMemory[base + index] = value;
         }
     }
 
@@ -379,7 +402,7 @@ public:
         const parallel::ThreadGroup& innerGroup) const
     {
         size_t sharedElement = innerGroup.id();
-        size_t globalElement = blockId * LocalValueCount * innerGroup.size();
+        size_t globalElement = blockId * LocalValueCount * innerGroup.size() + innerGroup.id();
 
         for(size_t element = 0; element < LocalValueCount; ++element)
         {
@@ -387,8 +410,11 @@ public:
             {
                 auto value = sharedMemory[sharedElement];
 
-                parallel::log("SortOperations") << "output[" << globalElement << "] = (" <<
-                     value.dimensionKey << ", " << value.normalKey << ")\n";
+                #if (LUCIUS_DEBUG == 1) && (ENABLE_DEBUG_LOGS == 1)
+                parallel::log("SortOperations") << "block sort output[" << globalElement
+                    << "] = (" << value.dimensionKey << ", " << value.normalKey << ")\n";
+                #endif
+
                 data[globalElement] = value;
             }
 
@@ -454,8 +480,8 @@ public:
         auto relativeInnerToMergeGroup = parallel::getRelativeGroup(innerGroup, mergeGroup);
         auto relativeMergeToOuterGroup = parallel::getRelativeGroup(mergeGroup, threadGroup);
 
-        auto* sharedMemory = parallel::SharedMemoryAllocator<SortElement,
-            LocalValueCount * parallel::GroupLevelSize<2>::size()>::allocate();
+        constexpr int sharedSize = LocalValueCount * parallel::GroupLevelSize<2>::size();
+        CUDA_SHARED_DECORATOR SortElement sharedMemory[sharedSize];
 
         SortElement localStorage[LocalValueCount];
 
@@ -471,7 +497,7 @@ public:
             size_t mergeGroupBEnd   = parallel::min(mergeGroupBBegin + regionToMergeSize,
                                                     elements);
 
-            size_t remainingElements = elements - mergeGroupABegin;
+            size_t remainingElements    = elements - mergeGroupABegin;
             size_t regionsPerMergeGroup = totalRegionsPerMergeGroup;
 
             if(remainingElements < mergedRegionSize)
@@ -486,7 +512,7 @@ public:
             {
                 // group merge path
                 size_t innerGroupLeftDiagonal  =
-                    parallel::min( innerGroupId * elementsPerInnerGroup, remainingElements);
+                    parallel::min( innerGroupId      * elementsPerInnerGroup, remainingElements);
                 size_t innerGroupRightDiagonal =
                     parallel::min((innerGroupId + 1) * elementsPerInnerGroup, remainingElements);
 
@@ -501,6 +527,8 @@ public:
                     mergeGroupABegin, mergeGroupBBegin,
                     innerGroupLeftDiagonal, innerGroupRightDiagonal, innerGroup);
 
+                barrier(innerGroup);
+
                 // thread merge path
                 size_t aSize = aEnd - aBegin;
 
@@ -508,30 +536,38 @@ public:
                 size_t aEndOffset   = aEnd   - keysAndIndicesInput - mergeGroupABegin;
 
                 size_t bBeginOffset = innerGroupLeftDiagonal  - aBeginOffset;
-                size_t bEndOffset   = innerGroupRightDiagonal - aEndOffset;
+                size_t bEndOffset   = innerGroupRightDiagonal -   aEndOffset;
 
                 size_t bSize = bEndOffset - bBeginOffset;
 
                 SortElement* sharedABegin = nullptr;
                 SortElement* sharedAEnd   = nullptr;
 
-                size_t threadLeftDiagonal  =  innerGroup.id()      * LocalValueCount;
-                size_t threadRightDiagonal = (innerGroup.id() + 1) * LocalValueCount;
+                size_t remainingThreadElements = remainingElements -
+                    innerGroupId * elementsPerInnerGroup;
+
+                size_t threadLeftDiagonal  = parallel::min( innerGroup.id()      * LocalValueCount,
+                    remainingThreadElements);
+                size_t threadRightDiagonal = parallel::min((innerGroup.id() + 1) * LocalValueCount,
+                    remainingThreadElements);
 
                 _mergePathPerThread(sharedABegin, sharedAEnd, aEnd - aBegin, sharedMemory,
                     bSize + aSize, threadLeftDiagonal, threadRightDiagonal, innerGroup);
 
+                #if (LUCIUS_DEBUG == 1) && (ENABLE_DEBUG_LOGS == 1)
                 size_t threadABeginOffset = sharedABegin - sharedMemory;
                 size_t threadAEndOffset   = sharedAEnd   - sharedMemory;
 
                 size_t threadBBeginOffset =  threadLeftDiagonal - threadABeginOffset;
                 size_t threadBEndOffset   = threadRightDiagonal - threadAEndOffset;
 
-                parallel::log("SortOperations") << "per block merge path a("
+                parallel::log("SortOperations") << "group " << relativeGroup.id()
+                    << " thread " << innerGroup.id() << " per block merge path a("
                     << aBeginOffset << ", " << aEndOffset << "), b("
                     << bBeginOffset << ", " << bEndOffset << "), per thread a("
                     << threadABeginOffset << ", " << threadAEndOffset << "), b("
                     << threadBBeginOffset << ", " << threadBEndOffset << ")\n";
+                #endif
 
                 _serialMerge(localStorage, sharedABegin, sharedAEnd, sharedMemory,
                     sharedMemory + aSize, threadLeftDiagonal, threadRightDiagonal, innerGroup);
@@ -541,6 +577,8 @@ public:
                     innerGroup.id() * LocalValueCount;
 
                 _saveOutputs(localStorage, outputStart, innerGroup);
+
+                barrier(innerGroup);
             }
         }
     }
@@ -557,8 +595,27 @@ private:
         size_t aEndOffset   = _mergePathForEntireGroup(mergeGroupABegin, mergeGroupAEnd,
             mergeGroupBBegin, mergeGroupBEnd, rightDiagonal, group);
 
-        aBegin = keysAndIndicesInput + mergeGroupABegin + aBeginOffset;
-        aEnd   = keysAndIndicesInput + mergeGroupABegin +   aEndOffset;
+        if(aEndOffset < aBeginOffset)
+        {
+            #if (LUCIUS_DEBUG == 1) && (ENABLE_DEBUG_LOGS == 1)
+            parallel::log("SortOperations") << "thread " << group.id()
+                << " out of range group merge path"
+                << " diagonals (" << leftDiagonal << ", " << rightDiagonal << ")"
+                << " a offsets (" << aBeginOffset << ", " << aEndOffset << ")"
+                << " a (" << mergeGroupABegin << ", " << mergeGroupAEnd << ")"
+                << " b (" << mergeGroupBBegin << ", " << mergeGroupBEnd << ")"
+                << "\n";
+            #endif
+        }
+
+        auto* aStart  = keysAndIndicesInput;
+
+        assert(rightDiagonal - leftDiagonal <= group.size() * LocalValueCount);
+        assert(aBeginOffset <= aEndOffset);
+        assert(aEndOffset - aBeginOffset <= group.size() * LocalValueCount);
+
+        aBegin = aStart + mergeGroupABegin + aBeginOffset;
+        aEnd   = aStart + mergeGroupABegin +   aEndOffset;
     }
 
     CUDA_DECORATOR size_t _mergePathForEntireGroup(
@@ -581,7 +638,7 @@ private:
             SortElement aKey = a[midPoint];
             SortElement bKey = b[diagonal - 1 - midPoint];
 
-            bool predicate = compare(aKey, bKey, comparisonOperation);
+            bool predicate = !compare(bKey, aKey, comparisonOperation);
 
             if(predicate)
             {
@@ -613,6 +670,12 @@ private:
         auto* bBegin = bBase + leftDiagonal   - aStartOffset;
         auto* bEnd   = bBase + rightDiagonal  - aEndOffset;
 
+        #if (LUCIUS_DEBUG == 1) && (ENABLE_DEBUG_LOGS == 1)
+        parallel::log("SortOperations")
+            << " thread " << innerGroup.id() << " copying B[" << (bBegin - keysAndIndicesInput)
+            << ", " << (bEnd - keysAndIndicesInput) << "] into shared memory\n";
+        #endif
+
         _copyIntoSharedMemory(sharedMemory,  aBegin, aEnd, innerGroup);
         _copyIntoSharedMemory(sharedMemoryB, bBegin, bEnd, innerGroup);
     }
@@ -624,6 +687,12 @@ private:
 
         for(size_t index = innerGroup.id(); index < size; index += innerGroup.size())
         {
+            #if (LUCIUS_DEBUG == 1) && (ENABLE_DEBUG_LOGS == 1)
+            parallel::log("SortOperations")
+                << " thread " << innerGroup.id() << " copying data[" << index
+                << "] into shared memory = " << begin[index].dimensionKey << ", "
+                << begin[index].normalKey << "\n";
+            #endif
             sharedMemory[index] = begin[index];
         }
     }
@@ -666,7 +735,7 @@ private:
             SortElement aKey = a[midPoint];
             SortElement bKey = b[diagonal - 1 - midPoint];
 
-            bool predicate = compare(aKey, bKey, comparisonOperation);
+            bool predicate = !compare(bKey, aKey, comparisonOperation);
 
             if(predicate)
             {
@@ -696,10 +765,13 @@ private:
         size_t sharedBEndOffset   = bBaseOffset + rightDiagonal - sharedAEndOffset;
 
         const SortElement* a = sharedABegin;
-        const SortElement* b = bBase;
+        const SortElement* b = sharedBase + sharedBBeginOffset;
 
         size_t aSize = sharedAEnd       - sharedABegin;
         size_t bSize = sharedBEndOffset - sharedBBeginOffset;
+
+        assert(sharedAEndOffset <= innerGroup.size() * LocalValueCount);
+        assert(sharedBEndOffset <= innerGroup.size() * LocalValueCount);
 
         size_t aOffset = 0;
         size_t bOffset = 0;
@@ -719,7 +791,7 @@ private:
                     currentElement = a[aOffset++];
                 }
             }
-            else
+            else if(bOffset < bSize)
             {
                 currentElement = b[bOffset++];
             }
@@ -738,9 +810,12 @@ private:
 
             if(outputStart + index < elements)
             {
-                parallel::log("SortOperations") << "output["
+                #if (LUCIUS_DEBUG == 1) && (ENABLE_DEBUG_LOGS == 1)
+                parallel::log("SortOperations") << "thread " << innerGroup.id()
+                    << " merge output["
                     << (outputStart + index) << "] = ("
                     << value.dimensionKey << ", " << value.normalKey << ")\n";
+                #endif
 
                 keysAndIndicesOutput[outputStart + index] = value;
             }
@@ -828,8 +903,14 @@ void gatherResults(MatrixView<NativeType>& keysOutputView,
 template <typename NativeType>
 size_t getBlockSortTileSize(size_t elements)
 {
-    return parallel::GroupLevelSize<SortConfiguration::GroupLevel>::size() *
-        SortConfiguration::LocalValueCount;
+    size_t groupSize = parallel::GroupLevelSize<SortConfiguration::GroupLevel>::size();
+
+    if(parallel::isCudaEnabled())
+    {
+        groupSize = parallel::GroupLevelSize<SortConfiguration::GroupLevel>::cudaSize();
+    }
+
+    return groupSize * SortConfiguration::LocalValueCount;
 }
 
 template <typename OperationType, typename PrecisionType>

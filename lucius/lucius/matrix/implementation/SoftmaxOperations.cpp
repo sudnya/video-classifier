@@ -39,7 +39,7 @@ Matrix logsoftmax(const Matrix& input)
 
     auto sums = reduce(expOutput, {0}, Add());
 
-    return broadcast(expOutput, apply(sums, Log()), {0}, Subtract());
+    return broadcast(normalizedOutput, apply(sums, Log()), {0}, Subtract());
 }
 
 Matrix logsoftmaxGradient(const Matrix& input, const Matrix& outputGradient)

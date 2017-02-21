@@ -33,6 +33,7 @@ source_directories = [os.path.join(i, 'implementation') for i in directories]
 
 cuda_source_directories = [os.path.join(i, 'cuda-implementation') for i in directories]
 
+env['STATIC_AND_SHARED_OBJECTS_ARE_THE_SAME'] = 1
 extensions = ['*.cpp']
 
 sources = []
@@ -41,12 +42,18 @@ for dir in source_directories:
         regexp = os.path.join(dir, ext)
         sources.extend(env.Glob(regexp))
 
+cuda_object_sources = []
 for dir in cuda_source_directories:
     for ext in extensions:
         regexp = os.path.join(dir, '*.cu')
         cuda_sources = env.Glob(regexp)
         for cuda_source in cuda_sources:
-            sources.append(env.CUDASharedObject(cuda_source))
+            cuda_object_sources.append(env.CUDADeviceSharedObject(cuda_source))
+
+libculucius = env.CUDADeviceLibrary('culucius', cuda_object_sources, LIBS=env['EXTRA_LIBS'])
+sources.append(libculucius)
+if cuda_exists(env):
+    sources.append(cuda_object_sources)
 
 # create the library
 liblucius = env.SharedLibrary('lucius', sources, LIBS=env['EXTRA_LIBS'])

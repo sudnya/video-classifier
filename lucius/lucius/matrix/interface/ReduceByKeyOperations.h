@@ -16,6 +16,10 @@ Matrix reduceByKey(const Matrix& keys, const Matrix& values, const Dimension& di
 void reduceByKey(Matrix& result, const Matrix& keys, const Matrix& values,
     const Dimension& dimensionsToReduce, const Operation& op);
 
+void unique(Matrix& output, const Matrix& input, const Dimension& dimensionsToReduce,
+    double defaultValue);
+Matrix unique(const Matrix& input, const Dimension& dimensionsToReduce, double defaultValue);
+
 }
 }
 
