@@ -8,7 +8,7 @@
         "batch-size"      : "64",
         "maximum-samples" : "16000",
         "standardization-samples" : "1024",
-        "validation-samples" : "1e5",
+        "validation-samples" : "1e2",
 
         "epochs" : "20",
 
@@ -32,7 +32,7 @@
             {
                 "Type" : "RecurrentLayer",
                 "Direction" : "bidirectional",
-                "Size" : "64"
+                "Size" : "1024"
             },
             "mean-pool":
             {
@@ -85,7 +85,14 @@
             "forward":
             {
                 "Type" : "FeedForwardLayer",
-                "OutputSize" : "64"
+                "ActivationFunction" : "NullActivationFunction",
+                "OutputSize" : "1024"
+            },
+            "language-model-forward":
+            {
+                "Type" : "FeedForwardLayer",
+                "ActivationFunction" : "NullActivationFunction",
+                "OutputSize" : "128"
             },
             "softmax":
             {
@@ -113,7 +120,7 @@
             {
                 "Type" : "RecurrentLayer",
                 "Direction" : "bidirectional",
-                "Size" : "64"
+                "Size" : "128"
             },
             "language-model-output":
             {
@@ -129,13 +136,17 @@
                 "layers" :
                 [
                     "forward",
+                    "batch-norm",
                     "recurrent",
                     "forward",
+                    "batch-norm",
                     "acoustic-model-output",
                     "ctc-decoder",
-                    "forward",
+                    "language-model-forward",
+                    "batch-norm",
                     "language-model-recurrent",
-                    "forward",
+                    "language-model-forward",
+                    "batch-norm",
                     "language-model-output"
                 ]
             }
@@ -208,7 +219,7 @@
     "system" :
     {
         "use-cuda"    : "1",
-        "cuda-device" : "2",
+        "cuda-device" : "1",
         "precision"   : "SinglePrecision"
     }
 

@@ -43,7 +43,8 @@ void launchCudaKernel(FunctionType function)
     checkCudaErrors(cudaOccupancyMaxActiveBlocksPerMultiprocessor(
         &ctasPerSM, kernelLauncher<FunctionType>, threads, 0));
 
-    size_t ctas = std::min(multiprocessorCount * ctasPerSM, GroupLevelSize<2>::cudaMaxSize());
+    size_t ctas = std::min(static_cast<uint32_t>(multiprocessorCount * ctasPerSM),
+        GroupLevelSize<2>::cudaMaxSize());
 
     kernelLauncher<<<ctas, threads>>>(function);
 }

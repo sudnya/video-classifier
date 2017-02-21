@@ -163,6 +163,8 @@ public:
             mergeSortShared(memory, innerGroup);
 
             saveShared(memory, dataBlock, innerGroup);
+
+            barrier(innerGroup);
         }
     }
 
@@ -236,7 +238,7 @@ public:
         const parallel::ThreadGroup& innerGroup) const
     {
         for(size_t phase = 1, phaseSize = 2;
-            phaseSize < innerGroup.size(); ++phase, phaseSize *= 2)
+            phaseSize <= innerGroup.size(); ++phase, phaseSize *= 2)
         {
             mergeRegions(sharedMemory, phase, innerGroup);
         }
@@ -368,7 +370,7 @@ public:
 
             if(isALegal && isBLegal)
             {
-                isA = compare(bBegin[bIndex], aBegin[aIndex], comparisonOperation);
+                isA = !compare(bBegin[bIndex], aBegin[aIndex], comparisonOperation);
             }
 
             if(isA)

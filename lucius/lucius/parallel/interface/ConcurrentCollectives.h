@@ -49,7 +49,7 @@ public:
     CUDA_DECORATOR static constexpr uint32_t cudaMaxSize()
     {
         return level == 0 ? 1  :
-               ((level == 1) ? 32 : 256);
+               ((level == 1) ? 1024 : 131072);
     }
 
 };
