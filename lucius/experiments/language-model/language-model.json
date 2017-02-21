@@ -9,7 +9,7 @@
         "maximum-samples" : "1e9",
         "standardization-samples" : "1024",
 
-        "epochs" : "200",
+        "epochs" : "20",
 
         "parameters" :
         {
@@ -30,7 +30,7 @@
             "recurrent" :
             {
                 "Type" : "RecurrentLayer",
-                "Direction" : "forward",
+                "Direction" : "bidirectional",
                 "Size" : "2048"
             },
             "input":
@@ -42,6 +42,20 @@
             {
                 "Type" : "FeedForwardLayer",
                 "ActivationFunction" : "NullActivationFunction"
+            },
+            "dropout":
+            {
+                "Type" : "DropoutLayer",
+                "InitialRate" : "0.0",
+                "FinalRate" : "0.3",
+                "RateRampIterations" : "100000"
+            },
+            "attentional-memory":
+            {
+                "Type" : "AttentionalMemoryLayer",
+                "OutputSize" : "64",
+                "MemoryCellSize": "64",
+                "MemoryCellCount": "32"
             }
         },
 
@@ -52,8 +66,11 @@
                 "layers" :
                 [
                     "input",
+                    "dropout",
                     "recurrent",
+                    "dropout",
                     "recurrent",
+                    "attentional-memory",
                     "recurrent",
                     "output"
                 ]
@@ -70,12 +87,11 @@
             "SegmentSize"  : "100",
             "Graphemes" : [ "A", "B", "C", "D", "E", "F", "G", "H", "I",
                             "J", "K", "L", "M", "N", "O", "P", "Q", "R",
-                            "S", "T", "U", "V", "W", "X", "Y", "Z", ",", 
+                            "S", "T", "U", "V", "W", "X", "Y", "Z", ",",
                             "a", "b", "c", "d", "e", "f", "g", "h", "i",
                             "j", "k", "l", "m", "n", "o", "p", "q", "r",
                             "s", "t", "u", "v", "w", "x", "y", "z", ".",
-                            "'", " ", "UNKNOWN"],
-            "DelimiterGrapheme" : "END"
+                            "'", " ", "-UNKNOWN-", "START-", "-END"]
 
 
         },

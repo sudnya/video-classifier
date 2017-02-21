@@ -260,7 +260,7 @@ static void setupOutputLayerParameters(model::Model& model,
 
     if(needsUnknown)
     {
-        model.setOutputLabel(index++, "UNKOWN");
+        model.setOutputLabel(index++, "-UNKOWN-");
     }
 
     for(auto& label : labels)
