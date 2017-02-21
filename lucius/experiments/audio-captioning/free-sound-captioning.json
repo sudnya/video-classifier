@@ -6,9 +6,9 @@
         "type" : "NesterovAcceleratedGradientSolver",
 
         "batch-size"      : "64",
-        "maximum-samples" : "16000",
+        "maximum-samples" : "1600",
         "standardization-samples" : "1024",
-        "validation-samples" : "1e2",
+        "validation-samples" : "16",
 
         "epochs" : "20",
 
@@ -185,14 +185,14 @@
         "InputAudioDataProducer::TotalTimestepsPerNoise" : "100",
         "InputAudioDataProducer::SaveSamples" : "0",
         "InputAudioDataProducer::IgnoreMissingGraphemes" : "1",
-        "InputAudioDataProducer::SecondsToCache" : "100000.0",
-        "InputAudioDataProducer::RandomShuffleWindow" : "16000"
+        "InputAudioDataProducer::SecondsToCache" : "10000.0",
+        "InputAudioDataProducer::RandomShuffleWindow" : "1600"
     },
 
     "dataset" :
     {
-        "training-dataset-path"   : "/data/4tb/filtered-free-sound-100/training/database.txt",
-        "validation-dataset-path" : "/data/4tb/filtered-free-sound-100/validation/database.txt",
+        "training-dataset-path"   : "/data/4tb/test-free-sound/training/database.txt",
+        "validation-dataset-path" : "/data/4tb/test-free-sound/validation/database.txt",
 
         "required-accuracy" : "99.0"
     },
@@ -219,7 +219,7 @@
     "system" :
     {
         "use-cuda"    : "1",
-        "cuda-device" : "1",
+        "cuda-device" : "2",
         "precision"   : "SinglePrecision"
     }
 
