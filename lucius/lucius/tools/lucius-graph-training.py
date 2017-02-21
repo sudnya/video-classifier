@@ -305,7 +305,7 @@ def parseTuple(text, elements):
     if len(split) != elements:
         raise ValueError("Expecting a " + str(elements) + " tuple, but got " + text)
 
-    return [int(i) for i in split]
+    return [float(i) for i in split]
 
 class Visualizer:
     def __init__(self, arguments):

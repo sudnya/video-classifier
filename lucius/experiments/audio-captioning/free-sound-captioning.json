@@ -11,6 +11,7 @@
         "validation-samples" : "16",
 
         "epochs" : "20",
+        "passes-per-epoch": "10",
 
         "parameters" :
         {
@@ -31,6 +32,7 @@
             "recurrent" :
             {
                 "Type" : "RecurrentLayer",
+                "LayerType" : "gru",
                 "Direction" : "bidirectional",
                 "Size" : "1024"
             },
@@ -109,8 +111,8 @@
             {
                 "Type" : "CTCDecoderLayer",
                 "CostFunction" : "CTCCostFunction",
-                "CostFunctionWeight" : "1.0",
-                "BeamSearchSize" : "8"
+                "CostFunctionWeight" : "10.0",
+                "BeamSearchSize" : "4"
             },
             "batch-norm" :
             {
@@ -135,18 +137,16 @@
             {
                 "layers" :
                 [
+                    "extract-frequencies-convolution-0",
+                    "extract-frequencies-convolution-1",
+                    "extract-frequencies-convolution-2",
                     "forward",
-                    "batch-norm",
                     "recurrent",
                     "forward",
-                    "batch-norm",
                     "acoustic-model-output",
                     "ctc-decoder",
                     "language-model-forward",
-                    "batch-norm",
                     "language-model-recurrent",
-                    "language-model-forward",
-                    "batch-norm",
                     "language-model-output"
                 ]
             }
@@ -181,8 +181,8 @@
         "InputAudioDataProducer::NoiseRateLower" : "0.0",
         "InputAudioDataProducer::NoiseRateUpper" : "0.001",
         "InputAudioDataProducer::TotalTimestepsPerUtterance" : "250",
-        "InputAudioDataProducer::TotalTimestepsPerRepeat" : "100",
-        "InputAudioDataProducer::TotalTimestepsPerNoise" : "100",
+        "InputAudioDataProducer::TotalTimestepsPerRepeat" : "50",
+        "InputAudioDataProducer::TotalTimestepsPerNoise" : "50",
         "InputAudioDataProducer::SaveSamples" : "0",
         "InputAudioDataProducer::IgnoreMissingGraphemes" : "1",
         "InputAudioDataProducer::SecondsToCache" : "10000.0",
