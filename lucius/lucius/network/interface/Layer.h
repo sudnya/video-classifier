@@ -162,6 +162,12 @@ protected:
     /*! \brief Indicate that the layer supports multiple inputs and outputs. */
     void setSupportsMultipleInputsAndOutputs(bool supportMultipleIOs);
 
+protected:
+    /*! \brief Collapse input dimensions except for mini-batch and timesteps. */
+    static Matrix foldTime(const Matrix& input);
+    /*! \brief Expand input dimensions except for mini-batch and timesteps. */
+    static Matrix unfoldTime(const Matrix& input, const Dimension& size);
+
 private:
     std::unique_ptr<ActivationFunction>     _activationFunction;
     std::unique_ptr<ActivationCostFunction> _activationCostFunction;

@@ -82,41 +82,6 @@ void SoftmaxLayer::initialize()
 
 }
 
-static Matrix foldTime(const Matrix& input)
-{
-    assert(input.size().size() < 4);
-
-    if(input.size().size() == 3)
-    {
-        auto size = input.size();
-        size_t timesteps = size.back();
-
-        size.pop_back();
-
-        size.back() *= timesteps;
-
-        return reshape(input, size);
-    }
-
-    return input;
-}
-
-static Matrix unfoldTime(const Matrix& result, const Dimension& inputSize)
-{
-    if(inputSize.size() <= 2)
-    {
-        return result;
-    }
-
-    assert(inputSize.size() == 3);
-
-    size_t layerSize = result.size()[0];
-    size_t miniBatch = inputSize[1];
-    size_t timesteps = inputSize[2];
-
-    return reshape(result, {layerSize, miniBatch, timesteps});
-}
-
 void SoftmaxLayer::runForwardImplementation(Bundle& bundle)
 {
     auto& inputActivationsVector  = bundle[ "inputActivations"].get<MatrixVector>();

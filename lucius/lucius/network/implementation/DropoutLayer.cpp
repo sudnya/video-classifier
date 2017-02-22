@@ -1,6 +1,6 @@
 /*  \file   DropoutLayer.cpp
     \author Gregory Diamos
-    \date   September 23, 2015
+    \date   February 21, 2017
     \brief  The interface for the DropoutLayer class.
 */
 
@@ -13,9 +13,9 @@
 #include <lucius/matrix/interface/Matrix.h>
 #include <lucius/matrix/interface/MatrixVector.h>
 #include <lucius/matrix/interface/MatrixOperations.h>
+#include <lucius/matrix/interface/RandomOperations.h>
 #include <lucius/matrix/interface/Operation.h>
 #include <lucius/matrix/interface/FileOperations.h>
-#include <lucius/matrix/interface/PoolingOperations.h>
 #include <lucius/matrix/interface/MatrixTransformations.h>
 
 #include <lucius/util/interface/debug.h>
@@ -32,21 +32,23 @@ typedef matrix::Dimension    Dimension;
 typedef matrix::MatrixVector MatrixVector;
 
 DropoutLayer::DropoutLayer()
-: DropoutLayer({1, 1, 1, 1})
+: DropoutLayer({1, 1, 1, 1}, 0.1)
 {
 
 }
 
-DropoutLayer::DropoutLayer(const Dimension& inputSize)
-: DropoutLayer(inputSize, matrix::Precision::getDefaultPrecision())
+DropoutLayer::DropoutLayer(const Dimension& inputSize, double dropoutRatio)
+: DropoutLayer(inputSize, dropoutRatio, matrix::Precision::getDefaultPrecision())
 {
 
 }
 
-DropoutLayer::DropoutLayer(const Dimension& inputSize, const matrix::Precision& precision)
+DropoutLayer::DropoutLayer(const Dimension& inputSize, double dropoutRatio,
+    const matrix::Precision& precision)
 : _inputSize(std::make_unique<matrix::Dimension>(inputSize)),
   _precision(std::make_unique<matrix::Precision>(precision)),
-  _trainingIteration(0)
+  _trainingIteration(0),
+  _dropoutRatio(dropoutRatio)
 {
 
 }
@@ -60,7 +62,8 @@ DropoutLayer::DropoutLayer(const DropoutLayer& l)
 : Layer(l),
   _inputSize(std::make_unique<matrix::Dimension>(*l._inputSize)),
   _precision(std::make_unique<matrix::Precision>(*l._precision)),
-  _trainingIteration(l._trainingIteration)
+  _trainingIteration(l._trainingIteration),
+  _dropoutRatio(l._dropoutRatio)
 {
 
 }
@@ -74,9 +77,10 @@ DropoutLayer& DropoutLayer::operator=(const DropoutLayer& l)
         return *this;
     }
 
-    _inputSize  = std::make_unique<matrix::Dimension>(*l._inputSize);
-    _precision  = std::make_unique<matrix::Precision>(*l._precision);
+    _inputSize = std::make_unique<matrix::Dimension>(*l._inputSize);
+    _precision = std::make_unique<matrix::Precision>(*l._precision);
     _trainingIteration = l._trainingIteration;
+    _dropoutRatio = l._dropoutRatio;
 
     return *this;
 }
@@ -88,25 +92,46 @@ void DropoutLayer::initialize()
 
 void DropoutLayer::runForwardImplementation(Bundle& bundle)
 {
-    // TODO
     auto& inputActivationsVector  = bundle[ "inputActivations"].get<MatrixVector>();
     auto& outputActivationsVector = bundle["outputActivations"].get<MatrixVector>();
 
     assert(inputActivationsVector.size() == 1);
 
-    auto inputActivations = inputActivationsVector.back();
+    auto inputActivations = foldTime(inputActivationsVector.back());
 
     util::log("DropoutLayer") << " Running forward propagation of matrix "
         << inputActivations.shapeString() << "\n";
 
     if(util::isLogEnabled("DropoutLayer::Detail"))
     {
-        util::log("DropoutLayer::Detail") << " input: "
-            << inputActivations.debugString();
+        util::log("DropoutLayer::Detail") << " input: " << inputActivations.debugString();
     }
 
-    auto outputActivations = getActivationFunction()->apply(
-        forwardDropout(inputActivations, *_filterSize));
+    Matrix maskedActivations;
+
+    if(getIsTraining())
+    {
+        matrix::RandomState randomState;
+
+        swapDefaultRandomState(randomState);
+
+        srand(_trainingIteration++);
+
+        auto mask = apply(rand(inputActivations.size(), inputActivations.precision()),
+            matrix::GreaterThan(_dropoutRatio));
+
+        swapDefaultRandomState(randomState);
+
+        maskedActivations = apply(Matrix(mask), inputActivations, matrix::Multiply());
+
+        saveMatrix("mask", mask);
+    }
+    else
+    {
+        maskedActivations = apply(inputActivations, matrix::Multiply(_dropoutRatio));
+    }
+
+    auto outputActivations = getActivationFunction()->apply(maskedActivations);
 
     if(util::isLogEnabled("DropoutLayer::Detail"))
     {
@@ -114,10 +139,10 @@ void DropoutLayer::runForwardImplementation(Bundle& bundle)
             << outputActivations.debugString();
     }
 
-    saveMatrix("inputActivations",  inputActivations);
     saveMatrix("outputActivations", outputActivations);
 
-    outputActivationsVector.push_back(std::move(outputActivations));
+    outputActivationsVector.push_back(unfoldTime(outputActivations,
+        inputActivations.size()));
 }
 
 void DropoutLayer::runReverseImplementation(Bundle& bundle)
@@ -130,15 +155,14 @@ void DropoutLayer::runReverseImplementation(Bundle& bundle)
     auto outputActivations = loadMatrix("outputActivations");
 
     // Get the input activations and deltas
-    auto inputActivations = loadMatrix("inputActivations");
+    auto mask = loadMatrix("mask");
 
     auto deltas = apply(getActivationFunction()->applyDerivative(outputActivations),
-        outputDeltas.front(), matrix::Multiply());
+        foldTime(outputDeltas.back()), matrix::Multiply());
 
-    auto inputDeltas = backwardDropout(inputActivations, outputActivations,
-        deltas, *_filterSize);
+    auto inputDeltas = apply(Matrix(deltas), mask, matrix::Multiply());
 
-    inputDeltasVector.push_back(std::move(inputDeltas));
+    inputDeltasVector.push_back(unfoldTime(inputDeltas, outputDeltas.back().size()));
 }
 
 MatrixVector& DropoutLayer::weights()
@@ -210,6 +234,7 @@ void DropoutLayer::save(util::OutputTarArchive& archive,
     properties["precision"]  = _precision->toString();
 
     properties["training-iteration"] = _trainingIteration;
+    properties["dropout-ratio"] = _dropoutRatio;
 
     saveLayer(archive, properties);
 }
@@ -220,7 +245,8 @@ void DropoutLayer::load(util::InputTarArchive& archive,
     *_inputSize = Dimension::fromString(properties["input-size"]);
     _precision  = matrix::Precision::fromString(properties["precision"]);
 
-    _iteratingIteration = properties.get<size_t>("training-iteration");
+    _trainingIteration = properties.get<size_t>("training-iteration");
+    _dropoutRatio = properties.get<double>("dropout-ratio");
 
     loadLayer(archive, properties);
 }

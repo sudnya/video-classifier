@@ -19,8 +19,8 @@ class DropoutLayer: public Layer
 {
 public:
     DropoutLayer();
-    DropoutLayer(const Dimension& inputSize);
-    DropoutLayer(const Dimension& inputSize, const matrix::Precision&);
+    DropoutLayer(const Dimension& inputSize, double dropoutRatio);
+    DropoutLayer(const Dimension& inputSize, double dropoutRatio, const matrix::Precision&);
     virtual ~DropoutLayer();
 
 public:
@@ -76,6 +76,9 @@ private:
 
 private:
     size_t _trainingIteration;
+
+private:
+    double _dropoutRatio;
 
 };
 
