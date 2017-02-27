@@ -1,17 +1,16 @@
 {
-    "name" : "audio-captioning",
+    "name" : "label-classification",
 
     "optimization" :
     {
         "type" : "NesterovAcceleratedGradientSolver",
-
-        "batch-size"      : "64",
-        "maximum-samples" : "1600",
+        "batch-size" : "64",
+        "maximum-samples" : "1024",
         "standardization-samples" : "1024",
         "validation-samples" : "16",
 
         "epochs" : "20",
-        "passes-per-epoch": "10",
+        "passes-per-epoch" : "1",
 
         "parameters" :
         {
@@ -29,24 +28,89 @@
 
         "layer-types" :
         {
+            "packed-layer" :
+            {
+                "Type": "SubgraphLayer",
+                "Submodules" :
+                {
+                    "input-text":
+                    {
+                        "Type": "input-text-subgraph",
+                        "ForwardConnections" : ["packed-layer-output"]
+                    },
+                    "input-label" :
+                    {
+                        "Type" : "input-label-subgraph",
+                        "ForwardConnections" : ["packed-layer-output"]
+                    },
+                    "input-audio" :
+                    {
+                        "Type" : "input-audio-subgraph",
+                        "ForwardConnections" : ["packed-layer-output"]
+                    },
+                    "packed-layer-output" :
+                    {
+                        "Type" : "decoder"
+                    }
+                }
+            },
+            "input-text-network" :
+            {
+                "Type" : "SubgraphLayer",
+                "Submodules" :
+                [
+                    "text-loader",
+                    "language-encoder"
+                ]
+            },
+            "input-label-network" :
+            {
+                "Type" : "SubgraphLayer",
+                "Submodules" :
+                [
+                    "label-loader",
+                    "language-encoder"
+                ]
+            },
+            "input-audio-network" :
+            {
+                "Type" : "SubgraphLayer",
+                "Submodules" :
+                [
+                    "audio-loader",
+                    "audio-encoder"
+                ]
+            },
             "recurrent" :
             {
-                "Type" : "RecurrentLayer",
-                "LayerType" : "gru",
-                "Direction" : "bidirectional",
-                "Size" : "1024"
+                "Type"      : "RecurrentLayer",
+                "Size"      : "128",
+                "Direction" : "bidirectional"
             },
-            "mean-pool":
+            "encoder-controller" :
             {
-                "Type"             : "FeedForwardLayer",
-                "InputSize"        : "4",
-                "OutputSize"       : "1"
+                "Type" : "FeedForwardLayer"
             },
-            "pool":
+            "decoder-controller" :
             {
-                "Type"             : "AudioMaxPoolingLayer",
-                "FilterSamples"    : "16",
-                "FilterTimesteps"  : "1"
+                "Type" : "FeedForwardLayer"
+            },
+            "memory-encoder" :
+            {
+                "Type" : "MemoryWriterLayer",
+                "MemoryCellSize": "64",
+                "MemoryCellCount": "32",
+                "ActivationFunction" : "NullActivationFunction",
+                "Controller" : "encoder-controller"
+            },
+            "language-encoder" :
+            {
+                "Type" : "SubgraphLayer",
+                "Submodules" :
+                [
+                    "recurrent",
+                    "memory-encoder"
+                ]
             },
             "extract-frequencies-convolution-0":
             {
@@ -84,71 +148,10 @@
                 "PaddingSamples"   : "3",
                 "PaddingTimesteps" : "1"
             },
-            "forward":
+            "audio-encoder" :
             {
-                "Type" : "FeedForwardLayer",
-                "ActivationFunction" : "NullActivationFunction",
-                "OutputSize" : "1024"
-            },
-            "language-model-forward":
-            {
-                "Type" : "FeedForwardLayer",
-                "ActivationFunction" : "NullActivationFunction",
-                "OutputSize" : "128"
-            },
-            "softmax":
-            {
-                "Type" : "SoftmaxLayer",
-                "ActivationFunction" : "NullActivationFunction"
-            },
-            "acoustic-model-output":
-            {
-                "Type" : "FeedForwardLayer",
-                "ActivationFunction" : "NullActivationFunction",
-                "OutputSize" : "45"
-            },
-            "ctc-decoder":
-            {
-                "Type" : "CTCDecoderLayer",
-                "CostFunction" : "CTCCostFunction",
-                "CostFunctionWeight" : "1.0",
-                "BeamSearchSize" : "4"
-            },
-            "batch-norm" :
-            {
-                "Type" : "BatchNormalizationLayer"
-            },
-            "language-model-recurrent" :
-            {
-                "Type" : "RecurrentLayer",
-                "LayerType" : "gru",
-                "Direction" : "bidirectional",
-                "Size" : "128"
-            },
-            "language-model-output":
-            {
-                "Type" : "FeedForwardLayer",
-                "ActivationFunction" : "NullActivationFunction"
-            },
-            "encoder-controller":
-            {
-                "Type" : "FeedForwardLayer"
-            },
-            "encoder":
-            {
-                "Type" : "MemoryWriterLayer",
-                "MemoryCellSize": "64",
-                "MemoryCellCount": "32",
-                "ActivationFunction" : "NullActivationFunction",
-                "Controller" : "encoder-controller"
-            }
-        },
-
-        "networks" :
-        {
-            "Classifier" :
-            {
-                "layers" :
+                "Type" : "SubgraphLayer",
+                "Submodules" :
                 [
                     "extract-frequencies-convolution-0",
                     "extract-frequencies-convolution-1",
@@ -158,35 +161,48 @@
                     "recurrent",
                     "recurrent",
                     "forward",
-                    "encoder"
+                    "memory-encoder"
                 ]
             },
-            "LanguageModelEncoder":
+            "decoder" :
             {
-                "load-from" : "TODO:path"
+                "Type" : "MemoryReaderLayer",
+                "MemoryCellSize" : "64",
+                "MemoryCellCount" : "32",
+                "ActivationFunction" : "NullActivationFunction",
+                "Controller" : "decoder-controller"
             }
-        },
-
-        "cost-function" :
-        {
-            "name" : "EmbeddedSoftmaxCostFunction",
-            "label-embedding-network" : "LanguageModelEncoder"
-        },
-
-        "model-attributes" :
-        {
-            "SamplingRate"  : "16384",
-            "FrameDuration" : "1024",
-            "Graphemes" : [ "a", "b", "c", "d", "e", "f", "g", "h", "i", "j",
-                            "k", "l", "m", "n", "o", "p", "q", "r", "s", "t",
-                            "u", "v", "w", "x", "y", "z", ".", ",", "'", " ",
-                            "0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
-                            "-", "START-", "-END"],
-            "UsesUnknownToken" : "1",
-            "UsesSeparatorToken" : "1"
-
         }
+    },
 
+    "networks" :
+    {
+        "Classifier" :
+        {
+            "layers" :
+            [
+                "packed-layer",
+                "forward-output"
+            ]
+        }
+    },
+
+    "cost-function" :
+    {
+        "name" : "SoftmaxCostFunction"
+    },
+
+    "model-attributes" :
+    {
+        "SamplingRate"  : "16384",
+        "FrameDuration" : "1024",
+        "Graphemes" : [ "a", "b", "c", "d", "e", "f", "g", "h", "i", "j",
+                        "k", "l", "m", "n", "o", "p", "q", "r", "s", "t",
+                        "u", "v", "w", "x", "y", "z", ".", ",", "'", " ",
+                        "0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
+                        "-", "START-", "-END"],
+        "UsesUnknownToken" : "1",
+        "UsesSeparatorToken" : "0"
     },
 
     "attributes" :
@@ -237,5 +253,6 @@
         "cuda-device" : "1",
         "precision"   : "SinglePrecision"
     }
+
 
 }
