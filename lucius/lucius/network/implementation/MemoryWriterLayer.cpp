@@ -14,6 +14,8 @@
 #include <lucius/matrix/interface/MatrixVector.h>
 #include <lucius/matrix/interface/Operation.h>
 #include <lucius/matrix/interface/MatrixOperations.h>
+#include <lucius/matrix/interface/MatrixVectorOperations.h>
+#include <lucius/matrix/interface/CopyOperations.h>
 #include <lucius/matrix/interface/MatrixTransformations.h>
 #include <lucius/matrix/interface/SoftmaxOperations.h>
 
@@ -36,10 +38,9 @@ MemoryWriterLayer::MemoryWriterLayer()
 
 }
 
-MemoryWriterLayer::MemoryWriterLayer(size_t cellSize, size_t cellCount, const Layer& controller)
+MemoryWriterLayer::MemoryWriterLayer(size_t cellSize, size_t cellCount)
 : _cellSize(cellSize),
-  _cellCount(cellCount),
-  _controller(controller.clone())
+  _cellCount(cellCount)
 {
 
 }
@@ -50,17 +51,16 @@ MemoryWriterLayer::~MemoryWriterLayer()
 }
 
 MemoryWriterLayer::MemoryWriterLayer(const MemoryWriterLayer& l)
-: Layer(l),
+: ControllerLayer(l),
   _cellSize( l._cellSize),
-  _cellCount(l._cellCount),
-  _controller(l._controller->clone())
+  _cellCount(l._cellCount)
 {
 
 }
 
 MemoryWriterLayer& MemoryWriterLayer::operator=(const MemoryWriterLayer& l)
 {
-    Layer::operator=(l);
+    ControllerLayer::operator=(l);
 
     if(&l == this)
     {
@@ -70,14 +70,12 @@ MemoryWriterLayer& MemoryWriterLayer::operator=(const MemoryWriterLayer& l)
     _cellSize  = l._cellSize;
     _cellCount = l._cellCount;
 
-    _controller = l._controller->clone();
-
     return *this;
 }
 
 void MemoryWriterLayer::initialize()
 {
-    _controller->initialize();
+    getController().initialize();
 }
 
 static Bundle packInputsForWrite(const Matrix& memory, const Matrix& inputs, size_t timestep)
@@ -87,7 +85,7 @@ static Bundle packInputsForWrite(const Matrix& memory, const Matrix& inputs, siz
     size_t cellCount     = memory.size()[1];
     size_t miniBatchSize = memory.size()[2];
 
-    size_t aggregateInputSize = inputSize * cellSize * cellCount;
+    size_t aggregateInputSize = cellSize * (1 + cellCount);
 
     auto inputsSlice = slice(inputs,
         {        0,             0, timestep    },
@@ -95,15 +93,15 @@ static Bundle packInputsForWrite(const Matrix& memory, const Matrix& inputs, siz
 
     Matrix packedInputs({aggregateInputSize, miniBatchSize, 1}, memory.precision());
 
+    auto packedInputsMemorySlice = slice(packedInputs,
+        {         inputSize,             0, 0},
+        {aggregateInputSize, miniBatchSize, 1});
+
     if(timestep != 0)
     {
         auto memorySlice = slice(memory,
             {       0,         0,             0, timestep - 1},
             {cellSize, cellCount, miniBatchSize, timestep    });
-
-        auto packedInputsMemorySlice = slice(packedInputs,
-            {         inputSize,             0, 0},
-            {aggregateInputSize, miniBatchSize, 1});
 
         copy(packedInputsMemorySlice, memorySlice);
     }
@@ -120,7 +118,8 @@ static Bundle packInputsForWrite(const Matrix& memory, const Matrix& inputs, siz
 
     Bundle bundle;
 
-    bundle["inputActivations"] = MatrixVector(packedInputs);
+    bundle["inputActivations"]  = MatrixVector({packedInputs});
+    bundle["outputActivations"] = MatrixVector();
 
     return bundle;
 }
@@ -142,33 +141,97 @@ static void unpackOutputsAndPerformWrite(
     // output is [write enable, write address, write contents]
     assert(1 + cellCount + cellSize == controllerOutputSize);
 
-    auto writeEnable = slice(controllerOutput,
+    auto writeEnable = reshape(slice(controllerOutput,
         {0,             0, 0},
-        {1, miniBatchSize, 1});
+        {1, miniBatchSize, 1}), {miniBatchSize, 1});
+
+    if(util::isLogEnabled("MemoryWriterLayer::Detail"))
+    {
+        util::log("MemoryWriterLayer::Detail") << " write enable: " << writeEnable.debugString();
+    }
 
     apply(writeEnable, writeEnable, matrix::Sigmoid());
+
+    if(util::isLogEnabled("MemoryWriterLayer::Detail"))
+    {
+        util::log("MemoryWriterLayer::Detail") << " sigmoid write enable: "
+            << writeEnable.debugString();
+    }
 
     auto writeAddress = slice(controllerOutput,
         {1,                         0, 0},
         {1 + cellCount, miniBatchSize, 1});
 
+    if(util::isLogEnabled("MemoryWriterLayer::Detail"))
+    {
+        util::log("MemoryWriterLayer::Detail") << " write address: "
+            << writeAddress.debugString();
+    }
+
     softmax(writeAddress, writeAddress);
+
+    if(util::isLogEnabled("MemoryWriterLayer::Detail"))
+    {
+        util::log("MemoryWriterLayer::Detail") << " softmax write address: "
+            << writeAddress.debugString();
+    }
 
     auto writeContents = slice(controllerOutput,
         {       1 + cellCount,             0, 0},
         {controllerOutputSize, miniBatchSize, 1});
 
-    Matrix newContents({cellSize, cellCount, miniBatchSize}, controllerOutput.precision());
+    if(util::isLogEnabled("MemoryWriterLayer::Detail"))
+    {
+        util::log("MemoryWriterLayer::Detail") << " write contents: "
+            << writeContents.debugString();
+    }
+
+    Matrix newContents({cellSize, cellCount, miniBatchSize, 1}, controllerOutput.precision());
 
     broadcast(newContents, newContents, writeContents, {1},    matrix::CopyRight());
     broadcast(newContents, newContents, writeAddress,  {0},    matrix::Multiply());
     broadcast(newContents, newContents, writeEnable,   {0, 1}, matrix::Multiply());
 
+    if(util::isLogEnabled("MemoryWriterLayer::Detail"))
+    {
+        util::log("MemoryWriterLayer::Detail") << " new contents: "
+            << newContents.debugString();
+    }
+
+    Matrix previousMemorySlice;
+
+    if(timestep != 0)
+    {
+        previousMemorySlice = slice(memory,
+            {       0,         0,             0, timestep - 1},
+            {cellSize, cellCount, miniBatchSize, timestep});
+    }
+    else
+    {
+        previousMemorySlice = zeros({cellSize, cellCount, miniBatchSize, 1}, memory.precision());
+    }
+
+    if(util::isLogEnabled("MemoryWriterLayer::Detail"))
+    {
+        util::log("MemoryWriterLayer::Detail") << " previous contents: "
+            << previousMemorySlice.debugString();
+    }
+
     auto oneMinusWriteAddress = apply(writeAddress, matrix::Subtract(1.0));
     auto scaledPreviousMemory = broadcast(previousMemorySlice, oneMinusWriteAddress, {0},
         matrix::Multiply());
 
+    auto memorySlice = slice(memory,
+        {       0,         0,             0, timestep},
+        {cellSize, cellCount, miniBatchSize, timestep + 1});
+
     apply(memorySlice, scaledPreviousMemory, newContents, matrix::Add());
+
+    if(util::isLogEnabled("MemoryWriterLayer::Detail"))
+    {
+        util::log("MemoryWriterLayer::Detail") << " current contents: "
+            << memorySlice.debugString();
+    }
 }
 
 void MemoryWriterLayer::runForwardImplementation(Bundle& bundle)
@@ -178,10 +241,10 @@ void MemoryWriterLayer::runForwardImplementation(Bundle& bundle)
 
     assert(inputActivationsVector.size() == 1);
 
+    auto inputActivations = inputActivationsVector.back();
+
     util::log("MemoryWriterLayer") << " Running forward propagation of matrix "
         << inputActivations.shapeString() << "\n";
-
-    auto inputActivations = inputActivationsVector.back();
 
     size_t timesteps     = inputActivations.size()[inputActivations.size().size() - 1];
     size_t miniBatchSize = inputActivations.size()[inputActivations.size().size() - 2];
@@ -197,16 +260,18 @@ void MemoryWriterLayer::runForwardImplementation(Bundle& bundle)
     {
         Matrix controllerOutput;
 
-        auto bundle = packInputsForWrite(memory, controllerOutput, inputActivations, timestep);
-        _controller->runForward(bundle);
-        unpackOutputsAndPerformWrite(memory, bundle, timestep);
+        auto bundle = packInputsForWrite(memory, inputActivations, timestep);
+        util::log("MemoryWriterLayer") << " Running forward propagation through controller "
+            "on timestep " << timestep << "\n";
+        getController().runForward(bundle);
+        unpackOutputsAndPerformWrite(controllerOutput, memory, bundle, timestep);
 
         saveMatrix("controllerOutput", controllerOutput);
     }
 
     if(util::isLogEnabled("MemoryWriterLayer::Detail"))
     {
-        util::log("MemoryWriterLayer::Detail") << " outputs: " << outputActivations.debugString();
+        util::log("MemoryWriterLayer::Detail") << " outputs: " << memory.debugString();
     }
 
     saveMatrix("memory", memory);
@@ -230,32 +295,38 @@ static Bundle reversePropagationThroughWrite(Matrix& memory,
 
     // output is [writeScale, writeAddress, writeContents]
 
-    auto writeScale = slice(controllerOutput,
-        {0,             0},
-        {1, miniBatchSize});
-    auto writeScaleDeltas = slice(controllerOutputDeltas,
-        {0,             0},
-        {1, miniBatchSize});
+    auto writeScale = reshape(slice(controllerOutput,
+        {0,             0, 0},
+        {1, miniBatchSize, 1}), {miniBatchSize, 1});
+    auto writeScaleDeltas = reshape(slice(controllerOutputDeltas,
+        {0,             0, 0},
+        {1, miniBatchSize, 1}), {miniBatchSize, 1});
 
     auto writeAddress = slice(controllerOutput,
-        {            1,             0},
-        {1 + cellCount, miniBatchSize});
+        {            1,             0, 0},
+        {1 + cellCount, miniBatchSize, 1});
     auto writeAddressDeltas = slice(controllerOutputDeltas,
-        {            1,             0},
-        {1 + cellCount, miniBatchSize});
+        {            1,             0, 0},
+        {1 + cellCount, miniBatchSize, 1});
 
     auto writeContents = slice(controllerOutput,
-        {           1 + cellCount,             0},
-        {1 + cellCount + cellSize, miniBatchSize});
+        {           1 + cellCount,             0, 0},
+        {1 + cellCount + cellSize, miniBatchSize, 1});
     auto writeContentsDeltas = slice(controllerOutputDeltas,
-        {           1 + cellCount,             0},
-        {1 + cellCount + cellSize, miniBatchSize});
+        {           1 + cellCount,             0, 0},
+        {1 + cellCount + cellSize, miniBatchSize, 1});
 
     // Compute previousMemoryDeltas
     auto oneMinusWriteAddress = apply(writeAddress, matrix::Subtract(1.0));
 
     previousMemoryDeltas = broadcast(currentMemoryDeltas, oneMinusWriteAddress, {0},
         matrix::Multiply());
+
+    if(util::isLogEnabled("MemoryWriterLayer::Detail"))
+    {
+        util::log("MemoryWriterLayer::Detail") << " previous memory deltas: "
+            << previousMemoryDeltas.debugString();
+    }
 
     // Compute writeEnableDeltas
     Matrix contentsSoftmaxProduct(memory.size(), memory.precision());
@@ -264,9 +335,16 @@ static Bundle reversePropagationThroughWrite(Matrix& memory,
         matrix::CopyRight());
     broadcast(contentsSoftmaxProduct, contentsSoftmaxProduct, writeContents, {1},
         matrix::Multiply());
+    apply(contentsSoftmaxProduct, contentsSoftmaxProduct, currentMemoryDeltas, matrix::Multiply());
 
-    apply(writeEnableDeltas, reduce(contentsSoftmaxProduct, {0, 1}, matrix::Add()),
-        matrix::SigmoidDerivative());
+    apply(writeScaleDeltas, reduce(contentsSoftmaxProduct, {0, 1}, matrix::Add()),
+        apply(writeScale, matrix::SigmoidDerivative()), matrix::Multiply());
+
+    if(util::isLogEnabled("MemoryWriterLayer::Detail"))
+    {
+        util::log("MemoryWriterLayer::Detail") << " write enable deltas: "
+            << writeScaleDeltas.debugString();
+    }
 
     // Compute writeContentsDeltas
     auto currentScaledMemoryDeltas = broadcast(currentMemoryDeltas, writeScale,
@@ -277,21 +355,36 @@ static Bundle reversePropagationThroughWrite(Matrix& memory,
 
     reduce(writeContentsDeltas, currentScaleAndAddressMemoryDeltas, {1}, matrix::Add());
 
+    if(util::isLogEnabled("MemoryWriterLayer::Detail"))
+    {
+        util::log("MemoryWriterLayer::Detail") << " write contents deltas: "
+            << writeContentsDeltas.debugString();
+    }
+
     // Compute writeAddressDeltas
-    auto negativeMemoryAndCurrentMemoryDeltasProduct =
-        apply(apply(memory, currentMemoryDeltas, matrix::Multiply()), matrix::Multiply(-1.0));
+    auto negativeMemoryAndCurrentMemoryDeltasProduct = apply(
+        apply(Matrix(memory), currentMemoryDeltas, matrix::Multiply()),
+        matrix::Multiply(-1.0));
 
     auto currentScaledMemoryDeltasAndContentProduct =
         broadcast(currentScaledMemoryDeltas, writeContents, {1}, matrix::Multiply());
 
     apply(writeAddressDeltas,
-        apply(currentScaledMemoryDeltasAndContentProduct,
-            negativeMemoryAndCurrentMemoryDeltasProduct, matrix::Add()),
+        reduce(apply(Matrix(currentScaledMemoryDeltasAndContentProduct),
+            negativeMemoryAndCurrentMemoryDeltasProduct, matrix::Add()), {1}, matrix::Add()),
         matrix::SigmoidDerivative());
+
+    if(util::isLogEnabled("MemoryWriterLayer::Detail"))
+    {
+        util::log("MemoryWriterLayer::Detail") << " write address deltas: "
+            << writeAddressDeltas.debugString();
+    }
 
     Bundle bundle;
 
-    bundle["outputDeltas"] = MatrixVector(controllerOutputDeltas);
+    bundle["outputDeltas"] = MatrixVector({controllerOutputDeltas});
+    bundle["gradients"]    = MatrixVector();
+    bundle["inputDeltas"]  = MatrixVector();
 
     return bundle;
 }
@@ -300,11 +393,12 @@ static void unpackInputDeltas(Matrix& outputDeltas,
     Matrix& inputDeltas, const Matrix& previousMemoryDeltas,
     const Bundle& bundle, size_t timestep)
 {
-    size_t totalInputSize = inputDeltas.size()[0];
-    size_t miniBatchSize  = inputDeltas.size()[1];
-
     // Compute input deltas
     auto& inputDeltasVector = bundle["inputDeltas"].get<MatrixVector>();
+
+    size_t inputSize      = inputDeltas.size()[0];
+    size_t totalInputSize = inputDeltasVector.back().size()[0];
+    size_t miniBatchSize  = inputDeltasVector.back().size()[1];
 
     auto currentInputDeltasSlice = slice(inputDeltasVector.back(),
         {        0,             0, 0},
@@ -316,28 +410,52 @@ static void unpackInputDeltas(Matrix& outputDeltas,
 
     copy(inputDeltasSlice, currentInputDeltasSlice);
 
+    if(util::isLogEnabled("MemoryWriterLayer::Detail"))
+    {
+        util::log("MemoryWriterLayer::Detail") << " input deltas: "
+            << inputDeltasSlice.debugString();
+    }
+
     // Compute previous memory output deltas
-    auto memoryDeltasSlice = slice(inputDeltasVector.back(),
+    size_t cellSize  = previousMemoryDeltas.size()[0];
+    size_t cellCount = previousMemoryDeltas.size()[1];
+
+    auto memoryDeltasSlice = reshape(slice(inputDeltasVector.back(),
         {     inputSize,             0, 0},
-        {totalInputSize, miniBatchSize, 1});
+        {totalInputSize, miniBatchSize, 1}), {cellSize, cellCount, miniBatchSize, 1});
 
     outputDeltas = apply(previousMemoryDeltas, memoryDeltasSlice, matrix::Add());
+
+    if(util::isLogEnabled("MemoryWriterLayer::Detail"))
+    {
+        util::log("MemoryWriterLayer::Detail") << " previous memory deltas: "
+            << outputDeltas.debugString();
+    }
 }
 
 void MemoryWriterLayer::runReverseImplementation(Bundle& bundle)
 {
+    auto& gradients          = bundle[   "gradients"].get<MatrixVector>();
     auto& inputDeltasVector  = bundle[ "inputDeltas"].get<MatrixVector>();
     auto& outputDeltasVector = bundle["outputDeltas"].get<MatrixVector>();
 
-    // Get the output activations
-    auto outputActivations = loadMatrix("outputActivations");
-
     // Get the output deltas
-    auto outputDeltas = outputDeltasVector.front();
+    auto& outputDeltas = outputDeltasVector.front();
 
-    Matrix inputDeltas({inputSize, miniBatchSize, timesteps}, outputDeltas.precision());
+    util::log("MemoryWriterLayer") << " Running reverse propagation of matrix "
+        << outputDeltas.shapeString() << "\n";
 
-    auto& memory = loadMatrix("memory");
+    if(util::isLogEnabled("MemoryWriterLayer::Detail"))
+    {
+        util::log("MemoryWriterLayer::Detail") << " output deltas: " << outputDeltas.debugString();
+    }
+
+    size_t timesteps     = outputDeltas.size()[outputDeltas.size().size() - 1];
+    size_t miniBatchSize = outputDeltas.size()[outputDeltas.size().size() - 2];
+
+    Matrix inputDeltas({_cellSize, miniBatchSize, timesteps}, outputDeltas.precision());
+
+    auto memory = loadMatrix("memory");
 
     for(size_t i = 0; i < timesteps; ++i)
     {
@@ -347,11 +465,26 @@ void MemoryWriterLayer::runReverseImplementation(Bundle& bundle)
         popReversePropagationData();
 
         Matrix previousMemoryDeltas;
-        auto bundle = reversePropagationThroughWrite(memory, previousMemoryDeltas,
+        auto controllerBundle = reversePropagationThroughWrite(memory, previousMemoryDeltas,
             controllerOutput, outputDeltas, timestep);
-        _controller->runReverse(bundle);
-        _controller->popReversePropagationData();
-        unpackInputDeltas(outputDeltas, inputDeltas, previousMemoryDeltas, bundle, timestep);
+        util::log("MemoryWriterLayer") << " Running reverse propagation through controller on "
+            "timestep " << timestep << "\n";
+        getController().runReverse(controllerBundle);
+        getController().popReversePropagationData();
+
+        auto& controllerGradients = controllerBundle["gradients"].get<MatrixVector>();
+
+        if(i == 0)
+        {
+            gradients = controllerGradients;
+        }
+        else
+        {
+            apply(gradients, gradients, controllerGradients, matrix::Add());
+        }
+
+        unpackInputDeltas(outputDeltas, inputDeltas, previousMemoryDeltas,
+            controllerBundle, timestep);
     }
 
     inputDeltasVector.push_back(inputDeltas);
@@ -359,22 +492,22 @@ void MemoryWriterLayer::runReverseImplementation(Bundle& bundle)
 
 MatrixVector& MemoryWriterLayer::weights()
 {
-    return _controller->weights();
+    return getController().weights();
 }
 
 const MatrixVector& MemoryWriterLayer::weights() const
 {
-    return _controller->weights();
+    return getController().weights();
 }
 
 const matrix::Precision& MemoryWriterLayer::precision() const
 {
-    return _controller->precision();
+    return getController().precision();
 }
 
 double MemoryWriterLayer::computeWeightCost() const
 {
-    return _controller->computeWeightCost();
+    return getController().computeWeightCost();
 }
 
 Dimension MemoryWriterLayer::getInputSize() const
@@ -399,22 +532,22 @@ size_t MemoryWriterLayer::getOutputCount() const
 
 size_t MemoryWriterLayer::totalNeurons() const
 {
-    return _controller->totalNeurons();
+    return getController().totalNeurons();
 }
 
 size_t MemoryWriterLayer::totalConnections() const
 {
-    return _controller->totalConnections();
+    return getController().totalConnections();
 }
 
 size_t MemoryWriterLayer::getFloatingPointOperationCount() const
 {
-    return _controller->getFloatingPointOperationCount();
+    return getController().getFloatingPointOperationCount();
 }
 
 size_t MemoryWriterLayer::getActivationMemory() const
 {
-    return _controller->getActivationMemory();
+    return getController().getActivationMemory();
 }
 
 void MemoryWriterLayer::save(util::OutputTarArchive& archive,
@@ -422,10 +555,6 @@ void MemoryWriterLayer::save(util::OutputTarArchive& archive,
 {
     properties["cell-size"]  = _cellSize;
     properties["cell-count"] = _cellCount;
-
-    auto& controllerProperties = properties["controller"];
-
-    _controller->save(archive, controllerProperties);
 
     saveLayer(archive, properties);
 }
@@ -435,10 +564,6 @@ void MemoryWriterLayer::load(util::InputTarArchive& archive,
 {
     _cellSize  = properties.get<size_t>("cell-size");
     _cellCount = properties.get<size_t>("cell-count");
-
-    auto& controllerProperties = properties["controller"];
-
-    _controller->load(archive, controllerProperties);
 
     loadLayer(archive, properties);
 }

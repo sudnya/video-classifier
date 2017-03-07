@@ -14,6 +14,7 @@
 #include <lucius/matrix/interface/MatrixVector.h>
 #include <lucius/matrix/interface/Operation.h>
 #include <lucius/matrix/interface/MatrixOperations.h>
+#include <lucius/matrix/interface/CopyOperations.h>
 #include <lucius/matrix/interface/MatrixTransformations.h>
 #include <lucius/matrix/interface/SoftmaxOperations.h>
 
@@ -31,15 +32,14 @@ typedef matrix::Dimension    Dimension;
 typedef matrix::MatrixVector MatrixVector;
 
 MemoryReaderLayer::MemoryReaderLayer()
-: MemoryReaderLayer(1, 1, *LayerFactory::create())
+: MemoryReaderLayer(1, 1)
 {
 
 }
 
-MemoryReaderLayer::MemoryReaderLayer(size_t cellSize, size_t cellCount, const Layer& controller)
+MemoryReaderLayer::MemoryReaderLayer(size_t cellSize, size_t cellCount)
 : _cellSize(cellSize),
-  _cellCount(cellCount),
-  _controller(controller.clone())
+  _cellCount(cellCount)
 {
 
 }
@@ -50,17 +50,16 @@ MemoryReaderLayer::~MemoryReaderLayer()
 }
 
 MemoryReaderLayer::MemoryReaderLayer(const MemoryReaderLayer& l)
-: Layer(l),
+: ControllerLayer(l),
   _cellSize( l._cellSize),
-  _cellCount(l._cellCount),
-  _controller(l._controller->clone())
+  _cellCount(l._cellCount)
 {
 
 }
 
 MemoryReaderLayer& MemoryReaderLayer::operator=(const MemoryReaderLayer& l)
 {
-    Layer::operator=(l);
+    ControllerLayer::operator=(l);
 
     if(&l == this)
     {
@@ -70,30 +69,30 @@ MemoryReaderLayer& MemoryReaderLayer::operator=(const MemoryReaderLayer& l)
     _cellSize  = l._cellSize;
     _cellCount = l._cellCount;
 
-    _controller = l._controller->clone();
-
     return *this;
 }
 
 void MemoryReaderLayer::initialize()
 {
-    _controller->initialize();
+    getController().initialize();
 }
 
-static Bundle packInputsForWrite(const Matrix& memory, const Matrix& inputs, size_t timestep)
+static Bundle packInputsForWrite(const Matrix& memory, const Matrix& outputs,
+    const Matrix& inputs, size_t timestep)
 {
-    size_t inputSize     = inputs.size()[0];
     size_t cellSize      = memory.size()[0];
     size_t cellCount     = memory.size()[1];
     size_t miniBatchSize = memory.size()[2];
 
-    size_t aggregateInputSize = inputSize * cellSize * cellCount;
+    size_t aggregateInputSize = cellSize * cellCount + cellSize;
 
-    auto inputsSlice = slice(inputs,
-        {        0,             0, timestep    },
-        {inputSize, miniBatchSize, timestep + 1});
-
+    // input format is [memory contents, previous output]
     Matrix packedInputs({aggregateInputSize, miniBatchSize, 1}, memory.precision());
+
+    // Copy previous timestep memory contents
+    auto packedInputsMemorySlice = slice(packedInputs,
+        {                   0,             0, 0},
+        {cellSize * cellCount, miniBatchSize, 1});
 
     if(timestep != 0)
     {
@@ -101,33 +100,40 @@ static Bundle packInputsForWrite(const Matrix& memory, const Matrix& inputs, siz
             {       0,         0,             0, timestep - 1},
             {cellSize, cellCount, miniBatchSize, timestep    });
 
-        auto packedInputsMemorySlice = slice(packedInputs,
-            {         inputSize,             0, 0},
-            {aggregateInputSize, miniBatchSize, 1});
-
         copy(packedInputsMemorySlice, memorySlice);
     }
     else
     {
-        zeros(packedInputsMemorySlice);
+        copy(packedInputsMemorySlice, inputs);
     }
 
+    // Copy previous timestep outputs
     auto packedInputsInputsSlice = slice(packedInputs,
-        {        0,             0, 0,},
-        {inputSize, miniBatchSize, 1});
+        {cellSize * cellCount,             0, 0},
+        {  aggregateInputSize, miniBatchSize, 1});
 
-    copy(packedInputsInputsSlice, inputsSlice);
+    if(timestep != 0)
+    {
+        auto outputsSlice = slice(outputs,
+            {       0,             0, timestep - 1},
+            {cellSize, miniBatchSize, timestep});
+
+        copy(packedInputsInputsSlice, outputsSlice);
+    }
+    else
+    {
+        zeros(packedInputsInputsSlice);
+    }
 
     Bundle bundle;
 
-    bundle["inputActivations"] = MatrixVector(packedInputs);
+    bundle["inputActivations"] = MatrixVector({packedInputs});
 
     return bundle;
 }
 
 static void unpackOutputsAndPerformWrite(
-    Matrix& controllerOutput,
-    Matrix& readOutput,
+    Matrix& controllerOutput, Matrix& readOutput,
     const Matrix& memory, Bundle& bundle, size_t timestep)
 {
     auto& outputActivationsVector = bundle["outputActivations"].get<MatrixVector>();
@@ -138,9 +144,11 @@ static void unpackOutputsAndPerformWrite(
     size_t cellCount     = memory.size()[1];
     size_t miniBatchSize = memory.size()[2];
 
+    size_t controllerWriteOutputSize = 1 + cellCount + cellSize;
+
     size_t controllerOutputSize = controllerOutput.size()[0];
 
-    // output is [write enable, write address, write contents]
+    // output is [write enable, write address, write contents, read address]
     assert(1 + 2 * cellCount + cellSize == controllerOutputSize);
 
     // Compute current timestep output
@@ -149,6 +157,19 @@ static void unpackOutputsAndPerformWrite(
         {     controllerOutputSize, miniBatchSize, 1});
 
     softmax(readAddress, readAddress);
+
+    Matrix previousMemorySlice;
+
+    if(timestep == 0)
+    {
+        previousMemorySlice = slice(memory,
+            {       0,         0,             0, timestep - 1},
+            {cellSize, cellCount, miniBatchSize, timestep});
+    }
+    else
+    {
+        previousMemorySlice = zeros({cellSize, cellCount, miniBatchSize, 1}, memory.precision());
+    }
 
     reduce(readOutput, broadcast(previousMemorySlice, readAddress, {0}, matrix::Multiply()),
         {1}, matrix::Add());
@@ -180,6 +201,10 @@ static void unpackOutputsAndPerformWrite(
     auto scaledPreviousMemory = broadcast(previousMemorySlice, oneMinusWriteAddress, {0},
         matrix::Multiply());
 
+    auto memorySlice = slice(memory,
+        {       0,         0,             0, timestep - 1},
+        {cellSize, cellCount, miniBatchSize, timestep});
+
     apply(memorySlice, scaledPreviousMemory, newContents, matrix::Add());
 }
 
@@ -190,10 +215,10 @@ void MemoryReaderLayer::runForwardImplementation(Bundle& bundle)
 
     assert(inputActivationsVector.size() == 1);
 
+    auto inputActivations = inputActivationsVector.back();
+
     util::log("MemoryReaderLayer") << " Running forward propagation of matrix "
         << inputActivations.shapeString() << "\n";
-
-    auto inputActivations = inputActivationsVector.back();
 
     size_t timesteps     = inputActivations.size()[inputActivations.size().size() - 1];
     size_t miniBatchSize = inputActivations.size()[inputActivations.size().size() - 2];
@@ -210,8 +235,8 @@ void MemoryReaderLayer::runForwardImplementation(Bundle& bundle)
     {
         Matrix controllerOutput;
 
-        auto bundle = packInputsForWrite(memory, inputActivations, timestep);
-        _controller->runForward(bundle);
+        auto bundle = packInputsForWrite(memory, output, inputActivations, timestep);
+        getController().runForward(bundle);
         unpackOutputsAndPerformWrite(controllerOutput, output, memory, bundle, timestep);
 
         saveMatrix("controllerOutput", controllerOutput);
@@ -230,6 +255,7 @@ void MemoryReaderLayer::runForwardImplementation(Bundle& bundle)
 
 static Bundle reversePropagationThroughWrite(Matrix& memory,
     Matrix& previousMemoryDeltas, const Matrix& controllerOutput,
+    const Matrix& outputDeltas, const Matrix& previousOutputDeltas,
     const Matrix& currentMemoryDeltas, size_t timestep)
 {
     size_t cellSize      = memory.size()[0];
@@ -238,7 +264,7 @@ static Bundle reversePropagationThroughWrite(Matrix& memory,
 
     Matrix controllerOutputDeltas(controllerOutput.size(), controllerOutput.precision());
 
-    // output is [writeScale, writeAddress, writeContents]
+    // output is [writeScale, writeAddress, writeContents, readContents]
 
     auto writeScale = slice(controllerOutput,
         {0,             0},
@@ -275,7 +301,7 @@ static Bundle reversePropagationThroughWrite(Matrix& memory,
     broadcast(contentsSoftmaxProduct, contentsSoftmaxProduct, writeContents, {1},
         matrix::Multiply());
 
-    apply(writeEnableDeltas, reduce(contentsSoftmaxProduct, {0, 1}, matrix::Add()),
+    apply(writeScaleDeltas, reduce(contentsSoftmaxProduct, {0, 1}, matrix::Add()),
         matrix::SigmoidDerivative());
 
     // Compute writeContentsDeltas
@@ -288,50 +314,51 @@ static Bundle reversePropagationThroughWrite(Matrix& memory,
     reduce(writeContentsDeltas, currentScaleAndAddressMemoryDeltas, {1}, matrix::Add());
 
     // Compute writeAddressDeltas
-    auto negativeMemoryAndCurrentMemoryDeltasProduct =
-        apply(apply(memory, currentMemoryDeltas, matrix::Multiply()), matrix::Multiply(-1.0));
+    auto negativeMemoryAndCurrentMemoryDeltasProduct = apply(
+        apply(Matrix(memory), currentMemoryDeltas, matrix::Multiply()),
+        matrix::Multiply(-1.0));
 
     auto currentScaledMemoryDeltasAndContentProduct =
         broadcast(currentScaledMemoryDeltas, writeContents, {1}, matrix::Multiply());
 
     apply(writeAddressDeltas,
-        apply(currentScaledMemoryDeltasAndContentProduct,
+        apply(Matrix(currentScaledMemoryDeltasAndContentProduct),
             negativeMemoryAndCurrentMemoryDeltasProduct, matrix::Add()),
         matrix::SigmoidDerivative());
 
     Bundle bundle;
 
-    bundle["outputDeltas"] = MatrixVector(controllerOutputDeltas);
+    bundle["outputDeltas"] = MatrixVector({controllerOutputDeltas});
 
     return bundle;
 }
 
-static void unpackInputDeltas(Matrix& outputDeltas,
-    Matrix& inputDeltas, const Matrix& previousMemoryDeltas,
-    const Bundle& bundle, size_t timestep)
+static void unpackInputDeltas(Matrix& previousTimestepOutputDeltas,
+    Matrix& previousTimestepOutputMemoryDeltas,
+    const Matrix& previousMemoryDeltas, const Bundle& bundle, size_t timestep)
 {
-    size_t totalInputSize = inputDeltas.size()[0];
-    size_t miniBatchSize  = inputDeltas.size()[1];
+    size_t cellSize      = previousMemoryDeltas.size()[0];
+    size_t cellCount     = previousMemoryDeltas.size()[1];
+    size_t miniBatchSize = previousMemoryDeltas.size()[2];
 
-    // Compute input deltas
+    // Compute previous output deltas
     auto& inputDeltasVector = bundle["inputDeltas"].get<MatrixVector>();
 
-    auto currentInputDeltasSlice = slice(inputDeltasVector.back(),
-        {        0,             0, 0},
-        {inputSize, miniBatchSize, 1});
+    // input deltas format is [memory size, cellSize]
 
-    auto inputDeltasSlice = slice(inputDeltas,
-        {        0,             0, timestep},
-        {inputSize, miniBatchSize, timestep + 1});
+    auto currentDeltasMemorySlice = slice(inputDeltasVector.back(),
+        {                   0,             0, 0},
+        {cellSize * cellCount, miniBatchSize, 1});
 
-    copy(inputDeltasSlice, currentInputDeltasSlice);
+    copy(previousTimestepOutputMemoryDeltas, currentDeltasMemorySlice);
 
     // Compute previous memory output deltas
-    auto memoryDeltasSlice = slice(inputDeltasVector.back(),
-        {     inputSize,             0, 0},
-        {totalInputSize, miniBatchSize, 1});
+    auto currentDeltasOutputSlice = slice(inputDeltasVector.back(),
+        {           cellSize * cellCount,             0, 0},
+        {cellSize * cellCount + cellSize, miniBatchSize, 1});
 
-    outputDeltas = apply(previousMemoryDeltas, memoryDeltasSlice, matrix::Add());
+    apply(previousTimestepOutputDeltas, previousMemoryDeltas,
+        currentDeltasOutputSlice, matrix::Add());
 }
 
 void MemoryReaderLayer::runReverseImplementation(Bundle& bundle)
@@ -345,9 +372,15 @@ void MemoryReaderLayer::runReverseImplementation(Bundle& bundle)
     // Get the output deltas
     auto outputDeltas = outputDeltasVector.front();
 
-    Matrix inputDeltas({inputSize, miniBatchSize, timesteps}, outputDeltas.precision());
+    size_t timesteps     = outputActivations.size()[outputActivations.size().size() - 1];
+    size_t miniBatchSize = outputActivations.size()[outputActivations.size().size() - 2];
 
-    auto& memory = loadMatrix("memory");
+    Matrix outputMemoryDeltas = zeros({_cellSize, _cellCount, miniBatchSize},
+        outputDeltas.precision());
+
+    auto memory = loadMatrix("memory");
+
+    auto previousOutputDeltas = zeros({_cellSize, miniBatchSize, 1}, outputDeltas.precision());
 
     for(size_t i = 0; i < timesteps; ++i)
     {
@@ -358,33 +391,36 @@ void MemoryReaderLayer::runReverseImplementation(Bundle& bundle)
 
         Matrix previousMemoryDeltas;
         auto bundle = reversePropagationThroughWrite(memory, previousMemoryDeltas,
-            controllerOutput, outputDeltas, timestep);
-        _controller->runReverse(bundle);
-        _controller->popReversePropagationData();
-        unpackInputDeltas(outputDeltas, inputDeltas, previousMemoryDeltas, bundle, timestep);
+            controllerOutput, outputDeltas, previousOutputDeltas, outputMemoryDeltas, timestep);
+        getController().runReverse(bundle);
+        getController().popReversePropagationData();
+        unpackInputDeltas(previousOutputDeltas, outputMemoryDeltas, previousMemoryDeltas,
+            bundle, timestep);
     }
 
-    inputDeltasVector.push_back(inputDeltas);
+    auto inputMemoryDeltas = outputMemoryDeltas;
+
+    inputDeltasVector.push_back(inputMemoryDeltas);
 }
 
 MatrixVector& MemoryReaderLayer::weights()
 {
-    return _controller->weights();
+    return getController().weights();
 }
 
 const MatrixVector& MemoryReaderLayer::weights() const
 {
-    return _controller->weights();
+    return getController().weights();
 }
 
 const matrix::Precision& MemoryReaderLayer::precision() const
 {
-    return _controller->precision();
+    return getController().precision();
 }
 
 double MemoryReaderLayer::computeWeightCost() const
 {
-    return _controller->computeWeightCost();
+    return getController().computeWeightCost();
 }
 
 Dimension MemoryReaderLayer::getInputSize() const
@@ -409,22 +445,22 @@ size_t MemoryReaderLayer::getOutputCount() const
 
 size_t MemoryReaderLayer::totalNeurons() const
 {
-    return _controller->totalNeurons();
+    return getController().totalNeurons();
 }
 
 size_t MemoryReaderLayer::totalConnections() const
 {
-    return _controller->totalConnections();
+    return getController().totalConnections();
 }
 
 size_t MemoryReaderLayer::getFloatingPointOperationCount() const
 {
-    return _controller->getFloatingPointOperationCount();
+    return getController().getFloatingPointOperationCount();
 }
 
 size_t MemoryReaderLayer::getActivationMemory() const
 {
-    return _controller->getActivationMemory();
+    return getController().getActivationMemory();
 }
 
 void MemoryReaderLayer::save(util::OutputTarArchive& archive,
@@ -432,10 +468,6 @@ void MemoryReaderLayer::save(util::OutputTarArchive& archive,
 {
     properties["cell-size"]  = _cellSize;
     properties["cell-count"] = _cellCount;
-
-    auto& controllerProperties = properties["controller"];
-
-    _controller->save(archive, controllerProperties);
 
     saveLayer(archive, properties);
 }
@@ -445,10 +477,6 @@ void MemoryReaderLayer::load(util::InputTarArchive& archive,
 {
     _cellSize  = properties.get<size_t>("cell-size");
     _cellCount = properties.get<size_t>("cell-count");
-
-    auto& controllerProperties = properties["controller"];
-
-    _controller->load(archive, controllerProperties);
 
     loadLayer(archive, properties);
 }
@@ -466,11 +494,4 @@ std::string MemoryReaderLayer::getTypeName() const
 }
 
 }
-
-
-
-
-
-
-
 

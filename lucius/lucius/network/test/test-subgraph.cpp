@@ -26,6 +26,7 @@
 #include <lucius/util/interface/Knobs.h>
 #include <lucius/util/interface/Timer.h>
 #include <lucius/util/interface/SystemCompatibility.h>
+#include <lucius/util/interface/TestEngine.h>
 
 // Standard Library Includes
 #include <random>
@@ -232,6 +233,131 @@ static NeuralNetwork createSimpleThroughTimeSubgraphNetwork(size_t layerSize)
     return network;
 }
 
+static NeuralNetwork createMemoryWriterLayerNetwork(size_t cellSize)
+{
+    const size_t cellCount = 2;
+    const size_t controllerInputSize  = cellSize * (1 + cellCount);
+    const size_t controllerOutputSize = 1 + cellCount + cellSize;
+
+    std::stringstream specification;
+
+    specification <<
+        "{\n"
+        "    \"layer-types\" :\n"
+        "    {\n"
+        "       \"memory-writer\" :\n"
+        "       {\n"
+        "           \"Type\"               : \"MemoryWriterLayer\",\n"
+        "           \"ActivationFunction\" : \"SigmoidActivationFunction\",\n"
+        "           \"Precision\"          : \"DoublePrecision\",\n"
+        "           \"Controller\"         : \"controller\",\n"
+        "           \"CellSize\"           : \"" << cellSize  << "\",\n"
+        "           \"CellCount\"          : \"" << cellCount <<"\"\n"
+        "       },\n"
+        "       \"controller\" :\n"
+        "       {\n"
+        "           \"Type\"               : \"FeedForwardLayer\",\n"
+        "           \"ActivationFunction\" : \"NullActivationFunction\",\n"
+        "           \"Precision\"          : \"DoublePrecision\",\n"
+        "           \"InputSize\"          : \"" << controllerInputSize << "\",\n"
+        "           \"OutputSize\"         : \"" << controllerOutputSize << "\"\n"
+        "       },\n"
+        "       \"forward\" :\n"
+        "       {\n"
+        "           \"Type\"               : \"FeedForwardLayer\",\n"
+        "           \"ActivationFunction\" : \"SigmoidActivationFunction\",\n"
+        "           \"Precision\"          : \"DoublePrecision\",\n"
+        "           \"InputSize\"          : \"" << cellSize << "\",\n"
+        "           \"OutputSize\"         : \"" << cellSize << "\"\n"
+        "       }\n"
+        "    },\n"
+        "    \"networks\" : \n"
+        "    {\n"
+        "       \"Classifier\" :\n"
+        "       {\n"
+        "           \"layers\" :\n"
+        "           [\n"
+        "               \"forward\",\n"
+        "               \"memory-writer\"\n"
+        "           ]\n"
+        "       }\n"
+        "    },\n"
+        "    \"cost-function\" :\n"
+        "    {\n"
+        "        \"name\" : \"SumOfSquaresCostFunction\"\n"
+        "    }\n"
+        "}\n";
+
+
+    auto model = model::ModelBuilder::create(specification.str());
+
+    NeuralNetwork network = model->getNeuralNetwork("Classifier");
+
+    return network;
+}
+
+static NeuralNetwork createMemoryReaderLayerNetwork(size_t cellSize)
+{
+    const size_t cellCount = 2;
+    const size_t controllerInputSize  = cellSize * (1 + cellCount);
+    const size_t controllerOutputSize = 1 + 2 * cellCount + cellSize;
+
+    std::stringstream specification;
+
+    specification <<
+        "{\n"
+        "    \"layer-types\" :\n"
+        "    {\n"
+        "       \"memory-reader\" :\n"
+        "       {\n"
+        "           \"Type\"               : \"MemoryReaderLayer\",\n"
+        "           \"ActivationFunction\" : \"SigmoidActivationFunction\",\n"
+        "           \"Precision\"          : \"DoublePrecision\",\n"
+        "           \"Controller\"         : \"controller\",\n"
+        "           \"CellSize\"           : \"" << cellSize  << "\",\n"
+        "           \"CellCount\"          : \"" << cellCount <<"\"\n"
+        "       },\n"
+        "       \"controller\" :\n"
+        "       {\n"
+        "           \"Type\"               : \"FeedForwardLayer\",\n"
+        "           \"ActivationFunction\" : \"NullActivationFunction\",\n"
+        "           \"Precision\"          : \"DoublePrecision\",\n"
+        "           \"InputSize\"          : \"" << controllerInputSize << "\",\n"
+        "           \"OutputSize\"         : \"" << controllerOutputSize << "\"\n"
+        "       },\n"
+        "       \"forward\" :\n"
+        "       {\n"
+        "           \"Type\"               : \"FeedForwardLayer\",\n"
+        "           \"ActivationFunction\" : \"SigmoidActivationFunction\",\n"
+        "           \"Precision\"          : \"DoublePrecision\",\n"
+        "           \"InputSize\"          : \"" << cellSize << "\",\n"
+        "           \"OutputSize\"         : \"" << cellSize << "\"\n"
+        "       }\n"
+        "    },\n"
+        "    \"networks\" : \n"
+        "    {\n"
+        "       \"Classifier\" :\n"
+        "       {\n"
+        "           \"layers\" :\n"
+        "           [\n"
+        "               \"forward\",\n"
+        "               \"memory-reader\"\n"
+        "           ]\n"
+        "       }\n"
+        "    },\n"
+        "    \"cost-function\" :\n"
+        "    {\n"
+        "        \"name\" : \"SumOfSquaresCostFunction\"\n"
+        "    }\n"
+        "}\n";
+
+    auto model = model::ModelBuilder::create(specification.str());
+
+    NeuralNetwork network = model->getNeuralNetwork("Classifier");
+
+    return network;
+}
+
 static Matrix generateInput(NeuralNetwork& network, size_t timesteps)
 {
     auto size = network.getInputSize();
@@ -265,7 +391,8 @@ static double getDifference(double difference, double total)
     return difference / total;
 }
 
-static bool gradientCheck(NeuralNetwork& network, const Matrix& input, const Matrix& reference)
+static bool gradientCheck(NeuralNetwork& network, const Matrix& input, const Matrix& reference,
+    bool haltOnError)
 {
     const double epsilon = 1.0e-5;
 
@@ -299,9 +426,15 @@ static bool gradientCheck(NeuralNetwork& network, const Matrix& input, const Mat
 
                 double newCost = bundle["cost"].get<double>();
 
-                weight -= epsilon;
+                weight -= 2*epsilon;
 
-                double estimatedGradient = (newCost - cost) / epsilon;
+                bundle = network.getCost(inputBundle);
+
+                double newCost2 = bundle["cost"].get<double>();
+
+                weight += epsilon;
+
+                double estimatedGradient = (newCost - newCost2) / (2.0 * epsilon);
                 double computedGradient = gradient[matrixId][weightId];
 
                 double thisDifference = std::pow(estimatedGradient - computedGradient, 2.0);
@@ -316,7 +449,7 @@ static bool gradientCheck(NeuralNetwork& network, const Matrix& input, const Mat
                     << estimatedGradient << " (newCost " << newCost << ", oldCost " << cost << ")"
                     << " difference is " << thisDifference << " \n";
 
-                if(!isInRange(getDifference(difference, total), epsilon))
+                if(!isInRange(getDifference(difference, total), epsilon) && haltOnError)
                 {
                     return false;
                 }
@@ -335,23 +468,23 @@ static bool gradientCheck(NeuralNetwork& network, const Matrix& input, const Mat
     return isInRange(getDifference(difference, total), epsilon);
 }
 
-static bool gradientCheck(NeuralNetwork& network)
+static bool gradientCheck(NeuralNetwork& network, bool haltOnError)
 {
     auto input     = generateInput(network, 1);
     auto reference = generateReference(network, 1);
 
-    return gradientCheck(network, input, reference);
+    return gradientCheck(network, input, reference, haltOnError);
 }
 
-static bool gradientCheck(NeuralNetwork& network, size_t timesteps)
+static bool gradientCheck(NeuralNetwork& network, size_t timesteps, bool haltOnError)
 {
     auto input     = generateInput(network, timesteps);
     auto reference = generateReference(network, timesteps);
 
-    return gradientCheck(network, input, reference);
+    return gradientCheck(network, input, reference, haltOnError);
 }
 
-static bool runSimpleSubgraphTest(size_t layerSize, bool seed)
+static bool runSimpleSubgraphTest(size_t layerSize, bool seed, bool haltOnError)
 {
     if(seed)
     {
@@ -364,10 +497,10 @@ static bool runSimpleSubgraphTest(size_t layerSize, bool seed)
 
     auto network = createSimpleSubgraphNetwork(layerSize);
 
-    return gradientCheck(network);
+    return gradientCheck(network, haltOnError);
 }
 
-static bool runSplitJoinSubgraphTest(size_t layerSize, bool seed)
+static bool runSplitJoinSubgraphTest(size_t layerSize, bool seed, bool haltOnError)
 {
     if(seed)
     {
@@ -380,9 +513,11 @@ static bool runSplitJoinSubgraphTest(size_t layerSize, bool seed)
 
     auto network = createSplitJoinSubgraphNetwork(layerSize);
 
-    return gradientCheck(network);
+    return gradientCheck(network, haltOnError);
 }
-static bool runSimpleThroughTimeSubgraphTest(size_t layerSize, size_t timesteps, bool seed)
+
+static bool runSimpleThroughTimeSubgraphTest(size_t layerSize, size_t timesteps, bool seed,
+    bool haltOnError)
 {
     if(seed)
     {
@@ -395,28 +530,83 @@ static bool runSimpleThroughTimeSubgraphTest(size_t layerSize, size_t timesteps,
 
     auto network = createSimpleThroughTimeSubgraphNetwork(layerSize);
 
-    return gradientCheck(network, timesteps);
+    return gradientCheck(network, timesteps, haltOnError);
 }
 
-static void check(bool passed, const std::string& name)
+static bool runMemoryWriterLayerTest(size_t layerSize, size_t timesteps, bool seed,
+    bool haltOnError)
 {
-    if(!passed)
+    if(seed)
     {
-        throw std::runtime_error(name + " Failed");
+        matrix::srand(std::time(0));
     }
     else
     {
-        std::cout << name << " Passed\n";
+        matrix::srand(10);
     }
+
+    auto network = createMemoryWriterLayerNetwork(layerSize);
+
+    return gradientCheck(network, timesteps, haltOnError);
 }
 
-static void runTest(size_t layerSize, size_t timesteps, bool seed)
+static bool runMemoryReaderLayerTest(size_t layerSize, size_t timesteps, bool seed,
+    bool haltOnError)
 {
-    check(runSimpleThroughTimeSubgraphTest(layerSize, timesteps, seed),
-        "Simple Through Time Subgraph Test");
+    if(seed)
+    {
+        matrix::srand(std::time(0));
+    }
+    else
+    {
+        matrix::srand(10);
+    }
 
-    check(runSimpleSubgraphTest(layerSize, seed),    "Simple Subgraph Test");
-    check(runSplitJoinSubgraphTest(layerSize, seed), "Split Join Subgraph Test");
+    auto network = createMemoryReaderLayerNetwork(layerSize);
+
+    return gradientCheck(network, timesteps, haltOnError);
+}
+
+static bool runTest(size_t layerSize, size_t timesteps, bool seed, bool haltOnError,
+    bool listTests, const std::string& testFilter)
+{
+    lucius::util::TestEngine engine;
+
+    engine.addTest("simple through time", [=]()
+    {
+        return runSimpleThroughTimeSubgraphTest(layerSize, timesteps, seed, haltOnError);
+    });
+
+    engine.addTest("simple", [=]()
+    {
+        return runSimpleSubgraphTest(layerSize, seed, haltOnError);
+    });
+
+    engine.addTest("split join", [=]()
+    {
+        return runSplitJoinSubgraphTest(layerSize, seed, haltOnError);
+    });
+
+    engine.addTest("memory writer", [=]()
+    {
+        return runMemoryWriterLayerTest(layerSize, timesteps, seed, haltOnError);
+    });
+
+    engine.addTest("memory reader", [=]()
+    {
+        return runMemoryReaderLayerTest(layerSize, timesteps, seed, haltOnError);
+    });
+
+    if(listTests)
+    {
+        std::cout << engine.listTests();
+
+        return true;
+    }
+    else
+    {
+        return engine.run(testFilter);
+    }
 }
 
 }
@@ -429,7 +619,11 @@ int main(int argc, char** argv)
 
     bool verbose = false;
     bool seed = false;
+    bool listTests = false;
+    bool haltOnError = true;
+
     std::string loggingEnabledModules;
+    std::string testFilter;
 
     size_t layerSize = 0;
     size_t timesteps = 0;
@@ -442,7 +636,12 @@ int main(int argc, char** argv)
     parser.parse("-L", "--log-module", loggingEnabledModules, "",
         "Print out log messages during execution for specified modules "
         "(comma-separated list of modules, e.g. NeuralNetwork, Layer, ...).");
+    parser.parse("-f", "--test-filter", testFilter, "",
+        "Only run tests that match the regular expression.");
+
     parser.parse("-s", "--seed", seed, false, "Seed with time.");
+    parser.parse("-l", "--list-tests", listTests, false, "List possible tests.");
+    parser.parse("",  "--no-halt-on-error", haltOnError, true, "Halt on error.");
     parser.parse("-v", "--verbose", verbose, false, "Print out log messages during execution");
 
     parser.parse();
@@ -460,7 +659,17 @@ int main(int argc, char** argv)
 
     try
     {
-        lucius::network::runTest(layerSize, timesteps, seed);
+        bool passed = lucius::network::runTest(layerSize, timesteps, seed, haltOnError,
+            listTests, testFilter);
+
+        if(!passed)
+        {
+            std::cout << "Test Failed\n";
+        }
+        else
+        {
+            std::cout << "Test Passed\n";
+        }
     }
     catch(const std::exception& e)
     {

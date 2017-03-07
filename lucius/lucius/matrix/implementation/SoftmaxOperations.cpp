@@ -12,6 +12,15 @@ namespace matrix
 
 Matrix softmax(const Matrix& input)
 {
+    Matrix result(input.size(), input.precision());
+
+    softmax(result, input);
+
+    return result;
+}
+
+void softmax(Matrix& output, const Matrix& input)
+{
     auto normalizedInput = broadcast(input,
         reduce(input, {0}, matrix::Maximum()), {0}, matrix::Subtract());
 
@@ -19,7 +28,7 @@ Matrix softmax(const Matrix& input)
 
     auto sums = reduce(expOutput, {0}, matrix::Add());
 
-    return broadcast(expOutput, sums, {0}, matrix::Divide());
+    broadcast(output, expOutput, sums, {0}, matrix::Divide());
 }
 
 Matrix softmaxGradient(const Matrix& output, const Matrix& outputGradient)
@@ -32,6 +41,15 @@ Matrix softmaxGradient(const Matrix& output, const Matrix& outputGradient)
 
 Matrix logsoftmax(const Matrix& input)
 {
+    Matrix output(input.size(), input.precision());
+
+    logsoftmax(output, input);
+
+    return output;
+}
+
+void logsoftmax(Matrix& output, const Matrix& input)
+{
     auto normalizedOutput = broadcast(input,
         reduce(input, {0}, matrix::Maximum()), {0}, Subtract());
 
@@ -39,7 +57,7 @@ Matrix logsoftmax(const Matrix& input)
 
     auto sums = reduce(expOutput, {0}, Add());
 
-    return broadcast(normalizedOutput, apply(sums, Log()), {0}, Subtract());
+    broadcast(output, normalizedOutput, apply(sums, Log()), {0}, Subtract());
 }
 
 Matrix logsoftmaxGradient(const Matrix& input, const Matrix& outputGradient)

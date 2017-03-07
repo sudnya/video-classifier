@@ -142,7 +142,7 @@ void DropoutLayer::runForwardImplementation(Bundle& bundle)
     saveMatrix("outputActivations", outputActivations);
 
     outputActivationsVector.push_back(unfoldTime(outputActivations,
-        inputActivations.size()));
+        inputActivationsVector.back().size()));
 }
 
 void DropoutLayer::runReverseImplementation(Bundle& bundle)

@@ -17,6 +17,8 @@
 #include <lucius/network/interface/MaxPoolingLayer.h>
 #include <lucius/network/interface/RecurrentLayer.h>
 #include <lucius/network/interface/SoftmaxLayer.h>
+#include <lucius/network/interface/MemoryReaderLayer.h>
+#include <lucius/network/interface/MemoryWriterLayer.h>
 #include <lucius/network/interface/SubgraphLayer.h>
 
 #include <lucius/network/interface/ActivationFunctionFactory.h>
@@ -199,6 +201,20 @@ std::unique_ptr<Layer> LayerFactory::create(const std::string& name,
         layer = std::make_unique<MaxPoolingLayer>(
             matrix::Dimension({inputWidth, inputHeight, inputColors, inputBatch, 1}),
             matrix::Dimension({width, height}), precision);
+    }
+    else if("MemoryReaderLayer" == name)
+    {
+        size_t cellSize  = parameters.get("CellSize",  inputSizeHeight);
+        size_t cellCount = parameters.get("CellCount", inputSizeWidth);
+
+        layer = std::make_unique<MemoryReaderLayer>(cellSize, cellCount);
+    }
+    else if("MemoryWriterLayer" == name)
+    {
+        size_t cellSize  = parameters.get("CellSize",  inputSizeHeight);
+        size_t cellCount = parameters.get("CellCount", inputSizeWidth);
+
+        layer = std::make_unique<MemoryWriterLayer>(cellSize, cellCount);
     }
     else if("RecurrentLayer" == name)
     {

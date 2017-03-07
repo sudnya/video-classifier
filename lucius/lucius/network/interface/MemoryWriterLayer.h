@@ -7,7 +7,7 @@
 #pragma once
 
 // Lucius Includes
-#include <lucius/network/interface/Layer.h>
+#include <lucius/network/interface/ControllerLayer.h>
 
 namespace lucius
 {
@@ -16,11 +16,11 @@ namespace network
 {
 
 /*! \brief A layer that iteratively writes into an associative memory on each timestep. */
-class MemoryWriterLayer : public Layer
+class MemoryWriterLayer : public ControllerLayer
 {
 public:
     MemoryWriterLayer();
-    MemoryWriterLayer(size_t cellSize, size_t cellCount, const Layer& controller);
+    MemoryWriterLayer(size_t cellSize, size_t cellCount);
     virtual ~MemoryWriterLayer();
 
 public:
@@ -70,12 +70,12 @@ public:
 public:
     virtual std::string getTypeName() const;
 
+public:
+    void setController(std::unique_ptr<Layer>&& l);
+
 private:
     size_t _cellSize;
     size_t _cellCount;
-
-private:
-    std::unique_ptr<Layer> _controller;
 
 };
 

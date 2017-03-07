@@ -107,7 +107,7 @@ Bundle NeuralNetwork::getCostAndGradient(const Bundle& input)
 
     auto costFunctionResult = bundle["costs"].get<Matrix>();
 
-    util::log("NeuralNetwork") << " Running forward propagation of delta "
+    util::log("NeuralNetwork") << " Running reverse propagation of delta "
         << bundle["outputDeltas"].get<MatrixVector>().front().shapeString() << "\n";
 
     auto gradientMatrix = gradient.rbegin();
