@@ -55,7 +55,7 @@ public:
 
 public:
     const std::string& path() const;
-    std::istream& stream();
+    std::istream* stream();
 
 public:
     bool containsVideoSamples() const;

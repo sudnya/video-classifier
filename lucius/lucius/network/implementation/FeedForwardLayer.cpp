@@ -307,13 +307,13 @@ void FeedForwardLayer::runReverseImplementation(Bundle& bundle)
 
     if(util::isLogEnabled("FeedForwardLayer"))
     {
-        util::log("FeedForwardLayer") << "  output shape: "
+        util::log("FeedForwardLayer") << "  input deltas shape: "
             << previousLayerDeltas.shapeString() << "\n";
     }
 
     if(util::isLogEnabled("FeedForwardLayer::Detail"))
     {
-        util::log("FeedForwardLayer::Detail") << "  output: "
+        util::log("FeedForwardLayer::Detail") << "  input deltas: "
             << previousLayerDeltas.debugString();
     }
 

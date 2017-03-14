@@ -283,7 +283,7 @@ void MemoryWriterLayer::runForwardImplementation(Bundle& bundle)
     outputActivationsVector.push_back(finalMemoryState);
 }
 
-static Bundle reversePropagationThroughWrite(Matrix& memory,
+static Bundle reversePropagationThroughWrite(const Matrix& memory,
     Matrix& previousMemoryDeltas, const Matrix& controllerOutput,
     const Matrix& currentMemoryDeltas, size_t timestep)
 {
@@ -329,7 +329,7 @@ static Bundle reversePropagationThroughWrite(Matrix& memory,
     }
 
     // Compute writeEnableDeltas
-    Matrix contentsSoftmaxProduct(memory.size(), memory.precision());
+    Matrix contentsSoftmaxProduct({cellSize, cellCount, miniBatchSize, 1}, memory.precision());
 
     broadcast(contentsSoftmaxProduct, contentsSoftmaxProduct, writeAddress, {0},
         matrix::CopyRight());
@@ -362,17 +362,45 @@ static Bundle reversePropagationThroughWrite(Matrix& memory,
     }
 
     // Compute writeAddressDeltas
+    Matrix memorySlice;
+
+    if(timestep == 0)
+    {
+        memorySlice = zeros({cellSize, cellCount, miniBatchSize, 1}, memory.precision());
+    }
+    else
+    {
+        memorySlice = slice(memory,
+            {       0,         0,             0, timestep - 1},
+            {cellSize, cellCount, miniBatchSize, timestep});
+    }
+
     auto negativeMemoryAndCurrentMemoryDeltasProduct = apply(
-        apply(Matrix(memory), currentMemoryDeltas, matrix::Multiply()),
+        apply(Matrix(memorySlice), currentMemoryDeltas, matrix::Multiply()),
         matrix::Multiply(-1.0));
+
+    if(util::isLogEnabled("MemoryWriterLayer::Detail"))
+    {
+        util::log("MemoryWriterLayer::Detail")
+            << " negative memory and current memory deltas product: "
+            << negativeMemoryAndCurrentMemoryDeltasProduct.debugString();
+    }
 
     auto currentScaledMemoryDeltasAndContentProduct =
         broadcast(currentScaledMemoryDeltas, writeContents, {1}, matrix::Multiply());
 
-    apply(writeAddressDeltas,
-        reduce(apply(Matrix(currentScaledMemoryDeltasAndContentProduct),
-            negativeMemoryAndCurrentMemoryDeltasProduct, matrix::Add()), {1}, matrix::Add()),
-        matrix::SigmoidDerivative());
+    if(util::isLogEnabled("MemoryWriterLayer::Detail"))
+    {
+        util::log("MemoryWriterLayer::Detail")
+            << " current scale and memory deltas and content product: "
+            << currentScaledMemoryDeltasAndContentProduct.debugString();
+    }
+
+    auto softmaxOutputGradient =
+        reduce(apply(Matrix(negativeMemoryAndCurrentMemoryDeltasProduct),
+            currentScaledMemoryDeltasAndContentProduct, matrix::Add()), {0}, matrix::Add());
+
+    softmaxGradient(writeAddressDeltas, writeAddress, softmaxOutputGradient);
 
     if(util::isLogEnabled("MemoryWriterLayer::Detail"))
     {
@@ -450,12 +478,12 @@ void MemoryWriterLayer::runReverseImplementation(Bundle& bundle)
         util::log("MemoryWriterLayer::Detail") << " output deltas: " << outputDeltas.debugString();
     }
 
-    size_t timesteps     = outputDeltas.size()[outputDeltas.size().size() - 1];
-    size_t miniBatchSize = outputDeltas.size()[outputDeltas.size().size() - 2];
+    auto memory = loadMatrix("memory");
+
+    size_t timesteps     = memory.size()[memory.size().size() - 1];
+    size_t miniBatchSize = memory.size()[memory.size().size() - 2];
 
     Matrix inputDeltas({_cellSize, miniBatchSize, timesteps}, outputDeltas.precision());
-
-    auto memory = loadMatrix("memory");
 
     for(size_t i = 0; i < timesteps; ++i)
     {

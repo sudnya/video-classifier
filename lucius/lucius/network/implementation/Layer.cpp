@@ -190,7 +190,10 @@ void Layer::popReversePropagationData()
 {
     for(auto& entry : _matrixCache)
     {
-        entry.second.pop_back();
+        if(!entry.second.empty())
+        {
+            entry.second.pop_back();
+        }
     }
 }
 

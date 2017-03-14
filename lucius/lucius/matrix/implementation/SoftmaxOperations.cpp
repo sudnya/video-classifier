@@ -33,10 +33,19 @@ void softmax(Matrix& output, const Matrix& input)
 
 Matrix softmaxGradient(const Matrix& output, const Matrix& outputGradient)
 {
+    Matrix gradient(output.size(), output.precision());
+
+    softmaxGradient(gradient, output, outputGradient);
+
+    return gradient;
+}
+
+void softmaxGradient(Matrix& gradient, const Matrix& output, const Matrix& outputGradient)
+{
     auto sum = reduce(apply(matrix::Matrix(output), outputGradient, Multiply()),
         {0}, Add());
 
-    return apply(broadcast(outputGradient, sum, {0}, Subtract()), output, Multiply());
+    apply(gradient, broadcast(outputGradient, sum, {0}, Subtract()), output, Multiply());
 }
 
 Matrix logsoftmax(const Matrix& input)

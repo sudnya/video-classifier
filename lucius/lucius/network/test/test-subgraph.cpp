@@ -331,7 +331,7 @@ static NeuralNetwork createMemoryReaderLayerNetwork(size_t cellSize)
         "           \"ActivationFunction\" : \"SigmoidActivationFunction\",\n"
         "           \"Precision\"          : \"DoublePrecision\",\n"
         "           \"InputSize\"          : \"" << cellSize << "\",\n"
-        "           \"OutputSize\"         : \"" << cellSize << "\"\n"
+        "           \"OutputSize\"         : \"" << cellSize * cellCount << "\"\n"
         "       }\n"
         "    },\n"
         "    \"networks\" : \n"
@@ -358,19 +358,21 @@ static NeuralNetwork createMemoryReaderLayerNetwork(size_t cellSize)
     return network;
 }
 
-static Matrix generateInput(NeuralNetwork& network, size_t timesteps)
+static Matrix generateInput(NeuralNetwork& network, size_t miniBatchSize, size_t timesteps)
 {
     auto size = network.getInputSize();
 
+    size[size.size() - 2] = miniBatchSize;
     size.back() = timesteps;
 
     return matrix::rand(size, DoublePrecision());
 }
 
-static Matrix generateReference(NeuralNetwork& network, size_t timesteps)
+static Matrix generateReference(NeuralNetwork& network, size_t miniBatchSize, size_t timesteps)
 {
     auto size = network.getOutputSize();
 
+    size[size.size() - 2] = miniBatchSize;
     size.back() = timesteps;
 
     return matrix::rand(size, DoublePrecision());
@@ -468,23 +470,43 @@ static bool gradientCheck(NeuralNetwork& network, const Matrix& input, const Mat
     return isInRange(getDifference(difference, total), epsilon);
 }
 
-static bool gradientCheck(NeuralNetwork& network, bool haltOnError)
+static bool gradientCheck(NeuralNetwork& network, size_t miniBatchSize, bool haltOnError)
 {
-    auto input     = generateInput(network, 1);
-    auto reference = generateReference(network, 1);
+    auto input     = generateInput(network, miniBatchSize, 1);
+    auto reference = generateReference(network, miniBatchSize, 1);
 
     return gradientCheck(network, input, reference, haltOnError);
 }
 
-static bool gradientCheck(NeuralNetwork& network, size_t timesteps, bool haltOnError)
+static bool gradientCheck(NeuralNetwork& network, size_t miniBatchSize,
+    size_t timesteps, bool haltOnError)
 {
-    auto input     = generateInput(network, timesteps);
-    auto reference = generateReference(network, timesteps);
+    auto input     = generateInput(network, miniBatchSize, timesteps);
+    auto reference = generateReference(network, miniBatchSize, timesteps);
 
     return gradientCheck(network, input, reference, haltOnError);
 }
 
-static bool runSimpleSubgraphTest(size_t layerSize, bool seed, bool haltOnError)
+static bool gradientCheckInputTimeOnly(NeuralNetwork& network, size_t miniBatchSize,
+    size_t timesteps, bool haltOnError)
+{
+    auto input     = generateInput(network, miniBatchSize, timesteps);
+    auto reference = generateReference(network, miniBatchSize, 1);
+
+    return gradientCheck(network, input, reference, haltOnError);
+}
+
+static bool gradientCheckOutputTimeOnly(NeuralNetwork& network, size_t miniBatchSize,
+    size_t timesteps, bool haltOnError)
+{
+    auto input     = generateInput(network, miniBatchSize, 1);
+    auto reference = generateReference(network, miniBatchSize, timesteps);
+
+    return gradientCheck(network, input, reference, haltOnError);
+}
+
+static bool runSimpleSubgraphTest(size_t layerSize, size_t miniBatchSize,
+    bool seed, bool haltOnError)
 {
     if(seed)
     {
@@ -497,10 +519,11 @@ static bool runSimpleSubgraphTest(size_t layerSize, bool seed, bool haltOnError)
 
     auto network = createSimpleSubgraphNetwork(layerSize);
 
-    return gradientCheck(network, haltOnError);
+    return gradientCheck(network, miniBatchSize, haltOnError);
 }
 
-static bool runSplitJoinSubgraphTest(size_t layerSize, bool seed, bool haltOnError)
+static bool runSplitJoinSubgraphTest(size_t layerSize, size_t miniBatchSize,
+    bool seed, bool haltOnError)
 {
     if(seed)
     {
@@ -513,11 +536,11 @@ static bool runSplitJoinSubgraphTest(size_t layerSize, bool seed, bool haltOnErr
 
     auto network = createSplitJoinSubgraphNetwork(layerSize);
 
-    return gradientCheck(network, haltOnError);
+    return gradientCheck(network, miniBatchSize, haltOnError);
 }
 
-static bool runSimpleThroughTimeSubgraphTest(size_t layerSize, size_t timesteps, bool seed,
-    bool haltOnError)
+static bool runSimpleThroughTimeSubgraphTest(size_t layerSize, size_t miniBatchSize,
+    size_t timesteps, bool seed, bool haltOnError)
 {
     if(seed)
     {
@@ -530,11 +553,11 @@ static bool runSimpleThroughTimeSubgraphTest(size_t layerSize, size_t timesteps,
 
     auto network = createSimpleThroughTimeSubgraphNetwork(layerSize);
 
-    return gradientCheck(network, timesteps, haltOnError);
+    return gradientCheck(network, miniBatchSize, timesteps, haltOnError);
 }
 
-static bool runMemoryWriterLayerTest(size_t layerSize, size_t timesteps, bool seed,
-    bool haltOnError)
+static bool runMemoryWriterLayerTest(size_t layerSize, size_t miniBatchSize,
+    size_t timesteps, bool seed, bool haltOnError)
 {
     if(seed)
     {
@@ -547,11 +570,11 @@ static bool runMemoryWriterLayerTest(size_t layerSize, size_t timesteps, bool se
 
     auto network = createMemoryWriterLayerNetwork(layerSize);
 
-    return gradientCheck(network, timesteps, haltOnError);
+    return gradientCheckInputTimeOnly(network, miniBatchSize, timesteps, haltOnError);
 }
 
-static bool runMemoryReaderLayerTest(size_t layerSize, size_t timesteps, bool seed,
-    bool haltOnError)
+static bool runMemoryReaderLayerTest(size_t layerSize, size_t miniBatchSize,
+    size_t timesteps, bool seed, bool haltOnError)
 {
     if(seed)
     {
@@ -564,37 +587,38 @@ static bool runMemoryReaderLayerTest(size_t layerSize, size_t timesteps, bool se
 
     auto network = createMemoryReaderLayerNetwork(layerSize);
 
-    return gradientCheck(network, timesteps, haltOnError);
+    return gradientCheckOutputTimeOnly(network, miniBatchSize, timesteps, haltOnError);
 }
 
-static bool runTest(size_t layerSize, size_t timesteps, bool seed, bool haltOnError,
-    bool listTests, const std::string& testFilter)
+static bool runTest(size_t layerSize, size_t miniBatchSize, size_t timesteps, bool seed,
+    bool haltOnError, bool listTests, const std::string& testFilter)
 {
     lucius::util::TestEngine engine;
 
     engine.addTest("simple through time", [=]()
     {
-        return runSimpleThroughTimeSubgraphTest(layerSize, timesteps, seed, haltOnError);
+        return runSimpleThroughTimeSubgraphTest(layerSize, miniBatchSize,
+            timesteps, seed, haltOnError);
     });
 
     engine.addTest("simple", [=]()
     {
-        return runSimpleSubgraphTest(layerSize, seed, haltOnError);
+        return runSimpleSubgraphTest(layerSize, miniBatchSize, seed, haltOnError);
     });
 
     engine.addTest("split join", [=]()
     {
-        return runSplitJoinSubgraphTest(layerSize, seed, haltOnError);
+        return runSplitJoinSubgraphTest(layerSize, miniBatchSize, seed, haltOnError);
     });
 
     engine.addTest("memory writer", [=]()
     {
-        return runMemoryWriterLayerTest(layerSize, timesteps, seed, haltOnError);
+        return runMemoryWriterLayerTest(layerSize, miniBatchSize, timesteps, seed, haltOnError);
     });
 
     engine.addTest("memory reader", [=]()
     {
-        return runMemoryReaderLayerTest(layerSize, timesteps, seed, haltOnError);
+        return runMemoryReaderLayerTest(layerSize, miniBatchSize, timesteps, seed, haltOnError);
     });
 
     if(listTests)
@@ -627,11 +651,13 @@ int main(int argc, char** argv)
 
     size_t layerSize = 0;
     size_t timesteps = 0;
+    size_t miniBatchSize = 1;
 
     parser.description("The lucius neural network gradient check.");
 
     parser.parse("-S", "--layer-size", layerSize, 10, "The number of neurons per layer.");
     parser.parse("-t", "--timesteps", timesteps, 10, "The number of timesteps to run.");
+    parser.parse("-b", "--mini-batch-size", miniBatchSize, 10, "The mini batch size to run.");
 
     parser.parse("-L", "--log-module", loggingEnabledModules, "",
         "Print out log messages during execution for specified modules "
@@ -659,8 +685,8 @@ int main(int argc, char** argv)
 
     try
     {
-        bool passed = lucius::network::runTest(layerSize, timesteps, seed, haltOnError,
-            listTests, testFilter);
+        bool passed = lucius::network::runTest(layerSize, miniBatchSize,
+            timesteps, seed, haltOnError, listTests, testFilter);
 
         if(!passed)
         {

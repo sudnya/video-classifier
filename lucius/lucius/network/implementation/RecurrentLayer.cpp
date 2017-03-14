@@ -181,7 +181,7 @@ void RecurrentLayer::runForwardImplementation(Bundle& bundle)
 
     assert(inputActivationsVector.size() == 1);
 
-    auto inputActivations = foldTime(inputActivationsVector.back());
+    auto inputActivations = inputActivationsVector.back();
 
     saveMatrix("inputActivations", inputActivations);
 
@@ -253,7 +253,7 @@ void RecurrentLayer::runReverseImplementation(Bundle& bundle)
 
     assert(outputDeltaVector.size() == 1);
 
-    auto outputDeltas = foldTime(outputDeltaVector.back());
+    auto outputDeltas = outputDeltaVector.back();
 
     if(util::isLogEnabled("RecurrentLayer"))
     {
