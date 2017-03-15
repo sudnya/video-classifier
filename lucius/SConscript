@@ -56,7 +56,8 @@ if cuda_exists(env):
     sources.append(cuda_object_sources)
 
 # create the library
-liblucius = env.SharedLibrary('lucius', sources, LIBS=env['EXTRA_LIBS'])
+liblucius = env.SharedLibrary('lucius', sources, LIBS=env['EXTRA_LIBS'],
+    LINKFLAGS=env['LINKFLAGS'] + getSharedLibraryLINKFLAGS('liblucius'))
 lucius_libs = ['lucius'] + env['EXTRA_LIBS']
 
 if env['install']:

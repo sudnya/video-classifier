@@ -13,7 +13,7 @@
 
         "parameters" :
         {
-            "NesterovAcceleratedGradient::LearningRate"       : "1.0e-3",
+            "NesterovAcceleratedGradient::LearningRate"       : "1.0e-4",
             "NesterovAcceleratedGradient::Momentum"           : "0.99",
             "NesterovAcceleratedGradient::AnnealingRate"      : "1.000000",
             "NesterovAcceleratedGradient::MaxGradNorm"        : "80.0",
@@ -51,21 +51,21 @@
             "dropout":
             {
                 "Type" : "DropoutLayer",
-                "DropoutRatio" : "0.1"
+                "DropoutRatio" : "0.0"
             },
             "reader-controller":
             {
                 "Type" : "FeedForwardLayer",
-                "ActivationFunction" : "NullActivationFunction",
                 "InputSize" : "144",
-                "OutputSize" : "33"
+                "OutputSize" : "33",
+                "ActivationFunction" : "NullActivationFunction"
             },
             "writer-controller":
             {
                 "Type" : "FeedForwardLayer",
-                "ActivationFunction" : "NullActivationFunction",
                 "InputSize" : "144",
-                "OutputSize" : "25"
+                "OutputSize" : "25",
+                "ActivationFunction" : "NullActivationFunction"
             },
             "memory-writer":
             {
@@ -92,8 +92,8 @@
                 "layers" :
                 [
                     "forward",
-                    "memory-writer",
                     "dropout",
+                    "memory-writer",
                     "memory-reader",
                     "output"
                 ]
