@@ -8,6 +8,7 @@
 
 // Standard Library Includes
 #include <set>
+#include <vector>
 
 namespace lucius
 {
@@ -47,76 +48,108 @@ static Dimension fillInDimension(const Dimension& newSize, const Dimension& inpu
     return size;
 }
 
-static Dimension computeSpacing(const Dimension& stride, const Dimension& size)
+typedef std::vector<size_t>   InputMap;
+typedef std::vector<InputMap> OutputToInputMap;
+
+static OutputToInputMap createDimensionMap(const Dimension& outputSize,
+    const Dimension& inputSize, const Dimension& inputStride)
 {
-    Dimension spacing;
+    size_t inputIndex = 0;
+    size_t inputRemainder = inputSize.front();
 
-    size_t linearStep = 1;
+    OutputToInputMap map;
 
-    for(size_t i = 0; i < stride.size(); ++i)
+    for(size_t outputIndex = 0; outputIndex < outputSize.size(); ++outputIndex)
     {
-        spacing.push_back(stride[i] / linearStep);
-        linearStep *= stride[i] * size[i] / linearStep;
+        InputMap localMap;
+
+        size_t outputDimSize = outputSize[outputIndex];
+
+        while(outputDimSize > inputRemainder)
+        {
+            if(inputRemainder > 1)
+            {
+                localMap.push_back(inputIndex);
+            }
+
+            ++inputIndex;
+            inputRemainder *= inputSize[inputIndex];
+        }
+
+        localMap.push_back(inputIndex);
+        inputRemainder /= outputDimSize;
+
+        map.push_back(localMap);
     }
 
-    return spacing;
+    return map;
 }
 
-static Dimension compressSpacing(const Dimension& uncompressedInputSpacing,
-    const Dimension& newSize, const Dimension& inputSize)
+static bool checkThatMergedDimensionsAreContiguous(const OutputToInputMap& map,
+    const Dimension& inputSize, const Dimension& inputStride)
 {
-    Dimension inputSpacing;
-
-    size_t currentSpacing = 1;
-    size_t currentSize    = 1;
-    size_t currentIndex   = 0;
-
-    for(size_t i = 0; i < inputSize.size(); ++i)
+    for(size_t i = 0; i < map.size(); ++i)
     {
-        currentSpacing *= uncompressedInputSpacing[i];
-        currentSize    *= inputSize[i];
+        auto& ids = map[i];
 
-        if(currentIndex >= newSize.size())
+        if(ids.size() == 1)
         {
-            inputSpacing.push_back(currentSpacing);
+            continue;
         }
-        else if(newSize[currentIndex] == currentSize)
-        {
-            inputSpacing.push_back(currentSpacing);
 
-            currentSize    = 1;
-            currentSpacing = 1;
-            ++currentIndex;
+        for(size_t j = 1; j < ids.size(); ++j)
+        {
+            if(inputStride[ids[j]] != inputSize[ids[j - 1]] * inputStride[ids[j - 1]])
+            {
+                return false;
+            }
         }
     }
 
-    return inputSpacing;
+    return true;
 }
 
-static Dimension fillInStride(const Dimension& newSize,
-    const Dimension& inputStride, const Dimension& inputSize)
+static Dimension convertMapToStrides(const OutputToInputMap& map, const Dimension& outputSize,
+    const Dimension& inputStride)
 {
-    Dimension uncompressedInputSpacing = computeSpacing(inputStride, inputSize);
+    size_t lastDimension = inputStride.size();
+    size_t strideMultiplier = 1;
+    size_t strideBase = 1;
 
-    Dimension inputSpacing = compressSpacing(uncompressedInputSpacing, newSize, inputSize);
+    Dimension outputStride;
 
-    Dimension newStride = linearStride(newSize);
-
-    // extend the input spacing with 1
-    for(size_t i = inputSpacing.size(); i < newStride.size(); ++i)
+    for(size_t i = 0; i < map.size(); ++i)
     {
-        inputSpacing.push_back(1);
+        auto& inputIndices = map[i];
+
+        if(lastDimension == inputIndices[0])
+        {
+            strideMultiplier *= outputSize[i - 1];
+        }
+        else
+        {
+            strideMultiplier = 1;
+            strideBase = inputStride[inputIndices[0]];
+        }
+
+        outputStride.push_back(strideBase * strideMultiplier);
+        lastDimension = inputIndices.back();
     }
 
-    // update the stride with the existing spacing
-    for(size_t i = 0, spacingMultiplier = 1; i < newStride.size(); ++i)
-    {
-        spacingMultiplier *= inputSpacing[i];
+    return outputStride;
+}
 
-        newStride[i] *= spacingMultiplier;
-    }
+/*
+    Compute a stride for a reshaped array.  Handle the case when the array is strided.
+*/
+static Dimension fillInStride(const Dimension& newSize, const Dimension& inputStride,
+    const Dimension& inputSize)
+{
+    auto dimensionMap = createDimensionMap(newSize, inputSize, inputStride);
 
-    return newStride;
+    checkThatMergedDimensionsAreContiguous(dimensionMap, inputSize, inputStride);
+
+    return convertMapToStrides(dimensionMap, newSize, inputStride);
 }
 
 Matrix reshape(const Matrix& input, const Dimension& size)

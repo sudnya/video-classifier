@@ -107,25 +107,6 @@ void BatchNormalizationLayer::initialize()
     _samples = 0;
 }
 
-static Matrix foldTime(const Matrix& input)
-{
-    auto size = input.size();
-
-    size_t batch = 1;
-
-    for(size_t i = 1; i < size.size(); ++i)
-    {
-        batch *= size[i];
-    }
-
-    return reshape(input, {size[0], batch});
-}
-
-static Matrix unfoldTime(const Matrix& result, const Dimension& inputSize)
-{
-    return reshape(result, inputSize);
-}
-
 static Matrix computeMeans(const Matrix& activations)
 {
     return apply(reduce(activations, {1}, matrix::Add()),

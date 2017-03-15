@@ -133,10 +133,13 @@ network::Bundle InputTextDataProducer::pop()
     // get minibatch size
     auto miniBatchSize = getBatchSize();
 
-    Matrix inputActivations = matrix::zeros({getModel()->getInputCount(), miniBatchSize, _segmentSize-1},
-           matrix::Precision::getDefaultPrecision());
-    Matrix referenceActivations = matrix::zeros({getModel()->getInputCount(), miniBatchSize, _segmentSize-1},
-           matrix::Precision::getDefaultPrecision());
+    Matrix inputActivations =
+        matrix::zeros({getModel()->getInputCount(), miniBatchSize, _segmentSize-1},
+        matrix::Precision::getDefaultPrecision());
+    Matrix referenceActivations =
+        matrix::zeros({getModel()->getInputCount(), miniBatchSize, _segmentSize-1},
+        matrix::Precision::getDefaultPrecision());
+
     // get minibatch number of descriptors (key)
     for (size_t i = 0; i < miniBatchSize; ++i)
     {

@@ -13,7 +13,7 @@
 
         "parameters" :
         {
-            "NesterovAcceleratedGradient::LearningRate"       : "1.0e-3",
+            "NesterovAcceleratedGradient::LearningRate"       : "1.0e-4",
             "NesterovAcceleratedGradient::Momentum"           : "0.99",
             "NesterovAcceleratedGradient::AnnealingRate"      : "1.000000",
             "NesterovAcceleratedGradient::MaxGradNorm"        : "80.0",
@@ -31,12 +31,17 @@
             {
                 "Type" : "RecurrentLayer",
                 "Direction" : "bidirectional",
-                "Size" : "2048"
+                "Size" : "16"
             },
-            "input":
+            "forward":
             {
                 "Type" : "FeedForwardLayer",
-                "OutputSize" : "2048"
+                "OutputSize" : "16",
+                "ActivationFunction" : "NullActivationFunction"
+            },
+            "batch-norm":
+            {
+                "Type" : "BatchNormalizationLayer"
             },
             "output":
             {
@@ -46,29 +51,37 @@
             "dropout":
             {
                 "Type" : "DropoutLayer",
-                "InitialRate" : "0.0",
-                "FinalRate" : "0.3",
-                "RateRampIterations" : "100000"
+                "DropoutRatio" : "0.0"
             },
-            "controller":
+            "reader-controller":
             {
-                "Type" : "FeedForwardLayer"
+                "Type" : "FeedForwardLayer",
+                "InputSize" : "144",
+                "OutputSize" : "33",
+                "ActivationFunction" : "NullActivationFunction"
+            },
+            "writer-controller":
+            {
+                "Type" : "FeedForwardLayer",
+                "InputSize" : "144",
+                "OutputSize" : "25",
+                "ActivationFunction" : "NullActivationFunction"
             },
             "memory-writer":
             {
                 "Type" : "MemoryWriterLayer",
-                "MemoryCellSize": "64",
-                "MemoryCellCount": "32",
+                "CellSize": "16",
+                "CellCount": "8",
                 "ActivationFunction" : "NullActivationFunction",
-                "Controller" : "controller"
+                "Controller" : "writer-controller"
             },
             "memory-reader":
             {
                 "Type" : "MemoryReaderLayer",
-                "MemoryCellSize": "64",
-                "MemoryCellCount": "32",
+                "CellSize": "16",
+                "CellCount": "8",
                 "ActivationFunction" : "NullActivationFunction",
-                "Controller" : "controller"
+                "Controller" : "reader-controller"
             }
         },
 
@@ -78,12 +91,10 @@
             {
                 "layers" :
                 [
-                    "input",
-                    "recurrent",
-                    "memory-writer",
+                    "forward",
                     "dropout",
+                    "memory-writer",
                     "memory-reader",
-                    "recurrent",
                     "output"
                 ]
             }
@@ -96,7 +107,7 @@
 
         "model-attributes" :
         {
-            "SegmentSize"  : "100",
+            "SegmentSize"  : "10",
             "Graphemes" : [ "A", "B", "C", "D", "E", "F", "G", "H", "I",
                             "J", "K", "L", "M", "N", "O", "P", "Q", "R",
                             "S", "T", "U", "V", "W", "X", "Y", "Z", ",",
@@ -108,14 +119,14 @@
 
         },
 
-        "infer-outputs-from" : "/data/1tb-ssd/billion/training/database.txt"
+        "infer-outputs-from" : "/mnt/Data/spring2016/billion/training/database.txt"
 
     },
 
     "dataset" :
     {
-        "training-dataset-path"   : "/data/1tb-ssd/billion/training/database.txt",
-        "validation-dataset-path" : "/data/1tb-ssd/billion/validation/database.txt",
+        "training-dataset-path"   : "/mnt/Data/spring2016/billion/training/database.txt",
+        "validation-dataset-path" : "/mnt/Data/spring2016/billion/validation/database.txt",
 
         "required-accuracy" : "99.0"
     },
@@ -145,7 +156,7 @@
 
     "system" :
     {
-        "use-cuda"    : "1",
+        "use-cuda"    : "0",
         "cuda-device" : "0",
         "precision"   : "SinglePrecision"
     }

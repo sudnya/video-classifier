@@ -7,16 +7,20 @@
 // Lucius Includes
 #include <lucius/network/interface/LayerFactory.h>
 
-#include <lucius/network/interface/FeedForwardLayer.h>
-#include <lucius/network/interface/RecurrentLayer.h>
-#include <lucius/network/interface/ConvolutionalLayer.h>
 #include <lucius/network/interface/AudioConvolutionalLayer.h>
-#include <lucius/network/interface/BatchNormalizationLayer.h>
-#include <lucius/network/interface/MaxPoolingLayer.h>
 #include <lucius/network/interface/AudioMaxPoolingLayer.h>
-#include <lucius/network/interface/SubgraphLayer.h>
-#include <lucius/network/interface/SoftmaxLayer.h>
+#include <lucius/network/interface/BatchNormalizationLayer.h>
 #include <lucius/network/interface/CTCDecoderLayer.h>
+#include <lucius/network/interface/ConvolutionalLayer.h>
+#include <lucius/network/interface/DropoutLayer.h>
+#include <lucius/network/interface/FeedForwardLayer.h>
+#include <lucius/network/interface/MaxPoolingLayer.h>
+#include <lucius/network/interface/RecurrentLayer.h>
+#include <lucius/network/interface/SoftmaxLayer.h>
+#include <lucius/network/interface/MemoryReaderLayer.h>
+#include <lucius/network/interface/MemoryWriterLayer.h>
+#include <lucius/network/interface/SubgraphLayer.h>
+
 #include <lucius/network/interface/ActivationFunctionFactory.h>
 #include <lucius/network/interface/ActivationFunction.h>
 
@@ -144,7 +148,7 @@ std::unique_ptr<Layer> LayerFactory::create(const std::string& name,
         double costFunctionWeight = parameters.get("CostFunctionWeight", 1.0);
         auto costFunctionName = parameters.get<std::string>("CostFunctionName", "CTCCostFunction");
 
-        size_t inputSize  = parameters.get("InputSize", inputSizeWidth);
+        size_t inputSize  = parameters.get("InputSize", inputSizeAggregate);
         size_t inputBatch = parameters.get("BatchSize", inputSizeBatch);
 
         auto precision = *matrix::Precision::fromString(parameters.get("Precision",
@@ -155,6 +159,20 @@ std::unique_ptr<Layer> LayerFactory::create(const std::string& name,
             beamSize,
             costFunctionName,
             costFunctionWeight,
+            precision);
+    }
+    else if("DropoutLayer" == name)
+    {
+        double dropoutRatio = parameters.get("DropoutRatio", 0.1);
+
+        size_t inputSize = parameters.get("InputSize", inputSizeAggregate);
+
+        auto precision = *matrix::Precision::fromString(parameters.get("Precision",
+            matrix::Precision::getDefaultPrecision().toString()));
+
+        layer = std::make_unique<DropoutLayer>(
+            matrix::Dimension(inputSize, 1, 1),
+            dropoutRatio,
             precision);
     }
     else if("FeedForwardLayer" == name)
@@ -183,6 +201,20 @@ std::unique_ptr<Layer> LayerFactory::create(const std::string& name,
         layer = std::make_unique<MaxPoolingLayer>(
             matrix::Dimension({inputWidth, inputHeight, inputColors, inputBatch, 1}),
             matrix::Dimension({width, height}), precision);
+    }
+    else if("MemoryReaderLayer" == name)
+    {
+        size_t cellSize  = parameters.get("CellSize",  inputSizeHeight);
+        size_t cellCount = parameters.get("CellCount", inputSizeWidth);
+
+        layer = std::make_unique<MemoryReaderLayer>(cellSize, cellCount);
+    }
+    else if("MemoryWriterLayer" == name)
+    {
+        size_t cellSize  = parameters.get("CellSize",  inputSizeHeight);
+        size_t cellCount = parameters.get("CellCount", inputSizeWidth);
+
+        layer = std::make_unique<MemoryWriterLayer>(cellSize, cellCount);
     }
     else if("RecurrentLayer" == name)
     {

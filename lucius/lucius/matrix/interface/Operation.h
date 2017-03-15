@@ -834,8 +834,8 @@ typedef std::tuple<Add, Subtract, Multiply, Divide, Maximum, Minimum,
 
 typedef std::tuple<Add, Subtract, Multiply, Divide, Log, Exp, Pow, Abs, Sqrt, Tanh, TanhDerivative,
                    RectifiedLinear, RectifiedLinearDerivative, Sigmoid, SigmoidDerivative, Negate,
-                   Maximum, Minimum, Equal, LessThan, NotEqual, Fill, Square, SquareAndScale,
-                   Inverse, Nop, NopDerivative, Cos> AllUnaryOperations;
+                   Maximum, Minimum, Equal, LessThan, NotEqual, GreaterThan, Fill, Square,
+                   SquareAndScale, Inverse, Nop, NopDerivative, Cos> AllUnaryOperations;
 
 typedef std::tuple<Equal, NotEqual, LessThan, GreaterThan, GreaterThanOrEqual>
                    AllComparisonOperations;

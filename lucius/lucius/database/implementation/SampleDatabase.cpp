@@ -20,6 +20,7 @@ namespace database
 {
 
 SampleDatabase::SampleDatabase()
+: _stream(nullptr)
 {
 }
 
@@ -106,9 +107,9 @@ const std::string& SampleDatabase::path() const
     return _path;
 }
 
-std::istream& SampleDatabase::stream()
+std::istream* SampleDatabase::stream()
 {
-    return *_stream;
+    return _stream;
 }
 
 bool SampleDatabase::containsVideoSamples() const

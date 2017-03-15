@@ -49,7 +49,7 @@ static std::string removeWhitespace(const std::string& line);
 
 void SampleDatabaseParser::parse()
 {
-    std::istream* stream = &_database->stream();
+    std::istream* stream = _database->stream();
 
     std::ifstream file;
 

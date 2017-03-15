@@ -126,33 +126,6 @@ void FeedForwardLayer::initialize()
     apply(_bias, _bias, matrix::Fill(0.0));
 }
 
-static Matrix foldTime(const Matrix& input)
-{
-    auto size = input.size();
-
-    size_t minibatch = size[size.size() - 2];
-    size_t timesteps = size[size.size() - 1];
-
-    size_t layerSize = 1;
-
-    for(size_t i = 2; i < size.size(); ++i)
-    {
-        layerSize *= size[i-2];
-    }
-
-    return reshape(input, {layerSize, minibatch * timesteps});
-}
-
-static Matrix unfoldTime(const Matrix& result, const Dimension& inputSize)
-{
-    size_t minibatch = inputSize[inputSize.size() - 2];
-    size_t timesteps = inputSize[inputSize.size() - 1];
-
-    size_t layerSize = result.size().product() / (minibatch * timesteps);
-
-    return reshape(result, {layerSize, minibatch, timesteps});
-}
-
 void FeedForwardLayer::runForwardImplementation(Bundle& bundle)
 {
     auto& inputActivations  = bundle[ "inputActivations"].get<MatrixVector>();
@@ -334,13 +307,13 @@ void FeedForwardLayer::runReverseImplementation(Bundle& bundle)
 
     if(util::isLogEnabled("FeedForwardLayer"))
     {
-        util::log("FeedForwardLayer") << "  output shape: "
+        util::log("FeedForwardLayer") << "  input deltas shape: "
             << previousLayerDeltas.shapeString() << "\n";
     }
 
     if(util::isLogEnabled("FeedForwardLayer::Detail"))
     {
-        util::log("FeedForwardLayer::Detail") << "  output: "
+        util::log("FeedForwardLayer::Detail") << "  input deltas: "
             << previousLayerDeltas.debugString();
     }
 

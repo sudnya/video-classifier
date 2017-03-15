@@ -262,6 +262,36 @@ static NeuralNetwork createCtcDecoderNetwork(size_t layerSize, size_t layerCount
     return network;
 }
 
+static NeuralNetwork createDropoutNetwork(size_t layerSize, size_t layerCount)
+{
+    NeuralNetwork network;
+
+    network.addLayer(LayerFactory::create("FeedForwardLayer",
+        util::ParameterPack(std::make_tuple("InputSizeAggregate", layerSize),
+        std::make_tuple("Precision", "DoublePrecision"))));
+    network.back()->setActivationFunction(
+        ActivationFunctionFactory::create("SigmoidActivationFunction"));
+
+    for(size_t layer = 0; layer < layerCount; ++layer)
+    {
+        network.addLayer(LayerFactory::create("DropoutLayer",
+            util::ParameterPack(std::make_tuple("InputSizeAggregate", layerSize),
+            std::make_tuple("Precision", "DoublePrecision"))));
+
+        network.addLayer(LayerFactory::create("FeedForwardLayer",
+            util::ParameterPack(std::make_tuple("InputSizeAggregate", layerSize),
+            std::make_tuple("Precision", "DoublePrecision"))));
+        network.back()->setActivationFunction(
+            ActivationFunctionFactory::create("SigmoidActivationFunction"));
+    }
+
+    network.initialize();
+
+    network.setCostFunction(CostFunctionFactory::create("SumOfSquaresCostFunction"));
+
+    return network;
+}
+
 static Matrix generateInput(NeuralNetwork& network)
 {
     return matrix::rand(network.getInputSize(), DoublePrecision());
@@ -382,7 +412,7 @@ static bool gradientCheck(NeuralNetwork& network, const Bundle& input,
 
                 weight += epsilon;
 
-                double estimatedGradient = (newCost - newCost2) / (2 * epsilon);
+                double estimatedGradient = (newCost - newCost2) / (2.0 * epsilon);
                 double computedGradient = gradient[matrixId][weightId];
 
                 double thisDifference = std::pow(estimatedGradient - computedGradient, 2.0);
@@ -800,6 +830,34 @@ static bool runTestCtcDecoderLayer(size_t layerSize, size_t layerCount, size_t b
     }
 }
 
+static bool runTestDropoutLayer(size_t layerSize, size_t layerCount, size_t batchSize,
+    size_t timesteps, bool seed)
+{
+    if(seed)
+    {
+        matrix::srand(std::time(0));
+    }
+    else
+    {
+        matrix::srand(1456212655);
+    }
+
+    auto network = createDropoutNetwork(layerSize, layerCount);
+
+    if(gradientCheckTimeSeries(network, batchSize, timesteps))
+    {
+        std::cout << "Dropout Layer Test Passed\n";
+
+        return true;
+    }
+    else
+    {
+        std::cout << "Dropout Layer Test Failed\n";
+
+        return false;
+    }
+}
+
 static bool runTest(size_t layerSize, size_t layerCount, size_t batchSize,
     size_t beamSize, size_t timesteps, bool listTests, const std::string& testFilter, bool seed)
 {
@@ -854,6 +912,11 @@ static bool runTest(size_t layerSize, size_t layerCount, size_t batchSize,
     engine.addTest("ctc decoder", [=]()
     {
         return runTestCtcDecoderLayer(layerSize, layerCount, batchSize, beamSize, timesteps, seed);
+    });
+
+    engine.addTest("dropout", [=]()
+    {
+        return runTestDropoutLayer(layerSize, layerCount, batchSize, timesteps, seed);
     });
 
     if(listTests)

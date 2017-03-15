@@ -799,11 +799,62 @@ bool testReshapeStridedSlice()
     {
         lucius::util::log("test-matrix") << " Matrix Reshape Strided Slice Test Failed:\n";
         lucius::util::log("test-matrix") << "  result matrix " << computed.toString();
-        lucius::util::log("test-matrix") << "  does not match reference matrix " << a.toString();
+        lucius::util::log("test-matrix") << "  does not match reference matrix "
+            << reference.toString();
     }
     else
     {
         lucius::util::log("test-matrix") << " Matrix Reshape Strided Slice Test Passed\n";
+    }
+
+    return computed == reference;
+}
+
+/*
+    Test reshaping an odd strided slice.
+
+   [ [ 1  6 ] ] slice = [ [ 2 7 ] ] reshape = [ 2 7 ]
+   [ [ 2  7 ] ]         [ [ 3 8 ] ]           [ 3 8 ]
+   [ [ 3  8 ] ]
+   [ [ 4  9 ] ]
+   [ [ 5 10 ] ]
+
+
+*/
+bool testReshapeOddStridedSlice()
+{
+    Matrix a(5, 2, 1);
+
+    a(0, 0, 0) = 1;
+    a(1, 0, 0) = 2;
+    a(2, 0, 0) = 3;
+    a(3, 0, 0) = 4;
+    a(4, 0, 0) = 5;
+    a(0, 1, 0) = 6;
+    a(1, 1, 0) = 7;
+    a(2, 1, 0) = 8;
+    a(3, 1, 0) = 9;
+    a(4, 1, 0) = 10;
+
+    Matrix reference(2, 2);
+
+    reference(0, 0) = 2;
+    reference(1, 0) = 3;
+    reference(0, 1) = 7;
+    reference(1, 1) = 8;
+
+    Matrix computed = reshape(slice(a, {1, 0, 0}, {3, 2, 1}), {2, 2});
+
+    if(computed != reference)
+    {
+        lucius::util::log("test-matrix") << " Matrix Reshape Odd Strided Slice Test Failed:\n";
+        lucius::util::log("test-matrix") << "  result matrix " << computed.toString();
+        lucius::util::log("test-matrix") << "  does not match reference matrix "
+            << reference.toString();
+    }
+    else
+    {
+        lucius::util::log("test-matrix") << " Matrix Reshape Odd Strided Slice Test Passed\n";
     }
 
     return computed == reference;
@@ -2570,6 +2621,7 @@ bool runTests(bool listTests, const std::string& testFilter)
     engine.addTest("reshape", testReshape);
     engine.addTest("reshape slice", testReshapeSlice);
     engine.addTest("reshape strided slice", testReshapeStridedSlice);
+    engine.addTest("reshape odd strided slice", testReshapeOddStridedSlice);
     engine.addTest("copy", testCopy);
     engine.addTest("copy between precisions", testCopyBetweenPrecisions);
     engine.addTest("uniform random", testUniformRandom);

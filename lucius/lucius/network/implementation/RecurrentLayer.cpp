@@ -174,28 +174,6 @@ void RecurrentLayer::initialize()
     }
 }
 
-static matrix::Matrix unfoldTimeAndBatch(const Matrix& input)
-{
-    size_t activationCount = input.size()[0];
-
-    size_t limit = input.size().size() - 2;
-
-    for(size_t i = 1; i < limit; ++i)
-    {
-        activationCount *= input.size()[i];
-    }
-
-    size_t miniBatch = 1;
-    size_t timesteps = 1;
-
-    assert(input.size().size() > 2);
-
-    miniBatch = input.size()[input.size().size() - 2];
-    timesteps = input.size()[input.size().size() - 1];
-
-    return reshape(input, {activationCount, miniBatch, timesteps});
-}
-
 void RecurrentLayer::runForwardImplementation(Bundle& bundle)
 {
     auto& inputActivationsVector  = bundle[ "inputActivations"].get<matrix::MatrixVector>();
@@ -203,7 +181,7 @@ void RecurrentLayer::runForwardImplementation(Bundle& bundle)
 
     assert(inputActivationsVector.size() == 1);
 
-    auto inputActivations = unfoldTimeAndBatch(inputActivationsVector.back());
+    auto inputActivations = inputActivationsVector.back();
 
     saveMatrix("inputActivations", inputActivations);
 
@@ -275,7 +253,7 @@ void RecurrentLayer::runReverseImplementation(Bundle& bundle)
 
     assert(outputDeltaVector.size() == 1);
 
-    auto outputDeltas = unfoldTimeAndBatch(outputDeltaVector.back());
+    auto outputDeltas = outputDeltaVector.back();
 
     if(util::isLogEnabled("RecurrentLayer"))
     {

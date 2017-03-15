@@ -146,6 +146,12 @@ def getLINKFLAGS(mode, LINK):
 
     return result
 
+def getSharedLibraryLINKFLAGS(name):
+    if platform.system() == 'Darwin':
+        return ['-install_name','@executable_path/../lib/' + name + '.dylib']
+
+    return []
+
 def cuda_exists(env):
     if not env['with_cuda']:
         return False

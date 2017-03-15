@@ -8,6 +8,7 @@
 #include <lucius/parallel/interface/Synchronization.h>
 
 #include <lucius/util/interface/debug.h>
+#include <lucius/util/interface/memory.h>
 
 // Standard Library Includes
 #include <random>
@@ -19,73 +20,111 @@ namespace matrix
 namespace detail
 {
 
-class RandomGeneratorState
+class RandomStateImplementation
 {
 public:
-    ~RandomGeneratorState()
+    RandomStateImplementation()
+    : _cudaEngine(nullptr)
     {
-        /*
-        if(_cudaEngine)
+        _load();
+    }
+
+    ~RandomStateImplementation()
+    {
+        if(_cudaEngine != nullptr)
         {
-            CurandLibrary::curandDestroyGenerator(*_cudaEngine);
+            CurandLibrary::curandDestroyGenerator(_cudaEngine);
         }
-        */
+    }
+
+public:
+    RandomStateImplementation(const RandomStateImplementation& state)
+    {
+
     }
 
 
 public:
     std::default_random_engine& getCpuEngine()
     {
-        _load();
-
-        return *_cpuEngine;
+        return _cpuEngine;
     }
 
     CurandLibrary::curandGenerator_t getCudaEngine()
     {
-        _load();
+        return _cudaEngine;
+    }
 
-        return *_cudaEngine;
+public:
+    void swap(RandomStateImplementation& i)
+    {
+        std::swap(i._cpuEngine,  _cpuEngine);
+        std::swap(i._cudaEngine, _cudaEngine);
     }
 
 private:
     void _load()
     {
-        if(!_cpuEngine)
-        {
-            _cpuEngine.reset(new std::default_random_engine);
-        }
-
         CurandLibrary::load();
 
         if(!_cudaEngine && CurandLibrary::loaded())
         {
-            _cudaEngine.reset(new CurandLibrary::curandGenerator_t);
-
-            CurandLibrary::curandCreateGenerator(_cudaEngine.get(), CurandLibrary::CURAND_RNG_PSEUDO_DEFAULT);
+            CurandLibrary::curandCreateGenerator(&_cudaEngine,
+                CurandLibrary::CURAND_RNG_PSEUDO_DEFAULT);
         }
     }
 
 private:
-    std::unique_ptr<std::default_random_engine>       _cpuEngine;
-    std::unique_ptr<CurandLibrary::curandGenerator_t> _cudaEngine;
+    std::default_random_engine       _cpuEngine;
+    CurandLibrary::curandGenerator_t _cudaEngine;
 
 };
 
-RandomGeneratorState randomGeneratorState;
+std::unique_ptr<RandomStateImplementation> randomGeneratorState;
 
+RandomStateImplementation& getRandomGeneratorState()
+{
+    if(!randomGeneratorState)
+    {
+        randomGeneratorState = std::make_unique<RandomStateImplementation>();
+    }
 
+    return *randomGeneratorState;
+}
+
+}
+
+RandomState::RandomState()
+: _implementation(std::make_unique<detail::RandomStateImplementation>())
+{
+
+}
+
+RandomState::~RandomState()
+{
+
+}
+
+detail::RandomStateImplementation& RandomState::getImplementation()
+{
+    return *_implementation;
+}
+
+void swapDefaultRandomState(RandomState& state)
+{
+    detail::getRandomGeneratorState().swap(state.getImplementation());
 }
 
 void srand(size_t seed)
 {
     if(CurandLibrary::loaded())
     {
-        CurandLibrary::curandSetPseudoRandomGeneratorSeed(detail::randomGeneratorState.getCudaEngine(), seed);
+        CurandLibrary::curandSetPseudoRandomGeneratorSeed(
+            detail::getRandomGeneratorState().getCudaEngine(), seed);
     }
     else
     {
-        detail::randomGeneratorState.getCpuEngine().seed(seed);
+        detail::getRandomGeneratorState().getCpuEngine().seed(seed);
     }
 }
 
@@ -97,12 +136,13 @@ void rand(Matrix& result)
 
         if(result.precision() == SinglePrecision())
         {
-            CurandLibrary::curandGenerateUniform(detail::randomGeneratorState.getCudaEngine(),
+            CurandLibrary::curandGenerateUniform(detail::getRandomGeneratorState().getCudaEngine(),
                 static_cast<float*>(result.data()), result.elements());
         }
         else if(result.precision() == DoublePrecision())
         {
-            CurandLibrary::curandGenerateUniformDouble(detail::randomGeneratorState.getCudaEngine(),
+            CurandLibrary::curandGenerateUniformDouble(
+                detail::getRandomGeneratorState().getCudaEngine(),
                 static_cast<double*>(result.data()), result.elements());
         }
         else
@@ -118,7 +158,7 @@ void rand(Matrix& result)
 
             for(auto i = result.begin(); i != result.end(); ++i)
             {
-                *i = distribution(detail::randomGeneratorState.getCpuEngine());
+                *i = distribution(detail::getRandomGeneratorState().getCpuEngine());
             }
         }
         else if(result.precision() == DoublePrecision())
@@ -127,7 +167,7 @@ void rand(Matrix& result)
 
             for(auto i = result.begin(); i != result.end(); ++i)
             {
-                *i = distribution(detail::randomGeneratorState.getCpuEngine());
+                *i = distribution(detail::getRandomGeneratorState().getCpuEngine());
             }
         }
         else
@@ -146,12 +186,13 @@ void randn(Matrix& result)
 
         if(result.precision() == SinglePrecision())
         {
-            CurandLibrary::curandGenerateNormal(detail::randomGeneratorState.getCudaEngine(),
+            CurandLibrary::curandGenerateNormal(detail::getRandomGeneratorState().getCudaEngine(),
                 static_cast<float*>(result.data()), result.elements(), 0.0f, 1.0f);
         }
         else if(result.precision() == DoublePrecision())
         {
-            CurandLibrary::curandGenerateNormalDouble(detail::randomGeneratorState.getCudaEngine(),
+            CurandLibrary::curandGenerateNormalDouble(
+                detail::getRandomGeneratorState().getCudaEngine(),
                 static_cast<double*>(result.data()), result.elements(), 0.0, 1.0);
         }
         else
@@ -167,7 +208,7 @@ void randn(Matrix& result)
 
             for(auto i = result.begin(); i != result.end(); ++i)
             {
-                *i = distribution(detail::randomGeneratorState.getCpuEngine());
+                *i = distribution(detail::getRandomGeneratorState().getCpuEngine());
             }
         }
         else if(result.precision() == DoublePrecision())
@@ -176,7 +217,7 @@ void randn(Matrix& result)
 
             for(auto i = result.begin(); i != result.end(); ++i)
             {
-                *i = distribution(detail::randomGeneratorState.getCpuEngine());
+                *i = distribution(detail::getRandomGeneratorState().getCpuEngine());
             }
         }
         else

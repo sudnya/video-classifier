@@ -13,6 +13,7 @@
 #include <lucius/network/interface/CostFunction.h>
 #include <lucius/network/interface/LayerFactory.h>
 #include <lucius/network/interface/SubgraphLayer.h>
+#include <lucius/network/interface/ControllerLayer.h>
 #include <lucius/network/interface/CostFunctionFactory.h>
 
 #include <lucius/matrix/interface/Dimension.h>
@@ -34,6 +35,7 @@ namespace model
 
 typedef network::Layer Layer;
 typedef network::SubgraphLayer SubgraphLayer;
+typedef network::ControllerLayer ControllerLayer;
 typedef matrix::Dimension Dimension;
 
 class ModelSpecificationImplementation
@@ -205,7 +207,10 @@ matrix::Dimension computeInputSize(const util::PropertyTree& model)
 
 static void appendInputSize(util::ParameterPack& parameters, const matrix::Dimension& inputSize)
 {
-    parameters.insert("InputSizeWidth", inputSize[0]);
+    if(inputSize.size() > 0)
+    {
+        parameters.insert("InputSizeWidth", inputSize[0]);
+    }
 
     if(inputSize.size() > 3)
     {
@@ -219,12 +224,12 @@ static void appendInputSize(util::ParameterPack& parameters, const matrix::Dimen
 
     if(inputSize.size() > 1)
     {
-        parameters.insert("InputSizeBatch",    inputSize[inputSize.size()-2]);
+        parameters.insert("InputSizeBatch", inputSize[inputSize.size() - 2]);
     }
 
     if(inputSize.size() > 2)
     {
-        parameters.insert("InputSizeTimesteps", inputSize[inputSize.size()-1]);
+        parameters.insert("InputSizeTimesteps", inputSize[inputSize.size() - 1]);
     }
 }
 
@@ -260,7 +265,7 @@ static void setupOutputLayerParameters(model::Model& model,
 
     if(needsUnknown)
     {
-        model.setOutputLabel(index++, "UNKOWN");
+        model.setOutputLabel(index++, "-UNKOWN-");
     }
 
     for(auto& label : labels)
@@ -281,58 +286,100 @@ static void setupOutputLayerParameters(model::Model& model,
     layerParameters.insert("OutputSize", labels.size());
 }
 
+static std::unique_ptr<Layer> createLayer(const util::PropertyTree& layerType,
+    const util::PropertyTree& layerConfiguration,
+    const util::ParameterPack& layerParameters)
+{
+    auto layerTypeName = layerConfiguration.get<std::string>("Type");
+
+    util::log("ModelSpecification") << " Building layer '" << layerTypeName
+        << "' with parameters '" << layerParameters.toString() << "'\n";
+
+    auto createdLayer = network::LayerFactory::create(layerTypeName, layerParameters);
+
+    if(!createdLayer)
+    {
+        throw std::runtime_error("Failed to create layer type name '" + layerTypeName +
+            "' with parameters '" + layerParameters.toString() + "'");
+    }
+
+    return createdLayer;
+}
+
+static util::ParameterPack getLayerParameters(const util::PropertyTree& layer,
+    const TypeMap& types)
+{
+    auto layerName = layer.key();
+
+    auto layerType = types.find(layerName);
+
+    if(layerType == types.end())
+    {
+        throw std::runtime_error("Unknown layer type name '" + layerName + "'.");
+    }
+
+    return layerType->second;
+}
+
+static std::unique_ptr<Layer> createLayer(Model& model, const util::PropertyTree& layer,
+    const util::PropertyTree& specification, const Dimension& size, const TypeMap& types,
+    bool isLastLayer)
+{
+    auto layerParameters = getLayerParameters(layer, types);
+
+    appendInputSize(layerParameters, size);
+
+    if(isLastLayer)
+    {
+        setupOutputLayerParameters(model, layerParameters, specification);
+    }
+
+    auto layerConfiguration = specification.get("layer-types." + layer.key());
+
+    return createLayer(layer, layerConfiguration, layerParameters);
+}
+
+static std::unique_ptr<Layer> createLayer(const util::PropertyTree& layer,
+    const util::PropertyTree& specification,
+    const Dimension& size, const TypeMap& types)
+{
+    util::ParameterPack parameters = getLayerParameters(layer, types);
+
+    appendInputSize(parameters, size);
+
+    auto layerConfiguration = specification.get("layer-types." + layer.key());
+
+    return createLayer(layer, layerConfiguration, parameters);
+}
+
+static void populateLayer(std::unique_ptr<Layer>& layer,
+    const util::PropertyTree& specification,
+    const util::PropertyTree& layerProperties,
+    const Dimension& size, const TypeMap& types);
+
 static void populateSubgraphLayer(std::unique_ptr<Layer>& layer,
-    const util::PropertyTree& specification, const util::PropertyTree& submodules,
+    const util::PropertyTree& specification,
+    const util::PropertyTree& layerProperties,
     const Dimension& size, const TypeMap& types)
 {
     SubgraphLayer& subgraph = dynamic_cast<SubgraphLayer&>(*layer);
 
-    Dimension inputSize = size;
-
     util::log("ModelSpecification") << "  Building subgraph layer with input size "
-        << inputSize.toString() << "\n";
+        << size.toString() << "\n";
+
+    auto submodules = specification.get("layer-types." + layerProperties.key() +
+        ".Submodules");
+
+    auto inputSize = size;
 
     // Add submodules
     for(auto& submodule : submodules)
     {
-        auto layerName = submodule.key();
-        auto type = submodule.get<std::string>("Type");
+        auto createdLayer = createLayer(submodule, specification, inputSize, types);
 
-        auto layerType = types.find(type);
+        inputSize = Dimension();
 
-        if(layerType == types.end())
-        {
-            throw std::runtime_error("Unknown layer type name '" + type + "'.");
-        }
-
-        auto layerParameters = layerType->second;
-
-        appendInputSize(layerParameters, inputSize);
-
-        auto layerTypeName = layerType->second.get<std::string>("Type");
-
-        util::log("ModelSpecification") << "   Building sublayer '" << layerName <<
-            "' with input size " << inputSize.toString() << " and parameters '" <<
-            layerParameters.toString() << "'\n";
-
-        auto createdLayer = network::LayerFactory::create(layerTypeName, layerParameters);
-
-        if(!createdLayer)
-        {
-            throw std::runtime_error("Failed to create layer type name '" + layerName +
-                "' with parameters '" + layerType->second.toString() + "'");
-        }
-
-        if(layerTypeName == "SubgraphLayer")
-        {
-            auto submodules = specification.get("layer-types." + layerName + ".Submodules");
-
-            populateSubgraphLayer(createdLayer, specification, submodules, inputSize, types);
-        }
-
-        subgraph.addLayer(layerName, std::move(createdLayer));
-
-        inputSize = subgraph.getOutputSize();
+        populateLayer(createdLayer, specification, submodule, inputSize, types);
     }
 
     // Connect submodules
@@ -364,6 +411,67 @@ static void populateSubgraphLayer(std::unique_ptr<Layer>& layer,
     subgraph.prepareSubgraphForEvaluation();
 }
 
+static void populateController(std::unique_ptr<Layer>& layer,
+    const util::PropertyTree& specification,
+    const util::PropertyTree& layerProperties,
+    const Dimension& size, const TypeMap& types)
+{
+    ControllerLayer& layerWithController = dynamic_cast<ControllerLayer&>(*layer);
+
+    if(!specification.exists("layer-types." + layerProperties.key() + ".Controller"))
+    {
+        throw std::runtime_error("No 'Controller' field in layer type '" +
+            layerProperties.key() + "'.");
+    }
+
+    auto controller = specification.get("layer-types." + layerProperties.key()
+        + ".Controller").get();
+
+    layerWithController.setController(createLayer(controller, specification, size, types));
+}
+
+static bool hasController(const std::string& layerType)
+{
+    return (layerType == "MemoryReaderLayer") || (layerType == "MemoryWriterLayer");
+}
+
+static void populateLayer(std::unique_ptr<Layer>& layer,
+    const util::PropertyTree& specification,
+    const util::PropertyTree& layerProperties,
+    const Dimension& size, const TypeMap& types)
+{
+    if(!specification.exists("layer-types." + layerProperties.key()))
+    {
+        throw std::runtime_error("No layer type name '" + layerProperties.key() + "'.");
+    }
+
+    auto layerConfiguration = specification.get("layer-types." + layerProperties.key());
+
+    auto layerTypeName = layerConfiguration.get<std::string>("Type");
+
+    if(layerTypeName == "SubgraphLayer")
+    {
+        populateSubgraphLayer(layer, specification, layerProperties, size, types);
+    }
+    else if(hasController(layerTypeName))
+    {
+        populateController(layer, specification, layerProperties, size, types);
+    }
+}
+
+static Dimension loadSubcomponent(Model& model, network::NeuralNetwork& neuralNetwork,
+    const util::PropertyTree& layer, const util::PropertyTree& specification,
+    const Dimension& size, const TypeMap& types, bool isLastLayer)
+{
+    auto createdLayer = createLayer(model, layer, specification, size, types, isLastLayer);
+
+    populateLayer(createdLayer, specification, layer, size, types);
+
+    neuralNetwork.addLayer(std::move(createdLayer));
+
+    return neuralNetwork.getOutputSize();
+}
+
 static void loadNetwork(Model& model, const util::PropertyTree& network,
     const util::PropertyTree& specification, const TypeMap& types)
 {
@@ -378,49 +486,10 @@ static void loadNetwork(Model& model, const util::PropertyTree& network,
 
     for(auto& layer : layers)
     {
-        auto layerName = layer.key();
-
-        auto layerType = types.find(layerName);
-
-        if(layerType == types.end())
-        {
-            throw std::runtime_error("Unknown layer type name '" + layerName + "'.");
-        }
-
-        auto layerParameters = layerType->second;
-
-        appendInputSize(layerParameters, inputSize);
-
         bool isLastLayer = neuralNetwork.size() == (layers.size() - 1);
 
-        if(isLastLayer)
-        {
-            setupOutputLayerParameters(model, layerParameters, specification);
-        }
-
-        auto layerTypeName = layerType->second.get<std::string>("Type");
-
-        util::log("ModelSpecification") << " Building layer '" << layerName << "' with input size "
-            << inputSize.toString() << " and parameters '" << layerParameters.toString() << "'\n";
-
-        auto createdLayer = network::LayerFactory::create(layerTypeName, layerParameters);
-
-        if(!createdLayer)
-        {
-            throw std::runtime_error("Failed to create layer type name '" + layerName +
-                "' with parameters '" + layerType->second.toString() + "'");
-        }
-
-        if(layerTypeName == "SubgraphLayer")
-        {
-            auto submodules = specification.get("layer-types." + layerName + ".Submodules");
-
-            populateSubgraphLayer(createdLayer, specification, submodules, inputSize, types);
-        }
-
-        neuralNetwork.addLayer(std::move(createdLayer));
-
-        inputSize = neuralNetwork.getOutputSize();
+        inputSize = loadSubcomponent(model, neuralNetwork, layer, specification,
+            inputSize, types, isLastLayer);
     }
 
     util::log("ModelSpecification") << " Created network \n" << neuralNetwork.shapeString();
