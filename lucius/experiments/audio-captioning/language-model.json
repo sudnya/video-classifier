@@ -13,7 +13,7 @@
 
         "parameters" :
         {
-            "NesterovAcceleratedGradient::LearningRate"       : "1.0e-4",
+            "NesterovAcceleratedGradient::LearningRate"       : "1.0e-3",
             "NesterovAcceleratedGradient::Momentum"           : "0.99",
             "NesterovAcceleratedGradient::AnnealingRate"      : "1.000000",
             "NesterovAcceleratedGradient::MaxGradNorm"        : "80.0",
@@ -31,13 +31,20 @@
             {
                 "Type" : "RecurrentLayer",
                 "Direction" : "bidirectional",
-                "Size" : "16"
+                "Size" : "32"
             },
             "forward":
             {
                 "Type" : "FeedForwardLayer",
-                "OutputSize" : "16",
+                "OutputSize" : "32",
                 "ActivationFunction" : "NullActivationFunction"
+            },
+            "middle-batch-norm":
+            {
+                "Type" : "BatchNormalizationLayer",
+                "InputWidth" : "256",
+                "InputHeight" : "1",
+                "InputColors" : "1"
             },
             "batch-norm":
             {
@@ -56,21 +63,21 @@
             "reader-controller":
             {
                 "Type" : "FeedForwardLayer",
-                "InputSize" : "144",
-                "OutputSize" : "33",
+                "InputSize" : "288",
+                "OutputSize" : "49",
                 "ActivationFunction" : "NullActivationFunction"
             },
             "writer-controller":
             {
                 "Type" : "FeedForwardLayer",
-                "InputSize" : "144",
-                "OutputSize" : "25",
+                "InputSize" : "288",
+                "OutputSize" : "41",
                 "ActivationFunction" : "NullActivationFunction"
             },
             "memory-writer":
             {
                 "Type" : "MemoryWriterLayer",
-                "CellSize": "16",
+                "CellSize": "32",
                 "CellCount": "8",
                 "ActivationFunction" : "NullActivationFunction",
                 "Controller" : "writer-controller"
@@ -78,7 +85,7 @@
             "memory-reader":
             {
                 "Type" : "MemoryReaderLayer",
-                "CellSize": "16",
+                "CellSize": "32",
                 "CellCount": "8",
                 "ActivationFunction" : "NullActivationFunction",
                 "Controller" : "reader-controller"
@@ -92,7 +99,6 @@
                 "layers" :
                 [
                     "forward",
-                    "dropout",
                     "memory-writer",
                     "memory-reader",
                     "output"
@@ -107,7 +113,7 @@
 
         "model-attributes" :
         {
-            "SegmentSize"  : "10",
+            "SegmentSize"  : "8",
             "Graphemes" : [ "A", "B", "C", "D", "E", "F", "G", "H", "I",
                             "J", "K", "L", "M", "N", "O", "P", "Q", "R",
                             "S", "T", "U", "V", "W", "X", "Y", "Z", ",",

@@ -38,9 +38,9 @@ void SoftmaxCostFunction::computeCostImplementation(Bundle& bundle) const
     auto& output    = bundle["outputActivations"].get<MatrixVector>().front();
     auto& reference = bundle["referenceActivations"].get<MatrixVector>().front();
 
-    auto softmaxResult = softmax(output);
+    auto softmaxResult = logsoftmax(output);
 
-    auto result = apply(softmaxResult, matrix::Log());
+    auto result = softmaxResult;
 
     size_t samples = output.size()[output.size().size() - 2];
 
