@@ -11,6 +11,7 @@
 // Standard Library Includes
 #include <istream>
 #include <map>
+#include <random>
 
 namespace lucius
 {
@@ -25,7 +26,6 @@ public:
     InputTextDataProducer(const std::string& textDatabaseFilename);
     InputTextDataProducer(std::istream& textDatabase);
     virtual ~InputTextDataProducer();
-    size_t getSegmentSize();
 
 public:
     /*! \brief Initialize the state of the producer after all parameters have been set. */
@@ -50,12 +50,22 @@ public:
     virtual void setSampleLength(size_t length);
 
 public:
+    /*! \brief Get the size of an input sample. */
+    size_t getSegmentSize() const;
+
+    /*! \brief Get the amount to shift over labels. */
+    size_t getShiftAmount() const;
+
+    /*! \brief Set the amount to shift over labels. */
+    void setShiftAmount(size_t amount);
+
+public:
     virtual void setModel(model::Model* model);
 
 private:
     void createTextDatabase();
     void getReferenceActivationsForString(const std::string& sample,
-        Matrix& referenceActivations, size_t miniBatch);
+        Matrix& referenceActivations, size_t miniBatch) const;
 
 private:
     class FileDescriptor
@@ -118,8 +128,8 @@ private:
     };
 
 private:
-    void convertChunkToOneHot(const std::string& string, Matrix m, size_t miniBatch);
-    std::string getDataFromDescriptor(const FileDescriptor& descriptor);
+    void convertChunkToOneHot(const std::string& string, Matrix m, size_t miniBatch) const;
+    std::string getDataFromDescriptor(const FileDescriptor& descriptor) const;
 
 private:
     std::vector<FileDescriptor> _descriptors;
@@ -127,10 +137,14 @@ private:
     std::istream* _sampleDatabaseStream;
     bool _initialized;
     size_t _segmentSize;
+    size_t _shiftAmount;
     size_t _poppedCount;
     size_t _outputCount;
 
     std::map<std::string, size_t> _outputLabels;
+
+private:
+    std::default_random_engine _generator;
 
 };
 

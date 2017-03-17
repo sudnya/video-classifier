@@ -1,5 +1,4 @@
 
-
 // Lucius Includes
 #include <lucius/matrix/interface/RandomOperations.h>
 #include <lucius/matrix/interface/CurandLibrary.h>
