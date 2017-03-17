@@ -32,12 +32,12 @@ namespace input
 
 InputTextDataProducer::InputTextDataProducer(const std::string& textDatabaseFilename)
 : _sampleDatabasePath(textDatabaseFilename),_sampleDatabaseStream(nullptr), _initialized(false),
-  _segmentSize(0), _poppedCount(0), _outputCount(0)
+  _segmentSize(0), _shiftAmount(0), _poppedCount(0), _outputCount(0)
 {
 }
 
 InputTextDataProducer::InputTextDataProducer(std::istream& textDatabase)
-: _sampleDatabaseStream(&textDatabase), _initialized(false), _segmentSize(0),
+: _sampleDatabaseStream(&textDatabase), _initialized(false), _segmentSize(0), _shiftAmount(0),
   _poppedCount(0), _outputCount(0)
 {
 }
@@ -45,11 +45,6 @@ InputTextDataProducer::InputTextDataProducer(std::istream& textDatabase)
 InputTextDataProducer::~InputTextDataProducer()
 {
 
-}
-
-size_t InputTextDataProducer::getSegmentSize()
-{
-    return _segmentSize;
 }
 
 void InputTextDataProducer::initialize()
@@ -64,10 +59,22 @@ void InputTextDataProducer::initialize()
 
     createTextDatabase();
 
+    bool shouldSeedWithTime = util::KnobDatabase::getKnobValue(
+        "InputTextDataProducer::SeedWithTime", false);
+
+    if(shouldSeedWithTime)
+    {
+        _generator.seed(std::time(0));
+    }
+    else
+    {
+        _generator.seed(127);
+    }
+
     _initialized = true;
 }
 
-std::string InputTextDataProducer::getDataFromDescriptor(const FileDescriptor& descriptor)
+std::string InputTextDataProducer::getDataFromDescriptor(const FileDescriptor& descriptor) const
 {
     if(descriptor.getType() == FileDescriptor::FILE_DESCRIPTOR)
     {
@@ -88,7 +95,7 @@ std::string InputTextDataProducer::getDataFromDescriptor(const FileDescriptor& d
 }
 
 void InputTextDataProducer::getReferenceActivationsForString(const std::string& sample,
-    Matrix& referenceActivations, size_t miniBatch)
+    Matrix& referenceActivations, size_t miniBatch) const
 {
     if(sample.empty())
     {
@@ -98,7 +105,7 @@ void InputTextDataProducer::getReferenceActivationsForString(const std::string& 
     bool ignoreMissingGraphemes = util::KnobDatabase::getKnobValue(
         "InputTextDataProducer::IgnoreMissingGraphemes", false);
 
-    for(size_t sampleIndex = 1; sampleIndex < sample.size(); ++sampleIndex)
+    for(size_t sampleIndex = getShiftAmount(); sampleIndex < sample.size(); ++sampleIndex)
     {
         size_t characterPositionInGraphemeSet = getModel()->getOutputCount();
 
@@ -115,14 +122,15 @@ void InputTextDataProducer::getReferenceActivationsForString(const std::string& 
         {
             if(ignoreMissingGraphemes)
             {
-                referenceActivations[{0, miniBatch, sampleIndex - 1}] = 1.0;
+                referenceActivations[{0, miniBatch, sampleIndex - getShiftAmount()}] = 1.0;
                 continue;
             }
             throw std::runtime_error("Could not match loaded grapheme '" +
                 sample.substr(sampleIndex, 1) + "' against any known grapheme.");
         }
 
-        referenceActivations[{characterPositionInGraphemeSet, miniBatch, sampleIndex - 1}] = 1.0;
+        referenceActivations[
+            {characterPositionInGraphemeSet, miniBatch, sampleIndex - getShiftAmount()}] = 1.0;
     }
 }
 
@@ -134,10 +142,12 @@ network::Bundle InputTextDataProducer::pop()
     auto miniBatchSize = getBatchSize();
 
     Matrix inputActivations =
-        matrix::zeros({getModel()->getInputCount(), miniBatchSize, _segmentSize-1},
+        matrix::zeros({getModel()->getInputCount(), miniBatchSize,
+                       getSegmentSize() - getShiftAmount()},
         matrix::Precision::getDefaultPrecision());
     Matrix referenceActivations =
-        matrix::zeros({getModel()->getInputCount(), miniBatchSize, _segmentSize-1},
+        matrix::zeros({getModel()->getInputCount(), miniBatchSize,
+                       getSegmentSize() - getShiftAmount()},
         matrix::Precision::getDefaultPrecision());
 
     // get minibatch number of descriptors (key)
@@ -149,6 +159,7 @@ network::Bundle InputTextDataProducer::pop()
         convertChunkToOneHot(data, inputActivations, i);
         getReferenceActivationsForString(data, referenceActivations, i);
     }
+
     // add one hot encoded matrix to bundle
     // add one hot encoded reference matrix (shifted to next char) to bundle
     _poppedCount += miniBatchSize;
@@ -169,20 +180,37 @@ bool InputTextDataProducer::empty() const
 
 void InputTextDataProducer::reset()
 {
-    // TODO: std::shuffle(_descriptors.begin(), _descriptors.end(), );
+    std::shuffle(_descriptors.begin(), _descriptors.begin() + getUniqueSampleCount(), _generator);
     _poppedCount = 0;
 }
 
 size_t InputTextDataProducer::getUniqueSampleCount() const
 {
+    // limit to total sample count
     size_t samples = std::min(getMaximumSamplesToRun(), _descriptors.size());
 
+    // clamp to a multiple of the batch size
     return samples - (samples % getBatchSize());
 }
 
 void InputTextDataProducer::setSampleLength(size_t length)
 {
     _segmentSize = length;
+}
+
+size_t InputTextDataProducer::getSegmentSize() const
+{
+    return _segmentSize;
+}
+
+size_t InputTextDataProducer::getShiftAmount() const
+{
+    return _shiftAmount;
+}
+
+void InputTextDataProducer::setShiftAmount(size_t amount)
+{
+    _shiftAmount = amount;
 }
 
 void InputTextDataProducer::setModel(model::Model* model)
@@ -198,11 +226,12 @@ void InputTextDataProducer::setModel(model::Model* model)
         _outputLabels[getModel()->getOutputLabel(i)] = i;
     }
 
-    _segmentSize = model->getAttribute<size_t>("SegmentSize");
+    setSampleLength(model->getAttribute<size_t>("SegmentSize"));
+    setShiftAmount(model->getAttribute<size_t>("ShiftAmount"));
 }
 
 void InputTextDataProducer::convertChunkToOneHot(const std::string& data,
-    Matrix inputActivations, size_t miniBatch)
+    Matrix inputActivations, size_t miniBatch) const
 {
     if(data.empty())
     {
@@ -212,7 +241,7 @@ void InputTextDataProducer::convertChunkToOneHot(const std::string& data,
     bool ignoreMissingGraphemes = util::KnobDatabase::getKnobValue(
         "InputTextDataProducer::IgnoreMissingGraphemes", false);
 
-    for(size_t charPosInFile = 0; charPosInFile < data.size() - 1; ++charPosInFile)
+    for(size_t charPosInFile = 0; charPosInFile < data.size() - getShiftAmount(); ++charPosInFile)
     {
         char c = data[charPosInFile];
 
@@ -220,7 +249,9 @@ void InputTextDataProducer::convertChunkToOneHot(const std::string& data,
 
         if(_outputLabels.count(std::string(1, c)) != 0)
         {
-            characterPositionInGraphemeSet = _outputLabels[std::string(1, c)];
+            auto position = _outputLabels.find(std::string(1, c));
+
+            characterPositionInGraphemeSet = position->second;
         }
 
         if(characterPositionInGraphemeSet == _outputCount)
@@ -241,17 +272,18 @@ void InputTextDataProducer::convertChunkToOneHot(const std::string& data,
 void InputTextDataProducer::createTextDatabase()
 {
     //
-    util::log("InputTextDataProducer") << " scanning text database '" << _sampleDatabasePath << "'\n";
+    util::log("InputTextDataProducer") << " scanning text database '"
+        << _sampleDatabasePath << "'\n";
 
     std::unique_ptr<database::SampleDatabase> sampleDatabase;
 
     if(_sampleDatabaseStream == nullptr)
     {
-        sampleDatabase.reset(new database::SampleDatabase(_sampleDatabasePath));
+        sampleDatabase = std::make_unique<database::SampleDatabase>(_sampleDatabasePath);
     }
     else
     {
-        sampleDatabase.reset(new database::SampleDatabase(*_sampleDatabaseStream));
+        sampleDatabase = std::make_unique<database::SampleDatabase>(*_sampleDatabaseStream);
     }
 
     sampleDatabase->load();
@@ -268,37 +300,43 @@ void InputTextDataProducer::createTextDatabase()
 
                 size_t totalSize = sample.label().size();
 
-                size_t iterationsInLabel = totalSize / _segmentSize;
-                size_t leftOver = totalSize % _segmentSize;
+                size_t iterationsInLabel = totalSize / getSegmentSize();
+                size_t leftOver = totalSize % getSegmentSize();
 
                 for(size_t i = 0; i < iterationsInLabel; ++i)
                 {
-                    _descriptors.push_back(FileDescriptor(sample.label().substr(i*_segmentSize, _segmentSize)));
+                    _descriptors.push_back(
+                        FileDescriptor(sample.label().substr(i * getSegmentSize(),
+                            getSegmentSize())));
                 }
 
                 if(leftOver > 0)
                 {
-                    _descriptors.push_back(FileDescriptor(sample.label().substr(iterationsInLabel*_segmentSize)));
+                    _descriptors.push_back(FileDescriptor(
+                        sample.label().substr(iterationsInLabel * getSegmentSize())));
                 }
             }
             else
             {
-                util::log("InputTextDataProducer::Detail") << "  found unlabeled text file '" << sample.path() << "'\n";
+                util::log("InputTextDataProducer::Detail") << "  found unlabeled text file '"
+                    << sample.path() << "'\n";
 
                 //get file size
                 size_t fileSize         = util::getFileSize(sample.path());
-                size_t iterationsInFile = fileSize/_segmentSize;
-                size_t leftOver         = fileSize%_segmentSize;
+                size_t iterationsInFile = fileSize / getSegmentSize();
+                size_t leftOver         = fileSize % getSegmentSize();
 
                 for(size_t i = 0; i < iterationsInFile; ++i)
                 {
-                    _descriptors.push_back(FileDescriptor(sample.path(), i*_segmentSize, _segmentSize));
+                    _descriptors.push_back(FileDescriptor(sample.path(),
+                        i * getSegmentSize(), getSegmentSize()));
                 }
 
                 //leftover
                 if(leftOver > 0)
                 {
-                    _descriptors.push_back(FileDescriptor(sample.path(), iterationsInFile*_segmentSize, leftOver));
+                    _descriptors.push_back(FileDescriptor(sample.path(),
+                        iterationsInFile * getSegmentSize(), leftOver));
                 }
             }
         }

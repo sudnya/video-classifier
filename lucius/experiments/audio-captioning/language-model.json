@@ -31,20 +31,13 @@
             {
                 "Type" : "RecurrentLayer",
                 "Direction" : "bidirectional",
-                "Size" : "32"
+                "Size" : "16"
             },
             "forward":
             {
                 "Type" : "FeedForwardLayer",
-                "OutputSize" : "32",
+                "OutputSize" : "16",
                 "ActivationFunction" : "NullActivationFunction"
-            },
-            "middle-batch-norm":
-            {
-                "Type" : "BatchNormalizationLayer",
-                "InputWidth" : "256",
-                "InputHeight" : "1",
-                "InputColors" : "1"
             },
             "batch-norm":
             {
@@ -63,30 +56,30 @@
             "reader-controller":
             {
                 "Type" : "FeedForwardLayer",
-                "InputSize" : "288",
-                "OutputSize" : "49",
+                "InputSize" : "2048",
+                "OutputSize" : "271",
                 "ActivationFunction" : "NullActivationFunction"
             },
             "writer-controller":
             {
                 "Type" : "FeedForwardLayer",
-                "InputSize" : "288",
-                "OutputSize" : "41",
+                "InputSize" : "2048",
+                "OutputSize" : "144",
                 "ActivationFunction" : "NullActivationFunction"
             },
             "memory-writer":
             {
                 "Type" : "MemoryWriterLayer",
-                "CellSize": "32",
-                "CellCount": "8",
+                "CellSize": "16",
+                "CellCount": "127",
                 "ActivationFunction" : "NullActivationFunction",
                 "Controller" : "writer-controller"
             },
             "memory-reader":
             {
                 "Type" : "MemoryReaderLayer",
-                "CellSize": "32",
-                "CellCount": "8",
+                "CellSize": "16",
+                "CellCount": "127",
                 "ActivationFunction" : "NullActivationFunction",
                 "Controller" : "reader-controller"
             }
@@ -113,7 +106,8 @@
 
         "model-attributes" :
         {
-            "SegmentSize"  : "8",
+            "ShiftAmount" : "0",
+            "SegmentSize" : "200",
             "Graphemes" : [ "A", "B", "C", "D", "E", "F", "G", "H", "I",
                             "J", "K", "L", "M", "N", "O", "P", "Q", "R",
                             "S", "T", "U", "V", "W", "X", "Y", "Z", ",",

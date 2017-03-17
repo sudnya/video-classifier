@@ -125,7 +125,8 @@ static void loadModelAttributes(Model& model, const util::PropertyTree& specific
 
 typedef std::map<std::string, util::ParameterPack> TypeMap;
 
-database::SampleDatabase::StringVector getAllPossibleGraphemes(const util::PropertyTree& specification)
+database::SampleDatabase::StringVector getAllPossibleGraphemes(
+    const util::PropertyTree& specification)
 {
     database::SampleDatabase::StringVector labels;
 
@@ -195,7 +196,6 @@ matrix::Dimension computeInputSize(const util::PropertyTree& model)
         result.push_back(1);
         result.push_back(1); // minibatch
         result.push_back(1); // timesteps
-
     }
     else
     {
