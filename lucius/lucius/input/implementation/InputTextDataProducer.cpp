@@ -4,6 +4,7 @@
     \brief  The source file for the InputTextDataProducer class.
 */
 
+// Lucius Includes
 #include <lucius/input/interface/InputTextDataProducer.h>
 
 #include <lucius/model/interface/Model.h>
@@ -21,8 +22,9 @@
 #include <lucius/util/interface/paths.h>
 #include <lucius/util/interface/Knobs.h>
 
+// Standard Library Includes
 #include <fstream>
-
+#include <algorithm>
 
 namespace lucius
 {
