@@ -243,7 +243,12 @@ void InputTextDataProducer::convertChunkToOneHot(const std::string& data,
     bool ignoreMissingGraphemes = util::KnobDatabase::getKnobValue(
         "InputTextDataProducer::IgnoreMissingGraphemes", false);
 
-    for(size_t charPosInFile = 0; charPosInFile < data.size() - getShiftAmount(); ++charPosInFile)
+    bool reverseSequence = util::KnobDatabase::getKnobValue(
+        "InputTextDataProducer::ReverseInputSequence", false);
+
+    size_t sequenceLength = data.size() - getShiftAmount();
+
+    for(size_t charPosInFile = 0; charPosInFile < sequenceLength; ++charPosInFile)
     {
         char c = data[charPosInFile];
 
@@ -256,18 +261,20 @@ void InputTextDataProducer::convertChunkToOneHot(const std::string& data,
             characterPositionInGraphemeSet = position->second;
         }
 
+        size_t timestep = reverseSequence ? sequenceLength - charPosInFile - 1 : charPosInFile;
+
         if(characterPositionInGraphemeSet == _outputCount)
         {
             if(ignoreMissingGraphemes)
             {
-                inputActivations[{0, miniBatch, charPosInFile}] = 1.0;
+                inputActivations[{0, miniBatch, timestep}] = 1.0;
                 continue;
             }
             throw std::runtime_error("Could not match loaded grapheme '" + std::string(1, c) +
                 "' against any known grapheme.");
         }
 
-        inputActivations[{characterPositionInGraphemeSet, miniBatch, charPosInFile}] = 1.0;
+        inputActivations[{characterPositionInGraphemeSet, miniBatch, timestep}] = 1.0;
     }
 }
 
