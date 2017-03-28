@@ -57,14 +57,16 @@ public:
 
 };
 
-lucius::matrix::Matrix getOneHotEncoded(const std::vector<std::string>& samples, lucius::model::Model& languageModel)
+lucius::matrix::Matrix getOneHotEncoded(const std::vector<std::string>& samples,
+    lucius::model::Model& languageModel)
 {
     size_t miniBatchSize = samples.size();
     size_t sampleSize = samples.front().size();
 
-    matrix::Matrix inputActivations = matrix::zeros(matrix::Dimension{languageModel.getInputCount(), miniBatchSize, sampleSize}, 
-            matrix::Precision::getDefaultPrecision());
-    
+    matrix::Matrix inputActivations = matrix::zeros(
+        matrix::Dimension{languageModel.getInputCount(), miniBatchSize, sampleSize},
+        matrix::Precision::getDefaultPrecision());
+
     for(size_t miniBatch = 0; miniBatch < miniBatchSize; ++miniBatch)
     {
         auto& sample = samples[miniBatch];
@@ -84,8 +86,8 @@ lucius::matrix::Matrix getOneHotEncoded(const std::vector<std::string>& samples,
 
             if(characterPositionInGraphemeSet == languageModel.getOutputCount())
             {
-                throw std::runtime_error("Could not match loaded grapheme '" + sample.substr(charPosInFile, 1) +
-                    "' against any known grapheme.");
+                throw std::runtime_error("Could not match loaded grapheme '" +
+                    sample.substr(charPosInFile, 1) + "' against any known grapheme.");
             }
 
             inputActivations[{characterPositionInGraphemeSet, miniBatch, charPosInFile}] = 1.0;
@@ -95,18 +97,23 @@ lucius::matrix::Matrix getOneHotEncoded(const std::vector<std::string>& samples,
     return inputActivations;
 }
 
-lucius::matrix::Matrix getInputActivationsForString(const std::vector<std::string>& samples, model::Model& languageModel)
+lucius::matrix::Matrix getInputActivationsForString(const std::vector<std::string>& samples,
+    model::Model& languageModel)
 {
     lucius::matrix::Matrix retVal = getOneHotEncoded(samples, languageModel);
 
-    return lucius::matrix::slice(retVal, {0, 0, 0}, {languageModel.getInputCount(), retVal.size()[1], samples.front().length() - 1});
+    return lucius::matrix::slice(retVal,
+        {                            0,                0,                            0},
+        {languageModel.getInputCount(), retVal.size()[1], samples.front().length() - 1});
 }
 
-lucius::matrix::Matrix getReferenceActivationsForString(const std::vector<std::string>& samples, model::Model& languageModel)
+lucius::matrix::Matrix getReferenceActivationsForString(const std::vector<std::string>& samples,
+    model::Model& languageModel)
 {
     lucius::matrix::Matrix retVal = getOneHotEncoded(samples, languageModel);
 
-    return slice(retVal, {0, 0, 1}, {languageModel.getInputCount(), retVal.size()[1], samples.front().length()});
+    return slice(retVal, {0, 0, 1}, {languageModel.getInputCount(), retVal.size()[1],
+        samples.front().length()});
 }
 
 void setVocabulary(model::Model& model)
@@ -138,36 +145,40 @@ model::Model createModel(lucius::input::Parameters parameters, size_t segmentSiz
 
     nextLetterPredictor.initialize();
 
-    languageModel.setAttribute("SegmentSize", segmentSize);
+    languageModel.setAttribute("MaximumSampleLength", segmentSize);
+    languageModel.setAttribute("ShiftAmount", 1);
+    languageModel.setAttribute("InitialSampleLength", segmentSize);
+    languageModel.setAttribute("SampleLengthStepSize", 0);
+    languageModel.setAttribute("SampleLengthStepPeriod", 0);
 
     languageModel.setNeuralNetwork("NextLetterPredictor", nextLetterPredictor);
 
     return languageModel;
 }
 
-bool testPop(lucius::input::Parameters parameters) 
+bool testPop(lucius::input::Parameters parameters)
 {
     bool status = true;
 
     {
         std::string label = "This is a sample string. This is also a sample string.";
-        for (auto & c: label) 
+        for (auto & c: label)
         {
             c = tolower(c);
         }
 
         std::string simpleInputStr = "random.txt, \"" + label + "\"";
         std::istringstream inputStream(simpleInputStr);
-        
+
         model::Model fakeModel = createModel(parameters, label.size());
 
         InputTextDataProducer producer(inputStream);
         producer.setBatchSize(1);
         producer.setModel(&fakeModel);
         producer.initialize();
-        
+
         auto bundle = producer.pop();
-        
+
         auto inputActivations = bundle["inputActivations"].get<lucius::matrix::MatrixVector>().front();
         auto referenceInputActivations = getInputActivationsForString({label}, fakeModel);
 
@@ -190,7 +201,7 @@ bool testEmpty()
         std::string emptyStr = "";
         std::istringstream inputStream(emptyStr);
         InputTextDataProducer producer(inputStream);
-        producer.setSampleLength(1);
+        producer.setMaximumSampleLength(1);
         producer.setBatchSize(1);
         producer.initialize();
         bool result = producer.empty();
@@ -206,12 +217,12 @@ bool testEmpty()
 
         status &= result;
     }
-    
+
     {
         std::string emptyStr = "random.txt, \"some text\"";
         std::istringstream inputStream(emptyStr);
         InputTextDataProducer producer(inputStream);
-        producer.setSampleLength(emptyStr.size());
+        producer.setMaximumSampleLength(emptyStr.size());
         producer.setBatchSize(1);
         producer.initialize();
         bool result = !producer.empty();
@@ -231,26 +242,26 @@ bool testEmpty()
     return status;
 }
 
-bool testReset(lucius::input::Parameters parameters) 
+bool testReset(lucius::input::Parameters parameters)
 {
     bool status = true;
     // create non empty string
     {
         std::string label = "This is a sample string. This is also a sample string.";
-        for (auto & c: label) 
+        for (auto & c: label)
         {
             c = tolower(c);
         }
         std::string simpleInputStr = "random.txt, \"" + label + "\"";
         std::istringstream inputStream(simpleInputStr);
-        
+
         model::Model fakeModel = createModel(parameters, label.size());
 
         InputTextDataProducer producer(inputStream);
         producer.setBatchSize(1);
         producer.setModel(&fakeModel);
         producer.initialize();
-        
+
         auto bundle = producer.pop();
 
         status &= producer.empty();
@@ -263,7 +274,7 @@ bool testReset(lucius::input::Parameters parameters)
 }
 
 
-bool testSampleCount(lucius::input::Parameters parameters) 
+bool testSampleCount(lucius::input::Parameters parameters)
 {
     bool status = true;
 
@@ -272,23 +283,23 @@ bool testSampleCount(lucius::input::Parameters parameters)
         std::string label = "This is a sample string. This is also a sample string.";
         std::string simpleInputStr = "random.txt, \"" + label + "\"";
         std::istringstream inputStream(simpleInputStr);
-        
+
         model::Model fakeModel = createModel(parameters, label.size());
-        
+
         InputTextDataProducer producer(inputStream);
         producer.setBatchSize(1);
         producer.setModel(&fakeModel);
         producer.initialize();
         status &= (producer.getUniqueSampleCount() == 1);
     }
-    
+
     {
         std::string label = "This is a sample string. This is also a sample string.";
         std::string simpleInputStr = "random.txt, \"" + label + "\"";
         std::istringstream inputStream(simpleInputStr);
-        
+
         model::Model fakeModel = createModel(parameters, label.size() / 2);
-        
+
         InputTextDataProducer producer(inputStream);
         producer.setBatchSize(1);
         producer.setModel(&fakeModel);
@@ -301,11 +312,11 @@ bool testSampleCount(lucius::input::Parameters parameters)
 }
 }
 
-int main(int argc, char** argv) 
+int main(int argc, char** argv)
 {
     std::cout << "Running InputTextDataProducer tests" << std::endl;
     std::cout << "Status Pass=1, Fail=0" << std::endl;
-    
+
     lucius::util::ArgumentParser parser(argc, argv);
 
     lucius::input::Parameters parameters;

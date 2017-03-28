@@ -34,13 +34,17 @@ namespace input
 
 InputTextDataProducer::InputTextDataProducer(const std::string& textDatabaseFilename)
 : _sampleDatabasePath(textDatabaseFilename),_sampleDatabaseStream(nullptr), _initialized(false),
-  _segmentSize(0), _shiftAmount(0), _poppedCount(0), _outputCount(0)
+  _shiftAmount(0), _poppedCount(0), _outputCount(0),
+  _maximumSampleLength(0), _initialSampleLength(0), _sampleLengthStepSize(0),
+  _sampleLengthStepPeriod(0)
 {
 }
 
 InputTextDataProducer::InputTextDataProducer(std::istream& textDatabase)
-: _sampleDatabaseStream(&textDatabase), _initialized(false), _segmentSize(0), _shiftAmount(0),
-  _poppedCount(0), _outputCount(0)
+: _sampleDatabaseStream(&textDatabase), _initialized(false), _shiftAmount(0),
+  _poppedCount(0), _outputCount(0),
+  _maximumSampleLength(0), _initialSampleLength(0), _sampleLengthStepSize(0),
+  _sampleLengthStepPeriod(0)
 {
 }
 
@@ -78,6 +82,8 @@ void InputTextDataProducer::initialize()
 
 std::string InputTextDataProducer::getDataFromDescriptor(const FileDescriptor& descriptor) const
 {
+    std::string result;
+
     if(descriptor.getType() == FileDescriptor::FILE_DESCRIPTOR)
     {
         std::ifstream stream(descriptor.getFilename());
@@ -87,13 +93,17 @@ std::string InputTextDataProducer::getDataFromDescriptor(const FileDescriptor& d
         std::vector<int8_t> result(descriptor.getSizeInFile());
 
         stream.read(reinterpret_cast<char*>(result.data()), descriptor.getSizeInFile());
-
-        return std::string(result.begin(), result.end());
     }
     else
     {
-        return descriptor.getLabel();
+        result = descriptor.getLabel();
     }
+
+    size_t size = std::min(result.size(), getCurrentSampleLength());
+
+    result.resize(size);
+
+    return result;
 }
 
 void InputTextDataProducer::getReferenceActivationsForString(const std::string& sample,
@@ -145,17 +155,17 @@ network::Bundle InputTextDataProducer::pop()
 
     Matrix inputActivations =
         matrix::zeros({getModel()->getInputCount(), miniBatchSize,
-                       getSegmentSize() - getShiftAmount()},
+                       getCurrentSampleLength() - getShiftAmount()},
         matrix::Precision::getDefaultPrecision());
     Matrix referenceActivations =
         matrix::zeros({getModel()->getInputCount(), miniBatchSize,
-                       getSegmentSize() - getShiftAmount()},
+                       getCurrentSampleLength() - getShiftAmount()},
         matrix::Precision::getDefaultPrecision());
 
     // get minibatch number of descriptors (key)
     for (size_t i = 0; i < miniBatchSize; ++i)
     {
-        auto data = getDataFromDescriptor(_descriptors[_poppedCount+i]);
+        auto data = getDataFromDescriptor(_descriptors[_poppedCount + i]);
 
         // one hot encoded the samples within descriptors
         convertChunkToOneHot(data, inputActivations, i);
@@ -195,14 +205,14 @@ size_t InputTextDataProducer::getUniqueSampleCount() const
     return samples - (samples % getBatchSize());
 }
 
-void InputTextDataProducer::setSampleLength(size_t length)
+void InputTextDataProducer::setMaximumSampleLength(size_t length)
 {
-    _segmentSize = length;
+    _maximumSampleLength = length;
 }
 
-size_t InputTextDataProducer::getSegmentSize() const
+size_t InputTextDataProducer::getMaximumSampleLength() const
 {
-    return _segmentSize;
+    return _maximumSampleLength;
 }
 
 size_t InputTextDataProducer::getShiftAmount() const
@@ -213,6 +223,44 @@ size_t InputTextDataProducer::getShiftAmount() const
 void InputTextDataProducer::setShiftAmount(size_t amount)
 {
     _shiftAmount = amount;
+}
+
+size_t InputTextDataProducer::getCurrentSampleLength() const
+{
+    size_t length = getInitialSampleLength() +
+        getSampleLengthStepSize() * (_poppedCount / getSampleLengthStepPeriod());
+
+    return std::min(length, getMaximumSampleLength());
+}
+
+void InputTextDataProducer::setInitialSampleLength(size_t length)
+{
+    _initialSampleLength = length;
+}
+
+size_t InputTextDataProducer::getInitialSampleLength() const
+{
+    return _initialSampleLength;
+}
+
+void InputTextDataProducer::setSampleLengthStepSize(size_t step)
+{
+    _sampleLengthStepSize = step;
+}
+
+size_t InputTextDataProducer::getSampleLengthStepSize() const
+{
+    return _sampleLengthStepSize;
+}
+
+void InputTextDataProducer::setSampleLengthStepPeriod(size_t period)
+{
+    _sampleLengthStepPeriod = period;
+}
+
+size_t InputTextDataProducer::getSampleLengthStepPeriod() const
+{
+    return _sampleLengthStepPeriod;
 }
 
 void InputTextDataProducer::setModel(model::Model* model)
@@ -228,8 +276,11 @@ void InputTextDataProducer::setModel(model::Model* model)
         _outputLabels[getModel()->getOutputLabel(i)] = i;
     }
 
-    setSampleLength(model->getAttribute<size_t>("SegmentSize"));
+    setMaximumSampleLength(model->getAttribute<size_t>("MaximumSampleLength"));
     setShiftAmount(model->getAttribute<size_t>("ShiftAmount"));
+    setInitialSampleLength(model->getAttribute<size_t>("InitialSampleLength"));
+    setSampleLengthStepSize(model->getAttribute<size_t>("SampleLengthStepSize"));
+    setSampleLengthStepPeriod(model->getAttribute<size_t>("SampleLengthStepPeriod"));
 }
 
 void InputTextDataProducer::convertChunkToOneHot(const std::string& data,
@@ -280,7 +331,6 @@ void InputTextDataProducer::convertChunkToOneHot(const std::string& data,
 
 void InputTextDataProducer::createTextDatabase()
 {
-    //
     util::log("InputTextDataProducer") << " scanning text database '"
         << _sampleDatabasePath << "'\n";
 
@@ -309,20 +359,20 @@ void InputTextDataProducer::createTextDatabase()
 
                 size_t totalSize = sample.label().size();
 
-                size_t iterationsInLabel = totalSize / getSegmentSize();
-                size_t leftOver = totalSize % getSegmentSize();
+                size_t iterationsInLabel = totalSize / getMaximumSampleLength();
+                size_t leftOver = totalSize % getMaximumSampleLength();
 
                 for(size_t i = 0; i < iterationsInLabel; ++i)
                 {
                     _descriptors.push_back(
-                        FileDescriptor(sample.label().substr(i * getSegmentSize(),
-                            getSegmentSize())));
+                        FileDescriptor(sample.label().substr(i * getMaximumSampleLength(),
+                            getMaximumSampleLength())));
                 }
 
                 if(leftOver > 0)
                 {
                     _descriptors.push_back(FileDescriptor(
-                        sample.label().substr(iterationsInLabel * getSegmentSize())));
+                        sample.label().substr(iterationsInLabel * getMaximumSampleLength())));
                 }
             }
             else
@@ -332,20 +382,20 @@ void InputTextDataProducer::createTextDatabase()
 
                 //get file size
                 size_t fileSize         = util::getFileSize(sample.path());
-                size_t iterationsInFile = fileSize / getSegmentSize();
-                size_t leftOver         = fileSize % getSegmentSize();
+                size_t iterationsInFile = fileSize / getMaximumSampleLength();
+                size_t leftOver         = fileSize % getMaximumSampleLength();
 
                 for(size_t i = 0; i < iterationsInFile; ++i)
                 {
                     _descriptors.push_back(FileDescriptor(sample.path(),
-                        i * getSegmentSize(), getSegmentSize()));
+                        i * getMaximumSampleLength(), getMaximumSampleLength()));
                 }
 
                 //leftover
                 if(leftOver > 0)
                 {
                     _descriptors.push_back(FileDescriptor(sample.path(),
-                        iterationsInFile * getSegmentSize(), leftOver));
+                        iterationsInFile * getMaximumSampleLength(), leftOver));
                 }
             }
         }
