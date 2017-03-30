@@ -260,7 +260,7 @@ void InputTextDataProducer::setSampleLengthStepPeriod(size_t period)
 
 size_t InputTextDataProducer::getSampleLengthStepPeriod() const
 {
-    return _sampleLengthStepPeriod;
+    return std::max(static_cast<size_t>(1), _sampleLengthStepPeriod);
 }
 
 void InputTextDataProducer::setModel(model::Model* model)
