@@ -33,16 +33,16 @@ namespace input
 {
 
 InputTextDataProducer::InputTextDataProducer(const std::string& textDatabaseFilename)
-: _sampleDatabasePath(textDatabaseFilename),_sampleDatabaseStream(nullptr), _initialized(false),
-  _shiftAmount(0), _poppedCount(0), _outputCount(0),
+: _sampleDatabasePath(textDatabaseFilename), _sampleDatabaseStream(nullptr), _initialized(false),
+  _reverseInputSequence(false), _shiftAmount(0), _poppedCount(0), _outputCount(0),
   _maximumSampleLength(0), _initialSampleLength(0), _sampleLengthStepSize(0),
   _sampleLengthStepPeriod(0)
 {
 }
 
 InputTextDataProducer::InputTextDataProducer(std::istream& textDatabase)
-: _sampleDatabaseStream(&textDatabase), _initialized(false), _shiftAmount(0),
-  _poppedCount(0), _outputCount(0),
+: _sampleDatabaseStream(&textDatabase), _initialized(false), _reverseInputSequence(false),
+  _shiftAmount(0), _poppedCount(0), _outputCount(0),
   _maximumSampleLength(0), _initialSampleLength(0), _sampleLengthStepSize(0),
   _sampleLengthStepPeriod(0)
 {
@@ -278,9 +278,33 @@ void InputTextDataProducer::setModel(model::Model* model)
 
     setMaximumSampleLength(model->getAttribute<size_t>("MaximumSampleLength"));
     setShiftAmount(model->getAttribute<size_t>("ShiftAmount"));
-    setInitialSampleLength(model->getAttribute<size_t>("InitialSampleLength"));
-    setSampleLengthStepSize(model->getAttribute<size_t>("SampleLengthStepSize"));
-    setSampleLengthStepPeriod(model->getAttribute<size_t>("SampleLengthStepPeriod"));
+
+    if(model->hasAttribute("ReverseInputSequence"))
+    {
+        setReverseInputSequence(model->getAttribute<bool>("ReverseInputSequence"));
+    }
+    else
+    {
+        setReverseInputSequence(util::KnobDatabase::getKnobValue(
+            "InputTextDataProducer::ReverseInputSequence", false));
+    }
+
+    setInitialSampleLength(util::KnobDatabase::getKnobValue(
+        "InputTextDataProducer::InitialSampleLength", getMaximumSampleLength()));
+    setSampleLengthStepSize(util::KnobDatabase::getKnobValue(
+        "InputTextDataProducer::SampleLengthStepSize", 0));
+    setSampleLengthStepPeriod(util::KnobDatabase::getKnobValue(
+        "InputTextDataProducer::SampleLengthStepPeriod", 1));
+}
+
+void InputTextDataProducer::setReverseInputSequence(bool reverse)
+{
+    _reverseInputSequence = reverse;
+}
+
+bool InputTextDataProducer::getReverseInputSequence() const
+{
+    return _reverseInputSequence;
 }
 
 void InputTextDataProducer::convertChunkToOneHot(const std::string& data,
@@ -293,9 +317,6 @@ void InputTextDataProducer::convertChunkToOneHot(const std::string& data,
 
     bool ignoreMissingGraphemes = util::KnobDatabase::getKnobValue(
         "InputTextDataProducer::IgnoreMissingGraphemes", false);
-
-    bool reverseSequence = util::KnobDatabase::getKnobValue(
-        "InputTextDataProducer::ReverseInputSequence", false);
 
     size_t sequenceLength = data.size() - getShiftAmount();
 
@@ -312,7 +333,8 @@ void InputTextDataProducer::convertChunkToOneHot(const std::string& data,
             characterPositionInGraphemeSet = position->second;
         }
 
-        size_t timestep = reverseSequence ? sequenceLength - charPosInFile - 1 : charPosInFile;
+        size_t timestep = getReverseInputSequence() ?
+            sequenceLength - charPosInFile - 1 : charPosInFile;
 
         if(characterPositionInGraphemeSet == _outputCount)
         {

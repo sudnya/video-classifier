@@ -147,9 +147,6 @@ model::Model createModel(lucius::input::Parameters parameters, size_t segmentSiz
 
     languageModel.setAttribute("MaximumSampleLength", segmentSize);
     languageModel.setAttribute("ShiftAmount", 1);
-    languageModel.setAttribute("InitialSampleLength", segmentSize);
-    languageModel.setAttribute("SampleLengthStepSize", 0);
-    languageModel.setAttribute("SampleLengthStepPeriod", 0);
 
     languageModel.setNeuralNetwork("NextLetterPredictor", nextLetterPredictor);
 

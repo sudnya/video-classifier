@@ -51,6 +51,13 @@ public:
     virtual void setModel(model::Model* model);
 
 public:
+    /*! \brief Set whether or not the input sequence should be reduced. */
+    void setReverseInputSequence(bool sequence);
+
+    /*! \brief Get whether or not the input sequence should be reduced. */
+    bool getReverseInputSequence() const;
+
+public:
     /*! \brief Set the size of the input sample */
     void setMaximumSampleLength(size_t length);
 
@@ -159,6 +166,7 @@ private:
     std::string _sampleDatabasePath;
     std::istream* _sampleDatabaseStream;
     bool _initialized;
+    bool _reverseInputSequence;
     size_t _shiftAmount;
     size_t _poppedCount;
     size_t _outputCount;
