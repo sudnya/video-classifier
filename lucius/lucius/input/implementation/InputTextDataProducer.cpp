@@ -90,9 +90,9 @@ std::string InputTextDataProducer::getDataFromDescriptor(const FileDescriptor& d
 
         stream.seekg(descriptor.getOffsetInFile());
 
-        std::vector<int8_t> result(descriptor.getSizeInFile());
+        result.resize(descriptor.getSizeInFile());
 
-        stream.read(reinterpret_cast<char*>(result.data()), descriptor.getSizeInFile());
+        stream.read(const_cast<char*>(result.c_str()), descriptor.getSizeInFile());
     }
     else
     {
