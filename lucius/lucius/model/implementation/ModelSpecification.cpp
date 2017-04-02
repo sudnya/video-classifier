@@ -189,7 +189,7 @@ matrix::Dimension computeInputSize(const util::PropertyTree& model)
         result.push_back(1);
         result.push_back(1);
     }
-    else if(attributes.exists("SegmentSize"))
+    else if(attributes.exists("MaximumSampleLength"))
     {
         result.push_back(getAllPossibleGraphemes(model).size());
         result.push_back(1);
