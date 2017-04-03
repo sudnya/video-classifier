@@ -169,6 +169,7 @@ private:
     bool _reverseInputSequence;
     size_t _shiftAmount;
     size_t _poppedCount;
+    size_t _totalPoppedCount;
     size_t _outputCount;
 
     std::map<std::string, size_t> _outputLabels;
