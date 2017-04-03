@@ -46,21 +46,60 @@ public:
     /*! \brief Get the total number of unique samples that can be produced. */
     virtual size_t getUniqueSampleCount() const;
 
-    /*! \brief Set the size of the input sample */
-    virtual void setSampleLength(size_t length);
+public:
+    /*! \brief Set the model. */
+    virtual void setModel(model::Model* model);
 
 public:
-    /*! \brief Get the size of an input sample. */
-    size_t getSegmentSize() const;
+    /*! \brief Set whether or not the input sequence should be reduced. */
+    void setReverseInputSequence(bool sequence);
 
-    /*! \brief Get the amount to shift over labels. */
-    size_t getShiftAmount() const;
+    /*! \brief Get whether or not the input sequence should be reduced. */
+    bool getReverseInputSequence() const;
+
+public:
+    /*! \brief Set whether or not the input sequence should be augmented with
+               start and end tokens. */
+    void setUseStartAndEndTokens(bool sequence);
+
+    /*! \brief Get whether or not the input sequence should be augmented with
+               start and end tokens. */
+    bool getUseStartAndEndTokens() const;
+
+public:
+    /*! \brief Set the size of the input sample */
+    void setMaximumSampleLength(size_t length);
+
+    /*! \brief Get the size of an input sample. */
+    size_t getMaximumSampleLength() const;
 
     /*! \brief Set the amount to shift over labels. */
     void setShiftAmount(size_t amount);
 
+    /*! \brief Get the amount to shift over labels. */
+    size_t getShiftAmount() const;
+
 public:
-    virtual void setModel(model::Model* model);
+    /*! \brief Get current sample length. */
+    size_t getCurrentSampleLength() const;
+
+    /*! \brief Set the initial sample length. */
+    void setInitialSampleLength(size_t length);
+
+    /*! \brief Get the initial sample length. */
+    size_t getInitialSampleLength() const;
+
+    /*! \brief Set the sample length step size. */
+    void setSampleLengthStepSize(size_t length);
+
+    /*! \brief Get the sample length step size. */
+    size_t getSampleLengthStepSize() const;
+
+    /*! \brief Set the sample length step period in samples. */
+    void setSampleLengthStepPeriod(size_t length);
+
+    /*! \brief Get the sample length step period in samples. */
+    size_t getSampleLengthStepPeriod() const;
 
 private:
     void createTextDatabase();
@@ -136,12 +175,20 @@ private:
     std::string _sampleDatabasePath;
     std::istream* _sampleDatabaseStream;
     bool _initialized;
-    size_t _segmentSize;
+    bool _reverseInputSequence;
+    bool _useStartAndEndTokens;
     size_t _shiftAmount;
     size_t _poppedCount;
+    size_t _totalPoppedCount;
     size_t _outputCount;
 
     std::map<std::string, size_t> _outputLabels;
+
+private:
+    size_t _maximumSampleLength;
+    size_t _initialSampleLength;
+    size_t _sampleLengthStepSize;
+    size_t _sampleLengthStepPeriod;
 
 private:
     std::default_random_engine _generator;

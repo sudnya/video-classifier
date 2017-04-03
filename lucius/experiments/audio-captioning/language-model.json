@@ -14,10 +14,10 @@
 
         "parameters" :
         {
-            "NesterovAcceleratedGradient::LearningRate"       : "1.0e-4",
+            "NesterovAcceleratedGradient::LearningRate"       : "1.0e-3",
             "NesterovAcceleratedGradient::Momentum"           : "0.99",
             "NesterovAcceleratedGradient::AnnealingRate"      : "1.000000",
-            "NesterovAcceleratedGradient::MaxGradNorm"        : "40.0",
+            "NesterovAcceleratedGradient::MaxGradNorm"        : "30.0",
             "NesterovAcceleratedGradient::IterationsPerBatch" : "1"
         }
     },
@@ -57,7 +57,7 @@
             "dropout":
             {
                 "Type" : "DropoutLayer",
-                "DropoutRatio" : "0.0"
+                "DropoutRatio" : "0.1"
             },
             "reader-controller":
             {
@@ -102,6 +102,7 @@
                     "memory-writer",
                     "memory-reader",
                     "batch-norm",
+                    "forward-nonlinear",
                     "output"
                 ]
             }
@@ -114,8 +115,10 @@
 
         "model-attributes" :
         {
+            "MaximumSampleLength" : "100",
             "ShiftAmount" : "0",
-            "SegmentSize" : "100",
+            "ReverseInputSequence" : "0",
+            "UseStartAndEndTokens" : "1",
             "Graphemes" : [ "A", "B", "C", "D", "E", "F", "G", "H", "I",
                             "J", "K", "L", "M", "N", "O", "P", "Q", "R",
                             "S", "T", "U", "V", "W", "X", "Y", "Z", ",",
@@ -141,7 +144,9 @@
 
     "attributes" :
     {
-        "InputTextDataProducer::ReverseInputSequence" : "1",
+        "InputTextDataProducer::InitialSampleLength" : "4",
+        "InputTextDataProducer::SampleLengthStepSize" : "1",
+        "InputTextDataProducer::SampleLengthStepPeriod" : "16384",
         "InputTextDataProducer::IgnoreMissingGraphemes" : "1"
     },
 

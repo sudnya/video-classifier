@@ -33,14 +33,21 @@ namespace input
 {
 
 InputTextDataProducer::InputTextDataProducer(const std::string& textDatabaseFilename)
-: _sampleDatabasePath(textDatabaseFilename),_sampleDatabaseStream(nullptr), _initialized(false),
-  _segmentSize(0), _shiftAmount(0), _poppedCount(0), _outputCount(0)
+: _sampleDatabasePath(textDatabaseFilename), _sampleDatabaseStream(nullptr), _initialized(false),
+  _reverseInputSequence(false), _useStartAndEndTokens(false),
+  _shiftAmount(0), _poppedCount(0), _totalPoppedCount(0),
+  _outputCount(0),
+  _maximumSampleLength(0), _initialSampleLength(0), _sampleLengthStepSize(0),
+  _sampleLengthStepPeriod(0)
 {
 }
 
 InputTextDataProducer::InputTextDataProducer(std::istream& textDatabase)
-: _sampleDatabaseStream(&textDatabase), _initialized(false), _segmentSize(0), _shiftAmount(0),
-  _poppedCount(0), _outputCount(0)
+: _sampleDatabaseStream(&textDatabase), _initialized(false), _reverseInputSequence(false),
+  _useStartAndEndTokens(false),
+  _shiftAmount(0), _poppedCount(0), _totalPoppedCount(0), _outputCount(0),
+  _maximumSampleLength(0), _initialSampleLength(0), _sampleLengthStepSize(0),
+  _sampleLengthStepPeriod(0)
 {
 }
 
@@ -78,84 +85,55 @@ void InputTextDataProducer::initialize()
 
 std::string InputTextDataProducer::getDataFromDescriptor(const FileDescriptor& descriptor) const
 {
+    std::string result;
+
     if(descriptor.getType() == FileDescriptor::FILE_DESCRIPTOR)
     {
         std::ifstream stream(descriptor.getFilename());
 
         stream.seekg(descriptor.getOffsetInFile());
 
-        std::vector<int8_t> result(descriptor.getSizeInFile());
+        result.resize(descriptor.getSizeInFile());
 
-        stream.read(reinterpret_cast<char*>(result.data()), descriptor.getSizeInFile());
-
-        return std::string(result.begin(), result.end());
+        stream.read(const_cast<char*>(result.c_str()), descriptor.getSizeInFile());
     }
     else
     {
-        return descriptor.getLabel();
-    }
-}
-
-void InputTextDataProducer::getReferenceActivationsForString(const std::string& sample,
-    Matrix& referenceActivations, size_t miniBatch) const
-{
-    if(sample.empty())
-    {
-        return;
+        result = descriptor.getLabel();
     }
 
-    bool ignoreMissingGraphemes = util::KnobDatabase::getKnobValue(
-        "InputTextDataProducer::IgnoreMissingGraphemes", false);
+    size_t size = std::min(result.size(), getCurrentSampleLength());
 
-    for(size_t sampleIndex = getShiftAmount(); sampleIndex < sample.size(); ++sampleIndex)
-    {
-        size_t characterPositionInGraphemeSet = getModel()->getOutputCount();
+    result.resize(size);
 
-        for(size_t index = 0; index < _model->getOutputCount(); ++index)
-        {
-            if(sample.substr(sampleIndex, 1) == getModel()->getOutputLabel(index))
-            {
-                characterPositionInGraphemeSet = index;
-                break;
-            }
-        }
-
-        if(characterPositionInGraphemeSet == _model->getOutputCount())
-        {
-            if(ignoreMissingGraphemes)
-            {
-                referenceActivations[{0, miniBatch, sampleIndex - getShiftAmount()}] = 1.0;
-                continue;
-            }
-            throw std::runtime_error("Could not match loaded grapheme '" +
-                sample.substr(sampleIndex, 1) + "' against any known grapheme.");
-        }
-
-        referenceActivations[
-            {characterPositionInGraphemeSet, miniBatch, sampleIndex - getShiftAmount()}] = 1.0;
-    }
+    return result;
 }
 
 network::Bundle InputTextDataProducer::pop()
 {
     assert(!empty());
 
-    // get minibatch size
-    auto miniBatchSize = getBatchSize();
+    // determine the activation sizes
+    size_t miniBatchSize = getBatchSize();
+
+    size_t timesteps = getCurrentSampleLength() - getShiftAmount();
+
+    if(getUseStartAndEndTokens())
+    {
+        timesteps += 2;
+    }
 
     Matrix inputActivations =
-        matrix::zeros({getModel()->getInputCount(), miniBatchSize,
-                       getSegmentSize() - getShiftAmount()},
+        matrix::zeros({getModel()->getInputCount(), miniBatchSize, timesteps},
         matrix::Precision::getDefaultPrecision());
     Matrix referenceActivations =
-        matrix::zeros({getModel()->getInputCount(), miniBatchSize,
-                       getSegmentSize() - getShiftAmount()},
+        matrix::zeros({getModel()->getInputCount(), miniBatchSize, timesteps},
         matrix::Precision::getDefaultPrecision());
 
     // get minibatch number of descriptors (key)
     for (size_t i = 0; i < miniBatchSize; ++i)
     {
-        auto data = getDataFromDescriptor(_descriptors[_poppedCount+i]);
+        auto data = getDataFromDescriptor(_descriptors[_poppedCount + i]);
 
         // one hot encoded the samples within descriptors
         convertChunkToOneHot(data, inputActivations, i);
@@ -164,7 +142,8 @@ network::Bundle InputTextDataProducer::pop()
 
     // add one hot encoded matrix to bundle
     // add one hot encoded reference matrix (shifted to next char) to bundle
-    _poppedCount += miniBatchSize;
+    _poppedCount      += miniBatchSize;
+    _totalPoppedCount += miniBatchSize;
 
     util::log("InputTextDataProducer") << "Loaded batch of '" << miniBatchSize
         <<  "' samples samples (" << inputActivations.size()[2] << " timesteps), "
@@ -195,14 +174,34 @@ size_t InputTextDataProducer::getUniqueSampleCount() const
     return samples - (samples % getBatchSize());
 }
 
-void InputTextDataProducer::setSampleLength(size_t length)
+void InputTextDataProducer::setReverseInputSequence(bool reverse)
 {
-    _segmentSize = length;
+    _reverseInputSequence = reverse;
 }
 
-size_t InputTextDataProducer::getSegmentSize() const
+bool InputTextDataProducer::getReverseInputSequence() const
 {
-    return _segmentSize;
+    return _reverseInputSequence;
+}
+
+void InputTextDataProducer::setUseStartAndEndTokens(bool useStartAndEndTokens)
+{
+    _useStartAndEndTokens = useStartAndEndTokens;
+}
+
+bool InputTextDataProducer::getUseStartAndEndTokens() const
+{
+    return _useStartAndEndTokens;
+}
+
+void InputTextDataProducer::setMaximumSampleLength(size_t length)
+{
+    _maximumSampleLength = length;
+}
+
+size_t InputTextDataProducer::getMaximumSampleLength() const
+{
+    return _maximumSampleLength;
 }
 
 size_t InputTextDataProducer::getShiftAmount() const
@@ -213,6 +212,47 @@ size_t InputTextDataProducer::getShiftAmount() const
 void InputTextDataProducer::setShiftAmount(size_t amount)
 {
     _shiftAmount = amount;
+}
+
+size_t InputTextDataProducer::getCurrentSampleLength() const
+{
+    size_t maximumStep = 1 + getSampleLengthStepSize() *
+        (_totalPoppedCount / getSampleLengthStepPeriod());
+    size_t stepIndex = _totalPoppedCount / getBatchSize();
+
+    size_t length = getInitialSampleLength() + stepIndex % maximumStep;
+
+    return std::min(length, getMaximumSampleLength());
+}
+
+void InputTextDataProducer::setInitialSampleLength(size_t length)
+{
+    _initialSampleLength = length;
+}
+
+size_t InputTextDataProducer::getInitialSampleLength() const
+{
+    return _initialSampleLength;
+}
+
+void InputTextDataProducer::setSampleLengthStepSize(size_t step)
+{
+    _sampleLengthStepSize = step;
+}
+
+size_t InputTextDataProducer::getSampleLengthStepSize() const
+{
+    return _sampleLengthStepSize;
+}
+
+void InputTextDataProducer::setSampleLengthStepPeriod(size_t period)
+{
+    _sampleLengthStepPeriod = period;
+}
+
+size_t InputTextDataProducer::getSampleLengthStepPeriod() const
+{
+    return std::max(static_cast<size_t>(1), _sampleLengthStepPeriod);
 }
 
 void InputTextDataProducer::setModel(model::Model* model)
@@ -228,8 +268,35 @@ void InputTextDataProducer::setModel(model::Model* model)
         _outputLabels[getModel()->getOutputLabel(i)] = i;
     }
 
-    setSampleLength(model->getAttribute<size_t>("SegmentSize"));
+    setMaximumSampleLength(model->getAttribute<size_t>("MaximumSampleLength"));
     setShiftAmount(model->getAttribute<size_t>("ShiftAmount"));
+
+    if(model->hasAttribute("ReverseInputSequence"))
+    {
+        setReverseInputSequence(model->getAttribute<bool>("ReverseInputSequence"));
+    }
+    else
+    {
+        setReverseInputSequence(util::KnobDatabase::getKnobValue(
+            "InputTextDataProducer::ReverseInputSequence", false));
+    }
+
+    if(model->hasAttribute("UseStartAndEndTokens"))
+    {
+        setUseStartAndEndTokens(model->getAttribute<bool>("UseStartAndEndTokens"));
+    }
+    else
+    {
+        setUseStartAndEndTokens(util::KnobDatabase::getKnobValue(
+            "InputTextDataProducer::UseStartAndEndTokens", false));
+    }
+
+    setInitialSampleLength(util::KnobDatabase::getKnobValue(
+        "InputTextDataProducer::InitialSampleLength", getMaximumSampleLength()));
+    setSampleLengthStepSize(util::KnobDatabase::getKnobValue(
+        "InputTextDataProducer::SampleLengthStepSize", 0));
+    setSampleLengthStepPeriod(util::KnobDatabase::getKnobValue(
+        "InputTextDataProducer::SampleLengthStepPeriod", 1));
 }
 
 void InputTextDataProducer::convertChunkToOneHot(const std::string& data,
@@ -243,10 +310,27 @@ void InputTextDataProducer::convertChunkToOneHot(const std::string& data,
     bool ignoreMissingGraphemes = util::KnobDatabase::getKnobValue(
         "InputTextDataProducer::IgnoreMissingGraphemes", false);
 
-    bool reverseSequence = util::KnobDatabase::getKnobValue(
-        "InputTextDataProducer::ReverseInputSequence", false);
-
     size_t sequenceLength = data.size() - getShiftAmount();
+    size_t totalSequenceLength = sequenceLength;
+    size_t offset = 0;
+
+    if(getUseStartAndEndTokens())
+    {
+        auto position = _outputLabels.find("START-");
+
+        if(position == _outputLabels.end())
+        {
+            throw std::runtime_error("InputTextDataProducer is using start and end tokens, "
+                "but model does not have a 'START-' token.");
+        }
+
+        size_t timestep = getReverseInputSequence() ? totalSequenceLength - 1 : 0;
+
+        inputActivations[{position->second, miniBatch, timestep}] = 1.0;
+
+        offset = 1;
+        totalSequenceLength += 2;
+    }
 
     for(size_t charPosInFile = 0; charPosInFile < sequenceLength; ++charPosInFile)
     {
@@ -261,7 +345,8 @@ void InputTextDataProducer::convertChunkToOneHot(const std::string& data,
             characterPositionInGraphemeSet = position->second;
         }
 
-        size_t timestep = reverseSequence ? sequenceLength - charPosInFile - 1 : charPosInFile;
+        size_t timestep = getReverseInputSequence() ?
+            totalSequenceLength - charPosInFile - offset - 1 : charPosInFile + offset;
 
         if(characterPositionInGraphemeSet == _outputCount)
         {
@@ -270,17 +355,111 @@ void InputTextDataProducer::convertChunkToOneHot(const std::string& data,
                 inputActivations[{0, miniBatch, timestep}] = 1.0;
                 continue;
             }
+
             throw std::runtime_error("Could not match loaded grapheme '" + std::string(1, c) +
                 "' against any known grapheme.");
         }
 
         inputActivations[{characterPositionInGraphemeSet, miniBatch, timestep}] = 1.0;
     }
+
+    if(getUseStartAndEndTokens())
+    {
+        auto position = _outputLabels.find("-END");
+
+        if(position == _outputLabels.end())
+        {
+            throw std::runtime_error("InputTextDataProducer is using start and end tokens, "
+                "but model does not have an '-END' token.");
+        }
+
+        size_t timestep = getReverseInputSequence() ? 0 : totalSequenceLength - 1;
+
+        inputActivations[{position->second, miniBatch, timestep}] = 1.0;
+    }
+}
+
+void InputTextDataProducer::getReferenceActivationsForString(const std::string& sample,
+    Matrix& referenceActivations, size_t miniBatch) const
+{
+    if(sample.empty())
+    {
+        return;
+    }
+
+    bool ignoreMissingGraphemes = util::KnobDatabase::getKnobValue(
+        "InputTextDataProducer::IgnoreMissingGraphemes", false);
+
+    size_t sequenceLength = sample.size() - getShiftAmount();
+    size_t totalSequenceLength = sequenceLength;
+    size_t offset = 0;
+
+    if(getUseStartAndEndTokens())
+    {
+        auto position = _outputLabels.find("START-");
+
+        if(position == _outputLabels.end())
+        {
+            throw std::runtime_error("InputTextDataProducer is using start and end tokens, "
+                "but model does not have a 'START-' token.");
+        }
+
+        size_t timestep = 0;
+
+        referenceActivations[{position->second, miniBatch, timestep}] = 1.0;
+
+        offset = 1;
+        totalSequenceLength += 2;
+    }
+
+    for(size_t sampleIndex = getShiftAmount(); sampleIndex < sample.size(); ++sampleIndex)
+    {
+        size_t characterPositionInGraphemeSet = getModel()->getOutputCount();
+
+        for(size_t index = 0; index < _model->getOutputCount(); ++index)
+        {
+            if(sample.substr(sampleIndex, 1) == getModel()->getOutputLabel(index))
+            {
+                characterPositionInGraphemeSet = index;
+                break;
+            }
+        }
+
+        size_t timestep = sampleIndex + offset - getShiftAmount();
+
+        if(characterPositionInGraphemeSet == _model->getOutputCount())
+        {
+            if(ignoreMissingGraphemes)
+            {
+                referenceActivations[{0, miniBatch, timestep}] = 1.0;
+                continue;
+            }
+            throw std::runtime_error("Could not match loaded grapheme '" +
+                sample.substr(sampleIndex, 1) + "' against any known grapheme.");
+        }
+
+        referenceActivations[
+            {characterPositionInGraphemeSet, miniBatch, timestep}] = 1.0;
+    }
+
+    if(getUseStartAndEndTokens())
+    {
+        auto position = _outputLabels.find("-END");
+
+        if(position == _outputLabels.end())
+        {
+            throw std::runtime_error("InputTextDataProducer is using start and end tokens, "
+                "but model does not have an '-END' token.");
+        }
+
+        size_t timestep = totalSequenceLength - 1;
+
+        referenceActivations[{position->second, miniBatch, timestep}] = 1.0;
+    }
 }
 
 void InputTextDataProducer::createTextDatabase()
 {
-    //
     util::log("InputTextDataProducer") << " scanning text database '"
         << _sampleDatabasePath << "'\n";
 
@@ -309,20 +488,20 @@ void InputTextDataProducer::createTextDatabase()
 
                 size_t totalSize = sample.label().size();
 
-                size_t iterationsInLabel = totalSize / getSegmentSize();
-                size_t leftOver = totalSize % getSegmentSize();
+                size_t iterationsInLabel = totalSize / getMaximumSampleLength();
+                size_t leftOver = totalSize % getMaximumSampleLength();
 
                 for(size_t i = 0; i < iterationsInLabel; ++i)
                 {
                     _descriptors.push_back(
-                        FileDescriptor(sample.label().substr(i * getSegmentSize(),
-                            getSegmentSize())));
+                        FileDescriptor(sample.label().substr(i * getMaximumSampleLength(),
+                            getMaximumSampleLength())));
                 }
 
                 if(leftOver > 0)
                 {
                     _descriptors.push_back(FileDescriptor(
-                        sample.label().substr(iterationsInLabel * getSegmentSize())));
+                        sample.label().substr(iterationsInLabel * getMaximumSampleLength())));
                 }
             }
             else
@@ -332,20 +511,20 @@ void InputTextDataProducer::createTextDatabase()
 
                 //get file size
                 size_t fileSize         = util::getFileSize(sample.path());
-                size_t iterationsInFile = fileSize / getSegmentSize();
-                size_t leftOver         = fileSize % getSegmentSize();
+                size_t iterationsInFile = fileSize / getMaximumSampleLength();
+                size_t leftOver         = fileSize % getMaximumSampleLength();
 
                 for(size_t i = 0; i < iterationsInFile; ++i)
                 {
                     _descriptors.push_back(FileDescriptor(sample.path(),
-                        i * getSegmentSize(), getSegmentSize()));
+                        i * getMaximumSampleLength(), getMaximumSampleLength()));
                 }
 
                 //leftover
                 if(leftOver > 0)
                 {
                     _descriptors.push_back(FileDescriptor(sample.path(),
-                        iterationsInFile * getSegmentSize(), leftOver));
+                        iterationsInFile * getMaximumSampleLength(), leftOver));
                 }
             }
         }
