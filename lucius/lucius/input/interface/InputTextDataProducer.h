@@ -58,6 +58,15 @@ public:
     bool getReverseInputSequence() const;
 
 public:
+    /*! \brief Set whether or not the input sequence should be augmented with
+               start and end tokens. */
+    void setUseStartAndEndTokens(bool sequence);
+
+    /*! \brief Get whether or not the input sequence should be augmented with
+               start and end tokens. */
+    bool getUseStartAndEndTokens() const;
+
+public:
     /*! \brief Set the size of the input sample */
     void setMaximumSampleLength(size_t length);
 
@@ -167,6 +176,7 @@ private:
     std::istream* _sampleDatabaseStream;
     bool _initialized;
     bool _reverseInputSequence;
+    bool _useStartAndEndTokens;
     size_t _shiftAmount;
     size_t _poppedCount;
     size_t _totalPoppedCount;
