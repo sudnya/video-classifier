@@ -34,7 +34,8 @@ namespace input
 
 InputTextDataProducer::InputTextDataProducer(const std::string& textDatabaseFilename)
 : _sampleDatabasePath(textDatabaseFilename), _sampleDatabaseStream(nullptr), _initialized(false),
-  _reverseInputSequence(false), _shiftAmount(0), _poppedCount(0), _totalPoppedCount(0),
+  _reverseInputSequence(false), _useStartAndEndTokens(false),
+  _shiftAmount(0), _poppedCount(0), _totalPoppedCount(0),
   _outputCount(0),
   _maximumSampleLength(0), _initialSampleLength(0), _sampleLengthStepSize(0),
   _sampleLengthStepPeriod(0)
@@ -43,6 +44,7 @@ InputTextDataProducer::InputTextDataProducer(const std::string& textDatabaseFile
 
 InputTextDataProducer::InputTextDataProducer(std::istream& textDatabase)
 : _sampleDatabaseStream(&textDatabase), _initialized(false), _reverseInputSequence(false),
+  _useStartAndEndTokens(false),
   _shiftAmount(0), _poppedCount(0), _totalPoppedCount(0), _outputCount(0),
   _maximumSampleLength(0), _initialSampleLength(0), _sampleLengthStepSize(0),
   _sampleLengthStepPeriod(0)
@@ -107,60 +109,25 @@ std::string InputTextDataProducer::getDataFromDescriptor(const FileDescriptor& d
     return result;
 }
 
-void InputTextDataProducer::getReferenceActivationsForString(const std::string& sample,
-    Matrix& referenceActivations, size_t miniBatch) const
-{
-    if(sample.empty())
-    {
-        return;
-    }
-
-    bool ignoreMissingGraphemes = util::KnobDatabase::getKnobValue(
-        "InputTextDataProducer::IgnoreMissingGraphemes", false);
-
-    for(size_t sampleIndex = getShiftAmount(); sampleIndex < sample.size(); ++sampleIndex)
-    {
-        size_t characterPositionInGraphemeSet = getModel()->getOutputCount();
-
-        for(size_t index = 0; index < _model->getOutputCount(); ++index)
-        {
-            if(sample.substr(sampleIndex, 1) == getModel()->getOutputLabel(index))
-            {
-                characterPositionInGraphemeSet = index;
-                break;
-            }
-        }
-
-        if(characterPositionInGraphemeSet == _model->getOutputCount())
-        {
-            if(ignoreMissingGraphemes)
-            {
-                referenceActivations[{0, miniBatch, sampleIndex - getShiftAmount()}] = 1.0;
-                continue;
-            }
-            throw std::runtime_error("Could not match loaded grapheme '" +
-                sample.substr(sampleIndex, 1) + "' against any known grapheme.");
-        }
-
-        referenceActivations[
-            {characterPositionInGraphemeSet, miniBatch, sampleIndex - getShiftAmount()}] = 1.0;
-    }
-}
-
 network::Bundle InputTextDataProducer::pop()
 {
     assert(!empty());
 
-    // get minibatch size
-    auto miniBatchSize = getBatchSize();
+    // determine the activation sizes
+    size_t miniBatchSize = getBatchSize();
+
+    size_t timesteps = getCurrentSampleLength() - getShiftAmount();
+
+    if(getUseStartAndEndTokens())
+    {
+        timesteps += 2;
+    }
 
     Matrix inputActivations =
-        matrix::zeros({getModel()->getInputCount(), miniBatchSize,
-                       getCurrentSampleLength() - getShiftAmount()},
+        matrix::zeros({getModel()->getInputCount(), miniBatchSize, timesteps},
         matrix::Precision::getDefaultPrecision());
     Matrix referenceActivations =
-        matrix::zeros({getModel()->getInputCount(), miniBatchSize,
-                       getCurrentSampleLength() - getShiftAmount()},
+        matrix::zeros({getModel()->getInputCount(), miniBatchSize, timesteps},
         matrix::Precision::getDefaultPrecision());
 
     // get minibatch number of descriptors (key)
@@ -175,7 +142,7 @@ network::Bundle InputTextDataProducer::pop()
 
     // add one hot encoded matrix to bundle
     // add one hot encoded reference matrix (shifted to next char) to bundle
-    _poppedCount += miniBatchSize;
+    _poppedCount      += miniBatchSize;
     _totalPoppedCount += miniBatchSize;
 
     util::log("InputTextDataProducer") << "Loaded batch of '" << miniBatchSize
@@ -207,6 +174,26 @@ size_t InputTextDataProducer::getUniqueSampleCount() const
     return samples - (samples % getBatchSize());
 }
 
+void InputTextDataProducer::setReverseInputSequence(bool reverse)
+{
+    _reverseInputSequence = reverse;
+}
+
+bool InputTextDataProducer::getReverseInputSequence() const
+{
+    return _reverseInputSequence;
+}
+
+void InputTextDataProducer::setUseStartAndEndTokens(bool useStartAndEndTokens)
+{
+    _useStartAndEndTokens = useStartAndEndTokens;
+}
+
+bool InputTextDataProducer::getUseStartAndEndTokens() const
+{
+    return _useStartAndEndTokens;
+}
+
 void InputTextDataProducer::setMaximumSampleLength(size_t length)
 {
     _maximumSampleLength = length;
@@ -229,8 +216,11 @@ void InputTextDataProducer::setShiftAmount(size_t amount)
 
 size_t InputTextDataProducer::getCurrentSampleLength() const
 {
-    size_t length = getInitialSampleLength() +
-        getSampleLengthStepSize() * (_totalPoppedCount / getSampleLengthStepPeriod());
+    size_t maximumStep = 1 + getSampleLengthStepSize() *
+        (_totalPoppedCount / getSampleLengthStepPeriod());
+    size_t stepIndex = _totalPoppedCount / getBatchSize();
+
+    size_t length = getInitialSampleLength() + stepIndex % maximumStep;
 
     return std::min(length, getMaximumSampleLength());
 }
@@ -291,22 +281,22 @@ void InputTextDataProducer::setModel(model::Model* model)
             "InputTextDataProducer::ReverseInputSequence", false));
     }
 
+    if(model->hasAttribute("UseStartAndEndTokens"))
+    {
+        setUseStartAndEndTokens(model->getAttribute<bool>("UseStartAndEndTokens"));
+    }
+    else
+    {
+        setUseStartAndEndTokens(util::KnobDatabase::getKnobValue(
+            "InputTextDataProducer::UseStartAndEndTokens", false));
+    }
+
     setInitialSampleLength(util::KnobDatabase::getKnobValue(
         "InputTextDataProducer::InitialSampleLength", getMaximumSampleLength()));
     setSampleLengthStepSize(util::KnobDatabase::getKnobValue(
         "InputTextDataProducer::SampleLengthStepSize", 0));
     setSampleLengthStepPeriod(util::KnobDatabase::getKnobValue(
         "InputTextDataProducer::SampleLengthStepPeriod", 1));
-}
-
-void InputTextDataProducer::setReverseInputSequence(bool reverse)
-{
-    _reverseInputSequence = reverse;
-}
-
-bool InputTextDataProducer::getReverseInputSequence() const
-{
-    return _reverseInputSequence;
 }
 
 void InputTextDataProducer::convertChunkToOneHot(const std::string& data,
@@ -321,6 +311,26 @@ void InputTextDataProducer::convertChunkToOneHot(const std::string& data,
         "InputTextDataProducer::IgnoreMissingGraphemes", false);
 
     size_t sequenceLength = data.size() - getShiftAmount();
+    size_t totalSequenceLength = sequenceLength;
+    size_t offset = 0;
+
+    if(getUseStartAndEndTokens())
+    {
+        auto position = _outputLabels.find("START-");
+
+        if(position == _outputLabels.end())
+        {
+            throw std::runtime_error("InputTextDataProducer is using start and end tokens, "
+                "but model does not have a 'START-' token.");
+        }
+
+        size_t timestep = getReverseInputSequence() ? totalSequenceLength - 1 : 0;
+
+        inputActivations[{position->second, miniBatch, timestep}] = 1.0;
+
+        offset = 1;
+        totalSequenceLength += 2;
+    }
 
     for(size_t charPosInFile = 0; charPosInFile < sequenceLength; ++charPosInFile)
     {
@@ -336,7 +346,7 @@ void InputTextDataProducer::convertChunkToOneHot(const std::string& data,
         }
 
         size_t timestep = getReverseInputSequence() ?
-            sequenceLength - charPosInFile - 1 : charPosInFile;
+            totalSequenceLength - charPosInFile - offset - 1 : charPosInFile + offset;
 
         if(characterPositionInGraphemeSet == _outputCount)
         {
@@ -345,11 +355,106 @@ void InputTextDataProducer::convertChunkToOneHot(const std::string& data,
                 inputActivations[{0, miniBatch, timestep}] = 1.0;
                 continue;
             }
+
             throw std::runtime_error("Could not match loaded grapheme '" + std::string(1, c) +
                 "' against any known grapheme.");
         }
 
         inputActivations[{characterPositionInGraphemeSet, miniBatch, timestep}] = 1.0;
+    }
+
+    if(getUseStartAndEndTokens())
+    {
+        auto position = _outputLabels.find("-END");
+
+        if(position == _outputLabels.end())
+        {
+            throw std::runtime_error("InputTextDataProducer is using start and end tokens, "
+                "but model does not have an '-END' token.");
+        }
+
+        size_t timestep = getReverseInputSequence() ? 0 : totalSequenceLength - 1;
+
+        inputActivations[{position->second, miniBatch, timestep}] = 1.0;
+    }
+}
+
+void InputTextDataProducer::getReferenceActivationsForString(const std::string& sample,
+    Matrix& referenceActivations, size_t miniBatch) const
+{
+    if(sample.empty())
+    {
+        return;
+    }
+
+    bool ignoreMissingGraphemes = util::KnobDatabase::getKnobValue(
+        "InputTextDataProducer::IgnoreMissingGraphemes", false);
+
+    size_t sequenceLength = sample.size() - getShiftAmount();
+    size_t totalSequenceLength = sequenceLength;
+    size_t offset = 0;
+
+    if(getUseStartAndEndTokens())
+    {
+        auto position = _outputLabels.find("START-");
+
+        if(position == _outputLabels.end())
+        {
+            throw std::runtime_error("InputTextDataProducer is using start and end tokens, "
+                "but model does not have a 'START-' token.");
+        }
+
+        size_t timestep = 0;
+
+        referenceActivations[{position->second, miniBatch, timestep}] = 1.0;
+
+        offset = 1;
+        totalSequenceLength += 2;
+    }
+
+    for(size_t sampleIndex = getShiftAmount(); sampleIndex < sample.size(); ++sampleIndex)
+    {
+        size_t characterPositionInGraphemeSet = getModel()->getOutputCount();
+
+        for(size_t index = 0; index < _model->getOutputCount(); ++index)
+        {
+            if(sample.substr(sampleIndex, 1) == getModel()->getOutputLabel(index))
+            {
+                characterPositionInGraphemeSet = index;
+                break;
+            }
+        }
+
+        size_t timestep = sampleIndex + offset - getShiftAmount();
+
+        if(characterPositionInGraphemeSet == _model->getOutputCount())
+        {
+            if(ignoreMissingGraphemes)
+            {
+                referenceActivations[{0, miniBatch, timestep}] = 1.0;
+                continue;
+            }
+            throw std::runtime_error("Could not match loaded grapheme '" +
+                sample.substr(sampleIndex, 1) + "' against any known grapheme.");
+        }
+
+        referenceActivations[
+            {characterPositionInGraphemeSet, miniBatch, timestep}] = 1.0;
+    }
+
+    if(getUseStartAndEndTokens())
+    {
+        auto position = _outputLabels.find("-END");
+
+        if(position == _outputLabels.end())
+        {
+            throw std::runtime_error("InputTextDataProducer is using start and end tokens, "
+                "but model does not have an '-END' token.");
+        }
+
+        size_t timestep = totalSequenceLength - 1;
+
+        referenceActivations[{position->second, miniBatch, timestep}] = 1.0;
     }
 }
 
