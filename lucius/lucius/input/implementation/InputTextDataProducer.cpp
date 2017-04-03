@@ -34,7 +34,8 @@ namespace input
 
 InputTextDataProducer::InputTextDataProducer(const std::string& textDatabaseFilename)
 : _sampleDatabasePath(textDatabaseFilename), _sampleDatabaseStream(nullptr), _initialized(false),
-  _reverseInputSequence(false), _shiftAmount(0), _poppedCount(0), _outputCount(0),
+  _reverseInputSequence(false), _shiftAmount(0), _poppedCount(0), _totalPoppedCount(0),
+  _outputCount(0),
   _maximumSampleLength(0), _initialSampleLength(0), _sampleLengthStepSize(0),
   _sampleLengthStepPeriod(0)
 {
@@ -42,7 +43,7 @@ InputTextDataProducer::InputTextDataProducer(const std::string& textDatabaseFile
 
 InputTextDataProducer::InputTextDataProducer(std::istream& textDatabase)
 : _sampleDatabaseStream(&textDatabase), _initialized(false), _reverseInputSequence(false),
-  _shiftAmount(0), _poppedCount(0), _outputCount(0),
+  _shiftAmount(0), _poppedCount(0), _totalPoppedCount(0), _outputCount(0),
   _maximumSampleLength(0), _initialSampleLength(0), _sampleLengthStepSize(0),
   _sampleLengthStepPeriod(0)
 {
@@ -175,6 +176,7 @@ network::Bundle InputTextDataProducer::pop()
     // add one hot encoded matrix to bundle
     // add one hot encoded reference matrix (shifted to next char) to bundle
     _poppedCount += miniBatchSize;
+    _totalPoppedCount += miniBatchSize;
 
     util::log("InputTextDataProducer") << "Loaded batch of '" << miniBatchSize
         <<  "' samples samples (" << inputActivations.size()[2] << " timesteps), "
@@ -228,7 +230,7 @@ void InputTextDataProducer::setShiftAmount(size_t amount)
 size_t InputTextDataProducer::getCurrentSampleLength() const
 {
     size_t length = getInitialSampleLength() +
-        getSampleLengthStepSize() * (_poppedCount / getSampleLengthStepPeriod());
+        getSampleLengthStepSize() * (_totalPoppedCount / getSampleLengthStepPeriod());
 
     return std::min(length, getMaximumSampleLength());
 }
