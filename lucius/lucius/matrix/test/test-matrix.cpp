@@ -456,6 +456,60 @@ bool testBroadcast()
     return computed == ref;
 
 }
+/*
+    Test 3D noncontiguous reduce
+
+  [ [ 1  2 ] ] slice =  [ [ 3  4 ] ] = [ [  8 10 ] ]
+  [ [ 3  4 ] ]          [ [ 5  6 ] ]   [           ]
+  [ [ 5  6 ] ]          [          ]   [ [ 17 23 ] ]
+  [          ]          [ [ 8 11 ] ]
+  [ [ 7 10 ] ]          [ [ 9 12 ] ]
+  [ [ 8 11 ] ]
+  [ [ 9 12 ] ]
+
+
+
+*/
+bool test3dNoncontiguousReduce()
+{
+    Matrix a(3, 2, 2);
+
+    Matrix c(2, 2);
+
+    a(0, 0, 0) = 1;
+    a(0, 1, 0) = 2;
+    a(1, 0, 0) = 3;
+    a(1, 1, 0) = 4;
+    a(2, 0, 0) = 5;
+    a(2, 1, 0) = 6;
+
+    a(0, 0, 1) = 7;
+    a(0, 1, 1) = 10;
+    a(1, 0, 1) = 8;
+    a(1, 1, 1) = 11;
+    a(2, 0, 1) = 9;
+    a(2, 1, 1) = 12;
+
+    c(0, 0) = 8;
+    c(0, 1) = 17;
+    c(1, 0) = 10;
+    c(1, 1) = 23;
+
+    Matrix computed = reduce(slice(a, {1, 0, 0}, {3, 2, 2}), {0}, lucius::matrix::Add());
+
+    if(computed != c)
+    {
+        lucius::util::log("test-matrix") << " Matrix 3D Reduction 0 Dimension Test Failed:\n";
+        lucius::util::log("test-matrix") << "  result matrix " << computed.toString();
+        lucius::util::log("test-matrix") << "  does not match reference matrix " << c.toString();
+    }
+    else
+    {
+        lucius::util::log("test-matrix") << " Matrix 3D Reduction 0 Dimension Test Passed\n";
+    }
+
+    return computed == c;
+}
 
 /*
     Test 4D reduce
@@ -2613,6 +2667,7 @@ bool runTests(bool listTests, const std::string& testFilter)
     engine.addTest("reduce 2d", test2dReduce);
     engine.addTest("reduce 2d (2)", test2dReduce2);
 
+    engine.addTest("reduce 3d noncontiguous", test3dNoncontiguousReduce);
     engine.addTest("reduce 4d", test4dReduce);
     engine.addTest("broadcast", testBroadcast);
     engine.addTest("broadcast 2d", test2dBroadcast);
