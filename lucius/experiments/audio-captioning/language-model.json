@@ -100,6 +100,7 @@
                     "forward",
                     "batch-norm",
                     "memory-writer",
+                    "dropout",
                     "memory-reader",
                     "batch-norm",
                     "forward-nonlinear",
@@ -146,7 +147,7 @@
     {
         "InputTextDataProducer::InitialSampleLength" : "4",
         "InputTextDataProducer::SampleLengthStepSize" : "1",
-        "InputTextDataProducer::SampleLengthStepPeriod" : "16384",
+        "InputTextDataProducer::SampleLengthStepPeriod" : "400000",
         "InputTextDataProducer::IgnoreMissingGraphemes" : "1"
     },
 
@@ -171,7 +172,7 @@
     "system" :
     {
         "use-cuda"    : "1",
-        "cuda-device" : "2",
+        "cuda-device" : "1",
         "precision"   : "SinglePrecision"
     }
 
