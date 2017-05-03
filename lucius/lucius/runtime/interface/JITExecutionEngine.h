@@ -25,6 +25,9 @@ public:
 public:
     final void run();
 
+public:
+    final void* getValueContents(const Value* );
+
 };
 
 } // namespace runtime

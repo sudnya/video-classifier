@@ -22,11 +22,14 @@ public:
 public:
     virtual void run() = 0;
 
+public:
+    void* getValueContents(const Value*);
+
 protected:
-    const Program& getProgram() const;
+    Program& getProgram();
 
 private:
-    const Program& _program;
+    Program& _program;
 
 };
 

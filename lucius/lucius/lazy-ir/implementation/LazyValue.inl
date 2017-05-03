@@ -1,0 +1,37 @@
+/*  \file   LazyValue.inl
+    \author Gregory Diamos
+    \date   April 22, 2017
+    \brief  The source header file for the LazyValue class.
+*/
+
+#pragma once
+
+// Lucius Includes
+#include <lucius/lazy-ir/interface/LazyValue.h>
+
+
+namespace lucius
+{
+
+namespace lazy
+{
+
+template <typename T>
+T LazyValue<T>::materialize()
+{
+    void* value = _runProgram();
+
+    T* result = dynamic_cast<T*>(value);
+
+    if(value == nullptr)
+    {
+        throw std::runtime_error("Could not get return value from IR execution engine.");
+    }
+
+    return *result;
+}
+
+}
+
+}
+

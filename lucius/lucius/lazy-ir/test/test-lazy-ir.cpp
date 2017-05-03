@@ -44,7 +44,7 @@ static void testAdd()
     LazyValue lazyA = lazy::getConstant(a);
     LazyValue lazyB = lazy::getConstant(b);
 
-    auto computed = lazy::add(lazyA, lazyB).materialize();
+    auto computed = lazy::applyBinary(lazyA, lazyB, lazy::Add()).materialize<Matrix>();
 
     if(computed != c)
     {
@@ -109,10 +109,10 @@ static void testLoop()
 
     lazy::forLoop(2, [=]()
     {
-        lazyA = lazy::add(lazyA, lazyB)
+        lazy::copy(lazyA, lazy::applyBinary(lazyA, lazyB, lazy::Add()));
     });
 
-    auto computed = lazyA.materialize();
+    auto computed = lazyA.materialize<Matrix>();
 
     if(computed != c)
     {
@@ -161,16 +161,18 @@ static void testLoopWithInitializer()
 
     LazyValue lazyA = lazy::createInitializer([]()
     {
-        return lazy::rand({3, 2});
+        LazyValue randomState = lazy::srand(177);
+
+        return lazy::rand(randomState, {3, 2}, SinglePrecision());
     });
 
     lazy::forLoop(2, [=]()
     {
-        lazyA = lazy::add(lazyA, lazyB)
+        lazy::copy(lazyA, lazy::applyBinary(lazyA, lazyB, lazy::Add()));
     });
 
-    Matrix firstRun  = lazyA.materialize();
-    Matrix secondRun = lazyA.materialize();
+    Matrix firstRun  = lazyA.materialize<Matrix>();
+    Matrix secondRun = lazyA.materialize<Matrix>();
 
     if(firstRun != secondRun)
     {
@@ -186,6 +188,78 @@ static void testLoopWithInitializer()
 
     return firstRun == secondRun;
 }
+/*
+    Test matrix addition loop with an initializer and update
+
+    a = [ 0 0 ]
+        [ 0 0 ]
+        [ 0 0 ]
+
+    b = [ 1 4 ]
+        [ 2 5 ]
+        [ 3 6 ]
+
+    for (i=0; i < 2; ++i)
+    {
+        cost = reduce(a * b);
+        a = a + dcost/da;
+    }
+*/
+static void testLoopWithInitializerAndUpdate()
+{
+    Matrix b(3, 2);
+
+    b(0, 0) = 1;
+    b(0, 1) = 2;
+    b(1, 0) = 3;
+    b(1, 1) = 4;
+    b(2, 0) = 5;
+    b(2, 1) = 6;
+
+    lazy::newThreadLocalContext();
+
+    LazyValue lazyB = lazy::getConstant(b);
+
+    LazyValue lazyA = lazy::createVariableInitializer([]()
+    {
+        return lazy::zeros({3, 2}, SinglePrecision());
+    });
+
+    lazy::forLoop(2, [=]()
+    {
+        auto aTimesB = lazy::applyBinary(lazyA, lazyB, lazy::Multiply())
+
+        auto cost = lazy::castToScalar(lazy::reduce(aTimesB, {}, lazy::Add()));
+
+        auto variablesAndGradients = lazy::getVariablesAndGradientsForCost(cost);
+
+        for(auto& variableAndGradient : variablesAndGradients)
+        {
+            lazy::copy(variableAndGradient.getVariable(),
+                lazy::add(variableAndGradient.getVariable(), variableAndGradient.getGradient()));
+        }
+    });
+
+    auto computed = lazyA.materialize<Matrix>();
+
+    Matrix c = apply(b, matrix::Multiply(2));
+
+    if(computed != c)
+    {
+        lucius::util::log("test-lazy-ir") << " Lazy IR Loop With Initialization "
+            "And Update Test Failed:\n";
+        lucius::util::log("test-lazy-ir") << "  computed matrix " << computed.toString();
+        lucius::util::log("test-lazy-ir") << "  does not match reference matrix "
+            << c.toString();
+    }
+    else
+    {
+        lucius::util::log("test-lazy-ir") << " Lazy IR Loop With Initialization "
+            "And Update Test Passed\n";
+    }
+
+    return computed == c;
+}
 
 static bool runTests(bool listTests, const std::string& testFilter)
 {
@@ -194,6 +268,7 @@ static bool runTests(bool listTests, const std::string& testFilter)
     engine.addTest("add", testAdd);
     engine.addTest("loop", testLoop);
     engine.addTest("initializer loop", testLoopWithInitializer);
+    engine.addTest("initializer and update loop", testLoopWithInitializerAndUpdate);
 
     if(listTests)
     {
