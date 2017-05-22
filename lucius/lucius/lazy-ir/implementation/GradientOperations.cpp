@@ -39,7 +39,7 @@ VariableAndGradientVector getVariablesAndGradientsForCost(const LazyValue& cost)
 
     for(auto& variable : variables)
     {
-        auto gradient = builder.addGradientForVariable(variable);
+        auto gradient = builder.addGradientForVariable(variable, cost);
 
         variablesAndGradients.push_back(VariableAndGradient(variable, gradient));
     }

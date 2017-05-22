@@ -16,7 +16,7 @@ namespace ir
 class Program
 {
 public:
-    Program();
+    Program(Context& c);
 
 public:
     /* \brief Interface for initialization code. */

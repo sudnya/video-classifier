@@ -7,7 +7,8 @@
 #pragma once
 
 // Forward Declarations
-namespace lucius { namespace ir { class InsertionPoint; } }
+namespace lucius { namespace ir { class InsertionPoint;          } }
+namespace lucius { namespace ir { class IRBuilderImplementation; } }
 
 namespace lucius
 {
@@ -27,8 +28,8 @@ public:
 
 public:
     /*! \brief Add new constant values to the program (or get an instance of the same value). */
-    ConstantMatrix* addConstant(const Matrix& value);
-    ConstantInteger* addConstant(int64_t value);
+    Constant* addConstant(const Matrix& value);
+    Constant* addConstant(int64_t value);
 
 public:
     /*! \brief Create a new basic block, add it to the current function. */
@@ -113,6 +114,8 @@ public:
     /*! \brief Clear the builder. */
     void clear();
 
+private:
+    std::unique_ptr<IRBuilderImplementation> _implementation;
 
 
 };

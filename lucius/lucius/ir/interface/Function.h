@@ -12,9 +12,21 @@ namespace lucius
 namespace ir
 {
 
-/*! \brief A class for representing a module. */
+/*! \brief A class for representing a function. */
 class Function
 {
+public:
+    Function();
+    ~Function();
+
+public:
+    BasicBlock* addBasicBlock();
+
+public:
+    void setIsInitializer(bool isInitializer);
+
+private:
+    Module* _module;
 
 private:
     BasicBlockList _basicBlocks;
