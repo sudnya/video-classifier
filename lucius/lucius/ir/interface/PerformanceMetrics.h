@@ -1,7 +1,7 @@
 /*  \file   PerformanceMetrics.h
     \author Gregory Diamos
     \date   April 4, 2017
-    \brief  The header file for the Operation class.
+    \brief  The header file for the PerformanceMetrics class.
 */
 
 #pragma once

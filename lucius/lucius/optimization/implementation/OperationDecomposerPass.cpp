@@ -52,22 +52,120 @@ static void moveOperation(BasicBlock* newBasicBlock, Operation* operation)
     newBasicBlock->push_back(operation->clone());
 }
 
+static bool isGemmComputeBoundForTileSize(GemmOperation* gemm,
+    size_t tileSize, const Dimension& size, OperationPerformanceAnalysis* performanceAnalysis)
+{
+    auto* c = dynamic_cast<TensorValue*>(gemm->getOperand(0));
+    auto* a = dynamic_cast<TensorValue*>(gemm->getOperand(1));
+    auto* b = dynamic_cast<TensorValue*>(gemm->getOperand(2));
+
+    size_t m = std::min(c->getSize()[0], tileSize);
+    size_t n = std::min(c->getSize()[1], tileSize);
+    size_t k = std::min(a->getSize()[1], tileSize);
+
+    TensorValue cTile({m, n}, gemm->getPrecision());
+    TensorValue aTile({m, k}, gemm->getPrecision());
+    TensorValue bTile({k, n}, gemm->getPrecision());
+
+    GemmOperation dummyOperation(&cTile, &aTile, &bTile);
+
+    return shouldOperationBeSplit(&dummyOperation, performanceAnalysis);
+}
+
+static void splitGemm(BasicBlock* newBasicBlock, Operation* operation,
+    OperationPerformanceAnalysis* performanceAnalysis)
+{
+    auto* gemm = static_cast<GemmOperation*>(operation);
+
+    auto* outputTensor = dynamic_cast<TensorValue*>(gemm->getOutputOperand());
+
+    assert(outputTensor != nullptr);
+
+    auto size = outputTensor->getSize();
+
+    // find the minimal tile size
+    size_t minimumTileSize = 1;
+    size_t maximumTileSize = std::max(size[0], size[1]);
+
+    // binary search over tile sizes
+    while(minimumTileSize < maximumTileSize)
+    {
+        size_t midPoint = (minimumTileSize + maximumTileSize) / 2;
+
+        if(isGemmComputeBoundForTileSize(gemm, midPoint, size, performanceAnalysis))
+        {
+            minimumTileSize = midPoint + 1;
+        }
+        else
+        {
+            maximumTileSize = midPoint;
+        }
+    }
+
+    // do the split
+    size_t tileSize = minimumTileSize;
+
+    size_t rows    = size[0];
+    size_t columns = size[1];
+
+    size_t rowSplits    = (rows    + tileSize - 1) / tileSize;
+    size_t columnSplits = (columns + tileSize - 1) / tileSize;
+
+    // TODO
+    for(size_t rowSplit = 0; rowSplit < rowSplits; ++rowSplit)
+    {
+        for(size_t columnSplit = 0; columnsSplit < columnSplits; ++columnSplit)
+        {
+            // slice the inputs
+
+            // gemm
+
+        }
+    }
+
+    // merge the outputs
+}
+
 static void splitOperation(BasicBlock* newBasicBlock, Operation* operation,
     OperationPerformanceAnalysis* performanceAnalysis)
 {
-    // determine the dimension to split along
-    // TODO
-
-    // determine the number of splits
-
     // mechanically split the operation
 
-    // add the new operations to the new basic block
+    // gemm       ops : split into squarish tiles
+    // conv       ops : special rules
+    // point-wise ops : split into contiguous arrays
+    // broadcst   ops : split along the input
+    // reduce     ops : split along the output
+
+    if(isGemm(operation))
+    {
+        splitGemm(newBasicBlock, operation, performanceAnalysis);
+    }
+    else if(isConvolution(operation))
+    {
+        splitConvolution(newBasicBlock, operation, performanceAnalysis);
+    }
+    else if(isPointWise(operation))
+    {
+        splitPointWise(newBasicBlock, operation, performanceAnalysis);
+    }
+    else if(isBroadcast(operation))
+    {
+        splitBroadcast(newBasicBlock, operation, performanceAnalysis);
+    }
+    else if(isReduce(operation))
+    {
+        splitReduce(newBasicBlock, operation, performanceAnalysis);
+    }
+    else
+    {
+        assertM(false, "Invalid operation type for splitting.");
+    }
 }
 
 static void replaceBasicBlock(BasicBlock* output, BasicBlock* input)
 {
-    auto* function = input->getParent();
+    auto* function = input->getFunction();
 
     function->replaceBasicBlock(output, input);
 }

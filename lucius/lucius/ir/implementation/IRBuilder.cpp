@@ -155,7 +155,7 @@ static Function* addFunctionWithUniqueName(Module& module, const std::string& na
 
         if(!module.containsFunction(newName))
         {
-            newFunction = module.addFunction(newName);
+            newFunction = module.addFunction(std::make_unique<Function>(newName));
 
             break;
         }

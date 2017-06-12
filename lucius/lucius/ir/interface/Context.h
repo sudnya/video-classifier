@@ -6,6 +6,9 @@
 
 #pragma once
 
+// Forward Declarations
+namespace lucius { namespace ir { class ContextImplementation; } }
+
 namespace lucius
 {
 
@@ -16,6 +19,9 @@ namespace ir
 class Context
 {
 public:
+
+private:
+    std::unique_ptr<ContextImplementation> _implementation;
 
 };
 

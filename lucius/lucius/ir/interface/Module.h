@@ -20,16 +20,17 @@ public:
     ~Module();
 
 public:
-    Function* addFunction();
+    Function* addFunction(const std::string& name);
 
 public:
-    void addConstant(std::unique_ptr<Constant>&& );
+    Constant* addConstant(std::unique_ptr<Constant>&& );
 
 public:
-    void addType(std::unique_ptr<Type>&& t);
+    Type* addType(std::unique_ptr<Type>&& t);
 
 public:
-    void addValue(std::unique_ptr<Value>&& v);
+    Value* addValue(std::unique_ptr<Value>&& v);
+    Variable* addVariable(std::unique_ptr<Variable>&& v);
 
 private:
     Context& _context;

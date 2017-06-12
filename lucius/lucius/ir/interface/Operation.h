@@ -6,6 +6,13 @@
 
 #pragma once
 
+// Lucius Includes
+#include <lucius/ir/interface/User.h>
+
+// Standard Library Includes
+#include <string>
+#include <vector>
+
 namespace lucius
 {
 
@@ -13,11 +20,11 @@ namespace ir
 {
 
 /*! \brief A class for representing an operation. */
-class Operation
+class Operation : public User
 {
 public:
     Operation(const std::string& name, const ArgumentList& inputs, const ArgumentList& outputs);
-    virtual Operation();
+    virtual ~Operation();
 
 public:
     // forward operation
@@ -42,18 +49,21 @@ public:
     virtual PerformanceMetrics getBackwardPerformanceMetrics(
         const ShapeList& outputShapes) const = 0;
 
+public:
+    const UseList& getOperands() const;
+          UseList& getOperands();
+
 private:
     // operation name
     std::string _name;
 
 private:
-    // input values
-    ArgumentList _inputs;
-
-    // output values
-    ArgumentList _outputs;
+    // operands
+    UseList _operands;
 
 };
+
+typedef std::list<std::unique_ptr<Operation>> OperationList;
 
 } // namespace ir
 } // namespace lucius

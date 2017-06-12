@@ -35,9 +35,18 @@ static void runStatisticsDependentOptimizations(Program& program, ExecutionStati
     PassManager manager;
 
     // back propagation
+    //manager.addPass(PassFactory::create("OperationDecomposerPass"));
     manager.addPass(PassFactory::create("MemoryEfficientBackPropagationPass"));
 
     manager.runOnProgram(program);
+}
+
+static void addLoweringPasses(PassManager& manager, DynamicProgramState& state)
+{
+    manager.addPass(PassFactory::create("TableOperationSelectionPass"));
+
+    manager.addPass(PassFactory::create("MinimalMemoryOperationSchedulingPass"));
+    manager.addPass(PassFactory::create("DynamicMemoryAllocationPass"));
 }
 
 class JITEngine
@@ -102,7 +111,7 @@ public:
         return getStack().popFrame();
     }
 
-    void executeBasicBlockList(TargetBasicBlockList& blocks)
+    void executeBasicBlockList(BasicBlockList& blocks)
     {
         auto* nextBlock = &blocks.front();
 
@@ -112,7 +121,7 @@ public:
         }
     }
 
-    TargetBasicBlock* executeBasicBlock(StackFrame& frame, TargetBasicBlock& block)
+    BasicBlock* executeBasicBlock(StackFrame& frame, BasicBlock& block)
     {
         // the block shouldn't be empty
         assert(!block.empty());
@@ -124,17 +133,11 @@ public:
         }
 
         // control operations can change control flow
-        if(block.back().isControlOperation())
-        {
-            auto& controlOperation = dynamic_cast<TargetControlOperation&>(block.back());
+        assert(block.back().isControlOperation());
 
-            return controlOperation.execute();
-        }
+        auto& controlOperation = dynamic_cast<TargetControlOperation&>(block.back());
 
-        // normal operations fall through to the next block
-        block.back().execute();
-
-        return block.nextBlock();
+        return controlOperation.execute();
     }
 
 public:

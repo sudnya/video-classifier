@@ -16,7 +16,7 @@ namespace ir
 class Function
 {
 public:
-    Function();
+    Function(const std::string& name);
     ~Function();
 
 public:

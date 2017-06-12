@@ -11,7 +11,7 @@
 #include <string>
 
 // Forward Declarations
-namespace lucius { namespace analysis { class AnalysisManager; } }
+namespace lucius { namespace optimization { class PassManager; } }
 
 namespace lucius { namespace ir { class Function; } }
 
@@ -38,7 +38,7 @@ public:
     virtual StringSet getRequiredAnalyses() const = 0;
 
 private:
-    AnalysisManager* _manager;
+    PassManager* _manager;
 };
 
 } // namespace analysis

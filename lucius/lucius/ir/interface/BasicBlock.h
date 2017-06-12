@@ -17,6 +17,8 @@ class BasicBlock
 {
 
 public:
+
+private:
     OperationList _ops;
 };
 
