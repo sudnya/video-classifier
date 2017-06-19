@@ -6,6 +6,9 @@
 
 #pragma once
 
+// Standard Library Includes
+#include <memory>
+
 // Forward Declarations
 namespace lucius { namespace ir { class ContextImplementation; } }
 
@@ -18,8 +21,6 @@ namespace ir
 /*! \brief Holds 'global' state for the IR. */
 class Context
 {
-public:
-
 private:
     std::unique_ptr<ContextImplementation> _implementation;
 

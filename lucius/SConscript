@@ -27,12 +27,14 @@ env['path_to_root_dir'] = os.path.abspath(lucius_path_to_root_dir)
 directories = ['lucius/audio', 'lucius/driver', 'lucius/util', 'lucius/engine',
     'lucius/matrix', 'lucius/matrix/ctc', 'lucius/model', 'lucius/network', 'lucius/configuration',
     'lucius/optimizer', 'lucius/parallel', 'lucius/video', 'lucius/visualization',
-    'lucius/database', 'lucius/input', 'lucius/results', 'lucius/api', 'lucius/text']
+    'lucius/database', 'lucius/input', 'lucius/results', 'lucius/api', 'lucius/text',
+    'lucius/ir', 'lucius/runtime', 'lucius/analysis', 'lucius/lazy-ir']
 
 source_directories = [os.path.join(i, 'implementation') for i in directories]
 
 cuda_source_directories = [os.path.join(i, 'cuda-implementation') for i in directories]
 
+# CUDA needs this to support device libraries
 env['STATIC_AND_SHARED_OBJECTS_ARE_THE_SAME'] = 1
 extensions = ['*.cpp']
 

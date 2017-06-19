@@ -6,15 +6,34 @@
 
 #pragma once
 
+// Standard Library Includes
+#include <cstdint>
+#include <vector>
+
 // Forward Declarations
 namespace lucius { namespace ir { class InsertionPoint;          } }
 namespace lucius { namespace ir { class IRBuilderImplementation; } }
+namespace lucius { namespace ir { class Constant;                } }
+namespace lucius { namespace ir { class BasicBlock;              } }
+namespace lucius { namespace ir { class Value;                   } }
+namespace lucius { namespace ir { class Variable;                } }
+namespace lucius { namespace ir { class Gradient;                } }
+namespace lucius { namespace ir { class Context;                 } }
+namespace lucius { namespace ir { class Type;                    } }
+
+namespace lucius { namespace matrix { class Matrix;    } }
+namespace lucius { namespace matrix { class Dimension; } }
+namespace lucius { namespace matrix { class Precision; } }
 
 namespace lucius
 {
 
 namespace ir
 {
+
+using Matrix    = matrix::Matrix;
+using Dimension = matrix::Dimension;
+using Precision = matrix::Precision;
 
 /*! \brief Helps build the IR. */
 class IRBuilder
@@ -23,69 +42,68 @@ public:
     IRBuilder(Context& context);
 
 public:
-    InsertionPoint* getInsertionPoint();
-    void setInsertionPoint(InsertionPoint* point);
+    InsertionPoint getInsertionPoint();
+    void setInsertionPoint(InsertionPoint point);
 
 public:
     /*! \brief Add new constant values to the program (or get an instance of the same value). */
-    Constant* addConstant(const Matrix& value);
-    Constant* addConstant(int64_t value);
+    Constant addConstant(const Matrix& value);
+    Constant addConstant(int64_t value);
 
 public:
     /*! \brief Create a new basic block, add it to the current function. */
-    BasicBlock* addBasicBlock();
+    BasicBlock addBasicBlock();
 
     /*! \brief Create a new initialization function, set the insertion point to the entry point. */
     void addInitializationFunction();
 
 public:
-    /*! \brief Allocate a new value. */
-    Value* addValue(const Type* type);
-
-public:
     /*! \brief Insert a new copy operation. */
-    void addCopy(Value* output, Value* input);
+    Value addCopy(Value input);
 
     /*! \brief Insert a new unary apply operation. */
-    void addApply(Value* output, Value* input, Value* op);
+    Value addApply(Value input, Value op);
 
     /*! \brief Insert a new binary apply operation. */
-    void addApplyBinary(Value* output, Value* left, Value* right, Value* op);
+    Value addApplyBinary(Value left, Value right, Value op);
 
     /*! \brief Insert a new reduce operation. */
-    void addReduce(Value* output, Value* input, Value* dimensions, Value* op);
+    Value addReduce(Value input, Value dimensions, Value op);
 
     /*! \brief Insert a new broadcast operation. */
-    void addBroadcast(Value* output, Value* input);
+    Value addBroadcast(Value input);
 
     /*! \brief Insert a new zeros operation. */
-    void addZeros(Value* output);
+    Value addZeros(Value output);
 
     /*! \brief Insert a new ones operation. */
-    void addOnes(Value* output);
+    Value addOnes(Value output);
 
     /*! \brief Insert a new range operation. */
-    void addRange(Value* output);
+    Value addRange(Value output);
 
     /*! \brief Insert a new srand operation. */
-    void addSrand(Value* state, Value* seed);
+    Value addSrand(Value seed);
 
     /*! \brief Insert a new rand operation. */
-    void addRand(Value* result, Value* state);
+    Value addRand(Value state);
 
     /*! \brief Insert a new randn operation. */
-    void addRandn(Value* result, Value* state);
+    Value addRandn(Value state);
 
 public:
     /*! \brief Insert a new conditional branch operation. */
-    void addConditionalBranch(Value* predicate, BasicBlock* target, BasicBlock* fallthrough);
+    void addConditionalBranch(Value predicate, BasicBlock target, BasicBlock fallthrough);
 
 public:
     /*! \brief Create a tensor type. */
-    Type* getTensorType(const Dimension& d, const Precision& p);
+    Type getTensorType(const Dimension& d, const Precision& p);
 
     /*! \brief Get the type associated with random state. */
-    Type* getRandomStateType();
+    Type getRandomStateType();
+
+public:
+    using VariableVector = std::vector<Variable>;
 
 public:
     /*! \brief Get all variables in the program. */
@@ -93,11 +111,11 @@ public:
 
 public:
     /*! \brief Add a new gradient value for a variable in the program. */
-    GradientValue* addGradientForVariable(const Variable*);
+    Gradient addGradientForVariable(Variable);
 
 public:
     /*! \brief Indicate that a value should be considered to be a variable. */
-    Variable* registerValueAsVariable(const Value*);
+    Variable registerValueAsVariable(Value );
 
 public:
     /*! \brief Push the current insertion point onto a stack owned by the builder. */

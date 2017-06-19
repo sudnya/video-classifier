@@ -22,6 +22,7 @@ static void runTargetIndependentOptimizations(Program& program)
 
     // TODO: add passes
 
+    // Control flow simplify
     // DCE
     // GVN
     // Strength reduction

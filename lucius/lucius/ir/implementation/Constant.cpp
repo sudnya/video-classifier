@@ -6,12 +6,17 @@
 
 // Lucius Includes
 #include <lucius/ir/interface/Constant.h>
+#include <lucius/ir/interface/Value.h>
 
 namespace lucius
 {
 
 namespace ir
 {
+
+class ConstantImplementation : public Value
+{
+};
 
 } // namespace ir
 } // namespace lucius

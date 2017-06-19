@@ -7,7 +7,7 @@
 #pragma once
 
 // Forward Declarations
-namespace lucius { namespace ir { class Value; } }
+namespace lucius { namespace ir { class Use; } }
 
 namespace lucius
 {
@@ -15,16 +15,14 @@ namespace lucius
 namespace ir
 {
 
-/*! \brief A class for representing uses of values. */
+/*! \brief A class for representing a user of other values. */
 class User : public Value
 {
+private:
+    using UseList = std::list<Use>;
 
 private:
-    typedef std::list<Use*> UseList;
-
-private:
-    UseList::iterator _position;
-    Value*            _value;
+    UseList _usedValues;
 };
 
 } // namespace ir

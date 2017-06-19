@@ -6,6 +6,12 @@
 
 #pragma once
 
+// Standard Library Includes
+#include <vector>
+
+// Forward Declarations
+namespace lucius { namespace ir { class Type; } }
+
 namespace lucius
 {
 
@@ -15,6 +21,11 @@ namespace ir
 /*! \brief A class for representing a function argument. */
 class Argument
 {
+public:
+    const Type* getType() const;
+
+private:
+    const Type* _type;
 };
 
 typedef std::vector<Argument> ArgumentList;

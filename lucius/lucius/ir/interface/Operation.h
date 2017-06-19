@@ -19,11 +19,18 @@ namespace lucius
 namespace ir
 {
 
+class OperationImplementation : public User
+{
+private:
+    std::weak_ptr<BasicBlockImplementation> _parent;
+
+};
+
 /*! \brief A class for representing an operation. */
-class Operation : public User
+class Operation
 {
 public:
-    Operation(const std::string& name, const ArgumentList& inputs, const ArgumentList& outputs);
+    Operation(const ArgumentList& inputs, const ArgumentList& outputs);
     virtual ~Operation();
 
 public:
@@ -54,16 +61,9 @@ public:
           UseList& getOperands();
 
 private:
-    // operation name
-    std::string _name;
-
-private:
-    // operands
-    UseList _operands;
+    std::shared_ptr<OperationImplementation> _implementation;
 
 };
-
-typedef std::list<std::unique_ptr<Operation>> OperationList;
 
 } // namespace ir
 } // namespace lucius

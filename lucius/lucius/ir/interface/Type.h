@@ -6,6 +6,12 @@
 
 #pragma once
 
+// Standard Library Includes
+#include <memory>
+
+// Forward Declarations
+namespace lucius { namespace ir { class TypeImplementation; } }
+
 namespace lucius
 {
 
@@ -33,7 +39,7 @@ public:
     };
 
 private:
-    TypeId _id;
+    std::shared_ptr<TypeImplementation> _implementation;
 
 };
 

@@ -6,6 +6,12 @@
 
 #pragma once
 
+// Standard Library Includes
+#include <memory>
+
+// Forward Declarations
+namespace lucius { namespace ir { class ConstantImplementation; } }
+
 namespace lucius
 {
 
@@ -13,8 +19,10 @@ namespace ir
 {
 
 /*! \brief A class for representing a constant value a program. */
-class Constant : public Value
+class Constant
 {
+public:
+    std::shared_ptr<ConstantImplementation> _implementation;
 };
 
 } // namespace ir

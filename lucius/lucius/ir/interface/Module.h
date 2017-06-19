@@ -6,43 +6,41 @@
 
 #pragma once
 
+// Forward Declarations
+namespace lucius { namespace ir { class ModuleImplementation; } }
+namespace lucius { namespace ir { class Context;              } }
+namespace lucius { namespace ir { class Constant;             } }
+namespace lucius { namespace ir { class Type;                 } }
+namespace lucius { namespace ir { class Variable;             } }
+
 namespace lucius
 {
 
 namespace ir
 {
 
+
 /*! \brief A class for representing a module. */
 class Module
 {
 public:
-    Module(Conext& context);
+    Module(Context& context);
     ~Module();
 
 public:
-    Function* addFunction(const std::string& name);
+    Function addFunction(const std::string& name);
 
 public:
-    Constant* addConstant(std::unique_ptr<Constant>&& );
+    Constant addConstant(Constant c);
 
 public:
-    Type* addType(std::unique_ptr<Type>&& t);
+    Type addType(Type t);
 
 public:
-    Value* addValue(std::unique_ptr<Value>&& v);
-    Variable* addVariable(std::unique_ptr<Variable>&& v);
+    Variable addVariable(Variable v);
 
 private:
-    Context& _context;
-
-private:
-    ConstantMap _constants;
-    FunctionMap _functions;
-
-private:
-    ValueList    _values;
-    VariableList _variables;
-
+    std::shared_ptr<ModuleImplementation> _implementation;
 };
 
 } // namespace ir

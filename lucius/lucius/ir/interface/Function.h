@@ -6,6 +6,13 @@
 
 #pragma once
 
+// Standard Library Includes
+#include <memory>
+
+// Forward Declarations
+namespace lucius { namespace ir { class FunctionImplementation; } }
+namespace lucius { namespace ir { class BasicBlock;             } }
+
 namespace lucius
 {
 
@@ -16,22 +23,17 @@ namespace ir
 class Function
 {
 public:
-    Function(const std::string& name);
+    Function();
     ~Function();
 
 public:
-    BasicBlock* addBasicBlock();
+    BasicBlock addBasicBlock();
 
 public:
     void setIsInitializer(bool isInitializer);
 
 private:
-    Module* _module;
-
-private:
-    BasicBlockList _basicBlocks;
-    ArgumentList   _arguments;
-
+    std::shared_ptr<FunctionImplementation> _implementation;
 };
 
 } // namespace ir

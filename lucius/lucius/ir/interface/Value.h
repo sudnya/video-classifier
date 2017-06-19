@@ -6,14 +6,16 @@
 
 #pragma once
 
+// Lucius Includes
+#include <lucius/ir/interface/Type.h>
+
 // Standard Library Includes
 #include <list>
-#include <memory>
 
 // Forward Declarations
-namespace lucius { namespace ir { class Type;   } }
-namespace lucius { namespace ir { class Module; } }
-namespace lucius { namespace ir { class Use;    } }
+namespace lucius { namespace ir { class Module;    } }
+namespace lucius { namespace ir { class Use;       } }
+namespace lucius { namespace ir { class Operation; } }
 
 namespace lucius
 {
@@ -29,25 +31,20 @@ public:
     ~Value();
 
 public:
-    void registerWithModule(Module* module);
+    void registerWithModule(Module& module);
 
 public:
-    Operation* getDefinition();
-    const Operation* getDefinition() const;
+    Operation getDefinition();
+    const Operation getDefinition() const;
 
 private:
-    typedef std::list<Use*> UseList;
-    typedef std::list<std::unique_ptr<Value>> ValueList;
+    typedef std::list<Use> UseList;
 
 private:
-    Type* _type;
+    Type _type;
 
 private:
     UseList _uses;
-
-private:
-    ValueList::iterator _position;
-    Module*             _module;
 
 };
 

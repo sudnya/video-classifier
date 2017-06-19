@@ -6,20 +6,24 @@
 
 #pragma once
 
+// Standard Library Includes
+#include <memory>
+
+// Forward Declarations
+namespace lucius { namespace ir { class BasicBlockImplementation; } }
+
 namespace lucius
 {
 
 namespace ir
 {
 
+
 /*! \brief A class for representing a basic block of operations in a program. */
 class BasicBlock
 {
-
-public:
-
 private:
-    OperationList _ops;
+    std::shared_ptr<BasicBlockImplementation> _implementation;
 };
 
 } // namespace ir
