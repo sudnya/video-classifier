@@ -6,7 +6,10 @@
 
 #pragma once
 
-// forward declarations
+// Standard Library Includes
+#include <memory>
+
+// Forward Declarations
 namespace lucius { namespace analysis { class Analysis; } }
 
 namespace lucius

@@ -14,7 +14,6 @@
 #include <lucius/matrix/interface/Operation.h>
 #include <lucius/matrix/interface/SoftmaxOperations.h>
 
-#include <lucius/util/interface/memory.h>
 #include <lucius/util/interface/debug.h>
 
 #include <string>

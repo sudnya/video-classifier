@@ -11,9 +11,6 @@
 #include <lucius/engine/interface/ModelCheckpointer.h>
 #include <lucius/engine/interface/ValidationErrorObserver.h>
 
-// Standard Library Includes
-#include <lucius/util/interface/memory.h>
-
 namespace lucius
 {
 

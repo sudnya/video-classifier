@@ -6,12 +6,17 @@
 
 #pragma once
 
+// Standard Library Includes
+#include <list>
+#include <string>
+
 // Forward Declarations
 namespace lucius { namespace ir { class ModuleImplementation; } }
 namespace lucius { namespace ir { class Context;              } }
 namespace lucius { namespace ir { class Constant;             } }
 namespace lucius { namespace ir { class Type;                 } }
 namespace lucius { namespace ir { class Variable;             } }
+namespace lucius { namespace ir { class Function;             } }
 
 namespace lucius
 {
@@ -28,16 +33,28 @@ public:
     ~Module();
 
 public:
-    Function addFunction(const std::string& name);
-
-public:
-    Constant addConstant(Constant c);
-
-public:
-    Type addType(Type t);
+    Function addFunction(Function f);
 
 public:
     Variable addVariable(Variable v);
+
+public:
+    Context& getContext();
+
+public:
+    bool containsFunction(const std::string& name) const;
+
+public:
+    using FunctionList = std::list<Function>;
+    using iterator = FunctionList::iterator;
+    using const_iterator = FunctionList::const_iterator;
+
+public:
+          iterator begin();
+    const_iterator begin() const;
+
+          iterator end();
+    const_iterator end() const;
 
 private:
     std::shared_ptr<ModuleImplementation> _implementation;

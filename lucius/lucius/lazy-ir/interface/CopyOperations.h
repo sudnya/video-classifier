@@ -7,7 +7,7 @@
 #pragma once
 
 // Forward Declarations
-class lucius { class lazy { class LazyValue; } }
+namespace lucius { namespace lazy { class LazyValue; } }
 
 namespace lucius
 {
@@ -19,7 +19,7 @@ namespace lazy
 LazyValue copy(LazyValue input);
 
 /*! \brief Copy from one value into another. */
-void copy(LazyValue output, LazyValue input);
+void copy(LazyValue& output, LazyValue input);
 
 }
 

@@ -7,6 +7,13 @@
 // Lucius Includes
 #include <lucius/optimization/interface/MinimalMemoryOperationSchedulingPass.h>
 
+#include <lucius/analysis/interface/OperationMemoryAnalysis.h>
+
+#include <lucius/ir/interface/Use.h>
+#include <lucius/ir/interface/Operation.h>
+#include <lucius/ir/interface/Function.h>
+#include <lucius/ir/interface/BasicBlock.h>
+
 namespace lucius
 {
 namespace optimization
@@ -22,43 +29,70 @@ MinimalMemoryOperationSchedulingPass::~MinimalMemoryOperationSchedulingPass()
 
 }
 
-static bool getInputMemory(Operation* operation)
+using Operation = ir::Operation;
+using OperationMemoryAnalysis = analysis::OperationMemoryAnalysis;
+
+static bool getInputMemory(const Operation& operation,
+    const OperationMemoryAnalysis& memoryAnalysis)
 {
-    auto& operands = operation->getOperands();
+    auto operands = operation.getOperands();
 
-    size_t totalMemory = 0;
+    double totalMemory = 0;
 
-    for(auto* operand : operands)
+    for(auto& operand : operands)
     {
-        totalMemory += getMemoryUsage(totalMemory);
+        totalMemory += memoryAnalysis.getOperandMemoryRequirement(operand);
     }
 
     return totalMemory;
 }
 
-static Operation* getBestOperation(OperationVector& readyOperations)
+using OperationVector = std::vector<Operation>;
+
+static Operation getBestOperation(OperationVector& readyOperations,
+    const OperationMemoryAnalysis& memoryAnalysis)
 {
-    // sort by used memory in operands
+    // sort by used memory in operands, the idea here is to prefer freeing up memory from
+    // the most memory intensive operations first
     std::sort(readyOperations.begin(), readyOperations.end(),
-        [](Operation* left, Operation* right)
+        [&](const Operation& left, const Operation& right)
         {
-            return getInputMemory(left) < getInputMemory(right);
+            return getInputMemory(left, memoryAnalysis) < getInputMemory(right, memoryAnalysis);
         });
 
-    auto* bestOperation = readyOperations.back();
+    auto bestOperation = readyOperations.back();
 
     readyOperations.pop_back();
 
     return bestOperation;
 }
 
-static void scheduleBasicBlock(OperationList& newOrder, OperationList& originalOrder)
+using OperationList = std::list<Operation>;
+using OperationSet  = std::set<Operation>;
+
+static bool isReady(const Operation& operation, const OperationSet& scheduledOperations)
+{
+    auto predecessors = operation.getPredecessors();
+
+    for(auto& predecessor : predecessors)
+    {
+        if(scheduledOperations.count(predecessor) == 0)
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+static void scheduleBasicBlock(OperationList& newOrder, OperationList& originalOrder,
+    const OperationMemoryAnalysis& memoryAnalysis)
 {
     // schedule according to memory priority using a greedy algorithm
     OperationVector readyOperations;
     OperationSet    scheduledOperations;
 
-    for(auto* operation : originalOrder)
+    for(auto& operation : originalOrder)
     {
         if(isReady(operation, scheduledOperations))
         {
@@ -68,14 +102,14 @@ static void scheduleBasicBlock(OperationList& newOrder, OperationList& originalO
 
     while(!readyOperations.empty())
     {
-        auto* operation = getBestOperation(readyOperations);
+        auto operation = getBestOperation(readyOperations, memoryAnalysis);
 
         newOrder.push_back(operation);
         scheduledOperations.insert(operation);
 
-        auto successors = getSuccessors(operation);
+        auto successors = operation.getSuccessors();
 
-        for(auto* successor : successors)
+        for(auto& successor : successors)
         {
             if(isReady(successor, scheduledOperations))
             {
@@ -89,14 +123,17 @@ static void scheduleBasicBlock(OperationList& newOrder, OperationList& originalO
 
 void MinimalMemoryOperationSchedulingPass::runOnFunction(ir::Function& function)
 {
+    const OperationMemoryAnalysis* memoryAnalysis =
+        static_cast<OperationMemoryAnalysis*>(getAnalysis("OperationMemoryAnalysis"));
+
     // schedule each basic block independently
     for(auto& basicBlock : function)
     {
         OperationList newOrder;
 
-        scheduleBasicBlock(newOrder, basicBlock->getOperations());
+        scheduleBasicBlock(newOrder, basicBlock.getOperations(), *memoryAnalysis);
 
-        basicBlock->moveOperations(newOrder);
+        basicBlock.setOperations(newOrder);
     }
 }
 

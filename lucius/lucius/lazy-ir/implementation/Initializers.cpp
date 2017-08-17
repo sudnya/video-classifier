@@ -7,6 +7,12 @@
 // Lucius Includes
 #include <lucius/lazy-ir/interface/Initializers.h>
 
+#include <lucius/lazy-ir/interface/LazyIr.h>
+#include <lucius/lazy-ir/interface/LazyValue.h>
+
+#include <lucius/ir/interface/IRBuilder.h>
+#include <lucius/ir/interface/Variable.h>
+
 namespace lucius
 {
 
@@ -19,11 +25,11 @@ LazyValue createInitializer(std::function<LazyValue()> body)
 
     builder.saveInsertionPoint();
 
-    builder.newInitializationFunction();
+    builder.addInitializationFunction();
 
     auto value = body();
 
-    auto variable = builder.registerValueAsVariable(value);
+    auto variable = builder.registerValueAsVariable(value.getValue());
 
     builder.restoreInsertionPoint();
 

@@ -10,8 +10,6 @@
 #include <lucius/network/interface/WeightRegularizationCostFunction.h>
 #include <lucius/network/interface/NullWeightRegularizationCostFunction.h>
 
-#include <lucius/util/interface/memory.h>
-
 namespace lucius
 {
 

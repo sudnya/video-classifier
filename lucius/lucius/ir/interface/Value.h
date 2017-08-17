@@ -16,6 +16,9 @@
 namespace lucius { namespace ir { class Module;    } }
 namespace lucius { namespace ir { class Use;       } }
 namespace lucius { namespace ir { class Operation; } }
+namespace lucius { namespace ir { class Constant;  } }
+
+namespace lucius { namespace ir { class ValueImplementation; } }
 
 namespace lucius
 {
@@ -28,17 +31,39 @@ class Value
 {
 public:
     Value();
+    Value(Operation o);
+    Value(Constant c);
     ~Value();
 
 public:
-    void registerWithModule(Module& module);
+    Value(const Value&);
+    Value& operator=(const Value&);
 
 public:
-    Operation getDefinition();
-    const Operation getDefinition() const;
+    const Type& getType() const;
 
-private:
+public:
+    /*! \brief Test if the value is an operation. */
+    bool isOperation() const;
+
+    /*! \brief Test if the value is a constant. */
+    bool isConstant() const;
+
+    /*! \brief Test if the value type is void. */
+    bool isVoid() const;
+
+public:
     typedef std::list<Use> UseList;
+
+public:
+          UseList& getUses();
+    const UseList& getUses() const;
+
+public:
+    bool operator<(const Value& right) const;
+
+public:
+    std::shared_ptr<ValueImplementation> getValueImplementation() const;
 
 private:
     Type _type;
@@ -47,6 +72,12 @@ private:
     UseList _uses;
 
 };
+
+template <typename T, typename V>
+T value_cast(const V& v)
+{
+    return T(v.getValueImplementation());
+}
 
 } // namespace ir
 } // namespace lucius

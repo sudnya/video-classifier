@@ -9,6 +9,9 @@
 // Lucius Includes
 #include <lucius/analysis/interface/Analysis.h>
 
+// Forward Declarations
+namespace lucius { namespace ir { class Operation; } }
+
 namespace lucius
 {
 
@@ -23,11 +26,14 @@ public:
     virtual ~OperationPerformanceAnalysis();
 
 public:
-    double getOperationTime(const ir::Operation* operation) const;
-    double getOverheadTime (const ir::Operation* operation) const;
+    using Operation = ir::Operation;
 
 public:
-    void runOnFunction(const ir::Function& function) final;
+    double getOperationTime(const Operation& operation) const;
+    double getOverheadTime (const Operation& operation) const;
+
+public:
+    void runOnFunction(const Function& function) final;
 
 public:
     StringSet getRequiredAnalyses() const final;

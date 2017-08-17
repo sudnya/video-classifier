@@ -12,7 +12,6 @@
 #include <lucius/matrix/interface/Precision.h>
 #include <lucius/matrix/interface/Matrix.h>
 
-#include <lucius/util/interface/memory.h>
 #include <lucius/util/interface/debug.h>
 
 // Standard Library Includes

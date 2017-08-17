@@ -18,7 +18,6 @@
 #include <lucius/matrix/interface/SoftmaxOperations.h>
 
 #include <lucius/util/interface/debug.h>
-#include <lucius/util/interface/memory.h>
 #include <lucius/util/interface/PropertyTree.h>
 
 namespace lucius

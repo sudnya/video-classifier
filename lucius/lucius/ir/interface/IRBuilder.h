@@ -20,6 +20,7 @@ namespace lucius { namespace ir { class Variable;                } }
 namespace lucius { namespace ir { class Gradient;                } }
 namespace lucius { namespace ir { class Context;                 } }
 namespace lucius { namespace ir { class Type;                    } }
+namespace lucius { namespace ir { class Program;                 } }
 
 namespace lucius { namespace matrix { class Matrix;    } }
 namespace lucius { namespace matrix { class Dimension; } }
@@ -31,6 +32,7 @@ namespace lucius
 namespace ir
 {
 
+// Matrix imports
 using Matrix    = matrix::Matrix;
 using Dimension = matrix::Dimension;
 using Precision = matrix::Precision;
@@ -42,12 +44,16 @@ public:
     IRBuilder(Context& context);
 
 public:
-    InsertionPoint getInsertionPoint();
-    void setInsertionPoint(InsertionPoint point);
+    InsertionPoint* getInsertionPoint();
+    void setInsertionPoint(InsertionPoint* point);
+
+    /*! \brief Sets up an insertion point at the end of the specified basic block. */
+    void setInsertionPoint(const BasicBlock& );
 
 public:
     /*! \brief Add new constant values to the program (or get an instance of the same value). */
     Constant addConstant(const Matrix& value);
+    Constant addConstant(const Dimension& value);
     Constant addConstant(int64_t value);
 
 public:
@@ -71,29 +77,32 @@ public:
     Value addReduce(Value input, Value dimensions, Value op);
 
     /*! \brief Insert a new broadcast operation. */
-    Value addBroadcast(Value input);
+    Value addBroadcast(Value left, Value right, Value dimensions, Value op);
 
     /*! \brief Insert a new zeros operation. */
-    Value addZeros(Value output);
+    Value addZeros(Type tensorType);
 
     /*! \brief Insert a new ones operation. */
-    Value addOnes(Value output);
+    Value addOnes(Type tensorType);
 
     /*! \brief Insert a new range operation. */
-    Value addRange(Value output);
+    Value addRange(Type tensorType);
 
     /*! \brief Insert a new srand operation. */
     Value addSrand(Value seed);
 
     /*! \brief Insert a new rand operation. */
-    Value addRand(Value state);
+    Value addRand(Value state, Type tensorType);
 
     /*! \brief Insert a new randn operation. */
-    Value addRandn(Value state);
+    Value addRandn(Value state, Type tensorType);
+
+    /*! \brief Insert a new get operation. */
+    Value addGet(Value container, Value position);
 
 public:
     /*! \brief Insert a new conditional branch operation. */
-    void addConditionalBranch(Value predicate, BasicBlock target, BasicBlock fallthrough);
+    Value addConditionalBranch(Value predicate, BasicBlock target, BasicBlock fallthrough);
 
 public:
     /*! \brief Create a tensor type. */
@@ -111,7 +120,7 @@ public:
 
 public:
     /*! \brief Add a new gradient value for a variable in the program. */
-    Gradient addGradientForVariable(Variable);
+    Gradient addGradientForVariable(Variable value, Value cost);
 
 public:
     /*! \brief Indicate that a value should be considered to be a variable. */
@@ -122,11 +131,11 @@ public:
     void saveInsertionPoint();
 
     /*! \brief Pop the current insertion point from a stack owned by the builder. */
-    void popInsertionPoint();
+    void restoreInsertionPoint();
 
 public:
     /*! \brief Extracts the program from the builder, caller takes ownership. */
-    std::unique_ptr<Program> getProgram();
+    Program getProgram();
 
 public:
     /*! \brief Clear the builder. */

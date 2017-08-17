@@ -6,8 +6,13 @@
 
 // Lucius Includes
 #include <lucius/lazy-ir/interface/LazyValue.h>
+#include <lucius/lazy-ir/interface/LazyIr.h>
 
 #include <lucius/runtime/interface/IRExecutionEngine.h>
+#include <lucius/runtime/interface/IRExecutionEngineFactory.h>
+
+#include <lucius/ir/interface/IRBuilder.h>
+#include <lucius/ir/interface/Program.h>
 
 namespace lucius
 {
@@ -15,21 +20,26 @@ namespace lucius
 namespace lazy
 {
 
-LazyValue::LazyValue(ir::Value* value)
+LazyValue::LazyValue(ir::Value value)
 : _value(value)
 {
 
 }
 
-ir::Value* LazyValue::getValue()
+ir::Value& LazyValue::getValue()
 {
     return _value;
 }
 
-void* LazyValue::runProgram()
+const ir::Value& LazyValue::getValue() const
+{
+    return _value;
+}
+
+void* LazyValue::_runProgram()
 {
     auto program = getBuilder().getProgram();
-    auto engine = IRExecutionEngineFactory::create(program.get());
+    auto engine = runtime::IRExecutionEngineFactory::create(program);
 
     engine->run();
 

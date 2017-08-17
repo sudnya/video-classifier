@@ -17,8 +17,6 @@
 
 #include <lucius/util/interface/ParameterPack.h>
 
-#include <lucius/util/interface/memory.h>
-
 namespace lucius
 {
 

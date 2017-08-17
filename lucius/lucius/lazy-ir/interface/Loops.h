@@ -7,10 +7,10 @@
 #pragma once
 
 // Standard Library Includes
-#include <function>
+#include <functional>
 
 // Forward Declarations
-class lucius { class lazy { class LazyValue; } }
+namespace lucius { namespace lazy { class LazyValue; } }
 
 namespace lucius
 {

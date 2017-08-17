@@ -25,7 +25,7 @@ public:
 class Add : public ConstantOperator
 {
 public:
-    ConstantOperator();
+    Add();
 
 };
 

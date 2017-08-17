@@ -4,15 +4,39 @@
     \brief  The source file for the DynamicMemoryAllocatin class.
 */
 
-#pragma once
-
 // Lucius Includes
 #include <lucius/optimization/interface/DynamicMemoryAllocationPass.h>
+
+#include <lucius/analysis/interface/PostDominatorAnalysis.h>
+#include <lucius/analysis/interface/DominatorAnalysis.h>
+
+#include <lucius/ir/target/interface/TargetOperation.h>
+#include <lucius/ir/target/interface/TargetValue.h>
+#include <lucius/ir/target/interface/AllocationOperation.h>
+#include <lucius/ir/target/interface/FreeOperation.h>
+
+#include <lucius/ir/interface/Operation.h>
+#include <lucius/ir/interface/BasicBlock.h>
+#include <lucius/ir/interface/Function.h>
+#include <lucius/ir/interface/Use.h>
+
+// Standard Library Includes
+#include <cassert>
 
 namespace lucius
 {
 namespace optimization
 {
+
+// Namespace imports
+using Operation = ir::Operation;
+using BasicBlock = ir::BasicBlock;
+using TargetOperation = ir::TargetOperation;
+using TargetValue = ir::TargetValue;
+using AllocationOperation = ir::AllocationOperation;
+using FreeOperation = ir::FreeOperation;
+using PostDominatorAnalysis = analysis::PostDominatorAnalysis;
+using DominatorAnalysis = analysis::DominatorAnalysis;
 
 DynamicMemoryAllocationPass::DynamicMemoryAllocationPass()
 : Pass("DynamicMemoryAllocationPass")
@@ -25,63 +49,226 @@ DynamicMemoryAllocationPass::~DynamicMemoryAllocationPass()
     // intentionally blank
 }
 
-static bool needsAllocation(const Operation* op)
+static bool needsAllocation(const TargetValue& value)
 {
-    return op->getType()->isTensor();
+    return value.getType().isTensor();
 }
 
-static Operation* addAllocation(Operation* op)
+static void insertBefore(BasicBlock block, BasicBlock::iterator position, Operation newOperation)
 {
-    auto* target = dynamic_cast<TargetOperation*>(op);
-
-    assert(target != nullptr);
-
-    auto* allocation = target->getFunction()->addOperation(
-        std::make_unique<AllocationOperation>(target->getType()));
-
-    insertBefore(target, allocation);
-
-    target->setOutputOperand(allocation);
-
-    return allocation;
+    block.insert(position, newOperation);
 }
 
-static void addFree(Operation* allocation, Operation* insertionPoint)
+static void insertAfter(BasicBlock block, BasicBlock::iterator position, Operation newOperation)
 {
-    auto* free = allocation->getFunction()->addOperation(
-        std::make_unique<FreeOperation>(allocation));
+    block.insert(++position, newOperation);
+}
 
-    insertAfter(insertionPoint, free);
+static void addAllocation(TargetValue value, BasicBlock postDominator,
+    BasicBlock::iterator insertionPoint)
+{
+    AllocationOperation allocation(value);
+
+    insertBefore(postDominator, insertionPoint, allocation);
+}
+
+static void addFree(TargetValue value, BasicBlock postDominator,
+    BasicBlock::iterator insertionPoint)
+{
+    FreeOperation free;
+
+    free.setOperand(value, 0);
+
+    insertAfter(postDominator, insertionPoint, free);
+}
+
+static BasicBlock getPostDominatorOfAllUses(TargetValue operand,
+    PostDominatorAnalysis* postDominatorAnalysis)
+{
+    auto& uses = operand.getUses();
+
+    assert(!uses.empty());
+
+    BasicBlock postDominator = uses.front().getParent();
+
+    for(auto& use : uses)
+    {
+        postDominator = postDominatorAnalysis->getPostDominator(use.getParent(), postDominator);
+    }
+
+    return postDominator;
+}
+
+static BasicBlock getDominatorOfAllDefinitions(TargetValue operand,
+    DominatorAnalysis* dominatorAnalysis)
+{
+    auto& definitions = operand.getDefinitions();
+
+    assert(!definitions.empty());
+
+    BasicBlock dominator = definitions.front().getParent();
+
+    for(auto& definition : definitions)
+    {
+        dominator = dominatorAnalysis->getDominator(definition.getParent(), dominator);
+    }
+
+    return dominator;
+}
+
+static bool dominatorContainsDefinition(TargetValue value, BasicBlock dominator)
+{
+    auto& definitions = value.getDefinitions();
+
+    for(auto& definition : definitions)
+    {
+        if(definition.getParent() == dominator)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+static BasicBlock::iterator getFirstDefinition(TargetValue value, BasicBlock dominator)
+{
+    auto possibleDefinition = dominator.begin();
+
+    for(; possibleDefinition != dominator.end(); ++possibleDefinition)
+    {
+        auto possibleTargetDefinition = ir::value_cast<TargetOperation>(*possibleDefinition);
+
+        if(possibleTargetDefinition.getOutputOperand() == value)
+        {
+            break;
+        }
+    }
+
+    assert(possibleDefinition != dominator.end());
+
+    return possibleDefinition;
+}
+
+static void addAllocations(TargetValue value, DominatorAnalysis* dominatorAnalysis)
+{
+    auto dominator = getDominatorOfAllDefinitions(value, dominatorAnalysis);
+
+    BasicBlock::iterator insertionPoint;
+
+    if(dominatorContainsDefinition(value, dominator))
+    {
+        insertionPoint = getFirstDefinition(value, dominator);
+    }
+    else
+    {
+        insertionPoint = dominator.end();
+    }
+
+    addAllocation(value, dominator, insertionPoint);
+}
+
+static bool postDominatorContainsUse(TargetValue value, BasicBlock postDominator)
+{
+    auto& uses = value.getUses();
+
+    for(auto& use : uses)
+    {
+        if(use.getParent() == postDominator)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+static BasicBlock::iterator getLastUse(TargetValue value, BasicBlock postDominator)
+{
+    auto possibleUse = postDominator.rbegin();
+
+    for(; possibleUse != postDominator.rend(); ++possibleUse)
+    {
+        auto possibleTargetUse = ir::value_cast<TargetOperation>(*possibleUse);
+
+        auto& operands = possibleTargetUse.getAllOperands();
+
+        bool foundUse = false;
+
+        for(auto& operand : operands)
+        {
+            if(operand == value)
+            {
+                foundUse = true;
+                break;
+            }
+        }
+
+        if(foundUse)
+        {
+            break;
+        }
+    }
+
+    assert(possibleUse != postDominator.rend());
+
+    return (++possibleUse).base();
+}
+
+static void addFrees(TargetValue value, PostDominatorAnalysis* postDominatorAnalysis)
+{
+    auto postDominator = getPostDominatorOfAllUses(value, postDominatorAnalysis);
+
+    BasicBlock::iterator insertionPoint;
+
+    if(postDominatorContainsUse(value, postDominator))
+    {
+        insertionPoint = getLastUse(value, postDominator);
+    }
+    else
+    {
+        insertionPoint = postDominator.begin();
+    }
+
+    addFree(value, postDominator, insertionPoint);
+}
+
+using TargetValueVector = std::vector<TargetValue>;
+
+static TargetValueVector getTargetValues(ir::Function& function)
+{
+    TargetValueVector values;
+
+    for(auto& block : function)
+    {
+        for(auto& operation : block)
+        {
+            auto targetOperation = ir::value_cast<TargetOperation>(operation);
+
+            auto& operands = targetOperation.getAllOperands();
+
+            values.insert(values.end(), operands.begin(), operands.end());
+        }
+    }
+
+    return values;
 }
 
 void DynamicMemoryAllocationPass::runOnFunction(ir::Function& function)
 {
-    auto* postDominatorAnalysis = getAnalysis<DominatorAnalysis*>("PostDominatorAnalysis");
+    auto* postDominatorAnalysis = dynamic_cast<PostDominatorAnalysis*>(
+        getAnalysis("PostDominatorAnalysis"));
+    auto* dominatorAnalysis = dynamic_cast<DominatorAnalysis*>(
+        getAnalysis("DominatorAnalysis"));
 
-    for(auto* basicBlock : function)
+    auto values = getTargetValues(function);
+
+    for(auto& value : values)
     {
-        for(auto* operation : basicBlock)
+        if(needsAllocation(value))
         {
-            if(needsAllocation(operation))
-            {
-                auto* allocation = addAllocation(operation);
-
-                // free at post dominator of all uses
-                auto* postDominator = getPostDominatorOfAllUses(operation, postDominatorAnalysis);
-
-                auto* insertionPoint = nullptr;
-
-                if(postDominatorContainsUse(operation, postDominator))
-                {
-                    insertionPoint = getLastUseInBlock(operation, postDominator);
-                }
-                else
-                {
-                    insertionPoint = getFirstNonPhi(postDominator);
-                }
-
-                addFree(allocation, insertionPoint);
-            }
+            addAllocations(value, dominatorAnalysis);
+            addFrees(value, postDominatorAnalysis);
         }
     }
 }

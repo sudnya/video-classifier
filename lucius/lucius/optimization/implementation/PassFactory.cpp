@@ -8,7 +8,7 @@
 #include <lucius/optimization/interface/PassFactory.h>
 
 #include <lucius/optimization/interface/MemoryEfficientBackPropagationPass.h>
-#include <lucius/optimization/interface/OperationDecomoserPass.h>
+#include <lucius/optimization/interface/OperationDecomposerPass.h>
 
 namespace lucius
 {

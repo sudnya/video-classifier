@@ -22,7 +22,6 @@
 
 #include <lucius/util/interface/PropertyTree.h>
 #include <lucius/util/interface/Units.h>
-#include <lucius/util/interface/memory.h>
 
 // Standard Library Includes
 #include <sstream>

@@ -6,6 +6,13 @@
 
 #pragma once
 
+// Standard Library Includes
+#include <istream>
+
+// Forward Declarations
+namespace lucius { namespace ir { class Context; } }
+namespace lucius { namespace ir { class Program; } }
+
 namespace lucius
 {
 
@@ -20,6 +27,9 @@ public:
 
 public:
     Program load(std::istream& stream);
+
+private:
+    Context* _context;
 
 };
 

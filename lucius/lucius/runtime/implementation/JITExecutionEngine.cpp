@@ -7,14 +7,146 @@
 // Lucius Includes
 #include <lucius/runtime/interface/JITExecutionEngine.h>
 
+#include <lucius/optimization/interface/PassManager.h>
+#include <lucius/optimization/interface/PassFactory.h>
+#include <lucius/optimization/interface/OperationFinalizationPass.h>
+
+#include <lucius/network/interface/Bundle.h>
+
+#include <lucius/ir/interface/BasicBlock.h>
+#include <lucius/ir/interface/Program.h>
+#include <lucius/ir/interface/Operation.h>
+#include <lucius/ir/interface/Function.h>
+
+#include <lucius/ir/target/interface/TargetOperation.h>
+#include <lucius/ir/target/interface/TargetControlOperation.h>
+
+// Standard Library Includes
+#include <list>
+#include <cassert>
+
 namespace lucius
 {
 
 namespace runtime
 {
 
+using Program = ir::Program;
+using BasicBlock = ir::BasicBlock;
+using TargetOperation = ir::TargetOperation;
+using TargetControlOperation = ir::TargetControlOperation;
+using BasicBlockList = std::list<BasicBlock>;
+using PassManager = optimization::PassManager;
+using PassFactory = optimization::PassFactory;
+using OperationFinalizationPass = optimization::OperationFinalizationPass;
+
+using Bundle = network::Bundle;
+
+using Function = ir::Function;
+
 namespace
 {
+
+class ExecutionStatistics
+{
+
+};
+
+class BasicBlockCache
+{
+public:
+    void addFunction(const Function& f, const Function& target)
+    {
+        _functions[f] = target;
+    }
+
+public:
+    bool contains(const Function& f) const
+    {
+        return _functions.count(f) != 0;
+    }
+
+public:
+    BasicBlock getFunctionEntryPoint(const Function& f)
+    {
+        auto mapping = _functions.find(f);
+
+        assert(mapping != _functions.end());
+
+        return mapping->second.front();
+    }
+
+public:
+    std::map<Function, Function> _functions;
+
+};
+
+class StackFrame
+{
+public:
+    Bundle getData()
+    {
+        return _data;
+    }
+
+private:
+    Bundle _data;
+
+};
+
+class ExecutionStack
+{
+public:
+    void popFrame()
+    {
+        _frames.pop_back();
+    }
+
+public:
+    StackFrame& getCurrentFrame()
+    {
+        return _frames.back();
+    }
+
+public:
+    using FrameList = std::list<StackFrame>;
+
+public:
+    FrameList _frames;
+
+};
+
+class DynamicProgramState
+{
+
+public:
+    BasicBlockCache& getBasicBlockCache()
+    {
+        return _basicBlockCache;
+    }
+
+public:
+    ExecutionStack& getStack()
+    {
+        return _stack;
+    }
+
+public:
+    ExecutionStatistics& getExecutionStatistics()
+    {
+        return _statistics;
+    }
+
+private:
+    ExecutionStatistics _statistics;
+
+private:
+    BasicBlockCache _basicBlockCache;
+
+private:
+    ExecutionStack _stack;
+
+};
 
 static void runTargetIndependentOptimizations(Program& program)
 {
@@ -31,23 +163,15 @@ static void runTargetIndependentOptimizations(Program& program)
     manager.runOnProgram(program);
 }
 
-static void runStatisticsDependentOptimizations(Program& program, ExecutionStatistics& statistics)
-{
-    PassManager manager;
-
-    // back propagation
-    //manager.addPass(PassFactory::create("OperationDecomposerPass"));
-    manager.addPass(PassFactory::create("MemoryEfficientBackPropagationPass"));
-
-    manager.runOnProgram(program);
-}
-
 static void addLoweringPasses(PassManager& manager, DynamicProgramState& state)
 {
     manager.addPass(PassFactory::create("TableOperationSelectionPass"));
 
     manager.addPass(PassFactory::create("MinimalMemoryOperationSchedulingPass"));
     manager.addPass(PassFactory::create("DynamicMemoryAllocationPass"));
+
+    //manager.addPass(PassFactory::create("OperationDecomposerPass"));
+    manager.addPass(PassFactory::create("MemoryEfficientBackPropagationPass"));
 }
 
 class JITEngine
@@ -62,94 +186,114 @@ public:
 public:
     void run()
     {
-        Program augmentedProgram(getProgram());
+        Program augmentedProgram = _getProgram().cloneModuleAndTieVariables();
 
         // target independent optimizations
         runTargetIndependentOptimizations(augmentedProgram);
 
         // lower and execute initialization code
-        lowerAndExecuteFunction(augmentedProgram.getInitializationEntryPoint());
+        _lowerAndExecuteFunction(augmentedProgram.getInitializationEntryPoint());
 
         // Program execution may fail due to JIT assumptions changing, allow it to restart here
-        while(!isProgramFinished(augmentedProgram))
+        while(!_isProgramFinished(augmentedProgram))
         {
-            lowerAndExecuteFunction(augmentedProgram.getEngineEntryPoint());
+            _lowerAndExecuteFunction(augmentedProgram.getEngineEntryPoint());
         }
-
-        // update state
-        updateProgramState(getProgram(), augmentedProgram);
     }
 
-public:
-    bool isProgramFinished(const Program& augmentedProgram) const
+private:
+    bool _isProgramFinished(Program& augmentedProgram)
     {
-        auto bundle = lowerAndExecuteFunction(augmentedProgram.getIsFinishedFunction());
+        auto bundle = _lowerAndExecuteFunction(augmentedProgram.getIsFinishedFunction());
 
         return bundle["returnValue"].get<bool>();
     }
 
-public:
-    Bundle lowerAndExecuteFunction(Function& function)
+private:
+    Bundle _lowerAndExecuteFunction(Function& function)
     {
-        if(!getBasicBlockCache().contains(function))
+        if(!_getBasicBlockCache().contains(function))
         {
             // lower
             PassManager manager;
 
-            addLoweringPasses(manager, dynamicProgramState);
+            addLoweringPasses(manager, _dynamicProgramState);
 
             manager.runOnFunction(function);
 
             auto* operationFinalizationPass = dynamic_cast<OperationFinalizationPass*>(
                 manager.getPass("OperationFinalizationPass"));
 
-            getBasicBlockCache().addFunction(operationFinalizationPass.getBasicBlocks());
+            _getBasicBlockCache().addFunction(function,
+                operationFinalizationPass->getTargetFunction());
         }
 
         // execute
-        executeBasicBlockList(getBasicBlockCache().getFunctionEntryPoint(function));
+        _executeFunction(_getBasicBlockCache().getFunctionEntryPoint(function));
 
-        return getStack().popFrame();
+        auto result = _getStack().getCurrentFrame().getData();
+
+        _getStack().popFrame();
+
+        return result;
     }
 
-    void executeBasicBlockList(BasicBlockList& blocks)
+    void _executeFunction(BasicBlock block)
     {
-        auto* nextBlock = &blocks.front();
+        auto nextBlock = block;
 
-        while(!nextBlock->isExitBlock())
+        while(!nextBlock.isExitBlock())
         {
-            nextBlock = executeBasicBlock(*nextBlock);
+            nextBlock = _executeBasicBlock(nextBlock);
         }
     }
 
-    BasicBlock* executeBasicBlock(StackFrame& frame, BasicBlock& block)
+    BasicBlock _executeBasicBlock(BasicBlock block)
     {
         // the block shouldn't be empty
         assert(!block.empty());
 
         // execute each operation
-        for(auto operation = block.begin(); operation != (block.end() - 1); ++operation)
+        for(auto operation : block)
         {
-            operation->execute();
+            if(operation.isControlOperation())
+            {
+                break;
+            }
+
+            ir::value_cast<TargetOperation>(operation).execute();
         }
 
         // control operations can change control flow
         assert(block.back().isControlOperation());
 
-        auto& controlOperation = dynamic_cast<TargetControlOperation&>(block.back());
-
-        return controlOperation.execute();
+        return TargetControlOperation(block.back()).execute();
     }
 
 public:
-    Program& getProgram()
+    Program& _getProgram()
     {
         return _program;
     }
 
-    ExecutionStatistics& getExecutionStatistics()
+    ExecutionStatistics& _getExecutionStatistics()
     {
-        return getDynamicProgramState().getExecutionStatistics();
+        return _getDynamicProgramState().getExecutionStatistics();
+    }
+
+    BasicBlockCache& _getBasicBlockCache()
+    {
+        return _getDynamicProgramState().getBasicBlockCache();
+    }
+
+    ExecutionStack& _getStack()
+    {
+        return _getDynamicProgramState().getStack();
+    }
+
+    DynamicProgramState& _getDynamicProgramState()
+    {
+        return _dynamicProgramState;
     }
 
 private:
@@ -160,7 +304,7 @@ private:
 
 } // anonymous namespace
 
-JITExecutionEngine::JITExecutionEngine(const Program& program)
+JITExecutionEngine::JITExecutionEngine(Program& program)
 : IRExecutionEngine(program)
 {
 

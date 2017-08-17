@@ -3,7 +3,6 @@
 #include <lucius/matrix/interface/Precision.h>
 
 #include <lucius/util/interface/debug.h>
-#include <lucius/util/interface/memory.h>
 #include <lucius/util/interface/Knobs.h>
 
 namespace lucius

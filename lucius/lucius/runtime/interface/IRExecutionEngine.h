@@ -6,6 +6,10 @@
 
 #pragma once
 
+// Forward Declarations
+namespace lucius { namespace ir { class Program; } }
+namespace lucius { namespace ir { class Value;   } }
+
 namespace lucius
 {
 
@@ -16,14 +20,18 @@ namespace runtime
 class IRExecutionEngine
 {
 public:
-    IRExecutionEngine(const Program& program);
+    using Value   = ir::Value;
+    using Program = ir::Program;
+
+public:
+    IRExecutionEngine(Program& program);
     virtual ~IRExecutionEngine();
 
 public:
     virtual void run() = 0;
 
 public:
-    void* getValueContents(const Value*);
+    virtual void* getValueContents(const Value& v) = 0;
 
 protected:
     Program& getProgram();

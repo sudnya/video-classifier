@@ -6,8 +6,13 @@
 
 #pragma once
 
-// forward declarations
+// Standard Library Includes
+#include <string>
+
+// Forward Declarations
 namespace lucius { namespace ir { class Function; } }
+
+namespace lucius { namespace optimization { class Pass; } }
 
 namespace lucius
 {

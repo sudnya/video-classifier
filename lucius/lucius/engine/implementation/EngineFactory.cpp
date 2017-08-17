@@ -12,8 +12,6 @@
 #include <lucius/engine/interface/LearnerEngine.h>
 #include <lucius/engine/interface/SampleStatisticsEngine.h>
 
-#include <lucius/util/interface/memory.h>
-
 namespace lucius
 {
 

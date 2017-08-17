@@ -166,7 +166,7 @@ static void testLoopWithInitializer()
         return lazy::rand(randomState, {3, 2}, SinglePrecision());
     });
 
-    lazy::forLoop(2, [=]()
+    lazy::forLoop(2, [&]()
     {
         lazy::copy(lazyA, lazy::applyBinary(lazyA, lazyB, lazy::Add()));
     });
@@ -225,7 +225,7 @@ static void testLoopWithInitializerAndUpdate()
         return lazy::zeros({3, 2}, SinglePrecision());
     });
 
-    lazy::forLoop(2, [=]()
+    lazy::forLoop(2, [&]()
     {
         auto aTimesB = lazy::applyBinary(lazyA, lazyB, lazy::Multiply())
 

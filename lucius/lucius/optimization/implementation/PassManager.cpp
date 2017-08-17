@@ -7,7 +7,13 @@
 // Lucius Includes
 #include <lucius/optimization/interface/PassManager.h>
 
+#include <lucius/optimization/interface/Pass.h>
+
 #include <lucius/analysis/interface/AnalysisFactory.h>
+#include <lucius/analysis/interface/Analysis.h>
+
+#include <lucius/ir/interface/Module.h>
+#include <lucius/ir/interface/Function.h>
 
 // Standard Library Includes
 #include <list>
@@ -18,8 +24,10 @@ namespace lucius
 namespace optimization
 {
 
-typedef std::list<std::unique_ptr<Pass>> PassList;
-typedef std::map<std::string, std::unique_ptr<Analysis>> AnalysisMap;
+using Analysis = analysis::Analysis;
+using AnalysisFactory = analysis::AnalysisFactory;
+using PassList = std::list<std::unique_ptr<Pass>>;
+using AnalysisMap = std::map<std::string, std::unique_ptr<Analysis>>;
 
 class PassManagerImplementation
 {
@@ -48,7 +56,7 @@ public:
                 if(analyses.count(analysisName) == 0)
                 {
                     auto newAnalysis = analyses.emplace(std::make_pair(analysisName,
-                        AnalysisFactory::create(analysisName)));
+                        AnalysisFactory::create(analysisName))).first;
 
                     newAnalysis->second->runOnFunction(f);
                 }
@@ -61,6 +69,11 @@ public:
         }
     }
 
+    void addPass(std::unique_ptr<Pass>&& pass)
+    {
+        _passes.emplace_back(std::move(pass));
+    }
+
 private:
     PassManager* _manager;
 
@@ -70,7 +83,7 @@ private:
 };
 
 PassManager::PassManager()
-: _implementation(std::make_unique<PassManagerImplementation>())
+: _implementation(std::make_unique<PassManagerImplementation>(this))
 {
 
 }
@@ -80,16 +93,16 @@ PassManager::~PassManager()
 
 }
 
-void PassManager::runOnFunction(ir::Function& f)
+void PassManager::runOnFunction(ir::Function& function)
 {
-    _implementation->runOnFunction(f);
+    _implementation->runOnFunction(function);
 }
 
-void PassManager::runOnModule(ir::Module& m)
+void PassManager::runOnModule(ir::Module& module)
 {
-    for(auto& function : m)
+    for(auto& function : module)
     {
-        runOnFunction(f);
+        runOnFunction(function);
     }
 }
 

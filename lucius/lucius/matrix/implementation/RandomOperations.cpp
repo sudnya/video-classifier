@@ -7,7 +7,6 @@
 #include <lucius/parallel/interface/Synchronization.h>
 
 #include <lucius/util/interface/debug.h>
-#include <lucius/util/interface/memory.h>
 
 // Standard Library Includes
 #include <random>

@@ -12,8 +12,6 @@
 #include <lucius/matrix/interface/CopyOperations.h>
 #include <lucius/matrix/interface/Operation.h>
 
-#include <lucius/util/interface/memory.h>
-
 namespace lucius
 {
 

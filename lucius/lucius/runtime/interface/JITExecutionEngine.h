@@ -19,14 +19,14 @@ namespace runtime
 class JITExecutionEngine : public IRExecutionEngine
 {
 public:
-    JITExecutionEngine(const Program& program);
-    virtual ~JITExecutionEngine();
+    JITExecutionEngine(Program& program);
+    virtual ~JITExecutionEngine() final;
 
 public:
-    final void run();
+    void run() final;
 
 public:
-    final void* getValueContents(const Value* );
+    void* getValueContents(const Value& ) final;
 
 };
 

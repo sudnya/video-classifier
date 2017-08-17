@@ -13,52 +13,92 @@
 #include <string>
 #include <vector>
 
+// Forward Declarations
+namespace lucius { namespace ir { class OperationImplementation; } }
+namespace lucius { namespace ir { class ValueImplementation;     } }
+namespace lucius { namespace ir { class ShapeList;               } }
+namespace lucius { namespace ir { class Use;                     } }
+namespace lucius { namespace ir { class Value;                   } }
+namespace lucius { namespace ir { class BasicBlock;              } }
+namespace lucius { namespace ir { class TargetOperation;         } }
+
 namespace lucius
 {
 
 namespace ir
 {
 
-class OperationImplementation : public User
-{
-private:
-    std::weak_ptr<BasicBlockImplementation> _parent;
-
-};
-
 /*! \brief A class for representing an operation. */
 class Operation
 {
 public:
-    Operation(const ArgumentList& inputs, const ArgumentList& outputs);
+    Operation();
+    explicit Operation(std::shared_ptr<ValueImplementation> );
+    Operation(const TargetOperation& op );
     virtual ~Operation();
 
 public:
-    // forward operation
-    virtual void runForwardProagation() = 0;
-
-    // backward inputs operation
-    virtual void runBackwardPropagation() = 0;
-
-public:
     // forward shape operation
-    virtual ShapeList getOutputShapes(const ShapeList& inputShapes) const = 0;
+    virtual ShapeList getOutputShapes(const ShapeList& inputShapes) const;
 
     // backward shape operation
-    virtual ShapeList getInputShapes(const ShapeList& outputShapes) const = 0;
+    virtual ShapeList getInputShapes(const ShapeList& outputShapes) const;
 
 public:
-    // forward performance metrics
-    virtual PerformanceMetrics getForwardPerformanceMetrics(
-        const ShapeList& inputShapes) const = 0;
+    using UseList   = std::list<Use>;
+    using ValueList = std::list<Value>;
+    using OperationList = std::list<Operation>;
 
-    // backward performance metrics
-    virtual PerformanceMetrics getBackwardPerformanceMetrics(
-        const ShapeList& outputShapes) const = 0;
+    using operation_iterator = OperationList::iterator;
+    using const_operation_iterator = OperationList::const_iterator;
 
 public:
     const UseList& getOperands() const;
           UseList& getOperands();
+
+public:
+    const Use& getOperand(size_t index) const;
+          Use& getOperand(size_t index);
+
+public:
+    void setOperands(const UseList& uses);
+    void setOperands(const ValueList& values);
+
+public:
+    OperationList getPredecessors() const;
+    OperationList getSuccessors() const;
+
+public:
+    ValueList getValues() const;
+
+public:
+    /*! \brief Query whether or not the operation can change control flow. */
+    bool isControlOperation() const;
+
+    /*! \brief Query whether or not the operation computes a gradient. */
+    bool isGradientOperation() const;
+
+public:
+          Type& getType();
+    const Type& getType() const;
+
+public:
+          BasicBlock& getParent();
+    const BasicBlock& getParent() const;
+
+public:
+          operation_iterator getIterator();
+    const_operation_iterator getIterator() const;
+
+public:
+    Operation clone() const;
+
+public:
+    std::shared_ptr<ValueImplementation> getValueImplementation() const;
+
+public:
+    bool operator==(const Operation&) const;
+    bool operator<(const Operation&) const;
 
 private:
     std::shared_ptr<OperationImplementation> _implementation;

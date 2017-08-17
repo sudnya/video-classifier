@@ -11,6 +11,8 @@
 
 // Forward Declarations
 namespace lucius { namespace ir { class ContextImplementation; } }
+namespace lucius { namespace ir { class Type;                  } }
+namespace lucius { namespace ir { class Constant;              } }
 
 namespace lucius
 {
@@ -18,9 +20,19 @@ namespace lucius
 namespace ir
 {
 
-/*! \brief Holds 'global' state for the IR. */
+/*! \brief Holds 'global' state for the IR including constants and types. */
 class Context
 {
+public:
+    Context();
+    ~Context();
+
+public:
+    Constant addConstant(Constant c);
+
+public:
+    Type addType(Type t);
+
 private:
     std::unique_ptr<ContextImplementation> _implementation;
 

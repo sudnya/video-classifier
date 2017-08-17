@@ -6,7 +6,6 @@
 
 // Lucius Includes
 #include <lucius/util/interface/TestEngine.h>
-#include <lucius/util/interface/memory.h>
 
 // Standard Library Includes
 #include <map>

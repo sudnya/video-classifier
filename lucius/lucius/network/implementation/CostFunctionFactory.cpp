@@ -11,8 +11,6 @@
 #include <lucius/network/interface/SumOfSquaresCostFunction.h>
 #include <lucius/network/interface/SoftmaxCostFunction.h>
 
-#include <lucius/util/interface/memory.h>
-
 namespace lucius
 {
 

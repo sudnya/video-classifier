@@ -7,6 +7,9 @@
 // Lucius Includes
 #include <lucius/ir/interface/Module.h>
 
+#include <lucius/ir/interface/Function.h>
+#include <lucius/ir/interface/Variable.h>
+
 namespace lucius
 {
 
@@ -15,19 +18,49 @@ namespace ir
 
 class ModuleImplementation
 {
+public:
+    ModuleImplementation(Context& context)
+    : _context(&context)
+    {
+
+    }
+
+public:
+    Function addFunction(Function f)
+    {
+        _functions.push_back(f);
+
+        return _functions.back();
+    }
+
+public:
+    Variable addVariable(Variable variable)
+    {
+        _variables.push_back(variable);
+
+        return _variables.back();
+    }
+
+public:
+    Context& getContext()
+    {
+        return *_context;
+    }
+
+private:
+    Context* _context;
+
 private:
     using FunctionList = std::list<Function>;
     using VariableList = std::list<Variable>;
-    using ConstantList = std::list<Constant>;
 
 private:
     FunctionList _functions;
     VariableList _variables;
-    ConstantList _constants;
 };
 
-Module::Module(Conext& context)
-: _context(context)
+Module::Module(Context& context)
+: _implementation(std::make_shared<ModuleImplementation>(context))
 {
 
 }
@@ -37,37 +70,19 @@ Module::~Module()
     // intentionally blank
 }
 
-Function* Module::addFunction(std::unique_ptr<Function>&& f)
+Function Module::addFunction(Function f)
 {
-    auto name = f->name();
-
-    _functions.emplace(name, std::move(f));
+    return _implementation->addFunction(f);
 }
 
-void Module::addConstant(std::unique_ptr<Constant>&& c)
+Variable Module::addVariable(Variable v)
 {
-    auto name = c->name();
-
-    _constants.emplace(name, std::move(c));
+    return _implementation->addVariable(v);
 }
 
-void Module::addType(std::unique_ptr<Type>&& t)
+Context& Module::getContext()
 {
-    _context.addType(std::move(t));
-}
-
-void Module::addValue(std::unique_ptr<Value>&& v)
-{
-    auto newValue = _values.insert(_values.end(), std::move(v));
-
-    (*vewValue)->registerWithModule(newValue, this);
-}
-
-void Module::addVariable(std::unique_ptr<Variable>&& v)
-{
-    auto newValue = _variables.insert(_variables.end(), std::move(v));
-
-    (*vewValue)->registerWithModule(newValue, this);
+    return _implementation->getContext();
 }
 
 } // namespace ir

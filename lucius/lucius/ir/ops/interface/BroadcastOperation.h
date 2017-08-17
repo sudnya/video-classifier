@@ -19,7 +19,7 @@ namespace ir
 class BroadcastOperation : public Operation
 {
 public:
-    BroadcastOperation(Value input, Value dimensions, Value operation);
+    BroadcastOperation(Value left, Value right, Value dimensions, Value operation);
     ~BroadcastOperation() final;
 
 public:

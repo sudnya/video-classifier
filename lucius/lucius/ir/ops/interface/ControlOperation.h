@@ -6,6 +6,9 @@
 
 #pragma once
 
+// Lucius Includes
+#include <lucius/ir/interface/Operation.h>
+
 namespace lucius
 {
 
@@ -13,8 +16,18 @@ namespace ir
 {
 
 /*! \brief A class for representing a branch. */
-class ControlOperation
+class ControlOperation : public Operation
 {
+public:
+    ControlOperation();
+    virtual ~ControlOperation();
+
+public:
+    // forward shape operation
+    ShapeList getOutputShapes(const ShapeList& inputShapes) const;
+
+    // backward shape operation
+    ShapeList getInputShapes(const ShapeList& outputShapes) const;
 
 
 };

@@ -4,15 +4,29 @@
     \brief  The source file for the Operation class.
 */
 
+// Lucius Includes
+#include <lucius/ir/interface/Operation.h>
+
+#include <lucius/ir/interface/Use.h>
+
+// Forward Declarations
+namespace lucius { namespace ir { class BasicBlockImplementation; } }
+
 namespace lucius
 {
 
 namespace ir
 {
 
-Operation::Operation(const std::string& name,
-    const ArgumentList& inputs, const ArgumentList& outputs)
-: _name(name), _inputs(inputs), _outputs(outputs)
+class OperationImplementation : public User
+{
+private:
+    std::weak_ptr<BasicBlockImplementation> _parent;
+
+};
+
+Operation::Operation()
+: _implementation(std::make_shared<OperationImplementation>())
 {
 
 }

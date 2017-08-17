@@ -7,6 +7,13 @@
 // Lucius Includes
 #include <lucius/analysis/interface/OperationMemoryAnalysis.h>
 
+#include <lucius/ir/interface/Type.h>
+#include <lucius/ir/interface/Value.h>
+#include <lucius/ir/interface/Operation.h>
+
+// Standard Library Incldues
+#include <cassert>
+
 namespace lucius
 {
 
@@ -23,18 +30,34 @@ OperationMemoryAnalysis::~OperationMemoryAnalysis()
 
 }
 
-static double getMemoryUsage(const ir::Value* value)
+static bool isTypeMemoryUsageStatic(const ir::Type& type)
 {
-    return value->getBytes();
+    if(type.isScalar())
+    {
+        return true;
+    }
+
+    // TODO: handle more interesting cases
+
+    return false;
 }
 
-double OperationMemoryAnalysis::getOperationMemoryRequirement(const ir::Operation* operation) const
+static double getMemoryUsage(const ir::Value& value)
+{
+    assert(isTypeMemoryUsageStatic(value.getType()));
+
+    // TODO: handle cases where the memory usage is not static
+
+    return value.getType().getBytes();
+}
+
+double OperationMemoryAnalysis::getOperationMemoryRequirement(const ir::Operation& operation) const
 {
     double memoryUsage = 0.0;
 
-    auto values = operation->getAllValues();
+    auto values = operation.getValues();
 
-    for(auto* value : values)
+    for(auto& value : values)
     {
         memoryUsage += getMemoryUsage(value);
     }
@@ -44,12 +67,18 @@ double OperationMemoryAnalysis::getOperationMemoryRequirement(const ir::Operatio
     return memoryUsage;
 }
 
-void OperationMemoryAnalysis::runOnFunction(const ir::Function& function)
+double OperationMemoryAnalysis::getOperationSavedMemoryRequirement(
+    const ir::Operation& operation) const
 {
-
+    return getOperationMemoryRequirement(operation);
 }
 
-StringSet OperationMemoryAnalysis::getRequiredAnalyses() const
+void OperationMemoryAnalysis::runOnFunction(const ir::Function& function)
+{
+    // TODO
+}
+
+OperationMemoryAnalysis::StringSet OperationMemoryAnalysis::getRequiredAnalyses() const
 {
     return StringSet({});
 }

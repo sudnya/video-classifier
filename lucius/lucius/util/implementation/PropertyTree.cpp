@@ -6,7 +6,6 @@
 
 // Lucius Includes
 #include <lucius/util/interface/PropertyTree.h>
-#include <lucius/util/interface/memory.h>
 #include <lucius/util/interface/string.h>
 
 // Standard Library Includes
@@ -365,7 +364,7 @@ static std::string addEscapes(const std::string& key)
             result += "\\";
         }
 
-        result += c; 
+        result += c;
     }
 
     return result;

@@ -6,6 +6,15 @@
 
 #pragma once
 
+// Standard Library Includes
+#include <memory>
+
+// Forward Declarations
+namespace lucius { namespace ir { class Function;              } }
+namespace lucius { namespace ir { class Module;                } }
+namespace lucius { namespace ir { class ProgramImplementation; } }
+namespace lucius { namespace ir { class Context;               } }
+
 namespace lucius
 {
 
@@ -17,6 +26,8 @@ class Program
 {
 public:
     Program(Context& c);
+    Program(Program&& p);
+    ~Program();
 
 public:
     /* \brief Interface for initialization code. */
@@ -39,8 +50,28 @@ public:
           Function& getEngineEntryPoint();
     const Function& getEngineEntryPoint() const;
 
+    /*! \brief Interface for status code. */
+          Function& getIsFinishedFunction();
+    const Function& getIsFinishedFunction() const;
+
+public:
+    /*! \brief Get access to the module associated with the program. */
+          Module& getModule();
+    const Module& getModule() const;
+
+public:
+    /*! \brief Interface to set the forward propagation entry point. */
+    void setForwardPropagationEntryPoint(Function&& f);
+
+public:
+    void clear();
+
+public:
+    /*! \brief Duplicate the module, but keep references to all existing variables. */
+    Program cloneModuleAndTieVariables();
+
 private:
-    Module _module;
+    std::unique_ptr<ProgramImplementation> _implementation;
 
 };
 

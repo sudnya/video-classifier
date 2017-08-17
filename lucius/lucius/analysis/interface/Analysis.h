@@ -25,17 +25,23 @@ namespace analysis
 class Analysis
 {
 public:
-    typedef std::set<std::string> StringSet;
+    using StringSet = std::set<std::string>;
+    using Function = ir::Function;
+    using PassManager = optimization::PassManager;
 
 public:
     Analysis();
     virtual ~Analysis();
 
 public:
-    virtual void runOnFunction(const ir::Function& function) = 0;
+    virtual void runOnFunction(const Function& function) = 0;
 
 public:
     virtual StringSet getRequiredAnalyses() const = 0;
+
+protected:
+          PassManager& getManager();
+    const PassManager& getManager() const;
 
 private:
     PassManager* _manager;

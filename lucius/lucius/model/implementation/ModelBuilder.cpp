@@ -11,8 +11,6 @@
 
 #include <lucius/network/interface/NeuralNetwork.h>
 
-#include <lucius/util/interface/memory.h>
-
 namespace lucius
 {
 

@@ -7,11 +7,22 @@
 // Lucius Includes
 #include <lucius/analysis/interface/OperationPerformanceAnalysis.h>
 
+#include <lucius/ir/target/interface/TargetOperation.h>
+#include <lucius/ir/target/interface/PerformanceMetrics.h>
+
+#include <lucius/ir/interface/Operation.h>
+
+#include <lucius/machine/interface/MachineModel.h>
+
 namespace lucius
 {
 
 namespace analysis
 {
+
+// Namespace imports
+using PerformanceMetrics = ir::PerformanceMetrics;
+using TargetOperation    = ir::TargetOperation;
 
 OperationPerformanceAnalysis::OperationPerformanceAnalysis()
 {
@@ -23,9 +34,10 @@ OperationPerformanceAnalysis::~OperationPerformanceAnalysis()
     // intentionally blank
 }
 
-double OperationPerformanceAnalysis::getOperationTime(const ir::Operation* operation) const
+double OperationPerformanceAnalysis::getOperationTime(const ir::Operation& operation) const
 {
-    PerformanceMetrics metrics = operation->getPerformanceMetrics();
+    PerformanceMetrics metrics = ir::value_cast<TargetOperation>(
+        operation).getPerformanceMetrics();
 
     // roofline model
     double computeTime = metrics.getTotalFloatingPointOperations() /
@@ -39,10 +51,10 @@ double OperationPerformanceAnalysis::getOperationTime(const ir::Operation* opera
                          machine::MachineModel::getNetworkOperationThroughput();
 
 
-    return std::max(computeTime, memoryTime, networkTime);
+    return std::max(std::max(computeTime, memoryTime), networkTime);
 }
 
-double OperationPerformanceAnalysis::getOverheadTime(const ir::Operation* operation) const
+double OperationPerformanceAnalysis::getOverheadTime(const ir::Operation& operation) const
 {
     return machine::MachineModel::getOperationLaunchOverhead();
 }
@@ -52,7 +64,7 @@ void OperationPerformanceAnalysis::runOnFunction(const ir::Function& function)
     // intentionally empty
 }
 
-StringSet OperationPerformanceAnalysis::getRequiredAnalyses() const
+OperationPerformanceAnalysis::StringSet OperationPerformanceAnalysis::getRequiredAnalyses() const
 {
     return StringSet({});
 }

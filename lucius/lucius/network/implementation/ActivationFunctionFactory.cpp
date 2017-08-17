@@ -11,8 +11,6 @@
 #include <lucius/network/interface/RectifiedLinearActivationFunction.h>
 #include <lucius/network/interface/NullActivationFunction.h>
 
-#include <lucius/util/interface/memory.h>
-
 namespace lucius
 {
 

@@ -10,7 +10,6 @@
 #include <lucius/results/interface/LabelResult.h>
 
 #include <lucius/util/interface/string.h>
-#include <lucius/util/interface/memory.h>
 
 // Standard Library Includes
 #include <vector>

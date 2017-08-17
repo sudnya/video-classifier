@@ -13,6 +13,8 @@ namespace lucius
 namespace analysis
 {
 
+using PassManager = optimization::PassManager;
+
 Analysis::Analysis()
 : _manager(nullptr)
 {
@@ -22,6 +24,17 @@ Analysis::Analysis()
 Analysis::~Analysis()
 {
     // intentionally blank
+}
+
+PassManager& Analysis::getManager()
+{
+    return *_manager;
+}
+
+
+const PassManager& Analysis::getManager() const
+{
+    return *_manager;
 }
 
 } // namespace analysis

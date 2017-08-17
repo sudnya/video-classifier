@@ -23,7 +23,6 @@
 
 #include <lucius/util/interface/debug.h>
 #include <lucius/util/interface/Knobs.h>
-#include <lucius/util/interface/memory.h>
 #include <lucius/util/interface/PropertyTree.h>
 
 // Standard Library Includes

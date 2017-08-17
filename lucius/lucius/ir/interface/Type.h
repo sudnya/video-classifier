@@ -29,6 +29,7 @@ public:
         FloatId,   // 32-bit floating point
         DoubleId,  // 64-bit floating point
 
+
         // Derived types
         IntegerId,      // Arbitrary precision integer
         FunctionTypeId, // Functions
@@ -37,6 +38,16 @@ public:
         PointerId,      // Pointers
         TensorId        // Tensors
     };
+
+public:
+    /*! \brief Is the type a scalar type. */
+    bool isScalar() const;
+
+    /*! \brief Is the type a tensor type. */
+    bool isTensor() const;
+
+    /*! \brief Get the number of bytes needed to represent the type. */
+    size_t getBytes() const;
 
 private:
     std::shared_ptr<TypeImplementation> _implementation;

@@ -8,6 +8,10 @@
 #include <lucius/lazy-ir/interface/LazyIr.h>
 
 #include <lucius/lazy-ir/interface/Context.h>
+#include <lucius/lazy-ir/interface/LazyValue.h>
+
+#include <lucius/ir/interface/BasicBlock.h>
+#include <lucius/ir/interface/IRBuilder.h>
 
 namespace lucius
 {
@@ -27,12 +31,12 @@ Context& getThreadLocalContext()
     return context;
 }
 
-IRBuilder& getBuilder()
+ir::IRBuilder& getBuilder()
 {
     return getThreadLocalContext().getBuilder();
 }
 
-LazyValue getConstant(const Matrix& value)
+LazyValue getConstant(const matrix::Matrix& value)
 {
     return getThreadLocalContext().getConstant(value);
 }
@@ -42,14 +46,14 @@ LazyValue getConstant(int64_t integer)
     return getThreadLocalContext().getConstant(integer);
 }
 
-BasicBlock* newBasicBlock()
+ir::BasicBlock newBasicBlock()
 {
     return getThreadLocalContext().newBasicBlock();
 }
 
-void setBasicBlock(BasicBlock* block)
+void setBasicBlock(const ir::BasicBlock& block)
 {
-    getThreadLocalContext().setInsertionPoint(block);
+    getBuilder().setInsertionPoint(block);
 }
 
 }

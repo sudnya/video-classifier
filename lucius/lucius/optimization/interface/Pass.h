@@ -7,8 +7,11 @@
 #pragma once
 
 // Forward Declarations
+namespace lucius { namespace analysis { class Analysis; } }
+
 namespace lucius { namespace ir { class Function; } }
-namespace lucius { namespace  }
+
+namespace lucius { namespace optimization { class PassManager; } }
 
 // Standard Library Includes
 #include <set>
@@ -19,13 +22,16 @@ namespace lucius
 namespace optimization
 {
 
-typedef std::set<std::string> StringSet;
+using StringSet = std::set<std::string>;
+using Function = ir::Function;
+using Analysis = analysis::Analysis;
 
 /*! \brief A class representing an optimization pass. */
 class Pass
 {
 public:
     Pass();
+    Pass(const std::string& name);
     virtual ~Pass();
 
 public:
@@ -38,7 +44,7 @@ public:
     PassManager* getManager();
 
 public:
-    virtual void runOnFunction(ir::Function&) = 0;
+    virtual void runOnFunction(Function&) = 0;
 
 public:
     virtual StringSet getRequiredAnalyses() const = 0;

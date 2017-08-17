@@ -6,8 +6,8 @@
 
 #pragma once
 
-// Forward Declarations
-class lucius { class lazy { class LazyValue; } }
+// Lucius Includes
+#include <lucius/lazy-ir/interface/LazyValue.h>
 
 namespace lucius
 {

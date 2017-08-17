@@ -17,7 +17,6 @@
 #include <lucius/matrix/interface/DimensionTransformations.h>
 #include <lucius/matrix/interface/GatherOperations.h>
 
-#include <lucius/util/interface/memory.h>
 #include <lucius/util/interface/debug.h>
 
 namespace lucius

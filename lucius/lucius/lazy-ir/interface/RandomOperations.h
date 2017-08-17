@@ -6,14 +6,24 @@
 
 #pragma once
 
+// Standard Library Includes
+#include <cstddef>
+
 // Forward Declarations
-class lucius { class lazy { class LazyValue; } }
+namespace lucius { namespace lazy { class LazyValue; } }
+
+namespace lucius { namespace matrix { class Dimension; } }
+namespace lucius { namespace matrix { class Precision; } }
 
 namespace lucius
 {
 
 namespace lazy
 {
+
+// Namespace imports
+using Dimension = matrix::Dimension;
+using Precision = matrix::Precision;
 
 LazyValue srand(size_t seed);
 

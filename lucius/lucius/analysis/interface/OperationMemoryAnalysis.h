@@ -9,6 +9,10 @@
 // Lucius Includes
 #include <lucius/analysis/interface/Analysis.h>
 
+// Forward Declarations
+namespace lucius { namespace ir { class Operation; } }
+namespace lucius { namespace ir { class Use;       } }
+
 namespace lucius
 {
 
@@ -23,8 +27,14 @@ public:
     ~OperationMemoryAnalysis() final;
 
 public:
-    /*! \brief Gets the memory usage of an operation in bytes. */
-    double getOperationMemoryRequirement(const ir::Operation* operation) const;
+    /*! \brief Gets the memory usage of an operation in bytes including scratch. */
+    double getOperationMemoryRequirement(const ir::Operation& operation) const;
+
+    /*! \brief Gets the memory usage of an operand in bytes. */
+    double getOperandMemoryRequirement(const ir::Use& operand) const;
+
+    /*! \brief Gets the memory usage of an operation in bytes excluding scratch. */
+    double getOperationSavedMemoryRequirement(const ir::Operation& operation) const;
 
 public:
     void runOnFunction(const ir::Function& function) final;

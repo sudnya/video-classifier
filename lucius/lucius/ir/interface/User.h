@@ -6,6 +6,9 @@
 
 #pragma once
 
+// Lucius Includes
+#include <lucius/ir/interface/Value.h>
+
 // Forward Declarations
 namespace lucius { namespace ir { class Use; } }
 

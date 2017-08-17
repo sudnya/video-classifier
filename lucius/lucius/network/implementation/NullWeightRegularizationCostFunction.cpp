@@ -10,8 +10,6 @@
 #include <lucius/matrix/interface/Matrix.h>
 #include <lucius/matrix/interface/MatrixOperations.h>
 
-#include <lucius/util/interface/memory.h>
-
 namespace lucius
 {
 

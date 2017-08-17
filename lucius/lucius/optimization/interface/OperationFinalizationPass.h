@@ -9,6 +9,12 @@
 // Lucius Includes
 #include <lucius/optimization/interface/Pass.h>
 
+// Standard Library Includes
+#include <list>
+
+// Forward Declarations
+namespace lucius { namespace ir { class BasicBlock; } }
+
 namespace lucius
 {
 namespace optimization
@@ -20,6 +26,13 @@ class OperationFinalizationPass : public Pass
 public:
     OperationFinalizationPass();
     virtual ~OperationFinalizationPass();
+
+public:
+    using BasicBlockList = std::list<ir::BasicBlock>;
+
+public:
+    /* \brief Extracts the target function.  Caller takes ownership. */
+    Function getTargetFunction();
 
 public:
     void runOnFunction(ir::Function& ) final;

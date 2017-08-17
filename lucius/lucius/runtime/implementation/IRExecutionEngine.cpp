@@ -7,6 +7,8 @@
 // Lucius Includes
 #include <lucius/runtime/interface/IRExecutionEngine.h>
 
+#include <lucius/ir/interface/Program.h>
+
 namespace lucius
 {
 
@@ -24,12 +26,7 @@ IRExecutionEngine::~IRExecutionEngine()
     // intentionally blank
 }
 
-void* IRExecutionEngine::getValueContents(const Value* value)
-{
-    return getProgram().getOutputValueContents(value);
-}
-
-Program& IRExecutionEngine::getProgram()
+IRExecutionEngine::Program& IRExecutionEngine::getProgram()
 {
     return _program;
 }

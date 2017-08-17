@@ -9,6 +9,9 @@
 // Lucius Includes
 #include <lucius/lazy-ir/interface/LazyValue.h>
 
+// Standard Library Includes
+#include <stdexcept>
+
 
 namespace lucius
 {
@@ -17,7 +20,7 @@ namespace lazy
 {
 
 template <typename T>
-T LazyValue<T>::materialize()
+T LazyValue::materialize()
 {
     void* value = _runProgram();
 

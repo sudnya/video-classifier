@@ -4,17 +4,30 @@
     \brief  The source file for the loop interface functions.
 */
 
-// Standard Library Includes
-#include <function>
+// Lucius Includes
+#include <lucius/lazy-ir/interface/Loops.h>
+#include <lucius/lazy-ir/interface/LazyIr.h>
+#include <lucius/lazy-ir/interface/LazyValue.h>
+#include <lucius/lazy-ir/interface/CopyOperations.h>
+#include <lucius/lazy-ir/interface/MatrixOperations.h>
+#include <lucius/lazy-ir/interface/ComparisonOperations.h>
+#include <lucius/lazy-ir/interface/Operators.h>
 
-// Forward Declarations
-class lucius { class lazy { class LazyValue; } }
+#include <lucius/ir/interface/BasicBlock.h>
+#include <lucius/ir/interface/IRBuilder.h>
+
+// Standard Library Includes
+#include <functional>
 
 namespace lucius
 {
 
 namespace lazy
 {
+
+// Namespace imports
+using BasicBlock = ir::BasicBlock;
+using IRBuilder  = ir::IRBuilder;
 
 void forLoop(std::function<LazyValue()> initializer,
     std::function<LazyValue(LazyValue)> condition,
@@ -23,10 +36,10 @@ void forLoop(std::function<LazyValue()> initializer,
 {
     auto& builder = getBuilder();
 
-    BasicBlock* preheader = builder.newBasicBlock();
-    BasicBlock* header    = builder.newBasicBlock();
-    BasicBlock* body      = builder.newBasicBlock();
-    BasicBlock* exit      = builder.newBasicBlock();
+    BasicBlock preheader = builder.addBasicBlock();
+    BasicBlock header    = builder.addBasicBlock();
+    BasicBlock body      = builder.addBasicBlock();
+    BasicBlock exit      = builder.addBasicBlock();
 
     builder.setInsertionPoint(preheader);
     LazyValue iterator = initializer();
@@ -47,15 +60,15 @@ void forLoop(size_t iterations, std::function<void()> body)
     forLoop(
     []()
     {
-        return getConstant(0);
+        return LazyValue(getConstant(0));
     },
     [=](LazyValue iterator)
     {
-        return lazy::lessThan(iterator, getConstant(iterations));
+        return lessThan(iterator, LazyValue(getConstant(iterations)));
     },
     [](LazyValue iterator)
     {
-        return lazy::apply(iterator, getConstant(1), Add());
+        return applyBinary(iterator, LazyValue(getConstant(1)), Add());
     },
     body);
 }

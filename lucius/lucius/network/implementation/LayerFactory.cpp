@@ -28,8 +28,6 @@
 #include <lucius/matrix/interface/Precision.h>
 #include <lucius/matrix/interface/RecurrentOperations.h>
 
-#include <lucius/util/interface/memory.h>
-
 namespace lucius
 {
 

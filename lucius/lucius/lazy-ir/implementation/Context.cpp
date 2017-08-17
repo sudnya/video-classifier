@@ -4,11 +4,25 @@
     \brief  The source file for the Context class.
 */
 
+// Lucius Includes
+#include <lucius/lazy-ir/interface/Context.h>
+#include <lucius/lazy-ir/interface/LazyValue.h>
+
+#include <lucius/ir/interface/Context.h>
+#include <lucius/ir/interface/IRBuilder.h>
+#include <lucius/ir/interface/BasicBlock.h>
+#include <lucius/ir/interface/Constant.h>
+
 namespace lucius
 {
 
 namespace lazy
 {
+
+// Namespace Imports
+using BasicBlock = ir::BasicBlock;
+using IRBuilder = ir::IRBuilder;
+using Matrix = matrix::Matrix;
 
 class ContextImplementation
 {
@@ -25,25 +39,25 @@ public:
     }
 
 public:
-    BasicBlock* newBasicBlock()
+    BasicBlock newBasicBlock()
     {
-        return _builder.newBasicBlock();
+        return _builder.addBasicBlock();
     }
 
-    void setBasicBlock(BasicBlock* block)
+    void setBasicBlock(const BasicBlock& block)
     {
         _builder.setInsertionPoint(block);
     }
 
 public:
-    LazyValue getContstant(const Matrix& value)
+    LazyValue getConstant(const Matrix& value)
     {
-        return _builder.getConstant(value);
+        return LazyValue(_builder.addConstant(value));
     }
 
     LazyValue getConstant(int64_t integer)
     {
-        return _builder.getConstant(integer);
+        return LazyValue(_builder.addConstant(integer));
     }
 
 public:
@@ -80,12 +94,12 @@ LazyValue Context::getConstant(int64_t integer)
     return _implementation->getConstant(integer);
 }
 
-BasicBlock* Context::newBasicBlock()
+BasicBlock Context::newBasicBlock()
 {
     return _implementation->newBasicBlock();
 }
 
-void Context::setBasicBlock(BasicBlock* block)
+void Context::setBasicBlock(const BasicBlock& block)
 {
     _implementation->setBasicBlock(block);
 }

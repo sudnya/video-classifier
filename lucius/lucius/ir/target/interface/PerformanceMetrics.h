@@ -18,6 +18,16 @@ class PerformanceMetrics
 public:
     PerformanceMetrics(double flops, double mops, double nops);
 
+public:
+    /*! \brief Get the total number of flops performed by the operation. */
+    double getTotalFloatingPointOperations() const;
+
+    /*! \brief Get the total number of bytes transferred to memory by the operation. */
+    double getTotalMemoryOperations() const;
+
+    /*! \brief Get the total number of bytes transferred to network by the operation. */
+    double getTotalNetworkOperations() const;
+
 private:
     double _floatingPointOperations;
     double _memoryOperations;

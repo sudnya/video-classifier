@@ -6,8 +6,8 @@
 
 #pragma once
 
-// Forward Declarations
-namespace lucius { namespace ir { class Value; } }
+// Lucius Includes
+#include <lucius/ir/interface/Value.h>
 
 namespace lucius
 {
@@ -19,25 +19,26 @@ namespace lazy
 class LazyValue
 {
 public:
-    explicit LazyValue(ir::Value* );
+    explicit LazyValue(ir::Value );
 
 public:
     template <typename T>
     T materialize();
 
 public:
-    ir::Value* getValue();
+          ir::Value& getValue();
+    const ir::Value& getValue() const;
 
 private:
     void* _runProgram();
 
 private:
-    ir::Vaue* _value;
+    ir::Value _value;
 };
 
 }
 
 }
 
-#include <lucius/lazy-ir/interface/LazyValue.inl>
+#include <lucius/lazy-ir/implementation/LazyValue.inl>
 

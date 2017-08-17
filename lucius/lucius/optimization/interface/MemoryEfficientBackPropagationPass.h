@@ -14,7 +14,20 @@ namespace lucius
 namespace optimization
 {
 
-/*! \brief A class representing an optimization pass. */
+/*! \brief An optimization pass that generates the back propagation graph using recomputation
+           to avoid exceeding a memory limit.
+
+    The current algorithm is based on linearizing the schedule, and then using exponentially
+    spaced checkpoints to avoid recomputation.
+
+    Improvement 1: Add a local search heuristic to adjust the checkpoints to further
+        reduce compute requirements.
+
+    Improvement 2: Relax the linearized schedule assumption.
+
+    Improvement 3: Compute a globally optimal schedule using ILP and a relaxation method.
+
+*/
 class MemoryEfficientBackPropagationPass : public Pass
 {
 public:

@@ -22,7 +22,6 @@
 
 #include <lucius/util/interface/Knobs.h>
 #include <lucius/util/interface/PropertyTree.h>
-#include <lucius/util/interface/memory.h>
 #include <lucius/util/interface/string.h>
 #include <lucius/util/interface/debug.h>
 

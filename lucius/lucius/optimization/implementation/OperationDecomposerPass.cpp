@@ -7,6 +7,16 @@
 // Lucius Includes
 #include <lucius/optimization/interface/OperationDecomposerPass.h>
 
+#include <lucius/analysis/interface/OperationPerformanceAnalysis.h>
+
+#include <lucius/ir/interface/Operation.h>
+#include <lucius/ir/interface/BasicBlock.h>
+#include <lucius/ir/interface/Function.h>
+
+#include <lucius/matrix/interface/Dimension.h>
+
+#include <lucius/util/interface/debug.h>
+
 namespace lucius
 {
 namespace optimization
@@ -22,15 +32,20 @@ OperationDecomposerPass::~OperationDecomposerPass()
     // intentionally blank
 }
 
-static bool isSplittingLegal(Operation* operation)
+using Dimension = matrix::Dimension;
+using Operation = ir::Operation;
+using BasicBlock = ir::BasicBlock;
+using OperationPerformanceAnalysis = analysis::OperationPerformanceAnalysis;
+
+static bool isSplittingLegal(const Operation& operation)
 {
     // TODO: Add more checks
 
     return true;
 }
 
-static bool shouldOperationBeSplit(Operation* operation,
-    OperationPerformanceAnalysis* performanceAnalysis)
+static bool shouldOperationBeSplit(const Operation& operation,
+    const OperationPerformanceAnalysis& performanceAnalysis)
 {
     // is splitting legal for the op
     if(!isSplittingLegal(operation))
@@ -39,42 +54,54 @@ static bool shouldOperationBeSplit(Operation* operation,
     }
 
     // is the operation latency or throughput bound
-    double time         = performanceAnalysis->getOperationTime(operation);
-    double overheadTime = performanceAnalysis->getOverheadTime(operation);
+    double time         = performanceAnalysis.getOperationTime(operation);
+    double overheadTime = performanceAnalysis.getOverheadTime(operation);
 
     bool isThroughputLimited = time > 2.0 * overheadTime;
 
     return isThroughputLimited;
 }
 
-static void moveOperation(BasicBlock* newBasicBlock, Operation* operation)
+static void copyOperation(BasicBlock& newBasicBlock, const Operation& operation)
 {
-    newBasicBlock->push_back(operation->clone());
+    newBasicBlock.push_back(operation.clone());
 }
 
-static bool isGemmComputeBoundForTileSize(GemmOperation* gemm,
-    size_t tileSize, const Dimension& size, OperationPerformanceAnalysis* performanceAnalysis)
+/* TODO
+static bool isGemmComputeBoundForTileSize(const Operation& gemm,
+    size_t tileSize, const Dimension& size,
+    const OperationPerformanceAnalysis& performanceAnalysis)
 {
-    auto* c = dynamic_cast<TensorValue*>(gemm->getOperand(0));
-    auto* a = dynamic_cast<TensorValue*>(gemm->getOperand(1));
-    auto* b = dynamic_cast<TensorValue*>(gemm->getOperand(2));
+    auto c = ir::value_cast<TensorValue>(gemm.getOperand(0));
+    auto a = ir::value_cast<TensorValue>(gemm.getOperand(1));
 
-    size_t m = std::min(c->getSize()[0], tileSize);
-    size_t n = std::min(c->getSize()[1], tileSize);
-    size_t k = std::min(a->getSize()[1], tileSize);
+    size_t m = std::min(c.getMaxSize()[0], tileSize);
+    size_t n = std::min(c.getMaxSize()[1], tileSize);
+    size_t k = std::min(a.getMaxSize()[1], tileSize);
 
-    TensorValue cTile({m, n}, gemm->getPrecision());
-    TensorValue aTile({m, k}, gemm->getPrecision());
-    TensorValue bTile({k, n}, gemm->getPrecision());
+    TensorValue cTile({m, n}, gemm.getPrecision());
+    TensorValue aTile({m, k}, gemm.getPrecision());
+    TensorValue bTile({k, n}, gemm.getPrecision());
 
-    GemmOperation dummyOperation(&cTile, &aTile, &bTile);
+    GemmOperation dummyOperation(cTile, aTile, bTile);
 
-    return shouldOperationBeSplit(&dummyOperation, performanceAnalysis);
+    return shouldOperationBeSplit(dummyOperation, performanceAnalysis);
+    return true;
+}
+*/
+
+static bool isGemm(const Operation& operation)
+{
+    // TODO
+
+    return false;
 }
 
-static void splitGemm(BasicBlock* newBasicBlock, Operation* operation,
-    OperationPerformanceAnalysis* performanceAnalysis)
+static void splitGemm(BasicBlock& newBasicBlock, const Operation& operation,
+    const OperationPerformanceAnalysis& performanceAnalysis)
 {
+    // TODO
+    /*
     auto* gemm = static_cast<GemmOperation*>(operation);
 
     auto* outputTensor = dynamic_cast<TensorValue*>(gemm->getOutputOperand());
@@ -111,7 +138,6 @@ static void splitGemm(BasicBlock* newBasicBlock, Operation* operation,
     size_t rowSplits    = (rows    + tileSize - 1) / tileSize;
     size_t columnSplits = (columns + tileSize - 1) / tileSize;
 
-    // TODO
     for(size_t rowSplit = 0; rowSplit < rowSplits; ++rowSplit)
     {
         for(size_t columnSplit = 0; columnsSplit < columnSplits; ++columnSplit)
@@ -124,10 +150,63 @@ static void splitGemm(BasicBlock* newBasicBlock, Operation* operation,
     }
 
     // merge the outputs
+    */
 }
 
-static void splitOperation(BasicBlock* newBasicBlock, Operation* operation,
-    OperationPerformanceAnalysis* performanceAnalysis)
+static bool isConvolution(const Operation& operation)
+{
+    // TODO
+
+    return false;
+}
+
+static void splitConvolution(BasicBlock& newBasicBlock, const Operation& operation,
+    const OperationPerformanceAnalysis& performanceAnalysis)
+{
+    // TODO
+}
+
+static bool isPointWise(const Operation& operation)
+{
+    // TODO
+
+    return false;
+}
+
+static void splitPointWise(BasicBlock& newBasicBlock, const Operation& operation,
+    const OperationPerformanceAnalysis& performanceAnalysis)
+{
+    // TODO
+}
+
+static bool isBroadcast(const Operation& operation)
+{
+    // TODO
+
+    return false;
+}
+
+static void splitBroadcast(BasicBlock& newBasicBlock, const Operation& operation,
+    const OperationPerformanceAnalysis& performanceAnalysis)
+{
+    // TODO
+}
+
+static bool isReduce(const Operation& operation)
+{
+    // TODO
+
+    return false;
+}
+
+static void splitReduce(BasicBlock& newBasicBlock, const Operation& operation,
+    const OperationPerformanceAnalysis& performanceAnalysis)
+{
+    // TODO
+}
+
+static void splitOperation(BasicBlock& newBasicBlock, const Operation& operation,
+    const OperationPerformanceAnalysis& performanceAnalysis)
 {
     // mechanically split the operation
 
@@ -163,14 +242,16 @@ static void splitOperation(BasicBlock* newBasicBlock, Operation* operation,
     }
 }
 
-static void replaceBasicBlock(BasicBlock* output, BasicBlock* input)
-{
-    auto* function = input->getFunction();
+using Function = ir::Function;
 
-    function->replaceBasicBlock(output, input);
+static void replaceBasicBlock(BasicBlock& output, const BasicBlock& input)
+{
+    //auto& function = input.getFunction();
+
+    // TODO
 }
 
-void OperationDecomposerPass::runOnFunction(ir::Function& function)
+void OperationDecomposerPass::runOnFunction(Function& function)
 {
     auto* performanceAnalysis = dynamic_cast<OperationPerformanceAnalysis*>(
         getAnalysis("OperationPerformanceAnalysis"));
@@ -183,13 +264,13 @@ void OperationDecomposerPass::runOnFunction(ir::Function& function)
 
         for(auto& operation : basicBlock)
         {
-            if(!shouldOperationBeSplit(operation, performanceAnalysis))
+            if(!shouldOperationBeSplit(operation, *performanceAnalysis))
             {
                 copyOperation(newBasicBlock, operation);
                 continue;
             }
 
-            splitOperation(newBasicBlock, operation, performanceAnalysis);
+            splitOperation(newBasicBlock, operation, *performanceAnalysis);
         }
 
         replaceBasicBlock(newBasicBlock, basicBlock);
@@ -198,7 +279,7 @@ void OperationDecomposerPass::runOnFunction(ir::Function& function)
 
 StringSet OperationDecomposerPass::getRequiredAnalyses() const
 {
-    return StringSet("OperationPerformanceAnalysis");
+    return StringSet({"OperationPerformanceAnalysis"});
 }
 
 } // namespace optimization

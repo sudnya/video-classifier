@@ -7,6 +7,15 @@
 // Lucius Includes
 #include <lucius/lazy-ir/interface/GradientOperations.h>
 
+#include <lucius/lazy-ir/interface/LazyIr.h>
+
+#include <lucius/ir/interface/IRBuilder.h>
+#include <lucius/ir/interface/Gradient.h>
+#include <lucius/ir/interface/Variable.h>
+
+// Standard Library Includes
+#include <vector>
+
 namespace lucius
 {
 
@@ -31,6 +40,8 @@ LazyValue VariableAndGradient::getGradient()
 
 VariableAndGradientVector getVariablesAndGradientsForCost(const LazyValue& cost)
 {
+    auto& builder = getBuilder();
+
     // Get all variables
     auto variables = builder.getAllVariables();
 
@@ -39,9 +50,10 @@ VariableAndGradientVector getVariablesAndGradientsForCost(const LazyValue& cost)
 
     for(auto& variable : variables)
     {
-        auto gradient = builder.addGradientForVariable(variable, cost);
+        auto gradient = builder.addGradientForVariable(variable, cost.getValue());
 
-        variablesAndGradients.push_back(VariableAndGradient(variable, gradient));
+        variablesAndGradients.push_back(
+            VariableAndGradient(LazyValue(variable), LazyValue(gradient)));
     }
 
     return variablesAndGradients;

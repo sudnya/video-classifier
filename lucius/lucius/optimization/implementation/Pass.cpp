@@ -23,12 +23,12 @@ Pass::~Pass()
 
 }
 
-void PassManager::setManager(PassManager* manager)
+void Pass::setManager(PassManager* manager)
 {
     _manager = manager;
 }
 
-PassManager* PassManager::getManager()
+PassManager* Pass::getManager()
 {
     return _manager;
 }

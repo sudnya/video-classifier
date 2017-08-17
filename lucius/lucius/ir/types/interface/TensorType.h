@@ -7,7 +7,7 @@
 #pragma once
 
 // Lucius Includes
-#include <lucius/ir/types/interface/Type.h>
+#include <lucius/ir/interface/Type.h>
 
 namespace lucius
 {
@@ -19,6 +19,8 @@ namespace ir
 class TensorType : public Type
 {
 public:
+    TensorType(const Dimension& d, const Precision& p);
+    ~TensorType();
 
 };
 

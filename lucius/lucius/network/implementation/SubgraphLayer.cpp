@@ -17,7 +17,6 @@
 #include <lucius/matrix/interface/Operation.h>
 #include <lucius/matrix/interface/Dimension.h>
 
-#include <lucius/util/interface/memory.h>
 #include <lucius/util/interface/debug.h>
 #include <lucius/util/interface/PropertyTree.h>
 

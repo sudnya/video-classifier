@@ -7,6 +7,12 @@
 // Lucius Includes
 #include <lucius/lazy-ir/interface/RandomOperations.h>
 
+#include <lucius/lazy-ir/interface/LazyValue.h>
+#include <lucius/lazy-ir/interface/LazyIr.h>
+
+#include <lucius/ir/interface/IRBuilder.h>
+#include <lucius/ir/interface/Constant.h>
+
 namespace lucius
 {
 
@@ -15,36 +21,31 @@ namespace lazy
 
 LazyValue srand(size_t seed)
 {
-    auto& buidler = getBuilder();
+    auto& builder = getBuilder();
 
-    LazyValue returnValue(builder.getRandomStateType());
-
-    builder.addSrand(returnValue, builder.getConstant(seed));
-
-    return returnValue;
+    return LazyValue(builder.addSrand(builder.addConstant(seed)));
 }
 
-LazyValue rand( LazyValue& state, const Dimension& shape, const Precision& precision)
+LazyValue rand(LazyValue& state, const Dimension& shape, const Precision& precision)
 {
-    auto& buidler = getBuilder();
+    auto& builder = getBuilder();
 
-    LazyValue returnValue(builder.newValue(builder.getTensorType(shape, precision)));
+    auto result = builder.addRand(state.getValue(), builder.getTensorType(shape, precision));
 
-    builder.addRand(returnValue.getValue(), state.getValue());
+    state = LazyValue(builder.addGet(result, builder.addConstant(1)));
 
-    return returnValue;
-
+    return LazyValue(builder.addGet(result, builder.addConstant(0)));
 }
 
 LazyValue randn(LazyValue& state, const Dimension& shape, const Precision& precision)
 {
-    auto& buidler = getBuilder();
+    auto& builder = getBuilder();
 
-    LazyValue returnValue(builder.newValue(builder.getTensorType(shape, precision)));
+    auto result = builder.addRand(state.getValue(), builder.getTensorType(shape, precision));
 
-    build.addRandn(returnValue.getValue(), state.getValue());
+    state = LazyValue(builder.addGet(result, builder.addConstant(1)));
 
-    return returnValue;
+    return LazyValue(builder.addGet(result, builder.addConstant(0)));
 }
 
 }

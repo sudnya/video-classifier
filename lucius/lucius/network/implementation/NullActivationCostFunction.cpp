@@ -8,7 +8,6 @@
 #include <lucius/network/interface/NullActivationCostFunction.h>
 
 #include <lucius/matrix/interface/Matrix.h>
-#include <lucius/util/interface/memory.h>
 #include <lucius/util/interface/debug.h>
 
 namespace lucius

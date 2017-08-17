@@ -13,7 +13,6 @@
 #include <lucius/matrix/interface/Allocation.h>
 #include <lucius/matrix/interface/RecurrentOperations.h>
 
-#include <lucius/util/interface/memory.h>
 #include <lucius/util/interface/debug.h>
 
 // Standard Library Includes

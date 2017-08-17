@@ -8,8 +8,6 @@
 #include <lucius/network/interface/ActivationCostFunctionFactory.h>
 #include <lucius/network/interface/NullActivationCostFunction.h>
 
-#include <lucius/util/interface/memory.h>
-
 namespace lucius
 {
 
