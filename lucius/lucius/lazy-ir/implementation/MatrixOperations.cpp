@@ -13,6 +13,7 @@
 
 #include <lucius/ir/interface/IRBuilder.h>
 #include <lucius/ir/interface/Constant.h>
+#include <lucius/ir/interface/Type.h>
 
 namespace lucius
 {

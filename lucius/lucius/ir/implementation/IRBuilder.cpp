@@ -119,7 +119,7 @@ public:
         return _currentInsertionPoint;
     }
 
-    Function& getFunction()
+    Function getFunction()
     {
         return getInsertionPoint()->getBasicBlock().getFunction();
     }

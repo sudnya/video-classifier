@@ -133,7 +133,7 @@ void MinimalMemoryOperationSchedulingPass::runOnFunction(ir::Function& function)
 
         scheduleBasicBlock(newOrder, basicBlock.getOperations(), *memoryAnalysis);
 
-        basicBlock.setOperations(newOrder);
+        basicBlock.setOperations(std::move(newOrder));
     }
 }
 

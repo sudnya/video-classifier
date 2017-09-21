@@ -9,6 +9,7 @@
 // Standard Library Includes
 #include <memory>
 #include <list>
+#include <set>
 
 // Forward Declarations
 namespace lucius { namespace ir { class BasicBlockImplementation; } }
@@ -26,8 +27,7 @@ namespace ir
 class BasicBlock
 {
 public:
-          Function& getFunction();
-    const Function& getFunction() const;
+    Function getFunction();
 
 public:
     void push_back(const Operation& op);
@@ -75,17 +75,17 @@ public:
     const OperationList& getOperations() const;
 
 public:
-    void setOperations(const OperationList& operations);
+    void setOperations(OperationList&& operations);
 
 public:
-    using BasicBlockList = std::list<BasicBlock>;
+    using BasicBlockSet = std::set<BasicBlock>;
 
 public:
-          BasicBlockList& getSuccessors();
-    const BasicBlockList& getSuccessors() const;
+          BasicBlockSet& getSuccessors();
+    const BasicBlockSet& getSuccessors() const;
 
-          BasicBlockList& getPredecessors();
-    const BasicBlockList& getPredecessors() const;
+          BasicBlockSet& getPredecessors();
+    const BasicBlockSet& getPredecessors() const;
 
 public:
     void addSuccessor(const BasicBlock& successor);

@@ -28,6 +28,7 @@ class Function
 {
 public:
     explicit Function(const std::string& name);
+    explicit Function(std::shared_ptr<FunctionImplementation> implementation);
     Function();
     ~Function();
 

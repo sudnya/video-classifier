@@ -6,9 +6,6 @@
 
 #pragma once
 
-// Lucius Includes
-#include <lucius/ir/interface/Type.h>
-
 // Standard Library Includes
 #include <list>
 
@@ -17,6 +14,7 @@ namespace lucius { namespace ir { class Module;    } }
 namespace lucius { namespace ir { class Use;       } }
 namespace lucius { namespace ir { class Operation; } }
 namespace lucius { namespace ir { class Constant;  } }
+namespace lucius { namespace ir { class Type;      } }
 
 namespace lucius { namespace ir { class ValueImplementation; } }
 
@@ -53,7 +51,7 @@ public:
     bool isVoid() const;
 
 public:
-    typedef std::list<Use> UseList;
+    using UseList = std::list<Use>;
 
 public:
           UseList& getUses();
@@ -66,10 +64,7 @@ public:
     std::shared_ptr<ValueImplementation> getValueImplementation() const;
 
 private:
-    Type _type;
-
-private:
-    UseList _uses;
+    std::shared_ptr<ValueImplementation> _implementation;
 
 };
 

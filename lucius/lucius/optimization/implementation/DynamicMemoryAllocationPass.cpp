@@ -19,6 +19,7 @@
 #include <lucius/ir/interface/BasicBlock.h>
 #include <lucius/ir/interface/Function.h>
 #include <lucius/ir/interface/Use.h>
+#include <lucius/ir/interface/Type.h>
 
 // Standard Library Includes
 #include <cassert>

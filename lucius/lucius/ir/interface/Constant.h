@@ -11,6 +11,7 @@
 
 // Forward Declarations
 namespace lucius { namespace ir { class ConstantImplementation; } }
+namespace lucius { namespace ir { class ValueImplementation;    } }
 
 namespace lucius
 {
@@ -21,6 +22,9 @@ namespace ir
 /*! \brief A class for representing a constant value a program. */
 class Constant
 {
+public:
+    std::shared_ptr<ValueImplementation> getValueImplementation() const;
+
 public:
     std::shared_ptr<ConstantImplementation> _implementation;
 };

@@ -103,7 +103,7 @@ void TableOperationSelectionPass::runOnFunction(ir::Function& function)
             generateOperations(newOperations, newValues, operation);
         }
 
-        basicBlock.setOperations(newOperations);
+        basicBlock.setOperations(std::move(newOperations));
     }
 }
 
