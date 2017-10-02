@@ -7,6 +7,10 @@
 // Lucius Includes
 #include <lucius/optimization/interface/OperationFinalizationPass.h>
 
+#include <lucius/ir/interface/Function.h>
+
+#include <lucius/util/interface/debug.h>
+
 namespace lucius
 {
 namespace optimization
@@ -30,6 +34,13 @@ void OperationFinalizationPass::runOnFunction(ir::Function& )
 StringSet OperationFinalizationPass::getRequiredAnalyses() const
 {
     return StringSet();
+}
+
+Function OperationFinalizationPass::getTargetFunction()
+{
+    assertM(false, "Not implemented");
+
+    return Function();
 }
 
 } // namespace optimization

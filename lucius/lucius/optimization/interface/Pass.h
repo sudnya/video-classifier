@@ -38,10 +38,11 @@ public:
     void setManager(PassManager* manager);
 
 public:
-    Analysis* getAnalysis(const std::string& name);
+    PassManager* getManager();
 
 public:
-    PassManager* getManager();
+    const Analysis* getAnalysis(const std::string& name) const;
+          Analysis* getAnalysis(const std::string& name);
 
 public:
     virtual void runOnFunction(Function&) = 0;
@@ -49,8 +50,14 @@ public:
 public:
     virtual StringSet getRequiredAnalyses() const = 0;
 
+public:
+    const std::string& name() const;
+
 private:
     PassManager* _manager;
+
+private:
+    std::string _name;
 };
 
 } // namespace optimization

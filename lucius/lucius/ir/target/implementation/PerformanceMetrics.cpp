@@ -1,10 +1,11 @@
 /*  \file   PerformanceMetrics.h
     \author Gregory Diamos
     \date   April 4, 2017
-    \brief  The header file for the Operation class.
+    \brief  The source file for the PerformanceMetrics class.
 */
 
-#pragma once
+// Lucius Includes
+#include <lucius/ir/target/interface/PerformanceMetrics.h>
 
 namespace lucius
 {
@@ -12,18 +13,26 @@ namespace lucius
 namespace ir
 {
 
-/*! \brief Performance metrics for an operation. */
-class PerformanceMetrics
+PerformanceMetrics::PerformanceMetrics(double flops, double mops, double nops)
+: _floatingPointOperations(flops), _memoryOperations(mops), _networkOperations(nops)
 {
-public:
-    PerformanceMetrics(double flops, double mops, double nops);
 
-private:
-    double _floatingPointOperations;
-    double _memoryOperations;
-    double _networkOperations;
+}
 
-};
+double PerformanceMetrics::getTotalFloatingPointOperations() const
+{
+    return _floatingPointOperations;
+}
+
+double PerformanceMetrics::getTotalMemoryOperations() const
+{
+    return _memoryOperations;
+}
+
+double PerformanceMetrics::getTotalNetworkOperations() const
+{
+    return _networkOperations;
+}
 
 } // namespace ir
 } // namespace lucius

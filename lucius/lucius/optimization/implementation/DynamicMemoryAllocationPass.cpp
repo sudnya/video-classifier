@@ -12,13 +12,13 @@
 
 #include <lucius/ir/target/interface/TargetOperation.h>
 #include <lucius/ir/target/interface/TargetValue.h>
+#include <lucius/ir/target/interface/TargetUse.h>
 #include <lucius/ir/target/interface/AllocationOperation.h>
 #include <lucius/ir/target/interface/FreeOperation.h>
 
 #include <lucius/ir/interface/Operation.h>
 #include <lucius/ir/interface/BasicBlock.h>
 #include <lucius/ir/interface/Function.h>
-#include <lucius/ir/interface/Use.h>
 #include <lucius/ir/interface/Type.h>
 
 // Standard Library Includes

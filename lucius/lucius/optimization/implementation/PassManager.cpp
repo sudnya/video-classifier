@@ -14,6 +14,7 @@
 
 #include <lucius/ir/interface/Module.h>
 #include <lucius/ir/interface/Function.h>
+#include <lucius/ir/interface/Program.h>
 
 // Standard Library Includes
 #include <list>
@@ -41,8 +42,6 @@ public:
 public:
     void runOnFunction(ir::Function& f)
     {
-        AnalysisMap analyses;
-
         // schedule passes
         // TODO: group passes by shared analyses
 
@@ -53,9 +52,9 @@ public:
 
             for(auto& analysisName : requiredAnalyses)
             {
-                if(analyses.count(analysisName) == 0)
+                if(_analyses.count(analysisName) == 0)
                 {
-                    auto newAnalysis = analyses.emplace(std::make_pair(analysisName,
+                    auto newAnalysis = _analyses.emplace(std::make_pair(analysisName,
                         AnalysisFactory::create(analysisName))).first;
 
                     newAnalysis->second->runOnFunction(f);
@@ -67,6 +66,8 @@ public:
             pass->setManager(_manager);
             pass->runOnFunction(f);
         }
+
+        _analyses.clear();
     }
 
     void addPass(std::unique_ptr<Pass>&& pass)
@@ -74,11 +75,62 @@ public:
         _passes.emplace_back(std::move(pass));
     }
 
+    Pass* getPass(const std::string& name)
+    {
+        for(auto& pass : _passes)
+        {
+            if(pass->name() == name)
+            {
+                return pass.get();
+            }
+        }
+
+        return nullptr;
+    }
+
+    const Pass* getPass(const std::string& name) const
+    {
+        for(auto& pass : _passes)
+        {
+            if(pass->name() == name)
+            {
+                return pass.get();
+            }
+        }
+
+        return nullptr;
+    }
+
+    Analysis* getAnalysis(const std::string& name)
+    {
+        auto newAnalysis = _analyses.find(name);
+
+        if(newAnalysis == _analyses.end())
+        {
+            return nullptr;
+        }
+
+        return newAnalysis->second.get();
+    }
+
+    const Analysis* getAnalysis(const std::string& name) const
+    {
+        auto newAnalysis = _analyses.find(name);
+
+        if(newAnalysis == _analyses.end())
+        {
+            return nullptr;
+        }
+
+        return newAnalysis->second.get();
+    }
+
 private:
     PassManager* _manager;
 
 private:
     PassList _passes;
+    AnalysisMap _analyses;
 
 };
 
@@ -106,9 +158,35 @@ void PassManager::runOnModule(ir::Module& module)
     }
 }
 
+
+void PassManager::runOnProgram(ir::Program& program)
+{
+    runOnModule(program.getModule());
+}
+
 void PassManager::addPass(std::unique_ptr<Pass>&& pass)
 {
     _implementation->addPass(std::move(pass));
+}
+
+Pass* PassManager::getPass(const std::string& name)
+{
+    return _implementation->getPass(name);
+}
+
+const Pass* PassManager::getPass(const std::string& name) const
+{
+    return _implementation->getPass(name);
+}
+
+Analysis* PassManager::getAnalysis(const std::string& name)
+{
+    return _implementation->getAnalysis(name);
+}
+
+const Analysis* PassManager::getAnalysis(const std::string& name) const
+{
+    return _implementation->getAnalysis(name);
 }
 
 } // namespace optimization

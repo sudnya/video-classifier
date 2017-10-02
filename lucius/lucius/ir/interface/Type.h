@@ -40,6 +40,11 @@ public:
     };
 
 public:
+    Type(TypeId id);
+    Type();
+    ~Type();
+
+public:
     /*! \brief Is the type a scalar type. */
     bool isScalar() const;
 

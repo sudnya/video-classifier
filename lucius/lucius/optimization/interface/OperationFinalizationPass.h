@@ -31,7 +31,7 @@ public:
     using BasicBlockList = std::list<ir::BasicBlock>;
 
 public:
-    /* \brief Extracts the target function.  Caller takes ownership. */
+    /* \brief Extracts the target function. */
     Function getTargetFunction();
 
 public:

@@ -14,7 +14,8 @@ namespace lucius { namespace ir { class Function; } }
 namespace lucius { namespace ir { class Module;   } }
 namespace lucius { namespace ir { class Program;  } }
 
-namespace lucius { namespace optimization { class Pass; } }
+namespace lucius { namespace optimization { class Pass;     } }
+namespace lucius { namespace analysis     { class Analysis; } }
 
 namespace lucius
 {
@@ -47,6 +48,14 @@ public:
     /*! \brief An interface to get a pass by name. Manager retains ownership. */
           Pass* getPass(const std::string& name);
     const Pass* getPass(const std::string& name) const;
+
+public:
+    using Analysis = analysis::Analysis;
+
+public:
+    /*! \brief An interface to get analysis by name.  Manager retains ownership. */
+    const Analysis* getAnalysis(const std::string& name) const;
+          Analysis* getAnalysis(const std::string& name);
 
 private:
     std::unique_ptr<PassManagerImplementation> _implementation;

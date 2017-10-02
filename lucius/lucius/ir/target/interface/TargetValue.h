@@ -8,10 +8,13 @@
 
 // Standard Library Includes
 #include <list>
+#include <memory>
 
 // Forward Declarations
-namespace lucius { namespace ir { class Type; } }
-namespace lucius { namespace ir { class Use;  } }
+namespace lucius { namespace ir { class Type;       } }
+namespace lucius { namespace ir { class TargetUse;  } }
+
+namespace lucius { namespace ir { class TargetValueImplementation; } }
 
 namespace lucius
 {
@@ -31,14 +34,17 @@ public:
     const Type& getType() const;
 
 public:
-    typedef std::list<Use> UseList;
+    typedef std::list<TargetUse> TargetUseList;
 
 public:
-    UseList& getUses();
-    UseList& getDefinitions();
+    TargetUseList& getUses();
+    TargetUseList& getDefinitions();
 
 public:
     bool operator==(const TargetValue& v) const;
+
+private:
+    std::shared_ptr<TargetValueImplementation> _implementation;
 
 };
 

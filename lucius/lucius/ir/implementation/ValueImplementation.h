@@ -13,12 +13,7 @@
 #include <list>
 
 // Forward Declarations
-namespace lucius { namespace ir { class Module;    } }
-namespace lucius { namespace ir { class Use;       } }
-namespace lucius { namespace ir { class Operation; } }
-namespace lucius { namespace ir { class Constant;  } }
-
-namespace lucius { namespace ir { class ValueImplementation; } }
+namespace lucius { namespace ir { class Use; } }
 
 namespace lucius
 {
@@ -46,6 +41,9 @@ public:
 public:
     bool isOperation() const;
     bool isConstant() const;
+
+private:
+    size_t _id;
 
 private:
     Type _type;

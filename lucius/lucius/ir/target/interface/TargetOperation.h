@@ -27,6 +27,7 @@ namespace ir
 class TargetOperation
 {
 public:
+    TargetOperation();
     explicit TargetOperation(std::shared_ptr<ValueImplementation> value);
     ~TargetOperation();
 
