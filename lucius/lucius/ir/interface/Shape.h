@@ -14,6 +14,14 @@ namespace ir
 /*! \brief A shape represents the dimensions of a tensor in the IR. */
 class Shape
 {
+public:
+    /*! \brief Indicate that the shape is completely unknown. */
+    void setUnknown();
+
+public:
+    /*! \brief Get a reference to the index. */
+          size_t& operator[](size_t i);
+    const size_t& operator[](size_t i) const;
 
 };
 

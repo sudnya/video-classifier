@@ -23,6 +23,11 @@ class ConstantTensor : public Constant
 {
 public:
     explicit ConstantTensor(const matrix::Matrix& value);
+    explicit ConstantTensor(std::shared_ptr<ValueImplementation>);
+
+public:
+          matrix::Matrix& getContents();
+    const matrix::Matrix& getContents() const;
 };
 
 } // namespace ir

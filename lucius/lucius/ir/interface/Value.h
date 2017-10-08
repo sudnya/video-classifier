@@ -31,6 +31,7 @@ public:
     Value();
     Value(Operation o);
     Value(Constant c);
+    Value(std::shared_ptr<ValueImplementation>);
     ~Value();
 
 public:

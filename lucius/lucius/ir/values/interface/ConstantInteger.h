@@ -15,11 +15,14 @@ namespace lucius
 namespace ir
 {
 
-/*! \brief A class for representing a constant matrix value a program. */
+/*! \brief A class for representing a constant scalar integer value a program. */
 class ConstantInteger : public Constant
 {
 public:
     explicit ConstantInteger(size_t value);
+
+public:
+    size_t getValue() const;
 };
 
 } // namespace ir

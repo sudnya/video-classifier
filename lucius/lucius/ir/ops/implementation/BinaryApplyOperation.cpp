@@ -4,10 +4,11 @@
     \brief  The source file for the BinaryApplyOperation class.
 */
 
-#pragma once
-
 // Lucius Includes
-#include <lucius/ir/interface/Operation.h>
+#include <lucius/ir/ops/interface/BinaryApplyOperation.h>
+
+#include <lucius/ir/interface/ShapeList.h>
+#include <lucius/ir/interface/Shape.h>
 
 namespace lucius
 {
@@ -25,12 +26,12 @@ BinaryApplyOperation::~BinaryApplyOperation()
     // intentionally blank
 }
 
-BinaryApplyOperation::ShapeList BinaryApplyOperation::getOutputShapes(const ShapeList& inputShapes) const
+ShapeList BinaryApplyOperation::getOutputShapes(const ShapeList& inputShapes) const
 {
-    return inputShapes.front();
+    return {inputShapes.front()};
 }
 
-BinaryApplyOperation::ShapeList BinaryApplyOperation::getInputShapes(const ShapeList& outputShapes) const
+ShapeList BinaryApplyOperation::getInputShapes(const ShapeList& outputShapes) const
 {
     return {outputShapes.front(), outputShapes.front()};
 }

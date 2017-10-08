@@ -5,7 +5,15 @@
 */
 
 // Lucius Includes
-#include <lucius/ir/interface/Operation.h>
+#include <lucius/ir/ops/interface/BroadcastOperation.h>
+
+#include <lucius/ir/values/interface/ConstantTensor.h>
+
+#include <lucius/ir/interface/ShapeList.h>
+#include <lucius/ir/interface/Shape.h>
+#include <lucius/ir/interface/Use.h>
+
+#include <lucius/matrix/interface/Matrix.h>
 
 namespace lucius
 {
@@ -36,9 +44,9 @@ ShapeList BroadcastOperation::getInputShapes(const ShapeList& outputShapes) cons
 
     if(dimensionsValue.isConstant())
     {
-        auto dimensions = value_cast<ConstantTensor>(dimensionsValue);
+        auto dimensions = value_cast<ConstantTensor>(dimensionsValue).getContents();
 
-        for(auto& index : dimensions)
+        for(auto index : dimensions)
         {
             rightShape[index] = 1;
         }

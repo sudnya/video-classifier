@@ -23,7 +23,7 @@
 #include <lucius/ir/ops/interface/OperationFactory.h>
 #include <lucius/ir/ops/interface/BinaryApplyOperation.h>
 
-#include <lucius/ir/values/interface/ConstantOperators.h>
+#include <lucius/ir/values/interface/ConstantOperator.h>
 
 #include <lucius/util/interface/debug.h>
 

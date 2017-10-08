@@ -7,6 +7,8 @@
 // Lucius Includes
 #include <lucius/ir/ops/interface/ApplyOperation.h>
 
+#include <lucius/ir/interface/ShapeList.h>
+
 namespace lucius
 {
 
@@ -23,12 +25,12 @@ ApplyOperation::~ApplyOperation()
 
 }
 
-ApplyOperation::ShapeList ApplyOperation::getOutputShapes(const ShapeList& inputShapes) const
+ShapeList ApplyOperation::getOutputShapes(const ShapeList& inputShapes) const
 {
     return inputShapes;
 }
 
-ApplyOperation::ShapeList ApplyOperation::getInputShapes(const ShapeList& outputShapes) const
+ShapeList ApplyOperation::getInputShapes(const ShapeList& outputShapes) const
 {
     return outputShapes;
 }

@@ -6,6 +6,9 @@
 
 #pragma once
 
+// Forward Declarations
+namespace lucius { namespace ir { class Shape; } }
+
 namespace lucius
 {
 namespace ir
@@ -14,6 +17,14 @@ namespace ir
 /*! \brief A list of shapes. */
 class ShapeList
 {
+public:
+    ShapeList();
+    ShapeList(std::initializer_list<Shape>);
+    ~ShapeList();
+
+public:
+          Shape& front();
+    const Shape& front() const;
 
 };
 

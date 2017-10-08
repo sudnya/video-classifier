@@ -23,10 +23,10 @@ namespace ir
 class Constant
 {
 public:
-    std::shared_ptr<ValueImplementation> getValueImplementation() const;
+    Constant(std::shared_ptr<ValueImplementation>);
 
 public:
-    std::shared_ptr<ConstantImplementation> _implementation;
+    std::shared_ptr<ValueImplementation> getValueImplementation() const;
 };
 
 } // namespace ir
