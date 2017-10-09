@@ -6,6 +6,9 @@
 
 #pragma once
 
+// Forward Declarations
+namespace lucius { namespace matrix { class Dimension; } }
+
 namespace lucius
 {
 namespace ir
@@ -14,6 +17,10 @@ namespace ir
 /*! \brief A shape represents the dimensions of a tensor in the IR. */
 class Shape
 {
+public:
+    Shape();
+    Shape(const matrix::Dimension& d);
+
 public:
     /*! \brief Indicate that the shape is completely unknown. */
     void setUnknown();

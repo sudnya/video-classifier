@@ -11,10 +11,10 @@
 #include <list>
 
 // Forward Declarations
-namespace lucius { namespace ir { class BasicBlock;                    } }
-namespace lucius { namespace ir { class Operation;                     } }
-namespace lucius { namespace ir { class Function;                      } }
-namespace lucius { namespace ir { class InsertionPointImplementation;  } }
+namespace lucius { namespace ir { class BasicBlock;                   } }
+namespace lucius { namespace ir { class Operation;                    } }
+namespace lucius { namespace ir { class Function;                     } }
+namespace lucius { namespace ir { class InsertionPointImplementation; } }
 
 namespace lucius
 {

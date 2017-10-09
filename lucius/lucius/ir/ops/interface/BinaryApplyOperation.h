@@ -20,14 +20,7 @@ class BinaryApplyOperation : public Operation
 {
 public:
     BinaryApplyOperation(Value left, Value right, Value operation);
-    ~BinaryApplyOperation() final;
-
-public:
-    // forward shape operation
-    ShapeList getOutputShapes(const ShapeList& inputShapes) const final;
-
-    // backward shape operation
-    ShapeList getInputShapes(const ShapeList& outputShapes) const final;
+    ~BinaryApplyOperation();
 
 };
 

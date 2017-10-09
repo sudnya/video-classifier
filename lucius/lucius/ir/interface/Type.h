@@ -41,6 +41,7 @@ public:
 
 public:
     Type(TypeId id);
+    Type(std::shared_ptr<TypeImplementation>);
     Type();
     ~Type();
 
@@ -57,10 +58,20 @@ public:
     /*! \brief Get the number of bytes needed to represent the type. */
     size_t getBytes() const;
 
+public:
+    std::shared_ptr<TypeImplementation> getTypeImplementation() const;
+
 private:
     std::shared_ptr<TypeImplementation> _implementation;
 
 };
+
+template <typename T, typename V>
+T type_cast(const V& v)
+{
+    return T(v.getTypeImplementation());
+}
+
 
 } // namespace ir
 } // namespace lucius

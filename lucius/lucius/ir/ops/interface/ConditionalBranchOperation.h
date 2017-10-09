@@ -20,7 +20,7 @@ class ConditionalBranchOperation : public ControlOperation
 {
 public:
     ConditionalBranchOperation(Value predicate, BasicBlock target, BasicBlock fallthrough);
-    virtual ~ConditionalBranchOperation();
+    ~ConditionalBranchOperation();
 
 };
 

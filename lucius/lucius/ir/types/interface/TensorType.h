@@ -13,6 +13,9 @@
 namespace lucius { namespace matrix { class Dimension; } }
 namespace lucius { namespace matrix { class Precision; } }
 
+namespace lucius { namespace ir { class Shape;              } }
+namespace lucius { namespace ir { class TypeImplementation; } }
+
 namespace lucius
 {
 
@@ -23,12 +26,16 @@ namespace ir
 class TensorType : public Type
 {
 public:
-    using Dimension = matrix::Dimension;
     using Precision = matrix::Precision;
 
 public:
-    TensorType(const Dimension& d, const Precision& p);
+    TensorType(const Shape& d, const Precision& p);
+    explicit TensorType(Type t);
+    explicit TensorType(std::shared_ptr<TypeImplementation> );
     ~TensorType();
+
+public:
+    const Shape& getShape() const;
 
 };
 

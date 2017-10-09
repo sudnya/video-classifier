@@ -10,13 +10,32 @@
 #include <lucius/ir/interface/ShapeList.h>
 #include <lucius/ir/interface/Shape.h>
 
+#include <lucius/ir/implementation/OperationImplementation.h>
+
 namespace lucius
 {
 
 namespace ir
 {
 
+class BinaryApplyOperationImplementation : public OperationImplementation
+{
+
+public:
+    ShapeList getOutputShapes(const ShapeList& inputShapes) const
+    {
+        return {inputShapes.front()};
+    }
+
+    ShapeList getInputShapes(const ShapeList& outputShapes) const
+    {
+        return {outputShapes.front(), outputShapes.front()};
+    }
+
+};
+
 BinaryApplyOperation::BinaryApplyOperation(Value left, Value right, Value operation)
+: Operation(std::make_shared<BinaryApplyOperationImplementation>())
 {
     setOperands({left, right, operation});
 }
@@ -24,16 +43,6 @@ BinaryApplyOperation::BinaryApplyOperation(Value left, Value right, Value operat
 BinaryApplyOperation::~BinaryApplyOperation()
 {
     // intentionally blank
-}
-
-ShapeList BinaryApplyOperation::getOutputShapes(const ShapeList& inputShapes) const
-{
-    return {inputShapes.front()};
-}
-
-ShapeList BinaryApplyOperation::getInputShapes(const ShapeList& outputShapes) const
-{
-    return {outputShapes.front(), outputShapes.front()};
 }
 
 } // namespace ir

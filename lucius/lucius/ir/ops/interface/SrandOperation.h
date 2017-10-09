@@ -20,14 +20,7 @@ class SrandOperation : public Operation
 {
 public:
     SrandOperation(Value seed);
-    ~SrandOperation() final;
-
-public:
-    // forward shape operation
-    ShapeList getOutputShapes(const ShapeList& inputShapes) const final;
-
-    // backward shape operation
-    ShapeList getInputShapes(const ShapeList& outputShapes) const final;
+    ~SrandOperation();
 
 };
 

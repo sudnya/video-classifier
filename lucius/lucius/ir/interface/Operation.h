@@ -35,14 +35,14 @@ public:
     Operation();
     explicit Operation(std::shared_ptr<ValueImplementation> );
     Operation(const TargetOperation& op );
-    virtual ~Operation();
+    ~Operation();
 
 public:
     // forward shape operation
-    virtual ShapeList getOutputShapes(const ShapeList& inputShapes) const;
+    ShapeList getOutputShapes(const ShapeList& inputShapes) const;
 
     // backward shape operation
-    virtual ShapeList getInputShapes(const ShapeList& outputShapes) const;
+    ShapeList getInputShapes(const ShapeList& outputShapes) const;
 
 public:
     using UseList   = std::list<Use>;

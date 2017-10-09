@@ -20,14 +20,7 @@ class ZerosOperation : public Operation
 {
 public:
     ZerosOperation(Type tensorType);
-    ~ZerosOperation() final;
-
-public:
-    // forward shape operation
-    ShapeList getOutputShapes(const ShapeList& inputShapes) const final;
-
-    // backward shape operation
-    ShapeList getInputShapes(const ShapeList& outputShapes) const final;
+    ~ZerosOperation();
 
 };
 

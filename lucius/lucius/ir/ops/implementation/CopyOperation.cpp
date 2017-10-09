@@ -9,13 +9,31 @@
 
 #include <lucius/ir/interface/ShapeList.h>
 
+#include <lucius/ir/implementation/OperationImplementation.h>
+
 namespace lucius
 {
 
 namespace ir
 {
 
+class CopyOperationImplementation : public OperationImplementation
+{
+public:
+    ShapeList getOutputShapes(const ShapeList& inputShapes) const
+    {
+        return inputShapes;
+    }
+
+    ShapeList getInputShapes(const ShapeList& outputShapes) const
+    {
+        return outputShapes;
+    }
+
+};
+
 CopyOperation::CopyOperation(Value input)
+: Operation(std::make_shared<CopyOperationImplementation>())
 {
     setOperands({input});
 }
@@ -23,16 +41,6 @@ CopyOperation::CopyOperation(Value input)
 CopyOperation::~CopyOperation()
 {
     // intentionally blank
-}
-
-ShapeList CopyOperation::getOutputShapes(const ShapeList& inputShapes) const
-{
-    return inputShapes;
-}
-
-ShapeList CopyOperation::getInputShapes(const ShapeList& outputShapes) const
-{
-    return outputShapes;
 }
 
 } // namespace ir

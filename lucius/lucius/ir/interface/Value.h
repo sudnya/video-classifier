@@ -10,11 +10,12 @@
 #include <list>
 
 // Forward Declarations
-namespace lucius { namespace ir { class Module;    } }
-namespace lucius { namespace ir { class Use;       } }
-namespace lucius { namespace ir { class Operation; } }
-namespace lucius { namespace ir { class Constant;  } }
-namespace lucius { namespace ir { class Type;      } }
+namespace lucius { namespace ir { class Module;     } }
+namespace lucius { namespace ir { class Use;        } }
+namespace lucius { namespace ir { class Operation;  } }
+namespace lucius { namespace ir { class Constant;   } }
+namespace lucius { namespace ir { class Type;       } }
+namespace lucius { namespace ir { class BasicBlock; } }
 
 namespace lucius { namespace ir { class ValueImplementation; } }
 
@@ -31,6 +32,7 @@ public:
     Value();
     Value(Operation o);
     Value(Constant c);
+    Value(BasicBlock b);
     Value(std::shared_ptr<ValueImplementation>);
     ~Value();
 

@@ -20,15 +20,8 @@ class ControlOperation : public Operation
 {
 public:
     ControlOperation();
-    virtual ~ControlOperation();
-
-public:
-    // forward shape operation
-    ShapeList getOutputShapes(const ShapeList& inputShapes) const;
-
-    // backward shape operation
-    ShapeList getInputShapes(const ShapeList& outputShapes) const;
-
+    explicit ControlOperation(std::shared_ptr<ValueImplementation>);
+    ~ControlOperation();
 
 };
 

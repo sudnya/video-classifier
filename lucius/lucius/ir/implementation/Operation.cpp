@@ -39,6 +39,3 @@ Operation::~Operation()
 } // namespace ir
 } // namespace lucius
 
-
-
-

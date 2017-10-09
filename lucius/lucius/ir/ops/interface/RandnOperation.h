@@ -20,14 +20,7 @@ class RandnOperation : public Operation
 {
 public:
     RandnOperation(Value state, Type tensorType);
-    ~RandnOperation() final;
-
-public:
-    // forward shape operation
-    ShapeList getOutputShapes(const ShapeList& inputShapes) const final;
-
-    // backward shape operation
-    ShapeList getInputShapes(const ShapeList& outputShapes) const final;
+    ~RandnOperation();
 
 };
 

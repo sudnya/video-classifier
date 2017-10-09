@@ -20,14 +20,7 @@ class RangeOperation : public Operation
 {
 public:
     RangeOperation(Type tensorType);
-    ~RangeOperation() final;
-
-public:
-    // forward shape operation
-    ShapeList getOutputShapes(const ShapeList& inputShapes) const final;
-
-    // backward shape operation
-    ShapeList getInputShapes(const ShapeList& outputShapes) const final;
+    ~RangeOperation();
 
 };
 

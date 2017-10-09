@@ -25,6 +25,10 @@ namespace ir
 class ValueImplementation
 {
 public:
+    ValueImplementation();
+    virtual ~ValueImplementation();
+
+public:
           Type& getType();
     const Type& getType() const;
 
