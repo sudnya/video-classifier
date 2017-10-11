@@ -11,8 +11,9 @@
 #include <memory>
 
 // Forward Declarations
-namespace lucius { namespace ir { class Type;       } }
-namespace lucius { namespace ir { class TargetUse;  } }
+namespace lucius { namespace ir { class Type;  } }
+namespace lucius { namespace ir { class Use;   } }
+namespace lucius { namespace ir { class Value; } }
 
 namespace lucius { namespace ir { class TargetValueImplementation; } }
 
@@ -27,6 +28,7 @@ class TargetValue
 {
 public:
     TargetValue();
+    explicit TargetValue(Value);
     ~TargetValue();
 
 public:
@@ -34,19 +36,25 @@ public:
     const Type& getType() const;
 
 public:
-    typedef std::list<TargetUse> TargetUseList;
+    typedef std::list<Use> UseList;
 
 public:
-    TargetUseList& getUses();
-    TargetUseList& getDefinitions();
+    UseList& getUses();
+    UseList& getDefinitions();
 
 public:
     bool operator==(const TargetValue& v) const;
+    bool operator==(const Value& v) const;
 
 private:
     std::shared_ptr<TargetValueImplementation> _implementation;
 
 };
+
+inline bool operator==(const Value& left, const TargetValue& right)
+{
+    return right == left;
+}
 
 } // namespace ir
 } // namespace lucius

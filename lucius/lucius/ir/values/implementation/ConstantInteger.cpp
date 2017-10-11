@@ -9,7 +9,7 @@
 
 #include <lucius/ir/interface/Use.h>
 
-#include <lucius/ir/implementation/ValueImplementation.h>
+#include <lucius/ir/implementation/ConstantImplementation.h>
 
 namespace lucius
 {
@@ -17,7 +17,7 @@ namespace lucius
 namespace ir
 {
 
-class ConstantIntegerValueImplementation : public ValueImplementation
+class ConstantIntegerValueImplementation : public ConstantImplementation
 {
 public:
     ConstantIntegerValueImplementation(size_t value)

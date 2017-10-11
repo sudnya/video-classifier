@@ -25,7 +25,7 @@ class SrandOperationImplementation : public OperationImplementation
 public:
     ShapeList getOutputShapes(const ShapeList& inputShapes) const
     {
-        return ShapeList({RandomStateType::getShape()});
+        return {};
     }
 
     ShapeList getInputShapes(const ShapeList& outputShapes) const

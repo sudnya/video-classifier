@@ -6,9 +6,12 @@
 
 #pragma once
 
+// Lucius Includes
+#include <lucius/ir/target/interface/TargetOperation.h>
+
 // Forward Declarations
-namespace lucius { namespace ir { class Operation;          } }
-namespace lucius { namespace ir { class PerformanceMetrics; } }
+namespace lucius { namespace ir { class BasicBlock;                           } }
+namespace lucius { namespace ir { class TargetControlOperationImplementation; } }
 
 namespace lucius
 {
@@ -17,10 +20,11 @@ namespace ir
 {
 
 /*! \brief A class for representing an execuatble operation that can change control flow. */
-class TargetControlOperation
+class TargetControlOperation : public TargetOperation
 {
 public:
-    TargetControlOperation(Operation o);
+    TargetControlOperation(std::shared_ptr<TargetOperationImplementation>);
+    TargetControlOperation(Operation);
     ~TargetControlOperation();
 
 public:
@@ -29,6 +33,10 @@ public:
 public:
     /*! \brief Execute the operation and return the new basic block. */
     BasicBlock execute();
+
+public:
+    std::shared_ptr<TargetControlOperationImplementation>
+        getTargetControlOperationImplementation() const;
 
 };
 

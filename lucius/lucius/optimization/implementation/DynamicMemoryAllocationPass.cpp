@@ -12,7 +12,6 @@
 
 #include <lucius/ir/target/interface/TargetOperation.h>
 #include <lucius/ir/target/interface/TargetValue.h>
-#include <lucius/ir/target/interface/TargetUse.h>
 #include <lucius/ir/target/interface/AllocationOperation.h>
 #include <lucius/ir/target/interface/FreeOperation.h>
 
@@ -20,6 +19,7 @@
 #include <lucius/ir/interface/BasicBlock.h>
 #include <lucius/ir/interface/Function.h>
 #include <lucius/ir/interface/Type.h>
+#include <lucius/ir/interface/Use.h>
 
 // Standard Library Includes
 #include <cassert>
@@ -76,9 +76,7 @@ static void addAllocation(TargetValue value, BasicBlock postDominator,
 static void addFree(TargetValue value, BasicBlock postDominator,
     BasicBlock::iterator insertionPoint)
 {
-    FreeOperation free;
-
-    free.setOperand(value, 0);
+    FreeOperation free(value);
 
     insertAfter(postDominator, insertionPoint, free);
 }
@@ -140,7 +138,7 @@ static BasicBlock::iterator getFirstDefinition(TargetValue value, BasicBlock dom
     {
         auto possibleTargetDefinition = ir::value_cast<TargetOperation>(*possibleDefinition);
 
-        if(possibleTargetDefinition.getOutputOperand() == value)
+        if(possibleTargetDefinition.getOutputOperand().getValue() == value)
         {
             break;
         }
@@ -198,7 +196,7 @@ static BasicBlock::iterator getLastUse(TargetValue value, BasicBlock postDominat
 
         for(auto& operand : operands)
         {
-            if(operand == value)
+            if(operand.getValue() == value)
             {
                 foundUse = true;
                 break;
@@ -248,7 +246,10 @@ static TargetValueVector getTargetValues(ir::Function& function)
 
             auto& operands = targetOperation.getAllOperands();
 
-            values.insert(values.end(), operands.begin(), operands.end());
+            for(auto& operand : operands)
+            {
+                values.push_back(ir::value_cast<TargetValue>(operand.getValue()));
+            }
         }
     }
 

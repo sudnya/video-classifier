@@ -9,6 +9,7 @@
 
 #include <lucius/ir/interface/Operation.h>
 #include <lucius/ir/interface/BasicBlock.h>
+#include <lucius/ir/interface/Function.h>
 
 namespace lucius
 {
@@ -81,6 +82,15 @@ BasicBlock& InsertionPoint::getBasicBlock()
     return _implementation->block;
 }
 
+InsertionPoint::OperationList::iterator& InsertionPoint::getIterator()
+{
+    return _implementation->positionInBlock;
+}
+
+Function InsertionPoint::getFunction()
+{
+    return getBasicBlock().getFunction();
+}
 
 } // namespace ir
 } // namespace lucius

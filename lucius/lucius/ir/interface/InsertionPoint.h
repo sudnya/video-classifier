@@ -34,12 +34,12 @@ public:
     InsertionPoint& operator=(const InsertionPoint&);
 
 public:
-    using BasicBlockList = std::list<BasicBlock>;
+    using OperationList = std::list<Operation>;
 
 public:
     BasicBlock& getBasicBlock();
-    BasicBlockList::iterator& getIterator();
-    Function& getFunction();
+    OperationList::iterator& getIterator();
+    Function getFunction();
 
 public:
     std::unique_ptr<InsertionPointImplementation> _implementation;

@@ -29,7 +29,6 @@ public:
         FloatId,   // 32-bit floating point
         DoubleId,  // 64-bit floating point
 
-
         // Derived types
         IntegerId,      // Arbitrary precision integer
         FunctionTypeId, // Functions

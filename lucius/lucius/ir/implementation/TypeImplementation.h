@@ -19,7 +19,7 @@ namespace ir
 class TypeImplementation
 {
 public:
-    TypeImplementation();
+    TypeImplementation(Type::TypeId);
     virtual ~TypeImplementation();
 
 private:

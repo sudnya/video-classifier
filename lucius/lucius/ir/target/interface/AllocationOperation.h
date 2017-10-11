@@ -1,7 +1,7 @@
-/*  \file   AllocationTargetOperation.h
+/*  \file   AllocationOperation.h
     \author Gregory Diamos
     \date   April 4, 2017
-    \brief  The header file for the AllocationTargetOperation class.
+    \brief  The header file for the AllocationOperation class.
 */
 
 #pragma once

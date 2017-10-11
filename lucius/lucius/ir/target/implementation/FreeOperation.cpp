@@ -7,15 +7,17 @@
 // Lucius Includes
 #include <lucius/ir/target/interface/FreeOperation.h>
 
+#include <lucius/ir/target/interface/TargetValue.h>
+
 namespace lucius
 {
 
 namespace ir
 {
 
-FreeOperation::FreeOperation()
+FreeOperation::FreeOperation(TargetValue allocatedValue)
 {
-
+    appendOperand(allocatedValue);
 }
 
 FreeOperation::~FreeOperation()

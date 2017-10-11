@@ -6,9 +6,11 @@
 
 // Lucius Includes
 #include <lucius/ir/target/interface/TargetValue.h>
-#include <lucius/ir/target/interface/TargetUse.h>
 
 #include <lucius/ir/interface/Type.h>
+#include <lucius/ir/interface/Use.h>
+
+#include <lucius/ir/implementation/ValueImplementation.h>
 
 namespace lucius
 {
@@ -16,9 +18,9 @@ namespace lucius
 namespace ir
 {
 
-using TargetUseList = TargetValue::TargetUseList;
+using UseList = TargetValue::UseList;
 
-class TargetValueImplementation
+class TargetValueImplementation : public ValueImplementation
 {
 public:
     TargetValueImplementation()
@@ -32,41 +34,13 @@ public:
     }
 
 public:
-    Type& getType()
-    {
-        return _type;
-    }
-
-    const Type& getType() const
-    {
-        return _type;
-    }
-
-public:
-    TargetUseList& getUses()
-    {
-        return _uses;
-    }
-
-    TargetUseList& getDefinitions()
+    UseList& getDefinitions()
     {
         return _definitions;
     }
 
-    size_t getId() const
-    {
-        return _id;
-    }
-
 private:
-    size_t _id;
-
-private:
-    Type _type;
-
-private:
-    TargetUseList _uses;
-    TargetUseList _definitions;
+    UseList _definitions;
 };
 
 TargetValue::TargetValue()
@@ -90,12 +64,12 @@ const Type& TargetValue::getType() const
     return _implementation->getType();
 }
 
-TargetValue::TargetUseList& TargetValue::getUses()
+TargetValue::UseList& TargetValue::getUses()
 {
     return _implementation->getUses();
 }
 
-TargetValue::TargetUseList& TargetValue::getDefinitions()
+TargetValue::UseList& TargetValue::getDefinitions()
 {
     return _implementation->getDefinitions();
 }

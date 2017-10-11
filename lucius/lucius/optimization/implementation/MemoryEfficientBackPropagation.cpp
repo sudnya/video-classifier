@@ -452,7 +452,7 @@ using BasicBlockList = std::list<BasicBlock>;
 
 static void insertSubgraph(InsertionPoint& insertionPoint, BasicBlockList& subgraph)
 {
-    auto& function = insertionPoint.getFunction();
+    auto function = insertionPoint.getFunction();
 
     function.insert(insertionPoint, subgraph);
 }

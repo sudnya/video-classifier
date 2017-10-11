@@ -9,6 +9,11 @@
 // Lucius Includes
 #include <lucius/ir/implementation/ValueImplementation.h>
 
+// Forward Declarations
+namespace lucius { namespace ir { class ShapeList; } }
+namespace lucius { namespace ir { class Shape;     } }
+namespace lucius { namespace ir { class Use;       } }
+
 namespace lucius
 {
 

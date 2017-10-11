@@ -19,7 +19,7 @@ namespace ir
 class FreeOperation : public TargetOperation
 {
 public:
-    FreeOperation();
+    FreeOperation(TargetValue allocatedValue);
     ~FreeOperation();
 
 };

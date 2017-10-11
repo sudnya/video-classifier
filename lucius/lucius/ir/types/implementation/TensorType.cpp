@@ -26,7 +26,7 @@ class TensorTypeImplementation : public TypeImplementation
 {
 public:
     TensorTypeImplementation(const Shape& shape, const Precision& precision)
-    : _shape(shape), _precision(precision)
+    : TypeImplementation(Type::TensorId), _shape(shape), _precision(precision)
     {
 
     }

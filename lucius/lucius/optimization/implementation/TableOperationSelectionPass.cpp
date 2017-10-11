@@ -85,7 +85,8 @@ static void generateOperations(OperationList& targetOperations,
 
         if(targetOperationEntry.isOutput())
         {
-            valueMap[operation] = targetOperation.getOutputOperand();
+            valueMap[operation] = ir::value_cast<TargetValue>(
+                targetOperation.getOutputOperand().getValue());
         }
     }
 }

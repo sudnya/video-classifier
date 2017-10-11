@@ -22,9 +22,6 @@ public:
     RandomStateType();
     ~RandomStateType();
 
-public:
-    static const Shape& getShape();
-
 };
 
 } // namespace ir
