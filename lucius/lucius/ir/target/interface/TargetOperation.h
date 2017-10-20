@@ -64,6 +64,9 @@ public:
 public:
     std::shared_ptr<TargetOperationImplementation> getTargetOperationImplementation() const;
 
+public:
+    std::shared_ptr<ValueImplementation> getValueImplementation() const;
+
 private:
     std::shared_ptr<TargetOperationImplementation> _implementation;
 

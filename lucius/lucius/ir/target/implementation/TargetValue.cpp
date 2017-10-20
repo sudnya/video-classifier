@@ -9,6 +9,7 @@
 
 #include <lucius/ir/interface/Type.h>
 #include <lucius/ir/interface/Use.h>
+#include <lucius/ir/interface/Value.h>
 
 #include <lucius/ir/implementation/ValueImplementation.h>
 
@@ -45,6 +46,12 @@ private:
 
 TargetValue::TargetValue()
 : _implementation(std::make_shared<TargetValueImplementation>())
+{
+
+}
+
+TargetValue::TargetValue(Value v)
+: _implementation(std::static_pointer_cast<TargetValueImplementation>(v.getValueImplementation()))
 {
 
 }

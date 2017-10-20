@@ -8,6 +8,8 @@
 #include <lucius/ir/ops/interface/ApplyOperation.h>
 
 #include <lucius/ir/interface/ShapeList.h>
+#include <lucius/ir/interface/Value.h>
+#include <lucius/ir/interface/Use.h>
 
 #include <lucius/ir/implementation/OperationImplementation.h>
 

@@ -7,12 +7,15 @@
 #pragma once
 
 // Lucius Includes
-#include <lucius/ir/implementation/ValueImplementation.h>
+#include <lucius/ir/implementation/UserImplementation.h>
 
 // Forward Declarations
-namespace lucius { namespace ir { class ShapeList; } }
-namespace lucius { namespace ir { class Shape;     } }
-namespace lucius { namespace ir { class Use;       } }
+namespace lucius { namespace ir { class ShapeList;                } }
+namespace lucius { namespace ir { class Shape;                    } }
+namespace lucius { namespace ir { class Use;                      } }
+namespace lucius { namespace ir { class BasicBlock;               } }
+namespace lucius { namespace ir { class Operation;                } }
+namespace lucius { namespace ir { class BasicBlockImplementation; } }
 
 namespace lucius
 {
@@ -21,7 +24,7 @@ namespace ir
 {
 
 /*! \brief The implementation of a class that represents an operation in the program. */
-class OperationImplementation : public ValueImplementation
+class OperationImplementation : public UserImplementation, public ValueImplementation
 {
 public:
     // forward shape operation
@@ -31,11 +34,45 @@ public:
     virtual ShapeList getInputShapes(const ShapeList& outputShapes) const;
 
 public:
+    using UseList = std::list<Use>;
+
+public:
     const Use& getOperand(size_t index) const;
           Use& getOperand(size_t index);
 
     const Shape& getOperandShape(size_t index) const;
           Shape& getOperandShape(size_t index);
+
+public:
+    const UseList& getOperands() const;
+          UseList& getOperands();
+
+public:
+    void setOperands(const UseList& uses);
+
+public:
+          BasicBlock& getParent();
+    const BasicBlock& getParent() const;
+
+public:
+          Type& getType();
+    const Type& getType() const;
+
+public:
+    using OperationList = std::list<Operation>;
+
+    using operation_iterator = OperationList::iterator;
+    using const_operation_iterator = OperationList::const_iterator;
+
+public:
+          operation_iterator getIterator();
+    const_operation_iterator getIterator() const;
+
+public:
+    virtual std::string name() const;
+
+private:
+    std::weak_ptr<BasicBlockImplementation> _parent;
 
 };
 

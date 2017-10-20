@@ -8,6 +8,7 @@
 
 // Lucius Includes
 #include <lucius/ir/implementation/ValueImplementation.h>
+#include <lucius/ir/implementation/UserImplementation.h>
 
 // Standard Library Includes
 #include <list>
@@ -25,8 +26,11 @@ namespace ir
 {
 
 /*! \brief The implementation of a class that represents an operation in the program. */
-class TargetOperationImplementation : public ValueImplementation
+class TargetOperationImplementation : public UserImplementation, public ValueImplementation
 {
+public:
+    TargetOperationImplementation();
+
 public:
     const Use& getOperand(size_t index) const;
           Use& getOperand(size_t index);
@@ -50,12 +54,22 @@ public:
     void appendOperand(const TargetValue& v);
 
 public:
+          BasicBlock& getParent();
+    const BasicBlock& getParent() const;
+
+public:
     /*! \brief Get the performance metrics for this operations. */
     virtual PerformanceMetrics getPerformanceMetrics() const = 0;
 
 public:
     /*! \brief Execute the operation. */
     virtual BasicBlock execute() = 0;
+
+private:
+    void _growToSupportIndex(size_t index);
+
+private:
+    bool _hasOutputOperand;
 
 };
 

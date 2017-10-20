@@ -55,7 +55,7 @@ double OperationMemoryAnalysis::getOperationMemoryRequirement(const ir::Operatio
 {
     double memoryUsage = 0.0;
 
-    auto values = operation.getValues();
+    auto values = operation.getUsedValues();
 
     for(auto& value : values)
     {

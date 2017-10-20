@@ -6,11 +6,11 @@
 
 #pragma once
 
-// Lucius Includes
-#include <lucius/ir/interface/Value.h>
+// Standard Library Includes
+#include <memory>
 
 // Forward Declarations
-namespace lucius { namespace ir { class Use; } }
+namespace lucius { namespace ir { class UserImplementation;  } }
 
 namespace lucius
 {
@@ -19,13 +19,15 @@ namespace ir
 {
 
 /*! \brief A class for representing a user of other values. */
-class User : public Value
+class User
 {
-private:
-    using UseList = std::list<Use>;
+public:
+    User(std::shared_ptr<UserImplementation>);
+    ~User();
 
 private:
-    UseList _usedValues;
+    std::shared_ptr<UserImplementation> _implementation;
+
 };
 
 } // namespace ir

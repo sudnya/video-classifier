@@ -22,6 +22,12 @@ public:
     TypeImplementation(Type::TypeId);
     virtual ~TypeImplementation();
 
+public:
+    Type::TypeId getTypeId() const;
+
+public:
+    size_t getId() const;
+
 private:
     size_t _id;
 

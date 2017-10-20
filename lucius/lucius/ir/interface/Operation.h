@@ -12,12 +12,14 @@
 // Standard Library Includes
 #include <string>
 #include <vector>
+#include <list>
 
 // Forward Declarations
 namespace lucius { namespace ir { class OperationImplementation; } }
 namespace lucius { namespace ir { class ValueImplementation;     } }
 namespace lucius { namespace ir { class ShapeList;               } }
 namespace lucius { namespace ir { class Use;                     } }
+namespace lucius { namespace ir { class Type;                    } }
 namespace lucius { namespace ir { class Value;                   } }
 namespace lucius { namespace ir { class BasicBlock;              } }
 namespace lucius { namespace ir { class TargetOperation;         } }
@@ -69,7 +71,7 @@ public:
     OperationList getSuccessors() const;
 
 public:
-    ValueList getValues() const;
+    ValueList getUsedValues() const;
 
 public:
     /*! \brief Query whether or not the operation can change control flow. */
@@ -92,6 +94,9 @@ public:
 
 public:
     Operation clone() const;
+
+public:
+    std::string name() const;
 
 public:
     std::shared_ptr<ValueImplementation> getValueImplementation() const;

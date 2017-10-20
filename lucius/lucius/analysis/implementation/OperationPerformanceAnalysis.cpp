@@ -11,6 +11,7 @@
 #include <lucius/ir/target/interface/PerformanceMetrics.h>
 
 #include <lucius/ir/interface/Operation.h>
+#include <lucius/ir/interface/Value.h>
 
 #include <lucius/machine/interface/MachineModel.h>
 

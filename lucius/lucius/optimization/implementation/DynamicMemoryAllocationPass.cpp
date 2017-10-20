@@ -20,6 +20,7 @@
 #include <lucius/ir/interface/Function.h>
 #include <lucius/ir/interface/Type.h>
 #include <lucius/ir/interface/Use.h>
+#include <lucius/ir/interface/Value.h>
 
 // Standard Library Includes
 #include <cassert>

@@ -25,18 +25,19 @@ namespace ir
 /*! \brief A class for representing and tracking the use of a value. */
 class Use
 {
+public:
+    Use();
+    explicit Use(const Value&);
+    ~Use();
 
 public:
-          BasicBlock& getParent();
-    const BasicBlock& getParent() const;
+    BasicBlock getParent() const;
 
 public:
-          Operation& getOperation();
-    const Operation& getOperation() const;
+    Operation getOperation() const;
 
 public:
-          Value& getValue();
-    const Value& getValue() const;
+    Value getValue() const;
 
 private:
     std::shared_ptr<UseImplementation> _implementation;

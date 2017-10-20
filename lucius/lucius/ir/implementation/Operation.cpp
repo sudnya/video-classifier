@@ -7,10 +7,16 @@
 // Lucius Includes
 #include <lucius/ir/interface/Operation.h>
 
-#include <lucius/ir/interface/Use.h>
+#include <lucius/ir/target/interface/TargetOperation.h>
 
-// Forward Declarations
-namespace lucius { namespace ir { class BasicBlockImplementation; } }
+#include <lucius/ir/ops/implementation/ControlOperationImplementation.h>
+#include <lucius/ir/ops/implementation/ComputeGradientOperationImplementation.h>
+
+#include <lucius/ir/implementation/OperationImplementation.h>
+
+#include <lucius/ir/interface/Use.h>
+#include <lucius/ir/interface/Value.h>
+#include <lucius/ir/interface/ShapeList.h>
 
 namespace lucius
 {
@@ -18,12 +24,9 @@ namespace lucius
 namespace ir
 {
 
-class OperationImplementation : public User
-{
-private:
-    std::weak_ptr<BasicBlockImplementation> _parent;
-
-};
+using UseList = std::list<Use>;
+using OperationList = std::list<Operation>;
+using ValueList = std::list<Value>;
 
 Operation::Operation()
 : _implementation(std::make_shared<OperationImplementation>())
@@ -31,9 +34,176 @@ Operation::Operation()
 
 }
 
+Operation::Operation(std::shared_ptr<ValueImplementation> implementation)
+: _implementation(std::static_pointer_cast<OperationImplementation>(implementation))
+{
+
+}
+
+Operation::Operation(const TargetOperation& op)
+: Operation(op.getValueImplementation())
+{
+
+}
+
 Operation::~Operation()
 {
     // intentionally blank
+}
+
+ShapeList Operation::getOutputShapes(const ShapeList& inputShapes) const
+{
+    return _implementation->getOutputShapes(inputShapes);
+}
+
+ShapeList Operation::getInputShapes(const ShapeList& outputShapes) const
+{
+    return _implementation->getInputShapes(outputShapes);
+}
+
+const UseList& Operation::getOperands() const
+{
+    return _implementation->getOperands();
+}
+
+UseList& Operation::getOperands()
+{
+    return _implementation->getOperands();
+}
+
+const Use& Operation::getOperand(size_t index) const
+{
+    return _implementation->getOperand(index);
+}
+
+Use& Operation::getOperand(size_t index)
+{
+    return _implementation->getOperand(index);
+}
+
+void Operation::setOperands(const UseList& uses)
+{
+    _implementation->setOperands(uses);
+}
+
+void Operation::setOperands(const ValueList& values)
+{
+    UseList list;
+
+    for(auto& value : values)
+    {
+        list.push_back(Use(value));
+    }
+
+    setOperands(list);
+}
+
+OperationList Operation::getPredecessors() const
+{
+    OperationList operations;
+
+    for(auto& use : getOperands())
+    {
+        if(!use.getValue().isOperation())
+        {
+            continue;
+        }
+
+        operations.push_back(Operation(use.getOperation()));
+    }
+
+    return operations;
+}
+
+OperationList Operation::getSuccessors() const
+{
+    OperationList operations;
+
+    for(auto& use : _implementation->getUses())
+    {
+        operations.push_back(use.getOperation());
+    }
+
+    return operations;
+}
+
+ValueList Operation::getUsedValues() const
+{
+    ValueList values;
+
+    for(auto& use : getOperands())
+    {
+        values.push_back(use.getValue());
+    }
+
+    return values;
+}
+
+bool Operation::isControlOperation() const
+{
+    return static_cast<bool>(std::dynamic_pointer_cast<ControlOperationImplementation>(
+        getValueImplementation()));
+}
+
+bool Operation::isGradientOperation() const
+{
+    return static_cast<bool>(std::dynamic_pointer_cast<ComputeGradientOperationImplementation>(
+        getValueImplementation()));
+}
+
+Type& Operation::getType()
+{
+    return _implementation->getType();
+}
+
+const Type& Operation::getType() const
+{
+    return _implementation->getType();
+}
+
+BasicBlock& Operation::getParent()
+{
+    return _implementation->getParent();
+}
+
+const BasicBlock& Operation::getParent() const
+{
+    return _implementation->getParent();
+}
+
+Operation::operation_iterator Operation::getIterator()
+{
+    return _implementation->getIterator();
+}
+
+Operation::const_operation_iterator Operation::getIterator() const
+{
+    return _implementation->getIterator();
+}
+
+Operation Operation::clone() const
+{
+    return Operation(getValueImplementation()->clone());
+}
+
+std::string Operation::name() const
+{
+    return _implementation->name();
+}
+
+std::shared_ptr<ValueImplementation> Operation::getValueImplementation() const
+{
+    return _implementation;
+}
+
+bool Operation::operator==(const Operation& operation) const
+{
+    return getValueImplementation()->getId() == operation.getValueImplementation()->getId();
+}
+
+bool Operation::operator<(const Operation& operation) const
+{
+    return getValueImplementation()->getId() < operation.getValueImplementation()->getId();
 }
 
 } // namespace ir

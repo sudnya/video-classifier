@@ -23,7 +23,7 @@ namespace lucius
 namespace ir
 {
 
-/*! \brief A class for representing an operand to an operation. */
+/*! \brief A class for representing an operand to a target operation. */
 class TargetValue
 {
 public:
@@ -41,6 +41,9 @@ public:
 public:
     UseList& getUses();
     UseList& getDefinitions();
+
+public:
+    Value getValue() const;
 
 public:
     bool operator==(const TargetValue& v) const;

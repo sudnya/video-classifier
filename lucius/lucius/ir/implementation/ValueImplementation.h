@@ -21,7 +21,10 @@ namespace lucius
 namespace ir
 {
 
-/*! \brief The implementation of a class that represents a value in the program. */
+/*! \brief The implementation of a class that represents a value in the program.
+
+    Aside: Inheritance is the base class of evil.
+*/
 class ValueImplementation
 {
 public:
@@ -36,7 +39,7 @@ public:
     typedef std::list<Use> UseList;
 
 public:
-    UseList& getUses();
+          UseList& getUses();
     const UseList& getUses() const;
 
 public:
@@ -45,6 +48,9 @@ public:
 public:
     bool isOperation() const;
     bool isConstant() const;
+
+public:
+    virtual std::shared_ptr<ValueImplementation> clone() const;
 
 private:
     size_t _id;

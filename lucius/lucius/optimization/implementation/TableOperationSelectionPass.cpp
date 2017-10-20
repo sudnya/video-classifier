@@ -16,6 +16,7 @@
 #include <lucius/ir/interface/Function.h>
 #include <lucius/ir/interface/BasicBlock.h>
 #include <lucius/ir/interface/Use.h>
+#include <lucius/ir/interface/Value.h>
 
 #include <lucius/ir/target/interface/TargetOperationFactory.h>
 #include <lucius/ir/target/interface/TargetOperation.h>
@@ -66,7 +67,7 @@ static void generateOperations(OperationList& targetOperations,
             if(targetOperandEntry.isExistingOperand())
             {
                 auto& use = operation.getOperand(targetOperandEntry.getExistingOperandIndex());
-                auto& operand = use.getValue();
+                auto operand = use.getValue();
 
                 auto mapping = valueMap.find(operand);
 

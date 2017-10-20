@@ -19,7 +19,6 @@ namespace ir
 class ControlOperation : public Operation
 {
 public:
-    ControlOperation();
     explicit ControlOperation(std::shared_ptr<ValueImplementation>);
     ~ControlOperation();
 

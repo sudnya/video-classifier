@@ -393,7 +393,7 @@ static ValueSets schedulePhases(const OperationVectors& wavefronts, double avail
 
             for(auto& operation : wavefront)
             {
-                auto values = operation.getValues();
+                auto values = operation.getUsedValues();
 
                 for(auto& value : values)
                 {
@@ -507,7 +507,7 @@ static bool isReady(const Value& value, const ValueMap& savedValues,
 {
     auto operation = ir::value_cast<Operation>(value);
 
-    auto values = operation.getValues();
+    auto values = operation.getUsedValues();
 
     for(auto& predecessor : values)
     {

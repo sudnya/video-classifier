@@ -9,9 +9,11 @@
 
 #include <lucius/ir/interface/Function.h>
 #include <lucius/ir/interface/Value.h>
+#include <lucius/ir/interface/Use.h>
 #include <lucius/ir/interface/Operation.h>
 
 #include <lucius/ir/implementation/ValueImplementation.h>
+#include <lucius/ir/implementation/UserImplementation.h>
 
 // Standard Library Includes
 #include <set>
@@ -25,7 +27,7 @@ namespace ir
 using OperationList = std::list<Operation>;
 using BasicBlockSet  = std::set<BasicBlock>;
 
-class BasicBlockImplementation : public ValueImplementation
+class BasicBlockImplementation : public ValueImplementation, public UserImplementation
 {
 public:
     Function getFunction()
@@ -82,6 +84,23 @@ private:
 
 };
 
+BasicBlock::BasicBlock()
+: _implementation(std::make_shared<BasicBlockImplementation>())
+{
+
+}
+
+BasicBlock::BasicBlock(std::shared_ptr<ValueImplementation> implementation)
+: _implementation(std::static_pointer_cast<BasicBlockImplementation>(implementation))
+{
+
+}
+
+BasicBlock::BasicBlock(std::shared_ptr<UserImplementation> implementation)
+: _implementation(std::static_pointer_cast<BasicBlockImplementation>(implementation))
+{
+
+}
 
 Function BasicBlock::getFunction()
 {

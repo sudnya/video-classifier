@@ -13,7 +13,8 @@ namespace lucius
 namespace ir
 {
 
-ControlOperation::ControlOperation()
+ControlOperation::ControlOperation(std::shared_ptr<ValueImplementation> implementation)
+: Operation(implementation)
 {
 
 }

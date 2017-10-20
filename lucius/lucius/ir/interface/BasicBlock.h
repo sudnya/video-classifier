@@ -13,6 +13,8 @@
 
 // Forward Declarations
 namespace lucius { namespace ir { class BasicBlockImplementation; } }
+namespace lucius { namespace ir { class ValueImplementation;      } }
+namespace lucius { namespace ir { class UserImplementation;       } }
 namespace lucius { namespace ir { class Operation;                } }
 namespace lucius { namespace ir { class Function;                 } }
 
@@ -26,6 +28,11 @@ namespace ir
 /*! \brief A class for representing a basic block of operations in a program. */
 class BasicBlock
 {
+public:
+    BasicBlock();
+    BasicBlock(std::shared_ptr<ValueImplementation> implementation);
+    BasicBlock(std::shared_ptr<UserImplementation> implementation);
+
 public:
     Function getFunction();
 

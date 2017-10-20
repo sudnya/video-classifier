@@ -17,6 +17,7 @@
 #include <lucius/ir/interface/Program.h>
 #include <lucius/ir/interface/Operation.h>
 #include <lucius/ir/interface/Function.h>
+#include <lucius/ir/interface/Value.h>
 
 #include <lucius/ir/target/interface/TargetOperation.h>
 #include <lucius/ir/target/interface/TargetControlOperation.h>
