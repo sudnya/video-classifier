@@ -28,8 +28,11 @@ public:
     UseList& getPredecessorUses();
     const UseList& getPredecessorUses() const;
 
+public:
+    void setPredecessorUses(const UseList& uses);
+
 private:
-    UseList _uses;
+    UseList _predecessorUses;
 };
 
 } // namespace ir

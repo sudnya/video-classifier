@@ -7,6 +7,8 @@
 // Lucius Includes
 #include <lucius/ir/interface/Operation.h>
 
+#include <lucius/ir/interface/BasicBlock.h>
+
 #include <lucius/ir/target/interface/TargetOperation.h>
 
 #include <lucius/ir/ops/implementation/ControlOperationImplementation.h>
@@ -161,12 +163,7 @@ const Type& Operation::getType() const
     return _implementation->getType();
 }
 
-BasicBlock& Operation::getParent()
-{
-    return _implementation->getParent();
-}
-
-const BasicBlock& Operation::getParent() const
+BasicBlock Operation::getParent() const
 {
     return _implementation->getParent();
 }

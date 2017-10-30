@@ -85,8 +85,7 @@ public:
     const Type& getType() const;
 
 public:
-          BasicBlock& getParent();
-    const BasicBlock& getParent() const;
+    BasicBlock getParent() const;
 
 public:
           operation_iterator getIterator();

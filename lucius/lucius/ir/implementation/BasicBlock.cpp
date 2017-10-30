@@ -102,6 +102,12 @@ BasicBlock::BasicBlock(std::shared_ptr<UserImplementation> implementation)
 
 }
 
+BasicBlock::BasicBlock(std::shared_ptr<BasicBlockImplementation> implementation)
+: _implementation(implementation)
+{
+
+}
+
 Function BasicBlock::getFunction()
 {
     return _implementation->getFunction();

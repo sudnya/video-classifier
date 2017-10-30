@@ -562,7 +562,7 @@ static void addRecomputeOperations(ValueMap& recomputedValues,
 
         auto operation = ir::value_cast<Operation>(value);
 
-        auto& block = operation.getParent();
+        auto block = operation.getParent();
 
         auto newBlock = addOrGetBasicBlock(subgraph, blockMap, block);
 

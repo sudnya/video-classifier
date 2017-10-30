@@ -32,6 +32,7 @@ public:
     BasicBlock();
     BasicBlock(std::shared_ptr<ValueImplementation> implementation);
     BasicBlock(std::shared_ptr<UserImplementation> implementation);
+    BasicBlock(std::shared_ptr<BasicBlockImplementation> implementation);
 
 public:
     Function getFunction();

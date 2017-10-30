@@ -36,6 +36,7 @@ public:
 
 public:
     const Shape& getShape() const;
+    const Precision& getPrecision() const;
 
 };
 

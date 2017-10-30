@@ -51,12 +51,7 @@ public:
     void setOperands(const UseList& uses);
 
 public:
-          BasicBlock& getParent();
-    const BasicBlock& getParent() const;
-
-public:
-          Type& getType();
-    const Type& getType() const;
+    BasicBlock getParent() const;
 
 public:
     using OperationList = std::list<Operation>;
@@ -73,6 +68,9 @@ public:
 
 private:
     std::weak_ptr<BasicBlockImplementation> _parent;
+
+private:
+    operation_iterator _iterator;
 
 };
 

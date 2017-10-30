@@ -39,7 +39,7 @@ public:
     };
 
 public:
-    Type(TypeId id);
+    Type(TypeId);
     Type(std::shared_ptr<TypeImplementation>);
     Type();
     ~Type();
@@ -70,7 +70,6 @@ T type_cast(const V& v)
 {
     return T(v.getTypeImplementation());
 }
-
 
 } // namespace ir
 } // namespace lucius

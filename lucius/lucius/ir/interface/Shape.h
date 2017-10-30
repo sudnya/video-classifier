@@ -1,4 +1,4 @@
-/*  \file   Shape .h
+/*  \file   Shape.h
     \author Gregory Diamos
     \date   October 1, 2017
     \brief  The header file for the Shape class.
@@ -6,8 +6,12 @@
 
 #pragma once
 
+// Standard Library Includes
+#include <memory>
+
 // Forward Declarations
-namespace lucius { namespace matrix { class Dimension; } }
+namespace lucius { namespace matrix { class Dimension;           } }
+namespace lucius { namespace ir     { class ShapeImplementation; } }
 
 namespace lucius
 {
@@ -20,6 +24,11 @@ class Shape
 public:
     Shape();
     Shape(const matrix::Dimension& d);
+    Shape(const Shape& );
+    ~Shape();
+
+public:
+    Shape& operator=(const Shape& );
 
 public:
     /*! \brief Indicate that the shape is completely unknown. */
@@ -27,8 +36,19 @@ public:
 
 public:
     /*! \brief Get a reference to the index. */
-          size_t& operator[](size_t i);
-    const size_t& operator[](size_t i) const;
+    size_t& operator[](size_t i);
+    size_t  operator[](size_t i) const;
+
+public:
+    /*! \brief Get the number of dimensions. */
+    size_t size() const;
+
+public:
+    /*! \brief Get the total number of elements, if known. */
+    size_t elements() const;
+
+private:
+    std::unique_ptr<ShapeImplementation> _implementation;
 
 };
 
