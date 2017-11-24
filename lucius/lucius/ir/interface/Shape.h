@@ -23,6 +23,7 @@ class Shape
 {
 public:
     Shape();
+    Shape(std::initializer_list<size_t>);
     Shape(const matrix::Dimension& d);
     Shape(const Shape& );
     ~Shape();

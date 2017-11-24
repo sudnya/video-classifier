@@ -50,6 +50,10 @@ public:
     bool isConstant() const;
 
 public:
+    bool isVariable() const;
+    void setIsVariable(bool b);
+
+public:
     virtual std::shared_ptr<ValueImplementation> clone() const;
 
 private:
@@ -60,6 +64,9 @@ private:
 
 private:
     UseList _uses;
+
+private:
+    bool _isVariable;
 
 };
 

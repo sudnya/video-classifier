@@ -6,6 +6,9 @@
 
 #pragma once
 
+// Standard Library Includes
+#include <vector>
+
 // Forward Declarations
 namespace lucius { namespace ir { class Shape; } }
 
@@ -25,6 +28,9 @@ public:
 public:
           Shape& front();
     const Shape& front() const;
+
+private:
+    std::vector<Shape> _shapes;
 
 };
 

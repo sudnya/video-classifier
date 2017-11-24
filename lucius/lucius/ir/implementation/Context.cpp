@@ -67,6 +67,18 @@ Type Context::addType(Type type)
     return _implementation->addType(type);
 }
 
+std::unique_ptr<Context> defaultContext;
+
+Context& Context::getDefaultContext()
+{
+    if(!defaultContext)
+    {
+        defaultContext = std::make_unique<Context>();
+    }
+
+    return *defaultContext;
+}
+
 } // namespace ir
 } // namespace lucius
 

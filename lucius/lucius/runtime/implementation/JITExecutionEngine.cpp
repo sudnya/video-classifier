@@ -211,7 +211,7 @@ private:
     }
 
 private:
-    Bundle _lowerAndExecuteFunction(Function& function)
+    Bundle _lowerAndExecuteFunction(Function function)
     {
         if(!_getBasicBlockCache().contains(function))
         {

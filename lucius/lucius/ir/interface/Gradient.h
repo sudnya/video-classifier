@@ -6,8 +6,14 @@
 
 #pragma once
 
-// Lucius Includes
-#include <lucius/ir/interface/Value.h>
+// Standard Library Includes
+#include <memory>
+
+// Forward Declarations
+namespace lucius { namespace ir { class Value;                   } }
+namespace lucius { namespace ir { class Operation;               } }
+namespace lucius { namespace ir { class OperationImplementation; } }
+namespace lucius { namespace ir { class ValueImplementation;     } }
 
 namespace lucius
 {
@@ -15,14 +21,20 @@ namespace lucius
 namespace ir
 {
 
-/*! \brief A class for a gradient value. */
-class Gradient : public Value
+/*! \brief A class for a gradient value that should be computed. */
+class Gradient
 {
 public:
     Gradient();
     explicit Gradient(Value );
     explicit Gradient(Operation );
     ~Gradient();
+
+public:
+    std::shared_ptr<ValueImplementation> getValueImplementation();
+
+public:
+    std::shared_ptr<OperationImplementation> _implementation;
 
 };
 

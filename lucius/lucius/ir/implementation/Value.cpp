@@ -9,6 +9,8 @@
 #include <lucius/ir/interface/Operation.h>
 #include <lucius/ir/interface/Constant.h>
 #include <lucius/ir/interface/Use.h>
+#include <lucius/ir/interface/BasicBlock.h>
+#include <lucius/ir/interface/Gradient.h>
 
 #include <lucius/ir/implementation/ValueImplementation.h>
 
@@ -24,6 +26,12 @@ Value::Value()
 
 }
 
+Value::Value(std::shared_ptr<ValueImplementation> implementation)
+: _implementation(implementation)
+{
+
+}
+
 Value::Value(Operation o)
 : _implementation(o.getValueImplementation())
 {
@@ -32,6 +40,18 @@ Value::Value(Operation o)
 
 Value::Value(Constant c)
 : _implementation(c.getValueImplementation())
+{
+
+}
+
+Value::Value(BasicBlock b)
+: _implementation(b.getValueImplementation())
+{
+
+}
+
+Value::Value(Gradient g)
+: _implementation(g.getValueImplementation())
 {
 
 }

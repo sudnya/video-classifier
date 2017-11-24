@@ -6,7 +6,7 @@
 
 // Lucius Includes
 #include <lucius/ir/interface/Constant.h>
-#include <lucius/ir/interface/Value.h>
+#include <lucius/ir/implementation/ValueImplementation.h>
 
 namespace lucius
 {
@@ -14,9 +14,20 @@ namespace lucius
 namespace ir
 {
 
-class ConstantImplementation : public Value
+class ConstantImplementation : public ValueImplementation
 {
 };
+
+Constant::Constant(std::shared_ptr<ValueImplementation> implementation)
+: _implementation(implementation)
+{
+
+}
+
+std::shared_ptr<ValueImplementation> Constant::getValueImplementation() const
+{
+    return _implementation;
+}
 
 } // namespace ir
 } // namespace lucius

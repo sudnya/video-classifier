@@ -27,6 +27,9 @@ public:
 
 public:
     std::shared_ptr<ValueImplementation> getValueImplementation() const;
+
+private:
+    std::shared_ptr<ValueImplementation> _implementation;
 };
 
 } // namespace ir

@@ -33,6 +33,9 @@ public:
 public:
     Type addType(Type t);
 
+public:
+    static Context& getDefaultContext();
+
 private:
     std::unique_ptr<ContextImplementation> _implementation;
 

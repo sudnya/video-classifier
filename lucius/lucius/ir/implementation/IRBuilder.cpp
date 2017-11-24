@@ -20,6 +20,7 @@
 #include <lucius/ir/interface/InsertionPoint.h>
 
 #include <lucius/ir/values/interface/ConstantTensor.h>
+#include <lucius/ir/values/interface/ConstantShape.h>
 #include <lucius/ir/values/interface/ConstantInteger.h>
 
 #include <lucius/ir/ops/interface/CopyOperation.h>
@@ -36,12 +37,16 @@
 #include <lucius/ir/ops/interface/RandOperation.h>
 #include <lucius/ir/ops/interface/RandnOperation.h>
 
+#include <lucius/ir/ops/interface/GetOperation.h>
+
 #include <lucius/ir/ops/interface/ConditionalBranchOperation.h>
 
 #include <lucius/ir/ops/interface/ComputeGradientOperation.h>
 
 #include <lucius/ir/types/interface/TensorType.h>
 #include <lucius/ir/types/interface/RandomStateType.h>
+
+#include <lucius/ir/implementation/ValueImplementation.h>
 
 // Standard Library Includes
 #include <list>
@@ -106,6 +111,11 @@ public:
         _currentInsertionPoint = p;
     }
 
+    void setInsertionPoint(const BasicBlock& block)
+    {
+        *_currentInsertionPoint = InsertionPoint(block);
+    }
+
 public:
     Operation insertOperation(const Operation& op)
     {
@@ -167,9 +177,19 @@ void IRBuilder::setInsertionPoint(InsertionPoint* point)
     _implementation->setInsertionPoint(point);
 }
 
+void IRBuilder::setInsertionPoint(const BasicBlock& block)
+{
+    _implementation->setInsertionPoint(block);
+}
+
 Constant IRBuilder::addConstant(const Matrix& value)
 {
     return _implementation->addConstant(ConstantTensor(value));
+}
+
+Constant IRBuilder::addConstant(const Dimension& value)
+{
+    return _implementation->addConstant(ConstantShape(value));
 }
 
 Constant IRBuilder::addConstant(int64_t value)
@@ -273,6 +293,11 @@ Value IRBuilder::addRandn(Value state, Type tensorType)
     return _implementation->insertOperation(RandnOperation(state, tensorType));
 }
 
+Value IRBuilder::addGet(Value container, Value position)
+{
+    return _implementation->insertOperation(GetOperation(container, position));
+}
+
 Value IRBuilder::addConditionalBranch(Value predicate, BasicBlock target, BasicBlock fallthrough)
 {
     return _implementation->insertOperation(ConditionalBranchOperation(predicate,
@@ -308,6 +333,13 @@ IRBuilder::VariableVector IRBuilder::getAllVariables()
 Gradient IRBuilder::addGradientForVariable(Variable v, Value cost)
 {
     return Gradient(_implementation->insertOperation(ComputeGradientOperation(v, cost)));
+}
+
+Variable IRBuilder::registerValueAsVariable(Value value)
+{
+    value.getValueImplementation()->setIsVariable(true);
+
+    return Variable(value);
 }
 
 void IRBuilder::saveInsertionPoint()

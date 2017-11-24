@@ -38,8 +38,10 @@ public:
 
 public:
     BasicBlock& getBasicBlock();
+    const BasicBlock& getBasicBlock() const;
     OperationList::iterator& getIterator();
-    Function getFunction();
+    const OperationList::iterator& getIterator() const;
+    Function getFunction() const;
 
 public:
     std::unique_ptr<InsertionPointImplementation> _implementation;

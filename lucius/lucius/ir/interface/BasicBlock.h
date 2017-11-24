@@ -35,7 +35,7 @@ public:
     BasicBlock(std::shared_ptr<BasicBlockImplementation> implementation);
 
 public:
-    Function getFunction();
+    Function getFunction() const;
 
 public:
     void push_back(const Operation& op);
@@ -99,8 +99,18 @@ public:
     void addSuccessor(const BasicBlock& successor);
 
 public:
+    using BasicBlockList = std::list<BasicBlock>;
+
+public:
+    BasicBlockList::iterator getIterator();
+    BasicBlockList::const_iterator getIterator() const;
+
+public:
     bool operator==(const BasicBlock& block) const;
     bool operator<(const BasicBlock& block) const;
+
+public:
+    std::shared_ptr<ValueImplementation> getValueImplementation();
 
 private:
     std::shared_ptr<BasicBlockImplementation> _implementation;

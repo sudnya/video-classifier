@@ -61,6 +61,12 @@ Shape::Shape()
 
 }
 
+Shape::Shape(std::initializer_list<size_t> d)
+: Shape(matrix::Dimension(d))
+{
+
+}
+
 Shape::Shape(const matrix::Dimension& d)
 : _implementation(std::make_unique<ShapeImplementation>(d))
 {

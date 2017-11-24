@@ -16,6 +16,7 @@ namespace lucius { namespace ir { class Operation;  } }
 namespace lucius { namespace ir { class Constant;   } }
 namespace lucius { namespace ir { class Type;       } }
 namespace lucius { namespace ir { class BasicBlock; } }
+namespace lucius { namespace ir { class Gradient;   } }
 
 namespace lucius { namespace ir { class ValueImplementation; } }
 
@@ -33,6 +34,7 @@ public:
     Value(Operation o);
     Value(Constant c);
     Value(BasicBlock b);
+    Value(Gradient g);
     Value(std::shared_ptr<ValueImplementation>);
     ~Value();
 
@@ -52,6 +54,9 @@ public:
 
     /*! \brief Test if the value type is void. */
     bool isVoid() const;
+
+    /*! \brief Test if the value is a variable. */
+    bool isVariable() const;
 
 public:
     using UseList = std::list<Use>;

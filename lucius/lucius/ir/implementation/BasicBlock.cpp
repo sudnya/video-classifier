@@ -30,7 +30,7 @@ using BasicBlockSet  = std::set<BasicBlock>;
 class BasicBlockImplementation : public ValueImplementation, public UserImplementation
 {
 public:
-    Function getFunction()
+    Function getFunction() const
     {
          return Function(_parent.lock());
     }
@@ -108,7 +108,7 @@ BasicBlock::BasicBlock(std::shared_ptr<BasicBlockImplementation> implementation)
 
 }
 
-Function BasicBlock::getFunction()
+Function BasicBlock::getFunction() const
 {
     return _implementation->getFunction();
 }
@@ -241,6 +241,11 @@ bool BasicBlock::operator==(const BasicBlock& block) const
 bool BasicBlock::operator<(const BasicBlock& block) const
 {
     return _implementation->getId() < block._implementation->getId();
+}
+
+std::shared_ptr<ValueImplementation> BasicBlock::getValueImplementation()
+{
+    return _implementation;
 }
 
 } // namespace ir

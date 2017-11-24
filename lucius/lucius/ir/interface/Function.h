@@ -68,6 +68,12 @@ public:
           iterator end();
     const_iterator end() const;
 
+public:
+    void setName(const std::string& name);
+
+public:
+    const std::string& name() const;
+
 private:
     std::shared_ptr<FunctionImplementation> _implementation;
 };

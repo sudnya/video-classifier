@@ -19,6 +19,7 @@
 #include <lucius/ir/interface/Use.h>
 #include <lucius/ir/interface/Value.h>
 #include <lucius/ir/interface/ShapeList.h>
+#include <lucius/ir/interface/Shape.h>
 
 namespace lucius
 {

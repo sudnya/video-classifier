@@ -19,6 +19,7 @@ namespace ir
 {
 
 ValueImplementation::ValueImplementation()
+: _isVariable(false)
 {
 
 }
@@ -61,6 +62,16 @@ bool ValueImplementation::isOperation() const
 bool ValueImplementation::isConstant() const
 {
     return dynamic_cast<const ConstantImplementation*>(this);
+}
+
+bool ValueImplementation::isVariable() const
+{
+    return _isVariable;
+}
+
+void ValueImplementation::setIsVariable(bool b)
+{
+    _isVariable = b;
 }
 
 } // namespace ir

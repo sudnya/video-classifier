@@ -8,6 +8,7 @@
 #include <lucius/ir/ops/interface/CopyOperation.h>
 
 #include <lucius/ir/interface/ShapeList.h>
+#include <lucius/ir/interface/Shape.h>
 #include <lucius/ir/interface/Use.h>
 #include <lucius/ir/interface/Value.h>
 

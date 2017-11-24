@@ -82,12 +82,22 @@ BasicBlock& InsertionPoint::getBasicBlock()
     return _implementation->block;
 }
 
+const BasicBlock& InsertionPoint::getBasicBlock() const
+{
+    return _implementation->block;
+}
+
 InsertionPoint::OperationList::iterator& InsertionPoint::getIterator()
 {
     return _implementation->positionInBlock;
 }
 
-Function InsertionPoint::getFunction()
+const InsertionPoint::OperationList::iterator& InsertionPoint::getIterator() const
+{
+    return _implementation->positionInBlock;
+}
+
+Function InsertionPoint::getFunction() const
 {
     return getBasicBlock().getFunction();
 }

@@ -31,28 +31,22 @@ public:
 
 public:
     /* \brief Interface for initialization code. */
-          Function& getInitializationEntryPoint();
-    const Function& getInitializationEntryPoint() const;
+    Function getInitializationEntryPoint() const;
 
     /*! \brief Interface for data producer code. */
-          Function& getDataProducerEntryPoint();
-    const Function& getDataProducerEntryPoint() const;
+    Function getDataProducerEntryPoint() const;
 
     /*! \brief Interface for cost code. */
-          Function& getCostFunctionEntryPoint();
-    const Function& getCostFunctionEntryPoint() const;
+    Function getCostFunctionEntryPoint() const;
 
     /*! \brief Interface for forward code. */
-          Function& getForwardPropagationEntryPoint();
-    const Function& getForwardPropagationEntryPoint() const;
+    Function getForwardPropagationEntryPoint() const;
 
     /*! \brief Interface for engine code. */
-          Function& getEngineEntryPoint();
-    const Function& getEngineEntryPoint() const;
+    Function getEngineEntryPoint() const;
 
     /*! \brief Interface for status code. */
-          Function& getIsFinishedFunction();
-    const Function& getIsFinishedFunction() const;
+    Function getIsFinishedFunction() const;
 
 public:
     /*! \brief Get access to the module associated with the program. */

@@ -30,6 +30,7 @@ class Module
 {
 public:
     Module(Context& context);
+    Module();
     ~Module();
 
 public:
@@ -45,6 +46,9 @@ public:
     bool containsFunction(const std::string& name) const;
 
 public:
+    Function getFunction(const std::string& name) const;
+
+public:
     using FunctionList = std::list<Function>;
     using iterator = FunctionList::iterator;
     using const_iterator = FunctionList::const_iterator;
@@ -55,6 +59,9 @@ public:
 
           iterator end();
     const_iterator end() const;
+
+public:
+    void clear();
 
 private:
     std::shared_ptr<ModuleImplementation> _implementation;

@@ -9,6 +9,7 @@
 
 #include <lucius/ir/interface/Function.h>
 #include <lucius/ir/interface/Variable.h>
+#include <lucius/ir/interface/Context.h>
 
 namespace lucius
 {
@@ -47,12 +48,40 @@ public:
         return *_context;
     }
 
-private:
-    Context* _context;
-
-private:
+public:
     using FunctionList = std::list<Function>;
     using VariableList = std::list<Variable>;
+
+public:
+    FunctionList::iterator begin()
+    {
+        return _functions.begin();
+    }
+
+    FunctionList::const_iterator begin() const
+    {
+        return _functions.begin();
+    }
+
+    FunctionList::iterator end()
+    {
+        return _functions.end();
+    }
+
+    FunctionList::const_iterator end() const
+    {
+        return _functions.end();
+    }
+
+public:
+    void clear()
+    {
+        _functions.clear();
+        _variables.clear();
+    }
+
+private:
+    Context* _context;
 
 private:
     FunctionList _functions;
@@ -61,6 +90,12 @@ private:
 
 Module::Module(Context& context)
 : _implementation(std::make_shared<ModuleImplementation>(context))
+{
+
+}
+
+Module::Module()
+: Module(Context::getDefaultContext())
 {
 
 }
@@ -83,6 +118,31 @@ Variable Module::addVariable(Variable v)
 Context& Module::getContext()
 {
     return _implementation->getContext();
+}
+
+Module::iterator Module::begin()
+{
+    return _implementation->begin();
+}
+
+Module::const_iterator Module::begin() const
+{
+    return _implementation->begin();
+}
+
+Module::iterator Module::end()
+{
+    return _implementation->end();
+}
+
+Module::const_iterator Module::end() const
+{
+    return _implementation->end();
+}
+
+void Module::clear()
+{
+    _implementation->clear();
 }
 
 } // namespace ir

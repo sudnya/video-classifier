@@ -18,11 +18,13 @@ namespace ir
 /*! \brief A class for representing a value corresponding to model parameters in a program. */
 class Variable : public Value
 {
-
+public:
+    Variable();
+    Variable(const Value& v);
 
 };
 
-} // namespace network
+} // namespace ir
 } // namespace lucius
 
 
