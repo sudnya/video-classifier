@@ -38,6 +38,7 @@
 #include <lucius/ir/ops/interface/RandnOperation.h>
 
 #include <lucius/ir/ops/interface/GetOperation.h>
+#include <lucius/ir/ops/interface/LessThanOperation.h>
 
 #include <lucius/ir/ops/interface/ConditionalBranchOperation.h>
 
@@ -163,6 +164,11 @@ private:
 
 IRBuilder::IRBuilder(Context& context)
 : _implementation(std::make_unique<IRBuilderImplementation>(context))
+{
+
+}
+
+IRBuilder::~IRBuilder()
 {
 
 }
@@ -296,6 +302,12 @@ Value IRBuilder::addRandn(Value state, Type tensorType)
 Value IRBuilder::addGet(Value container, Value position)
 {
     return _implementation->insertOperation(GetOperation(container, position));
+}
+
+Value IRBuilder::addLessThan(Value left, Value right)
+{
+    return _implementation->insertOperation(LessThanOperation(
+        left, right));
 }
 
 Value IRBuilder::addConditionalBranch(Value predicate, BasicBlock target, BasicBlock fallthrough)

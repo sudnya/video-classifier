@@ -6,7 +6,6 @@
 
 #pragma once
 
-
 // Forward Declarations
 namespace lucius { namespace machine { class TableEntry; } }
 

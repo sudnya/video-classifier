@@ -27,6 +27,12 @@ using Matrix = matrix::Matrix;
 class ContextImplementation
 {
 public:
+    ContextImplementation()
+    : _builder(getContext())
+    {
+
+    }
+
     ir::Context& getContext()
     {
         return _context;
@@ -73,6 +79,17 @@ private:
     ir::IRBuilder _builder;
 
 };
+
+Context::Context()
+: _implementation(std::make_unique<ContextImplementation>())
+{
+
+}
+
+Context::~Context()
+{
+    // intentionally blank
+}
 
 ir::Context& Context::getContext()
 {

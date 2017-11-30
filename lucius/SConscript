@@ -29,7 +29,8 @@ directories = ['lucius/audio', 'lucius/driver', 'lucius/util', 'lucius/engine',
     'lucius/optimizer', 'lucius/parallel', 'lucius/video', 'lucius/visualization',
     'lucius/database', 'lucius/input', 'lucius/results', 'lucius/api', 'lucius/text',
     'lucius/ir', 'lucius/ir/types', 'lucius/ir/target', 'lucius/ir/values', 'lucius/ir/ops',
-    'lucius/runtime', 'lucius/analysis', 'lucius/lazy-ir', 'lucius/optimization']
+    'lucius/runtime', 'lucius/analysis', 'lucius/lazy-ir', 'lucius/optimization',
+    'lucius/machine']
 
 source_directories = [os.path.join(i, 'implementation') for i in directories]
 

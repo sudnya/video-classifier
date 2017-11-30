@@ -1,11 +1,11 @@
-/*  \file   GetOperation.cpp
+/*  \file   LessThanOperation.cpp
     \author Gregory Diamos
     \date   October 1, 2017
-    \brief  The source file for the GetOperation class.
+    \brief  The source file for the LessThanOperation class.
 */
 
 // Lucius Includes
-#include <lucius/ir/ops/interface/GetOperation.h>
+#include <lucius/ir/ops/interface/LessThanOperation.h>
 
 #include <lucius/ir/interface/ShapeList.h>
 #include <lucius/ir/interface/Value.h>
@@ -25,7 +25,7 @@ namespace lucius
 namespace ir
 {
 
-class GetOperationImplementation : public OperationImplementation
+class LessThanOperationImplementation : public OperationImplementation
 {
 
 public:
@@ -40,19 +40,20 @@ public:
     }
 };
 
-GetOperation::GetOperation(Value container, Value position)
-: Operation(std::make_shared<GetOperationImplementation>())
+LessThanOperation::LessThanOperation(Value left, Value right)
+: Operation(std::make_shared<LessThanOperationImplementation>())
 {
-    setOperands({container, position});
+    setOperands({left, right});
 }
 
-GetOperation::~GetOperation()
+LessThanOperation::~LessThanOperation()
 {
 
 }
 
 } // namespace ir
 } // namespace lucius
+
 
 
 

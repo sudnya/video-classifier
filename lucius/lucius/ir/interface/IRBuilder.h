@@ -42,6 +42,7 @@ class IRBuilder
 {
 public:
     IRBuilder(Context& context);
+    ~IRBuilder();
 
 public:
     InsertionPoint* getInsertionPoint();
@@ -99,6 +100,9 @@ public:
 
     /*! \brief Insert a new get operation. */
     Value addGet(Value container, Value position);
+
+    /*! \brief Insert a new less-than operation. */
+    Value addLessThan(Value left, Value right);
 
 public:
     /*! \brief Insert a new conditional branch operation. */
