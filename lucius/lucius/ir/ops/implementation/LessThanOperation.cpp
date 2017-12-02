@@ -38,6 +38,18 @@ public:
     {
         return {getOperandShape(0), getOperandShape(1)};
     }
+
+public:
+    virtual std::shared_ptr<ValueImplementation> clone() const
+    {
+        return std::make_shared<LessThanOperationImplementation>(*this);
+    }
+
+public:
+    std::string name() const
+    {
+        return "less";
+    }
 };
 
 LessThanOperation::LessThanOperation(Value left, Value right)

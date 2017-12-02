@@ -100,6 +100,11 @@ TargetOperation::getTargetOperationImplementation() const
     return std::static_pointer_cast<TargetOperationImplementation>(_implementation);
 }
 
+std::shared_ptr<ValueImplementation> TargetOperation::getValueImplementation() const
+{
+    return _implementation;
+}
+
 } // namespace ir
 } // namespace lucius
 

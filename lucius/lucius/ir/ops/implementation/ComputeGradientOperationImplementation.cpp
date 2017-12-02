@@ -16,6 +16,9 @@
 
 #include <lucius/ir/implementation/OperationImplementation.h>
 
+// Standard Library Includes
+#include <string>
+
 namespace lucius
 {
 
@@ -34,6 +37,16 @@ ShapeList ComputeGradientOperationImplementation::getInputShapes(
     auto cost = value_cast<TensorValue>(getOperand(1).getValue());
 
     return {outputShapes.front(), cost.getShape()};
+}
+
+std::shared_ptr<ValueImplementation> ComputeGradientOperationImplementation::clone() const
+{
+    return std::make_shared<ComputeGradientOperationImplementation>(*this);
+}
+
+std::string ComputeGradientOperationImplementation::name() const
+{
+    return "gradient";
 }
 
 } // namespace ir

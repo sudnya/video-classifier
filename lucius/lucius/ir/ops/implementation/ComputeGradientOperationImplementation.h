@@ -19,6 +19,12 @@ public:
     ShapeList getOutputShapes(const ShapeList& inputShapes) const;
     ShapeList getInputShapes(const ShapeList& outputShapes) const;
 
+public:
+    std::shared_ptr<ValueImplementation> clone() const;
+
+public:
+    std::string name() const;
+
 };
 
 } // namespace ir

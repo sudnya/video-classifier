@@ -43,6 +43,18 @@ public:
         return ShapeList();
     }
 
+public:
+    virtual std::shared_ptr<ValueImplementation> clone() const
+    {
+        return std::make_shared<RangeOperationImplementation>(*this);
+    }
+
+public:
+    std::string name() const
+    {
+        return "range";
+    }
+
 private:
     Type _tensorType;
 

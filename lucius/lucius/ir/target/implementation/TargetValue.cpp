@@ -45,7 +45,6 @@ private:
 };
 
 TargetValue::TargetValue()
-: _implementation(std::make_shared<TargetValueImplementation>())
 {
 
 }
@@ -81,9 +80,19 @@ TargetValue::UseList& TargetValue::getDefinitions()
     return _implementation->getDefinitions();
 }
 
+Value TargetValue::getValue() const
+{
+    return Value(_implementation);
+}
+
 bool TargetValue::operator==(const TargetValue& v) const
 {
     return _implementation->getId() == v._implementation->getId();
+}
+
+bool TargetValue::operator==(const Value& v) const
+{
+    return _implementation->getId() == v.getValueImplementation()->getId();
 }
 
 } // namespace ir

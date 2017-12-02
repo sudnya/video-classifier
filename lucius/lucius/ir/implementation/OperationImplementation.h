@@ -64,7 +64,7 @@ public:
     const_operation_iterator getIterator() const;
 
 public:
-    virtual std::string name() const;
+    virtual std::string name() const = 0;
 
 private:
     std::weak_ptr<BasicBlockImplementation> _parent;

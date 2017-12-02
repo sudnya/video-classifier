@@ -55,6 +55,18 @@ public:
         return {getOperandShape(0)};
     }
 
+public:
+    virtual std::shared_ptr<ValueImplementation> clone() const
+    {
+        return std::make_shared<ReduceOperationImplementation>(*this);
+    }
+
+public:
+    std::string name() const
+    {
+        return "reduce";
+    }
+
 };
 
 ReduceOperation::ReduceOperation(Value input, Value dimensions, Value operation)

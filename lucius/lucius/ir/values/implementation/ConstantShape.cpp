@@ -8,6 +8,7 @@
 #include <lucius/ir/values/interface/ConstantShape.h>
 
 #include <lucius/ir/interface/Shape.h>
+#include <lucius/ir/interface/Use.h>
 
 #include <lucius/ir/implementation/ConstantImplementation.h>
 
@@ -40,6 +41,12 @@ public:
     const Shape& getContents() const
     {
         return _shape;
+    }
+
+public:
+    virtual std::shared_ptr<ValueImplementation> clone() const
+    {
+        return std::make_shared<ConstantShapeImplementation>(*this);
     }
 
 private:

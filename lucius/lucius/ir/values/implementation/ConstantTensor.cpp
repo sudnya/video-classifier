@@ -9,6 +9,8 @@
 
 #include <lucius/ir/implementation/ConstantImplementation.h>
 
+#include <lucius/ir/interface/Use.h>
+
 #include <lucius/matrix/interface/Matrix.h>
 
 namespace lucius
@@ -40,6 +42,12 @@ public:
     const matrix::Matrix& getContents() const
     {
         return _matrix;
+    }
+
+public:
+    virtual std::shared_ptr<ValueImplementation> clone() const
+    {
+        return std::make_shared<ConstantTensorImplementation>(*this);
     }
 
 private:

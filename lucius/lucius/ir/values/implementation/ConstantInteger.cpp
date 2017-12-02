@@ -31,6 +31,12 @@ public:
         return _value;
     }
 
+public:
+    virtual std::shared_ptr<ValueImplementation> clone() const
+    {
+        return std::make_shared<ConstantIntegerValueImplementation>(*this);
+    }
+
 private:
     size_t _value;
 };

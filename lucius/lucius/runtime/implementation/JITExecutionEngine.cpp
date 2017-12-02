@@ -22,6 +22,8 @@
 #include <lucius/ir/target/interface/TargetOperation.h>
 #include <lucius/ir/target/interface/TargetControlOperation.h>
 
+#include <lucius/util/interface/debug.h>
+
 // Standard Library Includes
 #include <list>
 #include <cassert>
@@ -321,6 +323,13 @@ void JITExecutionEngine::run()
     JITEngine engine(getProgram());
 
     engine.run();
+}
+
+void* JITExecutionEngine::getValueContents(const Value& v)
+{
+    assertM(false , "Not implemented.");
+
+    return nullptr;
 }
 
 } // namespace runtime

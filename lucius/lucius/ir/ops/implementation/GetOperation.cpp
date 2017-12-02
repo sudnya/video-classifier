@@ -38,6 +38,18 @@ public:
     {
         return {getOperandShape(0), getOperandShape(1)};
     }
+
+public:
+    virtual std::shared_ptr<ValueImplementation> clone() const
+    {
+        return std::make_shared<GetOperationImplementation>(*this);
+    }
+
+public:
+    std::string name() const
+    {
+        return "get";
+    }
 };
 
 GetOperation::GetOperation(Value container, Value position)

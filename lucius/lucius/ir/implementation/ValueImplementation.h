@@ -54,7 +54,7 @@ public:
     void setIsVariable(bool b);
 
 public:
-    virtual std::shared_ptr<ValueImplementation> clone() const;
+    virtual std::shared_ptr<ValueImplementation> clone() const = 0;
 
 private:
     size_t _id;

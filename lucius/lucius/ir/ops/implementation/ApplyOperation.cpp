@@ -33,6 +33,18 @@ public:
     {
         return outputShapes;
     }
+
+public:
+    std::string name() const
+    {
+        return "apply";
+    }
+
+public:
+    virtual std::shared_ptr<ValueImplementation> clone() const
+    {
+        return std::make_shared<ApplyOperationImplementation>(*this);
+    }
 };
 
 ApplyOperation::ApplyOperation(Value input, Value operation)

@@ -21,8 +21,17 @@ namespace ir
 
 class GradientOperationImplementation : public OperationImplementation
 {
+public:
+    std::shared_ptr<ValueImplementation> clone() const
+    {
+        return std::make_shared<GradientOperationImplementation>(*this);
+    }
 
-
+public:
+    std::string name() const
+    {
+        return "gradient";
+    }
 };
 
 Gradient::Gradient()

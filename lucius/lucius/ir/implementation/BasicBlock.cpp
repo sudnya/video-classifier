@@ -66,11 +66,28 @@ public:
         return _successors;
     }
 
-private:
-    std::weak_ptr<FunctionImplementation> _parent;
+public:
+    using BasicBlockList = std::list<BasicBlock>;
+
+public:
+    BasicBlockList::iterator getIterator()
+    {
+        return _position;
+    }
+
+    BasicBlockList::const_iterator getIterator() const
+    {
+        return _position;
+    }
+
+public:
+    std::shared_ptr<ValueImplementation> clone() const
+    {
+        return std::make_shared<BasicBlockImplementation>(*this);
+    }
 
 private:
-    using BasicBlockList = std::list<BasicBlock>;
+    std::weak_ptr<FunctionImplementation> _parent;
 
 private:
     BasicBlockList::iterator _position;
@@ -231,6 +248,16 @@ void BasicBlock::addSuccessor(const BasicBlock& successor)
 {
     _implementation->getSuccessors().insert(successor);
     successor._implementation->getPredecessors().insert(*this);
+}
+
+BasicBlock::BasicBlockList::iterator BasicBlock::getIterator()
+{
+    return _implementation->getIterator();
+}
+
+BasicBlock::BasicBlockList::const_iterator BasicBlock::getIterator() const
+{
+    return _implementation->getIterator();
 }
 
 bool BasicBlock::operator==(const BasicBlock& block) const

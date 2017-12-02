@@ -21,7 +21,6 @@ namespace ir
 {
 
 Value::Value()
-: _implementation(std::make_shared<ValueImplementation>())
 {
 
 }

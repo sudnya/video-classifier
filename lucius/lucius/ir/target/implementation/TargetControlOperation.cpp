@@ -48,6 +48,13 @@ BasicBlock TargetControlOperation::execute()
     return getTargetControlOperationImplementation()->execute();
 }
 
+std::shared_ptr<TargetControlOperationImplementation>
+    TargetControlOperation::getTargetControlOperationImplementation() const
+{
+    return std::static_pointer_cast<TargetControlOperationImplementation>(
+        getValueImplementation());
+}
+
 } // namespace ir
 } // namespace lucius
 

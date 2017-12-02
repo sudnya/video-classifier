@@ -32,7 +32,6 @@ using OperationList = std::list<Operation>;
 using ValueList = std::list<Value>;
 
 Operation::Operation()
-: _implementation(std::make_shared<OperationImplementation>())
 {
 
 }

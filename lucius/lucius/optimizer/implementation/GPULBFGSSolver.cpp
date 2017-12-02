@@ -1,4 +1,4 @@
-/*    \file   GPULBFGSSolver.h
+/*  \file   GPULBFGSSolver.h
     \date   Saturday August 10, 2013
     \author Gregory Diamos <solusstultus@gmail.com>
     \brief  The header file for the GPULBFGSSolver class.
@@ -270,7 +270,8 @@ private:
 
 GPULBFGSSolverImplementation::GPULBFGSSolverImplementation(MatrixVector& inputs,
     const CostAndGradientFunction& callback)
-: _inputs(inputs), _history(_parameters.historySize), _costAndGradientFunction(callback), _lineSearch(LineSearchFactory::create())
+: _inputs(inputs), _history(_parameters.historySize), _costAndGradientFunction(callback),
+  _lineSearch(LineSearchFactory::create())
 {
 
 }

@@ -7,6 +7,8 @@
 // Lucius Includes
 #include <lucius/ir/values/interface/ConstantOperator.h>
 
+#include <lucius/ir/interface/Use.h>
+
 #include <lucius/ir/implementation/ConstantImplementation.h>
 
 namespace lucius
@@ -33,6 +35,12 @@ public:
     size_t getId() const
     {
         return _id;
+    }
+
+public:
+    virtual std::shared_ptr<ValueImplementation> clone() const
+    {
+        return std::make_shared<ConstantOperatorValueImplementation>(*this);
     }
 
 private:

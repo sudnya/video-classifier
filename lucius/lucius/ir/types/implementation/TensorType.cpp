@@ -72,6 +72,14 @@ const Shape& TensorType::getShape() const
     return implementation->getShape();
 }
 
+const Precision& TensorType::getPrecision() const
+{
+    auto implementation = std::static_pointer_cast<TensorTypeImplementation>(
+        getTypeImplementation());
+
+    return implementation->getPrecision();
+}
+
 } // namespace ir
 } // namespace lucius
 

@@ -35,6 +35,18 @@ public:
         return {getOperandShape(0)};
     }
 
+public:
+    virtual std::shared_ptr<ValueImplementation> clone() const
+    {
+        return std::make_shared<ConditionalBranchOperationImplementation>(*this);
+    }
+
+public:
+    std::string name() const
+    {
+        return "branch";
+    }
+
 };
 
 ConditionalBranchOperation::ConditionalBranchOperation(Value predicate, BasicBlock target,

@@ -33,6 +33,18 @@ public:
         return outputShapes;
     }
 
+public:
+    virtual std::shared_ptr<ValueImplementation> clone() const
+    {
+        return std::make_shared<CopyOperationImplementation>(*this);
+    }
+
+public:
+    std::string name() const
+    {
+        return "copy";
+    }
+
 };
 
 CopyOperation::CopyOperation(Value input)

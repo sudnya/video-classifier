@@ -35,6 +35,18 @@ public:
         return ShapeList({getOperandShape(0)});
     }
 
+public:
+    virtual std::shared_ptr<ValueImplementation> clone() const
+    {
+        return std::make_shared<SrandOperationImplementation>(*this);
+    }
+
+public:
+    std::string name() const
+    {
+        return "srand";
+    }
+
 
 };
 

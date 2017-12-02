@@ -7,11 +7,26 @@
 // Lucius Includes
 #include <lucius/ir/ops/implementation/ControlOperationImplementation.h>
 
+#include <lucius/ir/interface/Use.h>
+
+// Standard Library Includes
+#include <string>
+
 namespace lucius
 {
 
 namespace ir
 {
+
+std::shared_ptr<ValueImplementation> ControlOperationImplementation::clone() const
+{
+    return std::make_shared<ControlOperationImplementation>(*this);
+}
+
+std::string ControlOperationImplementation::name() const
+{
+    return "control";
+}
 
 } // namespace ir
 } // namespace lucius

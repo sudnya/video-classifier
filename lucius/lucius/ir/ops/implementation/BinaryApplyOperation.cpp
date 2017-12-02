@@ -34,6 +34,18 @@ public:
         return {outputShapes.front(), outputShapes.front()};
     }
 
+public:
+    virtual std::shared_ptr<ValueImplementation> clone() const
+    {
+        return std::make_shared<BinaryApplyOperationImplementation>(*this);
+    }
+
+public:
+    std::string name() const
+    {
+        return "binary-apply";
+    }
+
 };
 
 BinaryApplyOperation::BinaryApplyOperation(Value left, Value right, Value operation)

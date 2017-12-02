@@ -133,6 +133,12 @@ public:
         return Function::VariableVector(variables.begin(), variables.end());
     }
 
+public:
+    std::shared_ptr<ValueImplementation> clone() const
+    {
+        return std::make_shared<FunctionImplementation>(*this);
+    }
+
 private:
     using FunctionList = std::list<Function>;
 

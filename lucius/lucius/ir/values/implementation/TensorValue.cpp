@@ -8,6 +8,7 @@
 #include <lucius/ir/values/interface/TensorValue.h>
 
 #include <lucius/ir/interface/Shape.h>
+#include <lucius/ir/interface/Use.h>
 
 #include <lucius/ir/implementation/ValueImplementation.h>
 
@@ -28,6 +29,12 @@ public:
     const Shape& getShape() const
     {
         return _shape;
+    }
+
+public:
+    virtual std::shared_ptr<ValueImplementation> clone() const
+    {
+        return std::make_shared<TensorValueImplementation>(*this);
     }
 
 private:

@@ -42,6 +42,18 @@ public:
         return {getOperandShape(0)};
     }
 
+public:
+    virtual std::shared_ptr<ValueImplementation> clone() const
+    {
+        return std::make_shared<RandOperationImplementation>(*this);
+    }
+
+public:
+    std::string name() const
+    {
+        return "rand";
+    }
+
 private:
     TensorType _tensorType;
 

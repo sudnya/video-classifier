@@ -56,6 +56,18 @@ public:
         return {outputShapes.front(), rightShape};
     }
 
+public:
+    virtual std::shared_ptr<ValueImplementation> clone() const
+    {
+        return std::make_shared<BroadcastOperationImplementation>(*this);
+    }
+
+public:
+    std::string name() const
+    {
+        return "broadcast";
+    }
+
 };
 
 BroadcastOperation::BroadcastOperation(Value left, Value right, Value dimensions, Value operation)

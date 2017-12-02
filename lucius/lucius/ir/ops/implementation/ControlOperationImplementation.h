@@ -17,6 +17,11 @@ namespace ir
 
 class ControlOperationImplementation : public OperationImplementation
 {
+public:
+    std::shared_ptr<ValueImplementation> clone() const;
+
+public:
+    std::string name() const;
 
 };
 
