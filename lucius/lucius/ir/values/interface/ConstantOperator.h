@@ -20,6 +20,9 @@ class ConstantOperator : public Constant
 {
 public:
     explicit ConstantOperator(size_t operatorId);
+
+public:
+    size_t getOperatorId() const;
 };
 
 class Add : public ConstantOperator

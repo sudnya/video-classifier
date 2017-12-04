@@ -9,6 +9,7 @@
 
 #include <lucius/ir/interface/Type.h>
 #include <lucius/ir/interface/Value.h>
+#include <lucius/ir/interface/Use.h>
 #include <lucius/ir/interface/Operation.h>
 
 // Standard Library Incldues
@@ -65,6 +66,11 @@ double OperationMemoryAnalysis::getOperationMemoryRequirement(const ir::Operatio
     // TODO: handle operations with scratch requirements
 
     return memoryUsage;
+}
+
+double OperationMemoryAnalysis::getOperandMemoryRequirement(const ir::Use& operand) const
+{
+    return getMemoryUsage(operand.getValue());
 }
 
 double OperationMemoryAnalysis::getOperationSavedMemoryRequirement(

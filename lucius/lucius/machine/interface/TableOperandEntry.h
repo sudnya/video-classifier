@@ -6,6 +6,9 @@
 
 #pragma once
 
+// Standard Library Includes
+#include <cstddef>
+
 namespace lucius
 {
 
@@ -17,11 +20,18 @@ namespace machine
 class TableOperandEntry
 {
 public:
+    TableOperandEntry();
+
+public:
     /*! \brief Check if the operand refers to an existing operand from the original operation. */
     bool isExistingOperand() const;
 
     /*! \brief Get the index of the operand in the original operation. */
     size_t getExistingOperandIndex() const;
+
+private:
+    bool   _isExisting;
+    size_t _existingOperandIndex;
 };
 
 }

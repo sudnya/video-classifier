@@ -12,6 +12,8 @@
 // Forward Declarations
 namespace lucius { namespace ir { class BasicBlock; } }
 
+namespace lucius { namespace analysis { class DominatorAnalysisImplementation; } }
+
 namespace lucius
 {
 
@@ -33,6 +35,9 @@ public:
 
 public:
     ir::BasicBlock getDominator(ir::BasicBlock one, ir::BasicBlock two) const;
+
+private:
+    std::unique_ptr<DominatorAnalysisImplementation> _implementation;
 };
 
 } // namespace analysis

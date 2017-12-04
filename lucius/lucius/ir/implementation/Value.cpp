@@ -93,6 +93,11 @@ bool Value::isVoid() const
     return getType().isVoid();
 }
 
+bool Value::isVariable() const
+{
+    return _implementation->isVariable();
+}
+
 Value::UseList& Value::getUses()
 {
     return _implementation->getUses();
@@ -106,6 +111,11 @@ const Value::UseList& Value::getUses() const
 bool Value::operator<(const Value& right) const
 {
     return _implementation->getId() < right._implementation->getId();
+}
+
+std::shared_ptr<ValueImplementation> Value::getValueImplementation() const
+{
+    return _implementation;
 }
 
 } // namespace ir

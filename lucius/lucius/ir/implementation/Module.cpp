@@ -80,6 +80,37 @@ public:
         _variables.clear();
     }
 
+public:
+    bool containsFunction(const std::string& name) const
+    {
+        // TODO: make this more efficient
+
+        for(auto& function : *this)
+        {
+            if(function.name() == name)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    Function getFunction(const std::string& name) const
+    {
+        // TODO: make this more efficient
+
+        for(auto& function : *this)
+        {
+            if(function.name() == name)
+            {
+                return function;
+            }
+        }
+
+        return Function();
+    }
+
 private:
     Context* _context;
 
@@ -143,6 +174,16 @@ Module::const_iterator Module::end() const
 void Module::clear()
 {
     _implementation->clear();
+}
+
+bool Module::containsFunction(const std::string& name) const
+{
+    return _implementation->containsFunction(name);
+}
+
+Function Module::getFunction(const std::string& name) const
+{
+    return _implementation->getFunction(name);
 }
 
 } // namespace ir

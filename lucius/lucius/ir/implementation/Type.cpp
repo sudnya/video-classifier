@@ -102,6 +102,11 @@ size_t Type::getBytes() const
     return 0;
 }
 
+std::shared_ptr<TypeImplementation> Type::getTypeImplementation() const
+{
+    return _implementation;
+}
+
 } // namespace ir
 } // namespace lucius
 

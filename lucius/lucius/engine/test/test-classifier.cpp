@@ -12,7 +12,6 @@
 
 #include <lucius/util/interface/Knobs.h>
 #include <lucius/util/interface/debug.h>
-#include <lucius/util/interface/memory.h>
 #include <lucius/util/interface/ArgumentParser.h>
 
 #include <random>

@@ -27,14 +27,14 @@ class ConstantOperatorValueImplementation : public ConstantImplementation
 {
 public:
     ConstantOperatorValueImplementation(size_t id)
-    : _id(id)
+    : _operatorId(id)
     {
 
     }
 
-    size_t getId() const
+    size_t getOperatorId() const
     {
-        return _id;
+        return _operatorId;
     }
 
 public:
@@ -44,13 +44,19 @@ public:
     }
 
 private:
-    size_t _id;
+    size_t _operatorId;
 };
 
 ConstantOperator::ConstantOperator(size_t operatorId)
 : Constant(std::make_shared<ConstantOperatorValueImplementation>(operatorId))
 {
 
+}
+
+size_t ConstantOperator::getOperatorId() const
+{
+    return std::static_pointer_cast<ConstantOperatorValueImplementation>(
+        getValueImplementation())->getOperatorId();
 }
 
 Add::Add()

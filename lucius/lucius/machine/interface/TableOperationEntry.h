@@ -8,6 +8,7 @@
 
 // Standard Library Includes
 #include <vector>
+#include <string>
 
 // Forward Declarations
 namespace lucius { namespace machine { class TableOperandEntry; } }
@@ -22,6 +23,10 @@ namespace machine
            selection table to generate a single target operation. */
 class TableOperationEntry
 {
+public:
+    TableOperationEntry();
+    ~TableOperationEntry();
+
 public:
     /*! \brief Get the name of the target operation to generate. */
     const std::string& name() const;
@@ -42,6 +47,15 @@ public:
 
           iterator end();
     const_iterator end() const;
+
+private:
+    std::string _name;
+
+private:
+    bool _producesOutput;
+
+private:
+    TableOperandEntryVector _operands;
 };
 
 }
