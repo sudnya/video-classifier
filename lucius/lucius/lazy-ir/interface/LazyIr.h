@@ -8,6 +8,7 @@
 
 // Standard Library Includes
 #include <cstdint>
+#include <istream>
 
 // Forward Declarations
 namespace lucius { namespace lazy { class Context;   } }
@@ -30,6 +31,12 @@ void newThreadLocalContext();
 /*! \brief Get the current thread local context. */
 Context& getThreadLocalContext();
 
+/*! \brief Save the context to a stream. */
+void saveThreadLocalContext(std::ostream& stream);
+
+/*! \brief Load the context from a stream. */
+void loadThreadLocalContext(std::istream& stream);
+
 /*! \brief Get the IR Builder. */
 ir::IRBuilder& getBuilder();
 
@@ -44,6 +51,12 @@ ir::BasicBlock newBasicBlock();
 
 /*! \brief Set the current basic block that new operations will be added to. */
 void setBasicBlock(const ir::BasicBlock& );
+
+/*! \brief Get the handle to a lazy value */
+size_t getHandle(LazyValue value);
+
+/*! \brief Find the value with the specified handle. */
+LazyValue lookupValueByHandle(size_t handle);
 
 }
 

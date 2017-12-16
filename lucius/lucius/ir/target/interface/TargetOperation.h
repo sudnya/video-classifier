@@ -35,7 +35,7 @@ public:
     ~TargetOperation();
 
 public:
-    const Type& getOutputType() const;
+    Type getOutputType() const;
 
 public:
     PerformanceMetrics getPerformanceMetrics() const;

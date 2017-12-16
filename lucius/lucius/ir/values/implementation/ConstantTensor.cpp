@@ -50,6 +50,18 @@ public:
         return std::make_shared<ConstantTensorImplementation>(*this);
     }
 
+public:
+    std::string toString() const
+    {
+        return "Tensor(" + _matrix.shapeString() + ") constant";
+    }
+
+public:
+    Type getType() const
+    {
+        return Type(Type::TensorId);
+    }
+
 private:
     matrix::Matrix _matrix;
 

@@ -51,6 +51,12 @@ public:
         }
     }
 
+public:
+    std::string toString() const
+    {
+        return _dimensions.toString();
+    }
+
 private:
     matrix::Dimension _dimensions;
 };
@@ -135,6 +141,10 @@ size_t Shape::elements() const
     return count;
 }
 
+std::string Shape::toString() const
+{
+    return _implementation->toString();
+}
 
 } // namespace ir
 } // namespace lucius

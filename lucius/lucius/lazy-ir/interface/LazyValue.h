@@ -9,6 +9,8 @@
 // Lucius Includes
 #include <lucius/ir/interface/Value.h>
 
+namespace lucius { namespace matrix { class Matrix; } }
+
 namespace lucius
 {
 
@@ -19,11 +21,14 @@ namespace lazy
 class LazyValue
 {
 public:
+    LazyValue();
     explicit LazyValue(ir::Value );
 
 public:
     template <typename T>
     T materialize();
+
+    matrix::Matrix materialize();
 
 public:
           ir::Value& getValue();

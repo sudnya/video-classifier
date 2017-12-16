@@ -16,6 +16,8 @@
 
 #include <lucius/ir/implementation/OperationImplementation.h>
 
+#include <lucius/util/interface/debug.h>
+
 // Standard Library Includes
 #include <cassert>
 
@@ -49,6 +51,13 @@ public:
     std::string name() const
     {
         return "get";
+    }
+
+public:
+    Type getType() const
+    {
+        assertM(false, "Not implemented");
+        return Type();
     }
 };
 

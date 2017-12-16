@@ -49,6 +49,18 @@ public:
         return std::make_shared<ConstantShapeImplementation>(*this);
     }
 
+public:
+    std::string toString() const
+    {
+        return _shape.toString();
+    }
+
+public:
+    Type getType() const
+    {
+        return Type(Type::ArrayId);
+    }
+
 private:
     Shape _shape;
 

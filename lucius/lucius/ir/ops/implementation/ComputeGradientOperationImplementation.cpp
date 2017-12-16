@@ -49,6 +49,11 @@ std::string ComputeGradientOperationImplementation::name() const
     return "gradient";
 }
 
+Type ComputeGradientOperationImplementation::getType() const
+{
+    return getOperand(0).getValue().getType();
+}
+
 } // namespace ir
 } // namespace lucius
 

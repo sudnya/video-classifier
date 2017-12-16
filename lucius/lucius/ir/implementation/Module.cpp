@@ -11,6 +11,9 @@
 #include <lucius/ir/interface/Variable.h>
 #include <lucius/ir/interface/Context.h>
 
+// Standard Library Includes
+#include <sstream>
+
 namespace lucius
 {
 
@@ -108,7 +111,18 @@ public:
             }
         }
 
-        return Function();
+        throw std::runtime_error("Requested function " + name + " does not exist." );
+    }
+
+public:
+    VariableList& getVariables()
+    {
+        return _variables;
+    }
+
+    const VariableList& getVariables() const
+    {
+        return _variables;
     }
 
 private:
@@ -121,6 +135,12 @@ private:
 
 Module::Module(Context& context)
 : _implementation(std::make_shared<ModuleImplementation>(context))
+{
+
+}
+
+Module::Module(std::shared_ptr<ModuleImplementation> implementation)
+: _implementation(implementation)
 {
 
 }
@@ -138,6 +158,8 @@ Module::~Module()
 
 Function Module::addFunction(Function f)
 {
+    f.setParent(*this);
+
     return _implementation->addFunction(f);
 }
 
@@ -184,6 +206,42 @@ bool Module::containsFunction(const std::string& name) const
 Function Module::getFunction(const std::string& name) const
 {
     return _implementation->getFunction(name);
+}
+
+Module::VariableList& Module::getVariables()
+{
+    return _implementation->getVariables();
+}
+
+const Module::VariableList& Module::getVariables() const
+{
+    return _implementation->getVariables();
+}
+
+std::string Module::toString() const
+{
+    std::stringstream stream;
+
+    stream << "// Variables\n";
+
+    for(auto& variable : getVariables())
+    {
+        stream << variable.toString() << "\n";
+    }
+
+    stream << "// Functions\n";
+
+    for(auto& function : *this)
+    {
+        stream << function.toString() << "\n";
+    }
+
+    return stream.str();
+}
+
+std::shared_ptr<ModuleImplementation> Module::getImplementation()
+{
+    return _implementation;
 }
 
 } // namespace ir

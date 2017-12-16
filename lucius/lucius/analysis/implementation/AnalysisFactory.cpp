@@ -9,6 +9,8 @@
 
 #include <lucius/analysis/interface/OperationMemoryAnalysis.h>
 #include <lucius/analysis/interface/OperationPerformanceAnalysis.h>
+#include <lucius/analysis/interface/PostDominatorAnalysis.h>
+#include <lucius/analysis/interface/DominatorAnalysis.h>
 
 namespace lucius
 {
@@ -24,6 +26,14 @@ std::unique_ptr<Analysis> AnalysisFactory::create(const std::string& name)
     else if("OperationPerformanceAnalysis" == name)
     {
         return std::make_unique<OperationPerformanceAnalysis>();
+    }
+    else if("DominatorAnalysis" == name)
+    {
+        return std::make_unique<DominatorAnalysis>();
+    }
+    else if("PostDominatorAnalysis" == name)
+    {
+        return std::make_unique<PostDominatorAnalysis>();
     }
 
     return std::unique_ptr<Analysis>();

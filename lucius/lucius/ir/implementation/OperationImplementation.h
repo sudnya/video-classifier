@@ -52,6 +52,7 @@ public:
 
 public:
     BasicBlock getParent() const;
+    void setParent(const BasicBlock&);
 
 public:
     using OperationList = std::list<Operation>;
@@ -65,6 +66,9 @@ public:
 
 public:
     virtual std::string name() const = 0;
+
+public:
+    virtual std::string toString() const;
 
 private:
     std::weak_ptr<BasicBlockImplementation> _parent;

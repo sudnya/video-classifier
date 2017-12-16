@@ -34,6 +34,9 @@ public:
     Type addType(Type t);
 
 public:
+    size_t allocateId();
+
+public:
     static Context& getDefaultContext();
 
 private:

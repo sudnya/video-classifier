@@ -34,6 +34,7 @@ namespace lucius
 namespace runtime
 {
 
+using Value = ir::Value;
 using Program = ir::Program;
 using BasicBlock = ir::BasicBlock;
 using TargetOperation = ir::TargetOperation;
@@ -47,13 +48,40 @@ using Bundle = network::Bundle;
 
 using Function = ir::Function;
 
-namespace
+class JITExecutionEngineImplementation
 {
+public:
+    void* getValueContents(const Value& v)
+    {
+        auto data = _savedValues.find(v);
+
+        assert(data != _savedValues.end());
+
+        return data->second;
+    }
+
+public:
+    void markSavedValue(const Value& v)
+    {
+        _valuesToSave.insert(v);
+    }
+
+private:
+    using ValueToDataMap = std::map<Value, void*>;
+    using ValueSet = std::set<Value>;
+
+private:
+    ValueSet       _valuesToSave;
+    ValueToDataMap _savedValues;
+};
 
 class ExecutionStatistics
 {
 
 };
+
+namespace
+{
 
 class BasicBlockCache
 {
@@ -75,6 +103,11 @@ public:
         auto mapping = _functions.find(f);
 
         assert(mapping != _functions.end());
+
+        if(mapping->second.empty())
+        {
+            return BasicBlock();
+        }
 
         return mapping->second.front();
     }
@@ -109,6 +142,12 @@ public:
     StackFrame& getCurrentFrame()
     {
         return _frames.back();
+    }
+
+public:
+    void pushNewFrame()
+    {
+        _frames.push_back(StackFrame());
     }
 
 public:
@@ -175,13 +214,15 @@ static void addLoweringPasses(PassManager& manager, DynamicProgramState& state)
 
     //manager.addPass(PassFactory::create("OperationDecomposerPass"));
     manager.addPass(PassFactory::create("MemoryEfficientBackPropagationPass"));
+
+    manager.addPass(PassFactory::create("OperationFinalizationPass"));
 }
 
 class JITEngine
 {
 public:
-    JITEngine(Program& program)
-    : _program(program)
+    JITEngine(Program& program, JITExecutionEngineImplementation& jitImplementation)
+    : _program(program), _jitImplementation(jitImplementation)
     {
 
     }
@@ -189,18 +230,40 @@ public:
 public:
     void run()
     {
+        util::log("JITExecutionEngine") << "Running JIT.\n";
+
+        util::log("JITExecutionEngine") << " Cloning program.\n";
         Program augmentedProgram = _getProgram().cloneModuleAndTieVariables();
 
+        if(util::isLogEnabled("JITExecutionEngine"))
+        {
+            util::log("JITExecutionEngine") << "  Cloned program:\n"
+                << augmentedProgram.toString();
+        }
+
         // target independent optimizations
+        util::log("JITExecutionEngine") << " Running target independent optimizations.\n";
         runTargetIndependentOptimizations(augmentedProgram);
 
         // lower and execute initialization code
+        util::log("JITExecutionEngine") << " Lowering and executing initialization program.\n";
         _lowerAndExecuteFunction(augmentedProgram.getInitializationEntryPoint());
 
+        bool isProgramFinished = true;
+
         // Program execution may fail due to JIT assumptions changing, allow it to restart here
-        while(!_isProgramFinished(augmentedProgram))
+        while(!isProgramFinished)
         {
+            util::log("JITExecutionEngine") << " running learning engine.\n";
             _lowerAndExecuteFunction(augmentedProgram.getEngineEntryPoint());
+
+            util::log("JITExecutionEngine") << " checking if program is finished.\n";
+            isProgramFinished = _isProgramFinished(augmentedProgram);
+
+            if(!isProgramFinished)
+            {
+                util::log("JITExecutionEngine") << "  program exited early, restarting\n";
+            }
         }
     }
 
@@ -208,6 +271,11 @@ private:
     bool _isProgramFinished(Program& augmentedProgram)
     {
         auto bundle = _lowerAndExecuteFunction(augmentedProgram.getIsFinishedFunction());
+
+        if(!bundle.contains("returnValue"))
+        {
+            return true;
+        }
 
         return bundle["returnValue"].get<bool>();
     }
@@ -227,9 +295,14 @@ private:
             auto* operationFinalizationPass = dynamic_cast<OperationFinalizationPass*>(
                 manager.getPass("OperationFinalizationPass"));
 
+            assert(operationFinalizationPass != nullptr);
+
             _getBasicBlockCache().addFunction(function,
                 operationFinalizationPass->getTargetFunction());
         }
+
+        // set up stack frame
+        _getStack().pushNewFrame();
 
         // execute
         _executeFunction(_getBasicBlockCache().getFunctionEntryPoint(function));
@@ -299,16 +372,24 @@ public:
         return _dynamicProgramState;
     }
 
+    void* getValueContents(const Value& value)
+    {
+        return _jitImplementation.getValueContents(value);
+    }
+
 private:
     Program&            _program;
     DynamicProgramState _dynamicProgramState;
+
+private:
+    JITExecutionEngineImplementation& _jitImplementation;
 
 };
 
 } // anonymous namespace
 
 JITExecutionEngine::JITExecutionEngine(Program& program)
-: IRExecutionEngine(program)
+: IRExecutionEngine(program), _implementation(std::make_unique<JITExecutionEngineImplementation>())
 {
 
 }
@@ -320,16 +401,24 @@ JITExecutionEngine::~JITExecutionEngine()
 
 void JITExecutionEngine::run()
 {
-    JITEngine engine(getProgram());
+    JITEngine engine(getProgram(), *_implementation);
+
+    if(util::isLogEnabled("JITExecutionEngine"))
+    {
+        util::log("JITExecutionEngine") << "Running program:\n" << getProgram().toString();
+    }
 
     engine.run();
 }
 
 void* JITExecutionEngine::getValueContents(const Value& v)
 {
-    assertM(false , "Not implemented.");
+    return _implementation->getValueContents(v);
+}
 
-    return nullptr;
+void JITExecutionEngine::saveValue(const Value& v)
+{
+    _implementation->markSavedValue(v);
 }
 
 } // namespace runtime

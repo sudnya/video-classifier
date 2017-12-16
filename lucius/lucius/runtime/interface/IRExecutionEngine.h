@@ -33,6 +33,9 @@ public:
 public:
     virtual void* getValueContents(const Value& v) = 0;
 
+public:
+    virtual void saveValue(const Value& v) = 0;
+
 protected:
     Program& getProgram();
 

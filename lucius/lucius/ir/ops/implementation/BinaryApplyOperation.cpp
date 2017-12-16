@@ -46,6 +46,12 @@ public:
         return "binary-apply";
     }
 
+public:
+    Type getType() const
+    {
+        return getOperand(0).getValue().getType();
+    }
+
 };
 
 BinaryApplyOperation::BinaryApplyOperation(Value left, Value right, Value operation)

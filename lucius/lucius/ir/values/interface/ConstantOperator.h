@@ -32,6 +32,13 @@ public:
 
 };
 
+class Multiply : public ConstantOperator
+{
+public:
+    Multiply();
+
+};
+
 } // namespace ir
 } // namespace lucius
 

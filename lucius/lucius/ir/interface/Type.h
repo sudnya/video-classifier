@@ -31,11 +31,12 @@ public:
 
         // Derived types
         IntegerId,      // Arbitrary precision integer
-        FunctionTypeId, // Functions
+        FunctionId, // Functions
         StructureId,    // Structures
         ArrayId,        // Arrays
         PointerId,      // Pointers
-        TensorId        // Tensors
+        TensorId,       // Tensors
+        BasicBlockId    // Basic Block
     };
 
 public:
@@ -56,6 +57,9 @@ public:
 
     /*! \brief Get the number of bytes needed to represent the type. */
     size_t getBytes() const;
+
+public:
+    std::string toString() const;
 
 public:
     std::shared_ptr<TypeImplementation> getTypeImplementation() const;

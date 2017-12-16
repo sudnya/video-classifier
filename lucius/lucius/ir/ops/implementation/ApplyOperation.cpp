@@ -45,6 +45,12 @@ public:
     {
         return std::make_shared<ApplyOperationImplementation>(*this);
     }
+
+public:
+    Type getType() const
+    {
+        return getOperand(0).getValue().getType();
+    }
 };
 
 ApplyOperation::ApplyOperation(Value input, Value operation)

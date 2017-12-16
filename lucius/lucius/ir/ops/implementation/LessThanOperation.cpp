@@ -50,6 +50,12 @@ public:
     {
         return "less";
     }
+
+public:
+    Type getType() const
+    {
+        return Type(Type::IntegerId);
+    }
 };
 
 LessThanOperation::LessThanOperation(Value left, Value right)

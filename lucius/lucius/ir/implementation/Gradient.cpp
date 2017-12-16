@@ -32,6 +32,12 @@ public:
     {
         return "gradient";
     }
+
+public:
+    Type getType() const
+    {
+        return getOperand(0).getValue().getType();
+    }
 };
 
 Gradient::Gradient()

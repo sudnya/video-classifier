@@ -44,6 +44,12 @@ Add::Add()
 
 }
 
+Multiply::Multiply()
+: BinaryOperator(ir::Multiply().getOperatorId())
+{
+
+}
+
 }
 
 }

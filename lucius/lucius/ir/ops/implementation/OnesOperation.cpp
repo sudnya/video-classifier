@@ -55,6 +55,12 @@ public:
         return "ones";
     }
 
+public:
+    Type getType() const
+    {
+        return _tensorType;
+    }
+
 private:
     Type _tensorType;
 

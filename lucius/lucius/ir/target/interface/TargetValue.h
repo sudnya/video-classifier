@@ -32,8 +32,7 @@ public:
     ~TargetValue();
 
 public:
-          Type& getType();
-    const Type& getType() const;
+    Type getType() const;
 
 public:
     typedef std::list<Use> UseList;

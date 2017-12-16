@@ -20,6 +20,7 @@ namespace optimization
 {
 
 MinimalMemoryOperationSchedulingPass::MinimalMemoryOperationSchedulingPass()
+: Pass("MinimalMemoryOperationSchedulingPass")
 {
 
 }

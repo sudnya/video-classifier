@@ -13,11 +13,15 @@
 #include <lucius/ir/interface/Use.h>
 #include <lucius/ir/interface/Value.h>
 #include <lucius/ir/interface/Variable.h>
+#include <lucius/ir/types/interface/VoidType.h>
 #include <lucius/ir/interface/InsertionPoint.h>
 
-#include <lucius/ir/implementation/ValueImplementation.h>
+#include <lucius/ir/implementation/FunctionImplementation.h>
 
 #include <lucius/util/interface/debug.h>
+
+// Standard Library Includes
+#include <map>
 
 namespace lucius
 {
@@ -25,137 +29,6 @@ namespace lucius
 namespace ir
 {
 
-class FunctionImplementation : public ValueImplementation
-{
-public:
-    FunctionImplementation(const std::string& name)
-    : _name(name), _isInitializer(false)
-    {
-
-    }
-
-public:
-    using BasicBlockList = std::list<BasicBlock>;
-
-    using iterator = BasicBlockList::iterator;
-    using const_iterator = BasicBlockList::const_iterator;
-
-public:
-    BasicBlock insert(const BasicBlock& block)
-    {
-        _blocks.push_back(block);
-
-        return _blocks.back();
-    }
-
-public:
-    iterator begin()
-    {
-        return _blocks.begin();
-    }
-
-    const_iterator begin() const
-    {
-        return _blocks.begin();
-    }
-
-    iterator end()
-    {
-        return _blocks.end();
-    }
-
-    const_iterator end() const
-    {
-        return _blocks.end();
-    }
-
-public:
-    BasicBlock& front()
-    {
-        return _blocks.front();
-    }
-
-    const BasicBlock& front() const
-    {
-        return _blocks.front();
-    }
-
-public:
-    void setIsInitializer(bool isInitializer)
-    {
-        _isInitializer = isInitializer;
-    }
-
-public:
-    void insert(const InsertionPoint& position, const BasicBlockList& blocks)
-    {
-        assertM(position.getIterator() == position.getBasicBlock().begin(),
-            "Splitting blocks not implemented.");
-
-        auto basicBlockPosition = position.getBasicBlock().getIterator();
-
-        for(auto& block : blocks)
-        {
-            _blocks.insert(basicBlockPosition, block);
-        }
-    }
-
-public:
-    const std::string& getName() const
-    {
-        return _name;
-    }
-
-    void setName(const std::string& name)
-    {
-        _name = name;
-    }
-
-public:
-    Function::VariableVector getVariables() const
-    {
-        std::set<Variable> variables;
-
-        for(auto& block : *this)
-        {
-            for(auto& operation : block)
-            {
-                for(auto& use : operation.getOperands())
-                {
-                    if(use.getValue().isVariable())
-                    {
-                        variables.insert(use.getValue());
-                    }
-                }
-            }
-        }
-
-        return Function::VariableVector(variables.begin(), variables.end());
-    }
-
-public:
-    std::shared_ptr<ValueImplementation> clone() const
-    {
-        return std::make_shared<FunctionImplementation>(*this);
-    }
-
-private:
-    using FunctionList = std::list<Function>;
-
-private:
-    FunctionList::iterator _position;
-
-private:
-    Module _parent;
-
-private:
-    BasicBlockList _blocks;
-
-private:
-    std::string _name;
-    bool _isInitializer;
-
-};
 
 Function::Function(const std::string& name)
 : Function(std::make_shared<FunctionImplementation>(name))
@@ -165,6 +38,12 @@ Function::Function(const std::string& name)
 
 Function::Function(std::shared_ptr<FunctionImplementation> implementation)
 : _implementation(implementation)
+{
+
+}
+
+Function::Function(std::shared_ptr<ValueImplementation> implementation)
+: _implementation(std::static_pointer_cast<FunctionImplementation>(implementation))
 {
 
 }
@@ -180,8 +59,10 @@ Function::~Function()
 
 }
 
-BasicBlock Function::insert(const BasicBlock& basicBlock)
+BasicBlock Function::insert(BasicBlock basicBlock)
 {
+    basicBlock.setParent(*this);
+
     return _implementation->insert(basicBlock);
 }
 
@@ -203,6 +84,16 @@ BasicBlock& Function::front()
 const BasicBlock& Function::front() const
 {
     return _implementation->front();
+}
+
+Operation Function::getReturn() const
+{
+    return _implementation->getReturn();
+}
+
+Type Function::getReturnType() const
+{
+    return _implementation->getReturnType();
 }
 
 bool Function::operator<(const Function& f) const
@@ -235,6 +126,11 @@ Function::const_iterator Function::end() const
     return _implementation->end();
 }
 
+bool Function::empty() const
+{
+    return _implementation->empty();
+}
+
 void Function::setName(const std::string& name)
 {
     _implementation->setName(name);
@@ -243,6 +139,41 @@ void Function::setName(const std::string& name)
 const std::string& Function::name() const
 {
     return _implementation->getName();
+}
+
+Function Function::clone() const
+{
+    return Function(_implementation->clone());
+}
+
+std::string Function::toString() const
+{
+    return _implementation->toString();
+}
+
+void Function::setParent(Module m)
+{
+    _implementation->setParent(m.getImplementation());
+
+    for(auto& block : *this)
+    {
+        block.setParent(*this);
+    }
+}
+
+Module Function::getParent() const
+{
+    return _implementation->getParent();
+}
+
+std::shared_ptr<ValueImplementation> Function::getValueImplementation() const
+{
+    return _implementation;
+}
+
+std::shared_ptr<FunctionImplementation> Function::getImplementation() const
+{
+    return _implementation;
 }
 
 } // namespace ir

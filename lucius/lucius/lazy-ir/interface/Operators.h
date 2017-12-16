@@ -49,6 +49,13 @@ public:
 
 };
 
+class Multiply : public BinaryOperator
+{
+public:
+    Multiply();
+
+};
+
 }
 
 }

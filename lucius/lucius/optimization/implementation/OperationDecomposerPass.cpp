@@ -23,6 +23,7 @@ namespace optimization
 {
 
 OperationDecomposerPass::OperationDecomposerPass()
+: Pass("OperationDecomposerPass")
 {
 
 }

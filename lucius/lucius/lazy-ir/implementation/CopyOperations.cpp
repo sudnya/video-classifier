@@ -12,6 +12,8 @@
 
 #include <lucius/ir/interface/IRBuilder.h>
 
+#include <lucius/util/interface/debug.h>
+
 namespace lucius
 {
 
@@ -25,9 +27,9 @@ LazyValue copy(LazyValue input)
     return LazyValue(builder.addCopy(input.getValue()));
 }
 
-void copy(LazyValue& output, LazyValue input)
+void copy(const LazyValue& output, LazyValue input)
 {
-    output = copy(input);
+    assertM(false, "Not implemented.");
 }
 
 }

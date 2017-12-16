@@ -13,8 +13,12 @@
 
 // Forward Declarations
 namespace lucius { namespace ir { class FunctionImplementation; } }
+namespace lucius { namespace ir { class ValueImplementation;    } }
 namespace lucius { namespace ir { class BasicBlock;             } }
 namespace lucius { namespace ir { class Variable;               } }
+namespace lucius { namespace ir { class Type;                   } }
+namespace lucius { namespace ir { class Operation;              } }
+namespace lucius { namespace ir { class Module;                 } }
 namespace lucius { namespace ir { class InsertionPoint;         } }
 
 namespace lucius
@@ -29,11 +33,9 @@ class Function
 public:
     explicit Function(const std::string& name);
     explicit Function(std::shared_ptr<FunctionImplementation> implementation);
+    explicit Function(std::shared_ptr<ValueImplementation> implementation);
     Function();
     ~Function();
-
-public:
-    BasicBlock insert(const BasicBlock& basicBlock);
 
 public:
     void setIsInitializer(bool isInitializer);
@@ -49,6 +51,10 @@ public:
     const BasicBlock& front() const;
 
 public:
+    Operation getReturn() const;
+    Type getReturnType() const;
+
+public:
     bool operator<(const Function& f) const;
 
 public:
@@ -57,7 +63,14 @@ public:
     using const_iterator = BasicBlockList::const_iterator;
 
 public:
-    /*! \brief Insertion an entire subgraph into the function. The first block is considered
+    /*! \brief Insert a single basic block onto the end of the function.
+
+        \return The inserted block.
+    */
+    BasicBlock insert(BasicBlock basicBlock);
+
+public:
+    /*! \brief Insert an entire subgraph into the function. The first block is considered
                the entry point and the last block is considered the exit point. */
     void insert(const InsertionPoint& position, const BasicBlockList& basicBlocks);
 
@@ -69,10 +82,27 @@ public:
     const_iterator end() const;
 
 public:
+    bool empty() const;
+
+public:
     void setName(const std::string& name);
 
 public:
     const std::string& name() const;
+
+public:
+    Function clone() const;
+
+public:
+    std::string toString() const;
+
+public:
+    void setParent(Module m);
+    Module getParent() const;
+
+public:
+    std::shared_ptr<FunctionImplementation> getImplementation() const;
+    std::shared_ptr<ValueImplementation> getValueImplementation() const;
 
 private:
     std::shared_ptr<FunctionImplementation> _implementation;

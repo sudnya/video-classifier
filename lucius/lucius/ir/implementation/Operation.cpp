@@ -153,12 +153,7 @@ bool Operation::isGradientOperation() const
         getValueImplementation()));
 }
 
-Type& Operation::getType()
-{
-    return _implementation->getType();
-}
-
-const Type& Operation::getType() const
+Type Operation::getType() const
 {
     return _implementation->getType();
 }
@@ -166,6 +161,11 @@ const Type& Operation::getType() const
 BasicBlock Operation::getParent() const
 {
     return _implementation->getParent();
+}
+
+void Operation::setParent(const BasicBlock& parent)
+{
+    _implementation->setParent(parent);
 }
 
 Operation::operation_iterator Operation::getIterator()
@@ -186,6 +186,11 @@ Operation Operation::clone() const
 std::string Operation::name() const
 {
     return _implementation->name();
+}
+
+std::string Operation::toString() const
+{
+    return _implementation->toString();
 }
 
 std::shared_ptr<ValueImplementation> Operation::getValueImplementation() const

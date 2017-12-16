@@ -15,8 +15,10 @@
 namespace lucius { namespace ir { class BasicBlockImplementation; } }
 namespace lucius { namespace ir { class ValueImplementation;      } }
 namespace lucius { namespace ir { class UserImplementation;       } }
+namespace lucius { namespace ir { class FunctionImplementation;   } }
 namespace lucius { namespace ir { class Operation;                } }
 namespace lucius { namespace ir { class Function;                 } }
+namespace lucius { namespace ir { class Type;                     } }
 
 namespace lucius
 {
@@ -30,9 +32,9 @@ class BasicBlock
 {
 public:
     BasicBlock();
-    BasicBlock(std::shared_ptr<ValueImplementation> implementation);
-    BasicBlock(std::shared_ptr<UserImplementation> implementation);
-    BasicBlock(std::shared_ptr<BasicBlockImplementation> implementation);
+    explicit BasicBlock(std::shared_ptr<ValueImplementation> implementation);
+    explicit BasicBlock(std::shared_ptr<UserImplementation> implementation);
+    explicit BasicBlock(std::shared_ptr<BasicBlockImplementation> implementation);
 
 public:
     Function getFunction() const;
@@ -107,10 +109,25 @@ public:
 
 public:
     bool operator==(const BasicBlock& block) const;
+    bool operator!=(const BasicBlock& block) const;
     bool operator<(const BasicBlock& block) const;
 
 public:
     std::shared_ptr<ValueImplementation> getValueImplementation();
+    std::shared_ptr<BasicBlockImplementation> getImplementation() const;
+
+public:
+    BasicBlock clone() const;
+
+public:
+    void setParent(const Function& f);
+    Function getParent() const;
+
+public:
+    std::string toString() const;
+
+public:
+    Type getType() const;
 
 private:
     std::shared_ptr<BasicBlockImplementation> _implementation;

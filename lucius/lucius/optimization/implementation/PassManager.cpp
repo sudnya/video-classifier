@@ -16,9 +16,12 @@
 #include <lucius/ir/interface/Function.h>
 #include <lucius/ir/interface/Program.h>
 
+#include <lucius/util/interface/debug.h>
+
 // Standard Library Includes
 #include <list>
 #include <map>
+#include <cassert>
 
 namespace lucius
 {
@@ -54,16 +57,21 @@ public:
             {
                 if(_analyses.count(analysisName) == 0)
                 {
+                    auto createdAnalysis = AnalysisFactory::create(analysisName);
+                    assert(createdAnalysis);
+
                     auto newAnalysis = _analyses.emplace(std::make_pair(analysisName,
-                        AnalysisFactory::create(analysisName))).first;
+                        std::move(createdAnalysis))).first;
 
                     newAnalysis->second->runOnFunction(f);
                 }
             }
 
             // TODO: free no longer needed analyses
-
             pass->setManager(_manager);
+
+            util::log("PassManager") << "Running pass " << pass->name()
+                << " on function " << f.name() << "\n";
             pass->runOnFunction(f);
         }
 
@@ -72,6 +80,7 @@ public:
 
     void addPass(std::unique_ptr<Pass>&& pass)
     {
+        assert(pass);
         _passes.emplace_back(std::move(pass));
     }
 
@@ -157,7 +166,6 @@ void PassManager::runOnModule(ir::Module& module)
         runOnFunction(function);
     }
 }
-
 
 void PassManager::runOnProgram(ir::Program& program)
 {

@@ -9,6 +9,10 @@
 
 #include <lucius/optimization/interface/MemoryEfficientBackPropagationPass.h>
 #include <lucius/optimization/interface/OperationDecomposerPass.h>
+#include <lucius/optimization/interface/TableOperationSelectionPass.h>
+#include <lucius/optimization/interface/MinimalMemoryOperationSchedulingPass.h>
+#include <lucius/optimization/interface/DynamicMemoryAllocationPass.h>
+#include <lucius/optimization/interface/OperationFinalizationPass.h>
 
 namespace lucius
 {
@@ -24,6 +28,22 @@ std::unique_ptr<Pass> PassFactory::create(const std::string& passName)
     if("OperationDecomposerPass" == passName)
     {
         return std::make_unique<OperationDecomposerPass>();
+    }
+    if("TableOperationSelectionPass" == passName)
+    {
+        return std::make_unique<TableOperationSelectionPass>();
+    }
+    if("MinimalMemoryOperationSchedulingPass" == passName)
+    {
+        return std::make_unique<MinimalMemoryOperationSchedulingPass>();
+    }
+    if("DynamicMemoryAllocationPass" == passName)
+    {
+        return std::make_unique<DynamicMemoryAllocationPass>();
+    }
+    if("OperationFinalizationPass" == passName)
+    {
+        return std::make_unique<OperationFinalizationPass>();
     }
 
     return std::unique_ptr<Pass>();

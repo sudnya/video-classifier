@@ -28,6 +28,9 @@ public:
 public:
     size_t getId() const;
 
+public:
+    virtual std::string toString() const;
+
 private:
     size_t _id;
 

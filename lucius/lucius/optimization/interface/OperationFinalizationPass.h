@@ -15,6 +15,8 @@
 // Forward Declarations
 namespace lucius { namespace ir { class BasicBlock; } }
 
+namespace lucius { namespace optimization { class OperationFinalizationPassImplementation; } }
+
 namespace lucius
 {
 namespace optimization
@@ -39,6 +41,9 @@ public:
 
 public:
     StringSet getRequiredAnalyses() const final;
+
+private:
+    std::unique_ptr<OperationFinalizationPassImplementation> _implementation;
 };
 
 } // namespace optimization

@@ -37,6 +37,17 @@ public:
         return std::make_shared<TensorValueImplementation>(*this);
     }
 
+    std::string toString() const
+    {
+        return "Tensor(" + _shape.toString() + ")" + "%" + std::to_string(getId());
+    }
+
+public:
+    Type getType() const
+    {
+        return Type(Type::TensorId);
+    }
+
 private:
     Shape _shape;
 };

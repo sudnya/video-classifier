@@ -44,7 +44,7 @@ TargetOperation::~TargetOperation()
     // intentionally blank
 }
 
-const Type& TargetOperation::getOutputType() const
+Type TargetOperation::getOutputType() const
 {
     return getOutputOperand().getValue().getType();
 }

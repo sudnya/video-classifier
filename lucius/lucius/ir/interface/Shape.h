@@ -8,6 +8,7 @@
 
 // Standard Library Includes
 #include <memory>
+#include <string>
 
 // Forward Declarations
 namespace lucius { namespace matrix { class Dimension;           } }
@@ -47,6 +48,9 @@ public:
 public:
     /*! \brief Get the total number of elements, if known. */
     size_t elements() const;
+
+public:
+    std::string toString() const;
 
 private:
     std::unique_ptr<ShapeImplementation> _implementation;

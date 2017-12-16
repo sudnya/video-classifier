@@ -36,6 +36,7 @@ namespace optimization
 {
 
 MemoryEfficientBackPropagationPass::MemoryEfficientBackPropagationPass()
+: Pass("MemoryEfficientBackPropagationPass")
 {
     // intentionally blank
 }

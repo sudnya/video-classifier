@@ -91,6 +91,9 @@ programs.append(env.Program('test-linear-regression', \
 programs.append(env.Program('test-optimizer', \
     ['optimizer/test/test-optimizer.cpp'], LIBS=lucius_libs))
 
+programs.append(env.Program('test-lazy-ir', \
+    ['lazy-ir/test/test-lazy-ir.cpp'], LIBS=lucius_libs))
+
 Return('programs')
 
 

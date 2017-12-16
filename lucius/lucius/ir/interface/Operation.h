@@ -81,11 +81,11 @@ public:
     bool isGradientOperation() const;
 
 public:
-          Type& getType();
-    const Type& getType() const;
+    Type getType() const;
 
 public:
     BasicBlock getParent() const;
+    void setParent(const BasicBlock& b);
 
 public:
           operation_iterator getIterator();
@@ -96,6 +96,9 @@ public:
 
 public:
     std::string name() const;
+
+public:
+    std::string toString() const;
 
 public:
     std::shared_ptr<ValueImplementation> getValueImplementation() const;

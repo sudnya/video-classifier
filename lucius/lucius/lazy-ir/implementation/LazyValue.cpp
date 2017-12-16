@@ -14,6 +14,8 @@
 #include <lucius/ir/interface/IRBuilder.h>
 #include <lucius/ir/interface/Program.h>
 
+#include <lucius/matrix/interface/Matrix.h>
+
 namespace lucius
 {
 
@@ -24,6 +26,11 @@ LazyValue::LazyValue(ir::Value value)
 : _value(value)
 {
 
+}
+
+matrix::Matrix LazyValue::materialize()
+{
+    return materialize<matrix::Matrix>();
 }
 
 ir::Value& LazyValue::getValue()
@@ -38,8 +45,10 @@ const ir::Value& LazyValue::getValue() const
 
 void* LazyValue::_runProgram()
 {
-    auto program = getBuilder().getProgram();
+    auto& program = getBuilder().getProgram();
     auto engine = runtime::IRExecutionEngineFactory::create(program);
+
+    engine->saveValue(getValue());
 
     engine->run();
 

@@ -16,7 +16,26 @@ namespace lucius
 namespace optimization
 {
 
+class OperationFinalizationPassImplementation
+{
+public:
+    void runOnFunction(const Function& function)
+    {
+        _function = function.clone();
+    }
+
+    Function getTargetFunction() const
+    {
+        return _function;
+    }
+
+private:
+    Function _function;
+};
+
 OperationFinalizationPass::OperationFinalizationPass()
+: Pass("OperationFinalizationPass"),
+  _implementation(std::make_unique<OperationFinalizationPassImplementation>())
 {
     // intentionally blank
 }
@@ -26,9 +45,9 @@ OperationFinalizationPass::~OperationFinalizationPass()
     // intentionally blank
 }
 
-void OperationFinalizationPass::runOnFunction(ir::Function& )
+void OperationFinalizationPass::runOnFunction(ir::Function& function)
 {
-    // TODO
+    _implementation->runOnFunction(function);
 }
 
 StringSet OperationFinalizationPass::getRequiredAnalyses() const
@@ -38,9 +57,7 @@ StringSet OperationFinalizationPass::getRequiredAnalyses() const
 
 Function OperationFinalizationPass::getTargetFunction()
 {
-    assertM(false, "Not implemented");
-
-    return Function();
+    return _implementation->getTargetFunction();
 }
 
 } // namespace optimization

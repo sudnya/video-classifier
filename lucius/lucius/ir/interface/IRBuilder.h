@@ -139,7 +139,7 @@ public:
 
 public:
     /*! \brief Extracts the program from the builder, caller takes ownership. */
-    Program getProgram();
+    Program& getProgram();
 
 public:
     /*! \brief Clear the builder. */

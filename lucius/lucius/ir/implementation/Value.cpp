@@ -11,6 +11,7 @@
 #include <lucius/ir/interface/Use.h>
 #include <lucius/ir/interface/BasicBlock.h>
 #include <lucius/ir/interface/Gradient.h>
+#include <lucius/ir/interface/Function.h>
 
 #include <lucius/ir/implementation/ValueImplementation.h>
 
@@ -55,6 +56,12 @@ Value::Value(Gradient g)
 
 }
 
+Value::Value(Function f)
+: _implementation(f.getValueImplementation())
+{
+
+}
+
 Value::~Value()
 {
 
@@ -73,7 +80,7 @@ Value& Value::operator=(const Value& v)
     return *this;
 }
 
-const Type& Value::getType() const
+Type Value::getType() const
 {
     return _implementation->getType();
 }
@@ -98,6 +105,11 @@ bool Value::isVariable() const
     return _implementation->isVariable();
 }
 
+bool Value::isFunction() const
+{
+    return _implementation->isFunction();
+}
+
 Value::UseList& Value::getUses()
 {
     return _implementation->getUses();
@@ -116,6 +128,11 @@ bool Value::operator<(const Value& right) const
 std::shared_ptr<ValueImplementation> Value::getValueImplementation() const
 {
     return _implementation;
+}
+
+std::string Value::toString() const
+{
+    return _implementation->toString();
 }
 
 } // namespace ir

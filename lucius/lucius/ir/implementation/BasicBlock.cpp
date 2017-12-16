@@ -10,6 +10,7 @@
 #include <lucius/ir/interface/Function.h>
 #include <lucius/ir/interface/Value.h>
 #include <lucius/ir/interface/Use.h>
+#include <lucius/ir/interface/Module.h>
 #include <lucius/ir/interface/Operation.h>
 
 #include <lucius/ir/implementation/ValueImplementation.h>
@@ -17,6 +18,7 @@
 
 // Standard Library Includes
 #include <set>
+#include <sstream>
 
 namespace lucius
 {
@@ -29,6 +31,12 @@ using BasicBlockSet  = std::set<BasicBlock>;
 
 class BasicBlockImplementation : public ValueImplementation, public UserImplementation
 {
+public:
+    BasicBlockImplementation()
+    {
+
+    }
+
 public:
     Function getFunction() const
     {
@@ -83,7 +91,47 @@ public:
 public:
     std::shared_ptr<ValueImplementation> clone() const
     {
-        return std::make_shared<BasicBlockImplementation>(*this);
+        auto newImplementation = std::make_shared<BasicBlockImplementation>();
+
+        for(auto& operation : _operations)
+        {
+            newImplementation->getOperations().push_back(operation.clone());
+        }
+
+        return newImplementation;
+    }
+
+public:
+    std::string toString() const
+    {
+        std::stringstream stream;
+
+        stream << "BasicBlock" << getId() << ":\n";
+
+        for(auto& operation : getOperations())
+        {
+            stream << "  " << operation.toString() << "\n";
+        }
+
+        return stream.str();
+    }
+
+public:
+    Type getType() const
+    {
+        return Type(Type::BasicBlockId);
+    }
+
+public:
+    void setParent(const Function& function)
+    {
+        bindToContext(function.getParent().getContext());
+        _parent = function.getImplementation();
+    }
+
+    std::weak_ptr<FunctionImplementation> getParent() const
+    {
+        return _parent;
     }
 
 private:
@@ -265,6 +313,11 @@ bool BasicBlock::operator==(const BasicBlock& block) const
     return _implementation->getId() == block._implementation->getId();
 }
 
+bool BasicBlock::operator!=(const BasicBlock& block) const
+{
+    return !(*this == block);
+}
+
 bool BasicBlock::operator<(const BasicBlock& block) const
 {
     return _implementation->getId() < block._implementation->getId();
@@ -273,6 +326,36 @@ bool BasicBlock::operator<(const BasicBlock& block) const
 std::shared_ptr<ValueImplementation> BasicBlock::getValueImplementation()
 {
     return _implementation;
+}
+
+std::shared_ptr<BasicBlockImplementation> BasicBlock::getImplementation() const
+{
+    return _implementation;
+}
+
+BasicBlock BasicBlock::clone() const
+{
+    return BasicBlock(_implementation->clone());
+}
+
+void BasicBlock::setParent(const Function& parent)
+{
+    _implementation->setParent(parent);
+
+    for(auto& operation : *this)
+    {
+        operation.setParent(*this);
+    }
+}
+
+Function BasicBlock::getParent() const
+{
+    return Function(_implementation->getParent().lock());
+}
+
+std::string BasicBlock::toString() const
+{
+    return _implementation->toString();
 }
 
 } // namespace ir

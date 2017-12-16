@@ -7,6 +7,8 @@
 // Lucius Includes
 #include <lucius/ir/implementation/TypeImplementation.h>
 
+#include <lucius/util/interface/debug.h>
+
 namespace lucius
 {
 
@@ -32,6 +34,38 @@ size_t TypeImplementation::getId() const
 TypeImplementation::~TypeImplementation()
 {
 
+}
+
+std::string TypeImplementation::toString() const
+{
+    if(getTypeId() == Type::VoidId)
+    {
+        return "void";
+    }
+    else if(getTypeId() == Type::HalfId)
+    {
+        return "half";
+    }
+    else if(getTypeId() == Type::FloatId)
+    {
+        return "float";
+    }
+    else if(getTypeId() == Type::DoubleId)
+    {
+        return "double";
+    }
+    else if(getTypeId() == Type::IntegerId)
+    {
+        return "integer";
+    }
+    else if(getTypeId() == Type::TensorId)
+    {
+        return "tensor";
+    }
+
+    assertM(false, "Not implemented.");
+
+    return "unknown";
 }
 
 } // namespace ir

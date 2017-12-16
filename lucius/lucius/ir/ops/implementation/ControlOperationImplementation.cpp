@@ -28,6 +28,11 @@ std::string ControlOperationImplementation::name() const
     return "control";
 }
 
+Type ControlOperationImplementation::getType() const
+{
+    return Type(Type::BasicBlockId);
+}
+
 } // namespace ir
 } // namespace lucius
 

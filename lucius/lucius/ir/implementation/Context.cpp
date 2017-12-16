@@ -19,6 +19,25 @@ namespace lucius
 namespace ir
 {
 
+class IdAllocator
+{
+public:
+    IdAllocator()
+    : _next(0)
+    {
+
+    }
+
+public:
+    size_t allocate()
+    {
+        return _next++;
+    }
+
+private:
+    size_t _next;
+};
+
 class ContextImplementation
 {
 
@@ -37,6 +56,11 @@ public:
         return _types.back();
     }
 
+    size_t allocateId()
+    {
+        return _idAllocator.allocate();
+    }
+
 private:
     using ConstantList = std::list<Constant>;
     using TypeList     = std::list<Type>;
@@ -44,6 +68,9 @@ private:
 private:
     ConstantList _constants;
     TypeList     _types;
+
+private:
+    IdAllocator _idAllocator;
 };
 
 Context::Context()
@@ -65,6 +92,11 @@ Constant Context::addConstant(Constant constant)
 Type Context::addType(Type type)
 {
     return _implementation->addType(type);
+}
+
+size_t Context::allocateId()
+{
+    return _implementation->allocateId();
 }
 
 std::unique_ptr<Context> defaultContext;

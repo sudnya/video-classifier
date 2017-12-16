@@ -9,6 +9,12 @@
 // Lucius Includes
 #include <lucius/runtime/interface/IRExecutionEngine.h>
 
+// Standard Library Includes
+#include <memory>
+
+// Forward Declarations
+namespace lucius { namespace runtime { class JITExecutionEngineImplementation; } }
+
 namespace lucius
 {
 
@@ -27,6 +33,12 @@ public:
 
 public:
     void* getValueContents(const Value& ) final;
+
+public:
+    void saveValue(const Value& v) final;
+
+private:
+    std::unique_ptr<JITExecutionEngineImplementation> _implementation;
 
 };
 

@@ -37,6 +37,9 @@
 #include <lucius/ir/ops/interface/RandOperation.h>
 #include <lucius/ir/ops/interface/RandnOperation.h>
 
+#include <lucius/ir/ops/interface/ReturnOperation.h>
+#include <lucius/ir/ops/interface/CallOperation.h>
+
 #include <lucius/ir/ops/interface/GetOperation.h>
 #include <lucius/ir/ops/interface/LessThanOperation.h>
 
@@ -48,6 +51,8 @@
 #include <lucius/ir/types/interface/RandomStateType.h>
 
 #include <lucius/ir/implementation/ValueImplementation.h>
+
+#include <lucius/util/interface/debug.h>
 
 // Standard Library Includes
 #include <list>
@@ -61,9 +66,39 @@ namespace ir
 
 using BasicBlockIterator = std::list<BasicBlock>::iterator;
 
+static Function getReturnTrueFunction()
+{
+    Function function;
+
+    BasicBlock block;
+
+    block.push_back(ReturnOperation(ConstantInteger(1)));
+
+    function.insert(block);
+
+    return function;
+}
+
+static Function getFunctionCallingFunction(Function callee)
+{
+    Function caller;
+
+    BasicBlock block;
+
+    block.push_back(CallOperation(callee));
+
+    caller.insert(block);
+
+    return caller;
+}
+
 static void setupEntryPoint(Program& program)
 {
+    program.setInitializationEntryPoint(Function());
     program.setForwardPropagationEntryPoint(Function());
+    program.setEngineEntryPoint(getFunctionCallingFunction(
+        program.getForwardPropagationEntryPoint()));
+    program.setIsFinishedEntryPoint(getReturnTrueFunction());
 }
 
 class IRBuilderImplementation
@@ -72,11 +107,7 @@ public:
     IRBuilderImplementation(Context& context)
     : _program(context)
     {
-        setupEntryPoint(getProgram());
-
-        auto block = getProgram().getForwardPropagationEntryPoint().insert(BasicBlock());
-
-        _insertionPointStack.push_front(InsertionPoint(block));
+        resetIR();
     }
 
 public:
@@ -105,6 +136,7 @@ public:
     void saveInsertionPoint()
     {
         _insertionPointStack.push_front(*getInsertionPoint());
+        setInsertionPoint(&_insertionPointStack.front());
     }
 
     void setInsertionPoint(InsertionPoint* p)
@@ -120,6 +152,8 @@ public:
 public:
     Operation insertOperation(const Operation& op)
     {
+        util::log("IRBuilder") << "Adding operation " + op.toString() + "\n";
+
         getInsertionPoint()->getBasicBlock().push_back(op);
 
         return op;
@@ -151,6 +185,21 @@ public:
     Type addType(Type type)
     {
         return getContext().addType(type);
+    }
+
+public:
+    void resetIR()
+    {
+        util::log("IRBuilder") << "Resetting IR builder.\n";
+
+        _program.clear();
+        _insertionPointStack.clear();
+        setupEntryPoint(getProgram());
+
+        auto block = getProgram().getForwardPropagationEntryPoint().insert(BasicBlock());
+
+        _insertionPointStack.push_front(InsertionPoint(block));
+        setInsertionPoint(&_insertionPointStack.front());
     }
 
 private:
@@ -364,14 +413,14 @@ void IRBuilder::restoreInsertionPoint()
     _implementation->restoreInsertionPoint();
 }
 
-Program IRBuilder::getProgram()
+Program& IRBuilder::getProgram()
 {
-    return std::move(_implementation->getProgram());
+    return _implementation->getProgram();
 }
 
 void IRBuilder::clear()
 {
-    _implementation->getProgram().clear();
+    _implementation->resetIR();
 }
 
 } // namespace ir

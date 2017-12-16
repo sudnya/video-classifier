@@ -30,6 +30,7 @@ class Module
 {
 public:
     Module(Context& context);
+    Module(std::shared_ptr<ModuleImplementation> module);
     Module();
     ~Module();
 
@@ -61,7 +62,20 @@ public:
     const_iterator end() const;
 
 public:
+    using VariableList = std::list<Variable>;
+
+public:
+    VariableList& getVariables();
+    const VariableList& getVariables() const;
+
+public:
     void clear();
+
+public:
+    std::string toString() const;
+
+public:
+    std::shared_ptr<ModuleImplementation> getImplementation();
 
 private:
     std::shared_ptr<ModuleImplementation> _implementation;

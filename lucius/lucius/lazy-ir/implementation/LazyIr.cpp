@@ -13,6 +13,8 @@
 #include <lucius/ir/interface/BasicBlock.h>
 #include <lucius/ir/interface/IRBuilder.h>
 
+#include <lucius/util/interface/debug.h>
+
 namespace lucius
 {
 
@@ -22,6 +24,16 @@ namespace lazy
 void newThreadLocalContext()
 {
     getThreadLocalContext().clear();
+}
+
+void saveThreadLocalContext(std::ostream& stream)
+{
+    assertM(false, "Not implemented.");
+}
+
+void loadThreadLocalContext(std::istream& stream)
+{
+    assertM(false, "Not implemented.");
 }
 
 thread_local Context context;
@@ -54,6 +66,20 @@ ir::BasicBlock newBasicBlock()
 void setBasicBlock(const ir::BasicBlock& block)
 {
     getBuilder().setInsertionPoint(block);
+}
+
+size_t getHandle(LazyValue value)
+{
+    assertM(false, "Not implemented.");
+
+    return 0;
+}
+
+LazyValue lookupValueByHandle(size_t handle)
+{
+    assertM(false, "Not implemented.");
+
+    return LazyValue();
 }
 
 }

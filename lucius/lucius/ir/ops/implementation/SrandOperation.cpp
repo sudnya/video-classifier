@@ -47,6 +47,12 @@ public:
         return "srand";
     }
 
+public:
+    Type getType() const
+    {
+        return Type(Type::StructureId);
+    }
+
 
 };
 

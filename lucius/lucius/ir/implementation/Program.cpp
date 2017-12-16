@@ -9,6 +9,7 @@
 
 #include <lucius/ir/interface/Module.h>
 #include <lucius/ir/interface/Function.h>
+#include <lucius/ir/interface/Variable.h>
 
 #include <lucius/util/interface/debug.h>
 
@@ -49,9 +50,9 @@ Program::Program(Context& c)
 }
 
 Program::Program(Program&& p)
-: _implementation(std::move(p._implementation))
+: _implementation(std::make_unique<ProgramImplementation>(p.getContext()))
 {
-
+    std::swap(_implementation, p._implementation);
 }
 
 Program::~Program()
@@ -69,11 +70,6 @@ Function Program::getDataProducerEntryPoint() const
     return getModule().getFunction("DataProducerEntryPoint");
 }
 
-Function Program::getCostFunctionEntryPoint() const
-{
-    return getModule().getFunction("CostFunctionEntryPoint");
-}
-
 Function Program::getForwardPropagationEntryPoint() const
 {
     return getModule().getFunction("ForwardPropagationEntryPoint");
@@ -84,9 +80,9 @@ Function Program::getEngineEntryPoint() const
     return getModule().getFunction("EngineEntryPoint");
 }
 
-Function Program::getIsFinishedFunction() const
+Function Program::getIsFinishedEntryPoint() const
 {
-    return getModule().getFunction("IsFinishedFunction");
+    return getModule().getFunction("IsFinishedEntryPoint");
 }
 
 Module& Program::getModule()
@@ -99,11 +95,39 @@ const Module& Program::getModule() const
     return _implementation->getModule();
 }
 
-void Program::setForwardPropagationEntryPoint(Function&& f)
+void Program::setInitializationEntryPoint(Function f)
+{
+    f.setName("InitializationEntryPoint");
+
+    getModule().addFunction(f);
+}
+
+void Program::setDataProducerEntryPoint(Function f)
+{
+    f.setName("DataProducerEntryPoint");
+
+    getModule().addFunction(f);
+}
+
+void Program::setForwardPropagationEntryPoint(Function f)
 {
     f.setName("ForwardPropagationEntryPoint");
 
-    getModule().addFunction(std::move(f));
+    getModule().addFunction(f);
+}
+
+void Program::setEngineEntryPoint(Function f)
+{
+    f.setName("EngineEntryPoint");
+
+    getModule().addFunction(f);
+}
+
+void Program::setIsFinishedEntryPoint(Function f)
+{
+    f.setName("IsFinishedEntryPoint");
+
+    getModule().addFunction(f);
 }
 
 void Program::clear()
@@ -113,9 +137,31 @@ void Program::clear()
 
 Program Program::cloneModuleAndTieVariables()
 {
-    assertM(false, "Not implemented");
+    auto program = Program(getModule().getContext());
 
-    return Program(getModule().getContext());
+    // add functions
+    for(auto& function : getModule())
+    {
+        program.getModule().addFunction(function.clone());
+    }
+
+    // add variables, but don't clone them
+    for(auto& variable : getModule().getVariables())
+    {
+        program.getModule().addVariable(variable);
+    }
+
+    return program;
+}
+
+Context& Program::getContext()
+{
+    return getModule().getContext();
+}
+
+std::string Program::toString() const
+{
+    return getModule().toString();
 }
 
 } // namespace ir

@@ -13,7 +13,8 @@
 #include <list>
 
 // Forward Declarations
-namespace lucius { namespace ir { class Use; } }
+namespace lucius { namespace ir { class Use;     } }
+namespace lucius { namespace ir { class Context; } }
 
 namespace lucius
 {
@@ -32,10 +33,6 @@ public:
     virtual ~ValueImplementation();
 
 public:
-          Type& getType();
-    const Type& getType() const;
-
-public:
     typedef std::list<Use> UseList;
 
 public:
@@ -48,25 +45,35 @@ public:
 public:
     bool isOperation() const;
     bool isConstant() const;
+    bool isFunction() const;
 
 public:
     bool isVariable() const;
     void setIsVariable(bool b);
 
 public:
+    void bindToContext(Context& context);
+
+public:
     virtual std::shared_ptr<ValueImplementation> clone() const = 0;
+
+public:
+    virtual std::string toString() const = 0;
+
+public:
+    virtual Type getType() const = 0;
 
 private:
     size_t _id;
-
-private:
-    Type _type;
 
 private:
     UseList _uses;
 
 private:
     bool _isVariable;
+
+private:
+    Context* _context;
 
 };
 

@@ -11,6 +11,9 @@
 
 #include <lucius/ir/implementation/ConstantImplementation.h>
 
+// Standard Library Includes
+#include <string>
+
 namespace lucius
 {
 
@@ -35,6 +38,16 @@ public:
     virtual std::shared_ptr<ValueImplementation> clone() const
     {
         return std::make_shared<ConstantIntegerValueImplementation>(*this);
+    }
+
+    std::string toString() const
+    {
+        return std::to_string(_value);
+    }
+
+    Type getType() const
+    {
+        return Type(Type::IntegerId);
     }
 
 private:

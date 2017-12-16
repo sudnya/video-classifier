@@ -54,6 +54,12 @@ public:
         return "rand";
     }
 
+public:
+    Type getType() const
+    {
+        return _tensorType;
+    }
+
 private:
     TensorType _tensorType;
 

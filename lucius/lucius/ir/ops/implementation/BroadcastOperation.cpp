@@ -68,6 +68,12 @@ public:
         return "broadcast";
     }
 
+public:
+    Type getType() const
+    {
+        return getOperand(0).getValue().getType();
+    }
+
 };
 
 BroadcastOperation::BroadcastOperation(Value left, Value right, Value dimensions, Value operation)

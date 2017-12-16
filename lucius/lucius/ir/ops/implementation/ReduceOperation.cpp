@@ -67,6 +67,12 @@ public:
         return "reduce";
     }
 
+public:
+    Type getType() const
+    {
+        return getOperand(0).getValue().getType();
+    }
+
 };
 
 ReduceOperation::ReduceOperation(Value input, Value dimensions, Value operation)

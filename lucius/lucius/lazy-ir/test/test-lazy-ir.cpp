@@ -4,6 +4,31 @@
     \brief  The source file for the lazy ir unit tests class.
 */
 
+// Lucius Includes
+#include <lucius/matrix/interface/Matrix.h>
+#include <lucius/matrix/interface/MatrixOperations.h>
+#include <lucius/matrix/interface/Operation.h>
+
+#include <lucius/lazy-ir/interface/LazyIr.h>
+#include <lucius/lazy-ir/interface/LazyValue.h>
+#include <lucius/lazy-ir/interface/MatrixOperations.h>
+#include <lucius/lazy-ir/interface/CopyOperations.h>
+#include <lucius/lazy-ir/interface/CastOperations.h>
+#include <lucius/lazy-ir/interface/RandomOperations.h>
+#include <lucius/lazy-ir/interface/GradientOperations.h>
+#include <lucius/lazy-ir/interface/Initializers.h>
+#include <lucius/lazy-ir/interface/Loops.h>
+#include <lucius/lazy-ir/interface/Operators.h>
+
+#include <lucius/util/interface/debug.h>
+
+#include <lucius/util/interface/ArgumentParser.h>
+#include <lucius/util/interface/TestEngine.h>
+
+using Matrix = lucius::matrix::Matrix;
+using LazyValue = lucius::lazy::LazyValue;
+using SinglePrecision = lucius::matrix::SinglePrecision;
+
 /*
     Test matrix addition
 
@@ -12,7 +37,7 @@
     [ 5 6 ]   [ 6 7 ]   [ 11 13 ]
 
 */
-static void testAdd()
+static bool testAdd()
 {
     Matrix a(3, 2);
     Matrix b(3, 2);
@@ -39,12 +64,12 @@ static void testAdd()
     c(2, 0) = 11;
     c(2, 1) = 13;
 
-    lazy::newThreadLocalContext();
+    lucius::lazy::newThreadLocalContext();
 
-    LazyValue lazyA = lazy::getConstant(a);
-    LazyValue lazyB = lazy::getConstant(b);
+    LazyValue lazyA = lucius::lazy::getConstant(a);
+    LazyValue lazyB = lucius::lazy::getConstant(b);
 
-    auto computed = lazy::applyBinary(lazyA, lazyB, lazy::Add()).materialize<Matrix>();
+    auto computed = lucius::lazy::applyBinary(lazyA, lazyB, lucius::lazy::Add()).materialize();
 
     if(computed != c)
     {
@@ -80,7 +105,7 @@ static void testAdd()
         [ 4 10 ]
         [ 6 12 ]
 */
-static void testLoop()
+static bool testLoop()
 {
     Matrix a(3, 2);
     Matrix b(3, 2);
@@ -100,19 +125,19 @@ static void testLoop()
     c(2, 0) = 11;
     c(2, 1) = 13;
 
-    lazy::newThreadLocalContext();
+    lucius::lazy::newThreadLocalContext();
 
-    LazyValue lazyA = lazy::getConstant(a);
-    LazyValue lazyB = lazy::getConstant(b);
+    LazyValue lazyA = lucius::lazy::getConstant(a);
+    LazyValue lazyB = lucius::lazy::getConstant(b);
 
-    lazy::zeros(lazyA);
+    lucius::lazy::zeros(lazyA);
 
-    lazy::forLoop(2, [=]()
+    lucius::lazy::forLoop(2, [=]()
     {
-        lazy::copy(lazyA, lazy::applyBinary(lazyA, lazyB, lazy::Add()));
+        lucius::lazy::copy(lazyA, lucius::lazy::applyBinary(lazyA, lazyB, lucius::lazy::Add()));
     });
 
-    auto computed = lazyA.materialize<Matrix>();
+    auto computed = lazyA.materialize();
 
     if(computed != c)
     {
@@ -144,7 +169,7 @@ static void testLoop()
 
     assert('a is initialized only once');
 */
-static void testLoopWithInitializer()
+static bool testLoopWithInitializer()
 {
     Matrix b(3, 2);
 
@@ -155,24 +180,24 @@ static void testLoopWithInitializer()
     b(2, 0) = 5;
     b(2, 1) = 6;
 
-    lazy::newThreadLocalContext();
+    lucius::lazy::newThreadLocalContext();
 
-    LazyValue lazyB = lazy::getConstant(b);
+    LazyValue lazyB = lucius::lazy::getConstant(b);
 
-    LazyValue lazyA = lazy::createInitializer([]()
+    LazyValue lazyA = lucius::lazy::createInitializer([]()
     {
-        LazyValue randomState = lazy::srand(177);
+        LazyValue randomState = lucius::lazy::srand(177);
 
-        return lazy::rand(randomState, {3, 2}, SinglePrecision());
+        return lucius::lazy::rand(randomState, {3, 2}, SinglePrecision());
     });
 
-    lazy::forLoop(2, [&]()
+    lucius::lazy::forLoop(2, [=]()
     {
-        lazy::copy(lazyA, lazy::applyBinary(lazyA, lazyB, lazy::Add()));
+        lucius::lazy::copy(lazyA, lucius::lazy::applyBinary(lazyA, lazyB, lucius::lazy::Add()));
     });
 
-    Matrix firstRun  = lazyA.materialize<Matrix>();
-    Matrix secondRun = lazyA.materialize<Matrix>();
+    Matrix firstRun  = lazyA.materialize();
+    Matrix secondRun = lazyA.materialize();
 
     if(firstRun != secondRun)
     {
@@ -205,7 +230,7 @@ static void testLoopWithInitializer()
         a = a + dcost/da;
     }
 */
-static void testLoopWithInitializerAndUpdate()
+static bool testLoopWithInitializerAndUpdate()
 {
     Matrix b(3, 2);
 
@@ -216,33 +241,35 @@ static void testLoopWithInitializerAndUpdate()
     b(2, 0) = 5;
     b(2, 1) = 6;
 
-    lazy::newThreadLocalContext();
+    lucius::lazy::newThreadLocalContext();
 
-    LazyValue lazyB = lazy::getConstant(b);
+    LazyValue lazyB = lucius::lazy::getConstant(b);
 
-    LazyValue lazyA = lazy::createVariableInitializer([]()
+    LazyValue lazyA = lucius::lazy::createInitializer([]()
     {
-        return lazy::zeros({3, 2}, SinglePrecision());
+        return lucius::lazy::zeros({3, 2}, SinglePrecision());
     });
 
-    lazy::forLoop(2, [&]()
+    lucius::lazy::forLoop(2, [=]()
     {
-        auto aTimesB = lazy::applyBinary(lazyA, lazyB, lazy::Multiply())
+        auto aTimesB = lucius::lazy::applyBinary(lazyA, lazyB, lucius::lazy::Multiply());
 
-        auto cost = lazy::castToScalar(lazy::reduce(aTimesB, {}, lazy::Add()));
+        auto cost = lucius::lazy::castToScalar(
+            lucius::lazy::reduce(aTimesB, {}, lucius::lazy::Add()));
 
-        auto variablesAndGradients = lazy::getVariablesAndGradientsForCost(cost);
+        auto variablesAndGradients = lucius::lazy::getVariablesAndGradientsForCost(cost);
 
         for(auto& variableAndGradient : variablesAndGradients)
         {
-            lazy::copy(variableAndGradient.getVariable(),
-                lazy::add(variableAndGradient.getVariable(), variableAndGradient.getGradient()));
+            lucius::lazy::copy(variableAndGradient.getVariable(),
+                lucius::lazy::applyBinary(variableAndGradient.getVariable(),
+                    variableAndGradient.getGradient(), lucius::lazy::Add()));
         }
     });
 
-    auto computed = lazyA.materialize<Matrix>();
+    auto computed = lazyA.materialize();
 
-    Matrix c = apply(b, matrix::Multiply(2));
+    Matrix c = apply(b, lucius::matrix::Multiply(2));
 
     if(computed != c)
     {
@@ -269,7 +296,7 @@ static void testLoopWithInitializerAndUpdate()
     [ 5 6 ]   [ 6 7 ]   [ 11 13 ]
 
 */
-static void testAdd()
+static bool testSaveAndLoad()
 {
     Matrix a(3, 2);
     Matrix b(3, 2);
@@ -296,24 +323,24 @@ static void testAdd()
     c(2, 0) = 11;
     c(2, 1) = 13;
 
-    lazy::newThreadLocalContext();
+    lucius::lazy::newThreadLocalContext();
 
-    LazyValue lazyA = lazy::getConstant(a);
-    LazyValue lazyB = lazy::getConstant(b);
+    LazyValue lazyA = lucius::lazy::getConstant(a);
+    LazyValue lazyB = lucius::lazy::getConstant(b);
 
-    auto lazyComputed = lazy::applyBinary(lazyA, lazyB, lazy::Add());
+    auto lazyComputed = lucius::lazy::applyBinary(lazyA, lazyB, lucius::lazy::Add());
 
-    auto lazyComputedHandle = lazy::getHandle(lazyComputed);
+    auto lazyComputedHandle = lucius::lazy::getHandle(lazyComputed);
 
     std::stringstream stream;
 
-    lazy::saveThreadLocalContext(stream);
-    lazy::newThreadLocalContext();
-    lazy::loadThreadLocalContext(stream);
+    lucius::lazy::saveThreadLocalContext(stream);
+    lucius::lazy::newThreadLocalContext();
+    lucius::lazy::loadThreadLocalContext(stream);
 
-    lazyComputed = lazy::lookupValueByHandle(lazyComputedHandle);
+    lazyComputed = lucius::lazy::lookupValueByHandle(lazyComputedHandle);
 
-    auto computed = lazyComputed.materialize<Matrix>();
+    auto computed = lazyComputed.materialize();
 
     if(computed != c)
     {

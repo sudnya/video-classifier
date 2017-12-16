@@ -47,6 +47,12 @@ public:
         return "branch";
     }
 
+public:
+    Type getType() const
+    {
+        return Type(Type::VoidId);
+    }
+
 };
 
 ConditionalBranchOperation::ConditionalBranchOperation(Value predicate, BasicBlock target,
@@ -58,7 +64,7 @@ ConditionalBranchOperation::ConditionalBranchOperation(Value predicate, BasicBlo
 
 ConditionalBranchOperation::~ConditionalBranchOperation()
 {
-
+    // intentionally blank
 }
 
 } // namespace ir

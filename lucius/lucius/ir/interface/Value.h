@@ -17,6 +17,7 @@ namespace lucius { namespace ir { class Constant;   } }
 namespace lucius { namespace ir { class Type;       } }
 namespace lucius { namespace ir { class BasicBlock; } }
 namespace lucius { namespace ir { class Gradient;   } }
+namespace lucius { namespace ir { class Function;   } }
 
 namespace lucius { namespace ir { class ValueImplementation; } }
 
@@ -35,6 +36,7 @@ public:
     Value(Constant c);
     Value(BasicBlock b);
     Value(Gradient g);
+    Value(Function f);
     Value(std::shared_ptr<ValueImplementation>);
     ~Value();
 
@@ -43,7 +45,7 @@ public:
     Value& operator=(const Value&);
 
 public:
-    const Type& getType() const;
+    Type getType() const;
 
 public:
     /*! \brief Test if the value is an operation. */
@@ -58,6 +60,9 @@ public:
     /*! \brief Test if the value is a variable. */
     bool isVariable() const;
 
+    /*! \brief Test if the value is a function. */
+    bool isFunction() const;
+
 public:
     using UseList = std::list<Use>;
 
@@ -70,6 +75,9 @@ public:
 
 public:
     std::shared_ptr<ValueImplementation> getValueImplementation() const;
+
+public:
+    std::string toString() const;
 
 private:
     std::shared_ptr<ValueImplementation> _implementation;

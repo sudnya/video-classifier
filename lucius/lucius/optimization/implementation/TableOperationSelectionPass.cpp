@@ -34,6 +34,7 @@ namespace optimization
 {
 
 TableOperationSelectionPass::TableOperationSelectionPass()
+: Pass("TableOperationSelectionPass")
 {
     // intetionally blank
 }
@@ -94,6 +95,8 @@ static void generateOperations(OperationList& targetOperations,
 
 void TableOperationSelectionPass::runOnFunction(ir::Function& function)
 {
+    util::log("TableOperationSelectionPass") << "Running on function " << function.name() << "\n";
+
     ValueMap newValues;
 
     for(auto& basicBlock : function)
@@ -107,6 +110,8 @@ void TableOperationSelectionPass::runOnFunction(ir::Function& function)
 
         basicBlock.setOperations(std::move(newOperations));
     }
+
+    util::log("TableOperationSelectionPass") << " new function is " << function.toString() << "\n";
 }
 
 StringSet TableOperationSelectionPass::getRequiredAnalyses() const

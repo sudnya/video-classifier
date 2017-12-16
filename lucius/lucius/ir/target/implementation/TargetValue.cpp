@@ -60,12 +60,7 @@ TargetValue::~TargetValue()
     // intentionally blank
 }
 
-Type& TargetValue::getType()
-{
-    return _implementation->getType();
-}
-
-const Type& TargetValue::getType() const
+Type TargetValue::getType() const
 {
     return _implementation->getType();
 }

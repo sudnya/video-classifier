@@ -9,6 +9,9 @@
 // Lucius Includes
 #include <lucius/lazy-ir/interface/LazyValue.h>
 
+// Standard Library Includes
+#include <vector>
+
 namespace lucius
 {
 

@@ -24,12 +24,13 @@ namespace ir
 {
 
 Type::Type(TypeId id)
-: Type(std::make_shared<TypeImplementation>(VoidId))
+: Type(std::make_shared<TypeImplementation>(id))
 {
 
 }
 
 Type::Type(std::shared_ptr<TypeImplementation> implementation)
+: _implementation(implementation)
 {
 
 }
@@ -100,6 +101,11 @@ size_t Type::getBytes() const
     assertM(false, "Not Implemented.");
 
     return 0;
+}
+
+std::string Type::toString() const
+{
+    return getTypeImplementation()->toString();
 }
 
 std::shared_ptr<TypeImplementation> Type::getTypeImplementation() const

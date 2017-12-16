@@ -11,6 +11,9 @@
 
 #include <lucius/ir/implementation/ConstantImplementation.h>
 
+// Standard Library Includes
+#include <string>
+
 namespace lucius
 {
 
@@ -20,7 +23,8 @@ namespace ir
 enum OperatorIds
 {
     Unknown = 0,
-    AddId = 1
+    AddId = 1,
+    MultiplyId = 2
 };
 
 class ConstantOperatorValueImplementation : public ConstantImplementation
@@ -43,6 +47,27 @@ public:
         return std::make_shared<ConstantOperatorValueImplementation>(*this);
     }
 
+public:
+    std::string toString() const
+    {
+        if(getOperatorId() == AddId)
+        {
+            return "AddOperator";
+        }
+        else if(getOperatorId() == MultiplyId)
+        {
+            return "MultiplyOperator";
+        }
+
+        return "UnknownOperator";
+    }
+
+public:
+    Type getType() const
+    {
+        return Type(Type::IntegerId);
+    }
+
 private:
     size_t _operatorId;
 };
@@ -61,6 +86,12 @@ size_t ConstantOperator::getOperatorId() const
 
 Add::Add()
 : ConstantOperator(AddId)
+{
+
+}
+
+Multiply::Multiply()
+: ConstantOperator(MultiplyId)
 {
 
 }

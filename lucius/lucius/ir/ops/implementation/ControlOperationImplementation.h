@@ -23,6 +23,9 @@ public:
 public:
     std::string name() const;
 
+public:
+    Type getType() const;
+
 };
 
 } // namespace ir

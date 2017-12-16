@@ -12,7 +12,6 @@
 // Standard Library Includes
 #include <stdexcept>
 
-
 namespace lucius
 {
 
@@ -24,7 +23,7 @@ T LazyValue::materialize()
 {
     void* value = _runProgram();
 
-    T* result = dynamic_cast<T*>(value);
+    T* result = reinterpret_cast<T*>(value);
 
     if(value == nullptr)
     {

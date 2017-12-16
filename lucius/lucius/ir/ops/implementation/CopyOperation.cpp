@@ -45,6 +45,13 @@ public:
         return "copy";
     }
 
+public:
+    Type getType() const
+    {
+        return getOperand(0).getValue().getType();
+    }
+
+
 };
 
 CopyOperation::CopyOperation(Value input)
