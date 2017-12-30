@@ -24,6 +24,13 @@ TableOperationEntry::~TableOperationEntry()
     // intentionally blank
 }
 
+TableOperationEntry::TableOperationEntry(const std::string& name,
+    const TableOperandEntryVector& operands)
+: _name(name), _operands(operands)
+{
+
+}
+
 const std::string& TableOperationEntry::name() const
 {
     return _name;

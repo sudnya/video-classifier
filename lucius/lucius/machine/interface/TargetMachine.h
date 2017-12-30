@@ -9,7 +9,8 @@
 // Forward Declarations
 namespace lucius { namespace machine { class TableEntry; } }
 
-namespace lucius { namespace ir { class Operation; } }
+namespace lucius { namespace ir { class Operation;              } }
+namespace lucius { namespace ir { class TargetOperationFactory; } }
 
 namespace lucius
 {
@@ -22,6 +23,9 @@ class TargetMachine
 {
 public:
     static const TableEntry& getTableEntryForOperation(const ir::Operation& o);
+
+public:
+    static ir::TargetOperationFactory& getFactory();
 
 };
 

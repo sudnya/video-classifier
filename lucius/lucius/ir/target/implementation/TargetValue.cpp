@@ -11,7 +11,12 @@
 #include <lucius/ir/interface/Use.h>
 #include <lucius/ir/interface/Value.h>
 
+#include <lucius/ir/target/interface/TargetValueData.h>
+
 #include <lucius/ir/implementation/ValueImplementation.h>
+
+// Standard Library Includes
+#include <string>
 
 namespace lucius
 {
@@ -40,9 +45,23 @@ public:
         return _definitions;
     }
 
+public:
+    TargetValueData getData() const
+    {
+        return _data;
+    }
+
 private:
     UseList _definitions;
+
+private:
+    TargetValueData _data;
 };
+
+static bool isTargetImplementation(std::shared_ptr<ValueImplementation> i)
+{
+    return static_cast<bool>(std::dynamic_pointer_cast<TargetValueImplementation>(i));
+}
 
 TargetValue::TargetValue()
 {
@@ -50,7 +69,7 @@ TargetValue::TargetValue()
 }
 
 TargetValue::TargetValue(Value v)
-: _implementation(std::static_pointer_cast<TargetValueImplementation>(v.getValueImplementation()))
+: _implementation(v.getValueImplementation())
 {
 
 }
@@ -72,7 +91,15 @@ TargetValue::UseList& TargetValue::getUses()
 
 TargetValue::UseList& TargetValue::getDefinitions()
 {
-    return _implementation->getDefinitions();
+    if(isTargetImplementation(getValueImplementation()))
+    {
+        return std::static_pointer_cast<TargetValueImplementation>(
+            _implementation)->getDefinitions();
+    }
+
+    static TargetValue::UseList dummyDefinitions;
+
+    return dummyDefinitions;
 }
 
 Value TargetValue::getValue() const
@@ -88,6 +115,26 @@ bool TargetValue::operator==(const TargetValue& v) const
 bool TargetValue::operator==(const Value& v) const
 {
     return _implementation->getId() == v.getValueImplementation()->getId();
+}
+
+TargetValueData TargetValue::getData() const
+{
+    if(isTargetImplementation(getValueImplementation()))
+    {
+        return std::static_pointer_cast<TargetValueImplementation>(_implementation)->getData();
+    }
+
+    return TargetValueData();
+}
+
+std::shared_ptr<ValueImplementation> TargetValue::getValueImplementation() const
+{
+    return _implementation;
+}
+
+std::string TargetValue::toString() const
+{
+    return _implementation->toString();
 }
 
 } // namespace ir

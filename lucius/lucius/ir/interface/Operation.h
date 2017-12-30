@@ -77,6 +77,12 @@ public:
     /*! \brief Query whether or not the operation can change control flow. */
     bool isControlOperation() const;
 
+    /*! \brief Query whether or not the operation is a function call. */
+    bool isCall() const;
+
+    /*! \brief Query whether or not the operation is a function return. */
+    bool isReturn() const;
+
     /*! \brief Query whether or not the operation computes a gradient. */
     bool isGradientOperation() const;
 

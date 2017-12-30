@@ -51,6 +51,9 @@ public:
     /*! \brief Test if the value is an operation. */
     bool isOperation() const;
 
+    /*! \brief Test if the value is a target operation. */
+    bool isTargetOperation() const;
+
     /*! \brief Test if the value is a constant. */
     bool isConstant() const;
 
@@ -78,6 +81,7 @@ public:
 
 public:
     std::string toString() const;
+    std::string toSummaryString() const;
 
 private:
     std::shared_ptr<ValueImplementation> _implementation;

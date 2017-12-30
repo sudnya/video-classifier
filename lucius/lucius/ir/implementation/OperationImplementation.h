@@ -69,6 +69,7 @@ public:
 
 public:
     virtual std::string toString() const;
+    virtual std::string toSummaryString() const;
 
 private:
     std::weak_ptr<BasicBlockImplementation> _parent;

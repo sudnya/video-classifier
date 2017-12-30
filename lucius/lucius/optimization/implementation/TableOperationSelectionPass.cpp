@@ -54,14 +54,28 @@ using TargetOperationFactory = ir::TargetOperationFactory;
 
 using ValueMap = std::map<Value, TargetValue>;
 
+
+static bool isNormalValue(const Value& v)
+{
+    return v.isOperation();
+}
+
+static bool isNotTranslatedValue(const Value& v)
+{
+    return v.isFunction() || v.isConstant();
+}
+
 static void generateOperations(OperationList& targetOperations,
     ValueMap& valueMap, Operation& operation)
 {
     auto& entry = TargetMachine::getTableEntryForOperation(operation);
+    auto& operationFactory = TargetMachine::getFactory();
 
     for(auto& targetOperationEntry : entry)
     {
-        auto targetOperation = TargetOperationFactory::create(targetOperationEntry.name());
+        auto targetOperation = operationFactory.create(targetOperationEntry.name());
+
+        assert(targetOperation.isValid());
 
         for(auto& targetOperandEntry : targetOperationEntry)
         {
@@ -70,11 +84,23 @@ static void generateOperations(OperationList& targetOperations,
                 auto& use = operation.getOperand(targetOperandEntry.getExistingOperandIndex());
                 auto operand = use.getValue();
 
-                auto mapping = valueMap.find(operand);
+                if(isNormalValue(operand))
+                {
+                    auto mapping = valueMap.find(operand);
 
-                assert(mapping != valueMap.end());
+                    assert(mapping != valueMap.end());
 
-                targetOperation.appendOperand(mapping->second);
+                    targetOperation.appendOperand(mapping->second);
+                }
+                else if(isNotTranslatedValue(operand))
+                {
+                    targetOperation.appendOperand(TargetValue(operand));
+                }
+                else
+                {
+                    // TODO: handle other types of operands
+                    assertM(false, "Not implemented.");
+                }
             }
             else
             {
@@ -83,7 +109,10 @@ static void generateOperations(OperationList& targetOperations,
             }
         }
 
-        targetOperations.push_back(std::move(targetOperation));
+        util::log("TableOperationSelectionPass") << "   added new operation "
+            << targetOperation.toString() << "\n";
+
+        targetOperations.push_back(targetOperation);
 
         if(targetOperationEntry.isOutput())
         {
@@ -101,10 +130,14 @@ void TableOperationSelectionPass::runOnFunction(ir::Function& function)
 
     for(auto& basicBlock : function)
     {
+        util::log("TableOperationSelectionPass") << " Running on basic block "
+            << basicBlock.toSummaryString() << "\n";
         OperationList newOperations;
 
         for(auto& operation : basicBlock)
         {
+            util::log("TableOperationSelectionPass") << "  Running on operation "
+                << operation.toString() << "\n";
             generateOperations(newOperations, newValues, operation);
         }
 

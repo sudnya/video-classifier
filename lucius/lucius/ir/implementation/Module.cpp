@@ -29,6 +29,11 @@ public:
 
     }
 
+    ~ModuleImplementation()
+    {
+        _removeSelfReferences();
+    }
+
 public:
     Function addFunction(Function f)
     {
@@ -123,6 +128,12 @@ public:
     const VariableList& getVariables() const
     {
         return _variables;
+    }
+
+private:
+    void _removeSelfReferences()
+    {
+        // TODO
     }
 
 private:

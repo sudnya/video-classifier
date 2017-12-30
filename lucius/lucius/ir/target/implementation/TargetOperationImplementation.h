@@ -7,8 +7,7 @@
 #pragma once
 
 // Lucius Includes
-#include <lucius/ir/implementation/ValueImplementation.h>
-#include <lucius/ir/implementation/UserImplementation.h>
+#include <lucius/ir/implementation/OperationImplementation.h>
 
 // Standard Library Includes
 #include <list>
@@ -26,25 +25,14 @@ namespace ir
 {
 
 /*! \brief The implementation of a class that represents an operation in the program. */
-class TargetOperationImplementation : public UserImplementation, public ValueImplementation
+class TargetOperationImplementation : public OperationImplementation
 {
 public:
     TargetOperationImplementation();
 
 public:
-    const Use& getOperand(size_t index) const;
-          Use& getOperand(size_t index);
-
-public:
           Use& getOutputOperand();
     const Use& getOutputOperand() const;
-
-public:
-    using UseList = std::list<Use>;
-
-public:
-          UseList& getAllOperands();
-    const UseList& getAllOperands() const;
 
 public:
     void setOutputOperand(const TargetValue& v);
@@ -52,10 +40,6 @@ public:
 public:
     void setOperand(const TargetValue& v, size_t index);
     void appendOperand(const TargetValue& v);
-
-public:
-          BasicBlock& getParent();
-    const BasicBlock& getParent() const;
 
 public:
     /*! \brief Get the performance metrics for this operations. */

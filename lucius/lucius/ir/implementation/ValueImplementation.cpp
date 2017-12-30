@@ -11,6 +11,8 @@
 #include <lucius/ir/implementation/ConstantImplementation.h>
 #include <lucius/ir/implementation/FunctionImplementation.h>
 
+#include <lucius/ir/target/implementation/TargetOperationImplementation.h>
+
 #include <lucius/ir/interface/Use.h>
 #include <lucius/ir/interface/Context.h>
 
@@ -51,6 +53,11 @@ bool ValueImplementation::isOperation() const
     return dynamic_cast<const OperationImplementation*>(this);
 }
 
+bool ValueImplementation::isTargetOperation() const
+{
+    return dynamic_cast<const TargetOperationImplementation*>(this);
+}
+
 bool ValueImplementation::isConstant() const
 {
     return dynamic_cast<const ConstantImplementation*>(this);
@@ -76,6 +83,26 @@ void ValueImplementation::bindToContext(Context& context)
     _context = &context;
 
     _id = _context->allocateId();
+}
+
+std::string ValueImplementation::name() const
+{
+    return "";
+}
+
+std::string ValueImplementation::toSummaryString() const
+{
+    return toString();
+}
+
+bool ValueImplementation::isCall() const
+{
+    return false;
+}
+
+bool ValueImplementation::isReturn() const
+{
+    return false;
 }
 
 } // namespace ir

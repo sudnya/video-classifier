@@ -9,6 +9,8 @@
 
 #include <lucius/machine/interface/TableEntry.h>
 
+#include <lucius/machine/cuda/interface/CudaTargetOperationFactory.h>
+
 namespace lucius
 {
 
@@ -27,6 +29,16 @@ CudaTargetMachine::TableEntryVector CudaTargetMachine::getEntries() const
     // TODO: add rules
 
     return vector;
+}
+
+std::unique_ptr<ir::TargetOperationFactory> CudaTargetMachine::getOperationFactory() const
+{
+    return std::make_unique<cuda::CudaTargetOperationFactory>();
+}
+
+std::string CudaTargetMachine::name() const
+{
+    return "CudaTargetMachine";
 }
 
 }

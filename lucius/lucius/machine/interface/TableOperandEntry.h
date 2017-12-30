@@ -21,6 +21,7 @@ class TableOperandEntry
 {
 public:
     TableOperandEntry();
+    TableOperandEntry(size_t existingOperandIndex);
 
 public:
     /*! \brief Check if the operand refers to an existing operand from the original operation. */

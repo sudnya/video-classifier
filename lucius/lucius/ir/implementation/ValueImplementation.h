@@ -44,6 +44,7 @@ public:
 
 public:
     bool isOperation() const;
+    bool isTargetOperation() const;
     bool isConstant() const;
     bool isFunction() const;
 
@@ -58,10 +59,16 @@ public:
     virtual std::shared_ptr<ValueImplementation> clone() const = 0;
 
 public:
+    virtual std::string name() const;
     virtual std::string toString() const = 0;
+    virtual std::string toSummaryString() const;
 
 public:
     virtual Type getType() const = 0;
+
+public:
+    virtual bool isCall() const;
+    virtual bool isReturn() const;
 
 private:
     size_t _id;

@@ -90,6 +90,7 @@ public:
 
 public:
     std::string toString() const;
+    std::string toSummaryString() const;
 
 public:
     Type getType() const;
@@ -98,6 +99,7 @@ public:
     void setParent(std::weak_ptr<ModuleImplementation> parent);
 
     Module getParent() const;
+    bool hasParent() const;
 
 private:
     using FunctionList = std::list<Function>;

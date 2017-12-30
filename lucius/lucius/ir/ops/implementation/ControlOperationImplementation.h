@@ -18,13 +18,13 @@ namespace ir
 class ControlOperationImplementation : public OperationImplementation
 {
 public:
-    std::shared_ptr<ValueImplementation> clone() const;
+    virtual std::shared_ptr<ValueImplementation> clone() const;
 
 public:
-    std::string name() const;
+    virtual std::string name() const;
 
 public:
-    Type getType() const;
+    virtual Type getType() const;
 
 };
 

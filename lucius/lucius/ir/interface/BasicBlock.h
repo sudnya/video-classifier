@@ -50,6 +50,10 @@ public:
     bool empty() const;
 
 public:
+    /*! \brief Get the next basic block in program order. */
+    BasicBlock getNextBasicBlock() const;
+
+public:
     using OperationList = std::list<Operation>;
 
 public:
@@ -122,9 +126,12 @@ public:
 public:
     void setParent(const Function& f);
     Function getParent() const;
+    bool hasParent() const;
 
 public:
+    std::string name() const;
     std::string toString() const;
+    std::string toSummaryString() const;
 
 public:
     Type getType() const;

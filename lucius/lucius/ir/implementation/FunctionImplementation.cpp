@@ -204,6 +204,12 @@ std::shared_ptr<ValueImplementation> FunctionImplementation::clone() const
                     continue;
                 }
 
+                // don't replace functions
+                if(operand.getValue().isFunction())
+                {
+                    continue;
+                }
+
                 auto correspondingValue = valueMap.find(operand.getValue());
 
                 assert(correspondingValue != valueMap.end());
@@ -220,7 +226,7 @@ std::string FunctionImplementation::toString() const
 {
     std::stringstream result;
 
-    result << getReturnType().toString() << " " << getName() << " ()\n";
+    result << getReturnType().toString() << " " << getName() << "{" << getId() << "} ()\n";
 
     result << "{\n";
 
@@ -234,6 +240,15 @@ std::string FunctionImplementation::toString() const
     return result.str();
 }
 
+std::string FunctionImplementation::toSummaryString() const
+{
+    std::stringstream result;
+
+    result << getReturnType().toString() << " " << getName() << "{" << getId() << "} ()\n";
+
+    return result.str();
+}
+
 Type FunctionImplementation::getType() const
 {
     return Type(Type::FunctionId);
@@ -242,6 +257,8 @@ Type FunctionImplementation::getType() const
 void FunctionImplementation::setParent(std::weak_ptr<ModuleImplementation> parent)
 {
     _parent = parent;
+
+    bindToContext(getParent().getContext());
 }
 
 Module FunctionImplementation::getParent() const
@@ -249,6 +266,10 @@ Module FunctionImplementation::getParent() const
     return Module(_parent.lock());
 }
 
+bool FunctionImplementation::hasParent() const
+{
+    return !_parent.expired();
+}
 
 } // namespace ir
 

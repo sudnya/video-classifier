@@ -19,6 +19,12 @@ TableOperandEntry::TableOperandEntry()
 
 }
 
+TableOperandEntry::TableOperandEntry(size_t existingOperandIndex)
+: _isExisting(true), _existingOperandIndex(existingOperandIndex)
+{
+
+}
+
 bool TableOperandEntry::isExistingOperand() const
 {
     return _isExisting;

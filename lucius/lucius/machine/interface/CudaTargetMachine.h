@@ -24,6 +24,12 @@ public:
 public:
     virtual TableEntryVector getEntries() const;
 
+public:
+    virtual std::unique_ptr<ir::TargetOperationFactory> getOperationFactory() const;
+
+public:
+    virtual std::string name() const;
+
 };
 
 }

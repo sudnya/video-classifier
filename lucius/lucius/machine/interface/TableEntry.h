@@ -23,7 +23,11 @@ namespace machine
 class TableEntry
 {
 public:
+    using TableOperationEntryVector = std::vector<TableOperationEntry>;
+
+public:
     TableEntry();
+    TableEntry(const TableOperationEntryVector&);
     TableEntry(const TableEntry&);
     ~TableEntry();
 
@@ -31,8 +35,6 @@ public:
     TableEntry& operator=(const TableEntry&);
 
 public:
-    using TableOperationEntryVector = std::vector<TableOperationEntry>;
-
     using iterator = TableOperationEntryVector::iterator;
     using const_iterator = TableOperationEntryVector::const_iterator;
 

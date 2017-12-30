@@ -18,6 +18,18 @@ namespace machine
 class TableEntryImplementation
 {
 public:
+    TableEntryImplementation()
+    {
+
+    }
+
+    TableEntryImplementation(const TableEntry::TableOperationEntryVector& operationEntries)
+    : _operationEntries(operationEntries)
+    {
+
+    }
+
+public:
     TableEntry::iterator begin()
     {
         return _operationEntries.begin();
@@ -48,11 +60,18 @@ TableEntry::TableEntry()
 
 }
 
+TableEntry::TableEntry(const TableOperationEntryVector& v)
+: _implementation(std::make_unique<TableEntryImplementation>(v))
+{
+
+}
+
 TableEntry::TableEntry(const TableEntry& t)
 : _implementation(std::make_unique<TableEntryImplementation>(*t._implementation))
 {
 
 }
+
 
 TableEntry::~TableEntry()
 {

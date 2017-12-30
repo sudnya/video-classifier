@@ -62,6 +62,10 @@ std::string TypeImplementation::toString() const
     {
         return "tensor";
     }
+    else if(getTypeId() == Type::FunctionId)
+    {
+        return "function";
+    }
 
     assertM(false, "Not implemented.");
 

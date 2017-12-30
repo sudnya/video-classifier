@@ -14,6 +14,8 @@
 #include <lucius/ir/interface/Function.h>
 #include <lucius/ir/interface/BasicBlock.h>
 
+#include <lucius/util/interface/debug.h>
+
 namespace lucius
 {
 namespace optimization
@@ -73,6 +75,11 @@ using OperationSet  = std::set<Operation>;
 
 static bool isReady(const Operation& operation, const OperationSet& scheduledOperations)
 {
+    if(operation.isControlOperation())
+    {
+        return false;
+    }
+
     auto predecessors = operation.getPredecessors();
 
     for(auto& predecessor : predecessors)
@@ -105,6 +112,8 @@ static void scheduleBasicBlock(OperationList& newOrder, OperationList& originalO
     {
         auto operation = getBestOperation(readyOperations, memoryAnalysis);
 
+        util::log("MinimalMemoryOperationSchedulingPass") << "   scheduling operation  '"
+            << operation.toString() << "'.\n";
         newOrder.push_back(operation);
         scheduledOperations.insert(operation);
 
@@ -119,7 +128,13 @@ static void scheduleBasicBlock(OperationList& newOrder, OperationList& originalO
         }
     }
 
-    newOrder.push_back(originalOrder.back());
+    // add the branch back in
+    if(originalOrder.back().isControlOperation())
+    {
+        util::log("MinimalMemoryOperationSchedulingPass") << "   scheduling control operation  '"
+            << originalOrder.back().toString() << "'.\n";
+        newOrder.push_back(originalOrder.back());
+    }
 }
 
 void MinimalMemoryOperationSchedulingPass::runOnFunction(ir::Function& function)
@@ -127,9 +142,16 @@ void MinimalMemoryOperationSchedulingPass::runOnFunction(ir::Function& function)
     const OperationMemoryAnalysis* memoryAnalysis =
         static_cast<OperationMemoryAnalysis*>(getAnalysis("OperationMemoryAnalysis"));
 
+    util::log("MinimalMemoryOperationSchedulingPass") << "  scheduling operations in function '"
+        << function.name() << "'.\n";
+
     // schedule each basic block independently
     for(auto& basicBlock : function)
     {
+        util::log("MinimalMemoryOperationSchedulingPass")
+            << "  scheduling operations in basic block '"
+            << basicBlock.name() << "'.\n";
+
         OperationList newOrder;
 
         scheduleBasicBlock(newOrder, basicBlock.getOperations(), *memoryAnalysis);

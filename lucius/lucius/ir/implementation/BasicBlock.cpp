@@ -19,6 +19,7 @@
 // Standard Library Includes
 #include <set>
 #include <sstream>
+#include <cassert>
 
 namespace lucius
 {
@@ -102,6 +103,15 @@ public:
     }
 
 public:
+    std::string name() const
+    {
+        std::stringstream stream;
+
+        stream << "BasicBlock" << getId();
+
+        return stream.str();
+    }
+
     std::string toString() const
     {
         std::stringstream stream;
@@ -116,6 +126,15 @@ public:
         return stream.str();
     }
 
+    std::string toSummaryString() const
+    {
+        std::stringstream stream;
+
+        stream << name();
+
+        return stream.str();
+    }
+
 public:
     Type getType() const
     {
@@ -125,7 +144,11 @@ public:
 public:
     void setParent(const Function& function)
     {
-        bindToContext(function.getParent().getContext());
+        if(function.hasParent())
+        {
+            bindToContext(function.getParent().getContext());
+        }
+
         _parent = function.getImplementation();
     }
 
@@ -191,6 +214,15 @@ bool BasicBlock::isExitBlock() const
 bool BasicBlock::empty() const
 {
     return getOperations().empty();
+}
+
+BasicBlock BasicBlock::getNextBasicBlock() const
+{
+    assert(!isExitBlock());
+
+    auto next = ++getIterator();
+
+    return *next;
 }
 
 BasicBlock::iterator BasicBlock::begin()
@@ -353,9 +385,24 @@ Function BasicBlock::getParent() const
     return Function(_implementation->getParent().lock());
 }
 
+bool BasicBlock::hasParent() const
+{
+    return !_implementation->getParent().expired();
+}
+
+std::string BasicBlock::name() const
+{
+    return _implementation->name();
+}
+
 std::string BasicBlock::toString() const
 {
     return _implementation->toString();
+}
+
+std::string BasicBlock::toSummaryString() const
+{
+    return _implementation->toSummaryString();
 }
 
 } // namespace ir

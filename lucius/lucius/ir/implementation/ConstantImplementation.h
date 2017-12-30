@@ -19,6 +19,7 @@ namespace ir
 class ConstantImplementation : public ValueImplementation
 {
 public:
+    virtual std::string toSummaryString() const;
 
 };
 

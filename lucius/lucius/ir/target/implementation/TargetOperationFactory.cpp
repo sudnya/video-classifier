@@ -7,17 +7,15 @@
 // Lucius Includes
 #include <lucius/ir/target/interface/TargetOperationFactory.h>
 
-#include <lucius/ir/target/interface/TargetOperation.h>
-
 namespace lucius
 {
 
 namespace ir
 {
 
-TargetOperation TargetOperationFactory::create(const std::string& name)
+TargetOperationFactory::~TargetOperationFactory()
 {
-    throw std::runtime_error("There is no registered target operation with name '" + name + "'.");
+
 }
 
 } // namespace ir

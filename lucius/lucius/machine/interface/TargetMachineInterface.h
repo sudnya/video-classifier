@@ -13,6 +13,8 @@
 // Forward Declarations
 namespace lucius { namespace machine { class TableEntry; } }
 
+namespace lucius { namespace ir { class TargetOperationFactory; } }
+
 namespace lucius
 {
 
@@ -30,6 +32,12 @@ public:
 
 public:
     virtual TableEntryVector getEntries() const = 0;
+
+public:
+    virtual std::unique_ptr<ir::TargetOperationFactory> getOperationFactory() const = 0;
+
+public:
+    virtual std::string name() const = 0;
 
 };
 

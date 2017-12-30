@@ -31,7 +31,6 @@ class TargetOperation
 public:
     TargetOperation();
     explicit TargetOperation(std::shared_ptr<ValueImplementation> op);
-    explicit TargetOperation(std::shared_ptr<TargetOperationImplementation> op);
     ~TargetOperation();
 
 public:
@@ -54,12 +53,24 @@ public:
     const Use& getOutputOperand() const;
 
 public:
-          UseList& getAllOperands();
-    const UseList& getAllOperands() const;
+          Use& getOperand(size_t index);
+    const Use& getOperand(size_t index) const;
+
+public:
+          UseList& getOperands();
+    const UseList& getOperands() const;
 
 public:
     void setOperand(const TargetValue& v, size_t index);
     void appendOperand(const TargetValue& v);
+
+public:
+    bool isValid() const;
+    bool isCall() const;
+    bool isReturn() const;
+
+public:
+    std::string toString() const;
 
 public:
     std::shared_ptr<TargetOperationImplementation> getTargetOperationImplementation() const;

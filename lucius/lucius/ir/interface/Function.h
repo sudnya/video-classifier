@@ -51,6 +51,14 @@ public:
     const BasicBlock& front() const;
 
 public:
+          BasicBlock& back();
+    const BasicBlock& back() const;
+
+public:
+    BasicBlock getEntryBlock() const;
+    BasicBlock getExitBlock() const;
+
+public:
     Operation getReturn() const;
     Type getReturnType() const;
 
@@ -99,6 +107,7 @@ public:
 public:
     void setParent(Module m);
     Module getParent() const;
+    bool hasParent() const;
 
 public:
     std::shared_ptr<FunctionImplementation> getImplementation() const;

@@ -14,6 +14,8 @@
 
 // Standard Library Includes
 #include <cassert>
+#include <string>
+#include <sstream>
 
 namespace lucius
 {
@@ -29,69 +31,26 @@ TargetOperationImplementation::TargetOperationImplementation()
 
 }
 
-const Use& TargetOperationImplementation::getOperand(size_t index) const
-{
-    auto use = getUses().begin();
-
-    std::advance(use, index);
-
-    return *use;
-}
-
-Use& TargetOperationImplementation::getOperand(size_t index)
-{
-    auto use = getUses().begin();
-
-    std::advance(use, index);
-
-    return *use;
-}
-
 Use& TargetOperationImplementation::getOutputOperand()
 {
-    return getUses().back();
+    return getOperands().back();
 }
 
 const Use& TargetOperationImplementation::getOutputOperand() const
 {
-    return getUses().back();
-}
-
-UseList& TargetOperationImplementation::getAllOperands()
-{
-    return getUses();
-}
-
-const UseList& TargetOperationImplementation::getAllOperands() const
-{
-    return getUses();
+    return getOperands().back();
 }
 
 void TargetOperationImplementation::setOutputOperand(const TargetValue& v)
 {
     if(!_hasOutputOperand)
     {
-        getUses().push_back(Use(v.getValue()));
+        getOperands().push_back(Use(v.getValue()));
         _hasOutputOperand = true;
     }
     else
     {
         getOutputOperand() = Use(v.getValue());
-    }
-}
-
-void TargetOperationImplementation::_growToSupportIndex(size_t index)
-{
-    size_t size = getUses().size();
-
-    if(_hasOutputOperand)
-    {
-        --size;
-    }
-
-    for(size_t i = size; i < index; ++i)
-    {
-        getUses().push_back(Use());
     }
 }
 
@@ -104,15 +63,30 @@ void TargetOperationImplementation::setOperand(const TargetValue& v, size_t inde
 
 void TargetOperationImplementation::appendOperand(const TargetValue& v)
 {
-    auto end = getUses().end();
+    auto end = getOperands().end();
 
     if(_hasOutputOperand)
     {
-        assert(!getUses().empty());
+        assert(!getOperands().empty());
         --end;
     }
 
-    getUses().insert(end, Use(v.getValue()));
+    getOperands().insert(end, Use(v.getValue()));
+}
+
+void TargetOperationImplementation::_growToSupportIndex(size_t index)
+{
+    size_t size = getOperands().size();
+
+    if(_hasOutputOperand)
+    {
+        --size;
+    }
+
+    for(size_t i = size; i < index; ++i)
+    {
+        getOperands().push_back(Use());
+    }
 }
 
 } // namespace ir

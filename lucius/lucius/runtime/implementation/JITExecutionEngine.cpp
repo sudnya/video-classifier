@@ -18,8 +18,11 @@
 #include <lucius/ir/interface/Operation.h>
 #include <lucius/ir/interface/Function.h>
 #include <lucius/ir/interface/Value.h>
+#include <lucius/ir/interface/Use.h>
 
 #include <lucius/ir/target/interface/TargetOperation.h>
+#include <lucius/ir/target/interface/TargetValue.h>
+#include <lucius/ir/target/interface/TargetValueData.h>
 #include <lucius/ir/target/interface/TargetControlOperation.h>
 
 #include <lucius/util/interface/debug.h>
@@ -43,6 +46,8 @@ using BasicBlockList = std::list<BasicBlock>;
 using PassManager = optimization::PassManager;
 using PassFactory = optimization::PassFactory;
 using OperationFinalizationPass = optimization::OperationFinalizationPass;
+using TargetValue = ir::TargetValue;
+using TargetValueData = ir::TargetValueData;
 
 using Bundle = network::Bundle;
 
@@ -55,9 +60,18 @@ public:
     {
         auto data = _savedValues.find(v);
 
-        assert(data != _savedValues.end());
+        if(data == _savedValues.end())
+        {
+            throw std::runtime_error("Could not find '" + v.toString() +
+                "' in the set of saved values for this program.");
+        }
 
-        return data->second;
+        return data->second.data();
+    }
+
+    void saveValue(const TargetValue& v)
+    {
+        _savedValues[v.getValue()] = v.getData();
     }
 
 public:
@@ -66,8 +80,13 @@ public:
         _valuesToSave.insert(v);
     }
 
+    bool isSavedValue(const TargetValue& v)
+    {
+        return _valuesToSave.count(v.getValue()) != 0;
+    }
+
 private:
-    using ValueToDataMap = std::map<Value, void*>;
+    using ValueToDataMap = std::map<Value, TargetValueData>;
     using ValueSet = std::set<Value>;
 
 private:
@@ -125,8 +144,24 @@ public:
         return _data;
     }
 
+    void setReturnValue(TargetValue value)
+    {
+        // TODO: type check
+        auto data = value.getData();
+
+        _data["returnValue"] = data;
+    }
+
+    BasicBlock getReturnTarget() const
+    {
+        return _returnTarget;
+    }
+
 private:
     Bundle _data;
+
+private:
+    BasicBlock _returnTarget;
 
 };
 
@@ -148,6 +183,11 @@ public:
     void pushNewFrame()
     {
         _frames.push_back(StackFrame());
+    }
+
+    bool isMainFrame() const
+    {
+        return _frames.size() == 1;
     }
 
 public:
@@ -249,12 +289,12 @@ public:
         util::log("JITExecutionEngine") << " Lowering and executing initialization program.\n";
         _lowerAndExecuteFunction(augmentedProgram.getInitializationEntryPoint());
 
-        bool isProgramFinished = true;
+        bool isProgramFinished = false;
 
         // Program execution may fail due to JIT assumptions changing, allow it to restart here
         while(!isProgramFinished)
         {
-            util::log("JITExecutionEngine") << " running learning engine.\n";
+            util::log("JITExecutionEngine") << " lowering and executing learning engine.\n";
             _lowerAndExecuteFunction(augmentedProgram.getEngineEntryPoint());
 
             util::log("JITExecutionEngine") << " checking if program is finished.\n";
@@ -270,21 +310,56 @@ public:
 private:
     bool _isProgramFinished(Program& augmentedProgram)
     {
-        auto bundle = _lowerAndExecuteFunction(augmentedProgram.getIsFinishedFunction());
+        auto bundle = _lowerAndExecuteFunction(augmentedProgram.getIsFinishedEntryPoint());
 
         if(!bundle.contains("returnValue"))
         {
+            util::log("JITExecutionEngine") << "  Warning: the finished check "
+                << "did not return a value!\n";
             return true;
         }
 
-        return bundle["returnValue"].get<bool>();
+        auto returnData = bundle["returnValue"].get<TargetValueData>();
+
+        return *reinterpret_cast<bool*>(returnData.data());
     }
 
 private:
     Bundle _lowerAndExecuteFunction(Function function)
     {
+        util::log("JITExecutionEngine") << "  lowering and executing function '"
+            << function.name() << "'.\n";
+
+        _lowerFunction(function);
+
+        util::log("JITExecutionEngine") << "  executing function '"
+            << function.name() << "'.\n";
+
+        // set up stack frames, one for main, and one for the function being called
+        _getStack().pushNewFrame();
+        _getStack().pushNewFrame();
+
+        // execute
+        _executeFunction(_getBasicBlockCache().getFunctionEntryPoint(function));
+
+        util::log("JITExecutionEngine") << "  finished executing function, "
+            << "getting return data from stack.\n";
+
+        auto result = _getStack().getCurrentFrame().getData();
+
+        // return from main
+        _getStack().popFrame();
+
+        return result;
+    }
+
+    void _lowerFunction(Function function)
+    {
         if(!_getBasicBlockCache().contains(function))
         {
+            util::log("JITExecutionEngine") << "  lowering function '"
+                << function.name() << "'.\n";
+
             // lower
             PassManager manager;
 
@@ -300,34 +375,40 @@ private:
             _getBasicBlockCache().addFunction(function,
                 operationFinalizationPass->getTargetFunction());
         }
-
-        // set up stack frame
-        _getStack().pushNewFrame();
-
-        // execute
-        _executeFunction(_getBasicBlockCache().getFunctionEntryPoint(function));
-
-        auto result = _getStack().getCurrentFrame().getData();
-
-        _getStack().popFrame();
-
-        return result;
     }
 
     void _executeFunction(BasicBlock block)
     {
         auto nextBlock = block;
 
-        while(!nextBlock.isExitBlock())
+        while(!_getStack().isMainFrame())
         {
             nextBlock = _executeBasicBlock(nextBlock);
+
+            if(nextBlock.empty() && nextBlock.isExitBlock())
+            {
+                _getStack().popFrame();
+            }
         }
     }
 
     BasicBlock _executeBasicBlock(BasicBlock block)
     {
-        // the block shouldn't be empty
-        assert(!block.empty());
+        // skip empty blocks
+        if(block.empty())
+        {
+            util::log("JITExecutionEngine") << "   skipping empty basic block.\n";
+
+            if(block.isExitBlock())
+            {
+                return block;
+            }
+
+            return block.getNextBasicBlock();
+        }
+
+        util::log("JITExecutionEngine") << "   executing basic block: "
+            << block.toString() << ".\n";
 
         // execute each operation
         for(auto operation : block)
@@ -337,13 +418,61 @@ private:
                 break;
             }
 
-            ir::value_cast<TargetOperation>(operation).execute();
+            auto targetOperation = ir::value_cast<TargetOperation>(operation);
+
+            auto targetOperationOutputValue = ir::value_cast<TargetValue>(
+                targetOperation.getOutputOperand().getValue());
+
+            // check if outputs should be saved
+            if(_jitImplementation.isSavedValue(targetOperationOutputValue))
+            {
+                _jitImplementation.saveValue(targetOperationOutputValue);
+            }
+
+            util::log("JITExecutionEngine") << "   executing operation : "
+                << targetOperation.toString() << ".\n";
+
+            targetOperation.execute();
         }
 
-        // control operations can change control flow
-        assert(block.back().isControlOperation());
+        // only control operations can change control flow
+        if(block.back().isControlOperation())
+        {
+            auto controlOperation = TargetControlOperation(block.back());
 
-        return TargetControlOperation(block.back()).execute();
+            if(controlOperation.isCall())
+            {
+                auto callOperand = controlOperation.getOperand(0);
+                auto callValue = callOperand.getValue();
+
+                assert(callValue.isFunction());
+
+                auto function = ir::value_cast<Function>(callValue);
+
+                _lowerFunction(function);
+
+                _getStack().pushNewFrame();
+            }
+
+            util::log("JITExecutionEngine") << "   executing control operation : "
+                << controlOperation.toString() << ".\n";
+
+            auto target = controlOperation.execute();
+
+            if(controlOperation.isReturn())
+            {
+                auto returnOperand = controlOperation.getOperand(0);
+                auto returnValue = TargetValue(returnOperand.getValue());
+
+                _getStack().popFrame();
+
+                _getStack().getCurrentFrame().setReturnValue(returnValue);
+            }
+
+            return target;
+        }
+
+        return block.getNextBasicBlock();
     }
 
 public:

@@ -14,12 +14,17 @@
 #include <lucius/ir/ops/implementation/ControlOperationImplementation.h>
 #include <lucius/ir/ops/implementation/ComputeGradientOperationImplementation.h>
 
+#include <lucius/ir/target/implementation/TargetControlOperationImplementation.h>
+
 #include <lucius/ir/implementation/OperationImplementation.h>
 
 #include <lucius/ir/interface/Use.h>
 #include <lucius/ir/interface/Value.h>
 #include <lucius/ir/interface/ShapeList.h>
 #include <lucius/ir/interface/Shape.h>
+
+// Standard Library Includes
+#include <cassert>
 
 namespace lucius
 {
@@ -39,7 +44,7 @@ Operation::Operation()
 Operation::Operation(std::shared_ptr<ValueImplementation> implementation)
 : _implementation(std::static_pointer_cast<OperationImplementation>(implementation))
 {
-
+    assert(Value(implementation).isOperation());
 }
 
 Operation::Operation(const TargetOperation& op)
@@ -144,13 +149,25 @@ ValueList Operation::getUsedValues() const
 bool Operation::isControlOperation() const
 {
     return static_cast<bool>(std::dynamic_pointer_cast<ControlOperationImplementation>(
-        getValueImplementation()));
+            getValueImplementation())) ||
+        static_cast<bool>(std::dynamic_pointer_cast<TargetControlOperationImplementation>(
+            getValueImplementation()));
 }
 
 bool Operation::isGradientOperation() const
 {
     return static_cast<bool>(std::dynamic_pointer_cast<ComputeGradientOperationImplementation>(
         getValueImplementation()));
+}
+
+bool Operation::isReturn() const
+{
+    return _implementation->isReturn();
+}
+
+bool Operation::isCall() const
+{
+    return _implementation->isCall();
 }
 
 Type Operation::getType() const

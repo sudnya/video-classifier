@@ -22,7 +22,10 @@ namespace ir
 class TargetOperationFactory
 {
 public:
-    static TargetOperation create(const std::string& name);
+    virtual ~TargetOperationFactory();
+
+public:
+    virtual TargetOperation create(const std::string& name) = 0;
 };
 
 } // namespace ir

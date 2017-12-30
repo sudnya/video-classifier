@@ -191,7 +191,7 @@ static BasicBlock::iterator getLastUse(TargetValue value, BasicBlock postDominat
     {
         auto possibleTargetUse = ir::value_cast<TargetOperation>(*possibleUse);
 
-        auto& operands = possibleTargetUse.getAllOperands();
+        auto& operands = possibleTargetUse.getOperands();
 
         bool foundUse = false;
 
@@ -245,7 +245,7 @@ static TargetValueVector getTargetValues(ir::Function& function)
         {
             auto targetOperation = ir::value_cast<TargetOperation>(operation);
 
-            auto& operands = targetOperation.getAllOperands();
+            auto& operands = targetOperation.getOperands();
 
             for(auto& operand : operands)
             {

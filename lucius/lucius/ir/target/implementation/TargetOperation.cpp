@@ -16,6 +16,10 @@
 
 #include <lucius/ir/target/implementation/TargetOperationImplementation.h>
 
+// Standard Library Includes
+#include <string>
+#include <cassert>
+
 namespace lucius
 {
 
@@ -28,15 +32,9 @@ TargetOperation::TargetOperation()
 }
 
 TargetOperation::TargetOperation(std::shared_ptr<ValueImplementation> value)
-: TargetOperation(std::static_pointer_cast<TargetOperationImplementation>(value))
+: _implementation(std::static_pointer_cast<TargetOperationImplementation>(value))
 {
-
-}
-
-TargetOperation::TargetOperation(std::shared_ptr<TargetOperationImplementation> value)
-: _implementation(value)
-{
-
+    assert(Value(value).isTargetOperation());
 }
 
 TargetOperation::~TargetOperation()
@@ -74,14 +72,32 @@ const Use& TargetOperation::getOutputOperand() const
     return getTargetOperationImplementation()->getOutputOperand();
 }
 
-TargetOperation::UseList& TargetOperation::getAllOperands()
+Use& TargetOperation::getOperand(size_t index)
 {
-    return getTargetOperationImplementation()->getAllOperands();
+    auto operand = getOperands().begin();
+
+    std::advance(operand, index);
+
+    return *operand;
 }
 
-const TargetOperation::UseList& TargetOperation::getAllOperands() const
+const Use& TargetOperation::getOperand(size_t index) const
 {
-    return getTargetOperationImplementation()->getAllOperands();
+    auto operand = getOperands().begin();
+
+    std::advance(operand, index);
+
+    return *operand;
+}
+
+TargetOperation::UseList& TargetOperation::getOperands()
+{
+    return getTargetOperationImplementation()->getOperands();
+}
+
+const TargetOperation::UseList& TargetOperation::getOperands() const
+{
+    return getTargetOperationImplementation()->getOperands();
 }
 
 void TargetOperation::setOperand(const TargetValue& v, size_t index)
@@ -92,6 +108,26 @@ void TargetOperation::setOperand(const TargetValue& v, size_t index)
 void TargetOperation::appendOperand(const TargetValue& v)
 {
     getTargetOperationImplementation()->appendOperand(v);
+}
+
+bool TargetOperation::isValid() const
+{
+    return static_cast<bool>(_implementation);
+}
+
+bool TargetOperation::isCall() const
+{
+    return _implementation->isCall();
+}
+
+bool TargetOperation::isReturn() const
+{
+    return _implementation->isReturn();
+}
+
+std::string TargetOperation::toString() const
+{
+    return _implementation->toString();
 }
 
 std::shared_ptr<TargetOperationImplementation>

@@ -90,6 +90,11 @@ bool Value::isOperation() const
     return _implementation->isOperation();
 }
 
+bool Value::isTargetOperation() const
+{
+    return _implementation->isTargetOperation();
+}
+
 bool Value::isConstant() const
 {
     return _implementation->isConstant();
@@ -133,6 +138,11 @@ std::shared_ptr<ValueImplementation> Value::getValueImplementation() const
 std::string Value::toString() const
 {
     return _implementation->toString();
+}
+
+std::string Value::toSummaryString() const
+{
+    return _implementation->toSummaryString();
 }
 
 } // namespace ir

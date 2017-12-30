@@ -68,7 +68,7 @@ BasicBlockList postOrderTraversal(const BasicBlockList& blocks, bool reverseEdge
 
     while(!stack.empty())
     {
-        auto next = stack.top();
+        auto& next = stack.top();
 
         // add successors if not already traversed
         if(!next.second)

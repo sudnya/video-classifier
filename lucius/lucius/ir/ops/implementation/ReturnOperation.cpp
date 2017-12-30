@@ -7,6 +7,15 @@
 // Lucius Includes
 #include <lucius/ir/ops/interface/ReturnOperation.h>
 
+#include <lucius/ir/interface/ShapeList.h>
+#include <lucius/ir/interface/Shape.h>
+#include <lucius/ir/interface/Value.h>
+#include <lucius/ir/interface/Use.h>
+
+#include <lucius/ir/types/interface/VoidType.h>
+
+#include <lucius/ir/implementation/OperationImplementation.h>
+
 namespace lucius
 {
 
@@ -47,9 +56,9 @@ public:
 };
 
 ReturnOperation::ReturnOperation(Value returnedValue)
-: ControlOperation(std::make_shared<ReturnOperationImplementation>)
+: ControlOperation(std::make_shared<ReturnOperationImplementation>())
 {
-    setOperands(returnedValue);
+    setOperands({returnedValue});
 }
 
 ReturnOperation::~ReturnOperation()

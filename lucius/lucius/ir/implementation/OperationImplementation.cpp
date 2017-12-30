@@ -93,7 +93,18 @@ BasicBlock OperationImplementation::getParent() const
 void OperationImplementation::setParent(const BasicBlock& parent)
 {
     _parent = parent.getImplementation();
-    bindToContext(parent.getParent().getParent().getContext());
+
+    if(parent.hasParent())
+    {
+        auto function = parent.getParent();
+
+        if(function.hasParent())
+        {
+            auto module = function.getParent();
+
+            bindToContext(module.getContext());
+        }
+    }
 }
 
 OperationImplementation::operation_iterator OperationImplementation::getIterator()
@@ -112,21 +123,30 @@ std::string OperationImplementation::toString() const
 
     stream << "%" << getId() << " = " << name() << " ";
 
-    auto operand = getOperands().begin();
+    auto operandIterator = getOperands().begin();
 
-    if(operand != getOperands().end())
+    if(operandIterator != getOperands().end())
     {
-        stream << operand->getValue().toString();
+        auto& operand = *operandIterator;
 
-        ++operand;
+        stream << operand.getValue().toSummaryString();
+
+        ++operandIterator;
     }
 
-    for( ; operand != getOperands().end(); ++operand)
+    for( ; operandIterator != getOperands().end(); ++operandIterator)
     {
-        stream << ", " << operand->getValue().toString();
+        auto& operand = *operandIterator;
+
+        stream << ", " << operand.getValue().toSummaryString();
     }
 
     return stream.str();
+}
+
+std::string OperationImplementation::toSummaryString() const
+{
+    return toString();
 }
 
 } // namespace ir

@@ -30,7 +30,7 @@ public:
 public:
     Value getValue() const
     {
-        return Value(_value.lock());
+        return Value(_value);
     }
 
     User getUser() const
@@ -41,7 +41,7 @@ public:
 public:
     Operation getOperation() const
     {
-        return Operation(_value.lock());
+        return Operation(_value);
     }
 
     BasicBlock getParent() const
@@ -54,7 +54,7 @@ private:
 
 private:
     std::weak_ptr<UserImplementation>  _parent;
-    std::weak_ptr<ValueImplementation> _value;
+    std::shared_ptr<ValueImplementation> _value;
 
 private:
     UseList::iterator _parentPosition;

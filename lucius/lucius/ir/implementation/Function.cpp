@@ -86,6 +86,26 @@ const BasicBlock& Function::front() const
     return _implementation->front();
 }
 
+BasicBlock& Function::back()
+{
+    return _implementation->back();
+}
+
+const BasicBlock& Function::back() const
+{
+    return _implementation->back();
+}
+
+BasicBlock Function::getEntryBlock() const
+{
+    return front();
+}
+
+BasicBlock Function::getExitBlock() const
+{
+    return back();
+}
+
 Operation Function::getReturn() const
 {
     return _implementation->getReturn();
@@ -164,6 +184,11 @@ void Function::setParent(Module m)
 Module Function::getParent() const
 {
     return _implementation->getParent();
+}
+
+bool Function::hasParent() const
+{
+    return _implementation->hasParent();
 }
 
 std::shared_ptr<ValueImplementation> Function::getValueImplementation() const

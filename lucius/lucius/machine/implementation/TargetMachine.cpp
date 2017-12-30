@@ -13,6 +13,10 @@
 
 #include <lucius/ir/interface/Operation.h>
 
+#include <lucius/ir/target/interface/TargetOperationFactory.h>
+
+#include <lucius/util/interface/debug.h>
+
 // Standard Library Includes
 #include <map>
 #include <cassert>
@@ -22,6 +26,8 @@ namespace lucius
 
 namespace machine
 {
+
+using TargetOperationFactory = ir::TargetOperationFactory;
 
 class TargetMachineImplementation
 {
@@ -36,6 +42,10 @@ public:
         {
             addTableEntry(entry.first, entry.second);
         }
+
+        _machineName = target->name();
+
+        _operationFactory = target->getOperationFactory();
     }
 
 public:
@@ -48,13 +58,30 @@ public:
     {
         auto position = _table.find(o.name());
 
-        assert(position != _table.end());
+        assertM(position != _table.end(), "There is no table entry for operation '" + o.name() +
+            "' for target machine '" + name() + "'");
 
         return position->second;
     }
 
+    const std::string& name() const
+    {
+        return _machineName;
+    }
+
+    TargetOperationFactory& getFactory()
+    {
+        return *_operationFactory;
+    }
+
 private:
     std::map<std::string, TableEntry> _table;
+
+private:
+    std::string _machineName;
+
+private:
+    std::unique_ptr<TargetOperationFactory> _operationFactory;
 };
 
 static std::unique_ptr<TargetMachineImplementation> _implementation;
@@ -72,6 +99,11 @@ static TargetMachineImplementation& getImplementation()
 const TableEntry& TargetMachine::getTableEntryForOperation(const ir::Operation& o)
 {
     return getImplementation().getTableEntryForOperation(o);
+}
+
+TargetOperationFactory& TargetMachine::getFactory()
+{
+    return getImplementation().getFactory();
 }
 
 }

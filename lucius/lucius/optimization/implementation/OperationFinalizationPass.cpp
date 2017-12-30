@@ -21,7 +21,9 @@ class OperationFinalizationPassImplementation
 public:
     void runOnFunction(const Function& function)
     {
-        _function = function.clone();
+        util::log("OperationFinalizationPass") << "  finalizing function '"
+            << function.name() << "' for execution.\n";
+        _function = function;
     }
 
     Function getTargetFunction() const
