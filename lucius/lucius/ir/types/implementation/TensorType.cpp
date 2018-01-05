@@ -41,6 +41,12 @@ public:
         return _precision;
     }
 
+public:
+    virtual std::string toString() const
+    {
+        return "tensor(" + _shape.toString() + ")";
+    }
+
 private:
     Shape     _shape;
     Precision _precision;

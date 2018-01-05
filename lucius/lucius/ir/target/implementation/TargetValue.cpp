@@ -13,50 +13,17 @@
 
 #include <lucius/ir/target/interface/TargetValueData.h>
 
-#include <lucius/ir/implementation/ValueImplementation.h>
+#include <lucius/ir/target/implementation/TargetValueImplementation.h>
 
 // Standard Library Includes
 #include <string>
+#include <cassert>
 
 namespace lucius
 {
 
 namespace ir
 {
-
-using UseList = TargetValue::UseList;
-
-class TargetValueImplementation : public ValueImplementation
-{
-public:
-    TargetValueImplementation()
-    {
-
-    }
-
-    ~TargetValueImplementation()
-    {
-
-    }
-
-public:
-    UseList& getDefinitions()
-    {
-        return _definitions;
-    }
-
-public:
-    TargetValueData getData() const
-    {
-        return _data;
-    }
-
-private:
-    UseList _definitions;
-
-private:
-    TargetValueData _data;
-};
 
 static bool isTargetImplementation(std::shared_ptr<ValueImplementation> i)
 {
@@ -102,9 +69,22 @@ TargetValue::UseList& TargetValue::getDefinitions()
     return dummyDefinitions;
 }
 
+void TargetValue::addDefinition(const Use& u)
+{
+    assert(isTargetImplementation(getValueImplementation()));
+
+    std::static_pointer_cast<TargetValueImplementation>(
+        _implementation)->getDefinitions().push_back(u);
+}
+
 Value TargetValue::getValue() const
 {
     return Value(_implementation);
+}
+
+bool TargetValue::isConstant() const
+{
+    return _implementation->isConstant();
 }
 
 bool TargetValue::operator==(const TargetValue& v) const

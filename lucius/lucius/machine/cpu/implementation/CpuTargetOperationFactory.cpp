@@ -10,7 +10,7 @@
 #include <lucius/machine/generic/interface/CallOperation.h>
 #include <lucius/machine/generic/interface/ReturnOperation.h>
 
-#include <lucius/machine/cpu/interface/ReturnOperation.h>
+#include <lucius/machine/cpu/interface/BinaryApplyOperation.h>
 
 #include <lucius/ir/target/interface/TargetOperation.h>
 
@@ -38,9 +38,9 @@ ir::TargetOperation CpuTargetOperationFactory::create(const std::string& name)
     {
         return generic::ReturnOperation();
     }
-    else if(name == "binary-apply")
+    else if(name == "cpu-binary-apply")
     {
-        return BinaryApply();
+        return BinaryApplyOperation();
     }
 
     throw std::runtime_error("No support for creating operation named '" + name +

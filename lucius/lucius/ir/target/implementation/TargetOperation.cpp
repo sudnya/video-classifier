@@ -59,6 +59,8 @@ void TargetOperation::execute()
 
 void TargetOperation::setOutputOperand(const TargetValue& v)
 {
+    TargetValue(v).addDefinition(Use(*this));
+
     getTargetOperationImplementation()->setOutputOperand(v);
 }
 

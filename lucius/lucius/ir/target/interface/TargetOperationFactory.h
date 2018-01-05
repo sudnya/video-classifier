@@ -18,7 +18,7 @@ namespace lucius
 namespace ir
 {
 
-/*! \brief A factory for creating target operations. */
+/*! \brief A factory for creating target operations and operands. */
 class TargetOperationFactory
 {
 public:

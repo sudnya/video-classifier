@@ -24,9 +24,18 @@ class TargetValueData
 public:
     void* data() const;
 
+public:
+    std::shared_ptr<TargetValueDataImplementation> getImplementation() const;
+
 private:
     std::shared_ptr<TargetValueDataImplementation> _implementation;
 };
+
+template<typename To, typename From>
+To data_cast(const From& from)
+{
+    return To(from.getImplementation());
+}
 
 } // namespace ir
 } // namespace lucius

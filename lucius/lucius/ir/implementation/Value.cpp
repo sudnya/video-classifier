@@ -13,6 +13,9 @@
 #include <lucius/ir/interface/Gradient.h>
 #include <lucius/ir/interface/Function.h>
 
+#include <lucius/ir/target/interface/TargetValue.h>
+#include <lucius/ir/target/interface/TargetOperation.h>
+
 #include <lucius/ir/implementation/ValueImplementation.h>
 
 namespace lucius
@@ -58,6 +61,18 @@ Value::Value(Gradient g)
 
 Value::Value(Function f)
 : _implementation(f.getValueImplementation())
+{
+
+}
+
+Value::Value(TargetValue t)
+: _implementation(t.getValueImplementation())
+{
+
+}
+
+Value::Value(TargetOperation t)
+: _implementation(t.getValueImplementation())
 {
 
 }

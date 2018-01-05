@@ -22,6 +22,7 @@ class TableOperandEntry
 public:
     TableOperandEntry();
     TableOperandEntry(size_t existingOperandIndex);
+    TableOperandEntry(size_t existingOperandIndex, bool isOutput);
 
 public:
     /*! \brief Check if the operand refers to an existing operand from the original operation. */
@@ -30,9 +31,13 @@ public:
     /*! \brief Get the index of the operand in the original operation. */
     size_t getExistingOperandIndex() const;
 
+    /*! \brief Check if the operand is an output of this operation. */
+    bool isOutput() const;
+
 private:
     bool   _isExisting;
     size_t _existingOperandIndex;
+    bool   _isOutput;
 };
 
 }

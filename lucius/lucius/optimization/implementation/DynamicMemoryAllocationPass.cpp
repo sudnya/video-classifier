@@ -22,6 +22,8 @@
 #include <lucius/ir/interface/Use.h>
 #include <lucius/ir/interface/Value.h>
 
+#include <lucius/util/interface/debug.h>
+
 // Standard Library Includes
 #include <cassert>
 
@@ -53,7 +55,7 @@ DynamicMemoryAllocationPass::~DynamicMemoryAllocationPass()
 
 static bool needsAllocation(const TargetValue& value)
 {
-    return value.getType().isTensor();
+    return value.getType().isTensor() && !value.isConstant();
 }
 
 static void insertBefore(BasicBlock block, BasicBlock::iterator position, Operation newOperation)

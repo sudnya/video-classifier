@@ -14,13 +14,19 @@ namespace machine
 {
 
 TableOperandEntry::TableOperandEntry()
-: _isExisting(true), _existingOperandIndex(0)
+: TableOperandEntry(0)
 {
 
 }
 
 TableOperandEntry::TableOperandEntry(size_t existingOperandIndex)
-: _isExisting(true), _existingOperandIndex(existingOperandIndex)
+: TableOperandEntry(existingOperandIndex, false)
+{
+
+}
+
+TableOperandEntry::TableOperandEntry(size_t existingOperandIndex, bool isOutput)
+: _isExisting(true), _existingOperandIndex(existingOperandIndex), _isOutput(isOutput)
 {
 
 }
@@ -35,6 +41,10 @@ size_t TableOperandEntry::getExistingOperandIndex() const
     return _existingOperandIndex;
 }
 
+bool TableOperandEntry::isOutput() const
+{
+    return _isOutput;
+}
 
 }
 

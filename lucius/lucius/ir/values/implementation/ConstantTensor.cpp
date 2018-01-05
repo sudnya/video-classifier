@@ -10,6 +10,9 @@
 #include <lucius/ir/implementation/ConstantImplementation.h>
 
 #include <lucius/ir/interface/Use.h>
+#include <lucius/ir/interface/Shape.h>
+
+#include <lucius/ir/types/interface/TensorType.h>
 
 #include <lucius/matrix/interface/Matrix.h>
 
@@ -59,7 +62,7 @@ public:
 public:
     Type getType() const
     {
-        return Type(Type::TensorId);
+        return TensorType(Shape(_matrix.size()), _matrix.precision());
     }
 
 private:

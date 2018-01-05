@@ -30,7 +30,6 @@ public:
 
 public:
     TensorType(const Shape& d, const Precision& p);
-    explicit TensorType(Type t);
     explicit TensorType(std::shared_ptr<TypeImplementation> );
     ~TensorType();
 

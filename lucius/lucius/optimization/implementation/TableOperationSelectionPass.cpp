@@ -17,6 +17,9 @@
 #include <lucius/ir/interface/BasicBlock.h>
 #include <lucius/ir/interface/Use.h>
 #include <lucius/ir/interface/Value.h>
+#include <lucius/ir/interface/Type.h>
+
+#include <lucius/ir/values/interface/ValueFactory.h>
 
 #include <lucius/ir/target/interface/TargetOperationFactory.h>
 #include <lucius/ir/target/interface/TargetOperation.h>
@@ -79,7 +82,13 @@ static void generateOperations(OperationList& targetOperations,
 
         for(auto& targetOperandEntry : targetOperationEntry)
         {
-            if(targetOperandEntry.isExistingOperand())
+            if(targetOperandEntry.isOutput())
+            {
+                auto value = ir::ValueFactory::createValueForType(operation.getType());
+
+                targetOperation.setOutputOperand(TargetValue(value));
+            }
+            else if(targetOperandEntry.isExistingOperand())
             {
                 auto& use = operation.getOperand(targetOperandEntry.getExistingOperandIndex());
                 auto operand = use.getValue();

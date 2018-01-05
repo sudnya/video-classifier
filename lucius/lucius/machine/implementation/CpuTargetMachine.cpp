@@ -36,6 +36,12 @@ CpuTargetMachine::TableEntryVector CpuTargetMachine::getEntries() const
         std::make_pair("return", TableEntry({TableOperationEntry("return", {TableOperandEntry(0)})}))
     );
 
+    vector.push_back(
+        std::make_pair("binary-apply", TableEntry({TableOperationEntry("cpu-binary-apply",
+            {TableOperandEntry(0, true), TableOperandEntry(0), TableOperandEntry(1),
+             TableOperandEntry(2)})}))
+    );
+
     return vector;
 }
 

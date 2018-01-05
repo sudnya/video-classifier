@@ -18,6 +18,10 @@ namespace lucius { namespace ir { class TargetValue;        } }
 namespace lucius { namespace ir { class PerformanceMetrics; } }
 namespace lucius { namespace ir { class BasicBlock;         } }
 
+namespace lucius { namespace matrix { class Matrix;    } }
+namespace lucius { namespace matrix { class Operation; } }
+
+
 namespace lucius
 {
 
@@ -40,6 +44,10 @@ public:
 public:
     void setOperand(const TargetValue& v, size_t index);
     void appendOperand(const TargetValue& v);
+
+public:
+    matrix::Matrix getOperandDataAsTensor(size_t index) const;
+    matrix::Operation getOperandDataAsOperator(size_t index) const;
 
 public:
     /*! \brief Get the performance metrics for this operations. */

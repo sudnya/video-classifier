@@ -44,7 +44,13 @@ public:
     UseList& getDefinitions();
 
 public:
+    void addDefinition(const Use& u);
+
+public:
     Value getValue() const;
+
+public:
+    bool isConstant() const;
 
 public:
     TargetValueData getData() const;

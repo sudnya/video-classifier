@@ -12,6 +12,8 @@
 // Forward Declarations
 namespace lucius { namespace ir { class Shape; } }
 
+namespace lucius { namespace matrix { class Precision; } }
+
 namespace lucius
 {
 
@@ -22,10 +24,13 @@ namespace ir
 class TensorValue : public Value
 {
 public:
-    explicit TensorValue(std::shared_ptr<ValueImplementation>);
+    using Precision = matrix::Precision;
 
 public:
-          Shape& getShape();
+    explicit TensorValue(std::shared_ptr<ValueImplementation>);
+    explicit TensorValue(const Shape& t, const Precision& p);
+
+public:
     const Shape& getShape() const;
 };
 

@@ -10,7 +10,13 @@
 #include <lucius/ir/interface/Use.h>
 #include <lucius/ir/interface/Value.h>
 
+#include <lucius/matrix/interface/Matrix.h>
+#include <lucius/matrix/interface/Operation.h>
+
 #include <lucius/ir/target/interface/TargetValue.h>
+#include <lucius/ir/target/interface/TargetValueData.h>
+#include <lucius/ir/target/interface/TensorData.h>
+#include <lucius/ir/target/interface/OperatorData.h>
 
 // Standard Library Includes
 #include <cassert>
@@ -72,6 +78,28 @@ void TargetOperationImplementation::appendOperand(const TargetValue& v)
     }
 
     getOperands().insert(end, Use(v.getValue()));
+}
+
+matrix::Matrix TargetOperationImplementation::getOperandDataAsTensor(size_t index) const
+{
+    auto operand = getOperand(index);
+
+    auto value = ir::value_cast<TargetValue>(operand.getValue());
+
+    auto data = data_cast<TensorData>(value.getData());
+
+    return data.getTensor();
+}
+
+matrix::Operation TargetOperationImplementation::getOperandDataAsOperator(size_t index) const
+{
+    auto operand = getOperand(index);
+
+    auto value = ir::value_cast<TargetValue>(operand.getValue());
+
+    auto data = data_cast<OperatorData>(value.getData());
+
+    return data.getOperator();
 }
 
 void TargetOperationImplementation::_growToSupportIndex(size_t index)

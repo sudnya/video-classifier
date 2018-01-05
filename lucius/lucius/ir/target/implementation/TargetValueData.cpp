@@ -15,6 +15,11 @@ namespace lucius
 namespace ir
 {
 
+std::shared_ptr<TargetValueDataImplementation> TargetValueData::getImplementation() const
+{
+    return _implementation;
+}
+
 void* TargetValueData::data() const
 {
     return _implementation->getData();
