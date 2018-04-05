@@ -3,7 +3,7 @@
 #include <lucius/matrix/interface/ReduceByKeyOperations.h>
 #include <lucius/matrix/interface/Matrix.h>
 #include <lucius/matrix/interface/MatrixView.h>
-#include <lucius/matrix/interface/Operation.h>
+#include <lucius/matrix/interface/GenericOperators.h>
 #include <lucius/matrix/interface/MatrixOperations.h>
 #include <lucius/matrix/interface/DimensionTransformations.h>
 
@@ -104,7 +104,7 @@ public:
 
 template <typename OperationType, typename PrecisionType>
 void reduceByKey(Matrix& result, const Matrix& keys, const Matrix& values,
-    const Dimension& dimensionsToReduce, const Operation& op,
+    const Dimension& dimensionsToReduce, const StaticOperator& op,
     const std::tuple<PrecisionType>& precisions)
 {
     assert(PrecisionType() == result.precision());
@@ -134,7 +134,7 @@ void reduceByKey(Matrix& result, const Matrix& keys, const Matrix& values,
 
 template <typename OperationType, typename PossiblePrecisions>
 void reduceByKey(Matrix& result, const Matrix& keys, const Matrix& values,
-    const Dimension& dimensionsToReduce, const Operation& op,
+    const Dimension& dimensionsToReduce, const StaticOperator& op,
     const PossiblePrecisions& precisions)
 {
     typedef typename std::tuple_element<0, PossiblePrecisions>::type PossiblePrecisionType;
@@ -155,7 +155,7 @@ void reduceByKey(Matrix& result, const Matrix& keys, const Matrix& values,
 
 template <typename OperationType>
 void reduceByKey(Matrix& result, const Matrix& keys, const Matrix& values,
-    const Dimension& dimensionsToReduce, const Operation& op,
+    const Dimension& dimensionsToReduce, const StaticOperator& op,
     const std::tuple<OperationType>& possibleOperation)
 {
     assert(OperationType() == op);
@@ -165,7 +165,7 @@ void reduceByKey(Matrix& result, const Matrix& keys, const Matrix& values,
 
 template <typename PossibleOperations>
 void reduceByKey(Matrix& result, const Matrix& keys, const Matrix& values,
-    const Dimension& dimensionsToReduce, const Operation& op,
+    const Dimension& dimensionsToReduce, const StaticOperator& op,
     const PossibleOperations& possibleOperations)
 {
     typedef typename std::tuple_element<0, PossibleOperations>::type PossibleOperationType;
@@ -186,7 +186,7 @@ void reduceByKey(Matrix& result, const Matrix& keys, const Matrix& values,
 } // namespace detail
 
 Matrix reduceByKey(const Matrix& keys, const Matrix& values, const Dimension& dimensionsToReduce,
-    const Operation& op)
+    const StaticOperator& op)
 {
     Matrix result = zeros(values.size(), values.precision());
 
@@ -196,15 +196,15 @@ Matrix reduceByKey(const Matrix& keys, const Matrix& values, const Dimension& di
 }
 
 Matrix reduceByKey(const Matrix& keys, const Matrix& values,
-    const Operation& op)
+    const StaticOperator& op)
 {
     return reduceByKey(keys, values, range(values.size()), op);
 }
 
 void reduceByKey(Matrix& result, const Matrix& keys, const Matrix& values,
-    const Dimension& dimensionsToReduce, const Operation& op)
+    const Dimension& dimensionsToReduce, const StaticOperator& op)
 {
-    detail::reduceByKey(result, keys, values, dimensionsToReduce, op, AllBinaryOperations());
+    detail::reduceByKey(result, keys, values, dimensionsToReduce, op, AllBinaryOperators());
 }
 
 void unique(Matrix& output, const Matrix& input, const Dimension& dimensionsToReduce,

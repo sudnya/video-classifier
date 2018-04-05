@@ -1,7 +1,7 @@
-/*  \file   GatherOperation.h
+/*  \file   StaticOperator.h
     \date   October 30, 2016
     \author Gregory Diamos <solusstultus@gmail.com>
-    \brief  The header file for the GatherOperation classes.
+    \brief  The header file for the StaticOperator classes.
 */
 
 #pragma once
@@ -12,6 +12,7 @@
 
 #include <lucius/matrix/interface/DimensionTransformations.h>
 #include <lucius/matrix/interface/MatrixView.h>
+#include <lucius/matrix/interface/StaticOperator.h>
 
 // Standard Library Includes
 #include <cmath>
@@ -22,43 +23,15 @@ namespace lucius
 namespace matrix
 {
 
-
-/*! \brief A class for specifying matrix gather operations. */
-class GatherOperation
-{
-public:
-    enum Type
-    {
-        Pool2DGather,
-        Pool2DGatherInverse,
-        PermuteDimensionGather,
-        HanningGather,
-        GatherIndexToOneHot,
-        MapOutputToIndexDimension,
-        MapOutputToMatchingIndexDimension
-
-    };
-
-public:
-    CUDA_DECORATOR GatherOperation(Type t) : _type(t) {}
-
-public:
-    CUDA_DECORATOR bool operator==(const GatherOperation&) const;
-
-private:
-    Type _type;
-
-};
-
-class Pool2DGather : public GatherOperation
+class Pool2DGather : public StaticOperator
 {
 public:
     CUDA_DECORATOR Pool2DGather()
-    : GatherOperation(GatherOperation::Pool2DGather)
+    : StaticOperator(StaticOperator::Pool2DGather)
     {}
 
     CUDA_DECORATOR Pool2DGather(size_t w, size_t h, size_t inputW, size_t inputH)
-    : GatherOperation(GatherOperation::Pool2DGather),
+    : StaticOperator(StaticOperator::Pool2DGather),
       width(w), height(h), inputWidth(inputW), inputHeight(inputH)
     {
 
@@ -66,7 +39,7 @@ public:
 
 public:
     template <typename NativeType>
-    CUDA_DECORATOR NativeType runOperation(
+    CUDA_DECORATOR NativeType runOperator(
         const Dimension& outputDimension,
         const ConstMatrixView<NativeType>& outputView,
         const ConstMatrixView<NativeType>& inputView) const
@@ -102,6 +75,12 @@ public:
     }
 
 public:
+    std::unique_ptr<StaticOperator> clone() const
+    {
+        return std::make_unique<Pool2DGather>(*this);
+    }
+
+public:
     size_t width;
     size_t height;
 
@@ -110,15 +89,15 @@ public:
 
 };
 
-class Pool2DGatherInverse : public GatherOperation
+class Pool2DGatherInverse : public StaticOperator
 {
 public:
     CUDA_DECORATOR Pool2DGatherInverse()
-    : GatherOperation(GatherOperation::Pool2DGatherInverse)
+    : StaticOperator(StaticOperator::Pool2DGatherInverse)
     {}
 
     CUDA_DECORATOR Pool2DGatherInverse(size_t w, size_t h, size_t inputW, size_t inputH)
-    : GatherOperation(GatherOperation::Pool2DGatherInverse),
+    : StaticOperator(StaticOperator::Pool2DGatherInverse),
       width(w), height(h), inputWidth(inputW), inputHeight(inputH)
     {
 
@@ -126,7 +105,7 @@ public:
 
 public:
     template <typename NativeType>
-    CUDA_DECORATOR NativeType runOperation(
+    CUDA_DECORATOR NativeType runOperator(
         const Dimension& outputDimension,
         const ConstMatrixView<NativeType>& outputView,
         const ConstMatrixView<NativeType>& inputView) const
@@ -165,6 +144,12 @@ public:
     }
 
 public:
+    std::unique_ptr<StaticOperator> clone() const
+    {
+        return std::make_unique<Pool2DGatherInverse>(*this);
+    }
+
+public:
     size_t width;
     size_t height;
 
@@ -173,16 +158,16 @@ public:
 
 };
 
-class PermuteDimensionGather : public GatherOperation
+class PermuteDimensionGather : public StaticOperator
 {
 public:
     CUDA_DECORATOR PermuteDimensionGather()
-    : GatherOperation(GatherOperation::PermuteDimensionGather)
+    : StaticOperator(StaticOperator::PermuteDimensionGather)
     {}
 
     CUDA_DECORATOR PermuteDimensionGather(const Dimension& inputStride,
         const Dimension& outputSize, const Dimension& order)
-    : GatherOperation(GatherOperation::PermuteDimensionGather), inputStride(inputStride),
+    : StaticOperator(StaticOperator::PermuteDimensionGather), inputStride(inputStride),
       outputSize(outputSize), order(order)
     {
 
@@ -190,7 +175,7 @@ public:
 
 public:
     template <typename NativeType>
-    CUDA_DECORATOR NativeType runOperation(
+    CUDA_DECORATOR NativeType runOperator(
         const Dimension& outputDimension,
         const ConstMatrixView<NativeType>& outputView,
         const ConstMatrixView<NativeType>& inputView) const
@@ -213,22 +198,28 @@ public:
     }
 
 public:
+    std::unique_ptr<StaticOperator> clone() const
+    {
+        return std::make_unique<PermuteDimensionGather>(*this);
+    }
+
+public:
     Dimension inputStride;
     Dimension outputSize;
     Dimension order;
 
 };
 
-class HanningGather : public GatherOperation
+class HanningGather : public StaticOperator
 {
 public:
     CUDA_DECORATOR HanningGather()
-    : GatherOperation(GatherOperation::HanningGather)
+    : StaticOperator(StaticOperator::HanningGather)
     {}
 
     CUDA_DECORATOR HanningGather(const Dimension& inputSize, const Dimension& inputStride,
         const Dimension& outputSize)
-    : GatherOperation(GatherOperation::HanningGather),
+    : StaticOperator(StaticOperator::HanningGather),
       inputSize(inputSize),
       inputStride(inputStride),
       outputSize(outputSize)
@@ -238,7 +229,7 @@ public:
 
 public:
     template <typename NativeType>
-    CUDA_DECORATOR NativeType runOperation(
+    CUDA_DECORATOR NativeType runOperator(
         const Dimension& outputDimension,
         const ConstMatrixView<NativeType>& outputView,
         const ConstMatrixView<NativeType>& inputView) const
@@ -265,13 +256,19 @@ public:
     }
 
 public:
+    std::unique_ptr<StaticOperator> clone() const
+    {
+        return std::make_unique<HanningGather>(*this);
+    }
+
+public:
     Dimension inputSize;
     Dimension inputStride;
     Dimension outputSize;
 
 };
 
-class GatherIndexToOneHot: public GatherOperation
+class GatherIndexToOneHot: public StaticOperator
 {
 public:
     CUDA_DECORATOR GatherIndexToOneHot()
@@ -281,7 +278,7 @@ public:
     }
 
     CUDA_DECORATOR GatherIndexToOneHot(size_t index)
-    : GatherOperation(GatherOperation::GatherIndexToOneHot),
+    : StaticOperator(StaticOperator::GatherIndexToOneHot),
       index(index)
     {
 
@@ -289,7 +286,7 @@ public:
 
 public:
     template <typename NativeType>
-    CUDA_DECORATOR NativeType runOperation(const Dimension& outputDimension,
+    CUDA_DECORATOR NativeType runOperator(const Dimension& outputDimension,
         const ConstMatrixView<NativeType>& outputView,
         const ConstMatrixView<NativeType>& inputView) const
     {
@@ -319,21 +316,27 @@ public:
         }
     }
 
+public:
+    std::unique_ptr<StaticOperator> clone() const
+    {
+        return std::make_unique<GatherIndexToOneHot>(*this);
+    }
+
 private:
     size_t index;
 };
 
-class MapOutputToIndexDimension: public GatherOperation
+class MapOutputToIndexDimension: public StaticOperator
 {
 public:
     CUDA_DECORATOR MapOutputToIndexDimension()
-    : GatherOperation(GatherOperation::MapOutputToIndexDimension)
+    : StaticOperator(StaticOperator::MapOutputToIndexDimension)
     {}
 
     CUDA_DECORATOR MapOutputToIndexDimension(const Dimension& indexDimensionOrder,
         size_t indexPosition,
         const Dimension& inputDimensionOrder)
-    : GatherOperation(GatherOperation::MapOutputToIndexDimension),
+    : StaticOperator(StaticOperator::MapOutputToIndexDimension),
        indexDimensionOrder(indexDimensionOrder),
        indexPosition(indexPosition),
        inputDimensionOrder(inputDimensionOrder)
@@ -343,7 +346,7 @@ public:
 
 public:
     template <typename NativeType>
-    CUDA_DECORATOR NativeType runOperation(
+    CUDA_DECORATOR NativeType runOperator(
         const Dimension& outputDimension,
         const ConstMatrixView<NativeType>& outputView,
         const ConstMatrixView<NativeType>& inputView,
@@ -376,24 +379,30 @@ public:
     }
 
 public:
+    std::unique_ptr<StaticOperator> clone() const
+    {
+        return std::make_unique<MapOutputToIndexDimension>(*this);
+    }
+
+public:
     Dimension indexDimensionOrder;
     size_t    indexPosition;
     Dimension inputDimensionOrder;
 
 };
 
-class MapOutputToMatchingIndexDimension: public GatherOperation
+class MapOutputToMatchingIndexDimension: public StaticOperator
 {
 public:
     CUDA_DECORATOR MapOutputToMatchingIndexDimension()
-    : GatherOperation(GatherOperation::MapOutputToMatchingIndexDimension)
+    : StaticOperator(StaticOperator::MapOutputToMatchingIndexDimension)
     {}
 
     CUDA_DECORATOR MapOutputToMatchingIndexDimension(const Dimension& indexDimensionOrder,
         const Dimension& inputDimensionOrder,
         size_t matchingOutputPosition,
         double defaultValue)
-    : GatherOperation(GatherOperation::MapOutputToMatchingIndexDimension),
+    : StaticOperator(StaticOperator::MapOutputToMatchingIndexDimension),
       indexDimensionOrder(indexDimensionOrder),
       inputDimensionOrder(inputDimensionOrder),
       matchingOutputPosition(matchingOutputPosition),
@@ -404,7 +413,7 @@ public:
 
 public:
     template <typename NativeType>
-    CUDA_DECORATOR NativeType runOperation(
+    CUDA_DECORATOR NativeType runOperator(
         const Dimension& outputDimension,
         const ConstMatrixView<NativeType>& outputView,
         const ConstMatrixView<NativeType>& inputView,
@@ -439,6 +448,12 @@ public:
     }
 
 public:
+    std::unique_ptr<StaticOperator> clone() const
+    {
+        return std::make_unique<MapOutputToMatchingIndexDimension>(*this);
+    }
+
+public:
     Dimension indexDimensionOrder;
     Dimension inputDimensionOrder;
 
@@ -448,10 +463,10 @@ public:
 };
 
 typedef std::tuple<Pool2DGather, Pool2DGatherInverse, PermuteDimensionGather, HanningGather,
-                   GatherIndexToOneHot> AllGatherOperations;
+                   GatherIndexToOneHot> AllGatherOperators;
 
 typedef std::tuple<MapOutputToIndexDimension, MapOutputToMatchingIndexDimension>
-                   AllIndirectGatherOperations;
+                   AllIndirectGatherOperators;
 
 }
 }

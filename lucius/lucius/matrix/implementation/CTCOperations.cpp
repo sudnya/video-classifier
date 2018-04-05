@@ -12,8 +12,8 @@
 #include <lucius/matrix/interface/AdjacentElementOperations.h>
 #include <lucius/matrix/interface/MatrixTransformations.h>
 
-#include <lucius/matrix/interface/Operation.h>
-#include <lucius/matrix/interface/GatherOperation.h>
+#include <lucius/matrix/interface/GenericOperators.h>
+#include <lucius/matrix/interface/GatherOperators.h>
 
 #include <lucius/parallel/interface/Synchronization.h>
 

@@ -9,43 +9,45 @@
 
 #include <lucius/ir/values/interface/ConstantOperator.h>
 
+#include <lucius/matrix/interface/GenericOperators.h>
+
 namespace lucius
 {
 
 namespace lazy
 {
 
-Operator::Operator(size_t id)
-: _id(id)
+Operator::Operator(const matrix::Operator& op)
+: _operator(op)
 {
 
 }
 
-size_t Operator::getId() const
+const matrix::Operator& Operator::getOperator() const
 {
-    return _id;
+    return _operator;
 }
 
-BinaryOperator::BinaryOperator(size_t id)
-: Operator(id)
+BinaryOperator::BinaryOperator(const matrix::Operator& op)
+: Operator(op)
 {
 
 }
 
-UnaryOperator::UnaryOperator(size_t id)
-: Operator(id)
+UnaryOperator::UnaryOperator(const matrix::Operator& op)
+: Operator(op)
 {
 
 }
 
 Add::Add()
-: BinaryOperator(ir::Add().getOperatorId())
+: BinaryOperator(matrix::Add())
 {
 
 }
 
 Multiply::Multiply()
-: BinaryOperator(ir::Multiply().getOperatorId())
+: BinaryOperator(matrix::Multiply())
 {
 
 }

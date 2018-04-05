@@ -54,6 +54,12 @@ private:
     size_t _value;
 };
 
+ConstantInteger::ConstantInteger(std::shared_ptr<ValueImplementation> implementation)
+: Constant(implementation)
+{
+
+}
+
 ConstantInteger::ConstantInteger(size_t value)
 : Constant(std::make_shared<ConstantIntegerValueImplementation>(value))
 {

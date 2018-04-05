@@ -10,8 +10,14 @@
 #include <lucius/ir/interface/Module.h>
 #include <lucius/ir/interface/Function.h>
 #include <lucius/ir/interface/Variable.h>
+#include <lucius/ir/interface/BasicBlock.h>
+#include <lucius/ir/interface/Operation.h>
+#include <lucius/ir/interface/Use.h>
 
 #include <lucius/util/interface/debug.h>
+
+// Standard Library Includes
+#include <map>
 
 namespace lucius
 {
@@ -139,16 +145,50 @@ Program Program::cloneModuleAndTieVariables()
 {
     auto program = Program(getModule().getContext());
 
+    std::map<Value, Value> functionMap;
+
     // add functions
     for(auto& function : getModule())
     {
-        program.getModule().addFunction(function.clone());
+        auto newFunction = function.clone();
+
+        functionMap[function] = newFunction;
+
+        program.getModule().addFunction(newFunction);
     }
 
     // add variables, but don't clone them
     for(auto& variable : getModule().getVariables())
     {
         program.getModule().addVariable(variable);
+    }
+
+    // replace uses of cloned functions
+    for(auto& function : program.getModule())
+    {
+        for(auto& block : function)
+        {
+            for(auto& operation : block)
+            {
+                for(auto operandPosition = operation.begin();
+                         operandPosition != operation.end(); )
+                {
+                    auto& operand = *operandPosition;
+
+                    ++operandPosition;
+
+                    if(operand.getValue().isFunction())
+                    {
+                        auto clonedFunction = functionMap.find(operand.getValue());
+
+                        if(clonedFunction != functionMap.end())
+                        {
+                            operation.replaceOperand(operand, Use(clonedFunction->second));
+                        }
+                    }
+                }
+            }
+        }
     }
 
     return program;

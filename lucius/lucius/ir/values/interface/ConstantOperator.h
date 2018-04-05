@@ -9,6 +9,9 @@
 // Lucius Includes
 #include <lucius/ir/interface/Constant.h>
 
+// Forward Declaration
+namespace lucius { namespace matrix { class Operator; } }
+
 namespace lucius
 {
 
@@ -19,10 +22,11 @@ namespace ir
 class ConstantOperator : public Constant
 {
 public:
-    explicit ConstantOperator(size_t operatorId);
+    explicit ConstantOperator(const matrix::Operator&);
+    explicit ConstantOperator(std::shared_ptr<ValueImplementation>);
 
 public:
-    size_t getOperatorId() const;
+    const matrix::Operator& getOperator() const;
 };
 
 class Add : public ConstantOperator

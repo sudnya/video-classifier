@@ -10,6 +10,7 @@
 
 #include <lucius/runtime/interface/IRExecutionEngine.h>
 #include <lucius/runtime/interface/IRExecutionEngineFactory.h>
+#include <lucius/runtime/interface/IRExecutionEngineOptions.h>
 
 #include <lucius/ir/interface/IRBuilder.h>
 #include <lucius/ir/interface/Program.h>
@@ -47,6 +48,8 @@ void* LazyValue::_runProgram()
 {
     auto& program = getBuilder().getProgram();
     auto engine = runtime::IRExecutionEngineFactory::create(program);
+
+    engine->getOptions().addTargetIndependentOptimizationPass("LazyProgramCompleterPass");
 
     engine->saveValue(getValue());
 

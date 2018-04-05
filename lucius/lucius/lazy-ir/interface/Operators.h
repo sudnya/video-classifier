@@ -6,6 +6,9 @@
 
 #pragma once
 
+// Lucius Includes
+#include <lucius/matrix/interface/Operator.h>
+
 // Standard Library Includes
 #include <cstddef>
 
@@ -18,27 +21,27 @@ namespace lazy
 class Operator
 {
 public:
-    Operator(size_t id);
+    Operator(const matrix::Operator& id);
 
 public:
-    size_t getId() const;
+    const matrix::Operator& getOperator() const;
 
 private:
-    size_t _id;
+    matrix::Operator _operator;
 
 };
 
 class BinaryOperator : public Operator
 {
 public:
-    BinaryOperator(size_t id);
+    BinaryOperator(const matrix::Operator& );
 
 };
 
 class UnaryOperator : public Operator
 {
 public:
-    UnaryOperator(size_t id);
+    UnaryOperator(const matrix::Operator& );
 
 };
 

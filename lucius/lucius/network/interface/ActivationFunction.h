@@ -12,7 +12,7 @@
 
 // Forward Declarations
 namespace lucius { namespace matrix { class Matrix;    } }
-namespace lucius { namespace matrix { class Operation; } }
+namespace lucius { namespace matrix { class Operator;  } }
 
 namespace lucius
 {
@@ -23,8 +23,8 @@ namespace network
 class ActivationFunction
 {
 public:
-    typedef matrix::Matrix    Matrix;
-    typedef matrix::Operation Operation;
+    typedef matrix::Matrix   Matrix;
+    typedef matrix::Operator Operator;
 
 public:
     virtual ~ActivationFunction();
@@ -38,10 +38,10 @@ public:
 
 public:
     /*! \brief Get the operation associated with the activation function. */
-    virtual Operation getOperation() const = 0;
+    virtual Operator getOperator() const = 0;
 
     /*! \brief Get the derivative operation associated with the activation function. */
-    virtual Operation getDerivativeOperation() const = 0;
+    virtual Operator getDerivativeOperator() const = 0;
 
 public:
     virtual std::string typeName() const = 0;

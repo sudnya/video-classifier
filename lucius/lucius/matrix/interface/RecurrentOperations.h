@@ -6,9 +6,9 @@
 #include <string>
 
 // Forward Declarations
-namespace lucius { namespace matrix { class Matrix;    } }
-namespace lucius { namespace matrix { class Operation; } }
-namespace lucius { namespace matrix { class Precision; } }
+namespace lucius { namespace matrix { class Matrix;         } }
+namespace lucius { namespace matrix { class StaticOperator; } }
+namespace lucius { namespace matrix { class Precision;      } }
 
 namespace lucius
 {

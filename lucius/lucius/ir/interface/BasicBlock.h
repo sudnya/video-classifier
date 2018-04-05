@@ -9,7 +9,7 @@
 // Standard Library Includes
 #include <memory>
 #include <list>
-#include <set>
+#include <vector>
 
 // Forward Declarations
 namespace lucius { namespace ir { class BasicBlockImplementation; } }
@@ -40,7 +40,7 @@ public:
     Function getFunction() const;
 
 public:
-    void push_back(const Operation& op);
+    void push_back(Operation op);
 
 public:
     /*! \brief Is this block the exit point of a function? */
@@ -92,22 +92,19 @@ public:
     void setOperations(OperationList&& operations);
 
 public:
-    using BasicBlockSet = std::set<BasicBlock>;
+    using BasicBlockVector = std::vector<BasicBlock>;
 
 public:
-          BasicBlockSet& getSuccessors();
-    const BasicBlockSet& getSuccessors() const;
+    BasicBlockVector getSuccessors() const;
 
-          BasicBlockSet& getPredecessors();
-    const BasicBlockSet& getPredecessors() const;
-
-public:
-    void addSuccessor(const BasicBlock& successor);
+    BasicBlockVector getPredecessors() const;
 
 public:
     using BasicBlockList = std::list<BasicBlock>;
 
 public:
+    void setIterator(BasicBlockList::iterator position);
+
     BasicBlockList::iterator getIterator();
     BasicBlockList::const_iterator getIterator() const;
 

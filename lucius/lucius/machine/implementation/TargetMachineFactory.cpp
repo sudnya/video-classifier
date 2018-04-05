@@ -18,26 +18,26 @@ namespace lucius
 namespace machine
 {
 
-std::unique_ptr<TargetMachineInterface> TargetMachineFactory::create()
+std::unique_ptr<TargetMachineInterface> TargetMachineFactory::create(ir::Context& context)
 {
     if(parallel::CudaDriver::loaded())
     {
-        return create("CudaTargetMachine");
+        return create(context, "CudaTargetMachine");
     }
 
-    return create("CpuTargetMachine");
+    return create(context, "CpuTargetMachine");
 }
 
-std::unique_ptr<TargetMachineInterface> TargetMachineFactory::create(
+std::unique_ptr<TargetMachineInterface> TargetMachineFactory::create(ir::Context& context,
     const std::string& machineName)
 {
     if(machineName == "CudaTargetMachine")
     {
-        return std::make_unique<CudaTargetMachine>();
+        return std::make_unique<CudaTargetMachine>(context);
     }
     else if (machineName == "CpuTargetMachine")
     {
-        return std::make_unique<CpuTargetMachine>();
+        return std::make_unique<CpuTargetMachine>(context);
     }
 
     return std::unique_ptr<TargetMachineInterface>();

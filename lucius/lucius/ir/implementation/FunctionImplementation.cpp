@@ -6,6 +6,7 @@
 
 // Lucius Includes
 #include <lucius/ir/implementation/FunctionImplementation.h>
+#include <lucius/ir/implementation/OperationImplementation.h>
 
 #include <lucius/ir/interface/Function.h>
 #include <lucius/ir/interface/Operation.h>
@@ -21,6 +22,7 @@
 
 // Standard Library Includes
 #include <map>
+#include <set>
 
 namespace lucius
 {
@@ -37,6 +39,8 @@ FunctionImplementation::FunctionImplementation(const std::string& name)
 BasicBlock FunctionImplementation::insert(const BasicBlock& block)
 {
     _blocks.push_back(block);
+
+    _blocks.back().setIterator(--_blocks.end());
 
     return _blocks.back();
 }
@@ -122,7 +126,8 @@ void FunctionImplementation::insert(const InsertionPoint& position, const BasicB
 
     for(auto& block : blocks)
     {
-        _blocks.insert(basicBlockPosition, block);
+        auto newPosition = _blocks.insert(basicBlockPosition, block);
+        newPosition->setIterator(newPosition);
     }
 }
 
@@ -190,23 +195,37 @@ std::shared_ptr<ValueImplementation> FunctionImplementation::clone() const
     {
         for(auto& operation : block)
         {
-            for(auto& operand : operation.getOperands())
+            for(auto& operand : operation)
             {
                 // don't replace variables
                 if(operand.getValue().isVariable())
                 {
+                    operand = Use(operand.getValue());
+
                     continue;
                 }
 
                 // don't replace constants
                 if(operand.getValue().isConstant())
                 {
+                    operand = Use(operand.getValue());
+
+                    continue;
+                }
+
+                // don't replace external functions
+                if(operand.getValue().isExternalFunction())
+                {
+                    operand = Use(operand.getValue());
+
                     continue;
                 }
 
                 // don't replace functions
                 if(operand.getValue().isFunction())
                 {
+                    operand = Use(operand.getValue());
+
                     continue;
                 }
 
@@ -215,6 +234,15 @@ std::shared_ptr<ValueImplementation> FunctionImplementation::clone() const
                 assert(correspondingValue != valueMap.end());
 
                 operand = Use(correspondingValue->second);
+            }
+
+            // add uses
+            for(auto position = operation.begin(); position != operation.end(); ++position)
+            {
+                auto& operand = *position;
+
+                position->setParent(User(operation.getImplementation()), position);
+                operand.getValue().addUse(operand);
             }
         }
     }
@@ -258,7 +286,7 @@ void FunctionImplementation::setParent(std::weak_ptr<ModuleImplementation> paren
 {
     _parent = parent;
 
-    bindToContext(getParent().getContext());
+    bindToContext(&getParent().getContext());
 }
 
 Module FunctionImplementation::getParent() const

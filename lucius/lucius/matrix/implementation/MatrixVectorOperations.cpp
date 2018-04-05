@@ -4,7 +4,7 @@
 #include <lucius/matrix/interface/MatrixVector.h>
 #include <lucius/matrix/interface/MatrixOperations.h>
 #include <lucius/matrix/interface/CopyOperations.h>
-#include <lucius/matrix/interface/Operation.h>
+#include <lucius/matrix/interface/GenericOperators.h>
 #include <lucius/matrix/interface/MatrixTransformations.h>
 #include <lucius/matrix/interface/DimensionTransformations.h>
 
@@ -16,7 +16,8 @@ namespace lucius
 namespace matrix
 {
 
-void apply(MatrixVector& result, const MatrixVector& left, const MatrixVector& right, const Operation& op)
+void apply(MatrixVector& result, const MatrixVector& left, const MatrixVector& right,
+    const StaticOperator& op)
 {
     assert(result.size() == left.size());
     assert(result.size() == right.size());
@@ -32,7 +33,7 @@ void apply(MatrixVector& result, const MatrixVector& left, const MatrixVector& r
     });
 }
 
-MatrixVector apply(const MatrixVector& left, const MatrixVector& right, const Operation& op)
+MatrixVector apply(const MatrixVector& left, const MatrixVector& right, const StaticOperator& op)
 {
     MatrixVector result;
 
@@ -46,7 +47,7 @@ MatrixVector apply(const MatrixVector& left, const MatrixVector& right, const Op
     return result;
 }
 
-void apply(MatrixVector& result, const MatrixVector& input, const Operation& op)
+void apply(MatrixVector& result, const MatrixVector& input, const StaticOperator& op)
 {
     assert(result.size() == input.size());
 
@@ -61,7 +62,7 @@ void apply(MatrixVector& result, const MatrixVector& input, const Operation& op)
     });
 }
 
-MatrixVector apply(const MatrixVector& input, const Operation& op)
+MatrixVector apply(const MatrixVector& input, const StaticOperator& op)
 {
     MatrixVector result;
 
@@ -75,7 +76,8 @@ MatrixVector apply(const MatrixVector& input, const Operation& op)
     return result;
 }
 
-void reduce(MatrixVector& result, const MatrixVector& input, const Dimension& d, const Operation& op)
+void reduce(MatrixVector& result, const MatrixVector& input, const Dimension& d,
+    const StaticOperator& op)
 {
     assert(result.size() == input.size());
 
@@ -100,7 +102,7 @@ void reduce(MatrixVector& result, const MatrixVector& input, const Dimension& d,
     }
 }
 
-MatrixVector reduce(const MatrixVector& input, const Dimension& d, const Operation& op)
+MatrixVector reduce(const MatrixVector& input, const Dimension& d, const StaticOperator& op)
 {
     MatrixVector result;
 

@@ -9,7 +9,8 @@
 
 #include <lucius/matrix/interface/Matrix.h>
 #include <lucius/matrix/interface/MatrixOperations.h>
-#include <lucius/matrix/interface/Operation.h>
+#include <lucius/matrix/interface/Operator.h>
+#include <lucius/matrix/interface/GenericOperators.h>
 
 namespace lucius
 {
@@ -18,7 +19,7 @@ namespace network
 {
 
 typedef matrix::Matrix Matrix;
-typedef matrix::Operation Operation;
+typedef matrix::Operator Operator;
 
 RectifiedLinearActivationFunction::~RectifiedLinearActivationFunction()
 {
@@ -35,12 +36,12 @@ Matrix RectifiedLinearActivationFunction::applyDerivative(const Matrix& activati
     return matrix::apply(activations, matrix::RectifiedLinearDerivative());
 }
 
-Operation RectifiedLinearActivationFunction::getOperation() const
+Operator RectifiedLinearActivationFunction::getOperator() const
 {
     return matrix::RectifiedLinear();
 }
 
-Operation RectifiedLinearActivationFunction::getDerivativeOperation() const
+Operator RectifiedLinearActivationFunction::getDerivativeOperator() const
 {
     return matrix::RectifiedLinearDerivative();
 }

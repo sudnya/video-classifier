@@ -34,10 +34,17 @@ public:
     /*! \brief Check if the operand is an output of this operation. */
     bool isOutput() const;
 
+    /*! \brief Check if the operand is an output of this operation. */
+    bool isVariableInputOperands() const;
+
+public:
+    void setIsVariableInputOperands(bool condition);
+
 private:
     bool   _isExisting;
     size_t _existingOperandIndex;
     bool   _isOutput;
+    bool   _isVariableInputOperands;
 };
 
 }

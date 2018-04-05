@@ -7,6 +7,8 @@
 // Lucius Includes
 #include <lucius/ir/target/interface/TensorData.h>
 
+#include <lucius/ir/interface/Shape.h>
+
 #include <lucius/ir/target/implementation/TargetValueDataImplementation.h>
 
 #include <lucius/matrix/interface/Matrix.h>
@@ -19,6 +21,18 @@ namespace ir
 
 class TensorDataImplementation : public TargetValueDataImplementation
 {
+public:
+    TensorDataImplementation(const Shape& shape, const matrix::Precision& precision)
+    : _tensor(shape.getDimension(), precision)
+    {
+
+    }
+
+    TensorDataImplementation()
+    {
+        // intentionally blank
+    }
+
 public:
     matrix::Matrix getTensor() const
     {
@@ -35,6 +49,12 @@ private:
     matrix::Matrix _tensor;
 
 };
+
+TensorData::TensorData(const Shape& shape, const matrix::Precision& precision)
+: TensorData(std::make_shared<TensorDataImplementation>(shape, precision))
+{
+
+}
 
 TensorData::TensorData()
 : TensorData(std::make_shared<TensorDataImplementation>())

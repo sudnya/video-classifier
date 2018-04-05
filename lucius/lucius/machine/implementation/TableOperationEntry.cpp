@@ -38,7 +38,28 @@ const std::string& TableOperationEntry::name() const
 
 bool TableOperationEntry::isOutput() const
 {
-    return _producesOutput;
+    for(auto operand : *this)
+    {
+        if(operand.isOutput())
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool TableOperationEntry::allowsVariableInputArguments() const
+{
+    for(auto operand : *this)
+    {
+        if(operand.isVariableInputOperands())
+        {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 TableOperationEntry::iterator TableOperationEntry::begin()

@@ -13,6 +13,7 @@
 #include <lucius/optimization/interface/MinimalMemoryOperationSchedulingPass.h>
 #include <lucius/optimization/interface/DynamicMemoryAllocationPass.h>
 #include <lucius/optimization/interface/OperationFinalizationPass.h>
+#include <lucius/optimization/interface/LazyProgramCompleterPass.h>
 
 namespace lucius
 {
@@ -44,6 +45,10 @@ std::unique_ptr<Pass> PassFactory::create(const std::string& passName)
     if("OperationFinalizationPass" == passName)
     {
         return std::make_unique<OperationFinalizationPass>();
+    }
+    if("LazyProgramCompleterPass" == passName)
+    {
+        return std::make_unique<LazyProgramCompleterPass>();
     }
 
     return std::unique_ptr<Pass>();

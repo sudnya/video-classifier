@@ -18,7 +18,7 @@
 #include <lucius/matrix/interface/MatrixVector.h>
 #include <lucius/matrix/interface/MatrixOperations.h>
 #include <lucius/matrix/interface/MatrixTransformations.h>
-#include <lucius/matrix/interface/Operation.h>
+#include <lucius/matrix/interface/GenericOperators.h>
 
 #include <lucius/util/interface/Knobs.h>
 #include <lucius/util/interface/PropertyTree.h>

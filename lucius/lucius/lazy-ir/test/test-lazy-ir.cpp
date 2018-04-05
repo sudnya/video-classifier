@@ -7,7 +7,7 @@
 // Lucius Includes
 #include <lucius/matrix/interface/Matrix.h>
 #include <lucius/matrix/interface/MatrixOperations.h>
-#include <lucius/matrix/interface/Operation.h>
+#include <lucius/matrix/interface/GenericOperators.h>
 
 #include <lucius/lazy-ir/interface/LazyIr.h>
 #include <lucius/lazy-ir/interface/LazyValue.h>

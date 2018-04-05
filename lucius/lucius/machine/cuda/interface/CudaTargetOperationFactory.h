@@ -22,10 +22,13 @@ namespace cuda
 class CudaTargetOperationFactory : public ir::TargetOperationFactory
 {
 public:
+    explicit CudaTargetOperationFactory(Context& );
     virtual ~CudaTargetOperationFactory();
 
 public:
-    virtual ir::TargetOperation create(const std::string& name);
+    virtual ir::TargetOperation create(const std::string& name) const;
+
+    virtual ir::TargetValue createOperand(const ir::Type& type) const;
 };
 
 } // namespace cuda

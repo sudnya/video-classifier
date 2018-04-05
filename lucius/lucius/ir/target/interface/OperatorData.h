@@ -13,7 +13,7 @@
 namespace lucius { namespace ir { class TargetValueDataImplementation; } }
 namespace lucius { namespace ir { class OperatorDataImplementation;    } }
 
-namespace lucius { namespace matrix { class Operation; } }
+namespace lucius { namespace matrix { class Operator; } }
 
 namespace lucius
 {
@@ -29,7 +29,7 @@ public:
     OperatorData(std::shared_ptr<TargetValueDataImplementation> implementation);
 
 public:
-    matrix::Operation getOperator() const;
+    matrix::Operator getOperator() const;
 
 public:
     std::shared_ptr<TargetValueDataImplementation> getImplementation() const;

@@ -14,6 +14,7 @@
 namespace lucius { namespace machine { class TableEntry; } }
 
 namespace lucius { namespace ir { class TargetOperationFactory; } }
+namespace lucius { namespace ir { class Context;                } }
 
 namespace lucius
 {
@@ -25,6 +26,10 @@ namespace machine
 class TargetMachineInterface
 {
 public:
+    using Context = ir::Context;
+
+public:
+    explicit TargetMachineInterface(Context& );
     virtual ~TargetMachineInterface();
 
 public:
@@ -38,6 +43,9 @@ public:
 
 public:
     virtual std::string name() const = 0;
+
+protected:
+    Context& _context;
 
 };
 

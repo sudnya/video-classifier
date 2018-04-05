@@ -7,10 +7,15 @@
 #pragma once
 
 // Forward Declarations
-namespace lucius { namespace machine { class TableEntry; } }
+namespace lucius { namespace machine { class TableEntry;                  } }
+namespace lucius { namespace machine { class TargetMachineImplementation; } }
 
+namespace lucius { namespace ir { class Context;                } }
 namespace lucius { namespace ir { class Operation;              } }
 namespace lucius { namespace ir { class TargetOperationFactory; } }
+
+// Standard Library Includes
+#include <memory>
 
 namespace lucius
 {
@@ -22,10 +27,17 @@ namespace machine
 class TargetMachine
 {
 public:
-    static const TableEntry& getTableEntryForOperation(const ir::Operation& o);
+    explicit TargetMachine(ir::Context& context);
+    ~TargetMachine();
 
 public:
-    static ir::TargetOperationFactory& getFactory();
+    const TableEntry& getTableEntryForOperation(const ir::Operation& o) const;
+
+public:
+    const ir::TargetOperationFactory& getFactory() const;
+
+private:
+    std::unique_ptr<TargetMachineImplementation> _implementation;
 
 };
 

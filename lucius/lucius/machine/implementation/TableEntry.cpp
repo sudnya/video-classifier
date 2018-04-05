@@ -105,6 +105,38 @@ TableEntry::const_iterator TableEntry::end() const
     return _implementation->end();
 }
 
+size_t TableEntry::getInputOperandCount() const
+{
+    int maxIndex = -1;
+
+    for(auto& operation : *this)
+    {
+        for(auto& operand : operation)
+        {
+            if(operand.isExistingOperand())
+            {
+                maxIndex = std::max(maxIndex,
+                    static_cast<int>(operand.getExistingOperandIndex()));
+            }
+        }
+    }
+
+    return maxIndex + 1;
+}
+
+bool TableEntry::allowsVariableInputArguments() const
+{
+    for(auto& operation : *this)
+    {
+        if(operation.allowsVariableInputArguments())
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 }
 
 }

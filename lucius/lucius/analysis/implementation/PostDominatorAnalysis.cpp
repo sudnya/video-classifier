@@ -7,7 +7,7 @@
 // Lucius Includes
 #include <lucius/analysis/interface/PostDominatorAnalysis.h>
 
-#include <lucius/analysis/interface/Traversals.h>
+#include <lucius/analysis/implementation/DominatorHelpers.h>
 
 #include <lucius/ir/interface/BasicBlock.h>
 #include <lucius/ir/interface/Function.h>
@@ -30,98 +30,22 @@ class PostDominatorAnalysisImplementation
 {
 public:
     using BlockIndexMap = std::map<BasicBlock, size_t>;
+    using BasicBlockMap = std::map<BasicBlock, BasicBlock>;
 
     void buildPostDominatorTree(const Function& function)
     {
-        _postDominatorTree.clear();
-
-        if(function.empty())
-        {
-            return;
-        }
-
-        auto reversePostOrder = reversePostOrderTraversal(
-            BasicBlockList(function.begin(), function.end()), true);
-
-        BlockIndexMap reversePostOrderPositions;
-
-        for(auto& block : reversePostOrder)
-        {
-            reversePostOrderPositions[block] = reversePostOrderPositions.size();
-        }
-
-        bool changed = true;
-
-        auto exitBlock = reversePostOrder.front();
-        reversePostOrder.pop_front();
-
-        _postDominatorTree[exitBlock] = exitBlock;
-
-        while(changed)
-        {
-            changed = false;
-
-            for(auto& block : reversePostOrder)
-            {
-                // perform post-dominator set intersections
-
-                // find the first processed predecessor
-                assert(!block.getSuccessors().empty());
-
-                BasicBlock newImmediatePostDominator = *block.getSuccessors().begin();
-
-                assert(_postDominatorTree.count(newImmediatePostDominator) != 0);
-
-                // intersect
-                for(auto& successor : block.getSuccessors())
-                {
-                    newImmediatePostDominator = _intersect(successor, newImmediatePostDominator,
-                        reversePostOrderPositions);
-                }
-
-                auto postDominator = _postDominatorTree.find(block);
-
-                if(postDominator == _postDominatorTree.end())
-                {
-                    _postDominatorTree.insert(std::make_pair(block, newImmediatePostDominator));
-                    changed = true;
-                }
-                else if(postDominator->second != newImmediatePostDominator)
-                {
-                    postDominator->second = newImmediatePostDominator;
-                    changed = true;
-                }
-            }
-        }
+        buildDominatorTree(_postDominatorTree, _reversePostOrderPositions, function, false);
     }
 
-private:
-    BasicBlock _intersect(BasicBlock left, BasicBlock right,
-        const BlockIndexMap& reversePostOrderPosition)
+public:
+    BasicBlock getPostDominator(BasicBlock left, BasicBlock right)
     {
-        while(left != right)
-        {
-            auto leftPosition = reversePostOrderPosition.find(left);
-            assert(leftPosition != reversePostOrderPosition.end());
-
-            auto rightPosition = reversePostOrderPosition.find(right);
-            assert(rightPosition != reversePostOrderPosition.end());
-
-            if(leftPosition->second < rightPosition->second)
-            {
-                left = _postDominatorTree[left];
-            }
-            else if(rightPosition->second < leftPosition->second)
-            {
-                right = _postDominatorTree[right];
-            }
-        }
-
-        return left;
+        return intersect(left, right, _reversePostOrderPositions, _postDominatorTree);
     }
 
 private:
-    std::map<BasicBlock, BasicBlock> _postDominatorTree;
+    BasicBlockMap _postDominatorTree;
+    BlockIndexMap _reversePostOrderPositions;
 
 };
 
@@ -151,8 +75,14 @@ PostDominatorAnalysis::StringSet PostDominatorAnalysis::getRequiredAnalyses() co
 ir::BasicBlock PostDominatorAnalysis::getPostDominator(ir::BasicBlock one,
     ir::BasicBlock two) const
 {
-    assertM(false, "Not implemented");
-    return ir::BasicBlock();
+    util::log("DominatorAnalysis") << " getting post-dominator of blocks (" << one.name()
+        << ", " << two.name() << ")\n";
+
+    auto result = _implementation->getPostDominator(one, two);
+
+    util::log("DominatorAnalysis") << "  post-dominator is " << result.name() << "\n";
+
+    return result;
 }
 
 

@@ -6,7 +6,7 @@
 #include <lucius/matrix/interface/Allocation.h>
 #include <lucius/matrix/interface/MatrixView.h>
 #include <lucius/matrix/interface/Dimension.h>
-#include <lucius/matrix/interface/Operation.h>
+#include <lucius/matrix/interface/GenericOperators.h>
 #include <lucius/matrix/interface/CopyOperations.h>
 #include <lucius/matrix/interface/MatrixOperations.h>
 #include <lucius/matrix/interface/DimensionTransformations.h>
@@ -915,7 +915,7 @@ size_t getBlockSortTileSize(size_t elements)
 
 template <typename OperationType, typename PrecisionType>
 void sortByKey(Matrix& keys, Matrix& values, const Matrix& dimensionKeys,
-    const Operation& operation, const std::tuple<PrecisionType>& precisions)
+    const StaticOperator& operation, const std::tuple<PrecisionType>& precisions)
 {
     if(util::isLogEnabled("SortOperations::Detail"))
     {
@@ -992,7 +992,7 @@ void sortByKey(Matrix& keys, Matrix& values, const Matrix& dimensionKeys,
 
 template <typename OperationType, typename PossiblePrecisions>
 void sortByKey(Matrix& keys, Matrix& values, const Matrix& dimensionKeys,
-    const Operation& operation, const PossiblePrecisions& possiblePrecisions)
+    const StaticOperator& operation, const PossiblePrecisions& possiblePrecisions)
 {
     typedef typename std::tuple_element<0, PossiblePrecisions>::type PossiblePrecisionType;
 
@@ -1013,7 +1013,7 @@ void sortByKey(Matrix& keys, Matrix& values, const Matrix& dimensionKeys,
 
 template <typename OperationType>
 void sortByKey(Matrix& keys, Matrix& values, const Matrix& dimensionKeys,
-    const Operation& operation, const std::tuple<OperationType>& operations)
+    const StaticOperator& operation, const std::tuple<OperationType>& operations)
 {
     assert(OperationType() == operation);
 
@@ -1022,7 +1022,7 @@ void sortByKey(Matrix& keys, Matrix& values, const Matrix& dimensionKeys,
 
 template <typename PossibleOperations>
 void sortByKey(Matrix& keys, Matrix& values, const Matrix& dimensionKeys,
-    const Operation& operation, const PossibleOperations& possibleOperations)
+    const StaticOperator& operation, const PossibleOperations& possibleOperations)
 {
     typedef typename std::tuple_element<0, PossibleOperations>::type PossibleOperationType;
 
@@ -1040,18 +1040,18 @@ void sortByKey(Matrix& keys, Matrix& values, const Matrix& dimensionKeys,
 
 } // namespace detail
 
-void sort(Matrix& values, const Dimension& dimensionsToSort, const Operation& operation)
+void sort(Matrix& values, const Dimension& dimensionsToSort, const StaticOperator& operation)
 {
     sortByKey(values, values, dimensionsToSort, operation);
 }
 
-void sort(Matrix& values, const Operation& operation)
+void sort(Matrix& values, const StaticOperator& operation)
 {
     sort(values, range(values.size()), operation);
 }
 
 void sortByKey(Matrix& keys, Matrix& values, const Dimension& dimensionsToSort,
-    const Operation& operation)
+    const StaticOperator& operation)
 {
     auto remainingDimensions = removeDimensions(values.size(), dimensionsToSort);
 
@@ -1060,10 +1060,10 @@ void sortByKey(Matrix& keys, Matrix& values, const Dimension& dimensionsToSort,
     auto dimensionOrder = range(remainingDimensions, values.precision());
     broadcast(dimensionKeys, dimensionKeys, dimensionOrder, dimensionsToSort, CopyRight());
 
-    detail::sortByKey(keys, values, dimensionKeys, operation, AllComparisonOperations());
+    detail::sortByKey(keys, values, dimensionKeys, operation, AllComparisonOperators());
 }
 
-void sortByKey(Matrix& keys, Matrix& values, const Operation& operation)
+void sortByKey(Matrix& keys, Matrix& values, const StaticOperator& operation)
 {
     sortByKey(keys, values, range(values.size()), operation);
 }

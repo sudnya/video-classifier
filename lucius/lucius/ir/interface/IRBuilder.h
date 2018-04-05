@@ -25,6 +25,7 @@ namespace lucius { namespace ir { class Program;                 } }
 namespace lucius { namespace matrix { class Matrix;    } }
 namespace lucius { namespace matrix { class Dimension; } }
 namespace lucius { namespace matrix { class Precision; } }
+namespace lucius { namespace matrix { class Operator;  } }
 
 namespace lucius
 {
@@ -36,6 +37,7 @@ namespace ir
 using Matrix    = matrix::Matrix;
 using Dimension = matrix::Dimension;
 using Precision = matrix::Precision;
+using Operator  = matrix::Operator;
 
 /*! \brief Helps build the IR. */
 class IRBuilder
@@ -55,6 +57,7 @@ public:
     /*! \brief Add new constant values to the program (or get an instance of the same value). */
     Constant addConstant(const Matrix& value);
     Constant addConstant(const Dimension& value);
+    Constant addConstant(const Operator& op);
     Constant addConstant(int64_t value);
 
 public:

@@ -7,7 +7,10 @@
 // Lucius Includes
 #include <lucius/analysis/interface/DominatorAnalysis.h>
 
+#include <lucius/analysis/implementation/DominatorHelpers.h>
+
 #include <lucius/ir/interface/BasicBlock.h>
+#include <lucius/ir/interface/Function.h>
 
 #include <lucius/util/interface/debug.h>
 
@@ -19,6 +22,24 @@ namespace analysis
 
 class DominatorAnalysisImplementation
 {
+public:
+    using BlockIndexMap = std::map<BasicBlock, size_t>;
+    using BlockMap = std::map<BasicBlock, BasicBlock>;
+
+    void buildForwardDominatorTree(const Function& function)
+    {
+        buildDominatorTree(_dominatorTree, _reversePostOrderPositions, function, true);
+    }
+
+    BasicBlock getDominator(BasicBlock left, BasicBlock right) const
+    {
+        // find the first block that dominates both
+        return intersect(left, right, _reversePostOrderPositions, _dominatorTree);
+    }
+
+private:
+    BlockMap      _dominatorTree;
+    BlockIndexMap _reversePostOrderPositions;
 
 };
 
@@ -35,7 +56,9 @@ DominatorAnalysis::~DominatorAnalysis()
 
 void DominatorAnalysis::runOnFunction(const Function& function)
 {
-    assertM(false, "Not implemented");
+    util::log("DominatorAnalysis") << "Running on " << function.name() << "\n";
+
+    _implementation->buildForwardDominatorTree(function);
 }
 
 DominatorAnalysis::StringSet DominatorAnalysis::getRequiredAnalyses() const
@@ -45,8 +68,14 @@ DominatorAnalysis::StringSet DominatorAnalysis::getRequiredAnalyses() const
 
 ir::BasicBlock DominatorAnalysis::getDominator(ir::BasicBlock one, ir::BasicBlock two) const
 {
-    assertM(false, "Not implemented");
-    return ir::BasicBlock();
+    util::log("DominatorAnalysis") << " getting dominator of blocks (" << one.name()
+        << ", " << two.name() << ")\n";
+
+    auto result = _implementation->getDominator(one, two);
+
+    util::log("DominatorAnalysis") << "  dominator is " << result.name() << "\n";
+
+    return result;
 }
 
 } // namespace analysis

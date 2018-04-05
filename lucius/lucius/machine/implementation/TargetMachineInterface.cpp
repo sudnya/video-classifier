@@ -13,6 +13,12 @@ namespace lucius
 namespace machine
 {
 
+TargetMachineInterface::TargetMachineInterface(Context& context)
+: _context(context)
+{
+
+}
+
 TargetMachineInterface::~TargetMachineInterface()
 {
     // intentionally blank

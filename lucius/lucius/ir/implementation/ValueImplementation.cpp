@@ -10,11 +10,15 @@
 #include <lucius/ir/implementation/OperationImplementation.h>
 #include <lucius/ir/implementation/ConstantImplementation.h>
 #include <lucius/ir/implementation/FunctionImplementation.h>
+#include <lucius/ir/implementation/ExternalFunctionImplementation.h>
 
 #include <lucius/ir/target/implementation/TargetOperationImplementation.h>
 
 #include <lucius/ir/interface/Use.h>
 #include <lucius/ir/interface/Context.h>
+
+// Standard Library Includes
+#include <cassert>
 
 namespace lucius
 {
@@ -68,6 +72,11 @@ bool ValueImplementation::isFunction() const
     return dynamic_cast<const FunctionImplementation*>(this);
 }
 
+bool ValueImplementation::isExternalFunction() const
+{
+    return dynamic_cast<const ExternalFunctionImplementation*>(this);
+}
+
 bool ValueImplementation::isVariable() const
 {
     return _isVariable;
@@ -78,11 +87,29 @@ void ValueImplementation::setIsVariable(bool b)
     _isVariable = b;
 }
 
-void ValueImplementation::bindToContext(Context& context)
+void ValueImplementation::bindToContext(Context* context)
 {
-    _context = &context;
+    _context = context;
 
     _id = _context->allocateId();
+}
+
+void ValueImplementation::bindToContextIfDifferent(Context* context)
+{
+    if(context == nullptr)
+    {
+        return;
+    }
+
+    if(context != _context)
+    {
+        bindToContext(context);
+    }
+}
+
+Context* ValueImplementation::getContext()
+{
+    return _context;
 }
 
 std::string ValueImplementation::name() const

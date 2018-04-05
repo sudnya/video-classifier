@@ -57,6 +57,12 @@ public:
         return _dimensions.toString();
     }
 
+public:
+    const matrix::Dimension& getDimension() const
+    {
+        return _dimensions;
+    }
+
 private:
     matrix::Dimension _dimensions;
 };
@@ -144,6 +150,11 @@ size_t Shape::elements() const
 std::string Shape::toString() const
 {
     return _implementation->toString();
+}
+
+matrix::Dimension Shape::getDimension() const
+{
+    return _implementation->getDimension();
 }
 
 } // namespace ir

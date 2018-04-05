@@ -13,6 +13,12 @@ namespace lucius
 namespace ir
 {
 
+TargetOperationFactory::TargetOperationFactory(Context& context)
+: _context(context)
+{
+
+}
+
 TargetOperationFactory::~TargetOperationFactory()
 {
 

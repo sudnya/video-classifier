@@ -11,6 +11,8 @@
 
 // Forward Declarations
 namespace lucius { namespace ir { class TargetValueDataImplementation; } }
+namespace lucius { namespace ir { class TensorData;                    } }
+namespace lucius { namespace ir { class IntegerData;                   } }
 
 namespace lucius
 {
@@ -21,6 +23,12 @@ namespace ir
 /*! \brief A class for representing a value resource. */
 class TargetValueData
 {
+public:
+    TargetValueData(std::shared_ptr<TargetValueDataImplementation>);
+    TargetValueData(TensorData);
+    TargetValueData(IntegerData);
+    TargetValueData();
+
 public:
     void* data() const;
 

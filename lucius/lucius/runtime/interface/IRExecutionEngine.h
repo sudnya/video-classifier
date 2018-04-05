@@ -6,9 +6,14 @@
 
 #pragma once
 
+// Standard Library Includes
+#include <memory>
+
 // Forward Declarations
 namespace lucius { namespace ir { class Program; } }
 namespace lucius { namespace ir { class Value;   } }
+
+namespace lucius { namespace runtime { class IRExecutionEngineOptions; } }
 
 namespace lucius
 {
@@ -36,11 +41,17 @@ public:
 public:
     virtual void saveValue(const Value& v) = 0;
 
+public:
+    IRExecutionEngineOptions& getOptions();
+
 protected:
     Program& getProgram();
 
 private:
     Program& _program;
+
+private:
+    std::unique_ptr<IRExecutionEngineOptions> _options;
 
 };
 

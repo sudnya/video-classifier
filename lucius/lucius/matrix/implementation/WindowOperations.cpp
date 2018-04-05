@@ -8,8 +8,8 @@
 #include <lucius/matrix/interface/WindowOperations.h>
 #include <lucius/matrix/interface/GatherOperations.h>
 #include <lucius/matrix/interface/MatrixOperations.h>
-#include <lucius/matrix/interface/Operation.h>
-#include <lucius/matrix/interface/GatherOperation.h>
+#include <lucius/matrix/interface/GenericOperators.h>
+#include <lucius/matrix/interface/GatherOperators.h>
 #include <lucius/matrix/interface/Dimension.h>
 #include <lucius/matrix/interface/Matrix.h>
 

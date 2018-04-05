@@ -7,6 +7,8 @@
 // Lucius Includes
 #include <lucius/runtime/interface/JITExecutionEngine.h>
 
+#include <lucius/runtime/interface/IRExecutionEngineOptions.h>
+
 #include <lucius/optimization/interface/PassManager.h>
 #include <lucius/optimization/interface/PassFactory.h>
 #include <lucius/optimization/interface/OperationFinalizationPass.h>
@@ -19,12 +21,23 @@
 #include <lucius/ir/interface/Function.h>
 #include <lucius/ir/interface/Value.h>
 #include <lucius/ir/interface/Use.h>
+#include <lucius/ir/interface/Type.h>
+#include <lucius/ir/interface/Utilities.h>
+#include <lucius/ir/interface/InsertionPoint.h>
+#include <lucius/ir/interface/ExternalFunction.h>
+
+#include <lucius/ir/values/interface/ConstantAddress.h>
+
+#include <lucius/ir/types/interface/AddressType.h>
+
+#include <lucius/ir/ops/interface/CallOperation.h>
 
 #include <lucius/ir/target/interface/TargetOperation.h>
 #include <lucius/ir/target/interface/TargetValue.h>
 #include <lucius/ir/target/interface/TargetValueData.h>
 #include <lucius/ir/target/interface/TargetControlOperation.h>
 
+#include <lucius/util/interface/ForeignFunctionInterface.h>
 #include <lucius/util/interface/debug.h>
 
 // Standard Library Includes
@@ -48,10 +61,16 @@ using PassFactory = optimization::PassFactory;
 using OperationFinalizationPass = optimization::OperationFinalizationPass;
 using TargetValue = ir::TargetValue;
 using TargetValueData = ir::TargetValueData;
+using AddressType = ir::AddressType;
+using ExternalFunction = ir::ExternalFunction;
+using ConstantAddress = ir::ConstantAddress;
+using CallOperation = ir::CallOperation;
 
 using Bundle = network::Bundle;
 
 using Function = ir::Function;
+
+void luciusJITRecordSavedValue(void* engineImplementation, void* value, void* data);
 
 class JITExecutionEngineImplementation
 {
@@ -69,20 +88,56 @@ public:
         return data->second.data();
     }
 
-    void saveValue(const TargetValue& v)
+    void recordSavedValue(const Value& value, const TargetValue& targetValue)
     {
-        _savedValues[v.getValue()] = v.getData();
+        util::log("JITExecutionEngine") << "    recording target value '"
+            << targetValue.toString() << "' for IR value '"
+            << value.toString() << "'.\n";
+        _savedValues[value] = targetValue.getData();
     }
 
 public:
     void markSavedValue(const Value& v)
     {
-        _valuesToSave.insert(v);
+        auto result = _valuesToSave.insert(v);
+
+        assert(result.second);
+
+        _insertCallToSaveValue(*result.first);
     }
 
     bool isSavedValue(const TargetValue& v)
     {
         return _valuesToSave.count(v.getValue()) != 0;
+    }
+
+private:
+    void _insertCallToSaveValue(const Value& v)
+    {
+        // definitions
+        auto location = getFirstAvailableInsertionPoint(v);
+
+        auto saveValueFunction = ExternalFunction("luciusJITRecordSavedValue",
+            {AddressType(), v.getType()});
+
+        saveValueFunction.setPassArgumentsAsTargetValues(true);
+
+        auto call = location.getBasicBlock().insert(location.getIterator(),
+            CallOperation(saveValueFunction));
+
+        call->appendOperand(ConstantAddress(this));
+        call->appendOperand(ConstantAddress(const_cast<Value*>(&v)));
+        call->appendOperand(v);
+
+        // register foreign function
+        if(!util::isForeignFunctionRegistered("luciusJITRecordSavedValue"))
+        {
+            util::registerForeignFunction("luciusJITRecordSavedValue",
+                reinterpret_cast<void*>(luciusJITRecordSavedValue),
+                {util::ForeignFunctionArgument(util::ForeignFunctionArgument::Pointer),
+                 util::ForeignFunctionArgument(util::ForeignFunctionArgument::Pointer),
+                 util::ForeignFunctionArgument(util::ForeignFunctionArgument::Pointer)});
+        }
     }
 
 private:
@@ -93,6 +148,23 @@ private:
     ValueSet       _valuesToSave;
     ValueToDataMap _savedValues;
 };
+
+void luciusJITRecordSavedValue(void* engineImplementation, void* value, void* data)
+{
+    auto* implementationValue = reinterpret_cast<TargetValue*>(
+        engineImplementation);
+    auto* savedValue = reinterpret_cast<TargetValue*>(value);
+    auto* targetValue = reinterpret_cast<TargetValue*>(data);
+
+    auto implementationAddress = ir::value_cast<ConstantAddress>(*implementationValue);
+    auto* implementation = implementationAddress.getAddress();
+
+    auto savedValueAddress = ir::value_cast<ConstantAddress>(*savedValue);
+    auto* saved = savedValueAddress.getAddress();
+
+    reinterpret_cast<JITExecutionEngineImplementation*>(
+        implementation)->recordSavedValue(*reinterpret_cast<Value*>(saved), *targetValue);
+}
 
 class ExecutionStatistics
 {
@@ -171,6 +243,8 @@ public:
     void popFrame()
     {
         _frames.pop_back();
+        util::log("JITExecutionEngine") << "   popped stack frame "
+            << _frames.size() << ".\n";
     }
 
 public:
@@ -182,6 +256,8 @@ public:
 public:
     void pushNewFrame()
     {
+        util::log("JITExecutionEngine") << "   pushed stack frame "
+            << _frames.size() << ".\n";
         _frames.push_back(StackFrame());
     }
 
@@ -230,9 +306,15 @@ private:
 
 };
 
-static void runTargetIndependentOptimizations(Program& program)
+static void runTargetIndependentOptimizations(Program& program,
+    const IRExecutionEngineOptions& options)
 {
     PassManager manager;
+
+    for(auto& pass : options.getTargetIndependentOptimizationPasses())
+    {
+        manager.addPass(PassFactory::create(pass));
+    }
 
     // TODO: add passes
 
@@ -261,8 +343,9 @@ static void addLoweringPasses(PassManager& manager, DynamicProgramState& state)
 class JITEngine
 {
 public:
-    JITEngine(Program& program, JITExecutionEngineImplementation& jitImplementation)
-    : _program(program), _jitImplementation(jitImplementation)
+    JITEngine(Program& program, JITExecutionEngineImplementation& jitImplementation,
+        IRExecutionEngineOptions& options)
+    : _program(program), _jitImplementation(jitImplementation), _options(options)
     {
 
     }
@@ -283,7 +366,7 @@ public:
 
         // target independent optimizations
         util::log("JITExecutionEngine") << " Running target independent optimizations.\n";
-        runTargetIndependentOptimizations(augmentedProgram);
+        runTargetIndependentOptimizations(augmentedProgram, _options);
 
         // lower and execute initialization code
         util::log("JITExecutionEngine") << " Lowering and executing initialization program.\n";
@@ -335,8 +418,9 @@ private:
         util::log("JITExecutionEngine") << "  executing function '"
             << function.name() << "'.\n";
 
-        // set up stack frames, one for main, and one for the function being called
+        // set up stack frames, one for main
         _getStack().pushNewFrame();
+        // and one for the function being called
         _getStack().pushNewFrame();
 
         // execute
@@ -423,12 +507,6 @@ private:
             auto targetOperationOutputValue = ir::value_cast<TargetValue>(
                 targetOperation.getOutputOperand().getValue());
 
-            // check if outputs should be saved
-            if(_jitImplementation.isSavedValue(targetOperationOutputValue))
-            {
-                _jitImplementation.saveValue(targetOperationOutputValue);
-            }
-
             util::log("JITExecutionEngine") << "   executing operation : "
                 << targetOperation.toString() << ".\n";
 
@@ -440,18 +518,10 @@ private:
         {
             auto controlOperation = TargetControlOperation(block.back());
 
+            // TODO: setup call parameters
             if(controlOperation.isCall())
             {
-                auto callOperand = controlOperation.getOperand(0);
-                auto callValue = callOperand.getValue();
-
-                assert(callValue.isFunction());
-
-                auto function = ir::value_cast<Function>(callValue);
-
-                _lowerFunction(function);
-
-                _getStack().pushNewFrame();
+                _executeCall(controlOperation);
             }
 
             util::log("JITExecutionEngine") << "   executing control operation : "
@@ -461,18 +531,48 @@ private:
 
             if(controlOperation.isReturn())
             {
-                auto returnOperand = controlOperation.getOperand(0);
-                auto returnValue = TargetValue(returnOperand.getValue());
-
-                _getStack().popFrame();
-
-                _getStack().getCurrentFrame().setReturnValue(returnValue);
+                _executeReturn(controlOperation);
             }
 
             return target;
         }
 
         return block.getNextBasicBlock();
+    }
+
+    void _executeCall(TargetControlOperation controlOperation)
+    {
+        auto callOperand = controlOperation.getOperand(0);
+        auto callValue = callOperand.getValue();
+
+        if(callValue.isFunction())
+        {
+            auto function = ir::value_cast<Function>(callValue);
+
+            _lowerFunction(function);
+
+            _getStack().pushNewFrame();
+        }
+    }
+
+    void _executeReturn(TargetControlOperation controlOperation)
+    {
+        if(!controlOperation.hasInputOperands())
+        {
+            _getStack().popFrame();
+        }
+        else
+        {
+            auto returnOperand = controlOperation.getOperand(0);
+            auto returnValue = TargetValue(returnOperand.getValue());
+
+            _getStack().popFrame();
+
+            util::log("JITExecutionEngine") << "    returned value '"
+                << returnValue.toString() << "'.\n";
+
+            _getStack().getCurrentFrame().setReturnValue(returnValue);
+        }
     }
 
 public:
@@ -513,6 +613,9 @@ private:
 private:
     JITExecutionEngineImplementation& _jitImplementation;
 
+private:
+    IRExecutionEngineOptions& _options;
+
 };
 
 } // anonymous namespace
@@ -530,7 +633,7 @@ JITExecutionEngine::~JITExecutionEngine()
 
 void JITExecutionEngine::run()
 {
-    JITEngine engine(getProgram(), *_implementation);
+    JITEngine engine(getProgram(), *_implementation, getOptions());
 
     if(util::isLogEnabled("JITExecutionEngine"))
     {
@@ -547,6 +650,8 @@ void* JITExecutionEngine::getValueContents(const Value& v)
 
 void JITExecutionEngine::saveValue(const Value& v)
 {
+    util::log("JITExecutionEngine") << "Marking saved value : "
+        << v.toString() << ".\n";
     _implementation->markSavedValue(v);
 }
 

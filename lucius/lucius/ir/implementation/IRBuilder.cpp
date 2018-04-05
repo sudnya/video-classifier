@@ -22,6 +22,7 @@
 #include <lucius/ir/values/interface/ConstantTensor.h>
 #include <lucius/ir/values/interface/ConstantShape.h>
 #include <lucius/ir/values/interface/ConstantInteger.h>
+#include <lucius/ir/values/interface/ConstantOperator.h>
 
 #include <lucius/ir/ops/interface/CopyOperation.h>
 #include <lucius/ir/ops/interface/ApplyOperation.h>
@@ -245,6 +246,11 @@ Constant IRBuilder::addConstant(const Matrix& value)
 Constant IRBuilder::addConstant(const Dimension& value)
 {
     return _implementation->addConstant(ConstantShape(value));
+}
+
+Constant IRBuilder::addConstant(const Operator& value)
+{
+    return _implementation->addConstant(ConstantOperator(value));
 }
 
 Constant IRBuilder::addConstant(int64_t value)

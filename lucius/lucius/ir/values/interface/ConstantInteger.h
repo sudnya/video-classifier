@@ -20,6 +20,7 @@ class ConstantInteger : public Constant
 {
 public:
     explicit ConstantInteger(size_t value);
+    explicit ConstantInteger(std::shared_ptr<ValueImplementation>);
 
 public:
     size_t getValue() const;

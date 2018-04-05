@@ -11,10 +11,17 @@
 #include <lucius/ir/interface/Use.h>
 #include <lucius/ir/interface/Value.h>
 #include <lucius/ir/interface/Function.h>
+#include <lucius/ir/interface/ExternalFunction.h>
 
 #include <lucius/ir/target/interface/PerformanceMetrics.h>
+#include <lucius/ir/target/interface/TargetValue.h>
 
 #include <lucius/ir/target/implementation/TargetControlOperationImplementation.h>
+
+#include <lucius/matrix/interface/Matrix.h>
+
+#include <lucius/util/interface/ForeignFunctionInterface.h>
+#include <lucius/util/interface/debug.h>
 
 // Standard Library Includes
 #include <cassert>
@@ -26,6 +33,67 @@ namespace machine
 {
 namespace generic
 {
+
+static void runExternalFunction(const ir::ExternalFunction& externalFunction,
+    const CallOperation::UseList& operands)
+{
+    auto name = externalFunction.name();
+
+    util::ForeignFunctionArguments arguments;
+
+    // Tensors are passed by pointer.  This list holds the objects pointed to until after the call
+    std::list<matrix::Matrix> tensorArguments;
+    std::list<ir::TargetValue> targetValues;
+
+    for(auto& operand : operands)
+    {
+        auto value = ir::value_cast<ir::TargetValue>(operand.getValue());
+
+        if(externalFunction.getPassArgumentsAsTargetValues())
+        {
+            targetValues.push_back(value);
+            arguments.push_back(util::ForeignFunctionArgument(&targetValues.back()));
+            continue;
+        }
+
+        auto type = value.getType();
+
+        if(type.isInteger())
+        {
+            auto data = value.getDataAsInteger();
+
+            arguments.push_back(util::ForeignFunctionArgument(data));
+        }
+        else if(type.isFloat())
+        {
+            auto data = value.getDataAsFloat();
+
+            arguments.push_back(util::ForeignFunctionArgument(data));
+        }
+        else if(type.isTensor())
+        {
+            auto data = value.getDataAsTensor();
+
+            tensorArguments.push_back(data);
+
+            arguments.push_back(util::ForeignFunctionArgument(&tensorArguments.back()));
+        }
+        else if(type.isPointer())
+        {
+            auto* data = value.getDataAsPointer();
+
+            arguments.push_back(util::ForeignFunctionArgument(data));
+        }
+        else
+        {
+            assertM(false, "TODO: add support for foreign function calls "
+                "using operands of type '" + type.toString() + "'");
+        }
+    }
+
+    // TODO: support return type
+    util::callForeignFunction(name, arguments);
+}
 
 class CallOperationImplementation : public ir::TargetControlOperationImplementation
 {
@@ -46,11 +114,20 @@ public:
         auto& functionOperand = getOperand(0);
         auto functionValue = functionOperand.getValue();
 
-        assert(functionValue.isFunction());
+        if(functionValue.isFunction())
+        {
+            auto function = ir::value_cast<ir::Function>(functionValue);
 
-        auto function = ir::value_cast<ir::Function>(functionValue);
+            return function.getEntryBlock();
+        }
 
-        return function.getEntryBlock();
+        assert(functionValue.isExternalFunction());
+
+        auto externalFunction = ir::value_cast<ir::ExternalFunction>(functionValue);
+
+        runExternalFunction(externalFunction, UseList(++begin(), end()));
+
+        return getBasicBlock().getNextBasicBlock();
     }
 
 public:
@@ -75,6 +152,11 @@ public:
     {
         assert(!getOperands().empty());
         return getOperand(0).getValue().getType();
+    }
+
+    virtual BasicBlockVector getPossibleTargets() const
+    {
+        return {getBasicBlock().getNextBasicBlock()};
     }
 
 };

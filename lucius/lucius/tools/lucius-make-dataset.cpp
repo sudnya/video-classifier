@@ -21,7 +21,7 @@
 #include <stdexcept>
 #include <fstream>
 #include <memory>
-#include <algorithm>
+#include <random>
 
 namespace lucius
 {
@@ -113,9 +113,9 @@ static void randomlyShuffleSamples(database::SampleDatabase& trainingDatabase,
         samples.push_back(sample);
     }
 
-    std::srand(377);
+    auto generator = std::minstd_rand(377);
 
-    std::random_shuffle(samples.begin(), samples.end());
+    std::shuffle(samples.begin(), samples.end(), generator);
 
     validationSamples = std::min(samples.size() - 1, validationSamples);
 

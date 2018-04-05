@@ -52,6 +52,9 @@ public:
 public:
     std::string toString() const;
 
+public:
+    matrix::Dimension getDimension() const;
+
 private:
     std::unique_ptr<ShapeImplementation> _implementation;
 

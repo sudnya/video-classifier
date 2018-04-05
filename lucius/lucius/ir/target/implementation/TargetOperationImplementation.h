@@ -18,8 +18,8 @@ namespace lucius { namespace ir { class TargetValue;        } }
 namespace lucius { namespace ir { class PerformanceMetrics; } }
 namespace lucius { namespace ir { class BasicBlock;         } }
 
-namespace lucius { namespace matrix { class Matrix;    } }
-namespace lucius { namespace matrix { class Operation; } }
+namespace lucius { namespace matrix { class Matrix;   } }
+namespace lucius { namespace matrix { class Operator; } }
 
 
 namespace lucius
@@ -38,6 +38,11 @@ public:
           Use& getOutputOperand();
     const Use& getOutputOperand() const;
 
+          iterator getOutputOperandPosition();
+    const_iterator getOutputOperandPosition() const;
+
+    bool hasOutputOperand() const;
+
 public:
     void setOutputOperand(const TargetValue& v);
 
@@ -47,7 +52,8 @@ public:
 
 public:
     matrix::Matrix getOperandDataAsTensor(size_t index) const;
-    matrix::Operation getOperandDataAsOperator(size_t index) const;
+    matrix::Operator getOperandDataAsOperator(size_t index) const;
+    size_t getOperandDataAsInteger(size_t index) const;
 
 public:
     /*! \brief Get the performance metrics for this operations. */
@@ -56,6 +62,9 @@ public:
 public:
     /*! \brief Execute the operation. */
     virtual BasicBlock execute() = 0;
+
+public:
+    virtual std::string toString() const;
 
 private:
     void _growToSupportIndex(size_t index);

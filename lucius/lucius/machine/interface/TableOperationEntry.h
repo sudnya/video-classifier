@@ -39,6 +39,9 @@ public:
     /*! \brief Indicate whether this operation produces an output. */
     bool isOutput() const;
 
+    /*! \brief Indicate whether this operation allows variable inputs. */
+    bool allowsVariableInputArguments() const;
+
 public:
     using iterator = TableOperandEntryVector::iterator;
     using const_iterator = TableOperandEntryVector::const_iterator;
@@ -52,9 +55,6 @@ public:
 
 private:
     std::string _name;
-
-private:
-    bool _producesOutput;
 
 private:
     TableOperandEntryVector _operands;

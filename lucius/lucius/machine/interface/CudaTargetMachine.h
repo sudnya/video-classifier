@@ -19,6 +19,7 @@ namespace machine
 class CudaTargetMachine : public TargetMachineInterface
 {
 public:
+    explicit CudaTargetMachine(Context& );
     virtual ~CudaTargetMachine();
 
 public:

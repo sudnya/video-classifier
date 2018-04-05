@@ -28,13 +28,14 @@ namespace machine
 {
 
 using TargetOperationFactory = ir::TargetOperationFactory;
+using Context = ir::Context;
 
 class TargetMachineImplementation
 {
 public:
-    TargetMachineImplementation()
+    TargetMachineImplementation(Context& context)
     {
-        auto target = TargetMachineFactory::create();
+        auto target = TargetMachineFactory::create(context);
 
         auto entries = target->getEntries();
 
@@ -51,17 +52,33 @@ public:
 public:
     void addTableEntry(const std::string& name, const TableEntry& entry)
     {
-        _table[name] = entry;
+        _table.insert(std::make_pair(name, entry));
     }
 
     const TableEntry& getTableEntryForOperation(const ir::Operation& o) const
     {
-        auto position = _table.find(o.name());
+        auto positions = _table.equal_range(o.name());
 
-        assertM(position != _table.end(), "There is no table entry for operation '" + o.name() +
-            "' for target machine '" + name() + "'");
+        assertM(positions.first != positions.second, "There is no table entry for operation '" +
+            o.name() + "' for target machine '" + name() + "'");
 
-        return position->second;
+        for(auto position = positions.first; position != positions.second; ++position)
+        {
+            if(position->second.allowsVariableInputArguments())
+            {
+                return position->second;
+            }
+
+            if(o.size() == position->second.getInputOperandCount())
+            {
+                return position->second;
+            }
+        }
+
+        assertM(positions.first == positions.second, "There is no table entry with matching "
+            "operands for operation '" + o.name() + "' for target machine '" + name() + "'");
+
+        return positions.first->second;
     }
 
     const std::string& name() const
@@ -75,7 +92,7 @@ public:
     }
 
 private:
-    std::map<std::string, TableEntry> _table;
+    std::multimap<std::string, TableEntry> _table;
 
 private:
     std::string _machineName;
@@ -84,26 +101,25 @@ private:
     std::unique_ptr<TargetOperationFactory> _operationFactory;
 };
 
-static std::unique_ptr<TargetMachineImplementation> _implementation;
-
-static TargetMachineImplementation& getImplementation()
+TargetMachine::TargetMachine(ir::Context& context)
+: _implementation(std::make_unique<TargetMachineImplementation>(context))
 {
-    if(!_implementation)
-    {
-        _implementation = std::make_unique<TargetMachineImplementation>();
-    }
 
-    return *_implementation;
 }
 
-const TableEntry& TargetMachine::getTableEntryForOperation(const ir::Operation& o)
+TargetMachine::~TargetMachine()
 {
-    return getImplementation().getTableEntryForOperation(o);
+    // intentionally blank
 }
 
-TargetOperationFactory& TargetMachine::getFactory()
+const TableEntry& TargetMachine::getTableEntryForOperation(const ir::Operation& o) const
 {
-    return getImplementation().getFactory();
+    return _implementation->getTableEntryForOperation(o);
+}
+
+const TargetOperationFactory& TargetMachine::getFactory() const
+{
+    return _implementation->getFactory();
 }
 
 }

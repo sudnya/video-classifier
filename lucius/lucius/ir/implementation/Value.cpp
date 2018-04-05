@@ -12,6 +12,7 @@
 #include <lucius/ir/interface/BasicBlock.h>
 #include <lucius/ir/interface/Gradient.h>
 #include <lucius/ir/interface/Function.h>
+#include <lucius/ir/interface/ExternalFunction.h>
 
 #include <lucius/ir/target/interface/TargetValue.h>
 #include <lucius/ir/target/interface/TargetOperation.h>
@@ -60,6 +61,12 @@ Value::Value(Gradient g)
 }
 
 Value::Value(Function f)
+: _implementation(f.getValueImplementation())
+{
+
+}
+
+Value::Value(ExternalFunction f)
 : _implementation(f.getValueImplementation())
 {
 
@@ -125,9 +132,34 @@ bool Value::isVariable() const
     return _implementation->isVariable();
 }
 
+bool Value::isExternalFunction() const
+{
+    return _implementation->isExternalFunction();
+}
+
 bool Value::isFunction() const
 {
     return _implementation->isFunction();
+}
+
+bool Value::isTensor() const
+{
+    return getType().isTensor();
+}
+
+bool Value::isInteger() const
+{
+    return getType().isInteger();
+}
+
+bool Value::isFloat() const
+{
+    return getType().isFloat();
+}
+
+bool Value::isPointer() const
+{
+    return getType().isPointer();
 }
 
 Value::UseList& Value::getUses()
@@ -140,9 +172,35 @@ const Value::UseList& Value::getUses() const
     return _implementation->getUses();
 }
 
+void Value::addUse(const Use& u)
+{
+    getUses().push_back(u);
+    getUses().back().setValuePosition(--getUses().end());
+}
+
+void Value::removeUse(use_iterator u)
+{
+    getUses().erase(u);
+}
+
+void Value::bindToContext(Context* context)
+{
+    _implementation->bindToContext(context);
+}
+
+void Value::bindToContextIfDifferent(Context* context)
+{
+    _implementation->bindToContextIfDifferent(context);
+}
+
 bool Value::operator<(const Value& right) const
 {
     return _implementation->getId() < right._implementation->getId();
+}
+
+bool Value::operator==(const Value& right) const
+{
+    return _implementation->getId() == right._implementation->getId();
 }
 
 std::shared_ptr<ValueImplementation> Value::getValueImplementation() const

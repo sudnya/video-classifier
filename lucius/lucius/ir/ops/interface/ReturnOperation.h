@@ -19,6 +19,7 @@ namespace ir
 class ReturnOperation : public ControlOperation
 {
 public:
+    ReturnOperation();
     ReturnOperation(Value returnedValue);
     ~ReturnOperation();
 

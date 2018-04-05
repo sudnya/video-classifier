@@ -13,6 +13,7 @@
 
 #include <lucius/ir/ops/implementation/ControlOperationImplementation.h>
 #include <lucius/ir/ops/implementation/ComputeGradientOperationImplementation.h>
+#include <lucius/ir/ops/implementation/PHIOperationImplementation.h>
 
 #include <lucius/ir/target/implementation/TargetControlOperationImplementation.h>
 
@@ -68,6 +69,26 @@ ShapeList Operation::getInputShapes(const ShapeList& outputShapes) const
     return _implementation->getInputShapes(outputShapes);
 }
 
+Operation::iterator Operation::begin()
+{
+    return getOperands().begin();
+}
+
+Operation::const_iterator Operation::begin() const
+{
+    return getOperands().begin();
+}
+
+Operation::iterator Operation::end()
+{
+    return getOperands().end();
+}
+
+Operation::const_iterator Operation::end() const
+{
+    return getOperands().end();
+}
+
 const UseList& Operation::getOperands() const
 {
     return _implementation->getOperands();
@@ -76,6 +97,16 @@ const UseList& Operation::getOperands() const
 UseList& Operation::getOperands()
 {
     return _implementation->getOperands();
+}
+
+size_t Operation::size() const
+{
+    return _implementation->size();
+}
+
+bool Operation::empty() const
+{
+    return _implementation->empty();
 }
 
 const Use& Operation::getOperand(size_t index) const
@@ -91,6 +122,16 @@ Use& Operation::getOperand(size_t index)
 void Operation::setOperands(const UseList& uses)
 {
     _implementation->setOperands(uses);
+
+    for(auto position = begin(); position != end(); ++position)
+    {
+        auto& use = *position;
+
+        use.setParent(User(_implementation), position);
+        use.getValue().addUse(use);
+
+        use.getValue().bindToContextIfDifferent(getContext());
+    }
 }
 
 void Operation::setOperands(const ValueList& values)
@@ -103,6 +144,45 @@ void Operation::setOperands(const ValueList& values)
     }
 
     setOperands(list);
+}
+
+void Operation::appendOperand(const Use& use)
+{
+    insertOperand(end(), use);
+}
+
+void Operation::appendOperand(const Value& value)
+{
+    appendOperand(Use(value));
+}
+
+void Operation::replaceOperand(const Use& original, const Use& newOperand)
+{
+    auto position = begin();
+
+    for( ; position != end(); ++position)
+    {
+        if(position->getValue() == original.getValue())
+        {
+            auto& operand = *position;
+            ++position;
+
+            operand.detach();
+            break;
+        }
+    }
+
+    insertOperand(position, newOperand);
+}
+
+void Operation::insertOperand(iterator position, const Use& operand)
+{
+    auto newPosition = getOperands().insert(position, operand);
+
+    newPosition->setParent(User(_implementation), newPosition);
+    newPosition->getValue().addUse(*newPosition);
+
+    newPosition->getValue().bindToContextIfDifferent(getContext());
 }
 
 OperationList Operation::getPredecessors() const
@@ -160,6 +240,12 @@ bool Operation::isGradientOperation() const
         getValueImplementation()));
 }
 
+bool Operation::isPHI() const
+{
+    return static_cast<bool>(std::dynamic_pointer_cast<PHIOperationImplementation>(
+        getValueImplementation()));
+}
+
 bool Operation::isReturn() const
 {
     return _implementation->isReturn();
@@ -175,6 +261,11 @@ Type Operation::getType() const
     return _implementation->getType();
 }
 
+BasicBlock Operation::getBasicBlock() const
+{
+    return getParent();
+}
+
 BasicBlock Operation::getParent() const
 {
     return _implementation->getParent();
@@ -185,6 +276,11 @@ void Operation::setParent(const BasicBlock& parent)
     _implementation->setParent(parent);
 }
 
+void Operation::setIterator(Operation::operation_iterator iterator)
+{
+    _implementation->setIterator(iterator);
+}
+
 Operation::operation_iterator Operation::getIterator()
 {
     return _implementation->getIterator();
@@ -193,6 +289,11 @@ Operation::operation_iterator Operation::getIterator()
 Operation::const_operation_iterator Operation::getIterator() const
 {
     return _implementation->getIterator();
+}
+
+Context* Operation::getContext()
+{
+    return _implementation->getContext();
 }
 
 Operation Operation::clone() const
@@ -211,6 +312,11 @@ std::string Operation::toString() const
 }
 
 std::shared_ptr<ValueImplementation> Operation::getValueImplementation() const
+{
+    return _implementation;
+}
+
+std::shared_ptr<OperationImplementation> Operation::getImplementation() const
 {
     return _implementation;
 }

@@ -25,7 +25,7 @@ LazyValue apply(const LazyValue& input, const UnaryOperator& op)
 {
     auto& builder = getBuilder();
 
-    auto opValue = builder.addConstant(op.getId());
+    auto opValue = builder.addConstant(op.getOperator());
 
     return LazyValue(builder.addApply(input.getValue(), opValue));
 }
@@ -39,7 +39,7 @@ LazyValue applyBinary(const LazyValue& left, const LazyValue& right, const Binar
 {
     auto& builder = getBuilder();
 
-    auto opValue = builder.addConstant(op.getId());
+    auto opValue = builder.addConstant(op.getOperator());
 
     return LazyValue(builder.addApplyBinary(left.getValue(), right.getValue(), opValue));
 }
@@ -54,7 +54,7 @@ LazyValue reduce(const LazyValue& input, const Dimension& d, const BinaryOperato
 {
     auto& builder = getBuilder();
 
-    auto operationValue = builder.addConstant(op.getId());
+    auto operationValue = builder.addConstant(op.getOperator());
     auto dimensionValue = builder.addConstant(d);
 
     return LazyValue(builder.addReduce(input.getValue(), dimensionValue, operationValue));
@@ -71,7 +71,7 @@ LazyValue broadcast(const LazyValue& left, const LazyValue& right, const Dimensi
 {
     auto& builder = getBuilder();
 
-    auto operationValue = builder.addConstant(op.getId());
+    auto operationValue = builder.addConstant(op.getOperator());
     auto dimensionValue = builder.addConstant(d);
 
     return LazyValue(builder.addBroadcast(left.getValue(), right.getValue(),

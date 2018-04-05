@@ -12,8 +12,10 @@
 // Forward Declarations
 namespace lucius { namespace ir { class TargetValueDataImplementation; } }
 namespace lucius { namespace ir { class TensorDataImplementation;      } }
+namespace lucius { namespace ir { class Shape;                         } }
 
-namespace lucius { namespace matrix { class Matrix; } }
+namespace lucius { namespace matrix { class Matrix;    } }
+namespace lucius { namespace matrix { class Precision; } }
 
 namespace lucius
 {
@@ -26,6 +28,7 @@ class TensorData
 {
 public:
     TensorData();
+    TensorData(const Shape& shape, const matrix::Precision& precision);
     TensorData(std::shared_ptr<TargetValueDataImplementation> implementation);
 
 public:

@@ -18,9 +18,19 @@ TargetValueImplementation::UseList& TargetValueImplementation::getDefinitions()
     return _definitions;
 }
 
+const TargetValueImplementation::UseList& TargetValueImplementation::getDefinitions() const
+{
+    return _definitions;
+}
+
 TargetValueData TargetValueImplementation::getData() const
 {
     return _data;
+}
+
+void TargetValueImplementation::setData(TargetValueData data)
+{
+    _data = data;
 }
 
 } // namespace ir

@@ -24,7 +24,11 @@ namespace ir
 class InsertionPoint
 {
 public:
+    using OperationList = std::list<Operation>;
+
+public:
     InsertionPoint(const BasicBlock& block);
+    InsertionPoint(const BasicBlock& block, const OperationList::iterator);
     InsertionPoint(const Operation& operation);
     InsertionPoint();
     InsertionPoint(const InsertionPoint&);
@@ -32,9 +36,6 @@ public:
 
 public:
     InsertionPoint& operator=(const InsertionPoint&);
-
-public:
-    using OperationList = std::list<Operation>;
 
 public:
     BasicBlock& getBasicBlock();

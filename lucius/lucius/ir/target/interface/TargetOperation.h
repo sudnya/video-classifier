@@ -48,21 +48,44 @@ public:
 public:
     using UseList = std::list<Use>;
 
+    using iterator = UseList::iterator;
+    using const_iterator = UseList::const_iterator;
+
 public:
           Use& getOutputOperand();
     const Use& getOutputOperand() const;
+
+          iterator getOutputOperandPosition();
+    const_iterator getOutputOperandPosition() const;
+
+    bool hasOutputOperand() const;
 
 public:
           Use& getOperand(size_t index);
     const Use& getOperand(size_t index) const;
 
+          iterator getOperandPosition(size_t index);
+    const_iterator getOperandPosition(size_t index) const;
+
+public:
+          iterator begin();
+    const_iterator begin() const;
+
+          iterator end();
+    const_iterator end() const;
+
 public:
           UseList& getOperands();
     const UseList& getOperands() const;
 
+    bool hasInputOperands() const;
+
 public:
     void setOperand(const TargetValue& v, size_t index);
     void appendOperand(const TargetValue& v);
+
+public:
+    size_t getInputOperandCount() const;
 
 public:
     bool isValid() const;

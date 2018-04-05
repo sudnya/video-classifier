@@ -26,7 +26,8 @@ TableOperandEntry::TableOperandEntry(size_t existingOperandIndex)
 }
 
 TableOperandEntry::TableOperandEntry(size_t existingOperandIndex, bool isOutput)
-: _isExisting(true), _existingOperandIndex(existingOperandIndex), _isOutput(isOutput)
+: _isExisting(true), _existingOperandIndex(existingOperandIndex), _isOutput(isOutput),
+  _isVariableInputOperands(false)
 {
 
 }
@@ -44,6 +45,16 @@ size_t TableOperandEntry::getExistingOperandIndex() const
 bool TableOperandEntry::isOutput() const
 {
     return _isOutput;
+}
+
+bool TableOperandEntry::isVariableInputOperands() const
+{
+    return _isVariableInputOperands;
+}
+
+void TableOperandEntry::setIsVariableInputOperands(bool condition)
+{
+    _isVariableInputOperands = condition;
 }
 
 }

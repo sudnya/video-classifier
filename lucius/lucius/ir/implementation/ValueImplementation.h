@@ -47,13 +47,16 @@ public:
     bool isTargetOperation() const;
     bool isConstant() const;
     bool isFunction() const;
+    bool isExternalFunction() const;
 
 public:
     bool isVariable() const;
     void setIsVariable(bool b);
 
 public:
-    void bindToContext(Context& context);
+    void bindToContext(Context* context);
+    void bindToContextIfDifferent(Context* context);
+    Context* getContext();
 
 public:
     virtual std::shared_ptr<ValueImplementation> clone() const = 0;

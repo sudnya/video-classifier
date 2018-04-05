@@ -19,8 +19,6 @@
 #include <lucius/ir/interface/Value.h>
 #include <lucius/ir/interface/Type.h>
 
-#include <lucius/ir/values/interface/ValueFactory.h>
-
 #include <lucius/ir/target/interface/TargetOperationFactory.h>
 #include <lucius/ir/target/interface/TargetOperation.h>
 #include <lucius/ir/target/interface/TargetValue.h>
@@ -52,6 +50,7 @@ using OperationList = std::list<Operation>;
 using Value = ir::Value;
 
 using TargetValue = ir::TargetValue;
+using TargetOperation = ir::TargetOperation;
 using TargetMachine = machine::TargetMachine;
 using TargetOperationFactory = ir::TargetOperationFactory;
 
@@ -65,14 +64,48 @@ static bool isNormalValue(const Value& v)
 
 static bool isNotTranslatedValue(const Value& v)
 {
-    return v.isFunction() || v.isConstant();
+    return v.isFunction() || v.isConstant() || v.isExternalFunction();
+}
+
+static void generateOneExistingOperand(TargetOperation& targetOperation, ValueMap& valueMap,
+    Operation& operation, size_t index)
+{
+    auto& use = operation.getOperand(index);
+    auto operand = use.getValue();
+
+    if(isNormalValue(operand))
+    {
+        auto mapping = valueMap.find(operand);
+
+        assert(mapping != valueMap.end());
+
+        targetOperation.appendOperand(mapping->second);
+    }
+    else if(isNotTranslatedValue(operand))
+    {
+        targetOperation.appendOperand(TargetValue(operand));
+    }
+    else
+    {
+        // TODO: handle other types of operands
+        assertM(false, "Not implemented.");
+    }
+}
+
+static void generateExistingOperandRange(TargetOperation& targetOperation, ValueMap& valueMap,
+    Operation& operation, size_t begin, size_t end)
+{
+    for(size_t i = begin; i < end; ++i)
+    {
+        generateOneExistingOperand(targetOperation, valueMap, operation, i);
+    }
 }
 
 static void generateOperations(OperationList& targetOperations,
-    ValueMap& valueMap, Operation& operation)
+    ValueMap& valueMap, Operation& operation, const TargetMachine& machine)
 {
-    auto& entry = TargetMachine::getTableEntryForOperation(operation);
-    auto& operationFactory = TargetMachine::getFactory();
+    auto& entry = machine.getTableEntryForOperation(operation);
+    auto& operationFactory = machine.getFactory();
 
     for(auto& targetOperationEntry : entry)
     {
@@ -84,32 +117,25 @@ static void generateOperations(OperationList& targetOperations,
         {
             if(targetOperandEntry.isOutput())
             {
-                auto value = ir::ValueFactory::createValueForType(operation.getType());
+                if(operation.getType().isVoid())
+                {
+                    continue;
+                }
+
+                auto value = operationFactory.createOperand(operation.getType());
 
                 targetOperation.setOutputOperand(TargetValue(value));
             }
+            else if (targetOperandEntry.isVariableInputOperands())
+            {
+                generateExistingOperandRange(targetOperation, valueMap, operation,
+                    targetOperandEntry.getExistingOperandIndex(), operation.size());
+            }
             else if(targetOperandEntry.isExistingOperand())
             {
-                auto& use = operation.getOperand(targetOperandEntry.getExistingOperandIndex());
-                auto operand = use.getValue();
+                generateOneExistingOperand(targetOperation, valueMap, operation,
+                    targetOperandEntry.getExistingOperandIndex());
 
-                if(isNormalValue(operand))
-                {
-                    auto mapping = valueMap.find(operand);
-
-                    assert(mapping != valueMap.end());
-
-                    targetOperation.appendOperand(mapping->second);
-                }
-                else if(isNotTranslatedValue(operand))
-                {
-                    targetOperation.appendOperand(TargetValue(operand));
-                }
-                else
-                {
-                    // TODO: handle other types of operands
-                    assertM(false, "Not implemented.");
-                }
             }
             else
             {
@@ -125,6 +151,9 @@ static void generateOperations(OperationList& targetOperations,
 
         if(targetOperationEntry.isOutput())
         {
+            util::log("TableOperationSelectionPass") << "    added output mapping "
+                << operation.toString() << " = "
+                << targetOperation.getOutputOperand().toString() << "\n";
             valueMap[operation] = ir::value_cast<TargetValue>(
                 targetOperation.getOutputOperand().getValue());
         }
@@ -137,6 +166,8 @@ void TableOperationSelectionPass::runOnFunction(ir::Function& function)
 
     ValueMap newValues;
 
+    TargetMachine machine(function.getContext());
+
     for(auto& basicBlock : function)
     {
         util::log("TableOperationSelectionPass") << " Running on basic block "
@@ -147,7 +178,7 @@ void TableOperationSelectionPass::runOnFunction(ir::Function& function)
         {
             util::log("TableOperationSelectionPass") << "  Running on operation "
                 << operation.toString() << "\n";
-            generateOperations(newOperations, newValues, operation);
+            generateOperations(newOperations, newValues, operation, machine);
         }
 
         basicBlock.setOperations(std::move(newOperations));

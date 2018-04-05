@@ -2,7 +2,7 @@
 // Lucius Includes
 #include <lucius/matrix/interface/ScanOperations.h>
 #include <lucius/matrix/interface/MatrixView.h>
-#include <lucius/matrix/interface/Operation.h>
+#include <lucius/matrix/interface/GenericOperators.h>
 
 #include <lucius/parallel/interface/MultiBulkSynchronousParallel.h>
 
@@ -71,7 +71,7 @@ public:
 
 template <bool isInclusive, typename OperationType, typename PrecisionType>
 void scan(Matrix& result, const Matrix& input, size_t dimensionToReduce,
-    const Operation& op, double initialValue, const std::tuple<PrecisionType>& precisions)
+    const StaticOperator& op, double initialValue, const std::tuple<PrecisionType>& precisions)
 {
     assert(PrecisionType() == result.precision());
     assert(PrecisionType() == input.precision());
@@ -97,7 +97,7 @@ void scan(Matrix& result, const Matrix& input, size_t dimensionToReduce,
 
 template<bool isInclusive, typename OperationType, typename PossiblePrecisions>
 void scan(Matrix& result, const Matrix& input, size_t dimensionToReduce,
-    const Operation& op, double initialValue, const PossiblePrecisions& precisions)
+    const StaticOperator& op, double initialValue, const PossiblePrecisions& precisions)
 {
     typedef typename std::tuple_element<0, PossiblePrecisions>::type PossiblePrecisionType;
 
@@ -117,7 +117,7 @@ void scan(Matrix& result, const Matrix& input, size_t dimensionToReduce,
 
 template <bool isInclusive, typename OperationType>
 void scan(Matrix& result, const Matrix& input, size_t dimensionToReduce,
-    const Operation& op, double initialValue, const std::tuple<OperationType>& operations)
+    const StaticOperator& op, double initialValue, const std::tuple<OperationType>& operations)
 {
     assert(op == OperationType());
 
@@ -127,7 +127,7 @@ void scan(Matrix& result, const Matrix& input, size_t dimensionToReduce,
 
 template <bool isInclusive, typename PossibleOperations>
 void scan(Matrix& result, const Matrix& input, size_t dimensionToReduce,
-    const Operation& op, double initialValue, const PossibleOperations& possibleOperations)
+    const StaticOperator& op, double initialValue, const PossibleOperations& possibleOperations)
 {
     typedef typename std::tuple_element<0, PossibleOperations>::type PossibleOperationType;
 
@@ -148,12 +148,12 @@ void scan(Matrix& result, const Matrix& input, size_t dimensionToReduce,
 } // namespace detail
 
 void inclusiveScan(Matrix& output, const Matrix& input, size_t dimensionToReduce,
-    const Operation& op, double initialValue)
+    const StaticOperator& op, double initialValue)
 {
-    detail::scan<true>(output, input, dimensionToReduce, op, initialValue, AllBinaryOperations());
+    detail::scan<true>(output, input, dimensionToReduce, op, initialValue, AllBinaryOperators());
 }
 
-Matrix inclusiveScan(const Matrix& input, size_t dimensionToReduce, const Operation& op,
+Matrix inclusiveScan(const Matrix& input, size_t dimensionToReduce, const StaticOperator& op,
     double initialValue)
 {
     Matrix result(input.size(), input.precision());
@@ -164,12 +164,12 @@ Matrix inclusiveScan(const Matrix& input, size_t dimensionToReduce, const Operat
 }
 
 void exclusiveScan(Matrix& output, const Matrix& input, size_t dimensionToReduce,
-    const Operation& op, double initialValue)
+    const StaticOperator& op, double initialValue)
 {
-    detail::scan<false>(output, input, dimensionToReduce, op, initialValue, AllBinaryOperations());
+    detail::scan<false>(output, input, dimensionToReduce, op, initialValue, AllBinaryOperators());
 }
 
-Matrix exclusiveScan(const Matrix& input, size_t dimensionToReduce, const Operation& op,
+Matrix exclusiveScan(const Matrix& input, size_t dimensionToReduce, const StaticOperator& op,
     double initialValue)
 {
     Matrix result(input.size(), input.precision());

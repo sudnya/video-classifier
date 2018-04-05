@@ -28,9 +28,18 @@ public:
     }
 
 public:
+    using UseList = std::list<Use>;
+    using iterator = UseList::iterator;
+
+public:
     Value getValue() const
     {
         return Value(_value);
+    }
+
+    void setValuePosition(iterator position)
+    {
+        _valuePosition = position;
     }
 
     User getUser() const
@@ -44,16 +53,31 @@ public:
         return Operation(_value);
     }
 
-    BasicBlock getParent() const
+    BasicBlock getBasicBlock() const
     {
-       return BasicBlock(_parent.lock());
+        return getOperation().getParent();
+    }
+
+    void setParent(std::weak_ptr<UserImplementation> parent, iterator position)
+    {
+        _parent = parent;
+        _parentPosition = position;
+    }
+
+    User getParent() const
+    {
+        return User(_parent.lock());
+    }
+
+public:
+    void detach()
+    {
+        getParent().removePredecessorUse(_parentPosition);
+        getValue().removeUse(_valuePosition);
     }
 
 private:
-    using UseList = std::list<Use>;
-
-private:
-    std::weak_ptr<UserImplementation>  _parent;
+    std::weak_ptr<UserImplementation>    _parent;
     std::shared_ptr<ValueImplementation> _value;
 
 private:
@@ -80,9 +104,24 @@ Use::~Use()
     // intetionally blank
 }
 
-BasicBlock Use::getParent() const
+BasicBlock Use::getBasicBlock() const
+{
+    return _implementation->getBasicBlock();
+}
+
+User Use::getParent() const
 {
     return _implementation->getParent();
+}
+
+void Use::setParent(User parent, iterator position)
+{
+    _implementation->setParent(parent.getImplementation(), position);
+}
+
+void Use::detach()
+{
+    _implementation->detach();
 }
 
 Operation Use::getOperation() const
@@ -93,6 +132,16 @@ Operation Use::getOperation() const
 Value Use::getValue() const
 {
     return _implementation->getValue();
+}
+
+void Use::setValuePosition(iterator position)
+{
+    _implementation->setValuePosition(position);
+}
+
+std::string Use::toString() const
+{
+    return getValue().toString();
 }
 
 } // namespace ir

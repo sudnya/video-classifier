@@ -15,7 +15,7 @@
 #include <lucius/matrix/interface/MatrixOperations.h>
 #include <lucius/matrix/interface/FileOperations.h>
 #include <lucius/matrix/interface/CopyOperations.h>
-#include <lucius/matrix/interface/Operation.h>
+#include <lucius/matrix/interface/GenericOperators.h>
 #include <lucius/matrix/interface/MatrixTransformations.h>
 
 #include <lucius/util/interface/debug.h>

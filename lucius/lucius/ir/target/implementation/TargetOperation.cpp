@@ -9,6 +9,7 @@
 
 #include <lucius/ir/interface/BasicBlock.h>
 #include <lucius/ir/interface/Use.h>
+#include <lucius/ir/interface/User.h>
 #include <lucius/ir/interface/Value.h>
 
 #include <lucius/ir/target/interface/TargetValue.h>
@@ -62,6 +63,10 @@ void TargetOperation::setOutputOperand(const TargetValue& v)
     TargetValue(v).addDefinition(Use(*this));
 
     getTargetOperationImplementation()->setOutputOperand(v);
+
+    auto position = getOutputOperandPosition();
+
+    position->setParent(User(_implementation), position);
 }
 
 Use& TargetOperation::getOutputOperand()
@@ -74,8 +79,25 @@ const Use& TargetOperation::getOutputOperand() const
     return getTargetOperationImplementation()->getOutputOperand();
 }
 
+TargetOperation::iterator TargetOperation::getOutputOperandPosition()
+{
+    return getTargetOperationImplementation()->getOutputOperandPosition();
+}
+
+TargetOperation::const_iterator TargetOperation::getOutputOperandPosition() const
+{
+    return getTargetOperationImplementation()->getOutputOperandPosition();
+}
+
+bool TargetOperation::hasOutputOperand() const
+{
+    return getTargetOperationImplementation()->hasOutputOperand();
+}
+
 Use& TargetOperation::getOperand(size_t index)
 {
+    assert(index < getOperands().size());
+
     auto operand = getOperands().begin();
 
     std::advance(operand, index);
@@ -85,11 +107,55 @@ Use& TargetOperation::getOperand(size_t index)
 
 const Use& TargetOperation::getOperand(size_t index) const
 {
+    assert(index < getOperands().size());
+
     auto operand = getOperands().begin();
 
     std::advance(operand, index);
 
     return *operand;
+}
+
+TargetOperation::iterator TargetOperation::getOperandPosition(size_t index)
+{
+    assert(index < getOperands().size());
+
+    auto operand = getOperands().begin();
+
+    std::advance(operand, index);
+
+    return operand;
+}
+
+TargetOperation::const_iterator TargetOperation::getOperandPosition(size_t index) const
+{
+    assert(index < getOperands().size());
+
+    auto operand = getOperands().begin();
+
+    std::advance(operand, index);
+
+    return operand;
+}
+
+TargetOperation::iterator TargetOperation::begin()
+{
+    return getOperands().begin();
+}
+
+TargetOperation::const_iterator TargetOperation::begin() const
+{
+    return getOperands().begin();
+}
+
+TargetOperation::iterator TargetOperation::end()
+{
+    return getOperands().end();
+}
+
+TargetOperation::const_iterator TargetOperation::end() const
+{
+    return getOperands().end();
 }
 
 TargetOperation::UseList& TargetOperation::getOperands()
@@ -102,14 +168,41 @@ const TargetOperation::UseList& TargetOperation::getOperands() const
     return getTargetOperationImplementation()->getOperands();
 }
 
+bool TargetOperation::hasInputOperands() const
+{
+    return getInputOperandCount() != 0;
+}
+
 void TargetOperation::setOperand(const TargetValue& v, size_t index)
 {
     getTargetOperationImplementation()->setOperand(v, index);
+
+    auto position = getOperandPosition(index);
+
+    position->setParent(User(_implementation), position);
+    position->getValue().addUse(*position);
 }
 
 void TargetOperation::appendOperand(const TargetValue& v)
 {
+    size_t index = getInputOperandCount();
+
     getTargetOperationImplementation()->appendOperand(v);
+
+    auto position = getOperandPosition(index);
+
+    position->setParent(User(_implementation), position);
+    position->getValue().addUse(*position);
+}
+
+size_t TargetOperation::getInputOperandCount() const
+{
+    if(hasOutputOperand())
+    {
+        return getOperands().size() - 1;
+    }
+
+    return getOperands().size();
 }
 
 bool TargetOperation::isValid() const

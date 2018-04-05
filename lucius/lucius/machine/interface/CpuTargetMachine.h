@@ -19,6 +19,7 @@ namespace machine
 class CpuTargetMachine : public TargetMachineInterface
 {
 public:
+    explicit CpuTargetMachine(Context&);
     virtual ~CpuTargetMachine();
 
 public:

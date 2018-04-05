@@ -18,6 +18,10 @@ namespace lucius { namespace ir { class TargetValueData; } }
 
 namespace lucius { namespace ir { class TargetValueImplementation; } }
 namespace lucius { namespace ir { class ValueImplementation;       } }
+namespace lucius { namespace ir { class UserImplementation;        } }
+
+namespace lucius { namespace matrix { class Matrix;   } }
+namespace lucius { namespace matrix { class Operator; } }
 
 namespace lucius
 {
@@ -30,6 +34,7 @@ class TargetValue
 {
 public:
     TargetValue();
+    explicit TargetValue(std::shared_ptr<ValueImplementation>);
     explicit TargetValue(Value);
     ~TargetValue();
 
@@ -44,23 +49,47 @@ public:
     UseList& getDefinitions();
 
 public:
+    const UseList& getUses() const;
+    const UseList& getDefinitions() const;
+
+    UseList getUsesAndDefinitions() const;
+
+public:
     void addDefinition(const Use& u);
+
+public:
+    void allocateData();
+    void freeData();
 
 public:
     Value getValue() const;
 
 public:
     bool isConstant() const;
+    bool isOperation() const;
+    bool isTensor() const;
+    bool isInteger() const;
+    bool isFloat() const;
+    bool isPointer() const;
 
 public:
     TargetValueData getData() const;
 
 public:
+    size_t getDataAsInteger() const;
+    float getDataAsFloat() const;
+    void* getDataAsPointer() const;
+    matrix::Operator getDataAsOperator() const;
+    matrix::Matrix getDataAsTensor() const;
+
+public:
     bool operator==(const TargetValue& v) const;
+    bool operator<(const TargetValue& v) const;
     bool operator==(const Value& v) const;
 
 public:
     std::shared_ptr<ValueImplementation> getValueImplementation() const;
+    std::shared_ptr<UserImplementation>  getUserImplementation() const;
 
 public:
     std::string toString() const;

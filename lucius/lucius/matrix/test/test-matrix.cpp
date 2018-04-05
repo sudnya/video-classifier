@@ -19,8 +19,8 @@
 #include <lucius/matrix/interface/SortOperations.h>
 #include <lucius/matrix/interface/GatherOperations.h>
 #include <lucius/matrix/interface/ScanOperations.h>
-#include <lucius/matrix/interface/GatherOperation.h>
-#include <lucius/matrix/interface/Operation.h>
+#include <lucius/matrix/interface/GatherOperators.h>
+#include <lucius/matrix/interface/GenericOperators.h>
 #include <lucius/matrix/interface/Matrix.h>
 
 #include <lucius/util/interface/debug.h>

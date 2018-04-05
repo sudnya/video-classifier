@@ -9,6 +9,9 @@
 
 #include <lucius/ir/interface/Use.h>
 
+#include <lucius/matrix/interface/Operator.h>
+#include <lucius/matrix/interface/GenericOperators.h>
+
 #include <lucius/ir/implementation/ConstantImplementation.h>
 
 // Standard Library Includes
@@ -20,25 +23,18 @@ namespace lucius
 namespace ir
 {
 
-enum OperatorIds
-{
-    Unknown = 0,
-    AddId = 1,
-    MultiplyId = 2
-};
-
 class ConstantOperatorValueImplementation : public ConstantImplementation
 {
 public:
-    ConstantOperatorValueImplementation(size_t id)
-    : _operatorId(id)
+    ConstantOperatorValueImplementation(const matrix::Operator& op)
+    : _operator(op)
     {
 
     }
 
-    size_t getOperatorId() const
+    const matrix::Operator& getOperator() const
     {
-        return _operatorId;
+        return _operator;
     }
 
 public:
@@ -50,11 +46,11 @@ public:
 public:
     std::string toString() const
     {
-        if(getOperatorId() == AddId)
+        if(getOperator() == matrix::Add())
         {
             return "AddOperator";
         }
-        else if(getOperatorId() == MultiplyId)
+        else if(getOperator() == matrix::Multiply())
         {
             return "MultiplyOperator";
         }
@@ -69,29 +65,35 @@ public:
     }
 
 private:
-    size_t _operatorId;
+    matrix::Operator _operator;
 };
 
-ConstantOperator::ConstantOperator(size_t operatorId)
-: Constant(std::make_shared<ConstantOperatorValueImplementation>(operatorId))
+ConstantOperator::ConstantOperator(const matrix::Operator& op)
+: ConstantOperator(std::make_shared<ConstantOperatorValueImplementation>(op))
 {
 
 }
 
-size_t ConstantOperator::getOperatorId() const
+ConstantOperator::ConstantOperator(std::shared_ptr<ValueImplementation> i)
+: Constant(i)
+{
+
+}
+
+const matrix::Operator& ConstantOperator::getOperator() const
 {
     return std::static_pointer_cast<ConstantOperatorValueImplementation>(
-        getValueImplementation())->getOperatorId();
+        getValueImplementation())->getOperator();
 }
 
 Add::Add()
-: ConstantOperator(AddId)
+: ConstantOperator(matrix::Add())
 {
 
 }
 
 Multiply::Multiply()
-: ConstantOperator(MultiplyId)
+: ConstantOperator(matrix::Multiply())
 {
 
 }

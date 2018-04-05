@@ -66,6 +66,10 @@ std::string TypeImplementation::toString() const
     {
         return "function";
     }
+    else if(getTypeId() == Type::PointerId)
+    {
+        return "void*";
+    }
 
     assertM(false, "Not implemented.");
 

@@ -10,6 +10,7 @@
 #include <lucius/machine/interface/TableEntry.h>
 #include <lucius/machine/interface/TableOperationEntry.h>
 #include <lucius/machine/interface/TableOperandEntry.h>
+#include <lucius/machine/interface/VariableInputOperandsEntry.h>
 
 #include <lucius/machine/cpu/interface/CpuTargetOperationFactory.h>
 
@@ -18,6 +19,12 @@ namespace lucius
 
 namespace machine
 {
+
+CpuTargetMachine::CpuTargetMachine(Context& context)
+: TargetMachineInterface(context)
+{
+
+}
 
 CpuTargetMachine::~CpuTargetMachine()
 {
@@ -29,11 +36,17 @@ CpuTargetMachine::TableEntryVector CpuTargetMachine::getEntries() const
     TableEntryVector vector;
 
     vector.push_back(
-        std::make_pair("call", TableEntry({TableOperationEntry("call", {TableOperandEntry(0)})}))
+        std::make_pair("call", TableEntry({TableOperationEntry("call",
+            {TableOperandEntry(0, true), TableOperandEntry(0), VariableInputOperandsEntry(1)})}))
     );
 
     vector.push_back(
-        std::make_pair("return", TableEntry({TableOperationEntry("return", {TableOperandEntry(0)})}))
+        std::make_pair("return", TableEntry({TableOperationEntry("return",
+            {TableOperandEntry(0)})}))
+    );
+
+    vector.push_back(
+        std::make_pair("return", TableEntry({TableOperationEntry("return", {})}))
     );
 
     vector.push_back(
@@ -47,7 +60,7 @@ CpuTargetMachine::TableEntryVector CpuTargetMachine::getEntries() const
 
 std::unique_ptr<ir::TargetOperationFactory> CpuTargetMachine::getOperationFactory() const
 {
-    return std::make_unique<cpu::CpuTargetOperationFactory>();
+    return std::make_unique<cpu::CpuTargetOperationFactory>(_context);
 }
 
 std::string CpuTargetMachine::name() const

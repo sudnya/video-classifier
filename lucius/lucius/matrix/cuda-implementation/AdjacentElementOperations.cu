@@ -2,7 +2,7 @@
 // Lucius Includes
 #include <lucius/matrix/interface/AdjacentElementOperations.h>
 #include <lucius/matrix/interface/MatrixView.h>
-#include <lucius/matrix/interface/Operation.h>
+#include <lucius/matrix/interface/GenericOperators.h>
 
 #include <lucius/parallel/interface/MultiBulkSynchronousParallel.h>
 
@@ -65,7 +65,7 @@ public:
 
 template <typename ActualOperation, typename ActualPrecision>
 void applyToAdjacentElements(Matrix& output, const Matrix& input,
-    size_t dimensionToApplyTo, const Operation& op, double initialValue,
+    size_t dimensionToApplyTo, const StaticOperator& op, double initialValue,
     const std::tuple<ActualPrecision>& p)
 {
     typedef typename ActualPrecision::type NativeType;
@@ -90,7 +90,7 @@ void applyToAdjacentElements(Matrix& output, const Matrix& input,
 
 template <typename ActualOperation, typename PossiblePrecisions>
 void applyToAdjacentElements(Matrix& output, const Matrix& input,
-    size_t dimensionToApplyTo, const Operation& op, double initialValue,
+    size_t dimensionToApplyTo, const StaticOperator& op, double initialValue,
     const PossiblePrecisions& possiblePrecisions)
 {
     typedef typename std::tuple_element<0, PossiblePrecisions>::type PossiblePrecisionType;
@@ -110,7 +110,7 @@ void applyToAdjacentElements(Matrix& output, const Matrix& input,
 
 template <typename PossibleOperation>
 void applyToAdjacentElements(Matrix& output, const Matrix& input,
-    size_t dimensionToApplyTo, const Operation& op, double initialValue,
+    size_t dimensionToApplyTo, const StaticOperator& op, double initialValue,
     const std::tuple<PossibleOperation>& p)
 {
     assert(PossibleOperation() == op);
@@ -120,7 +120,7 @@ void applyToAdjacentElements(Matrix& output, const Matrix& input,
 
 template <typename PossibleOperations>
 void applyToAdjacentElements(Matrix& output, const Matrix& input,
-    size_t dimensionToApplyTo, const Operation& op, double initialValue,
+    size_t dimensionToApplyTo, const StaticOperator& op, double initialValue,
     const PossibleOperations& possibleOperations)
 {
     typedef typename std::tuple_element<0, PossibleOperations>::type PossibleOperationType;
@@ -142,7 +142,7 @@ void applyToAdjacentElements(Matrix& output, const Matrix& input,
 }
 
 Matrix applyToAdjacentElements(const Matrix& input, size_t dimensionToApplyTo,
-    const Operation& op, double initialValue)
+    const StaticOperator& op, double initialValue)
 {
     Matrix result(input.size(), input.precision());
 
@@ -152,10 +152,10 @@ Matrix applyToAdjacentElements(const Matrix& input, size_t dimensionToApplyTo,
 }
 
 void applyToAdjacentElements(Matrix& output, const Matrix& input,
-    size_t dimensionToApplyTo, const Operation& op, double initialValue)
+    size_t dimensionToApplyTo, const StaticOperator& op, double initialValue)
 {
     detail::applyToAdjacentElements(output, input, dimensionToApplyTo, op,
-        initialValue, AllBinaryOperations());
+        initialValue, AllBinaryOperators());
 }
 
 }

@@ -9,7 +9,10 @@
 
 #include <lucius/ir/target/implementation/TargetValueDataImplementation.h>
 
-#include <lucius/matrix/interface/Operation.h>
+#include <lucius/matrix/interface/Operator.h>
+
+// Standard Library Includes
+#include <cassert>
 
 namespace lucius
 {
@@ -20,9 +23,9 @@ namespace ir
 class OperatorDataImplementation : public TargetValueDataImplementation
 {
 public:
-    matrix::Operation getOperator() const
+    matrix::Operator getOperator() const
     {
-        return *_operator;
+        return _operator;
     }
 
 public:
@@ -32,7 +35,7 @@ public:
     }
 
 private:
-    std::unique_ptr<matrix::Operation> _operator;
+   matrix::Operator _operator;
 
 };
 
@@ -49,7 +52,7 @@ OperatorData::OperatorData(std::shared_ptr<TargetValueDataImplementation> implem
         implementation)));
 }
 
-matrix::Operation OperatorData::getOperator() const
+matrix::Operator OperatorData::getOperator() const
 {
     return _implementation->getOperator();
 }

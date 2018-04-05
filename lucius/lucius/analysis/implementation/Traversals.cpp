@@ -75,14 +75,18 @@ BasicBlockList postOrderTraversal(const BasicBlockList& blocks, bool reverseEdge
         {
             if(!reverseEdges)
             {
-                for(auto& successor : next.first.getSuccessors())
+                auto successors = next.first.getSuccessors();
+
+                for(auto& successor : successors)
                 {
                     tryStackPush(stack, successor, visited, reachable);
                 }
             }
             else
             {
-                for(auto& predecessor : next.first.getPredecessors())
+                auto predecessors = next.first.getPredecessors();
+
+                for(auto& predecessor : predecessors)
                 {
                     tryStackPush(stack, predecessor, visited, reachable);
                 }

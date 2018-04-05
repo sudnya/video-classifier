@@ -80,6 +80,36 @@ OperationImplementation::UseList& OperationImplementation::getOperands()
     return getPredecessorUses();
 }
 
+OperationImplementation::iterator OperationImplementation::begin()
+{
+    return getOperands().begin();
+}
+
+OperationImplementation::const_iterator OperationImplementation::begin() const
+{
+    return getOperands().begin();
+}
+
+OperationImplementation::iterator OperationImplementation::end()
+{
+    return getOperands().end();
+}
+
+OperationImplementation::const_iterator OperationImplementation::end() const
+{
+    return getOperands().end();
+}
+
+size_t OperationImplementation::size() const
+{
+    return getOperands().size();
+}
+
+bool OperationImplementation::empty() const
+{
+    return getOperands().empty();
+}
+
 void OperationImplementation::setOperands(const UseList& uses)
 {
     setPredecessorUses(uses);
@@ -88,6 +118,11 @@ void OperationImplementation::setOperands(const UseList& uses)
 BasicBlock OperationImplementation::getParent() const
 {
     return BasicBlock(_parent.lock());
+}
+
+BasicBlock OperationImplementation::getBasicBlock() const
+{
+    return getParent();
 }
 
 void OperationImplementation::setParent(const BasicBlock& parent)
@@ -102,9 +137,19 @@ void OperationImplementation::setParent(const BasicBlock& parent)
         {
             auto module = function.getParent();
 
-            bindToContext(module.getContext());
+            bindToContext(&module.getContext());
+
+            for(auto& operand : getOperands())
+            {
+                operand.getValue().bindToContext(&module.getContext());
+            }
         }
     }
+}
+
+void OperationImplementation::setIterator(operation_iterator it)
+{
+    _iterator = it;
 }
 
 OperationImplementation::operation_iterator OperationImplementation::getIterator()
@@ -146,7 +191,11 @@ std::string OperationImplementation::toString() const
 
 std::string OperationImplementation::toSummaryString() const
 {
-    return toString();
+    std::stringstream stream;
+
+    stream << getType().toString() << " %" << getId();
+
+    return stream.str();
 }
 
 } // namespace ir

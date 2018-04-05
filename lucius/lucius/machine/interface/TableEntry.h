@@ -46,6 +46,11 @@ public:
     const_iterator end() const;
 
 public:
+    size_t getInputOperandCount() const;
+
+    bool allowsVariableInputArguments() const;
+
+public:
     std::unique_ptr<TableEntryImplementation> _implementation;
 
 };

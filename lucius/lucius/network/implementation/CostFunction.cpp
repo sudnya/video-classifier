@@ -11,7 +11,7 @@
 
 #include <lucius/matrix/interface/Matrix.h>
 #include <lucius/matrix/interface/MatrixVector.h>
-#include <lucius/matrix/interface/Operation.h>
+#include <lucius/matrix/interface/GenericOperators.h>
 #include <lucius/matrix/interface/MatrixOperations.h>
 #include <lucius/matrix/interface/CopyOperations.h>
 #include <lucius/matrix/interface/SoftmaxOperations.h>

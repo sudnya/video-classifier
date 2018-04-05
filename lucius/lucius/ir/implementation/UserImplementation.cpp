@@ -15,6 +15,11 @@ namespace lucius
 namespace ir
 {
 
+UserImplementation::~UserImplementation()
+{
+    // intentionally blank
+}
+
 UserImplementation::UseList& UserImplementation::getPredecessorUses()
 {
     return _predecessorUses;
@@ -28,6 +33,11 @@ const UserImplementation::UseList& UserImplementation::getPredecessorUses() cons
 void UserImplementation::setPredecessorUses(const UseList& uses)
 {
     _predecessorUses = uses;
+}
+
+void UserImplementation::removePredecessorUse(iterator use)
+{
+    _predecessorUses.erase(use);
 }
 
 } // namespace ir

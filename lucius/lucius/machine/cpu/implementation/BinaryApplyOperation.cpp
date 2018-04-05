@@ -20,7 +20,7 @@
 #include <lucius/ir/target/implementation/TargetOperationImplementation.h>
 
 #include <lucius/matrix/interface/Matrix.h>
-#include <lucius/matrix/interface/Operation.h>
+#include <lucius/matrix/interface/Operator.h>
 #include <lucius/matrix/interface/MatrixOperations.h>
 
 // Standard Library Includes
@@ -60,7 +60,7 @@ public:
 
         auto out = getOperandDataAsTensor(3);
 
-        matrix::apply(out, left, right, applyOperator);
+        matrix::apply(out, left, right, applyOperator.getStaticOperator());
 
         return getParent();
     }

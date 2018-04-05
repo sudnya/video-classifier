@@ -36,10 +36,22 @@ public:
 
     }
 
+    InsertionPointImplementation(BasicBlock block, BasicBlock::iterator position)
+    : block(block), positionInBlock(position)
+    {
+
+    }
+
 public:
     BasicBlock block;
     BasicBlock::iterator positionInBlock;
 };
+
+InsertionPoint::InsertionPoint(const BasicBlock& block, BasicBlock::iterator position)
+: _implementation(std::make_unique<InsertionPointImplementation>(block, position))
+{
+
+}
 
 InsertionPoint::InsertionPoint(const BasicBlock& block)
 : _implementation(std::make_unique<InsertionPointImplementation>(block))

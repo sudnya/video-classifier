@@ -10,7 +10,8 @@
 #include <lucius/matrix/interface/Matrix.h>
 #include <lucius/matrix/interface/MatrixOperations.h>
 #include <lucius/matrix/interface/CopyOperations.h>
-#include <lucius/matrix/interface/Operation.h>
+#include <lucius/matrix/interface/GenericOperators.h>
+#include <lucius/matrix/interface/Operator.h>
 
 namespace lucius
 {
@@ -19,7 +20,7 @@ namespace network
 {
 
 typedef matrix::Matrix Matrix;
-typedef matrix::Operation Operation;
+typedef matrix::Operator Operator;
 
 NullActivationFunction::~NullActivationFunction()
 {
@@ -36,12 +37,12 @@ Matrix NullActivationFunction::applyDerivative(const Matrix& activations) const
     return ones(activations.size(), activations.precision());
 }
 
-Operation NullActivationFunction::getOperation() const
+Operator NullActivationFunction::getOperator() const
 {
     return matrix::Nop();
 }
 
-Operation NullActivationFunction::getDerivativeOperation() const
+Operator NullActivationFunction::getDerivativeOperator() const
 {
     return matrix::NopDerivative();
 }

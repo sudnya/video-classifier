@@ -7,7 +7,8 @@
 #include <lucius/matrix/interface/CopyOperations.h>
 #include <lucius/matrix/interface/MatrixOperations.h>
 #include <lucius/matrix/interface/MatrixTransformations.h>
-#include <lucius/matrix/interface/Operation.h>
+#include <lucius/matrix/interface/GenericOperators.h>
+#include <lucius/matrix/interface/Operator.h>
 #include <lucius/matrix/interface/Matrix.h>
 #include <lucius/matrix/interface/Precision.h>
 
@@ -173,7 +174,7 @@ static void simpleRNNForwardPropRecurrentThroughTime(matrix::Matrix& output,
                                                      const matrix::Matrix& recurrentWeights,
                                                      const matrix::Matrix& recurrentBias,
                                                      bool reversed,
-                                                     const matrix::Operation& activationFunction)
+                                                     const matrix::StaticOperator& activationFunction)
 {
 
     if(util::isLogEnabled("NativeRecurrentOperations::Detail"))
@@ -350,7 +351,7 @@ static matrix::Matrix getRecurrentBias(const matrix::Matrix& allWeights,
     return reshape(slicedWeights, {handle.layerSize});
 }
 
-static matrix::Operation getSimpleRNNActivationFunction(const RecurrentOpsHandle& handle)
+static matrix::Operator getSimpleRNNActivationFunction(const RecurrentOpsHandle& handle)
 {
     if(handle.layerType == RECURRENT_SIMPLE_TYPE)
     {
@@ -398,7 +399,7 @@ static void simpleRNNForwardPropRecurrent(matrix::Matrix& allOutputActivations,
         auto recurrentBias    = getRecurrentBias(   allWeights, handle, layer, offset);
 
         simpleRNNForwardPropRecurrentThroughTime(output, recurrentWeights,
-            recurrentBias, reversed, getSimpleRNNActivationFunction(handle));
+            recurrentBias, reversed, getSimpleRNNActivationFunction(handle).getStaticOperator());
     }
 }
 
@@ -504,7 +505,7 @@ static void simpleRNNBackPropRecurrentThroughTime(matrix::Matrix& recurrentDelta
                                                   const matrix::Matrix& outputActivations,
                                                   const matrix::Matrix& recurrentWeights,
                                                   bool reversed,
-                                                  const matrix::Operation& activationDerivative)
+                                                  const matrix::StaticOperator& activationDerivative)
 {
     if(util::isLogEnabled("NativeRecurrentOperations::Detail"))
     {
@@ -659,7 +660,7 @@ static matrix::Matrix getOutputDeltas(const matrix::Matrix& reserve,
     return reshape(slicedReserve, {handle.layerSize, handle.miniBatchSize, handle.timesteps});
 }
 
-static matrix::Operation getSimpleRNNActivationDerivative(const RecurrentOpsHandle& handle)
+static matrix::Operator getSimpleRNNActivationDerivative(const RecurrentOpsHandle& handle)
 {
     if(handle.layerType == RECURRENT_SIMPLE_TYPE)
     {
@@ -701,7 +702,7 @@ static void simpleRNNBackPropDeltasRecurrent(matrix::Matrix& inputDeltas,
             handle, layer, offset);
 
         simpleRNNBackPropRecurrentThroughTime(recurrentDeltas, forwardOutput, recurrentWeights,
-            reversed, getSimpleRNNActivationDerivative(handle));
+            reversed, getSimpleRNNActivationDerivative(handle).getStaticOperator());
 
         auto forwardInputDeltas = getInputDeltas(inputDeltas, reserve, handle, layer, offset);
 

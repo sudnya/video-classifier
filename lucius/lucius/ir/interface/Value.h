@@ -10,16 +10,18 @@
 #include <list>
 
 // Forward Declarations
-namespace lucius { namespace ir { class Module;          } }
-namespace lucius { namespace ir { class Use;             } }
-namespace lucius { namespace ir { class Operation;       } }
-namespace lucius { namespace ir { class Constant;        } }
-namespace lucius { namespace ir { class Type;            } }
-namespace lucius { namespace ir { class BasicBlock;      } }
-namespace lucius { namespace ir { class Gradient;        } }
-namespace lucius { namespace ir { class Function;        } }
-namespace lucius { namespace ir { class TargetValue;     } }
-namespace lucius { namespace ir { class TargetOperation; } }
+namespace lucius { namespace ir { class Module;           } }
+namespace lucius { namespace ir { class Use;              } }
+namespace lucius { namespace ir { class Operation;        } }
+namespace lucius { namespace ir { class Constant;         } }
+namespace lucius { namespace ir { class Context;          } }
+namespace lucius { namespace ir { class Type;             } }
+namespace lucius { namespace ir { class BasicBlock;       } }
+namespace lucius { namespace ir { class Gradient;         } }
+namespace lucius { namespace ir { class Function;         } }
+namespace lucius { namespace ir { class ExternalFunction; } }
+namespace lucius { namespace ir { class TargetValue;      } }
+namespace lucius { namespace ir { class TargetOperation;  } }
 
 namespace lucius { namespace ir { class ValueImplementation; } }
 
@@ -39,6 +41,7 @@ public:
     Value(BasicBlock b);
     Value(Gradient g);
     Value(Function f);
+    Value(ExternalFunction f);
     Value(TargetValue t);
     Value(TargetOperation t);
     Value(std::shared_ptr<ValueImplementation>);
@@ -70,15 +73,41 @@ public:
     /*! \brief Test if the value is a function. */
     bool isFunction() const;
 
+    /*! \brief Test if the value is an external function. */
+    bool isExternalFunction() const;
+
+    /*! \brief Test if the value is a tensor. */
+    bool isTensor() const;
+
+    /*! \brief Test if the value is an integer. */
+    bool isInteger() const;
+
+    /*! \brief Test if the value is a float. */
+    bool isFloat() const;
+
+    /*! \brief Test if the value is a pointer. */
+    bool isPointer() const;
+
 public:
     using UseList = std::list<Use>;
+
+    using use_iterator = UseList::iterator;
 
 public:
           UseList& getUses();
     const UseList& getUses() const;
 
 public:
+    void addUse(const Use& u);
+    void removeUse(use_iterator position);
+
+public:
+    void bindToContext(Context* context);
+    void bindToContextIfDifferent(Context* context);
+
+public:
     bool operator<(const Value& right) const;
+    bool operator==(const Value& right) const;
 
 public:
     std::shared_ptr<ValueImplementation> getValueImplementation() const;

@@ -2,7 +2,7 @@
 // Lucius Includes
 #include <lucius/matrix/interface/SoftmaxOperations.h>
 #include <lucius/matrix/interface/MatrixOperations.h>
-#include <lucius/matrix/interface/Operation.h>
+#include <lucius/matrix/interface/GenericOperators.h>
 #include <lucius/matrix/interface/Matrix.h>
 
 namespace lucius

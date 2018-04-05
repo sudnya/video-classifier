@@ -29,9 +29,15 @@ public:
 
 public:
     UseList& getDefinitions();
+    const UseList& getDefinitions() const;
 
 public:
     TargetValueData getData() const;
+    void setData(TargetValueData d);
+
+public:
+    virtual void allocateData() = 0;
+    virtual void freeData()  = 0;
 
 private:
     UseList _definitions;

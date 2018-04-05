@@ -17,6 +17,12 @@ namespace lucius
 namespace machine
 {
 
+CudaTargetMachine::CudaTargetMachine(Context& context)
+: TargetMachineInterface(context)
+{
+
+}
+
 CudaTargetMachine::~CudaTargetMachine()
 {
     // intentionally blank
@@ -33,7 +39,7 @@ CudaTargetMachine::TableEntryVector CudaTargetMachine::getEntries() const
 
 std::unique_ptr<ir::TargetOperationFactory> CudaTargetMachine::getOperationFactory() const
 {
-    return std::make_unique<cuda::CudaTargetOperationFactory>();
+    return std::make_unique<cuda::CudaTargetOperationFactory>(_context);
 }
 
 std::string CudaTargetMachine::name() const

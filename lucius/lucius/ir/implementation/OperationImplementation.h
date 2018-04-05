@@ -8,6 +8,7 @@
 
 // Lucius Includes
 #include <lucius/ir/implementation/UserImplementation.h>
+#include <lucius/ir/implementation/ValueImplementation.h>
 
 // Forward Declarations
 namespace lucius { namespace ir { class ShapeList;                } }
@@ -36,6 +37,9 @@ public:
 public:
     using UseList = std::list<Use>;
 
+    using iterator = UseList::iterator;
+    using const_iterator = UseList::const_iterator;
+
 public:
     const Use& getOperand(size_t index) const;
           Use& getOperand(size_t index);
@@ -48,10 +52,22 @@ public:
           UseList& getOperands();
 
 public:
+          iterator begin();
+    const_iterator begin() const;
+
+          iterator end();
+    const_iterator end() const;
+
+public:
+    size_t size() const;
+    bool  empty() const;
+
+public:
     void setOperands(const UseList& uses);
 
 public:
     BasicBlock getParent() const;
+    BasicBlock getBasicBlock() const;
     void setParent(const BasicBlock&);
 
 public:
@@ -61,6 +77,8 @@ public:
     using const_operation_iterator = OperationList::const_iterator;
 
 public:
+    void setIterator(operation_iterator it);
+
           operation_iterator getIterator();
     const_operation_iterator getIterator() const;
 

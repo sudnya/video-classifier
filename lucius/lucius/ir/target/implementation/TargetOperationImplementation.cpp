@@ -11,12 +11,16 @@
 #include <lucius/ir/interface/Value.h>
 
 #include <lucius/matrix/interface/Matrix.h>
-#include <lucius/matrix/interface/Operation.h>
+#include <lucius/matrix/interface/GenericOperators.h>
+#include <lucius/matrix/interface/Operator.h>
 
 #include <lucius/ir/target/interface/TargetValue.h>
 #include <lucius/ir/target/interface/TargetValueData.h>
 #include <lucius/ir/target/interface/TensorData.h>
 #include <lucius/ir/target/interface/OperatorData.h>
+
+#include <lucius/ir/values/interface/ConstantTensor.h>
+#include <lucius/ir/values/interface/ConstantOperator.h>
 
 // Standard Library Includes
 #include <cassert>
@@ -45,6 +49,22 @@ Use& TargetOperationImplementation::getOutputOperand()
 const Use& TargetOperationImplementation::getOutputOperand() const
 {
     return getOperands().back();
+}
+
+TargetOperationImplementation::iterator TargetOperationImplementation::getOutputOperandPosition()
+{
+    return --getOperands().end();
+}
+
+TargetOperationImplementation::const_iterator
+    TargetOperationImplementation::getOutputOperandPosition() const
+{
+    return --getOperands().end();
+}
+
+bool TargetOperationImplementation::hasOutputOperand() const
+{
+    return _hasOutputOperand;
 }
 
 void TargetOperationImplementation::setOutputOperand(const TargetValue& v)
@@ -86,20 +106,72 @@ matrix::Matrix TargetOperationImplementation::getOperandDataAsTensor(size_t inde
 
     auto value = ir::value_cast<TargetValue>(operand.getValue());
 
-    auto data = data_cast<TensorData>(value.getData());
-
-    return data.getTensor();
+    return value.getDataAsTensor();
 }
 
-matrix::Operation TargetOperationImplementation::getOperandDataAsOperator(size_t index) const
+matrix::Operator TargetOperationImplementation::getOperandDataAsOperator(size_t index) const
 {
     auto operand = getOperand(index);
 
     auto value = ir::value_cast<TargetValue>(operand.getValue());
 
-    auto data = data_cast<OperatorData>(value.getData());
+    return value.getDataAsOperator();
 
-    return data.getOperator();
+    if(value.isConstant())
+    {
+        auto constant = ir::value_cast<ConstantOperator>(value);
+
+        return constant.getOperator();
+    }
+    else
+    {
+        auto data = data_cast<OperatorData>(value.getData());
+
+        return data.getOperator();
+    }
+}
+
+std::string TargetOperationImplementation::toString() const
+{
+    std::stringstream stream;
+
+    if(hasOutputOperand())
+    {
+        stream << getOutputOperand().toString() << " = ";
+    }
+
+    stream << name();
+
+    if(!empty())
+    {
+        stream << " ";
+
+        auto operandIterator = getOperands().begin();
+        auto end = getOperands().end();
+
+        if(hasOutputOperand())
+        {
+            --end;
+        }
+
+        if(operandIterator != end)
+        {
+            auto& operand = *operandIterator;
+
+            stream << operand.getValue().toSummaryString();
+
+            ++operandIterator;
+        }
+
+        for( ; operandIterator != end; ++operandIterator)
+        {
+            auto& operand = *operandIterator;
+
+            stream << ", " << operand.getValue().toSummaryString();
+        }
+    }
+
+    return stream.str();
 }
 
 void TargetOperationImplementation::_growToSupportIndex(size_t index)

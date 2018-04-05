@@ -73,6 +73,9 @@ static void addAllocation(TargetValue value, BasicBlock postDominator,
 {
     AllocationOperation allocation(value);
 
+    util::log("DynamicMemoryAllocationPass") << "   adding allocation '"
+        << allocation.toString() << "'.\n";
+
     insertBefore(postDominator, insertionPoint, allocation);
 }
 
@@ -81,21 +84,25 @@ static void addFree(TargetValue value, BasicBlock postDominator,
 {
     FreeOperation free(value);
 
+    util::log("DynamicMemoryAllocationPass") << "   adding free '"
+        << free.toString() << "'.\n";
+
     insertAfter(postDominator, insertionPoint, free);
 }
 
 static BasicBlock getPostDominatorOfAllUses(TargetValue operand,
     PostDominatorAnalysis* postDominatorAnalysis)
 {
-    auto& uses = operand.getUses();
+    auto uses = operand.getUsesAndDefinitions();
 
     assert(!uses.empty());
 
-    BasicBlock postDominator = uses.front().getParent();
+    BasicBlock postDominator = uses.front().getBasicBlock();
 
     for(auto& use : uses)
     {
-        postDominator = postDominatorAnalysis->getPostDominator(use.getParent(), postDominator);
+        postDominator = postDominatorAnalysis->getPostDominator(
+            use.getBasicBlock(), postDominator);
     }
 
     return postDominator;
@@ -108,11 +115,11 @@ static BasicBlock getDominatorOfAllDefinitions(TargetValue operand,
 
     assert(!definitions.empty());
 
-    BasicBlock dominator = definitions.front().getParent();
+    BasicBlock dominator = definitions.front().getBasicBlock();
 
     for(auto& definition : definitions)
     {
-        dominator = dominatorAnalysis->getDominator(definition.getParent(), dominator);
+        dominator = dominatorAnalysis->getDominator(definition.getBasicBlock(), dominator);
     }
 
     return dominator;
@@ -124,7 +131,7 @@ static bool dominatorContainsDefinition(TargetValue value, BasicBlock dominator)
 
     for(auto& definition : definitions)
     {
-        if(definition.getParent() == dominator)
+        if(definition.getBasicBlock() == dominator)
         {
             return true;
         }
@@ -172,11 +179,11 @@ static void addAllocations(TargetValue value, DominatorAnalysis* dominatorAnalys
 
 static bool postDominatorContainsUse(TargetValue value, BasicBlock postDominator)
 {
-    auto& uses = value.getUses();
+    auto uses = value.getUsesAndDefinitions();
 
     for(auto& use : uses)
     {
-        if(use.getParent() == postDominator)
+        if(use.getBasicBlock() == postDominator)
         {
             return true;
         }
@@ -217,8 +224,44 @@ static BasicBlock::iterator getLastUse(TargetValue value, BasicBlock postDominat
     return (++possibleUse).base();
 }
 
+static bool isReturned(TargetValue value)
+{
+    util::log("DynamicMemoryAllocationPass") << "  checking if '"
+        << value.toString() << "' is returned.\n";
+
+    for(auto& use : value.getUses())
+    {
+        auto userValue = use.getParent().getValue();
+
+        assert(userValue.isOperation());
+
+        auto operation = ir::value_cast<Operation>(userValue);
+
+        util::log("DynamicMemoryAllocationPass") << "   checking use by '"
+            << operation.toString() << "'\n";
+
+        if(operation.isReturn())
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 static void addFrees(TargetValue value, PostDominatorAnalysis* postDominatorAnalysis)
 {
+    // don't free values that are returned, return will take care of it
+    if(isReturned(value))
+    {
+        util::log("DynamicMemoryAllocationPass") << "  skipping frees for returned value '"
+            << value.toString() << "'.\n";
+        return;
+    }
+
+    util::log("DynamicMemoryAllocationPass") << "  adding free for value '"
+        << value.toString() << "'.\n";
+
     auto postDominator = getPostDominatorOfAllUses(value, postDominatorAnalysis);
 
     BasicBlock::iterator insertionPoint;
@@ -236,10 +279,11 @@ static void addFrees(TargetValue value, PostDominatorAnalysis* postDominatorAnal
 }
 
 using TargetValueVector = std::vector<TargetValue>;
+using TargetValueSet = std::set<TargetValue>;
 
 static TargetValueVector getTargetValues(ir::Function& function)
 {
-    TargetValueVector values;
+    TargetValueSet values;
 
     for(auto& block : function)
     {
@@ -251,20 +295,26 @@ static TargetValueVector getTargetValues(ir::Function& function)
 
             for(auto& operand : operands)
             {
-                values.push_back(ir::value_cast<TargetValue>(operand.getValue()));
+                values.insert(ir::value_cast<TargetValue>(operand.getValue()));
             }
         }
     }
 
-    return values;
+    return TargetValueVector(values.begin(), values.end());
 }
 
 void DynamicMemoryAllocationPass::runOnFunction(ir::Function& function)
 {
     auto* postDominatorAnalysis = dynamic_cast<PostDominatorAnalysis*>(
         getAnalysis("PostDominatorAnalysis"));
+    assert(postDominatorAnalysis);
+
     auto* dominatorAnalysis = dynamic_cast<DominatorAnalysis*>(
         getAnalysis("DominatorAnalysis"));
+    assert(dominatorAnalysis);
+
+    util::log("DynamicMemoryAllocationPass") << "Running on function  '"
+        << function.toString() << "'.\n";
 
     auto values = getTargetValues(function);
 
@@ -272,6 +322,8 @@ void DynamicMemoryAllocationPass::runOnFunction(ir::Function& function)
     {
         if(needsAllocation(value))
         {
+            util::log("DynamicMemoryAllocationPass") << " adding allocations and free for value '"
+                << value.toString() << "'.\n";
             addAllocations(value, dominatorAnalysis);
             addFrees(value, postDominatorAnalysis);
         }
@@ -280,7 +332,7 @@ void DynamicMemoryAllocationPass::runOnFunction(ir::Function& function)
 
 StringSet DynamicMemoryAllocationPass::getRequiredAnalyses() const
 {
-    return StringSet({"PostDominatorAnalysis"});
+    return StringSet({"PostDominatorAnalysis", "DominatorAnalysis"});
 }
 
 } // namespace optimization

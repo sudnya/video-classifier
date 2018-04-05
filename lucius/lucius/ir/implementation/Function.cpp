@@ -191,6 +191,13 @@ bool Function::hasParent() const
     return _implementation->hasParent();
 }
 
+Context& Function::getContext() const
+{
+    assert(hasParent());
+
+    return getParent().getContext();
+}
+
 std::shared_ptr<ValueImplementation> Function::getValueImplementation() const
 {
     return _implementation;

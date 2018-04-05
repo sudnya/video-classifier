@@ -31,7 +31,7 @@ public:
 
         // Derived types
         IntegerId,      // Arbitrary precision integer
-        FunctionId, // Functions
+        FunctionId,     // Functions
         StructureId,    // Structures
         ArrayId,        // Arrays
         PointerId,      // Pointers
@@ -51,6 +51,15 @@ public:
 
     /*! \brief Is the type a tensor type. */
     bool isTensor() const;
+
+    /*! \brief Is the type a tensor type. */
+    bool isInteger() const;
+
+    /*! \brief Is the type a float type. */
+    bool isFloat() const;
+
+    /*! \brief Is the type a pointer type. */
+    bool isPointer() const;
 
     /*! \brief Is the type void */
     bool isVoid() const;

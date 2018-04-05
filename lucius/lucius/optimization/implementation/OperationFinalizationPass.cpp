@@ -24,6 +24,9 @@ public:
         util::log("OperationFinalizationPass") << "  finalizing function '"
             << function.name() << "' for execution.\n";
         _function = function;
+
+        util::log("OperationFinalizationPass") << "   function is: "
+            << function.toString() << "\n";
     }
 
     Function getTargetFunction() const

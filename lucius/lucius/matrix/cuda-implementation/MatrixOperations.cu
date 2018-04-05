@@ -5,7 +5,7 @@
 #include <lucius/matrix/interface/CopyOperations.h>
 #include <lucius/matrix/interface/Matrix.h>
 #include <lucius/matrix/interface/MatrixView.h>
-#include <lucius/matrix/interface/Operation.h>
+#include <lucius/matrix/interface/GenericOperators.h>
 
 #include <lucius/parallel/interface/MultiBulkSynchronousParallel.h>
 #include <lucius/parallel/interface/SharedMemoryAllocator.h>
@@ -78,7 +78,7 @@ public:
 
 template<typename OperationType, typename T>
 void applyOverPrecisions(Matrix& result, const Matrix& left, const Matrix& right,
-    const Operation& op, const Precision& precision, std::tuple<T> precisions)
+    const StaticOperator& op, const Precision& precision, std::tuple<T> precisions)
 {
     typedef T PrecisionPrimitive;
     typedef typename PrecisionPrimitive::type NativeType;
@@ -114,7 +114,7 @@ void applyOverPrecisions(Matrix& result, const Matrix& left, const Matrix& right
 }
 
 template<typename OperationType, typename PossiblePrecisions>
-void applyOverPrecisions(Matrix& result, const Matrix& left, const Matrix& right, const Operation& op,
+void applyOverPrecisions(Matrix& result, const Matrix& left, const Matrix& right, const StaticOperator& op,
     const Precision& precision, PossiblePrecisions precisions)
 {
     typedef typename std::tuple_element<0, PossiblePrecisions>::type PossiblePrecisionType;
@@ -134,25 +134,27 @@ void applyOverPrecisions(Matrix& result, const Matrix& left, const Matrix& right
 
 
 template<typename T>
-void applyOverOperations(Matrix& result, const Matrix& left, const Matrix& right, const Operation& op,
+void applyOverOperations(Matrix& result, const Matrix& left, const Matrix& right, const StaticOperator& op,
     const Precision& precision, const std::tuple<T>& operations)
 {
     typedef T PossibleOperationType;
 
     assert(op == PossibleOperationType());
 
-    applyOverPrecisions<PossibleOperationType, AllPrecisions>(result, left, right, op, precision, AllPrecisions());
+    applyOverPrecisions<PossibleOperationType, AllPrecisions>(result, left, right, op,
+        precision, AllPrecisions());
 }
 
 template<typename PossibleOperations>
 void applyOverOperations(Matrix& result, const Matrix& left, const Matrix& right,
-    const Operation& op, const Precision& precision, const PossibleOperations& operations)
+    const StaticOperator& op, const Precision& precision, const PossibleOperations& operations)
 {
     typedef typename std::tuple_element<0, PossibleOperations>::type PossibleOperationType;
 
     if(op == PossibleOperationType())
     {
-        applyOverOperations(result, left, right, op, precision, std::tuple<PossibleOperationType>());
+        applyOverOperations(result, left, right, op, precision,
+            std::tuple<PossibleOperationType>());
     }
     else
     {
@@ -163,14 +165,15 @@ void applyOverOperations(Matrix& result, const Matrix& left, const Matrix& right
 }
 
 void applyOverOperations(Matrix& result, const Matrix& left, const Matrix& right,
-    const Operation& op, const Precision& precision)
+    const StaticOperator& op, const Precision& precision)
 {
-    applyOverOperations<AllBinaryOperations>(result, left, right, op, precision, AllBinaryOperations());
+    applyOverOperations<AllBinaryOperators>(result, left, right, op, precision,
+        AllBinaryOperators());
 }
 
 }
 
-void apply(Matrix& result, const Matrix& left, const Matrix& right, const Operation& op)
+void apply(Matrix& result, const Matrix& left, const Matrix& right, const StaticOperator& op)
 {
     auto precision = left.precision();
 
@@ -182,7 +185,7 @@ void apply(Matrix& result, const Matrix& left, const Matrix& right, const Operat
     detail::applyOverOperations(result, left, right, op, precision);
 }
 
-Matrix apply(const Matrix& left, const Matrix& right, const Operation& op)
+Matrix apply(const Matrix& left, const Matrix& right, const StaticOperator& op)
 {
     assert(left.size() == right.size());
     assert(left.precision() == right.precision());
@@ -247,7 +250,7 @@ public:
 
 template<typename OperationType, typename T>
 void applyOverPrecisions(Matrix& result, const Matrix& input,
-    const Operation& op, const Precision& precision, std::tuple<T> precisions)
+    const StaticOperator& op, const Precision& precision, std::tuple<T> precisions)
 {
     typedef T PrecisionPrimitive;
     typedef typename PrecisionPrimitive::type NativeType;
@@ -282,7 +285,7 @@ void applyOverPrecisions(Matrix& result, const Matrix& input,
 }
 
 template<typename OperationType, typename PossiblePrecisions>
-void applyOverPrecisions(Matrix& result, const Matrix& input, const Operation& op,
+void applyOverPrecisions(Matrix& result, const Matrix& input, const StaticOperator& op,
     const Precision& precision, PossiblePrecisions precisions)
 {
     typedef typename std::tuple_element<0, PossiblePrecisions>::type PossiblePrecisionType;
@@ -302,7 +305,7 @@ void applyOverPrecisions(Matrix& result, const Matrix& input, const Operation& o
 
 
 template<typename T>
-void applyOverOperations(Matrix& result, const Matrix& input, const Operation& op,
+void applyOverOperations(Matrix& result, const Matrix& input, const StaticOperator& op,
     const Precision& precision, const std::tuple<T>& operations)
 {
     typedef T PossibleOperationType;
@@ -315,7 +318,7 @@ void applyOverOperations(Matrix& result, const Matrix& input, const Operation& o
 
 template<typename PossibleOperations>
 void applyOverOperations(Matrix& result, const Matrix& input,
-    const Operation& op, const Precision& precision, const PossibleOperations& operations)
+    const StaticOperator& op, const Precision& precision, const PossibleOperations& operations)
 {
     typedef typename std::tuple_element<0, PossibleOperations>::type PossibleOperationType;
 
@@ -332,19 +335,19 @@ void applyOverOperations(Matrix& result, const Matrix& input,
 }
 
 void applyOverOperations(Matrix& result, const Matrix& input,
-    const Operation& op, const Precision& precision)
+    const StaticOperator& op, const Precision& precision)
 {
-    applyOverOperations<AllUnaryOperations>(result, input, op, precision, AllUnaryOperations());
+    applyOverOperations<AllUnaryOperators>(result, input, op, precision, AllUnaryOperators());
 }
 
 }
 
-void apply(Matrix& result, const Matrix& input, const Operation& op)
+void apply(Matrix& result, const Matrix& input, const StaticOperator& op)
 {
     detail::applyOverOperations(result, input, op, input.precision());
 }
 
-Matrix apply(const Matrix& input, const Operation& op)
+Matrix apply(const Matrix& input, const StaticOperator& op)
 {
     Matrix result(input.size(), input.precision());
 
@@ -677,7 +680,7 @@ public:
 
 template <typename ActualOperation, typename ActualPrecision>
 void reduce(Matrix& result, const Matrix& input, const Dimension& unsortedDimensions,
-    const Operation& op, const std::tuple<ActualPrecision>& p)
+    const StaticOperator& op, const std::tuple<ActualPrecision>& p)
 {
     typedef typename ActualPrecision::type NativeType;
 
@@ -751,7 +754,7 @@ void reduce(Matrix& result, const Matrix& input, const Dimension& unsortedDimens
 }
 
 template <typename ActualOperation, typename PossiblePrecisions>
-void reduce(Matrix& result, const Matrix& input, const Dimension& dimensions, const Operation& op,
+void reduce(Matrix& result, const Matrix& input, const Dimension& dimensions, const StaticOperator& op,
     const PossiblePrecisions& possiblePrecisions)
 {
     typedef typename std::tuple_element<0, PossiblePrecisions>::type PossiblePrecisionType;
@@ -768,7 +771,7 @@ void reduce(Matrix& result, const Matrix& input, const Dimension& dimensions, co
 }
 
 template <typename PossibleOperation>
-void reduce(Matrix& result, const Matrix& input, const Dimension& dimensions, const Operation& op,
+void reduce(Matrix& result, const Matrix& input, const Dimension& dimensions, const StaticOperator& op,
     const std::tuple<PossibleOperation>& p)
 {
     assert(PossibleOperation() == op);
@@ -776,7 +779,7 @@ void reduce(Matrix& result, const Matrix& input, const Dimension& dimensions, co
 }
 
 template <typename PossibleOperations>
-void reduce(Matrix& result, const Matrix& input, const Dimension& dimensions, const Operation& op,
+void reduce(Matrix& result, const Matrix& input, const Dimension& dimensions, const StaticOperator& op,
     const PossibleOperations& possibleOperations)
 {
     typedef typename std::tuple_element<0, PossibleOperations>::type PossibleOperationType;
@@ -795,12 +798,13 @@ void reduce(Matrix& result, const Matrix& input, const Dimension& dimensions, co
 
 }
 
-void reduce(Matrix& result, const Matrix& input, const Dimension& dimensions, const Operation& op)
+void reduce(Matrix& result, const Matrix& input, const Dimension& dimensions,
+    const StaticOperator& op)
 {
-    detail::reduce(result, input, dimensions, op, AllBinaryOperations());
+    detail::reduce(result, input, dimensions, op, AllBinaryOperators());
 }
 
-Matrix reduce(const Matrix& input, const Dimension& dimensions, const Operation& op)
+Matrix reduce(const Matrix& input, const Dimension& dimensions, const StaticOperator& op)
 {
     Matrix result(removeDimensions(input.size(), dimensions), input.precision());
 
@@ -1090,7 +1094,7 @@ static bool isNotInnerDimension(const Dimension& size, const Dimension& dimensio
 
 template <typename ActualOperation, typename ActualPrecision>
 void broadcast(Matrix& result, const Matrix& left, const Matrix& right, const Dimension& d,
-    const Operation& op, const std::tuple<ActualPrecision>& p)
+    const StaticOperator& op, const std::tuple<ActualPrecision>& p)
 {
     auto dimension = invert(left.size(), fillOutDimension(d, left.size(), right.size()));
     typedef typename ActualPrecision::type NativeType;
@@ -1180,7 +1184,7 @@ void broadcast(Matrix& result, const Matrix& left, const Matrix& right, const Di
 
 template <typename ActualOperation, typename PossiblePrecisions>
 void broadcast(Matrix& result, const Matrix& left, const Matrix& right, const Dimension& d,
-    const Operation& op, const PossiblePrecisions& possiblePrecisions)
+    const StaticOperator& op, const PossiblePrecisions& possiblePrecisions)
 {
     typedef typename std::tuple_element<0, PossiblePrecisions>::type PossiblePrecisionType;
     if(result.precision() == PossiblePrecisionType())
@@ -1196,7 +1200,7 @@ void broadcast(Matrix& result, const Matrix& left, const Matrix& right, const Di
 
 template <typename PossibleOperation>
 void broadcast(Matrix& result, const Matrix& left, const Matrix& right, const Dimension& d,
-    const Operation& op, const std::tuple<PossibleOperation>& p)
+    const StaticOperator& op, const std::tuple<PossibleOperation>& p)
 {
     assert(PossibleOperation() == op);
     broadcast<PossibleOperation>(result, left, right, d, op, AllPrecisions());
@@ -1204,7 +1208,7 @@ void broadcast(Matrix& result, const Matrix& left, const Matrix& right, const Di
 
 template <typename PossibleOperations>
 void broadcast(Matrix& result, const Matrix& left, const Matrix& right, const Dimension& d,
-    const Operation& op, const PossibleOperations& possibleOperations)
+    const StaticOperator& op, const PossibleOperations& possibleOperations)
 {
     typedef typename std::tuple_element<0, PossibleOperations>::type PossibleOperationType;
     if(op == PossibleOperationType())
@@ -1223,12 +1227,13 @@ void broadcast(Matrix& result, const Matrix& left, const Matrix& right, const Di
 }
 
 void broadcast(Matrix& result, const Matrix& left, const Matrix& right,
-    const Dimension& d, const Operation& op)
+    const Dimension& d, const StaticOperator& op)
 {
-    detail::broadcast(result, left, right, d, op, AllBinaryOperations());
+    detail::broadcast(result, left, right, d, op, AllBinaryOperators());
 }
 
-Matrix broadcast(const Matrix& left, const Matrix& right, const Dimension& d, const Operation& op)
+Matrix broadcast(const Matrix& left, const Matrix& right, const Dimension& d,
+    const StaticOperator& op)
 {
     Matrix retVal(left.size(), left.precision());
     broadcast(retVal, left, right, d, op);
@@ -1430,7 +1435,7 @@ public:
 
 template <typename ActualOperation, typename ActualPrecision>
 void reduceGetPositions(Matrix& result, const Matrix& input, const Dimension& dimensions,
-    const Operation& op, const std::tuple<ActualPrecision>& p)
+    const StaticOperator& op, const std::tuple<ActualPrecision>& p)
 {
     typedef typename ActualPrecision::type NativeType;
 
@@ -1456,7 +1461,7 @@ void reduceGetPositions(Matrix& result, const Matrix& input, const Dimension& di
 
 template <typename ActualOperation, typename PossiblePrecisions>
 void reduceGetPositions(Matrix& result, const Matrix& input, const Dimension& d,
-    const Operation& op, const PossiblePrecisions& possiblePrecisions)
+    const StaticOperator& op, const PossiblePrecisions& possiblePrecisions)
 {
     typedef typename std::tuple_element<0, PossiblePrecisions>::type PossiblePrecisionType;
     if(result.precision() == PossiblePrecisionType())
@@ -1473,7 +1478,7 @@ void reduceGetPositions(Matrix& result, const Matrix& input, const Dimension& d,
 
 template <typename PossibleOperation>
 void reduceGetPositions(Matrix& result, const Matrix& input, const Dimension& d,
-    const Operation& op, const std::tuple<PossibleOperation>& p)
+    const StaticOperator& op, const std::tuple<PossibleOperation>& p)
 {
     assert(PossibleOperation() == op);
     reduceGetPositions<PossibleOperation>(result, input, d, op, AllPrecisions());
@@ -1481,7 +1486,7 @@ void reduceGetPositions(Matrix& result, const Matrix& input, const Dimension& d,
 
 template <typename PossibleOperations>
 void reduceGetPositions(Matrix& result, const Matrix& input, const Dimension& d,
-    const Operation& op, const PossibleOperations& possibleOperations)
+    const StaticOperator& op, const PossibleOperations& possibleOperations)
 {
     typedef typename std::tuple_element<0, PossibleOperations>::type PossibleOperationType;
     if(op == PossibleOperationType())
@@ -1500,12 +1505,12 @@ void reduceGetPositions(Matrix& result, const Matrix& input, const Dimension& d,
 }
 
 void reduceGetPositions(Matrix& result, const Matrix& input, const Dimension& d,
-    const Operation& op)
+    const StaticOperator& op)
 {
-    detail::reduceGetPositions(result, input, d, op, AllBinaryOperations());
+    detail::reduceGetPositions(result, input, d, op, AllBinaryOperators());
 }
 
-Matrix reduceGetPositions(const Matrix& input, const Dimension& d, const Operation& op)
+Matrix reduceGetPositions(const Matrix& input, const Dimension& d, const StaticOperator& op)
 {
     Matrix result(input.size(), input.precision());
 

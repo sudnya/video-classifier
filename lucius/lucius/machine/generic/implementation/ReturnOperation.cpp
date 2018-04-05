@@ -12,6 +12,8 @@
 #include <lucius/ir/interface/Value.h>
 #include <lucius/ir/interface/Function.h>
 
+#include <lucius/ir/types/interface/VoidType.h>
+
 #include <lucius/ir/target/interface/PerformanceMetrics.h>
 
 #include <lucius/ir/target/implementation/TargetControlOperationImplementation.h>
@@ -45,7 +47,7 @@ public:
     /*! \brief Execute the operation. */
     virtual ir::BasicBlock execute()
     {
-        assertM(false, "Not implemented.");
+        return getParent();
     }
 
 public:
@@ -68,8 +70,44 @@ public:
 public:
     virtual ir::Type getType() const
     {
-        assert(!getOperands().empty());
+        if(getOperands().empty())
+        {
+            return ir::VoidType();
+        }
+
         return getOperand(0).getValue().getType();
+    }
+
+    virtual std::string toString() const
+    {
+        std::stringstream stream;
+
+        stream << name() << " ";
+
+        auto operandIterator = getOperands().begin();
+
+        if(operandIterator != getOperands().end())
+        {
+            auto& operand = *operandIterator;
+
+            stream << operand.getValue().toSummaryString();
+
+            ++operandIterator;
+        }
+
+        for( ; operandIterator != getOperands().end(); ++operandIterator)
+        {
+            auto& operand = *operandIterator;
+
+            stream << ", " << operand.getValue().toSummaryString();
+        }
+
+        return stream.str();
+    }
+
+    virtual BasicBlockVector getPossibleTargets() const
+    {
+        return {};
     }
 
 };

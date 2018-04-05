@@ -9,6 +9,9 @@
 // Lucius Includes
 #include <lucius/ir/interface/Operation.h>
 
+// Standard Library Includes
+#include <vector>
+
 namespace lucius
 {
 
@@ -21,6 +24,12 @@ class ControlOperation : public Operation
 public:
     explicit ControlOperation(std::shared_ptr<ValueImplementation>);
     ~ControlOperation();
+
+public:
+    using BasicBlockVector = std::vector<BasicBlock>;
+
+public:
+    BasicBlockVector getPossibleTargets() const;
 
 };
 

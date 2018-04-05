@@ -65,6 +65,21 @@ bool Type::isVoid() const
     return _implementation->getTypeId() == VoidId;
 }
 
+bool Type::isInteger() const
+{
+    return _implementation->getTypeId() == IntegerId;
+}
+
+bool Type::isFloat() const
+{
+    return _implementation->getTypeId() == FloatId;
+}
+
+bool Type::isPointer() const
+{
+    return _implementation->getTypeId() == PointerId;
+}
+
 size_t Type::getBytes() const
 {
     if(isVoid())

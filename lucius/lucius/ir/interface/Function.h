@@ -20,6 +20,7 @@ namespace lucius { namespace ir { class Type;                   } }
 namespace lucius { namespace ir { class Operation;              } }
 namespace lucius { namespace ir { class Module;                 } }
 namespace lucius { namespace ir { class InsertionPoint;         } }
+namespace lucius { namespace ir { class Context;                } }
 
 namespace lucius
 {
@@ -108,6 +109,9 @@ public:
     void setParent(Module m);
     Module getParent() const;
     bool hasParent() const;
+
+public:
+    Context& getContext() const;
 
 public:
     std::shared_ptr<FunctionImplementation> getImplementation() const;

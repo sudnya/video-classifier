@@ -10,7 +10,8 @@
 #include <lucius/ir/ops/interface/ControlOperation.h>
 
 // Forward Declarations
-namespace lucius { namespace ir { class Function; } }
+namespace lucius { namespace ir { class Function;         } }
+namespace lucius { namespace ir { class ExternalFunction; } }
 
 namespace lucius
 {
@@ -22,7 +23,8 @@ namespace ir
 class CallOperation : public ControlOperation
 {
 public:
-    CallOperation(Function target);
+    explicit CallOperation(Function target);
+    explicit CallOperation(ExternalFunction target);
     ~CallOperation();
 
 };

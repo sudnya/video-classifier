@@ -18,6 +18,11 @@ namespace ir
 /*! \brief The implementation of a class that represents an operation in the program. */
 class TargetControlOperationImplementation : public TargetOperationImplementation
 {
+public:
+    using BasicBlockVector = std::vector<BasicBlock>;
+
+public:
+    virtual BasicBlockVector getPossibleTargets() const = 0;
 
 };
 

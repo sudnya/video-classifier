@@ -13,10 +13,12 @@
 #include <lucius/ir/interface/Use.h>
 #include <lucius/ir/interface/Value.h>
 #include <lucius/ir/interface/Function.h>
+#include <lucius/ir/interface/BasicBlock.h>
+#include <lucius/ir/interface/ExternalFunction.h>
 
 #include <lucius/ir/types/interface/TensorType.h>
 
-#include <lucius/ir/implementation/OperationImplementation.h>
+#include <lucius/ir/ops/implementation/ControlOperationImplementation.h>
 
 // Standard Library Includes
 #include <cassert>
@@ -27,10 +29,10 @@ namespace lucius
 namespace ir
 {
 
-class CallOperationImplementation : public OperationImplementation
+class CallOperationImplementation : public ControlOperationImplementation
 {
 public:
-    ShapeList getOutputShapes(const ShapeList& inputShapes) const
+    virtual ShapeList getOutputShapes(const ShapeList& inputShapes) const
     {
         if(getType().isVoid())
         {
@@ -58,7 +60,7 @@ public:
         return ShapeList();
     }
 
-    ShapeList getInputShapes(const ShapeList& outputShapes) const
+    virtual ShapeList getInputShapes(const ShapeList& outputShapes) const
     {
         return ShapeList();
     }
@@ -70,20 +72,44 @@ public:
     }
 
 public:
-    std::string name() const
+    virtual std::string name() const
     {
         return "call";
     }
 
 public:
-    Type getType() const
+    virtual Type getType() const
     {
-        return getOperand(0).getValue().getType();
+        auto callee = getOperand(0).getValue();
+
+        if(callee.isExternalFunction())
+        {
+            auto function = value_cast<ExternalFunction>(callee);
+
+            return function.getReturnType();
+        }
+        else
+        {
+            auto function = value_cast<Function>(callee);
+
+            return function.getReturnType();
+        }
+    }
+
+    virtual BasicBlockVector getPossibleTargets() const
+    {
+        return {getBasicBlock().getNextBasicBlock()};
     }
 
 };
 
 CallOperation::CallOperation(Function target)
+: ControlOperation(std::make_shared<CallOperationImplementation>())
+{
+    setOperands({target});
+}
+
+CallOperation::CallOperation(ExternalFunction target)
 : ControlOperation(std::make_shared<CallOperationImplementation>())
 {
     setOperands({target});

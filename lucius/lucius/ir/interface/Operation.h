@@ -20,6 +20,7 @@ namespace lucius { namespace ir { class ValueImplementation;     } }
 namespace lucius { namespace ir { class ShapeList;               } }
 namespace lucius { namespace ir { class Use;                     } }
 namespace lucius { namespace ir { class Type;                    } }
+namespace lucius { namespace ir { class Context;                 } }
 namespace lucius { namespace ir { class Value;                   } }
 namespace lucius { namespace ir { class BasicBlock;              } }
 namespace lucius { namespace ir { class TargetOperation;         } }
@@ -54,9 +55,23 @@ public:
     using operation_iterator = OperationList::iterator;
     using const_operation_iterator = OperationList::const_iterator;
 
+    using iterator = UseList::iterator;
+    using const_iterator = UseList::const_iterator;
+
+public:
+          iterator begin();
+    const_iterator begin() const;
+
+          iterator end();
+    const_iterator end() const;
+
 public:
     const UseList& getOperands() const;
           UseList& getOperands();
+
+public:
+    size_t size() const;
+    bool  empty() const;
 
 public:
     const Use& getOperand(size_t index) const;
@@ -65,6 +80,14 @@ public:
 public:
     void setOperands(const UseList& uses);
     void setOperands(const ValueList& values);
+
+public:
+    void appendOperand(const Use& use);
+    void appendOperand(const Value& value);
+
+public:
+    void replaceOperand(const Use& original, const Use& newOperand);
+    void insertOperand(iterator position, const Use& newOperand);
 
 public:
     OperationList getPredecessors() const;
@@ -86,16 +109,25 @@ public:
     /*! \brief Query whether or not the operation computes a gradient. */
     bool isGradientOperation() const;
 
+    /*! \brief Query whether or not the operation is a PHI node. */
+    bool isPHI() const;
+
 public:
     Type getType() const;
 
 public:
+    BasicBlock getBasicBlock() const;
     BasicBlock getParent() const;
     void setParent(const BasicBlock& b);
 
 public:
+    void setIterator(operation_iterator it);
+
           operation_iterator getIterator();
     const_operation_iterator getIterator() const;
+
+public:
+    Context* getContext();
 
 public:
     Operation clone() const;
@@ -108,6 +140,7 @@ public:
 
 public:
     std::shared_ptr<ValueImplementation> getValueImplementation() const;
+    std::shared_ptr<OperationImplementation> getImplementation() const;
 
 public:
     bool operator==(const Operation&) const;

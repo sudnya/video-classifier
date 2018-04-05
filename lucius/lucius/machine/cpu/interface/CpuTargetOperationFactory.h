@@ -22,10 +22,13 @@ namespace cpu
 class CpuTargetOperationFactory : public ir::TargetOperationFactory
 {
 public:
+    CpuTargetOperationFactory(Context& );
     virtual ~CpuTargetOperationFactory();
 
 public:
-    virtual ir::TargetOperation create(const std::string& name);
+    virtual ir::TargetOperation create(const std::string& name) const;
+
+    virtual ir::TargetValue createOperand(const ir::Type& type) const;
 };
 
 } // namespace cpu

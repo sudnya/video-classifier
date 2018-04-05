@@ -469,7 +469,7 @@ static BasicBlock addOrGetBasicBlock(BasicBlockList& subgraph, BasicBlockMap& bl
     {
         BasicBlock newBlock;
 
-        auto& successors = block.getSuccessors();
+        auto successors = block.getSuccessors();
 
         for(auto& successor : successors)
         {
@@ -479,11 +479,9 @@ static BasicBlock addOrGetBasicBlock(BasicBlockList& subgraph, BasicBlockMap& bl
             {
                 continue;
             }
-
-            newBlock.addSuccessor(successorMapping->second);
         }
 
-        auto& predecessors = block.getPredecessors();
+        auto predecessors = block.getPredecessors();
 
         for(auto& predecessor : predecessors)
         {
@@ -493,8 +491,6 @@ static BasicBlock addOrGetBasicBlock(BasicBlockList& subgraph, BasicBlockMap& bl
             {
                 continue;
             }
-
-            predecessorMapping->second.addSuccessor(newBlock);
         }
 
         existingBlock = blockMap.insert(std::make_pair(block, newBlock)).first;

@@ -35,10 +35,10 @@ public:
 
 public:
     /*! \brief Get the operation associated with the activation function. */
-    virtual Operation getOperation() const;
+    virtual Operator getOperator() const;
 
     /*! \brief Get the derivative operation associated with the activation function. */
-    virtual Operation getDerivativeOperation() const;
+    virtual Operator getDerivativeOperator() const;
 
 public:
     virtual std::string typeName() const;

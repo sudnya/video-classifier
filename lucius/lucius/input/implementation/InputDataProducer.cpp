@@ -14,7 +14,7 @@
 #include <lucius/matrix/interface/Dimension.h>
 #include <lucius/matrix/interface/Matrix.h>
 #include <lucius/matrix/interface/MatrixOperations.h>
-#include <lucius/matrix/interface/Operation.h>
+#include <lucius/matrix/interface/GenericOperators.h>
 
 #include <lucius/util/interface/Knobs.h>
 #include <lucius/util/interface/debug.h>
