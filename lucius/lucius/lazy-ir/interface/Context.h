@@ -18,6 +18,8 @@ namespace lucius { namespace ir { class IRBuilder;  } }
 namespace lucius { namespace lazy { class LazyValue;             } }
 namespace lucius { namespace lazy { class ContextImplementation; } }
 
+namespace lucius { namespace analysis { class Analysis; } }
+
 namespace lucius { namespace matrix { class Matrix; } }
 
 namespace lucius
@@ -54,6 +56,14 @@ public:
 
 public:
     IRBuilder& getBuilder();
+
+public:
+    analysis::Analysis& getAnalysis(const std::string& name);
+    void invalidateAnalyses();
+
+public:
+    void convertProgramToSSA();
+    void registerLazyValue(const LazyValue& value);
 
 private:
     std::unique_ptr<ContextImplementation> _implementation;

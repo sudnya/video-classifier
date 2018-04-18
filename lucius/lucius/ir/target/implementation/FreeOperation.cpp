@@ -56,7 +56,7 @@ public:
 
     virtual std::string name() const
     {
-        return "free";
+        return "require-freed";
     }
 
     virtual Type getType() const

@@ -48,6 +48,26 @@ ir::IRBuilder& getBuilder()
     return getThreadLocalContext().getBuilder();
 }
 
+analysis::Analysis& getAnalysis(const std::string& name)
+{
+    return getThreadLocalContext().getAnalysis(name);
+}
+
+void invalidateAnalyses()
+{
+    return getThreadLocalContext().invalidateAnalyses();
+}
+
+void convertProgramToSSA()
+{
+    getThreadLocalContext().convertProgramToSSA();
+}
+
+void registerLazyValue(const LazyValue& value)
+{
+    getThreadLocalContext().registerLazyValue(value);
+}
+
 LazyValue getConstant(const matrix::Matrix& value)
 {
     return getThreadLocalContext().getConstant(value);

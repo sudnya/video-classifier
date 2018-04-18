@@ -16,12 +16,18 @@
 #include <lucius/ir/types/interface/TensorType.h>
 
 #include <lucius/ir/target/interface/PerformanceMetrics.h>
+#include <lucius/ir/target/interface/TargetValue.h>
+#include <lucius/ir/target/interface/TargetValueData.h>
+#include <lucius/ir/target/interface/IntegerData.h>
 
 #include <lucius/ir/target/implementation/TargetOperationImplementation.h>
 
+#include <lucius/matrix/interface/Scalar.h>
 #include <lucius/matrix/interface/Matrix.h>
 #include <lucius/matrix/interface/Operator.h>
+
 #include <lucius/matrix/interface/MatrixOperations.h>
+#include <lucius/matrix/interface/ScalarOperations.h>
 
 // Standard Library Includes
 #include <cassert>
@@ -53,14 +59,33 @@ public:
 public:
     virtual ir::BasicBlock execute()
     {
-        auto left  = getOperandDataAsTensor(0);
-        auto right = getOperandDataAsTensor(1);
+        if(getType().isTensor())
+        {
+            auto left  = getOperandDataAsTensor(0);
+            auto right = getOperandDataAsTensor(1);
 
-        auto applyOperator = getOperandDataAsOperator(2);
+            auto applyOperator = getOperandDataAsOperator(2);
 
-        auto out = getOperandDataAsTensor(3);
+            auto out = getOperandDataAsTensor(3);
 
-        matrix::apply(out, left, right, applyOperator.getStaticOperator());
+            matrix::apply(out, left, right, applyOperator.getStaticOperator());
+        }
+        else if(getType().isInteger())
+        {
+            auto left  = matrix::Scalar(getOperandDataAsInteger(0));
+            auto right = matrix::Scalar(getOperandDataAsInteger(1));
+
+            auto applyOperator = getOperandDataAsOperator(2);
+
+            auto outValue = ir::value_cast<ir::TargetValue>(getOperand(3).getValue());
+            auto outData  = ir::data_cast<ir::IntegerData>(outValue.getData());
+
+            matrix::Scalar result;
+
+            matrix::apply(result, left, right, applyOperator.getStaticOperator());
+
+            outData.setInteger(result.get<size_t>());
+        }
 
         return getParent();
     }

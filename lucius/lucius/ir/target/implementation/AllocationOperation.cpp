@@ -56,7 +56,12 @@ public:
 
     virtual std::string name() const
     {
-        return "allocate";
+        return "require-allocated";
+    }
+
+    virtual std::string toString() const
+    {
+        return name() + " " + getOutputOperand().toString();
     }
 
     virtual Type getType() const

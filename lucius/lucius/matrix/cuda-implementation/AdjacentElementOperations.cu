@@ -115,7 +115,7 @@ void applyToAdjacentElements(Matrix& output, const Matrix& input,
 {
     assert(PossibleOperation() == op);
     applyToAdjacentElements<PossibleOperation>(output, input, dimensionToApplyTo, op,
-        initialValue, AllPrecisions());
+        initialValue, AllFloatingPointPrecisions());
 }
 
 template <typename PossibleOperations>

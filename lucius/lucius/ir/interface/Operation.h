@@ -89,6 +89,7 @@ public:
     void replaceOperand(const Use& original, const Use& newOperand);
     void insertOperand(iterator position, const Use& newOperand);
 
+
 public:
     OperationList getPredecessors() const;
     OperationList getSuccessors() const;
@@ -112,6 +113,12 @@ public:
     /*! \brief Query whether or not the operation is a PHI node. */
     bool isPHI() const;
 
+    /*! \brief Query whether or not the operation is a target operation. */
+    bool isTargetOperation() const;
+
+    /*! \brief Query whether or not the operation returns a void type */
+    bool isVoid() const;
+
 public:
     Type getType() const;
 
@@ -121,10 +128,16 @@ public:
     void setParent(const BasicBlock& b);
 
 public:
+    /*! \brief Remove uses of operands. */
+    void detach();
+
+public:
     void setIterator(operation_iterator it);
 
           operation_iterator getIterator();
     const_operation_iterator getIterator() const;
+
+    size_t getIndexInBasicBlock() const;
 
 public:
     Context* getContext();

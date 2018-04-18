@@ -33,6 +33,11 @@ public:
         return _value;
     }
 
+    void setInteger(size_t value)
+    {
+        _value = value;
+    }
+
 public:
     virtual void* getData() const
     {
@@ -66,6 +71,11 @@ IntegerData::IntegerData(std::shared_ptr<TargetValueDataImplementation> implemen
 size_t IntegerData::getInteger() const
 {
     return _implementation->getInteger();
+}
+
+void IntegerData::setInteger(size_t value)
+{
+    return _implementation->setInteger(value);
 }
 
 std::shared_ptr<TargetValueDataImplementation> IntegerData::getImplementation() const

@@ -48,6 +48,7 @@ public:
     bool isConstant() const;
     bool isFunction() const;
     bool isExternalFunction() const;
+    bool isTargetValue() const;
 
 public:
     bool isVariable() const;
@@ -72,6 +73,7 @@ public:
 public:
     virtual bool isCall() const;
     virtual bool isReturn() const;
+    virtual bool isPHI() const;
 
 private:
     size_t _id;

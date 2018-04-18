@@ -24,12 +24,14 @@ LazyValue copy(LazyValue input)
 {
     auto& builder = getBuilder();
 
-    return LazyValue(builder.addCopy(input.getValue()));
+    return LazyValue(builder.addCopy(input.getValueForRead()));
 }
 
-void copy(const LazyValue& output, LazyValue input)
+void copy(LazyValue output, LazyValue input)
 {
-    assertM(false, "Not implemented.");
+    auto& builder = getBuilder();
+
+    output.addDefinition(builder.addCopy(input.getValueForRead()));
 }
 
 }

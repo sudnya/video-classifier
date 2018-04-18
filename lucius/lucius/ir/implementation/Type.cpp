@@ -80,6 +80,11 @@ bool Type::isPointer() const
     return _implementation->getTypeId() == PointerId;
 }
 
+bool Type::isBasicBlock() const
+{
+    return _implementation->getTypeId() == BasicBlockId;
+}
+
 size_t Type::getBytes() const
 {
     if(isVoid())

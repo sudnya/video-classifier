@@ -9,6 +9,9 @@
 // Lucius Includes
 #include <lucius/ir/implementation/OperationImplementation.h>
 
+// Standard Library Includes
+#include <vector>
+
 namespace lucius
 {
 
@@ -22,9 +25,25 @@ public:
 
 public:
     virtual std::string name() const;
+    virtual std::string toString() const;
 
 public:
     virtual Type getType() const;
+
+public:
+    virtual bool isPHI() const;
+
+public:
+    using BasicBlockVector = std::vector<BasicBlock>;
+
+public:
+    const BasicBlockVector& getIncomingBasicBlocks() const;
+
+public:
+    void addIncomingValue(const Value&, const BasicBlock& incoming);
+
+private:
+    BasicBlockVector _incomingBlocks;
 
 };
 

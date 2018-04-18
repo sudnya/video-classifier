@@ -45,6 +45,22 @@ ControlOperation::BasicBlockVector ControlOperation::getPossibleTargets() const
     return targetControlOperation->getPossibleTargets();
 }
 
+bool ControlOperation::canFallthrough() const
+{
+    auto normalControlOperation = std::dynamic_pointer_cast<ControlOperationImplementation>(
+        getValueImplementation());
+
+    if(normalControlOperation)
+    {
+        return normalControlOperation->canFallthrough();
+    }
+
+    auto targetControlOperation = std::dynamic_pointer_cast<TargetControlOperationImplementation>(
+        getValueImplementation());
+
+    return targetControlOperation->canFallthrough();
+}
+
 } // namespace ir
 } // namespace lucius
 

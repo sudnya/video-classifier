@@ -6,6 +6,9 @@
 
 #pragma once
 
+// Lucius Includes
+#include <lucius/util/interface/IteratorRange.h>
+
 // Standard Library Includes
 #include <memory>
 #include <list>
@@ -41,17 +44,30 @@ public:
 
 public:
     void push_back(Operation op);
+    void push_front(Operation op);
 
 public:
     /*! \brief Is this block the exit point of a function? */
     bool isExitBlock() const;
 
+    /*! \brief Is this block the entry point of a function? */
+    bool isEntryBlock() const;
+
     /*! \brief Is the basic block empty? */
     bool empty() const;
+
+    /*! \brief Get the number of operations (including PHIs) in the block. */
+    size_t size() const;
 
 public:
     /*! \brief Get the next basic block in program order. */
     BasicBlock getNextBasicBlock() const;
+
+    /*! \brief Can control fall through from this block to the next one in program order. */
+    bool canFallthrough() const;
+
+    /*! \brief Add the named block as a predecessor of this block. */
+    void addPredecessor(const BasicBlock& block);
 
 public:
     using OperationList = std::list<Operation>;
@@ -63,11 +79,29 @@ public:
     using const_reverse_iterator = OperationList::const_reverse_iterator;
 
 public:
+    using IteratorRange = util::IteratorRange<iterator>;
+    using ConstIteratorRange = util::IteratorRange<const_iterator>;
+
+public:
           iterator begin();
     const_iterator begin() const;
 
           iterator end();
     const_iterator end() const;
+
+public:
+          iterator phiBegin();
+    const_iterator phiBegin() const;
+
+          iterator phiEnd();
+    const_iterator phiEnd() const;
+
+public:
+         IteratorRange getPHIRange();
+    ConstIteratorRange getPHIRange() const;
+
+         IteratorRange getNonPHIRange();
+    ConstIteratorRange getNonPHIRange() const;
 
 public:
           reverse_iterator rbegin();
@@ -80,9 +114,16 @@ public:
           Operation& back();
     const Operation& back() const;
 
+          Operation& front();
+    const Operation& front() const;
+
 public:
     iterator insert(iterator position, Operation op);
     Operation insert(Operation position, Operation op);
+
+public:
+    iterator erase(iterator position);
+    iterator erase(iterator begin, iterator end);
 
 public:
           OperationList& getOperations();
@@ -96,7 +137,6 @@ public:
 
 public:
     BasicBlockVector getSuccessors() const;
-
     BasicBlockVector getPredecessors() const;
 
 public:

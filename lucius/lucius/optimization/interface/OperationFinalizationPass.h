@@ -22,7 +22,11 @@ namespace lucius
 namespace optimization
 {
 
-/*! \brief A class that prepares a function for execution. */
+/*! \brief A class that prepares a function for execution.
+
+
+    Convert out of SSA.
+*/
 class OperationFinalizationPass : public Pass
 {
 public:

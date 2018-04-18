@@ -34,6 +34,7 @@ size_t Precision::size() const
     case Half: return sizeof(float)/2;
     case Single: return sizeof(float);
     case Double: return sizeof(double);
+    case SizeT: return sizeof(size_t);
     default:
         assertM(false, "Invalid type.");
         return 0;
@@ -63,6 +64,10 @@ Precision Precision::getDefaultPrecision()
     {
         return HalfPrecision();
     }
+    else if(precision == "SizeTPrecision")
+    {
+        return SizeTPrecision();
+    }
 
     return DoublePrecision();
 }
@@ -75,6 +80,7 @@ std::string Precision::toString() const
     case Half: return "HalfPrecision";
     case Single: return "SinglePrecision";
     case Double: return "DoublePrecision";
+    case SizeT: return "SizeTPrecision";
     default:
         return "Invalid";
     }
@@ -91,6 +97,10 @@ std::unique_ptr<Precision> Precision::fromString(const std::string& name)
         return std::unique_ptr<Precision>(new SinglePrecision());
     }
     else if(name == "DoublePrecision")
+    {
+        return std::unique_ptr<Precision>(new DoublePrecision());
+    }
+    else if(name == "SizeTPrecision")
     {
         return std::unique_ptr<Precision>(new DoublePrecision());
     }
@@ -112,6 +122,12 @@ SinglePrecision::SinglePrecision()
 
 DoublePrecision::DoublePrecision()
 : Precision(Double)
+{
+
+}
+
+SizeTPrecision::SizeTPrecision()
+: Precision(SizeT)
 {
 
 }

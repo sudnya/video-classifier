@@ -8,6 +8,7 @@
 
 // Standard Library Includes
 #include <memory>
+#include <list>
 
 // Forward Declarations
 namespace lucius { namespace ir { class Function;              } }
@@ -65,6 +66,18 @@ public:
 
     /*! \brief Interface to set the function that checks whether or not the program is finished. */
     void setIsFinishedEntryPoint(Function f);
+
+public:
+    using FunctionList = std::list<Function>;
+    using iterator = FunctionList::iterator;
+    using const_iterator = FunctionList::const_iterator;
+
+public:
+          iterator begin();
+    const_iterator begin() const;
+
+          iterator end();
+    const_iterator end() const;
 
 public:
     void clear();

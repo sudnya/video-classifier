@@ -50,9 +50,34 @@ CpuTargetMachine::TableEntryVector CpuTargetMachine::getEntries() const
     );
 
     vector.push_back(
+        std::make_pair("phi", TableEntry({TableOperationEntry("phi",
+            {TableOperandEntry(0, true), VariableInputOperandsEntry(0)})}))
+    );
+
+    vector.push_back(
+        std::make_pair("branch", TableEntry({TableOperationEntry("branch",
+            {TableOperandEntry(0), TableOperandEntry(1), TableOperandEntry(2)})}))
+    );
+
+    vector.push_back(
         std::make_pair("binary-apply", TableEntry({TableOperationEntry("cpu-binary-apply",
             {TableOperandEntry(0, true), TableOperandEntry(0), TableOperandEntry(1),
              TableOperandEntry(2)})}))
+    );
+
+    vector.push_back(
+        std::make_pair("less", TableEntry({TableOperationEntry("cpu-less",
+            {TableOperandEntry(0, true), TableOperandEntry(0), TableOperandEntry(1)})}))
+    );
+
+    vector.push_back(
+        std::make_pair("zeros", TableEntry({TableOperationEntry("cpu-zeros",
+            {TableOperandEntry(0, true)})}))
+    );
+
+    vector.push_back(
+        std::make_pair("copy", TableEntry({TableOperationEntry("cpu-copy",
+            {TableOperandEntry(0, true), TableOperandEntry(0)})}))
     );
 
     return vector;

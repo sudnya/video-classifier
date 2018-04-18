@@ -27,8 +27,8 @@ using Precision = matrix::Precision;
 
 LazyValue srand(size_t seed);
 
-LazyValue rand( LazyValue& state, const Dimension& shape, const Precision& precision);
-LazyValue randn(LazyValue& state, const Dimension& shape, const Precision& precision);
+LazyValue rand( LazyValue state, const Dimension& shape, const Precision& precision);
+LazyValue randn(LazyValue state, const Dimension& shape, const Precision& precision);
 
 }
 

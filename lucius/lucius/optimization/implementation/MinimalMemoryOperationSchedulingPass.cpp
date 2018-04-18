@@ -35,7 +35,7 @@ MinimalMemoryOperationSchedulingPass::~MinimalMemoryOperationSchedulingPass()
 using Operation = ir::Operation;
 using OperationMemoryAnalysis = analysis::OperationMemoryAnalysis;
 
-static bool getInputMemory(const Operation& operation,
+static double getInputMemory(const Operation& operation,
     const OperationMemoryAnalysis& memoryAnalysis)
 {
     auto operands = operation.getOperands();
@@ -46,6 +46,9 @@ static bool getInputMemory(const Operation& operation,
     {
         totalMemory += memoryAnalysis.getOperandMemoryRequirement(operand);
     }
+
+    util::log("MinimalMemoryOperationSchedulingPass") << "    Operation '"
+        << operation.toString() << "' uses " << totalMemory << " bytes.\n";
 
     return totalMemory;
 }
@@ -84,6 +87,25 @@ static bool isReady(const Operation& operation, const OperationSet& scheduledOpe
 
     for(auto& predecessor : predecessors)
     {
+        // skip PHIs
+        if(predecessor.isPHI())
+        {
+            continue;
+        }
+
+        // skip predecessors in different blocks
+        if(predecessor.getBasicBlock() != operation.getBasicBlock())
+        {
+            continue;
+        }
+
+        // predecessors in the same block should occur previously in program order
+        if(predecessor.getIndexInBasicBlock() > operation.getIndexInBasicBlock())
+        {
+            assert(false);
+            continue;
+        }
+
         if(scheduledOperations.count(predecessor) == 0)
         {
             return false;
@@ -93,7 +115,7 @@ static bool isReady(const Operation& operation, const OperationSet& scheduledOpe
     return true;
 }
 
-static void scheduleBasicBlock(OperationList& newOrder, OperationList& originalOrder,
+static void scheduleBasicBlock(OperationList& newOrder, const OperationList& originalOrder,
     const OperationMemoryAnalysis& memoryAnalysis)
 {
     // schedule according to memory priority using a greedy algorithm
@@ -121,9 +143,24 @@ static void scheduleBasicBlock(OperationList& newOrder, OperationList& originalO
 
         for(auto& successor : successors)
         {
+            // skip successsors in different blocks
+            if(successor.getBasicBlock() != operation.getBasicBlock())
+            {
+                continue;
+            }
+
+            // skip PHIs
+            if(successor.isPHI())
+            {
+                continue;
+            }
+
+            // already scheduled ops
+            assert(scheduledOperations.count(successor) == 0);
+
             if(isReady(successor, scheduledOperations))
             {
-                readyOperations.push_back(operation);
+                readyOperations.push_back(successor);
             }
         }
     }
@@ -135,6 +172,8 @@ static void scheduleBasicBlock(OperationList& newOrder, OperationList& originalO
             << originalOrder.back().toString() << "'.\n";
         newOrder.push_back(originalOrder.back());
     }
+
+    assert(newOrder.size() == originalOrder.front().getBasicBlock().size());
 }
 
 void MinimalMemoryOperationSchedulingPass::runOnFunction(ir::Function& function)
@@ -152,12 +191,15 @@ void MinimalMemoryOperationSchedulingPass::runOnFunction(ir::Function& function)
             << "  scheduling operations in basic block '"
             << basicBlock.name() << "'.\n";
 
-        OperationList newOrder;
+        OperationList newOrder(basicBlock.phiBegin(), basicBlock.phiEnd());
 
-        scheduleBasicBlock(newOrder, basicBlock.getOperations(), *memoryAnalysis);
+        scheduleBasicBlock(newOrder, OperationList(basicBlock.phiEnd(), basicBlock.end()),
+            *memoryAnalysis);
 
         basicBlock.setOperations(std::move(newOrder));
     }
+    util::log("MinimalMemoryOperationSchedulingPass") << "  function is now '"
+        << function.toString() << "'.\n";
 }
 
 StringSet MinimalMemoryOperationSchedulingPass::getRequiredAnalyses() const

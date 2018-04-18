@@ -9,9 +9,11 @@
 
 #include <lucius/ir/interface/Use.h>
 #include <lucius/ir/interface/Value.h>
+#include <lucius/ir/interface/BasicBlock.h>
 
 // Standard Library Includes
 #include <string>
+#include <sstream>
 
 namespace lucius
 {
@@ -29,11 +31,62 @@ std::string PHIOperationImplementation::name() const
     return "phi";
 }
 
+std::string PHIOperationImplementation::toString() const
+{
+    assert(size() == _incomingBlocks.size());
+
+    std::stringstream stream;
+
+    stream << "%" << getId() << " = " << name() << " ";
+
+    auto operandIterator = getOperands().begin();
+    auto incomingBlockIterator = _incomingBlocks.begin();
+
+    if(operandIterator != getOperands().end())
+    {
+        auto& operand = *operandIterator;
+
+        stream << operand.getValue().toSummaryString() << " <- "
+            << incomingBlockIterator->name();
+
+        ++operandIterator;
+        ++incomingBlockIterator;
+    }
+
+    for( ; operandIterator != getOperands().end(); ++operandIterator, ++incomingBlockIterator)
+    {
+        auto& operand = *operandIterator;
+
+        stream << ", " << operand.getValue().toSummaryString() << " <- "
+            << incomingBlockIterator->name();
+    }
+
+    return stream.str();
+}
+
 Type PHIOperationImplementation::getType() const
 {
     assert(!empty());
 
     return getOperands().front().getValue().getType();
+}
+
+bool PHIOperationImplementation::isPHI() const
+{
+    return true;
+}
+
+const PHIOperationImplementation::BasicBlockVector&
+    PHIOperationImplementation::getIncomingBasicBlocks() const
+{
+    return _incomingBlocks;
+}
+
+void PHIOperationImplementation::addIncomingValue(const Value& value,
+    const BasicBlock& incoming)
+{
+    appendOperand(value);
+    _incomingBlocks.push_back(incoming);
 }
 
 } // namespace ir

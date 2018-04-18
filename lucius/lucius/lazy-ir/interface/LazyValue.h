@@ -9,7 +9,14 @@
 // Lucius Includes
 #include <lucius/ir/interface/Value.h>
 
+// Standard Library Includes
+#include <memory>
+#include <set>
+
+// Forward Declarations
 namespace lucius { namespace matrix { class Matrix; } }
+
+namespace lucius { namespace lazy { class LazyValueImplementation; } }
 
 namespace lucius
 {
@@ -31,14 +38,27 @@ public:
     matrix::Matrix materialize();
 
 public:
-          ir::Value& getValue();
-    const ir::Value& getValue() const;
+    ir::Value getValueForRead();
+    ir::Value getValue() const;
+
+public:
+    using ValueSet = std::set<ir::Value>;
+
+    const ValueSet& getDefinitions() const;
+
+public:
+    void addDefinition(ir::Value newDefinition);
+
+public:
+    bool operator<(const LazyValue& right) const;
 
 private:
     void* _runProgram();
+    void _clearState();
 
 private:
-    ir::Value _value;
+    std::shared_ptr<LazyValueImplementation> _implementation;
+
 };
 
 }

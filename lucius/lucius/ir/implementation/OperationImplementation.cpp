@@ -14,6 +14,7 @@
 #include <lucius/ir/interface/Function.h>
 #include <lucius/ir/interface/Module.h>
 #include <lucius/ir/interface/BasicBlock.h>
+#include <lucius/ir/interface/User.h>
 #include <lucius/ir/interface/Value.h>
 
 // Standard Library Includes
@@ -113,6 +114,67 @@ bool OperationImplementation::empty() const
 void OperationImplementation::setOperands(const UseList& uses)
 {
     setPredecessorUses(uses);
+
+    for(auto position = begin(); position != end(); ++position)
+    {
+        auto& use = *position;
+
+        use.setParent(User(getImplementation()), position);
+        use.getValue().addUse(use);
+
+        use.getValue().bindToContextIfDifferent(getContext());
+    }
+}
+
+void OperationImplementation::setOperands(const ValueList& values)
+{
+    UseList list;
+
+    for(auto& value : values)
+    {
+        list.push_back(Use(value));
+    }
+
+    setOperands(list);
+}
+
+void OperationImplementation::appendOperand(const Use& use)
+{
+    insertOperand(end(), use);
+}
+
+void OperationImplementation::appendOperand(const Value& value)
+{
+    appendOperand(Use(value));
+}
+
+void OperationImplementation::replaceOperand(const Use& original, const Use& newOperand)
+{
+    auto position = begin();
+
+    for( ; position != end(); ++position)
+    {
+        if(position->getValue() == original.getValue())
+        {
+            auto& operand = *position;
+            ++position;
+
+            operand.detach();
+            break;
+        }
+    }
+
+    insertOperand(position, newOperand);
+}
+
+void OperationImplementation::insertOperand(iterator position, const Use& operand)
+{
+    auto newPosition = getOperands().insert(position, operand);
+
+    newPosition->setParent(User(getImplementation()), newPosition);
+    newPosition->getValue().addUse(*newPosition);
+
+    newPosition->getValue().bindToContextIfDifferent(getContext());
 }
 
 BasicBlock OperationImplementation::getParent() const
@@ -137,11 +199,11 @@ void OperationImplementation::setParent(const BasicBlock& parent)
         {
             auto module = function.getParent();
 
-            bindToContext(&module.getContext());
+            bindToContextIfDifferent(&module.getContext());
 
             for(auto& operand : getOperands())
             {
-                operand.getValue().bindToContext(&module.getContext());
+                operand.getValue().bindToContextIfDifferent(&module.getContext());
             }
         }
     }
@@ -160,6 +222,17 @@ OperationImplementation::operation_iterator OperationImplementation::getIterator
 OperationImplementation::const_operation_iterator OperationImplementation::getIterator() const
 {
     return _iterator;
+}
+
+void OperationImplementation::setImplementation(
+    std::weak_ptr<OperationImplementation> implementation)
+{
+    _this = implementation;
+}
+
+std::shared_ptr<OperationImplementation> OperationImplementation::getImplementation() const
+{
+    return _this.lock();
 }
 
 std::string OperationImplementation::toString() const

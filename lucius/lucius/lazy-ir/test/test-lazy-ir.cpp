@@ -118,19 +118,17 @@ static bool testLoop()
     b(2, 0) = 5;
     b(2, 1) = 6;
 
-    c(0, 0) = 3;
-    c(0, 1) = 5;
-    c(1, 0) = 7;
-    c(1, 1) = 9;
-    c(2, 0) = 11;
-    c(2, 1) = 13;
+    c(0, 0) = 2;
+    c(0, 1) = 4;
+    c(1, 0) = 6;
+    c(1, 1) = 8;
+    c(2, 0) = 10;
+    c(2, 1) = 12;
 
     lucius::lazy::newThreadLocalContext();
 
-    LazyValue lazyA = lucius::lazy::getConstant(a);
+    LazyValue lazyA = lucius::lazy::zeros(a.size(), a.precision());
     LazyValue lazyB = lucius::lazy::getConstant(b);
-
-    lucius::lazy::zeros(lazyA);
 
     lucius::lazy::forLoop(2, [=]()
     {

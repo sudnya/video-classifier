@@ -207,6 +207,11 @@ public:
         return fabs(l);
     }
 
+    CUDA_DECORATOR size_t operator()(const size_t& l) const
+    {
+        return l;
+    }
+
 public:
     std::unique_ptr<StaticOperator> clone() const
     {
@@ -331,6 +336,11 @@ public:
         if(l >  50.0) return  50.0;
 
         return T(1.0) / (T(1.0) + T(exp(-l)));
+    }
+
+    CUDA_DECORATOR size_t operator()(const size_t& l) const
+    {
+        return 1.0 / (1.0 + exp(-(double)l));
     }
 
 public:
@@ -960,6 +970,11 @@ public:
     }
 
     CUDA_DECORATOR double operator() (double operand) const
+    {
+        return std::cos(operand);
+    }
+
+    CUDA_DECORATOR size_t operator() (size_t operand) const
     {
         return std::cos(operand);
     }

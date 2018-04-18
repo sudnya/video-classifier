@@ -23,7 +23,7 @@ LazyValue lessThan(LazyValue left, LazyValue right)
 {
     auto& builder = getBuilder();
 
-    return LazyValue(builder.addLessThan(left.getValue(), right.getValue()));
+    return LazyValue(builder.addLessThan(left.getValueForRead(), right.getValueForRead()));
 }
 
 }

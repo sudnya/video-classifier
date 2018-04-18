@@ -85,42 +85,64 @@ public:
     }
 
 public:
+    bool isEntryBlock() const
+    {
+        if(!hasParent())
+        {
+            return true;
+        }
 
+        return getIterator() == getFunction().begin();
+    }
+
+    bool isExitBlock() const
+    {
+        if(!hasParent())
+        {
+            return true;
+        }
+
+        return getIterator() == --getFunction().end();
+    }
+
+    bool canFallthrough() const
+    {
+        if(empty())
+        {
+            return true;
+        }
+
+        auto terminator = getOperations().back();
+
+        if(!terminator.isControlOperation())
+        {
+            return true;
+        }
+
+        auto controlOperation = value_cast<ControlOperation>(terminator);
+
+        return controlOperation.canFallthrough();
+    }
+
+public:
+    BasicBlock getPreviousBlock() const
+    {
+        return *(--getIterator());
+    }
+
+public:
     BasicBlockVector getPredecessors() const
     {
-        bool hasPHI = false;
+        BasicBlockSet predecessors = _predecessors;
 
-        if(!empty())
+        if(!isEntryBlock())
         {
-            if(getOperations().front().isPHI())
+            auto previousBlock = getPreviousBlock();
+
+            if(previousBlock.canFallthrough())
             {
-                hasPHI = true;
+                predecessors.insert(previousBlock);
             }
-        }
-
-        if(!hasPHI)
-        {
-            if(getIterator() == getFunction().begin())
-            {
-                return BasicBlockVector();
-            }
-
-            return {*(--getIterator())};
-        }
-
-        auto operation = begin();
-
-        BasicBlockSet predecessors;
-
-        while(operation != end() && operation->isPHI())
-        {
-            auto phi = value_cast<PHIOperation>(*operation);
-
-            auto phiPredecessors = phi.getPredecessorBasicBlocks();
-
-            predecessors.insert(phiPredecessors.begin(), phiPredecessors.end());
-
-            ++operation;
         }
 
         return BasicBlockVector(predecessors.begin(), predecessors.end());
@@ -130,28 +152,46 @@ public:
     {
         if(empty())
         {
-            auto nextBlock = ++getIterator();
-
-            if(nextBlock == getFunction().end())
-            {
-                return BasicBlockVector();
-            }
-
-            return {*nextBlock};
+            return getFallthroughSuccessors();
         }
 
         auto terminator = getOperations().back();
 
-        assert(terminator.isControlOperation());
+        if(!terminator.isControlOperation())
+        {
+            return getFallthroughSuccessors();
+        }
 
         auto controlOperation = value_cast<ControlOperation>(terminator);
 
         return controlOperation.getPossibleTargets();
     }
 
+    BasicBlockVector getFallthroughSuccessors() const
+    {
+        auto nextBlock = ++getIterator();
+
+        if(nextBlock == getFunction().end())
+        {
+            return BasicBlockVector();
+        }
+
+        return {*nextBlock};
+    }
+
     bool empty() const
     {
         return getOperations().empty();
+    }
+
+    size_t size() const
+    {
+        return getOperations().size();
+    }
+
+    void addPredecessor(const BasicBlock& predecessor)
+    {
+        _predecessors.insert(predecessor);
     }
 
 public:
@@ -234,7 +274,7 @@ public:
     {
         if(function.hasParent())
         {
-            bindToContext(&function.getParent().getContext());
+            bindToContextIfDifferent(&function.getParent().getContext());
         }
 
         _parent = function.getImplementation();
@@ -245,6 +285,11 @@ public:
         return _parent;
     }
 
+    bool hasParent() const
+    {
+        return static_cast<bool>(getParent().lock());
+    }
+
 private:
     std::weak_ptr<FunctionImplementation> _parent;
 
@@ -253,6 +298,10 @@ private:
 
 private:
     OperationList _operations;
+
+private:
+    // records non-trivial (not fallthrough) predecessors
+    BasicBlockSet _predecessors;
 
 };
 
@@ -285,20 +334,54 @@ Function BasicBlock::getFunction() const
     return _implementation->getFunction();
 }
 
+static void addPredecessorForOperation(BasicBlock& block, const Operation& op)
+{
+    if(!block.hasParent())
+    {
+        return;
+    }
+
+    if(op.isControlOperation())
+    {
+        auto controlOperation = value_cast<ControlOperation>(op);
+
+        auto targets = controlOperation.getPossibleTargets();
+
+        for(auto& target : targets)
+        {
+            target.addPredecessor(block);
+        }
+    }
+}
+
 void BasicBlock::push_back(Operation op)
 {
-    op.setParent(*this);
-    op.setIterator(getOperations().insert(getOperations().end(), op));
+    insert(end(), op);
+}
+
+void BasicBlock::push_front(Operation op)
+{
+    insert(begin(), op);
+}
+
+bool BasicBlock::isEntryBlock() const
+{
+    return _implementation->isEntryBlock();
 }
 
 bool BasicBlock::isExitBlock() const
 {
-    return getIterator() == --getFunction().end();
+    return _implementation->isExitBlock();
 }
 
 bool BasicBlock::empty() const
 {
     return _implementation->empty();
+}
+
+size_t BasicBlock::size() const
+{
+    return _implementation->size();
 }
 
 BasicBlock BasicBlock::getNextBasicBlock() const
@@ -308,6 +391,16 @@ BasicBlock BasicBlock::getNextBasicBlock() const
     auto next = ++getIterator();
 
     return *next;
+}
+
+bool BasicBlock::canFallthrough() const
+{
+    return _implementation->canFallthrough();
+}
+
+void BasicBlock::addPredecessor(const BasicBlock& predecessor)
+{
+    _implementation->addPredecessor(predecessor);
 }
 
 BasicBlock::iterator BasicBlock::begin()
@@ -328,6 +421,66 @@ BasicBlock::iterator BasicBlock::end()
 BasicBlock::const_iterator BasicBlock::end() const
 {
     return _implementation->end();
+}
+
+BasicBlock::iterator BasicBlock::phiBegin()
+{
+    return begin();
+}
+
+BasicBlock::const_iterator BasicBlock::phiBegin() const
+{
+    return begin();
+}
+
+BasicBlock::iterator BasicBlock::phiEnd()
+{
+    auto phi = begin();
+
+    for( ; phi != end(); ++phi)
+    {
+        if(!phi->isPHI())
+        {
+            break;
+        }
+    }
+
+    return phi;
+}
+
+BasicBlock::const_iterator BasicBlock::phiEnd() const
+{
+    auto phi = begin();
+
+    for( ; phi != end(); ++phi)
+    {
+        if(!phi->isPHI())
+        {
+            break;
+        }
+    }
+
+    return phi;
+}
+
+BasicBlock::IteratorRange BasicBlock::getPHIRange()
+{
+    return IteratorRange(phiBegin(), phiEnd());
+}
+
+BasicBlock::ConstIteratorRange BasicBlock::getPHIRange() const
+{
+    return ConstIteratorRange(phiBegin(), phiEnd());
+}
+
+BasicBlock::IteratorRange BasicBlock::getNonPHIRange()
+{
+    return IteratorRange(phiEnd(), end());
+}
+
+BasicBlock::ConstIteratorRange BasicBlock::getNonPHIRange() const
+{
+    return ConstIteratorRange(phiEnd(), end());
 }
 
 BasicBlock::reverse_iterator BasicBlock::rbegin()
@@ -360,10 +513,21 @@ const Operation& BasicBlock::back() const
     return getOperations().back();
 }
 
+Operation& BasicBlock::front()
+{
+    return getOperations().front();
+}
+
+const Operation& BasicBlock::front() const
+{
+    return getOperations().front();
+}
+
 BasicBlock::iterator BasicBlock::insert(iterator position, Operation op)
 {
     op.setParent(*this);
     op.setIterator(getOperations().insert(position, op));
+    addPredecessorForOperation(*this, op);
 
     return op.getIterator();
 }
@@ -372,10 +536,25 @@ Operation BasicBlock::insert(Operation position, Operation op)
 {
     auto positionIterator = position.getIterator();
 
-    op.setParent(*this);
     auto newPosition = insert(positionIterator, op);
 
     return *newPosition;
+}
+
+BasicBlock::iterator BasicBlock::erase(iterator position)
+{
+    position->detach();
+    return getOperations().erase(position);
+}
+
+BasicBlock::iterator BasicBlock::erase(iterator begin, iterator end)
+{
+    while(begin != end)
+    {
+        begin = erase(begin);
+    }
+
+    return begin;
 }
 
 OperationList& BasicBlock::getOperations()
@@ -390,12 +569,18 @@ const OperationList& BasicBlock::getOperations() const
 
 void BasicBlock::setOperations(OperationList&& operations)
 {
-    for(auto& operation : operations)
+    getOperations() = std::move(operations);
+
+    for(auto& operation : *this)
     {
         operation.setParent(*this);
+        addPredecessorForOperation(*this, operation);
     }
 
-    getOperations() = std::move(operations);
+    for(auto position = begin(); position != end(); ++position)
+    {
+        position->setIterator(position);
+    }
 }
 
 BasicBlockVector BasicBlock::getSuccessors() const

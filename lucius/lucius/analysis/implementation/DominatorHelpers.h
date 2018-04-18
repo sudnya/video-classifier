@@ -24,11 +24,17 @@ using Function = ir::Function;
 using BasicBlockMap = std::map<BasicBlock, BasicBlock>;
 using BlockIndexMap = std::map<BasicBlock, size_t>;
 
+using BlockVector = std::vector<BasicBlock>;
+using BlockVectorMap = std::map<BasicBlock, BlockVector>;
+
 void buildDominatorTree(BasicBlockMap& tree, BlockIndexMap& positions,
     const Function& function, bool isDominatorAnalysis);
 
 BasicBlock intersect(BasicBlock left, BasicBlock right,
     const BlockIndexMap& positions, const BasicBlockMap& dominatorTree);
+
+void buildDominanceFrontiers(BlockVectorMap& dominanceFrontiers,
+    const BasicBlockMap& dominatorTree, bool isDominatorAnalysis);
 
 
 } // namespace analysis

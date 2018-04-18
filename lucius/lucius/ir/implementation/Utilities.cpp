@@ -28,7 +28,16 @@ InsertionPoint getFirstAvailableInsertionPoint(const Value& v)
 
     auto operation = value_cast<Operation>(v);
 
-    return InsertionPoint(operation.getBasicBlock(), ++operation.getIterator());
+    // start after the value is defined
+    auto iterator = ++operation.getIterator();
+
+    // advance past the last phi
+    while(iterator != operation.getBasicBlock().end() && iterator->isPHI())
+    {
+        ++iterator;
+    }
+
+    return InsertionPoint(operation.getBasicBlock(), iterator);
 }
 
 } // namespace ir

@@ -34,7 +34,7 @@ private:
 
 typedef std::vector<VariableAndGradient> VariableAndGradientVector;
 
-VariableAndGradientVector getVariablesAndGradientsForCost(const LazyValue& cost);
+VariableAndGradientVector getVariablesAndGradientsForCost(LazyValue cost);
 
 }
 

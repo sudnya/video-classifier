@@ -141,8 +141,8 @@ void applyOverOperations(Matrix& result, const Matrix& left, const Matrix& right
 
     assert(op == PossibleOperationType());
 
-    applyOverPrecisions<PossibleOperationType, AllPrecisions>(result, left, right, op,
-        precision, AllPrecisions());
+    applyOverPrecisions<PossibleOperationType>(result, left, right, op,
+        precision, AllFloatingPointPrecisions());
 }
 
 template<typename PossibleOperations>
@@ -312,8 +312,8 @@ void applyOverOperations(Matrix& result, const Matrix& input, const StaticOperat
 
     assert(op == PossibleOperationType());
 
-    applyOverPrecisions<PossibleOperationType, AllPrecisions>(result, input, op,
-        precision, AllPrecisions());
+    applyOverPrecisions<PossibleOperationType>(result, input, op,
+        precision, AllFloatingPointPrecisions());
 }
 
 template<typename PossibleOperations>
@@ -775,7 +775,7 @@ void reduce(Matrix& result, const Matrix& input, const Dimension& dimensions, co
     const std::tuple<PossibleOperation>& p)
 {
     assert(PossibleOperation() == op);
-    reduce<PossibleOperation>(result, input, dimensions, op, AllPrecisions());
+    reduce<PossibleOperation>(result, input, dimensions, op, AllFloatingPointPrecisions());
 }
 
 template <typename PossibleOperations>
@@ -1203,7 +1203,7 @@ void broadcast(Matrix& result, const Matrix& left, const Matrix& right, const Di
     const StaticOperator& op, const std::tuple<PossibleOperation>& p)
 {
     assert(PossibleOperation() == op);
-    broadcast<PossibleOperation>(result, left, right, d, op, AllPrecisions());
+    broadcast<PossibleOperation>(result, left, right, d, op, AllFloatingPointPrecisions());
 }
 
 template <typename PossibleOperations>
@@ -1337,7 +1337,7 @@ void rangeOverPrecisions(Matrix& result, const Matrix& input,
 
 void range(Matrix& result)
 {
-    detail::rangeOverPrecisions(result, result, result.precision(), AllPrecisions());
+    detail::rangeOverPrecisions(result, result, result.precision(), AllFloatingPointPrecisions());
 }
 
 Matrix range(const Dimension& size, const Precision& precision)
@@ -1481,7 +1481,7 @@ void reduceGetPositions(Matrix& result, const Matrix& input, const Dimension& d,
     const StaticOperator& op, const std::tuple<PossibleOperation>& p)
 {
     assert(PossibleOperation() == op);
-    reduceGetPositions<PossibleOperation>(result, input, d, op, AllPrecisions());
+    reduceGetPositions<PossibleOperation>(result, input, d, op, AllFloatingPointPrecisions());
 }
 
 template <typename PossibleOperations>

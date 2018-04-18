@@ -141,7 +141,7 @@ public:
     void restoreInsertionPoint();
 
 public:
-    /*! \brief Extracts the program from the builder, caller takes ownership. */
+    /*! \brief Get a reference to the program owned by the builder. */
     Program& getProgram();
 
 public:

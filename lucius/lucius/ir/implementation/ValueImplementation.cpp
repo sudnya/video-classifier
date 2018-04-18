@@ -13,6 +13,7 @@
 #include <lucius/ir/implementation/ExternalFunctionImplementation.h>
 
 #include <lucius/ir/target/implementation/TargetOperationImplementation.h>
+#include <lucius/ir/target/implementation/TargetValueImplementation.h>
 
 #include <lucius/ir/interface/Use.h>
 #include <lucius/ir/interface/Context.h>
@@ -77,6 +78,11 @@ bool ValueImplementation::isExternalFunction() const
     return dynamic_cast<const ExternalFunctionImplementation*>(this);
 }
 
+bool ValueImplementation::isTargetValue() const
+{
+    return dynamic_cast<const TargetValueImplementation*>(this);
+}
+
 bool ValueImplementation::isVariable() const
 {
     return _isVariable;
@@ -128,6 +134,11 @@ bool ValueImplementation::isCall() const
 }
 
 bool ValueImplementation::isReturn() const
+{
+    return false;
+}
+
+bool ValueImplementation::isPHI() const
 {
     return false;
 }

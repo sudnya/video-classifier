@@ -22,6 +22,8 @@
 #include <lucius/ir/interface/Use.h>
 #include <lucius/ir/interface/Value.h>
 
+#include <lucius/ir/ops/interface/ControlOperation.h>
+
 #include <lucius/util/interface/debug.h>
 
 // Standard Library Includes
@@ -34,6 +36,7 @@ namespace optimization
 
 // Namespace imports
 using Operation = ir::Operation;
+using ControlOperation = ir::ControlOperation;
 using BasicBlock = ir::BasicBlock;
 using TargetOperation = ir::TargetOperation;
 using TargetValue = ir::TargetValue;
@@ -53,19 +56,19 @@ DynamicMemoryAllocationPass::~DynamicMemoryAllocationPass()
     // intentionally blank
 }
 
+static bool isAllocatableValue(const TargetValue& value)
+{
+    return value.isTensor() || value.isInteger() || value.isFloat();
+}
+
 static bool needsAllocation(const TargetValue& value)
 {
-    return value.getType().isTensor() && !value.isConstant();
+    return isAllocatableValue(value) && !value.isConstant();
 }
 
-static void insertBefore(BasicBlock block, BasicBlock::iterator position, Operation newOperation)
+static void insert(BasicBlock block, BasicBlock::iterator position, Operation newOperation)
 {
     block.insert(position, newOperation);
-}
-
-static void insertAfter(BasicBlock block, BasicBlock::iterator position, Operation newOperation)
-{
-    block.insert(++position, newOperation);
 }
 
 static void addAllocation(TargetValue value, BasicBlock postDominator,
@@ -76,7 +79,7 @@ static void addAllocation(TargetValue value, BasicBlock postDominator,
     util::log("DynamicMemoryAllocationPass") << "   adding allocation '"
         << allocation.toString() << "'.\n";
 
-    insertBefore(postDominator, insertionPoint, allocation);
+    insert(postDominator, insertionPoint, allocation);
 }
 
 static void addFree(TargetValue value, BasicBlock postDominator,
@@ -87,8 +90,10 @@ static void addFree(TargetValue value, BasicBlock postDominator,
     util::log("DynamicMemoryAllocationPass") << "   adding free '"
         << free.toString() << "'.\n";
 
-    insertAfter(postDominator, insertionPoint, free);
+    insert(postDominator, insertionPoint, free);
 }
+
+using BasicBlockVector = std::vector<BasicBlock>;
 
 static BasicBlock getPostDominatorOfAllUses(TargetValue operand,
     PostDominatorAnalysis* postDominatorAnalysis)
@@ -101,8 +106,26 @@ static BasicBlock getPostDominatorOfAllUses(TargetValue operand,
 
     for(auto& use : uses)
     {
-        postDominator = postDominatorAnalysis->getPostDominator(
-            use.getBasicBlock(), postDominator);
+        BasicBlockVector useBlocks;
+
+        useBlocks.push_back(use.getBasicBlock());
+
+        auto operation = use.getOperation();
+
+        // make sure values are freed after the branch is evaluated
+        if(operation.isControlOperation())
+        {
+            auto controlOperation = ir::value_cast<ControlOperation>(operation);
+
+            auto possibleTargets = controlOperation.getPossibleTargets();
+
+            useBlocks.insert(useBlocks.end(), possibleTargets.begin(), possibleTargets.end());
+        }
+
+        for(auto& block : useBlocks)
+        {
+            postDominator = postDominatorAnalysis->getPostDominator(block, postDominator);
+        }
     }
 
     return postDominator;
@@ -268,7 +291,7 @@ static void addFrees(TargetValue value, PostDominatorAnalysis* postDominatorAnal
 
     if(postDominatorContainsUse(value, postDominator))
     {
-        insertionPoint = getLastUse(value, postDominator);
+        insertionPoint = ++getLastUse(value, postDominator);
     }
     else
     {
@@ -328,6 +351,9 @@ void DynamicMemoryAllocationPass::runOnFunction(ir::Function& function)
             addFrees(value, postDominatorAnalysis);
         }
     }
+
+    util::log("DynamicMemoryAllocationPass") << " function is now '"
+        << function.toString() << "'.\n";
 }
 
 StringSet DynamicMemoryAllocationPass::getRequiredAnalyses() const

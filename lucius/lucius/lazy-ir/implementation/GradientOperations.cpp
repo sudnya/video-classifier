@@ -38,7 +38,7 @@ LazyValue VariableAndGradient::getGradient()
     return _gradient;
 }
 
-VariableAndGradientVector getVariablesAndGradientsForCost(const LazyValue& cost)
+VariableAndGradientVector getVariablesAndGradientsForCost(LazyValue cost)
 {
     auto& builder = getBuilder();
 
@@ -50,7 +50,7 @@ VariableAndGradientVector getVariablesAndGradientsForCost(const LazyValue& cost)
 
     for(auto& variable : variables)
     {
-        auto gradient = builder.addGradientForVariable(variable, cost.getValue());
+        auto gradient = builder.addGradientForVariable(variable, cost.getValueForRead());
 
         variablesAndGradients.push_back(
             VariableAndGradient(LazyValue(variable), LazyValue(gradient)));

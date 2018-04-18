@@ -159,6 +159,11 @@ public:
         return {getBasicBlock().getNextBasicBlock()};
     }
 
+    virtual bool canFallthrough() const
+    {
+        return true;
+    }
+
 };
 
 CallOperation::CallOperation()

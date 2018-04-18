@@ -155,7 +155,7 @@ void copyOverPrecisions(Matrix& result, const ResultPrecisions& resultPrecisions
 
 void copyOverPrecisions(Matrix& result, const Matrix& input)
 {
-    copyOverPrecisions(result, AllPrecisions(), input, AllPrecisions());
+    copyOverPrecisions(result, AllFloatingPointPrecisions(), input, AllFloatingPointPrecisions());
 }
 
 }

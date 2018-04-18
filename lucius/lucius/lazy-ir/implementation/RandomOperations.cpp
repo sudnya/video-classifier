@@ -27,24 +27,26 @@ LazyValue srand(size_t seed)
     return LazyValue(builder.addSrand(builder.addConstant(seed)));
 }
 
-LazyValue rand(LazyValue& state, const Dimension& shape, const Precision& precision)
+LazyValue rand(LazyValue state, const Dimension& shape, const Precision& precision)
 {
     auto& builder = getBuilder();
 
-    auto result = builder.addRand(state.getValue(), builder.getTensorType(shape, precision));
+    auto result = builder.addRand(state.getValueForRead(),
+        builder.getTensorType(shape, precision));
 
-    state = LazyValue(builder.addGet(result, builder.addConstant(1)));
+    state.addDefinition(LazyValue(builder.addGet(result, builder.addConstant(1))).getValue());
 
     return LazyValue(builder.addGet(result, builder.addConstant(0)));
 }
 
-LazyValue randn(LazyValue& state, const Dimension& shape, const Precision& precision)
+LazyValue randn(LazyValue state, const Dimension& shape, const Precision& precision)
 {
     auto& builder = getBuilder();
 
-    auto result = builder.addRand(state.getValue(), builder.getTensorType(shape, precision));
+    auto result = builder.addRand(state.getValueForRead(),
+        builder.getTensorType(shape, precision));
 
-    state = LazyValue(builder.addGet(result, builder.addConstant(1)));
+    state.addDefinition(LazyValue(builder.addGet(result, builder.addConstant(1))).getValue());
 
     return LazyValue(builder.addGet(result, builder.addConstant(0)));
 }

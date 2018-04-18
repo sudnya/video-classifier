@@ -61,8 +61,16 @@ BasicBlockList postOrderTraversal(const BasicBlockList& blocks, bool reverseEdge
 
     BasicBlockStack stack;
 
-    stack.push(std::make_pair(blocks.front(), false));
-    visited.insert(blocks.front());
+    if(reverseEdges)
+    {
+        stack.push(std::make_pair(blocks.back(), false));
+        visited.insert(blocks.back());
+    }
+    else
+    {
+        stack.push(std::make_pair(blocks.front(), false));
+        visited.insert(blocks.front());
+    }
 
     BasicBlockList order;
 

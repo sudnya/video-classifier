@@ -32,7 +32,10 @@ public:
     using BasicBlockVector = std::vector<BasicBlock>;
 
 public:
-    BasicBlockVector getPredecessorBasicBlocks() const;
+    const BasicBlockVector& getIncomingBasicBlocks() const;
+
+public:
+    void addIncomingValue(const Value&, const BasicBlock& incoming);
 
 };
 

@@ -30,7 +30,11 @@ T LazyValue::materialize()
         throw std::runtime_error("Could not get return value from IR execution engine.");
     }
 
-    return *result;
+    T resultValue = *result;
+
+    _clearState();
+
+    return resultValue;
 }
 
 }

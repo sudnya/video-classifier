@@ -52,6 +52,31 @@ public:
     }
 
 public:
+    using       iterator = size_t*;
+    using const_iterator = const size_t*;
+
+public:
+    iterator begin()
+    {
+        return _dimensions.begin();
+    }
+
+    const_iterator begin() const
+    {
+        return _dimensions.begin();
+    }
+
+    iterator end()
+    {
+        return _dimensions.end();
+    }
+
+    const_iterator end() const
+    {
+        return _dimensions.end();
+    }
+
+public:
     std::string toString() const
     {
         return _dimensions.toString();
@@ -106,6 +131,39 @@ Shape& Shape::operator=(const Shape& s)
 void Shape::setUnknown()
 {
     _implementation->setUnknown();
+}
+
+bool Shape::areAllDimensionsKnown() const
+{
+    for(auto& i : *this)
+    {
+        if(i == UnknownValue)
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+Shape::iterator Shape::begin()
+{
+    return _implementation->begin();
+}
+
+Shape::const_iterator Shape::begin() const
+{
+    return _implementation->begin();
+}
+
+Shape::iterator Shape::end()
+{
+    return _implementation->end();
+}
+
+Shape::const_iterator Shape::end() const
+{
+    return _implementation->end();
 }
 
 size_t& Shape::operator[](size_t i)

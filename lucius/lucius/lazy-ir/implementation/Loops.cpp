@@ -29,6 +29,15 @@ namespace lazy
 using BasicBlock = ir::BasicBlock;
 using IRBuilder  = ir::IRBuilder;
 
+static void addConditionalBranch(IRBuilder& builder, LazyValue condition,
+    const BasicBlock& fallthrough, const BasicBlock& target)
+{
+    builder.addConditionalBranch(condition.getValueForRead(), fallthrough, target);
+
+    // TODO: be more precise
+    invalidateAnalyses();
+}
+
 void forLoop(std::function<LazyValue()> initializer,
     std::function<LazyValue(LazyValue)> condition,
     std::function<LazyValue(LazyValue)> increment,
@@ -41,16 +50,24 @@ void forLoop(std::function<LazyValue()> initializer,
     BasicBlock body      = builder.addBasicBlock();
     BasicBlock exit      = builder.addBasicBlock();
 
+    // TODO: be more precise
+    invalidateAnalyses();
+
     builder.setInsertionPoint(preheader);
     LazyValue iterator = initializer();
 
+    if(iterator.getValue().isConstant())
+    {
+        iterator = copy(iterator);
+    }
+
     builder.setInsertionPoint(header);
-    builder.addConditionalBranch(condition(iterator).getValue(), body, exit);
+    addConditionalBranch(builder, condition(iterator), body, exit);
 
     builder.setInsertionPoint(body);
     addBody();
     copy(iterator, increment(iterator));
-    builder.addConditionalBranch(condition(iterator).getValue(), body, exit);
+    addConditionalBranch(builder, condition(iterator), body, exit);
 
     builder.setInsertionPoint(exit);
 }

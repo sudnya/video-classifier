@@ -19,6 +19,9 @@
 #include <lucius/ir/interface/Value.h>
 #include <lucius/ir/interface/Type.h>
 
+#include <lucius/ir/ops/interface/PHIOperation.h>
+#include <lucius/machine/generic/interface/PHIOperation.h>
+
 #include <lucius/ir/target/interface/TargetOperationFactory.h>
 #include <lucius/ir/target/interface/TargetOperation.h>
 #include <lucius/ir/target/interface/TargetValue.h>
@@ -56,40 +59,13 @@ using TargetOperationFactory = ir::TargetOperationFactory;
 
 using ValueMap = std::map<Value, TargetValue>;
 
-
-static bool isNormalValue(const Value& v)
-{
-    return v.isOperation();
-}
-
-static bool isNotTranslatedValue(const Value& v)
-{
-    return v.isFunction() || v.isConstant() || v.isExternalFunction();
-}
-
 static void generateOneExistingOperand(TargetOperation& targetOperation, ValueMap& valueMap,
     Operation& operation, size_t index)
 {
     auto& use = operation.getOperand(index);
     auto operand = use.getValue();
 
-    if(isNormalValue(operand))
-    {
-        auto mapping = valueMap.find(operand);
-
-        assert(mapping != valueMap.end());
-
-        targetOperation.appendOperand(mapping->second);
-    }
-    else if(isNotTranslatedValue(operand))
-    {
-        targetOperation.appendOperand(TargetValue(operand));
-    }
-    else
-    {
-        // TODO: handle other types of operands
-        assertM(false, "Not implemented.");
-    }
+    targetOperation.appendOperand(TargetValue(operand));
 }
 
 static void generateExistingOperandRange(TargetOperation& targetOperation, ValueMap& valueMap,
@@ -144,12 +120,25 @@ static void generateOperations(OperationList& targetOperations,
             }
         }
 
+        if(operation.isPHI())
+        {
+            assert(targetOperation.isPHI());
+
+            auto sourcePHI = ir::value_cast<ir::PHIOperation>(operation);
+            auto targetPHI = ir::value_cast<machine::generic::PHIOperation>(targetOperation);
+
+            for(auto& block : sourcePHI.getIncomingBasicBlocks())
+            {
+                targetPHI.addIncomingBasicBlock(block);
+            }
+        }
+
         util::log("TableOperationSelectionPass") << "   added new operation "
             << targetOperation.toString() << "\n";
 
         targetOperations.push_back(targetOperation);
 
-        if(targetOperationEntry.isOutput())
+        if(targetOperation.hasOutputOperand())
         {
             util::log("TableOperationSelectionPass") << "    added output mapping "
                 << operation.toString() << " = "
@@ -157,6 +146,28 @@ static void generateOperations(OperationList& targetOperations,
             valueMap[operation] = ir::value_cast<TargetValue>(
                 targetOperation.getOutputOperand().getValue());
         }
+    }
+}
+
+static void replaceOperands(ValueMap& valueMap, Operation& operation,
+    const TargetMachine& machine)
+{
+    auto targetOperation = ir::value_cast<ir::TargetOperation>(operation);
+
+    for(size_t i = 0, size = targetOperation.getInputOperandCount(); i < size; ++i)
+    {
+        auto& operand = targetOperation.getOperand(i);
+
+        auto valueMapping = valueMap.find(operand.getValue());
+
+        if(valueMapping == valueMap.end())
+        {
+            continue;
+        }
+        util::log("TableOperationSelectionPass") << "   replacing '"
+                << operand.toString() << "' with '" << valueMapping->second.toString() << "'\n";
+
+        targetOperation.replaceOperand(operand, ir::Use(valueMapping->second));
     }
 }
 
@@ -168,6 +179,8 @@ void TableOperationSelectionPass::runOnFunction(ir::Function& function)
 
     TargetMachine machine(function.getContext());
 
+    // generate new instructions
+    util::log("TableOperationSelectionPass") << "Generating new operations\n";
     for(auto& basicBlock : function)
     {
         util::log("TableOperationSelectionPass") << " Running on basic block "
@@ -182,6 +195,21 @@ void TableOperationSelectionPass::runOnFunction(ir::Function& function)
         }
 
         basicBlock.setOperations(std::move(newOperations));
+    }
+
+    // replace operands
+    util::log("TableOperationSelectionPass") << "Replacing operands\n";
+    for(auto& basicBlock : function)
+    {
+        util::log("TableOperationSelectionPass") << " Running on basic block "
+            << basicBlock.toSummaryString() << "\n";
+
+        for(auto& operation : basicBlock)
+        {
+            util::log("TableOperationSelectionPass") << "  Running on operation "
+                << operation.toString() << "\n";
+            replaceOperands(newValues, operation, machine);
+        }
     }
 
     util::log("TableOperationSelectionPass") << " new function is " << function.toString() << "\n";

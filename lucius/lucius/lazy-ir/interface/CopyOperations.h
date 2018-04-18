@@ -19,7 +19,7 @@ namespace lazy
 LazyValue copy(LazyValue input);
 
 /*! \brief Copy from one value into another. */
-void copy(const LazyValue& output, LazyValue input);
+void copy(LazyValue output, LazyValue input);
 
 }
 

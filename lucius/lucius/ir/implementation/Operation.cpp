@@ -10,10 +10,10 @@
 #include <lucius/ir/interface/BasicBlock.h>
 
 #include <lucius/ir/target/interface/TargetOperation.h>
+#include <lucius/ir/target/interface/TargetValue.h>
 
 #include <lucius/ir/ops/implementation/ControlOperationImplementation.h>
 #include <lucius/ir/ops/implementation/ComputeGradientOperationImplementation.h>
-#include <lucius/ir/ops/implementation/PHIOperationImplementation.h>
 
 #include <lucius/ir/target/implementation/TargetControlOperationImplementation.h>
 
@@ -23,6 +23,8 @@
 #include <lucius/ir/interface/Value.h>
 #include <lucius/ir/interface/ShapeList.h>
 #include <lucius/ir/interface/Shape.h>
+
+#include <lucius/util/interface/debug.h>
 
 // Standard Library Includes
 #include <cassert>
@@ -45,6 +47,7 @@ Operation::Operation()
 Operation::Operation(std::shared_ptr<ValueImplementation> implementation)
 : _implementation(std::static_pointer_cast<OperationImplementation>(implementation))
 {
+    _implementation->setImplementation(_implementation);
     assert(Value(implementation).isOperation());
 }
 
@@ -123,80 +126,73 @@ void Operation::setOperands(const UseList& uses)
 {
     _implementation->setOperands(uses);
 
-    for(auto position = begin(); position != end(); ++position)
-    {
-        auto& use = *position;
-
-        use.setParent(User(_implementation), position);
-        use.getValue().addUse(use);
-
-        use.getValue().bindToContextIfDifferent(getContext());
-    }
 }
 
 void Operation::setOperands(const ValueList& values)
 {
-    UseList list;
-
-    for(auto& value : values)
-    {
-        list.push_back(Use(value));
-    }
-
-    setOperands(list);
+    _implementation->setOperands(values);
 }
 
 void Operation::appendOperand(const Use& use)
 {
-    insertOperand(end(), use);
+    _implementation->appendOperand(use);
 }
 
 void Operation::appendOperand(const Value& value)
 {
-    appendOperand(Use(value));
+    _implementation->appendOperand(value);
 }
 
 void Operation::replaceOperand(const Use& original, const Use& newOperand)
 {
-    auto position = begin();
-
-    for( ; position != end(); ++position)
-    {
-        if(position->getValue() == original.getValue())
-        {
-            auto& operand = *position;
-            ++position;
-
-            operand.detach();
-            break;
-        }
-    }
-
-    insertOperand(position, newOperand);
+    _implementation->replaceOperand(original, newOperand);
 }
 
 void Operation::insertOperand(iterator position, const Use& operand)
 {
-    auto newPosition = getOperands().insert(position, operand);
-
-    newPosition->setParent(User(_implementation), newPosition);
-    newPosition->getValue().addUse(*newPosition);
-
-    newPosition->getValue().bindToContextIfDifferent(getContext());
+    _implementation->insertOperand(position, operand);
 }
 
 OperationList Operation::getPredecessors() const
 {
     OperationList operations;
 
-    for(auto& use : getOperands())
+    // Target operations need to be handled differently because they represent defined
+    // values explicitly as operands
+    if(isTargetOperation())
     {
-        if(!use.getValue().isOperation())
-        {
-            continue;
-        }
+        auto targetOperation = value_cast<TargetOperation>(*this);
 
-        operations.push_back(Operation(use.getOperation()));
+        for(auto& operand : targetOperation.getInputOperandRange())
+        {
+            auto targetValue = value_cast<TargetValue>(operand.getValue());
+
+            auto definitions = targetValue.getDefinitions();
+
+            if(definitions.empty())
+            {
+                continue;
+            }
+
+            assert(definitions.size() == 1);
+
+            auto definingOperation = definitions.front().getOperation();
+
+            operations.push_back(definingOperation);
+        }
+    }
+    else
+    {
+        for(auto& use : getOperands())
+        {
+            // skip normal values that are not operations
+            if(!use.getValue().isOperation())
+            {
+                continue;
+            }
+
+            operations.push_back(Operation(use.getOperation()));
+        }
     }
 
     return operations;
@@ -206,10 +202,37 @@ OperationList Operation::getSuccessors() const
 {
     OperationList operations;
 
-    for(auto& use : _implementation->getUses())
+    if(isTargetOperation())
     {
-        operations.push_back(use.getOperation());
+        auto targetOperation = value_cast<TargetOperation>(*this);
+
+        if(targetOperation.hasOutputOperand())
+        {
+            auto& output = targetOperation.getOutputOperand();
+
+            for(auto& use : output.getValue().getUses())
+            {
+                auto user = use.getParent().getValue();
+
+                if(user == targetOperation)
+                {
+                    continue;
+                }
+
+                assert(user.isOperation());
+
+                operations.push_back(value_cast<Operation>(user));
+            }
+        }
     }
+    else
+    {
+        for(auto& use : _implementation->getUses())
+        {
+            operations.push_back(use.getOperation());
+        }
+    }
+
 
     return operations;
 }
@@ -242,8 +265,7 @@ bool Operation::isGradientOperation() const
 
 bool Operation::isPHI() const
 {
-    return static_cast<bool>(std::dynamic_pointer_cast<PHIOperationImplementation>(
-        getValueImplementation()));
+    return _implementation->isPHI();
 }
 
 bool Operation::isReturn() const
@@ -254,6 +276,17 @@ bool Operation::isReturn() const
 bool Operation::isCall() const
 {
     return _implementation->isCall();
+}
+
+bool Operation::isVoid() const
+{
+    return getType().isVoid();
+}
+
+bool Operation::isTargetOperation() const
+{
+    return static_cast<bool>(std::dynamic_pointer_cast<TargetOperationImplementation>(
+        getValueImplementation()));
 }
 
 Type Operation::getType() const
@@ -276,6 +309,18 @@ void Operation::setParent(const BasicBlock& parent)
     _implementation->setParent(parent);
 }
 
+void Operation::detach()
+{
+    util::log("Operation") << "Detaching uses of " << toString() << "...\n";
+    for(auto use = begin(); use != end(); )
+    {
+        auto next = use; ++next;
+        util::log("Operation") << " detaching use " << use->toString() << "\n";
+        use->detach();
+        use = next;
+    }
+}
+
 void Operation::setIterator(Operation::operation_iterator iterator)
 {
     _implementation->setIterator(iterator);
@@ -289,6 +334,11 @@ Operation::operation_iterator Operation::getIterator()
 Operation::const_operation_iterator Operation::getIterator() const
 {
     return _implementation->getIterator();
+}
+
+size_t Operation::getIndexInBasicBlock() const
+{
+    return std::distance(const_operation_iterator(getBasicBlock().begin()), getIterator());
 }
 
 Context* Operation::getContext()

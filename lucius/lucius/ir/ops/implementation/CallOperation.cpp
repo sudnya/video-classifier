@@ -98,7 +98,17 @@ public:
 
     virtual BasicBlockVector getPossibleTargets() const
     {
+        if(getBasicBlock().isExitBlock())
+        {
+            return {};
+        }
+
         return {getBasicBlock().getNextBasicBlock()};
+    }
+
+    virtual bool canFallthrough() const
+    {
+        return true;
     }
 
 };

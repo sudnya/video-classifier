@@ -98,8 +98,8 @@ void gatherOverOperations(Matrix& result, const Matrix& input, const StaticOpera
 
     assert(op == PossibleOperationType());
 
-    gatherOverPrecisions<PossibleOperationType, AllPrecisions>(result, input, op,
-        precision, AllPrecisions());
+    gatherOverPrecisions<PossibleOperationType>(result, input, op,
+        precision, AllFloatingPointPrecisions());
 }
 
 template<typename PossibleOperations>
@@ -240,7 +240,7 @@ void indirectGatherOverOperations(Matrix& result, const Matrix& input, const Mat
     assert(op == PossibleOperationType());
 
     indirectGatherOverPrecisions<PossibleOperationType>(result, input, indices, op,
-        AllPrecisions());
+        AllFloatingPointPrecisions());
 }
 
 template<typename PossibleOperations>

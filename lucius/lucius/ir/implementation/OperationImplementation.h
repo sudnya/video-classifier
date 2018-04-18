@@ -36,6 +36,7 @@ public:
 
 public:
     using UseList = std::list<Use>;
+    using ValueList = std::list<Value>;
 
     using iterator = UseList::iterator;
     using const_iterator = UseList::const_iterator;
@@ -46,6 +47,18 @@ public:
 
     const Shape& getOperandShape(size_t index) const;
           Shape& getOperandShape(size_t index);
+
+public:
+    void setOperands(const UseList& uses);
+    void setOperands(const ValueList& values);
+
+public:
+    void appendOperand(const Use& use);
+    void appendOperand(const Value& value);
+
+public:
+    void replaceOperand(const Use& original, const Use& newOperand);
+    void insertOperand(iterator position, const Use& newOperand);
 
 public:
     const UseList& getOperands() const;
@@ -61,9 +74,6 @@ public:
 public:
     size_t size() const;
     bool  empty() const;
-
-public:
-    void setOperands(const UseList& uses);
 
 public:
     BasicBlock getParent() const;
@@ -83,11 +93,18 @@ public:
     const_operation_iterator getIterator() const;
 
 public:
+    void setImplementation(std::weak_ptr<OperationImplementation> implementation);
+    std::shared_ptr<OperationImplementation> getImplementation() const;
+
+public:
     virtual std::string name() const = 0;
 
 public:
     virtual std::string toString() const;
     virtual std::string toSummaryString() const;
+
+private:
+    std::weak_ptr<OperationImplementation> _this;
 
 private:
     std::weak_ptr<BasicBlockImplementation> _parent;

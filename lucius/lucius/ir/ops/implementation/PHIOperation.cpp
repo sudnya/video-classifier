@@ -7,7 +7,10 @@
 // Lucius Includes
 #include <lucius/ir/ops/interface/PHIOperation.h>
 
+#include <lucius/ir/ops/implementation/PHIOperationImplementation.h>
+
 #include <lucius/ir/interface/BasicBlock.h>
+#include <lucius/ir/interface/Use.h>
 
 #include <lucius/util/interface/debug.h>
 
@@ -16,6 +19,12 @@ namespace lucius
 
 namespace ir
 {
+
+PHIOperation::PHIOperation()
+: PHIOperation(std::make_shared<PHIOperationImplementation>())
+{
+
+}
 
 PHIOperation::PHIOperation(std::shared_ptr<ValueImplementation> implementation)
 : Operation(implementation)
@@ -28,11 +37,16 @@ PHIOperation::~PHIOperation()
 
 }
 
-PHIOperation::BasicBlockVector PHIOperation::getPredecessorBasicBlocks() const
+const PHIOperation::BasicBlockVector& PHIOperation::getIncomingBasicBlocks() const
 {
-    assertM(false, "Not implemented.");
+    return std::static_pointer_cast<PHIOperationImplementation>(
+        getImplementation())->getIncomingBasicBlocks();
+}
 
-    return {};
+void PHIOperation::addIncomingValue(const Value& value, const BasicBlock& predecessor)
+{
+    std::static_pointer_cast<PHIOperationImplementation>(
+        getImplementation())->addIncomingValue(value, predecessor);
 }
 
 } // namespace ir

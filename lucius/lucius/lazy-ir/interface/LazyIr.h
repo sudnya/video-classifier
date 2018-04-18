@@ -17,6 +17,8 @@ namespace lucius { namespace lazy { class LazyValue; } }
 namespace lucius { namespace ir { class IRBuilder;  } }
 namespace lucius { namespace ir { class BasicBlock; } }
 
+namespace lucius { namespace analysis { class Analysis; } }
+
 namespace lucius { namespace matrix { class Matrix; } }
 
 namespace lucius
@@ -39,6 +41,18 @@ void loadThreadLocalContext(std::istream& stream);
 
 /*! \brief Get the IR Builder. */
 ir::IRBuilder& getBuilder();
+
+/*! \brief Get the named analysis. */
+analysis::Analysis& getAnalysis(const std::string& name);
+
+/*! \brief Invalidate all analyses. */
+void invalidateAnalyses();
+
+/*! \brief Convert the IR for lazy programs to SSA form. */
+void convertProgramToSSA();
+
+/*! \brief Register a lazy value with the current context. */
+void registerLazyValue(const LazyValue& value);
 
 /*! \brief Get a lazy value constant representation of a Matrix. */
 LazyValue getConstant(const matrix::Matrix& );

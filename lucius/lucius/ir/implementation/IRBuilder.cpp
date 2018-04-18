@@ -142,20 +142,24 @@ public:
 
     void setInsertionPoint(InsertionPoint* p)
     {
+        util::log("IRBuilder") << "Setting insertion point to "
+            << p->getBasicBlock().name() << "\n";
         _currentInsertionPoint = p;
     }
 
     void setInsertionPoint(const BasicBlock& block)
     {
+        util::log("IRBuilder") << "Setting insertion point to " << block.name() << "\n";
         *_currentInsertionPoint = InsertionPoint(block);
     }
 
 public:
     Operation insertOperation(const Operation& op)
     {
-        util::log("IRBuilder") << "Adding operation " + op.toString() + "\n";
-
         getInsertionPoint()->getBasicBlock().push_back(op);
+
+        util::log("IRBuilder") << " Adding operation " <<
+            getInsertionPoint()->getBasicBlock().back().toString() << "\n";
 
         return op;
     }

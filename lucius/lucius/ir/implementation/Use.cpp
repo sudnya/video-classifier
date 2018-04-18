@@ -50,7 +50,16 @@ public:
 public:
     Operation getOperation() const
     {
-        return Operation(_value);
+        if(hasParent())
+        {
+            return value_cast<Operation>(getUser().getValue());
+        }
+        else
+        {
+            assert(getValue().isOperation());
+
+            return value_cast<Operation>(getValue());
+        }
     }
 
     BasicBlock getBasicBlock() const
@@ -67,6 +76,11 @@ public:
     User getParent() const
     {
         return User(_parent.lock());
+    }
+
+    bool hasParent() const
+    {
+        return !_parent.expired();
     }
 
 public:

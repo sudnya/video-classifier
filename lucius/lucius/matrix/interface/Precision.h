@@ -19,6 +19,7 @@ public:
         Half,
         Single,
         Double,
+        SizeT
     };
 
 public:
@@ -79,7 +80,18 @@ public:
 
 };
 
-typedef std::tuple<HalfPrecision, SinglePrecision, DoublePrecision> AllPrecisions;
+class SizeTPrecision : public Precision
+{
+public:
+    typedef size_t type;
+
+public:
+    SizeTPrecision();
+
+};
+
+typedef std::tuple<HalfPrecision, SinglePrecision, DoublePrecision> AllFloatingPointPrecisions;
+typedef std::tuple<HalfPrecision, SinglePrecision, DoublePrecision, SizeTPrecision> AllPrecisions;
 
 }
 }

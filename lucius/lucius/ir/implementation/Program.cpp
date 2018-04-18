@@ -136,6 +136,26 @@ void Program::setIsFinishedEntryPoint(Function f)
     getModule().addFunction(f);
 }
 
+Program::iterator Program::begin()
+{
+    return getModule().begin();
+}
+
+Program::const_iterator Program::begin() const
+{
+    return getModule().begin();
+}
+
+Program::iterator Program::end()
+{
+    return getModule().end();
+}
+
+Program::const_iterator Program::end() const
+{
+    return getModule().end();
+}
+
 void Program::clear()
 {
     return getModule().clear();

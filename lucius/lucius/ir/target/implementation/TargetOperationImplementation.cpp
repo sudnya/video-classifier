@@ -71,12 +71,12 @@ void TargetOperationImplementation::setOutputOperand(const TargetValue& v)
 {
     if(!_hasOutputOperand)
     {
-        getOperands().push_back(Use(v.getValue()));
+        appendOperand(v);
         _hasOutputOperand = true;
     }
     else
     {
-        getOutputOperand() = Use(v.getValue());
+        setOperand(v, size() - 1);
     }
 }
 
@@ -84,7 +84,7 @@ void TargetOperationImplementation::setOperand(const TargetValue& v, size_t inde
 {
     _growToSupportIndex(index);
 
-    getOperand(index) = Use(v.getValue());
+    replaceOperand(getOperand(index), Use(v.getValue()));
 }
 
 void TargetOperationImplementation::appendOperand(const TargetValue& v)
@@ -97,7 +97,7 @@ void TargetOperationImplementation::appendOperand(const TargetValue& v)
         --end;
     }
 
-    getOperands().insert(end, Use(v.getValue()));
+    insertOperand(end, Use(v.getValue()));
 }
 
 matrix::Matrix TargetOperationImplementation::getOperandDataAsTensor(size_t index) const
@@ -116,19 +116,15 @@ matrix::Operator TargetOperationImplementation::getOperandDataAsOperator(size_t 
     auto value = ir::value_cast<TargetValue>(operand.getValue());
 
     return value.getDataAsOperator();
+}
 
-    if(value.isConstant())
-    {
-        auto constant = ir::value_cast<ConstantOperator>(value);
+size_t TargetOperationImplementation::getOperandDataAsInteger(size_t index) const
+{
+    auto operand = getOperand(index);
 
-        return constant.getOperator();
-    }
-    else
-    {
-        auto data = data_cast<OperatorData>(value.getData());
+    auto value = ir::value_cast<TargetValue>(operand.getValue());
 
-        return data.getOperator();
-    }
+    return value.getDataAsInteger();
 }
 
 std::string TargetOperationImplementation::toString() const

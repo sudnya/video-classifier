@@ -64,6 +64,9 @@ public:
     /*! \brief Is the type void */
     bool isVoid() const;
 
+    /*! \brief Is the type a basic block. */
+    bool isBasicBlock() const;
+
     /*! \brief Get the number of bytes needed to represent the type. */
     size_t getBytes() const;
 

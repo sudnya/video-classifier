@@ -6,6 +6,9 @@
 
 #pragma once
 
+// Lucius Includes
+#include <lucius/util/interface/IteratorRange.h>
+
 // Standard Library Includes
 #include <list>
 
@@ -51,6 +54,9 @@ public:
     using iterator = UseList::iterator;
     using const_iterator = UseList::const_iterator;
 
+    using IteratorRange = util::IteratorRange<iterator>;
+    using ConstIteratorRange = util::IteratorRange<const_iterator>;
+
 public:
           Use& getOutputOperand();
     const Use& getOutputOperand() const;
@@ -75,6 +81,10 @@ public:
     const_iterator end() const;
 
 public:
+         IteratorRange getInputOperandRange();
+    ConstIteratorRange getInputOperandRange() const;
+
+public:
           UseList& getOperands();
     const UseList& getOperands() const;
 
@@ -83,6 +93,7 @@ public:
 public:
     void setOperand(const TargetValue& v, size_t index);
     void appendOperand(const TargetValue& v);
+    void replaceOperand(const Use& original, const Use& newOperand);
 
 public:
     size_t getInputOperandCount() const;
@@ -91,6 +102,7 @@ public:
     bool isValid() const;
     bool isCall() const;
     bool isReturn() const;
+    bool isPHI() const;
 
 public:
     std::string toString() const;

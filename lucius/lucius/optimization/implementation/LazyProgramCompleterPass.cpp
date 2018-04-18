@@ -66,11 +66,19 @@ static void addMissingReturns(ir::Function& function)
             exitBlock = function.insert(ir::BasicBlock());
         }
 
-        // return the last value
-        exitBlock.push_back(ir::ReturnOperation(returnValue));
+        // return the last value if not void
+        if(returnValue.isVoid())
+        {
+            exitBlock.push_back(ir::ReturnOperation());
+        }
+        else
+        {
+
+            exitBlock.push_back(ir::ReturnOperation(returnValue));
+        }
 
         util::log("LazyProgramCompleterPass")
-            << "  adding missing return with value '" << exitBlock.back().toString() << "'\n";
+            << "  adding missing return '" << exitBlock.back().toString() << "'\n";
     }
 }
 

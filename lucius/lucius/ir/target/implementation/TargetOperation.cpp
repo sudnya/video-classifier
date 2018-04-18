@@ -35,6 +35,7 @@ TargetOperation::TargetOperation()
 TargetOperation::TargetOperation(std::shared_ptr<ValueImplementation> value)
 : _implementation(std::static_pointer_cast<TargetOperationImplementation>(value))
 {
+    _implementation->setImplementation(_implementation);
     assert(Value(value).isTargetOperation());
 }
 
@@ -63,10 +64,6 @@ void TargetOperation::setOutputOperand(const TargetValue& v)
     TargetValue(v).addDefinition(Use(*this));
 
     getTargetOperationImplementation()->setOutputOperand(v);
-
-    auto position = getOutputOperandPosition();
-
-    position->setParent(User(_implementation), position);
 }
 
 Use& TargetOperation::getOutputOperand()
@@ -158,6 +155,16 @@ TargetOperation::const_iterator TargetOperation::end() const
     return getOperands().end();
 }
 
+TargetOperation::IteratorRange TargetOperation::getInputOperandRange()
+{
+    return IteratorRange(begin(), hasOutputOperand() ? --end() : end());
+}
+
+TargetOperation::ConstIteratorRange TargetOperation::getInputOperandRange() const
+{
+    return ConstIteratorRange(begin(), hasOutputOperand() ? --end() : end());
+}
+
 TargetOperation::UseList& TargetOperation::getOperands()
 {
     return getTargetOperationImplementation()->getOperands();
@@ -176,23 +183,16 @@ bool TargetOperation::hasInputOperands() const
 void TargetOperation::setOperand(const TargetValue& v, size_t index)
 {
     getTargetOperationImplementation()->setOperand(v, index);
-
-    auto position = getOperandPosition(index);
-
-    position->setParent(User(_implementation), position);
-    position->getValue().addUse(*position);
 }
 
 void TargetOperation::appendOperand(const TargetValue& v)
 {
-    size_t index = getInputOperandCount();
-
     getTargetOperationImplementation()->appendOperand(v);
+}
 
-    auto position = getOperandPosition(index);
-
-    position->setParent(User(_implementation), position);
-    position->getValue().addUse(*position);
+void TargetOperation::replaceOperand(const Use& original, const Use& newOperand)
+{
+    getTargetOperationImplementation()->replaceOperand(original, newOperand);
 }
 
 size_t TargetOperation::getInputOperandCount() const
@@ -218,6 +218,11 @@ bool TargetOperation::isCall() const
 bool TargetOperation::isReturn() const
 {
     return _implementation->isReturn();
+}
+
+bool TargetOperation::isPHI() const
+{
+    return _implementation->isPHI();
 }
 
 std::string TargetOperation::toString() const

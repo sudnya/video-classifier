@@ -24,6 +24,9 @@ public:
 public:
     virtual BasicBlockVector getPossibleTargets() const = 0;
 
+public:
+    virtual bool canFallthrough() const = 0;
+
 };
 
 } // namespace ir

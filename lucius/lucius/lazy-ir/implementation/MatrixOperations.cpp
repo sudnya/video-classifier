@@ -21,52 +21,53 @@ namespace lucius
 namespace lazy
 {
 
-LazyValue apply(const LazyValue& input, const UnaryOperator& op)
+LazyValue apply(LazyValue input, const UnaryOperator& op)
 {
     auto& builder = getBuilder();
 
     auto opValue = builder.addConstant(op.getOperator());
 
-    return LazyValue(builder.addApply(input.getValue(), opValue));
+    return LazyValue(builder.addApply(input.getValueForRead(), opValue));
 }
 
-void apply(LazyValue& output, const LazyValue& input, const UnaryOperator& op)
+void apply(LazyValue& output, LazyValue input, const UnaryOperator& op)
 {
     output = apply(input, op);
 }
 
-LazyValue applyBinary(const LazyValue& left, const LazyValue& right, const BinaryOperator& op)
+LazyValue applyBinary(LazyValue left, LazyValue right, const BinaryOperator& op)
 {
     auto& builder = getBuilder();
 
     auto opValue = builder.addConstant(op.getOperator());
 
-    return LazyValue(builder.addApplyBinary(left.getValue(), right.getValue(), opValue));
+    return LazyValue(builder.addApplyBinary(left.getValueForRead(), right.getValueForRead(),
+        opValue));
 }
 
-void applyBinary(LazyValue& output, const LazyValue& left, const LazyValue& right,
+void applyBinary(LazyValue output, LazyValue left, LazyValue right,
     const BinaryOperator& op)
 {
-    output = applyBinary(left, right, op);
+    output.addDefinition(applyBinary(left, right, op).getValue());
 }
 
-LazyValue reduce(const LazyValue& input, const Dimension& d, const BinaryOperator& op)
+LazyValue reduce(LazyValue input, const Dimension& d, const BinaryOperator& op)
 {
     auto& builder = getBuilder();
 
     auto operationValue = builder.addConstant(op.getOperator());
     auto dimensionValue = builder.addConstant(d);
 
-    return LazyValue(builder.addReduce(input.getValue(), dimensionValue, operationValue));
+    return LazyValue(builder.addReduce(input.getValueForRead(), dimensionValue, operationValue));
 }
 
-void reduce(LazyValue& result, const LazyValue& input, const Dimension& d,
+void reduce(LazyValue result, LazyValue input, const Dimension& d,
     const BinaryOperator& op)
 {
-    result = reduce(input, d, op);
+    result.addDefinition(reduce(input, d, op).getValue());
 }
 
-LazyValue broadcast(const LazyValue& left, const LazyValue& right, const Dimension& d,
+LazyValue broadcast(LazyValue left, LazyValue right, const Dimension& d,
     const BinaryOperator& op)
 {
     auto& builder = getBuilder();
@@ -74,14 +75,14 @@ LazyValue broadcast(const LazyValue& left, const LazyValue& right, const Dimensi
     auto operationValue = builder.addConstant(op.getOperator());
     auto dimensionValue = builder.addConstant(d);
 
-    return LazyValue(builder.addBroadcast(left.getValue(), right.getValue(),
+    return LazyValue(builder.addBroadcast(left.getValueForRead(), right.getValueForRead(),
         dimensionValue, operationValue));
 }
 
-void broadcast(LazyValue& result, const LazyValue& left, const LazyValue& right,
+void broadcast(LazyValue result, LazyValue left, LazyValue right,
     const Dimension& d, const BinaryOperator& op)
 {
-    result = broadcast(left, right, d, op);
+    result.addDefinition(broadcast(left, right, d, op).getValue());
 }
 
 LazyValue zeros(const Dimension& size, const Precision& precision)
@@ -95,7 +96,7 @@ void zeros(LazyValue& output)
 {
     auto& builder = getBuilder();
 
-    output = LazyValue(builder.addZeros(output.getValue().getType()));
+    output.addDefinition(builder.addZeros(output.getValue().getType()));
 }
 
 LazyValue ones(const Dimension& size, const Precision& precision)
@@ -109,7 +110,7 @@ void ones(LazyValue& result)
 {
     auto& builder = getBuilder();
 
-    result = LazyValue(builder.addOnes(result.getValue().getType()));
+    result.addDefinition(builder.addOnes(result.getValue().getType()));
 }
 
 LazyValue range(const Dimension& size, const Precision& precision)
@@ -123,7 +124,7 @@ void range(LazyValue& result)
 {
     auto& builder = getBuilder();
 
-    result = LazyValue(builder.addRange(result.getValue().getType()));
+    result.addDefinition(builder.addRange(result.getValue().getType()));
 }
 
 }

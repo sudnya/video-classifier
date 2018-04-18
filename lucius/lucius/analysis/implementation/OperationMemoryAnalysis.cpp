@@ -11,6 +11,9 @@
 #include <lucius/ir/interface/Value.h>
 #include <lucius/ir/interface/Use.h>
 #include <lucius/ir/interface/Operation.h>
+#include <lucius/ir/interface/Shape.h>
+
+#include <lucius/ir/types/interface/TensorType.h>
 
 // Standard Library Incldues
 #include <cassert>
@@ -36,6 +39,12 @@ static bool isTypeMemoryUsageStatic(const ir::Type& type)
     if(type.isScalar())
     {
         return true;
+    }
+    else if(type.isTensor())
+    {
+        auto tensor = ir::type_cast<ir::TensorType>(type);
+
+        return tensor.getShape().areAllDimensionsKnown();
     }
 
     // TODO: handle more interesting cases

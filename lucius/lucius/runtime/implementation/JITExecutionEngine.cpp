@@ -329,15 +329,19 @@ static void runTargetIndependentOptimizations(Program& program,
 
 static void addLoweringPasses(PassManager& manager, DynamicProgramState& state)
 {
+    // Instruction selection
     manager.addPass(PassFactory::create("TableOperationSelectionPass"));
-
-    manager.addPass(PassFactory::create("MinimalMemoryOperationSchedulingPass"));
-    manager.addPass(PassFactory::create("DynamicMemoryAllocationPass"));
-
     //manager.addPass(PassFactory::create("OperationDecomposerPass"));
+
+    // Instruction scheduling
+    manager.addPass(PassFactory::create("MinimalMemoryOperationSchedulingPass"));
+
+    // Back propagation
     manager.addPass(PassFactory::create("MemoryEfficientBackPropagationPass"));
 
+    // Finalization (convert out of SSA, add memory allocation)
     manager.addPass(PassFactory::create("OperationFinalizationPass"));
+    manager.addPass(PassFactory::create("DynamicMemoryAllocationPass"));
 }
 
 class JITEngine

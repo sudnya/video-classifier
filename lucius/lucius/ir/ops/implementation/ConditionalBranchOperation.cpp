@@ -14,7 +14,7 @@
 
 #include <lucius/ir/interface/BasicBlock.h>
 
-#include <lucius/ir/implementation/OperationImplementation.h>
+#include <lucius/ir/ops/implementation/ControlOperationImplementation.h>
 
 namespace lucius
 {
@@ -22,7 +22,7 @@ namespace lucius
 namespace ir
 {
 
-class ConditionalBranchOperationImplementation : public OperationImplementation
+class ConditionalBranchOperationImplementation : public ControlOperationImplementation
 {
 public:
     ShapeList getOutputShapes(const ShapeList& inputShapes) const
@@ -51,6 +51,19 @@ public:
     Type getType() const
     {
         return Type(Type::VoidId);
+    }
+
+    virtual BasicBlockVector getPossibleTargets() const
+    {
+        auto target      = value_cast<BasicBlock>(getOperand(1).getValue());
+        auto fallthrough = value_cast<BasicBlock>(getOperand(2).getValue());
+
+        return {target, fallthrough};
+    }
+
+    virtual bool canFallthrough() const
+    {
+        return false;
     }
 
 };

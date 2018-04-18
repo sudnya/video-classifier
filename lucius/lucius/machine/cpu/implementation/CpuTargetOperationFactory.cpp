@@ -9,10 +9,16 @@
 
 #include <lucius/machine/generic/interface/CallOperation.h>
 #include <lucius/machine/generic/interface/ReturnOperation.h>
+#include <lucius/machine/generic/interface/BranchOperation.h>
+#include <lucius/machine/generic/interface/PHIOperation.h>
 
 #include <lucius/machine/generic/interface/TensorValue.h>
+#include <lucius/machine/generic/interface/IntegerValue.h>
 
 #include <lucius/machine/cpu/interface/BinaryApplyOperation.h>
+#include <lucius/machine/cpu/interface/ZerosOperation.h>
+#include <lucius/machine/cpu/interface/CopyOperation.h>
+#include <lucius/machine/cpu/interface/LessOperation.h>
 
 #include <lucius/ir/interface/Type.h>
 
@@ -51,9 +57,29 @@ ir::TargetOperation CpuTargetOperationFactory::create(const std::string& name) c
     {
         return generic::ReturnOperation();
     }
+    else if(name == "branch")
+    {
+        return generic::BranchOperation();
+    }
+    else if(name == "phi")
+    {
+        return generic::PHIOperation();
+    }
     else if(name == "cpu-binary-apply")
     {
         return BinaryApplyOperation();
+    }
+    else if(name == "cpu-zeros")
+    {
+        return ZerosOperation();
+    }
+    else if(name == "cpu-copy")
+    {
+        return CopyOperation();
+    }
+    else if(name == "cpu-less")
+    {
+        return LessOperation();
     }
 
     throw std::runtime_error("No support for creating operation named '" + name +
@@ -67,6 +93,10 @@ ir::TargetValue CpuTargetOperationFactory::createOperand(const ir::Type& t) cons
         auto tensorType = ir::type_cast<ir::TensorType>(t);
 
         return generic::TensorValue(tensorType.getShape(), tensorType.getPrecision(), _context);
+    }
+    if(t.isInteger())
+    {
+        return generic::IntegerValue(_context);
     }
 
     throw std::runtime_error("No support for creating operand of type '" + t.toString() +

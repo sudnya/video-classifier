@@ -97,7 +97,7 @@ Operation FunctionImplementation::getReturn() const
 
 Type FunctionImplementation::getReturnType() const
 {
-    if(!empty())
+    if(!empty() && !back().empty())
     {
         auto type = getReturn().getType();
 
@@ -286,7 +286,7 @@ void FunctionImplementation::setParent(std::weak_ptr<ModuleImplementation> paren
 {
     _parent = parent;
 
-    bindToContext(&getParent().getContext());
+    bindToContextIfDifferent(&getParent().getContext());
 }
 
 Module FunctionImplementation::getParent() const

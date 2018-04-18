@@ -31,6 +31,9 @@ public:
 public:
     BasicBlockVector getPossibleTargets() const;
 
+public:
+    bool canFallthrough() const;
+
 };
 
 } // namespace ir

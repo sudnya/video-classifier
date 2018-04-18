@@ -162,6 +162,16 @@ bool Value::isPointer() const
     return getType().isPointer();
 }
 
+bool Value::isBasicBlock() const
+{
+    return getType().isBasicBlock();
+}
+
+bool Value::isTargetValue() const
+{
+    return _implementation->isTargetValue();
+}
+
 Value::UseList& Value::getUses()
 {
     return _implementation->getUses();

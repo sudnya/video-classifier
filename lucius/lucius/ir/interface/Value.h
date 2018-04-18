@@ -61,6 +61,9 @@ public:
     /*! \brief Test if the value is a target operation. */
     bool isTargetOperation() const;
 
+    /*! \brief Test if the value is a target value. */
+    bool isTargetValue() const;
+
     /*! \brief Test if the value is a constant. */
     bool isConstant() const;
 
@@ -87,6 +90,9 @@ public:
 
     /*! \brief Test if the value is a pointer. */
     bool isPointer() const;
+
+    /*! \brief Test if the value is a basic block. */
+    bool isBasicBlock() const;
 
 public:
     using UseList = std::list<Use>;

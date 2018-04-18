@@ -196,7 +196,8 @@ Matrix gatherForwardConvolutionInputOverPrecisions(const Matrix& input, const Ma
 Matrix gatherForwardConvolutionInput(const Matrix& input, const Matrix& filter,
     const Dimension& stride, const Dimension& padding)
 {
-    return gatherForwardConvolutionInputOverPrecisions(input, filter, stride, padding, AllPrecisions());
+    return gatherForwardConvolutionInputOverPrecisions(input, filter, stride, padding,
+        AllFloatingPointPrecisions());
 }
 
 template<typename NativeType>
@@ -288,7 +289,7 @@ Matrix gatherForwardConvolutionFilterOverPrecisions(const Matrix& filter,
 
 Matrix gatherForwardConvolutionFilter(const Matrix& filter)
 {
-    return gatherForwardConvolutionFilterOverPrecisions(filter, AllPrecisions());
+    return gatherForwardConvolutionFilterOverPrecisions(filter, AllFloatingPointPrecisions());
 }
 
 template<typename NativeType>
@@ -371,7 +372,8 @@ void scatterForwardConvolutionResultOverPrecisions(Matrix& result, const Matrix&
 
 void scatterForwardConvolutionResult(Matrix& result, const Matrix& reshapedResult)
 {
-    scatterForwardConvolutionResultOverPrecisions(result, reshapedResult, AllPrecisions());
+    scatterForwardConvolutionResultOverPrecisions(result, reshapedResult,
+        AllFloatingPointPrecisions());
 }
 
 Matrix foldTime(const Matrix& input)
@@ -823,7 +825,7 @@ void genericReverseConvolutionDeltas(Matrix& resultDeltas, const Matrix& filter,
     const Dimension& stride, const Matrix& deltas, const Dimension& padding)
 {
     genericReverseConvolutionDeltasOverPrecisions(resultDeltas, filter, stride,
-        deltas, padding, AllPrecisions());
+        deltas, padding, AllFloatingPointPrecisions());
 }
 
 }
@@ -1207,7 +1209,7 @@ void genericReverseConvolutionGradients(Matrix& gradients, const Matrix& input,
     const Matrix& deltas, const Dimension& stride, const Dimension& padding, double alpha)
 {
     genericReverseConvolutionGradientsOverPrecisions(gradients, input, deltas, stride, padding,
-        alpha, AllPrecisions());
+        alpha, AllFloatingPointPrecisions());
 }
 
 }

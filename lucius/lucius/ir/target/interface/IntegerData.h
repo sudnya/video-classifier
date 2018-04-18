@@ -29,6 +29,7 @@ public:
 
 public:
     size_t getInteger() const;
+    void setInteger(size_t value);
 
 public:
     std::shared_ptr<TargetValueDataImplementation> getImplementation() const;

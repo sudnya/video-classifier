@@ -113,7 +113,7 @@ size_t TableEntry::getInputOperandCount() const
     {
         for(auto& operand : operation)
         {
-            if(operand.isExistingOperand())
+            if(operand.isExistingOperand() && !operand.isOutput())
             {
                 maxIndex = std::max(maxIndex,
                     static_cast<int>(operand.getExistingOperandIndex()));

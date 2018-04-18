@@ -1,3 +1,8 @@
+/*  \file   MatrixOperations.h
+    \date   Sunday August 11, 2013
+    \author Gregory Diamos <solusstultus@gmail.com>
+    \brief  The header file for common matrix operations.
+*/
 
 #pragma once
 

@@ -14,6 +14,9 @@
 
 #include <lucius/util/interface/debug.h>
 
+// Standard Library Includes
+#include <set>
+
 namespace lucius
 {
 
@@ -36,15 +39,15 @@ void buildDominatorTree(BasicBlockMap& tree, BlockIndexMap& positions,
 
     for(auto& block : traversal)
     {
-        positions[block] = positions.size();
+        positions[block] = traversal.size() - positions.size() - 1;
     }
 
     bool changed = true;
 
-    auto exitBlock = traversal.front();
+    auto startBlock = traversal.front();
     traversal.pop_front();
 
-    tree[exitBlock] = exitBlock;
+    tree[startBlock] = startBlock;
 
     while(changed)
     {
@@ -60,17 +63,39 @@ void buildDominatorTree(BasicBlockMap& tree, BlockIndexMap& positions,
 
             assert(!nextBlocks.empty());
 
-            BasicBlock newImmediateDominator = *nextBlocks.begin();
+            auto possibleBlock = nextBlocks.begin();
+            bool anyProcessed = false;
 
-            assert(tree.count(newImmediateDominator) != 0);
+            for( ; possibleBlock != nextBlocks.end(); ++possibleBlock)
+            {
+                anyProcessed = tree.count(*possibleBlock) != 0;
+
+                if(anyProcessed)
+                {
+                    break;
+                }
+            }
+
+            if(!anyProcessed)
+            {
+                continue;
+            }
+
+            auto newImmediateDominator = *possibleBlock;
 
             // intersect
             for(auto& nextBlock : nextBlocks)
             {
+                if(tree.count(nextBlock) == 0)
+                {
+                    continue;
+                }
+
                 newImmediateDominator = intersect(nextBlock, newImmediateDominator,
                     positions, tree);
             }
 
+            // update tree
             auto dominator = tree.find(block);
 
             if(dominator == tree.end())
@@ -116,6 +141,48 @@ BasicBlock intersect(BasicBlock left, BasicBlock right,
     }
 
     return left;
+}
+
+void buildDominanceFrontiers(BlockVectorMap& dominanceFrontiers,
+    const BasicBlockMap& dominatorTree, bool isDominatorAnalysis)
+{
+    std::map<BasicBlock, std::set<BasicBlock>> frontiers;
+
+    for(auto& entry : dominatorTree)
+    {
+        auto& block = entry.first;
+        auto& dominator = entry.second;
+
+        dominanceFrontiers.insert(std::make_pair(block, BlockVector()));
+
+        auto predecessors = isDominatorAnalysis ? block.getPredecessors() : block.getSuccessors();
+
+        if(predecessors.size() < 2)
+        {
+            continue;
+        }
+
+        for(auto& predecessor : predecessors)
+        {
+            auto runner = predecessor;
+
+            while(runner != dominator)
+            {
+                frontiers[runner].insert(block);
+
+                auto newRunner = dominatorTree.find(runner);
+
+                assert(newRunner != dominatorTree.end());
+
+                runner = newRunner->second;
+            }
+        }
+    }
+
+    for(auto& entry : frontiers)
+    {
+        dominanceFrontiers[entry.first] = BlockVector(entry.second.begin(), entry.second.end());
+    }
 }
 
 } // namespace analysis

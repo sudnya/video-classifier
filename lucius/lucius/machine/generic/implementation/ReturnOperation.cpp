@@ -110,6 +110,11 @@ public:
         return {};
     }
 
+    virtual bool canFallthrough() const
+    {
+        return false;
+    }
+
 };
 
 ReturnOperation::ReturnOperation()

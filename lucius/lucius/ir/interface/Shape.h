@@ -36,6 +36,20 @@ public:
     /*! \brief Indicate that the shape is completely unknown. */
     void setUnknown();
 
+    /*! \brief Are dimensions known. */
+    bool areAllDimensionsKnown() const;
+
+public:
+    using       iterator = size_t*;
+    using const_iterator = const size_t*;
+
+public:
+          iterator begin();
+    const_iterator begin() const;
+
+          iterator end();
+    const_iterator end() const;
+
 public:
     /*! \brief Get a reference to the index. */
     size_t& operator[](size_t i);
