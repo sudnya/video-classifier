@@ -11,20 +11,22 @@
 
 namespace lucius
 {
-
-namespace ir
+namespace machine
+{
+namespace generic
 {
 
 /*! \brief A class for representing an operation. */
-class AllocationOperation : public TargetOperation
+class AllocationOperation : public ir::TargetOperation
 {
 public:
-    AllocationOperation(TargetValue allocatedValue);
+    AllocationOperation();
     ~AllocationOperation();
 
 };
 
-} // namespace ir
+} // namespace generic
+} // namespace machine
 } // namespace lucius
 
 

@@ -7,7 +7,7 @@
 // Lucius Includes
 #include <lucius/machine/generic/interface/IntegerValue.h>
 
-#include <lucius/ir/target/interface/IntegerData.h>
+#include <lucius/machine/generic/interface/IntegerData.h>
 
 #include <lucius/ir/interface/Use.h>
 
@@ -28,7 +28,6 @@ class IntegerValueImplementation : public ir::TargetValueImplementation
 public:
     using Type = ir::Type;
     using Context = ir::Context;
-    using IntegerData = ir::IntegerData;
     using TargetValueData = ir::TargetValueData;
 
 public:

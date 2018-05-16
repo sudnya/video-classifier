@@ -61,9 +61,14 @@ Function::~Function()
 
 BasicBlock Function::insert(BasicBlock basicBlock)
 {
+    return insert(end(), basicBlock);
+}
+
+BasicBlock Function::insert(const_iterator position, BasicBlock basicBlock)
+{
     basicBlock.setParent(*this);
 
-    return _implementation->insert(basicBlock);
+    return _implementation->insert(position, basicBlock);
 }
 
 void Function::setIsInitializer(bool isInitializer)
@@ -161,9 +166,21 @@ const std::string& Function::name() const
     return _implementation->getName();
 }
 
+size_t Function::id() const
+{
+    return _implementation->getId();
+}
+
 Function Function::clone() const
 {
-    return Function(_implementation->clone());
+    ValueMap mappedValues;
+
+    return clone(mappedValues);
+}
+
+Function Function::clone(ValueMap& mappedValues) const
+{
+    return Function(_implementation->clone(mappedValues));
 }
 
 std::string Function::toString() const
@@ -184,6 +201,11 @@ void Function::setParent(Module m)
 Module Function::getParent() const
 {
     return _implementation->getParent();
+}
+
+Module Function::getModule() const
+{
+    return getParent();
 }
 
 bool Function::hasParent() const

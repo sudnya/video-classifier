@@ -15,6 +15,9 @@
 #include <lucius/ir/interface/Use.h>
 #include <lucius/ir/interface/Variable.h>
 #include <lucius/ir/interface/Module.h>
+#include <lucius/ir/interface/Value.h>
+
+#include <lucius/ir/ops/interface/ControlOperation.h>
 
 #include <lucius/ir/types/interface/VoidType.h>
 
@@ -36,13 +39,27 @@ FunctionImplementation::FunctionImplementation(const std::string& name)
 
 }
 
-BasicBlock FunctionImplementation::insert(const BasicBlock& block)
+BasicBlock FunctionImplementation::insert(const_iterator position, const BasicBlock& block)
 {
-    _blocks.push_back(block);
+    auto iterator = _blocks.insert(position, block);
 
-    _blocks.back().setIterator(--_blocks.end());
+    iterator->setIterator(iterator);
 
-    return _blocks.back();
+    return *iterator;
+}
+
+void FunctionImplementation::insert(const InsertionPoint& position, const BasicBlockList& blocks)
+{
+    assertM(position.getIterator() == position.getBasicBlock().begin(),
+        "Splitting blocks not implemented.");
+
+    auto basicBlockPosition = position.getBasicBlock().getIterator();
+
+    for(auto& block : blocks)
+    {
+        auto newPosition = _blocks.insert(basicBlockPosition, block);
+        newPosition->setIterator(newPosition);
+    }
 }
 
 FunctionImplementation::iterator FunctionImplementation::begin()
@@ -117,20 +134,6 @@ bool FunctionImplementation::getIsInitializer() const
     return _isInitializer;
 }
 
-void FunctionImplementation::insert(const InsertionPoint& position, const BasicBlockList& blocks)
-{
-    assertM(position.getIterator() == position.getBasicBlock().begin(),
-        "Splitting blocks not implemented.");
-
-    auto basicBlockPosition = position.getBasicBlock().getIterator();
-
-    for(auto& block : blocks)
-    {
-        auto newPosition = _blocks.insert(basicBlockPosition, block);
-        newPosition->setIterator(newPosition);
-    }
-}
-
 const std::string& FunctionImplementation::getName() const
 {
     return _name;
@@ -164,12 +167,16 @@ FunctionImplementation::VariableVector FunctionImplementation::getVariables() co
 
 std::shared_ptr<ValueImplementation> FunctionImplementation::clone() const
 {
+    ValueMap valueMap;
+
+    return clone(valueMap);
+}
+
+std::shared_ptr<ValueImplementation> FunctionImplementation::clone(ValueMap& valueMap) const
+{
     auto functionImplementation = std::make_shared<FunctionImplementation>(getName());
 
     functionImplementation->setIsInitializer(getIsInitializer());
-
-    // Setup new values in the function
-    std::map<Value, Value> valueMap;
 
     // clone blocks
     for(auto& block : *this)
@@ -187,7 +194,7 @@ std::shared_ptr<ValueImplementation> FunctionImplementation::clone() const
             ++newOperation;
         }
 
-        functionImplementation->insert(newBlock);
+        functionImplementation->insert(functionImplementation->end(), newBlock);
     }
 
     // replace values
@@ -244,6 +251,24 @@ std::shared_ptr<ValueImplementation> FunctionImplementation::clone() const
                 position->setParent(User(operation.getImplementation()), position);
                 operand.getValue().addUse(operand);
             }
+        }
+    }
+
+    // add predecessors
+    for(auto& block : *functionImplementation)
+    {
+        if(!block.hasTerminator())
+        {
+            continue;
+        }
+
+        auto terminator = block.getTerminator();
+
+        auto targets = terminator.getPossibleTargets();
+
+        for(auto& target : targets)
+        {
+            target.addPredecessor(block);
         }
     }
 

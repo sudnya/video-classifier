@@ -6,7 +6,9 @@
 
 // Lucius Includes
 #include <lucius/video/interface/OpenCVLibrary.h>
+
 #include <lucius/util/interface/Casts.h>
+#include <lucius/util/interface/debug.h>
 
 // Standard Library Includes
 #include <stdexcept>

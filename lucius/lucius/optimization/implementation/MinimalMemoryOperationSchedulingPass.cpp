@@ -22,7 +22,7 @@ namespace optimization
 {
 
 MinimalMemoryOperationSchedulingPass::MinimalMemoryOperationSchedulingPass()
-: Pass("MinimalMemoryOperationSchedulingPass")
+: FunctionPass("MinimalMemoryOperationSchedulingPass")
 {
 
 }
@@ -179,7 +179,8 @@ static void scheduleBasicBlock(OperationList& newOrder, const OperationList& ori
 void MinimalMemoryOperationSchedulingPass::runOnFunction(ir::Function& function)
 {
     const OperationMemoryAnalysis* memoryAnalysis =
-        static_cast<OperationMemoryAnalysis*>(getAnalysis("OperationMemoryAnalysis"));
+        static_cast<OperationMemoryAnalysis*>(getAnalysisForFunction(function,
+        "OperationMemoryAnalysis"));
 
     util::log("MinimalMemoryOperationSchedulingPass") << "  scheduling operations in function '"
         << function.name() << "'.\n";
@@ -190,6 +191,12 @@ void MinimalMemoryOperationSchedulingPass::runOnFunction(ir::Function& function)
         util::log("MinimalMemoryOperationSchedulingPass")
             << "  scheduling operations in basic block '"
             << basicBlock.name() << "'.\n";
+
+        // skip empty blocks
+        if(basicBlock.empty())
+        {
+            continue;
+        }
 
         OperationList newOrder(basicBlock.phiBegin(), basicBlock.phiEnd());
 

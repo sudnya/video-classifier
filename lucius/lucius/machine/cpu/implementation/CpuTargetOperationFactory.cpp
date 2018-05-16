@@ -11,14 +11,24 @@
 #include <lucius/machine/generic/interface/ReturnOperation.h>
 #include <lucius/machine/generic/interface/BranchOperation.h>
 #include <lucius/machine/generic/interface/PHIOperation.h>
+#include <lucius/machine/generic/interface/AllocationOperation.h>
+#include <lucius/machine/generic/interface/FreeOperation.h>
+#include <lucius/machine/generic/interface/GetOperation.h>
+#include <lucius/machine/generic/interface/LoadOperation.h>
+#include <lucius/machine/generic/interface/StoreOperation.h>
 
 #include <lucius/machine/generic/interface/TensorValue.h>
 #include <lucius/machine/generic/interface/IntegerValue.h>
+#include <lucius/machine/generic/interface/FloatValue.h>
+#include <lucius/machine/generic/interface/RandomStateValue.h>
+#include <lucius/machine/generic/interface/StructureValue.h>
 
 #include <lucius/machine/cpu/interface/BinaryApplyOperation.h>
 #include <lucius/machine/cpu/interface/ZerosOperation.h>
 #include <lucius/machine/cpu/interface/CopyOperation.h>
 #include <lucius/machine/cpu/interface/LessOperation.h>
+#include <lucius/machine/cpu/interface/SRandOperation.h>
+#include <lucius/machine/cpu/interface/RandOperation.h>
 
 #include <lucius/ir/interface/Type.h>
 
@@ -49,21 +59,41 @@ CpuTargetOperationFactory::~CpuTargetOperationFactory()
 
 ir::TargetOperation CpuTargetOperationFactory::create(const std::string& name) const
 {
-    if(name == "call")
+    if(name == "generic-call")
     {
         return generic::CallOperation();
     }
-    else if(name == "return")
+    else if(name == "generic-return")
     {
         return generic::ReturnOperation();
     }
-    else if(name == "branch")
+    else if(name == "generic-branch")
     {
         return generic::BranchOperation();
     }
-    else if(name == "phi")
+    else if(name == "generic-phi")
     {
         return generic::PHIOperation();
+    }
+    else if(name == "generic-get")
+    {
+        return generic::GetOperation();
+    }
+    else if(name == "generic-load")
+    {
+        return generic::LoadOperation();
+    }
+    else if(name == "generic-store")
+    {
+        return generic::StoreOperation();
+    }
+    else if(name == "allocate")
+    {
+        return generic::AllocationOperation();
+    }
+    else if(name == "free")
+    {
+        return generic::FreeOperation();
     }
     else if(name == "cpu-binary-apply")
     {
@@ -81,6 +111,14 @@ ir::TargetOperation CpuTargetOperationFactory::create(const std::string& name) c
     {
         return LessOperation();
     }
+    else if(name == "cpu-srand")
+    {
+        return SRandOperation();
+    }
+    else if(name == "cpu-rand")
+    {
+        return RandOperation();
+    }
 
     throw std::runtime_error("No support for creating operation named '" + name +
         "' for CPU target machine.");
@@ -94,9 +132,21 @@ ir::TargetValue CpuTargetOperationFactory::createOperand(const ir::Type& t) cons
 
         return generic::TensorValue(tensorType.getShape(), tensorType.getPrecision(), _context);
     }
-    if(t.isInteger())
+    else if(t.isInteger())
     {
         return generic::IntegerValue(_context);
+    }
+    else if(t.isFloat())
+    {
+        return generic::FloatValue(_context);
+    }
+    else if(t.isRandomState())
+    {
+        return generic::RandomStateValue(_context);
+    }
+    else if(t.isStructure())
+    {
+        return generic::StructureValue(t, _context);
     }
 
     throw std::runtime_error("No support for creating operand of type '" + t.toString() +

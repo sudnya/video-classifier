@@ -227,6 +227,8 @@ public:
             newImplementation->getOperations().back().setParent(BasicBlock(newImplementation));
         }
 
+        newImplementation->bindToContext(getContext());
+
         return newImplementation;
     }
 
@@ -396,6 +398,23 @@ BasicBlock BasicBlock::getNextBasicBlock() const
 bool BasicBlock::canFallthrough() const
 {
     return _implementation->canFallthrough();
+}
+
+bool BasicBlock::hasTerminator() const
+{
+    if(empty())
+    {
+        return false;
+    }
+
+    return back().isControlOperation();
+}
+
+ControlOperation BasicBlock::getTerminator() const
+{
+    assert(hasTerminator());
+
+    return value_cast<ControlOperation>(back());
 }
 
 void BasicBlock::addPredecessor(const BasicBlock& predecessor)

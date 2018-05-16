@@ -10,7 +10,7 @@
 #include <lucius/ir/interface/Shape.h>
 #include <lucius/ir/interface/Use.h>
 
-#include <lucius/ir/target/interface/TensorData.h>
+#include <lucius/machine/generic/interface/TensorData.h>
 
 #include <lucius/ir/types/interface/TensorType.h>
 
@@ -31,7 +31,6 @@ public:
     using TensorType = ir::TensorType;
     using Type = ir::Type;
     using Context = ir::Context;
-    using TensorData = ir::TensorData;
     using TargetValueData = ir::TargetValueData;
 
 public:

@@ -11,12 +11,14 @@
 
 // Forward Declarations
 namespace lucius { namespace ir { class TargetValueDataImplementation; } }
-namespace lucius { namespace ir { class PointerDataImplementation;    } }
+
+namespace lucius { namespace machine { namespace generic { class PointerDataImplementation; } } }
 
 namespace lucius
 {
-
-namespace ir
+namespace machine
+{
+namespace generic
 {
 
 /*! \brief A class for representing a tensor value resource. */
@@ -25,20 +27,21 @@ class PointerData
 public:
     PointerData();
     PointerData(void* value);
-    PointerData(std::shared_ptr<TargetValueDataImplementation> implementation);
+    PointerData(std::shared_ptr<ir::TargetValueDataImplementation> implementation);
 
 public:
     void* getPointer() const;
 
 public:
-    std::shared_ptr<TargetValueDataImplementation> getImplementation() const;
+    std::shared_ptr<ir::TargetValueDataImplementation> getImplementation() const;
 
 private:
     std::shared_ptr<PointerDataImplementation> _implementation;
 
 };
 
-} // namespace ir
+} // namespace generic
+} // namespace machine
 } // namespace lucius
 
 

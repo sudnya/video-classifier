@@ -19,7 +19,7 @@ class RandomStateTypeImplementation : public TypeImplementation
 {
 public:
     RandomStateTypeImplementation()
-    : TypeImplementation(Type::StructureId)
+    : TypeImplementation(Type::RandomId)
     {
 
     }

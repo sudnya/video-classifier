@@ -21,6 +21,12 @@ namespace lucius
 namespace ir
 {
 
+PHIOperationImplementation::PHIOperationImplementation(const Type& type)
+: _type(type)
+{
+
+}
+
 std::shared_ptr<ValueImplementation> PHIOperationImplementation::clone() const
 {
     return std::make_shared<PHIOperationImplementation>(*this);
@@ -66,9 +72,7 @@ std::string PHIOperationImplementation::toString() const
 
 Type PHIOperationImplementation::getType() const
 {
-    assert(!empty());
-
-    return getOperands().front().getValue().getType();
+    return _type;
 }
 
 bool PHIOperationImplementation::isPHI() const

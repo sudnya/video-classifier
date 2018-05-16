@@ -15,6 +15,8 @@
 // Forward Declarations
 namespace lucius { namespace ir { class Use;                } }
 namespace lucius { namespace ir { class TargetValue;        } }
+namespace lucius { namespace ir { class TargetValueData;    } }
+namespace lucius { namespace ir { class StructureValue;     } }
 namespace lucius { namespace ir { class PerformanceMetrics; } }
 namespace lucius { namespace ir { class BasicBlock;         } }
 
@@ -24,7 +26,6 @@ namespace lucius { namespace matrix { class Operator; } }
 
 namespace lucius
 {
-
 namespace ir
 {
 
@@ -51,9 +52,7 @@ public:
     void appendOperand(const TargetValue& v);
 
 public:
-    matrix::Matrix getOperandDataAsTensor(size_t index) const;
-    matrix::Operator getOperandDataAsOperator(size_t index) const;
-    size_t getOperandDataAsInteger(size_t index) const;
+    TargetValueData getOperandData(size_t index) const;
 
 public:
     /*! \brief Get the performance metrics for this operations. */

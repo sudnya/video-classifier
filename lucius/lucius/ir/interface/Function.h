@@ -10,6 +10,7 @@
 #include <memory>
 #include <vector>
 #include <list>
+#include <map>
 
 // Forward Declarations
 namespace lucius { namespace ir { class FunctionImplementation; } }
@@ -19,6 +20,7 @@ namespace lucius { namespace ir { class Variable;               } }
 namespace lucius { namespace ir { class Type;                   } }
 namespace lucius { namespace ir { class Operation;              } }
 namespace lucius { namespace ir { class Module;                 } }
+namespace lucius { namespace ir { class Value;                  } }
 namespace lucius { namespace ir { class InsertionPoint;         } }
 namespace lucius { namespace ir { class Context;                } }
 
@@ -78,6 +80,12 @@ public:
     */
     BasicBlock insert(BasicBlock basicBlock);
 
+    /*! \brief Insert a single basic block before the specified block in program order.
+
+        \return The inserted block.
+    */
+    BasicBlock insert(const_iterator position, BasicBlock basicBlock);
+
 public:
     /*! \brief Insert an entire subgraph into the function. The first block is considered
                the entry point and the last block is considered the exit point. */
@@ -98,8 +106,13 @@ public:
 
 public:
     const std::string& name() const;
+    size_t id() const;
 
 public:
+    using ValueMap = std::map<Value, Value>;
+
+public:
+    Function clone(ValueMap& mappedValues) const;
     Function clone() const;
 
 public:
@@ -108,6 +121,7 @@ public:
 public:
     void setParent(Module m);
     Module getParent() const;
+    Module getModule() const;
     bool hasParent() const;
 
 public:

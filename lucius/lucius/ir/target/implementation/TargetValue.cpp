@@ -15,16 +15,8 @@
 #include <lucius/ir/implementation/OperationImplementation.h>
 
 #include <lucius/ir/values/interface/ConstantInteger.h>
-#include <lucius/ir/values/interface/ConstantFloat.h>
-#include <lucius/ir/values/interface/ConstantOperator.h>
-#include <lucius/ir/values/interface/ConstantTensor.h>
-#include <lucius/ir/values/interface/ConstantPointer.h>
 
-#include <lucius/ir/target/interface/IntegerData.h>
-#include <lucius/ir/target/interface/FloatData.h>
-#include <lucius/ir/target/interface/OperatorData.h>
-#include <lucius/ir/target/interface/TensorData.h>
-#include <lucius/ir/target/interface/PointerData.h>
+#include <lucius/machine/generic/interface/IntegerData.h>
 
 #include <lucius/ir/target/implementation/TargetValueImplementation.h>
 
@@ -149,9 +141,28 @@ void TargetValue::freeData()
     targetValueImplementation->freeData();
 }
 
+bool TargetValue::isAllocated() const
+{
+    assert(isTargetImplementation(getValueImplementation()));
+
+    auto data = std::static_pointer_cast<TargetValueImplementation>(_implementation)->getData();
+
+    return data.isValid();
+}
+
 Value TargetValue::getValue() const
 {
     return Value(_implementation);
+}
+
+bool TargetValue::isValid() const
+{
+    return static_cast<bool>(_implementation);
+}
+
+bool TargetValue::isVariable() const
+{
+    return getValue().isVariable();
 }
 
 bool TargetValue::isConstant() const
@@ -184,6 +195,16 @@ bool TargetValue::isPointer() const
     return getValue().isPointer();
 }
 
+bool TargetValue::isRandomState() const
+{
+    return getValue().isRandomState();
+}
+
+bool TargetValue::isStructure() const
+{
+    return getValue().isStructure();
+}
+
 bool TargetValue::operator==(const TargetValue& v) const
 {
     return _implementation->getId() == v._implementation->getId();
@@ -212,101 +233,23 @@ TargetValueData TargetValue::getData() const
         {
             auto constantInteger = value_cast<ConstantInteger>(getValue());
 
-            return IntegerData(constantInteger.getValue());
+            return machine::generic::IntegerData(constantInteger.getValue());
         }
     }
 
     return TargetValueData();
 }
 
-size_t TargetValue::getDataAsInteger() const
+void TargetValue::setData(const TargetValueData& data)
 {
-    assert(isInteger());
+    assert(isTargetImplementation(getValueImplementation()));
 
-    if(isConstant())
-    {
-        auto constantInteger = value_cast<ConstantInteger>(getValue());
-
-        return constantInteger.getValue();
-    }
-    else
-    {
-        auto data = data_cast<IntegerData>(getData());
-
-        return data.getInteger();
-    }
+    return std::static_pointer_cast<TargetValueImplementation>(_implementation)->setData(data);
 }
 
-float TargetValue::getDataAsFloat() const
+Context& TargetValue::getContext()
 {
-    assert(isFloat());
-
-    if(isConstant())
-    {
-        auto constantFloat = value_cast<ConstantFloat>(getValue());
-
-        return constantFloat.getValue();
-    }
-    else
-    {
-        auto data = data_cast<FloatData>(getData());
-
-        return data.getFloat();
-    }
-
-}
-
-void* TargetValue::getDataAsPointer() const
-{
-    assert(isPointer());
-
-    if(isConstant())
-    {
-        auto constantPointer = value_cast<ConstantPointer>(getValue());
-
-        return constantPointer.getValue();
-    }
-    else
-    {
-        auto data = data_cast<PointerData>(getData());
-
-        return data.getPointer();
-    }
-}
-
-matrix::Operator TargetValue::getDataAsOperator() const
-{
-    if(isConstant())
-    {
-        auto constant = value_cast<ConstantOperator>(getValue());
-
-        return constant.getOperator();
-    }
-    else
-    {
-        auto data = data_cast<OperatorData>(getData());
-
-        return data.getOperator();
-    }
-
-}
-
-matrix::Matrix TargetValue::getDataAsTensor() const
-{
-    assert(isTensor());
-
-    if(isConstant())
-    {
-        auto constant = value_cast<ConstantTensor>(getValue());
-
-        return constant.getContents();
-    }
-    else
-    {
-        auto data = data_cast<TensorData>(getData());
-
-        return data.getTensor();
-    }
+    return getValue().getContext();
 }
 
 std::shared_ptr<UserImplementation> TargetValue::getUserImplementation() const

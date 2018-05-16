@@ -5,7 +5,7 @@
 */
 
 // Lucius Includes
-#include <lucius/ir/target/interface/AllocationOperation.h>
+#include <lucius/machine/generic/interface/AllocationOperation.h>
 
 #include <lucius/ir/interface/BasicBlock.h>
 #include <lucius/ir/interface/Use.h>
@@ -21,27 +21,28 @@
 
 namespace lucius
 {
-
-namespace ir
+namespace machine
+{
+namespace generic
 {
 
-class AllocationOperationImplementation : public TargetOperationImplementation
+class AllocationOperationImplementation : public ir::TargetOperationImplementation
 {
 public:
-    virtual PerformanceMetrics getPerformanceMetrics() const
+    virtual ir::PerformanceMetrics getPerformanceMetrics() const
     {
         // how many memory operations are needed for a malloc?
         double ops = 1.0;
 
-        return PerformanceMetrics(0.0, ops, 0.0);
+        return ir::PerformanceMetrics(0.0, ops, 0.0);
     }
 
 public:
-    virtual BasicBlock execute()
+    virtual ir::BasicBlock execute()
     {
         auto operand = getOutputOperand();
 
-        auto value = ir::value_cast<TargetValue>(operand.getValue());
+        auto value = ir::value_cast<ir::TargetValue>(operand.getValue());
 
         value.allocateData();
 
@@ -49,7 +50,7 @@ public:
     }
 
 public:
-    virtual std::shared_ptr<ValueImplementation> clone() const
+    virtual std::shared_ptr<ir::ValueImplementation> clone() const
     {
         return std::make_shared<AllocationOperationImplementation>(*this);
     }
@@ -64,21 +65,21 @@ public:
         return name() + " " + getOutputOperand().toString();
     }
 
-    virtual Type getType() const
+    virtual ir::Type getType() const
     {
         auto operand = getOutputOperand();
 
-        auto value = ir::value_cast<TargetValue>(operand.getValue());
+        auto value = ir::value_cast<ir::TargetValue>(operand.getValue());
 
         return value.getType();
     }
 
 };
 
-AllocationOperation::AllocationOperation(TargetValue allocatedValue)
-: TargetOperation(std::make_shared<AllocationOperationImplementation>())
+AllocationOperation::AllocationOperation()
+: ir::TargetOperation(std::make_shared<AllocationOperationImplementation>())
 {
-    setOutputOperand(allocatedValue);
+
 }
 
 AllocationOperation::~AllocationOperation()
@@ -86,7 +87,8 @@ AllocationOperation::~AllocationOperation()
     // intentionally blank
 }
 
-} // namespace ir
+} // namespace generic
+} // namespace machine
 } // namespace lucius
 
 

@@ -14,6 +14,8 @@ namespace lucius { namespace ir { class Function; } }
 
 namespace lucius { namespace optimization { class Pass; } }
 
+namespace lucius { namespace util { class Any; } }
+
 namespace lucius
 {
 namespace optimization
@@ -24,6 +26,7 @@ class PassFactory
 {
 public:
     static std::unique_ptr<Pass> create(const std::string& );
+    static std::unique_ptr<Pass> create(const std::string& , const util::Any& parameters);
 };
 
 } // namespace optimization

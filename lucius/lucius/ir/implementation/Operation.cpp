@@ -321,6 +321,17 @@ void Operation::detach()
     }
 }
 
+void Operation::detachFromBasicBlock()
+{
+    auto block    = getBasicBlock();
+    auto position = getIterator();
+
+    block.getOperations().erase(position);
+
+    setParent(BasicBlock());
+    setIterator(BasicBlock::iterator());
+}
+
 void Operation::setIterator(Operation::operation_iterator iterator)
 {
     _implementation->setIterator(iterator);

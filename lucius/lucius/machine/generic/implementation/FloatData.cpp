@@ -5,7 +5,7 @@
 */
 
 // Lucius Includes
-#include <lucius/ir/target/interface/FloatData.h>
+#include <lucius/machine/generic/interface/FloatData.h>
 
 #include <lucius/ir/target/implementation/TargetValueDataImplementation.h>
 
@@ -14,11 +14,12 @@
 
 namespace lucius
 {
-
-namespace ir
+namespace machine
+{
+namespace generic
 {
 
-class FloatDataImplementation : public TargetValueDataImplementation
+class FloatDataImplementation : public ir::TargetValueDataImplementation
 {
 public:
     FloatDataImplementation(float value)
@@ -56,7 +57,7 @@ FloatData::FloatData()
 
 }
 
-FloatData::FloatData(std::shared_ptr<TargetValueDataImplementation> implementation)
+FloatData::FloatData(std::shared_ptr<ir::TargetValueDataImplementation> implementation)
 : _implementation(std::static_pointer_cast<FloatDataImplementation>(implementation))
 {
     assert(static_cast<bool>(std::dynamic_pointer_cast<FloatDataImplementation>(
@@ -68,12 +69,13 @@ float FloatData::getFloat() const
     return _implementation->getFloat();
 }
 
-std::shared_ptr<TargetValueDataImplementation> FloatData::getImplementation() const
+std::shared_ptr<ir::TargetValueDataImplementation> FloatData::getImplementation() const
 {
     return _implementation;
 }
 
-} // namespace ir
+} // namespace generic
+} // namespace machine
 } // namespace lucius
 
 

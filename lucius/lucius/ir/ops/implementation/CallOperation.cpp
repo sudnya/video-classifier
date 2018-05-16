@@ -22,6 +22,7 @@
 
 // Standard Library Includes
 #include <cassert>
+#include <sstream>
 
 namespace lucius
 {
@@ -109,6 +110,26 @@ public:
     virtual bool canFallthrough() const
     {
         return true;
+    }
+
+    virtual bool isCall() const
+    {
+        return true;
+    }
+
+public:
+    virtual std::string toString() const
+    {
+        if(getType().isVoid())
+        {
+            std::stringstream stream;
+
+            stream << name() << "{%" << getId() << "} " << operandString();
+
+            return stream.str();
+        }
+
+        return OperationImplementation::toString();
     }
 
 };

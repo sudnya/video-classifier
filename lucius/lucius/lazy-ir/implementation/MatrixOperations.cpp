@@ -14,6 +14,7 @@
 #include <lucius/ir/interface/IRBuilder.h>
 #include <lucius/ir/interface/Constant.h>
 #include <lucius/ir/interface/Type.h>
+#include <lucius/ir/interface/Value.h>
 
 namespace lucius
 {

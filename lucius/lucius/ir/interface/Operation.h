@@ -130,6 +130,8 @@ public:
 public:
     /*! \brief Remove uses of operands. */
     void detach();
+    /*! \brief Remove from parent basic block. */
+    void detachFromBasicBlock();
 
 public:
     void setIterator(operation_iterator it);

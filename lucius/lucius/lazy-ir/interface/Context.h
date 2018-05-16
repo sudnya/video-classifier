@@ -9,16 +9,17 @@
 // Standard Library Includes
 #include <cstdint>
 #include <memory>
+#include <vector>
+#include <map>
 
 // Forward Declarations
 namespace lucius { namespace ir { class Context;    } }
 namespace lucius { namespace ir { class BasicBlock; } }
 namespace lucius { namespace ir { class IRBuilder;  } }
+namespace lucius { namespace ir { class Value;      } }
 
 namespace lucius { namespace lazy { class LazyValue;             } }
 namespace lucius { namespace lazy { class ContextImplementation; } }
-
-namespace lucius { namespace analysis { class Analysis; } }
 
 namespace lucius { namespace matrix { class Matrix; } }
 
@@ -45,6 +46,9 @@ public:
     using Matrix = matrix::Matrix;
     using BasicBlock = ir::BasicBlock;
     using IRBuilder = ir::IRBuilder;
+    using MergedValue = std::vector<ir::Value>;
+    using MergedValueVector = std::vector<MergedValue>;
+    using ValueMap = std::map<ir::Value, ir::Value>;
 
 public:
     LazyValue getConstant(const Matrix& value);
@@ -58,12 +62,10 @@ public:
     IRBuilder& getBuilder();
 
 public:
-    analysis::Analysis& getAnalysis(const std::string& name);
-    void invalidateAnalyses();
+    void registerLazyValue(const LazyValue& value);
 
 public:
-    void convertProgramToSSA();
-    void registerLazyValue(const LazyValue& value);
+    MergedValueVector getLazyValues(const ValueMap& mappedValues);
 
 private:
     std::unique_ptr<ContextImplementation> _implementation;

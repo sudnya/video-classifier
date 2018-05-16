@@ -5,7 +5,7 @@
 */
 
 // Lucius Includes
-#include <lucius/ir/target/interface/OperatorData.h>
+#include <lucius/machine/generic/interface/OperatorData.h>
 
 #include <lucius/ir/target/implementation/TargetValueDataImplementation.h>
 
@@ -16,11 +16,12 @@
 
 namespace lucius
 {
-
-namespace ir
+namespace machine
+{
+namespace generic
 {
 
-class OperatorDataImplementation : public TargetValueDataImplementation
+class OperatorDataImplementation : public ir::TargetValueDataImplementation
 {
 public:
     matrix::Operator getOperator() const
@@ -45,7 +46,7 @@ OperatorData::OperatorData()
 
 }
 
-OperatorData::OperatorData(std::shared_ptr<TargetValueDataImplementation> implementation)
+OperatorData::OperatorData(std::shared_ptr<ir::TargetValueDataImplementation> implementation)
 : _implementation(std::static_pointer_cast<OperatorDataImplementation>(implementation))
 {
     assert(static_cast<bool>(std::dynamic_pointer_cast<OperatorDataImplementation>(
@@ -57,12 +58,13 @@ matrix::Operator OperatorData::getOperator() const
     return _implementation->getOperator();
 }
 
-std::shared_ptr<TargetValueDataImplementation> OperatorData::getImplementation() const
+std::shared_ptr<ir::TargetValueDataImplementation> OperatorData::getImplementation() const
 {
     return _implementation;
 }
 
-} // namespace ir
+} // namespace generic
+} // namespace machine
 } // namespace lucius
 
 

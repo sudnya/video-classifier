@@ -100,6 +100,12 @@ public:
         return valueContainer->value;
     }
 
+public:
+    bool empty() const
+    {
+        return !static_cast<bool>(container);
+    }
+
 private:
     class GenericContainer
     {

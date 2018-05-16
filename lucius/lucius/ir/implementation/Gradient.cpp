@@ -50,7 +50,6 @@ Gradient::Gradient(Value v)
 : _implementation(std::dynamic_pointer_cast<GradientOperationImplementation>(
     v.getValueImplementation()))
 {
-
 }
 
 Gradient::Gradient(Operation o)

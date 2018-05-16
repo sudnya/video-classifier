@@ -14,6 +14,7 @@
 #include <lucius/ir/interface/Shape.h>
 
 #include <lucius/ir/types/interface/TensorType.h>
+#include <lucius/ir/types/interface/StructureType.h>
 
 // Standard Library Incldues
 #include <cassert>
@@ -45,6 +46,24 @@ static bool isTypeMemoryUsageStatic(const ir::Type& type)
         auto tensor = ir::type_cast<ir::TensorType>(type);
 
         return tensor.getShape().areAllDimensionsKnown();
+    }
+    else if(type.isRandomState())
+    {
+        return true;
+    }
+    else if(type.isStructure())
+    {
+        auto structure = ir::type_cast<ir::StructureType>(type);
+
+        for(auto& memberType : structure)
+        {
+            if(!isTypeMemoryUsageStatic(memberType))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     // TODO: handle more interesting cases

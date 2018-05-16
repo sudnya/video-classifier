@@ -29,6 +29,7 @@ class PHIOperation : public ir::TargetOperation
 {
 public:
     PHIOperation();
+    PHIOperation(const ir::Type& type);
     explicit PHIOperation(std::shared_ptr<ir::ValueImplementation>);
     ~PHIOperation();
 
@@ -41,6 +42,9 @@ public:
 public:
     void addIncomingValue(const ir::TargetValue&, const ir::BasicBlock& incoming);
     void addIncomingBasicBlock(const ir::BasicBlock& incoming);
+
+public:
+    void setType(const ir::Type& type);
 
 public:
     std::shared_ptr<PHIOperationImplementation> getPHIImplementation() const;

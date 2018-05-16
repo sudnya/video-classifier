@@ -14,6 +14,7 @@
 namespace lucius { namespace ir { class Type;            } }
 namespace lucius { namespace ir { class Use;             } }
 namespace lucius { namespace ir { class Value;           } }
+namespace lucius { namespace ir { class Context;         } }
 namespace lucius { namespace ir { class TargetValueData; } }
 
 namespace lucius { namespace ir { class TargetValueImplementation; } }
@@ -61,26 +62,29 @@ public:
     void allocateData();
     void freeData();
 
+    bool isAllocated() const;
+
 public:
     Value getValue() const;
 
 public:
+    bool isValid() const;
+    bool isVariable() const;
     bool isConstant() const;
     bool isOperation() const;
     bool isTensor() const;
     bool isInteger() const;
     bool isFloat() const;
     bool isPointer() const;
+    bool isRandomState() const;
+    bool isStructure() const;
 
 public:
     TargetValueData getData() const;
+    void setData(const TargetValueData& );
 
 public:
-    size_t getDataAsInteger() const;
-    float getDataAsFloat() const;
-    void* getDataAsPointer() const;
-    matrix::Operator getDataAsOperator() const;
-    matrix::Matrix getDataAsTensor() const;
+    Context& getContext();
 
 public:
     bool operator==(const TargetValue& v) const;

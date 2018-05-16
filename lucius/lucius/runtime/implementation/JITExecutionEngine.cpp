@@ -16,21 +16,23 @@
 #include <lucius/network/interface/Bundle.h>
 
 #include <lucius/ir/interface/BasicBlock.h>
-#include <lucius/ir/interface/Program.h>
 #include <lucius/ir/interface/Operation.h>
 #include <lucius/ir/interface/Function.h>
+#include <lucius/ir/interface/Program.h>
 #include <lucius/ir/interface/Value.h>
+#include <lucius/ir/interface/Variable.h>
 #include <lucius/ir/interface/Use.h>
 #include <lucius/ir/interface/Type.h>
+#include <lucius/ir/interface/Module.h>
 #include <lucius/ir/interface/Utilities.h>
 #include <lucius/ir/interface/InsertionPoint.h>
 #include <lucius/ir/interface/ExternalFunction.h>
 
-#include <lucius/ir/values/interface/ConstantAddress.h>
-
 #include <lucius/ir/types/interface/AddressType.h>
 
 #include <lucius/ir/ops/interface/CallOperation.h>
+
+#include <lucius/ir/values/interface/ConstantPointer.h>
 
 #include <lucius/ir/target/interface/TargetOperation.h>
 #include <lucius/ir/target/interface/TargetValue.h>
@@ -51,6 +53,7 @@ namespace runtime
 {
 
 using Value = ir::Value;
+using Variable = ir::Variable;
 using Program = ir::Program;
 using BasicBlock = ir::BasicBlock;
 using TargetOperation = ir::TargetOperation;
@@ -63,8 +66,9 @@ using TargetValue = ir::TargetValue;
 using TargetValueData = ir::TargetValueData;
 using AddressType = ir::AddressType;
 using ExternalFunction = ir::ExternalFunction;
-using ConstantAddress = ir::ConstantAddress;
+using ConstantPointer = ir::ConstantPointer;
 using CallOperation = ir::CallOperation;
+using ValueMap = std::map<Value, Value>;
 
 using Bundle = network::Bundle;
 
@@ -74,6 +78,12 @@ void luciusJITRecordSavedValue(void* engineImplementation, void* value, void* da
 
 class JITExecutionEngineImplementation
 {
+public:
+    JITExecutionEngineImplementation()
+    {
+
+    }
+
 public:
     void* getValueContents(const Value& v)
     {
@@ -102,8 +112,6 @@ public:
         auto result = _valuesToSave.insert(v);
 
         assert(result.second);
-
-        _insertCallToSaveValue(*result.first);
     }
 
     bool isSavedValue(const TargetValue& v)
@@ -111,23 +119,33 @@ public:
         return _valuesToSave.count(v.getValue()) != 0;
     }
 
+    void addCallsToSaveValues()
+    {
+        for(auto& value : _valuesToSave)
+        {
+            _insertCallToSaveValue(value);
+        }
+    }
+
 private:
-    void _insertCallToSaveValue(const Value& v)
+    void _insertCallToSaveValue(const Value& valueToSave)
     {
         // definitions
-        auto location = getFirstAvailableInsertionPoint(v);
+        auto location = getFirstAvailableInsertionPoint(valueToSave);
+
+        location = prepareBlockToAddTerminator(location);
 
         auto saveValueFunction = ExternalFunction("luciusJITRecordSavedValue",
-            {AddressType(), v.getType()});
+            {AddressType(), valueToSave.getType()});
 
         saveValueFunction.setPassArgumentsAsTargetValues(true);
 
         auto call = location.getBasicBlock().insert(location.getIterator(),
             CallOperation(saveValueFunction));
 
-        call->appendOperand(ConstantAddress(this));
-        call->appendOperand(ConstantAddress(const_cast<Value*>(&v)));
-        call->appendOperand(v);
+        call->appendOperand(ConstantPointer(this));
+        call->appendOperand(ConstantPointer(const_cast<Value*>(&valueToSave)));
+        call->appendOperand(valueToSave);
 
         // register foreign function
         if(!util::isForeignFunctionRegistered("luciusJITRecordSavedValue"))
@@ -156,11 +174,11 @@ void luciusJITRecordSavedValue(void* engineImplementation, void* value, void* da
     auto* savedValue = reinterpret_cast<TargetValue*>(value);
     auto* targetValue = reinterpret_cast<TargetValue*>(data);
 
-    auto implementationAddress = ir::value_cast<ConstantAddress>(*implementationValue);
-    auto* implementation = implementationAddress.getAddress();
+    auto implementationAddress = ir::value_cast<ConstantPointer>(*implementationValue);
+    auto* implementation = implementationAddress.getValue();
 
-    auto savedValueAddress = ir::value_cast<ConstantAddress>(*savedValue);
-    auto* saved = savedValueAddress.getAddress();
+    auto savedValueAddress = ir::value_cast<ConstantPointer>(*savedValue);
+    auto* saved = savedValueAddress.getValue();
 
     reinterpret_cast<JITExecutionEngineImplementation*>(
         implementation)->recordSavedValue(*reinterpret_cast<Value*>(saved), *targetValue);
@@ -211,14 +229,37 @@ public:
 class StackFrame
 {
 public:
+    StackFrame(BasicBlock target)
+    : _returnTarget(target)
+    {
+
+    }
+
+public:
     Bundle getData()
     {
         return _data;
     }
 
+    void setupExpectedReturnValue(TargetValue value)
+    {
+        _expectedReturnValue = value;
+    }
+
     void setReturnValue(TargetValue value)
     {
-        // TODO: type check
+        if(_expectedReturnValue.isValid())
+        {
+            if(value.getType() != _expectedReturnValue.getType())
+            {
+                throw std::runtime_error("Function returned type: '" + value.toString() +
+                    "' that did not match call site expectated type: '" +
+                    _expectedReturnValue.toString() + "'");
+            }
+
+            _expectedReturnValue.setData(value.getData());
+        }
+
         auto data = value.getData();
 
         _data["returnValue"] = data;
@@ -230,6 +271,7 @@ public:
     }
 
 private:
+    TargetValue _expectedReturnValue;
     Bundle _data;
 
 private:
@@ -240,11 +282,15 @@ private:
 class ExecutionStack
 {
 public:
-    void popFrame()
+    BasicBlock popFrame()
     {
+        auto returnTarget = getCurrentFrame().getReturnTarget();
+
         _frames.pop_back();
         util::log("JITExecutionEngine") << "   popped stack frame "
-            << _frames.size() << ".\n";
+            << _frames.size() << ", returning to " << returnTarget.name() << ".\n";
+
+        return returnTarget;
     }
 
 public:
@@ -254,11 +300,11 @@ public:
     }
 
 public:
-    void pushNewFrame()
+    void pushNewFrame(BasicBlock returnTarget)
     {
         util::log("JITExecutionEngine") << "   pushed stack frame "
-            << _frames.size() << ".\n";
-        _frames.push_back(StackFrame());
+            << _frames.size() << " with return target " << returnTarget.name() << ".\n";
+        _frames.push_back(StackFrame(returnTarget));
     }
 
     bool isMainFrame() const
@@ -313,16 +359,47 @@ static void runTargetIndependentOptimizations(Program& program,
 
     for(auto& pass : options.getTargetIndependentOptimizationPasses())
     {
-        manager.addPass(PassFactory::create(pass));
+        if(std::get<1>(pass).empty())
+        {
+            manager.addPass(PassFactory::create(std::get<0>(pass)));
+        }
+        else
+        {
+            manager.addPass(PassFactory::create(std::get<0>(pass), std::get<1>(pass)));
+        }
     }
 
-    // TODO: add passes
+    // TODO: add more passes
 
     // Control flow simplify
     // DCE
     // GVN
     // Strength reduction
     // Operation combining
+
+    manager.runOnProgram(program);
+}
+
+static void runTargetDependentOptimizations(Program& program,
+    const IRExecutionEngineOptions& options)
+{
+    PassManager manager;
+
+    for(auto& pass : options.getTargetDependentOptimizationPasses())
+    {
+        if(std::get<1>(pass).empty())
+        {
+            manager.addPass(PassFactory::create(std::get<0>(pass)));
+        }
+        else
+        {
+            manager.addPass(PassFactory::create(std::get<0>(pass), std::get<1>(pass)));
+        }
+    }
+
+    manager.addPass(PassFactory::create("LowerVariablesPass"));
+
+    // TODO: add more passes
 
     manager.runOnProgram(program);
 }
@@ -344,6 +421,19 @@ static void addLoweringPasses(PassManager& manager, DynamicProgramState& state)
     manager.addPass(PassFactory::create("DynamicMemoryAllocationPass"));
 }
 
+static void allocateGlobalVariables(Program& program)
+{
+    for(auto& variable : program.getModule().getVariables())
+    {
+        auto targetValue = ir::value_cast<ir::TargetValue>(variable.getValue());
+
+        if(!targetValue.isAllocated())
+        {
+            targetValue.allocateData();
+        }
+    }
+}
+
 class JITEngine
 {
 public:
@@ -359,22 +449,23 @@ public:
     {
         util::log("JITExecutionEngine") << "Running JIT.\n";
 
-        util::log("JITExecutionEngine") << " Cloning program.\n";
-        Program augmentedProgram = _getProgram().cloneModuleAndTieVariables();
-
-        if(util::isLogEnabled("JITExecutionEngine"))
-        {
-            util::log("JITExecutionEngine") << "  Cloned program:\n"
-                << augmentedProgram.toString();
-        }
+        // Add calls to save values
+        _jitImplementation.addCallsToSaveValues();
 
         // target independent optimizations
         util::log("JITExecutionEngine") << " Running target independent optimizations.\n";
-        runTargetIndependentOptimizations(augmentedProgram, _options);
+        runTargetIndependentOptimizations(_program, _options);
+
+        // lowering optimizations that need the whole program
+        util::log("JITExecutionEngine") << " Running target dependent optimizations.\n";
+        runTargetDependentOptimizations(_program, _options);
+
+        // Make sure that global variables are allocated
+        allocateGlobalVariables(_program);
 
         // lower and execute initialization code
         util::log("JITExecutionEngine") << " Lowering and executing initialization program.\n";
-        _lowerAndExecuteFunction(augmentedProgram.getInitializationEntryPoint());
+        _lowerAndExecuteFunction(_program.getInitializationEntryPoint());
 
         bool isProgramFinished = false;
 
@@ -382,10 +473,10 @@ public:
         while(!isProgramFinished)
         {
             util::log("JITExecutionEngine") << " lowering and executing learning engine.\n";
-            _lowerAndExecuteFunction(augmentedProgram.getEngineEntryPoint());
+            _lowerAndExecuteFunction(_program.getEngineEntryPoint());
 
             util::log("JITExecutionEngine") << " checking if program is finished.\n";
-            isProgramFinished = _isProgramFinished(augmentedProgram);
+            isProgramFinished = _isProgramFinished(_program);
 
             if(!isProgramFinished)
             {
@@ -423,9 +514,9 @@ private:
             << function.name() << "'.\n";
 
         // set up stack frames, one for main
-        _getStack().pushNewFrame();
+        _getStack().pushNewFrame(_getBasicBlockCache().getFunctionEntryPoint(function));
         // and one for the function being called
-        _getStack().pushNewFrame();
+        _getStack().pushNewFrame(_getBasicBlockCache().getFunctionEntryPoint(function));
 
         // execute
         _executeFunction(_getBasicBlockCache().getFunctionEntryPoint(function));
@@ -475,7 +566,7 @@ private:
 
             if(nextBlock.empty() && nextBlock.isExitBlock())
             {
-                _getStack().popFrame();
+                nextBlock = _getStack().popFrame();
             }
         }
     }
@@ -535,7 +626,7 @@ private:
 
             if(controlOperation.isReturn())
             {
-                _executeReturn(controlOperation);
+                target = _executeReturn(controlOperation);
             }
 
             return target;
@@ -555,28 +646,36 @@ private:
 
             _lowerFunction(function);
 
-            _getStack().pushNewFrame();
+            auto returnValue = ir::value_cast<ir::TargetValue>(
+                controlOperation.getOutputOperand().getValue());
+
+            _getStack().getCurrentFrame().setupExpectedReturnValue(returnValue);
+            _getStack().pushNewFrame(controlOperation.getBasicBlock().getNextBasicBlock());
         }
     }
 
-    void _executeReturn(TargetControlOperation controlOperation)
+    BasicBlock _executeReturn(TargetControlOperation controlOperation)
     {
+        BasicBlock returnTo;
+
         if(!controlOperation.hasInputOperands())
         {
-            _getStack().popFrame();
+            returnTo = _getStack().popFrame();
         }
         else
         {
             auto returnOperand = controlOperation.getOperand(0);
             auto returnValue = TargetValue(returnOperand.getValue());
 
-            _getStack().popFrame();
+            returnTo = _getStack().popFrame();
 
             util::log("JITExecutionEngine") << "    returned value '"
                 << returnValue.toString() << "'.\n";
 
             _getStack().getCurrentFrame().setReturnValue(returnValue);
         }
+
+        return returnTo;
     }
 
 public:

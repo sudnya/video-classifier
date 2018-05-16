@@ -7,13 +7,15 @@
 // Lucius Includes
 #include <lucius/machine/cpu/interface/LessOperation.h>
 
+#include <lucius/machine/generic/interface/IntegerData.h>
+#include <lucius/machine/generic/interface/DataAccessors.h>
+
 #include <lucius/ir/interface/BasicBlock.h>
 #include <lucius/ir/interface/Use.h>
 #include <lucius/ir/interface/Value.h>
 
 #include <lucius/ir/target/interface/TargetValueData.h>
 #include <lucius/ir/target/interface/TargetValue.h>
-#include <lucius/ir/target/interface/IntegerData.h>
 
 #include <lucius/ir/target/interface/PerformanceMetrics.h>
 
@@ -46,11 +48,11 @@ public:
     {
         assert(getType().isInteger());
 
-        auto left  = getOperandDataAsInteger(0);
-        auto right = getOperandDataAsInteger(1);
+        auto left  = generic::getDataAsInteger(getOperand(0));
+        auto right = generic::getDataAsInteger(getOperand(1));
 
         auto outValue = ir::value_cast<ir::TargetValue>(getOutputOperand().getValue());
-        auto out = ir::data_cast<ir::IntegerData>(outValue.getData());
+        auto out = ir::data_cast<generic::IntegerData>(outValue.getData());
 
         out.setInteger(left < right ? 1 : 0);
 

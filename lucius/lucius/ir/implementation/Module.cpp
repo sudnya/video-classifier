@@ -24,7 +24,7 @@ class ModuleImplementation
 {
 public:
     ModuleImplementation(Context& context)
-    : _context(&context)
+    : _name("UnknownModuleName"), _context(&context)
     {
 
     }
@@ -130,11 +130,25 @@ public:
         return _variables;
     }
 
+public:
+    const std::string& getName() const
+    {
+        return _name;
+    }
+
+    void setName(const std::string& name)
+    {
+        _name = name;
+    }
+
 private:
     void _removeSelfReferences()
     {
-        // TODO
+        // TODO: make sure that nothing in the module holds a self reference
     }
+
+private:
+    std::string _name;
 
 private:
     Context* _context;
@@ -248,6 +262,26 @@ std::string Module::toString() const
     }
 
     return stream.str();
+}
+
+void Module::setName(const std::string& name)
+{
+    _implementation->setName(name);
+}
+
+const std::string& Module::name() const
+{
+    return _implementation->getName();
+}
+
+bool Module::operator==(const Module& m) const
+{
+    return name() == m.name();
+}
+
+bool Module::operator!=(const Module& m) const
+{
+    return !(*this == m);
 }
 
 std::shared_ptr<ModuleImplementation> Module::getImplementation()

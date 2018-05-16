@@ -16,6 +16,7 @@
 namespace lucius { namespace ir { class TargetOperationImplementation; } }
 namespace lucius { namespace ir { class ValueImplementation;           } }
 namespace lucius { namespace ir { class Operation;                     } }
+namespace lucius { namespace ir { class BasicBlock;                    } }
 namespace lucius { namespace ir { class TargetValue;                   } }
 namespace lucius { namespace ir { class Use;                           } }
 namespace lucius { namespace ir { class ShapeList;                     } }
@@ -103,6 +104,9 @@ public:
     bool isCall() const;
     bool isReturn() const;
     bool isPHI() const;
+
+public:
+    BasicBlock getBasicBlock() const;
 
 public:
     std::string toString() const;

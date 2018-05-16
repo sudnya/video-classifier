@@ -24,7 +24,7 @@ namespace ir
 class PHIOperation : public Operation
 {
 public:
-    PHIOperation();
+    explicit PHIOperation(const Type& type);
     explicit PHIOperation(std::shared_ptr<ValueImplementation>);
     ~PHIOperation();
 

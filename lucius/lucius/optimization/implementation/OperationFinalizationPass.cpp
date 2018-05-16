@@ -166,7 +166,7 @@ private:
 };
 
 OperationFinalizationPass::OperationFinalizationPass()
-: Pass("OperationFinalizationPass"),
+: FunctionPass("OperationFinalizationPass"),
   _implementation(std::make_unique<OperationFinalizationPassImplementation>())
 {
     // intentionally blank

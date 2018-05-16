@@ -52,7 +52,7 @@ public:
 public:
     std::string toString() const
     {
-        return _shape.toString();
+        return "shape(" + _shape.toString() + ")";
     }
 
 public:

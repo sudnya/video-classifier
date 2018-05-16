@@ -11,8 +11,6 @@
 
 // Forward Declarations
 namespace lucius { namespace ir { class TargetValueDataImplementation; } }
-namespace lucius { namespace ir { class TensorData;                    } }
-namespace lucius { namespace ir { class IntegerData;                   } }
 
 namespace lucius
 {
@@ -25,12 +23,20 @@ class TargetValueData
 {
 public:
     TargetValueData(std::shared_ptr<TargetValueDataImplementation>);
-    TargetValueData(TensorData);
-    TargetValueData(IntegerData);
     TargetValueData();
+
+    template <typename T>
+    TargetValueData(T t)
+    : TargetValueData(t.getImplementation())
+    {
+
+    }
 
 public:
     void* data() const;
+
+public:
+    bool isValid() const;
 
 public:
     std::shared_ptr<TargetValueDataImplementation> getImplementation() const;

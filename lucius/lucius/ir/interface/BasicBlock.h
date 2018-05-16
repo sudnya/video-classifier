@@ -20,6 +20,7 @@ namespace lucius { namespace ir { class ValueImplementation;      } }
 namespace lucius { namespace ir { class UserImplementation;       } }
 namespace lucius { namespace ir { class FunctionImplementation;   } }
 namespace lucius { namespace ir { class Operation;                } }
+namespace lucius { namespace ir { class ControlOperation;         } }
 namespace lucius { namespace ir { class Function;                 } }
 namespace lucius { namespace ir { class Type;                     } }
 
@@ -65,6 +66,12 @@ public:
 
     /*! \brief Can control fall through from this block to the next one in program order. */
     bool canFallthrough() const;
+
+    /*! \brief Does the block contain a terminator operation? */
+    bool hasTerminator() const;
+
+    /*! \brief Get the terminator if the block has one. */
+    ControlOperation getTerminator() const;
 
     /*! \brief Add the named block as a predecessor of this block. */
     void addPredecessor(const BasicBlock& block);

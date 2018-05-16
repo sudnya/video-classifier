@@ -23,6 +23,7 @@
 #include <lucius/ir/values/interface/ConstantShape.h>
 #include <lucius/ir/values/interface/ConstantInteger.h>
 #include <lucius/ir/values/interface/ConstantOperator.h>
+#include <lucius/ir/values/interface/ValueFactory.h>
 
 #include <lucius/ir/ops/interface/CopyOperation.h>
 #include <lucius/ir/ops/interface/ApplyOperation.h>
@@ -45,8 +46,10 @@
 #include <lucius/ir/ops/interface/LessThanOperation.h>
 
 #include <lucius/ir/ops/interface/ConditionalBranchOperation.h>
-
 #include <lucius/ir/ops/interface/ComputeGradientOperation.h>
+
+#include <lucius/ir/ops/interface/StoreOperation.h>
+#include <lucius/ir/ops/interface/LoadOperation.h>
 
 #include <lucius/ir/types/interface/TensorType.h>
 #include <lucius/ir/types/interface/RandomStateType.h>
@@ -147,10 +150,30 @@ public:
         _currentInsertionPoint = p;
     }
 
+    void setInsertionPoint(const InsertionPoint& p)
+    {
+        util::log("IRBuilder") << "Setting insertion point to "
+            << p.getBasicBlock().name() << "\n";
+        *_currentInsertionPoint = p;
+    }
+
     void setInsertionPoint(const BasicBlock& block)
     {
         util::log("IRBuilder") << "Setting insertion point to " << block.name() << "\n";
         *_currentInsertionPoint = InsertionPoint(block);
+    }
+
+    void setInsertionPoint(Function function)
+    {
+        auto block = function.begin();
+
+        if(block != function.end())
+        {
+            setInsertionPoint(*block);
+            return;
+        }
+
+        setInsertionPoint(function.insert(BasicBlock()));
     }
 
 public:
@@ -201,10 +224,16 @@ public:
         _insertionPointStack.clear();
         setupEntryPoint(getProgram());
 
-        auto block = getProgram().getForwardPropagationEntryPoint().insert(BasicBlock());
+        _allocateInsertionPoint();
 
-        _insertionPointStack.push_front(InsertionPoint(block));
-        setInsertionPoint(&_insertionPointStack.front());
+        setInsertionPoint(getProgram().getForwardPropagationEntryPoint());
+    }
+
+private:
+    void _allocateInsertionPoint()
+    {
+        _insertionPointStack.push_back(InsertionPoint());
+        _currentInsertionPoint = &_insertionPointStack.back();
     }
 
 private:
@@ -293,13 +322,29 @@ static Function addFunctionWithUniqueName(Module& module, const std::string& nam
     return newFunction;
 }
 
-void IRBuilder::addInitializationFunction()
+Value IRBuilder::addInitializationFunction()
 {
     auto& module = _implementation->getModule();
 
     auto function = addFunctionWithUniqueName(module, "initializer");
 
     function.setIsInitializer(true);
+
+    _implementation->setInsertionPoint(function);
+
+    auto initializations = _implementation->getProgram().getInitializationEntryPoint();
+
+    if(initializations.empty())
+    {
+        initializations.insert(BasicBlock());
+    }
+
+    auto body = initializations.back();
+    body.push_back(CallOperation(function));
+
+    auto nextBlock = initializations.insert(BasicBlock());
+
+    return body.back();
 }
 
 Value IRBuilder::addCopy(Value input)
@@ -387,30 +432,36 @@ Type IRBuilder::getRandomStateType()
 
 IRBuilder::VariableVector IRBuilder::getAllVariables()
 {
-    VariableVector variables;
+    auto& module = _implementation->getModule();
+
+    return VariableVector(module.getVariables().begin(), module.getVariables().end());
+}
+
+Value IRBuilder::addGradientForVariable(Variable v, Value cost)
+{
+    return _implementation->insertOperation(
+        ComputeGradientOperation(v.getValue(), cost));
+}
+
+Variable IRBuilder::addVariable(Type type)
+{
+    auto value = ValueFactory::create(type);
+
+    value.getValueImplementation()->setIsVariable(true);
 
     auto& module = _implementation->getModule();
 
-    for(auto& function : module)
-    {
-        auto functionVariables = function.getVariables();
-
-        variables.insert(variables.begin(), functionVariables.begin(), functionVariables.end());
-    }
-
-    return variables;
+    return module.addVariable(Variable(value));
 }
 
-Gradient IRBuilder::addGradientForVariable(Variable v, Value cost)
+void IRBuilder::storeToVariable(Variable target, Value source)
 {
-    return Gradient(_implementation->insertOperation(ComputeGradientOperation(v, cost)));
+    _implementation->insertOperation(StoreOperation(target, source));
 }
 
-Variable IRBuilder::registerValueAsVariable(Value value)
+Value IRBuilder::loadFromVariable(Variable source)
 {
-    value.getValueImplementation()->setIsVariable(true);
-
-    return Variable(value);
+    return _implementation->insertOperation(LoadOperation(source));
 }
 
 void IRBuilder::saveInsertionPoint()

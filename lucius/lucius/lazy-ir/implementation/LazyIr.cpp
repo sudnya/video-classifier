@@ -12,6 +12,7 @@
 
 #include <lucius/ir/interface/BasicBlock.h>
 #include <lucius/ir/interface/IRBuilder.h>
+#include <lucius/ir/interface/Value.h>
 
 #include <lucius/util/interface/debug.h>
 
@@ -46,21 +47,6 @@ Context& getThreadLocalContext()
 ir::IRBuilder& getBuilder()
 {
     return getThreadLocalContext().getBuilder();
-}
-
-analysis::Analysis& getAnalysis(const std::string& name)
-{
-    return getThreadLocalContext().getAnalysis(name);
-}
-
-void invalidateAnalyses()
-{
-    return getThreadLocalContext().invalidateAnalyses();
-}
-
-void convertProgramToSSA()
-{
-    getThreadLocalContext().convertProgramToSSA();
 }
 
 void registerLazyValue(const LazyValue& value)
@@ -100,6 +86,12 @@ LazyValue lookupValueByHandle(size_t handle)
     assertM(false, "Not implemented.");
 
     return LazyValue();
+}
+
+MergedValueVector getLazyValues(const ValueMap& valueMap)
+{
+    return getThreadLocalContext().getLazyValues(valueMap);
+
 }
 
 }

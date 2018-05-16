@@ -27,7 +27,7 @@ namespace optimization
 
     Convert out of SSA.
 */
-class OperationFinalizationPass : public Pass
+class OperationFinalizationPass : public FunctionPass
 {
 public:
     OperationFinalizationPass();

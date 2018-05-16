@@ -11,6 +11,7 @@
 
 // Standard Library Includes
 #include <string>
+#include <map>
 
 // Forward Declarations
 namespace lucius { namespace ir { class BasicBlock;               } }
@@ -18,6 +19,7 @@ namespace lucius { namespace ir { class Operation;                } }
 namespace lucius { namespace ir { class Function;                 } }
 namespace lucius { namespace ir { class Module;                   } }
 namespace lucius { namespace ir { class Variable;                 } }
+namespace lucius { namespace ir { class Value;                    } }
 namespace lucius { namespace ir { class InsertionPoint;           } }
 namespace lucius { namespace ir { class ModuleImplementation;     } }
 
@@ -39,7 +41,9 @@ public:
     using const_iterator = BasicBlockList::const_iterator;
 
 public:
-    BasicBlock insert(const BasicBlock& block);
+    BasicBlock insert(const_iterator position, const BasicBlock& block);
+
+    void insert(const InsertionPoint& position, const BasicBlockList& blocks);
 
 public:
     iterator begin();
@@ -72,9 +76,6 @@ public:
     bool getIsInitializer() const;
 
 public:
-    void insert(const InsertionPoint& position, const BasicBlockList& blocks);
-
-public:
     const std::string& getName() const;
 
     void setName(const std::string& name);
@@ -86,6 +87,10 @@ public:
     VariableVector getVariables() const;
 
 public:
+    using ValueMap = std::map<Value, Value>;
+
+public:
+    std::shared_ptr<ValueImplementation> clone(ValueMap& mappedValues) const;
     std::shared_ptr<ValueImplementation> clone() const;
 
 public:

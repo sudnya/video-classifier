@@ -15,7 +15,7 @@ namespace optimization
 {
 
 /*! \brief A class that performs table driven instruction selection. */
-class TableOperationSelectionPass : public Pass
+class TableOperationSelectionPass : public FunctionPass
 {
 public:
     TableOperationSelectionPass();

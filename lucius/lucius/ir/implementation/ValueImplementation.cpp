@@ -113,7 +113,7 @@ void ValueImplementation::bindToContextIfDifferent(Context* context)
     }
 }
 
-Context* ValueImplementation::getContext()
+Context* ValueImplementation::getContext() const
 {
     return _context;
 }

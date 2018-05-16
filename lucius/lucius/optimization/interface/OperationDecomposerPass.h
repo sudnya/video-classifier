@@ -15,7 +15,7 @@ namespace optimization
 {
 
 /*! \brief A class representing an optimization pass. */
-class OperationDecomposerPass : public Pass
+class OperationDecomposerPass : public FunctionPass
 {
 public:
     OperationDecomposerPass();

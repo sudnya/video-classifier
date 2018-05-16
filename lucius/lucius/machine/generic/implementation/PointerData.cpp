@@ -5,7 +5,7 @@
 */
 
 // Lucius Includes
-#include <lucius/ir/target/interface/PointerData.h>
+#include <lucius/machine/generic/interface/PointerData.h>
 
 #include <lucius/ir/target/implementation/TargetValueDataImplementation.h>
 
@@ -14,11 +14,12 @@
 
 namespace lucius
 {
-
-namespace ir
+namespace machine
+{
+namespace generic
 {
 
-class PointerDataImplementation : public TargetValueDataImplementation
+class PointerDataImplementation : public ir::TargetValueDataImplementation
 {
 public:
     PointerDataImplementation(void* value)
@@ -56,7 +57,7 @@ PointerData::PointerData()
 
 }
 
-PointerData::PointerData(std::shared_ptr<TargetValueDataImplementation> implementation)
+PointerData::PointerData(std::shared_ptr<ir::TargetValueDataImplementation> implementation)
 : _implementation(std::static_pointer_cast<PointerDataImplementation>(implementation))
 {
     assert(static_cast<bool>(std::dynamic_pointer_cast<PointerDataImplementation>(
@@ -68,12 +69,13 @@ void* PointerData::getPointer() const
     return _implementation->getPointer();
 }
 
-std::shared_ptr<TargetValueDataImplementation> PointerData::getImplementation() const
+std::shared_ptr<ir::TargetValueDataImplementation> PointerData::getImplementation() const
 {
     return _implementation;
 }
 
-} // namespace ir
+} // namespace generic
+} // namespace machine
 } // namespace lucius
 
 

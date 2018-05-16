@@ -52,10 +52,11 @@ public:
 public:
     using Analysis = analysis::Analysis;
 
-public:
-    /*! \brief An interface to get analysis by name.  Manager retains ownership. */
-    const Analysis* getAnalysis(const std::string& name) const;
-          Analysis* getAnalysis(const std::string& name);
+    /*! \brief An interface to get analysis by name for a specific function.
+               Manager retains ownership.
+    */
+    const Analysis* getAnalysisForFunction(const ir::Function& f, const std::string& name) const;
+          Analysis* getAnalysisForFunction(const ir::Function& f, const std::string& name);
 
 private:
     std::unique_ptr<PassManagerImplementation> _implementation;

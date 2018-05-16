@@ -36,27 +36,42 @@ CpuTargetMachine::TableEntryVector CpuTargetMachine::getEntries() const
     TableEntryVector vector;
 
     vector.push_back(
-        std::make_pair("call", TableEntry({TableOperationEntry("call",
+        std::make_pair("call", TableEntry({TableOperationEntry("generic-call",
             {TableOperandEntry(0, true), TableOperandEntry(0), VariableInputOperandsEntry(1)})}))
     );
 
     vector.push_back(
-        std::make_pair("return", TableEntry({TableOperationEntry("return",
+        std::make_pair("return", TableEntry({TableOperationEntry("generic-return",
             {TableOperandEntry(0)})}))
     );
 
     vector.push_back(
-        std::make_pair("return", TableEntry({TableOperationEntry("return", {})}))
+        std::make_pair("return", TableEntry({TableOperationEntry("generic-return", {})}))
     );
 
     vector.push_back(
-        std::make_pair("phi", TableEntry({TableOperationEntry("phi",
+        std::make_pair("phi", TableEntry({TableOperationEntry("generic-phi",
             {TableOperandEntry(0, true), VariableInputOperandsEntry(0)})}))
     );
 
     vector.push_back(
-        std::make_pair("branch", TableEntry({TableOperationEntry("branch",
+        std::make_pair("get", TableEntry({TableOperationEntry("generic-get",
+            {TableOperandEntry(0, true), TableOperandEntry(0), TableOperandEntry(1)})}))
+    );
+
+    vector.push_back(
+        std::make_pair("branch", TableEntry({TableOperationEntry("generic-branch",
             {TableOperandEntry(0), TableOperandEntry(1), TableOperandEntry(2)})}))
+    );
+
+    vector.push_back(
+        std::make_pair("store", TableEntry({TableOperationEntry("generic-store",
+            {TableOperandEntry(0), TableOperandEntry(1)})}))
+    );
+
+    vector.push_back(
+        std::make_pair("load", TableEntry({TableOperationEntry("generic-load",
+            {TableOperandEntry(0, true), TableOperandEntry(0)})}))
     );
 
     vector.push_back(
@@ -73,6 +88,16 @@ CpuTargetMachine::TableEntryVector CpuTargetMachine::getEntries() const
     vector.push_back(
         std::make_pair("zeros", TableEntry({TableOperationEntry("cpu-zeros",
             {TableOperandEntry(0, true)})}))
+    );
+
+    vector.push_back(
+        std::make_pair("srand", TableEntry({TableOperationEntry("cpu-srand",
+            {TableOperandEntry(0, true), TableOperandEntry(0)})}))
+    );
+
+    vector.push_back(
+        std::make_pair("rand", TableEntry({TableOperationEntry("cpu-rand",
+            {TableOperandEntry(0, true), TableOperandEntry(0)})}))
     );
 
     vector.push_back(

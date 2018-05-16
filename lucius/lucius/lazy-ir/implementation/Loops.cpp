@@ -15,6 +15,7 @@
 
 #include <lucius/ir/interface/BasicBlock.h>
 #include <lucius/ir/interface/IRBuilder.h>
+#include <lucius/ir/interface/Value.h>
 
 // Standard Library Includes
 #include <functional>
@@ -35,7 +36,7 @@ static void addConditionalBranch(IRBuilder& builder, LazyValue condition,
     builder.addConditionalBranch(condition.getValueForRead(), fallthrough, target);
 
     // TODO: be more precise
-    invalidateAnalyses();
+    //invalidateAnalyses();
 }
 
 void forLoop(std::function<LazyValue()> initializer,
@@ -51,7 +52,7 @@ void forLoop(std::function<LazyValue()> initializer,
     BasicBlock exit      = builder.addBasicBlock();
 
     // TODO: be more precise
-    invalidateAnalyses();
+    //invalidateAnalyses();
 
     builder.setInsertionPoint(preheader);
     LazyValue iterator = initializer();

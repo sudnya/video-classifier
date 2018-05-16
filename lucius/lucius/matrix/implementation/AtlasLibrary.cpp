@@ -6,7 +6,9 @@
 
 // Lucius Includes
 #include <lucius/matrix/interface/AtlasLibrary.h>
+
 #include <lucius/util/interface/Casts.h>
+#include <lucius/util/interface/debug.h>
 
 // Standard Library Includes
 #include <stdexcept>
@@ -39,7 +41,7 @@ void AtlasLibrary::sgemm(const int Order, const int TransA,
          const float beta, float *C, const int ldc)
 {
     _check();
-    
+
     (*_interface.cblas_sgemm)(Order, TransA, TransB, M, N, K, alpha, A, lda, B,
         ldb, beta, C, ldc);
 }
@@ -51,7 +53,7 @@ void AtlasLibrary::dgemm(const int Order, const int TransA,
          const double beta, double* C, const int ldc)
 {
     _check();
-    
+
     (*_interface.cblas_dgemm)(Order, TransA, TransB, M, N, K, alpha, A, lda, B,
         ldb, beta, C, ldc);
 }
@@ -59,7 +61,7 @@ void AtlasLibrary::dgemm(const int Order, const int TransA,
 void AtlasLibrary::_check()
 {
     load();
-    
+
     if(!loaded())
     {
         throw std::runtime_error("Tried to call ATLAS function when "
@@ -67,7 +69,7 @@ void AtlasLibrary::_check()
             "installing ATLAS.");
     }
 }
-    
+
 AtlasLibrary::Interface::Interface()
 : _library(nullptr), _failed(false)
 {
@@ -92,7 +94,7 @@ void AtlasLibrary::Interface::load()
 {
     if(_failed)  return;
     if(loaded()) return;
-    
+
     #ifdef __APPLE__
     const char* libraryName = "libcblas.dylib";
     #else
@@ -110,14 +112,14 @@ void AtlasLibrary::Interface::load()
         _failed = true;
         return;
     }
-    
+
     #define DynLink( function ) util::bit_cast(function, \
         dlsym(_library, #function)); checkFunction((void*)function, #function)
-    
+
     DynLink(cblas_sgemm);
     DynLink(cblas_dgemm);
-    
-    #undef DynLink    
+
+    #undef DynLink
 
     util::log("AtlasLibrary") << " Loaded library '" << libraryName
         << "' successfully\n";
@@ -136,7 +138,7 @@ void AtlasLibrary::Interface::unload()
     dlclose(_library);
     _library = nullptr;
 }
-    
+
 AtlasLibrary::Interface AtlasLibrary::_interface;
 
 }

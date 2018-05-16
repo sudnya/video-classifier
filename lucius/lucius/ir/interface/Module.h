@@ -72,7 +72,15 @@ public:
     void clear();
 
 public:
+    void setName(const std::string& name);
+    const std::string& name() const;
+
+public:
     std::string toString() const;
+
+public:
+    bool operator==(const Module&) const;
+    bool operator!=(const Module&) const;
 
 public:
     std::shared_ptr<ModuleImplementation> getImplementation();

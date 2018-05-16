@@ -24,7 +24,11 @@ class RandomState
 {
 public:
     RandomState();
+    RandomState(const RandomState& );
     ~RandomState();
+
+public:
+    RandomState& operator=(const RandomState&);
 
 public:
     detail::RandomStateImplementation& getImplementation();

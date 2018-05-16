@@ -20,8 +20,8 @@ namespace lucius
 namespace ir
 {
 
-PHIOperation::PHIOperation()
-: PHIOperation(std::make_shared<PHIOperationImplementation>())
+PHIOperation::PHIOperation(const Type& type)
+: PHIOperation(std::make_shared<PHIOperationImplementation>(type))
 {
 
 }

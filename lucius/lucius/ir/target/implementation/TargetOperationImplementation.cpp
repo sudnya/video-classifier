@@ -7,17 +7,15 @@
 // Lucius Includes
 #include <lucius/ir/target/implementation/TargetOperationImplementation.h>
 
+#include <lucius/ir/target/interface/TargetValue.h>
+#include <lucius/ir/target/interface/TargetValueData.h>
+
 #include <lucius/ir/interface/Use.h>
 #include <lucius/ir/interface/Value.h>
 
 #include <lucius/matrix/interface/Matrix.h>
 #include <lucius/matrix/interface/GenericOperators.h>
 #include <lucius/matrix/interface/Operator.h>
-
-#include <lucius/ir/target/interface/TargetValue.h>
-#include <lucius/ir/target/interface/TargetValueData.h>
-#include <lucius/ir/target/interface/TensorData.h>
-#include <lucius/ir/target/interface/OperatorData.h>
 
 #include <lucius/ir/values/interface/ConstantTensor.h>
 #include <lucius/ir/values/interface/ConstantOperator.h>
@@ -100,31 +98,13 @@ void TargetOperationImplementation::appendOperand(const TargetValue& v)
     insertOperand(end, Use(v.getValue()));
 }
 
-matrix::Matrix TargetOperationImplementation::getOperandDataAsTensor(size_t index) const
+TargetValueData TargetOperationImplementation::getOperandData(size_t index) const
 {
     auto operand = getOperand(index);
 
     auto value = ir::value_cast<TargetValue>(operand.getValue());
 
-    return value.getDataAsTensor();
-}
-
-matrix::Operator TargetOperationImplementation::getOperandDataAsOperator(size_t index) const
-{
-    auto operand = getOperand(index);
-
-    auto value = ir::value_cast<TargetValue>(operand.getValue());
-
-    return value.getDataAsOperator();
-}
-
-size_t TargetOperationImplementation::getOperandDataAsInteger(size_t index) const
-{
-    auto operand = getOperand(index);
-
-    auto value = ir::value_cast<TargetValue>(operand.getValue());
-
-    return value.getDataAsInteger();
+    return value.getData();
 }
 
 std::string TargetOperationImplementation::toString() const

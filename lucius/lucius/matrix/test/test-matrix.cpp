@@ -1052,6 +1052,50 @@ bool testNormalRandom()
 }
 
 /*
+    Test random state copy.
+*/
+bool testRandomStateCopy()
+{
+    size_t size = 2;
+
+    lucius::matrix::RandomState stateA;
+    lucius::matrix::RandomState stateB;
+
+    lucius::matrix::swapDefaultRandomState(stateA);
+    lucius::matrix::srand(0);
+    lucius::matrix::swapDefaultRandomState(stateA);
+
+    auto stateACopy = stateA;
+
+    lucius::matrix::swapDefaultRandomState(stateACopy);
+    auto a = lucius::matrix::randn({size, size}, lucius::matrix::SinglePrecision());
+    lucius::matrix::swapDefaultRandomState(stateACopy);
+
+    lucius::matrix::swapDefaultRandomState(stateB);
+    lucius::matrix::srand(377);
+    lucius::matrix::swapDefaultRandomState(stateB);
+
+    auto stateBCopy = stateB;
+
+    lucius::matrix::swapDefaultRandomState(stateBCopy);
+    auto b = lucius::matrix::randn({size, size}, lucius::matrix::SinglePrecision());
+    lucius::matrix::swapDefaultRandomState(stateBCopy);
+
+    if(a == b)
+    {
+        lucius::util::log("test-matrix") << " Matrix Random State Copy Test Failed:\n";
+        lucius::util::log("test-lazy-ir") << "  first run matrix " << a.toString();
+        lucius::util::log("test-lazy-ir") << "  does match second run matrix " << b.toString();
+    }
+    else
+    {
+        lucius::util::log("test-matrix") << " Matrix Normal Random Test Passed\n";
+    }
+
+    return a != b;
+}
+
+/*
     Test 1D forward convolution.
 
     [ 0 ] conv [ 0 ] = [  1 ]
@@ -2681,6 +2725,7 @@ bool runTests(bool listTests, const std::string& testFilter)
     engine.addTest("copy between precisions", testCopyBetweenPrecisions);
     engine.addTest("uniform random", testUniformRandom);
     engine.addTest("normal random", testNormalRandom);
+    engine.addTest("random state copy", testRandomStateCopy);
 
     engine.addTest("1d forward convolution", test1dForwardConvolution);
     engine.addTest("2d forward convolution", test2dForwardConvolution);

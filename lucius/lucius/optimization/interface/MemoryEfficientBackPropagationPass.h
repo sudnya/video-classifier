@@ -28,7 +28,7 @@ namespace optimization
     Improvement 3: Compute a globally optimal schedule using ILP and a relaxation method.
 
 */
-class MemoryEfficientBackPropagationPass : public Pass
+class MemoryEfficientBackPropagationPass : public FunctionPass
 {
 public:
     MemoryEfficientBackPropagationPass();

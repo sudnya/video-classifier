@@ -12,6 +12,7 @@
 #include <lucius/ir/interface/BasicBlock.h>
 #include <lucius/ir/interface/Gradient.h>
 #include <lucius/ir/interface/Function.h>
+#include <lucius/ir/interface/Variable.h>
 #include <lucius/ir/interface/ExternalFunction.h>
 
 #include <lucius/ir/target/interface/TargetValue.h>
@@ -84,6 +85,12 @@ Value::Value(TargetOperation t)
 
 }
 
+Value::Value(Variable v)
+: Value(v.getValue())
+{
+
+}
+
 Value::~Value()
 {
 
@@ -105,6 +112,11 @@ Value& Value::operator=(const Value& v)
 Type Value::getType() const
 {
     return _implementation->getType();
+}
+
+bool Value::isValid() const
+{
+    return static_cast<bool>(_implementation);
 }
 
 bool Value::isOperation() const
@@ -167,6 +179,16 @@ bool Value::isBasicBlock() const
     return getType().isBasicBlock();
 }
 
+bool Value::isRandomState() const
+{
+    return getType().isRandomState();
+}
+
+bool Value::isStructure() const
+{
+    return getType().isStructure();
+}
+
 bool Value::isTargetValue() const
 {
     return _implementation->isTargetValue();
@@ -201,6 +223,11 @@ void Value::bindToContext(Context* context)
 void Value::bindToContextIfDifferent(Context* context)
 {
     _implementation->bindToContextIfDifferent(context);
+}
+
+Context& Value::getContext()
+{
+    return *_implementation->getContext();
 }
 
 bool Value::operator<(const Value& right) const

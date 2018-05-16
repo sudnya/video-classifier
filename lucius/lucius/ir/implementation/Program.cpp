@@ -13,6 +13,7 @@
 #include <lucius/ir/interface/BasicBlock.h>
 #include <lucius/ir/interface/Operation.h>
 #include <lucius/ir/interface/Use.h>
+#include <lucius/ir/interface/Value.h>
 
 #include <lucius/util/interface/debug.h>
 
@@ -163,6 +164,13 @@ void Program::clear()
 
 Program Program::cloneModuleAndTieVariables()
 {
+    ValueMap mappedValues;
+
+    return cloneModuleAndTieVariables(mappedValues);
+}
+
+Program Program::cloneModuleAndTieVariables(ValueMap& mappedValues)
+{
     auto program = Program(getModule().getContext());
 
     std::map<Value, Value> functionMap;
@@ -170,9 +178,10 @@ Program Program::cloneModuleAndTieVariables()
     // add functions
     for(auto& function : getModule())
     {
-        auto newFunction = function.clone();
+        auto newFunction = function.clone(mappedValues);
 
         functionMap[function] = newFunction;
+        mappedValues[function] = newFunction;
 
         program.getModule().addFunction(newFunction);
     }
@@ -222,6 +231,11 @@ Context& Program::getContext()
 std::string Program::toString() const
 {
     return getModule().toString();
+}
+
+const std::string& Program::name() const
+{
+    return getModule().name();
 }
 
 } // namespace ir

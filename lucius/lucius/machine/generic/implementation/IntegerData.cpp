@@ -5,7 +5,7 @@
 */
 
 // Lucius Includes
-#include <lucius/ir/target/interface/IntegerData.h>
+#include <lucius/machine/generic/interface/IntegerData.h>
 
 #include <lucius/ir/target/implementation/TargetValueDataImplementation.h>
 
@@ -14,11 +14,12 @@
 
 namespace lucius
 {
-
-namespace ir
+namespace machine
+{
+namespace generic
 {
 
-class IntegerDataImplementation : public TargetValueDataImplementation
+class IntegerDataImplementation : public ir::TargetValueDataImplementation
 {
 public:
     IntegerDataImplementation(size_t value)
@@ -61,7 +62,7 @@ IntegerData::IntegerData()
 
 }
 
-IntegerData::IntegerData(std::shared_ptr<TargetValueDataImplementation> implementation)
+IntegerData::IntegerData(std::shared_ptr<ir::TargetValueDataImplementation> implementation)
 : _implementation(std::static_pointer_cast<IntegerDataImplementation>(implementation))
 {
     assert(static_cast<bool>(std::dynamic_pointer_cast<IntegerDataImplementation>(
@@ -78,12 +79,13 @@ void IntegerData::setInteger(size_t value)
     return _implementation->setInteger(value);
 }
 
-std::shared_ptr<TargetValueDataImplementation> IntegerData::getImplementation() const
+std::shared_ptr<ir::TargetValueDataImplementation> IntegerData::getImplementation() const
 {
     return _implementation;
 }
 
-} // namespace ir
+} // namespace generic
+} // namespace machine
 } // namespace lucius
 
 

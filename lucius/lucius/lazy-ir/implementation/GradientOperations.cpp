@@ -12,6 +12,7 @@
 #include <lucius/ir/interface/IRBuilder.h>
 #include <lucius/ir/interface/Gradient.h>
 #include <lucius/ir/interface/Variable.h>
+#include <lucius/ir/interface/Value.h>
 
 // Standard Library Includes
 #include <vector>

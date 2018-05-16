@@ -12,6 +12,7 @@
 #include <lucius/ir/implementation/TypeImplementation.h>
 
 #include <lucius/ir/types/interface/TensorType.h>
+#include <lucius/ir/types/interface/StructureType.h>
 
 #include <lucius/matrix/interface/Precision.h>
 
@@ -85,6 +86,16 @@ bool Type::isBasicBlock() const
     return _implementation->getTypeId() == BasicBlockId;
 }
 
+bool Type::isStructure() const
+{
+    return _implementation->getTypeId() == StructureId;
+}
+
+bool Type::isRandomState() const
+{
+    return _implementation->getTypeId() == RandomId;
+}
+
 size_t Type::getBytes() const
 {
     if(isVoid())
@@ -109,18 +120,45 @@ size_t Type::getBytes() const
     {
         return 8;
     }
-    else if(_implementation->getTypeId() == PointerId)
+    else if(isPointer())
     {
         return 8;
     }
-    else if(_implementation->getTypeId() == IntegerId)
+    else if(isInteger())
+    {
+        return sizeof(size_t);
+    }
+    else if(isRandomState())
     {
         return 8;
+    }
+    else if(isStructure())
+    {
+        auto structureType = type_cast<StructureType>(*this);
+
+        size_t bytes = 0;
+
+        for(auto& memberType : structureType)
+        {
+            bytes += memberType.getBytes();
+        }
+
+        return bytes;
     }
 
     assertM(false, "Not Implemented.");
 
     return 0;
+}
+
+bool Type::operator==(const Type& type) const
+{
+    return _implementation->getTypeId() == type._implementation->getTypeId();
+}
+
+bool Type::operator!=(const Type& type) const
+{
+    return _implementation->getTypeId() != type._implementation->getTypeId();
 }
 
 std::string Type::toString() const

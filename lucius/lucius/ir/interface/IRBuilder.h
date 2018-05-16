@@ -64,8 +64,11 @@ public:
     /*! \brief Create a new basic block, add it to the current function. */
     BasicBlock addBasicBlock();
 
-    /*! \brief Create a new initialization function, set the insertion point to the entry point. */
-    void addInitializationFunction();
+    /*! \brief Create a new initialization function, set the insertion point to the entry point.
+
+        Return the call to the initialization function.
+    */
+    Value addInitializationFunction();
 
 public:
     /*! \brief Insert a new copy operation. */
@@ -127,11 +130,17 @@ public:
 
 public:
     /*! \brief Add a new gradient value for a variable in the program. */
-    Gradient addGradientForVariable(Variable value, Value cost);
+    Value addGradientForVariable(Variable value, Value cost);
 
 public:
-    /*! \brief Indicate that a value should be considered to be a variable. */
-    Variable registerValueAsVariable(Value );
+    /*! \brief Create a variable with the specified type. */
+    Variable addVariable(Type type);
+
+    /*! \brief Insert a store from the specified value into the specified variable. */
+    void storeToVariable(Variable target, Value source);
+
+    /*! \brief Insert a load from the specified variable, producing a new value. */
+    Value loadFromVariable(Variable source);
 
 public:
     /*! \brief Push the current insertion point onto a stack owned by the builder. */

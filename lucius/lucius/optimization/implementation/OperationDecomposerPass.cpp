@@ -23,7 +23,7 @@ namespace optimization
 {
 
 OperationDecomposerPass::OperationDecomposerPass()
-: Pass("OperationDecomposerPass")
+: FunctionPass("OperationDecomposerPass")
 {
 
 }
@@ -255,7 +255,7 @@ static void replaceBasicBlock(BasicBlock& output, const BasicBlock& input)
 void OperationDecomposerPass::runOnFunction(Function& function)
 {
     auto* performanceAnalysis = dynamic_cast<OperationPerformanceAnalysis*>(
-        getAnalysis("OperationPerformanceAnalysis"));
+        getAnalysisForFunction(function, "OperationPerformanceAnalysis"));
 
     // run on each operation, decide whether or not to crack it based on
     // the smallest compute limited unit

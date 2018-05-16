@@ -12,8 +12,9 @@
 
 #include <lucius/ir/target/interface/TargetOperation.h>
 #include <lucius/ir/target/interface/TargetValue.h>
-#include <lucius/ir/target/interface/AllocationOperation.h>
-#include <lucius/ir/target/interface/FreeOperation.h>
+#include <lucius/ir/target/interface/TargetOperationFactory.h>
+
+#include <lucius/machine/interface/TargetMachine.h>
 
 #include <lucius/ir/interface/Operation.h>
 #include <lucius/ir/interface/BasicBlock.h>
@@ -40,13 +41,12 @@ using ControlOperation = ir::ControlOperation;
 using BasicBlock = ir::BasicBlock;
 using TargetOperation = ir::TargetOperation;
 using TargetValue = ir::TargetValue;
-using AllocationOperation = ir::AllocationOperation;
-using FreeOperation = ir::FreeOperation;
 using PostDominatorAnalysis = analysis::PostDominatorAnalysis;
 using DominatorAnalysis = analysis::DominatorAnalysis;
+using TargetMachine = machine::TargetMachine;
 
 DynamicMemoryAllocationPass::DynamicMemoryAllocationPass()
-: Pass("DynamicMemoryAllocationPass")
+: FunctionPass("DynamicMemoryAllocationPass")
 {
     // intentionally blank
 }
@@ -58,12 +58,13 @@ DynamicMemoryAllocationPass::~DynamicMemoryAllocationPass()
 
 static bool isAllocatableValue(const TargetValue& value)
 {
-    return value.isTensor() || value.isInteger() || value.isFloat();
+    return value.isTensor() || value.isInteger() || value.isFloat() || value.isRandomState()
+        || value.isStructure();
 }
 
 static bool needsAllocation(const TargetValue& value)
 {
-    return isAllocatableValue(value) && !value.isConstant();
+    return isAllocatableValue(value) && !value.isConstant() && !value.isVariable();
 }
 
 static void insert(BasicBlock block, BasicBlock::iterator position, Operation newOperation)
@@ -74,7 +75,12 @@ static void insert(BasicBlock block, BasicBlock::iterator position, Operation ne
 static void addAllocation(TargetValue value, BasicBlock postDominator,
     BasicBlock::iterator insertionPoint)
 {
-    AllocationOperation allocation(value);
+    TargetMachine machine(value.getContext());
+
+    auto& factory = machine.getFactory();
+
+    auto allocation = factory.create("allocate");
+    allocation.setOutputOperand(value);
 
     util::log("DynamicMemoryAllocationPass") << "   adding allocation '"
         << allocation.toString() << "'.\n";
@@ -85,7 +91,12 @@ static void addAllocation(TargetValue value, BasicBlock postDominator,
 static void addFree(TargetValue value, BasicBlock postDominator,
     BasicBlock::iterator insertionPoint)
 {
-    FreeOperation free(value);
+    TargetMachine machine(value.getContext());
+
+    auto& factory = machine.getFactory();
+
+    auto free = factory.create("free");
+    free.appendOperand(value);
 
     util::log("DynamicMemoryAllocationPass") << "   adding free '"
         << free.toString() << "'.\n";
@@ -329,11 +340,11 @@ static TargetValueVector getTargetValues(ir::Function& function)
 void DynamicMemoryAllocationPass::runOnFunction(ir::Function& function)
 {
     auto* postDominatorAnalysis = dynamic_cast<PostDominatorAnalysis*>(
-        getAnalysis("PostDominatorAnalysis"));
+        getAnalysisForFunction(function, "PostDominatorAnalysis"));
     assert(postDominatorAnalysis);
 
     auto* dominatorAnalysis = dynamic_cast<DominatorAnalysis*>(
-        getAnalysis("DominatorAnalysis"));
+        getAnalysisForFunction(function, "DominatorAnalysis"));
     assert(dominatorAnalysis);
 
     util::log("DynamicMemoryAllocationPass") << "Running on function  '"

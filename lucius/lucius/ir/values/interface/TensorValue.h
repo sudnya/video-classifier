@@ -20,7 +20,7 @@ namespace lucius
 namespace ir
 {
 
-/*! \brief A class for representing a matrix value a program. */
+/*! \brief A class for representing a tensor value in a program. */
 class TensorValue : public Value
 {
 public:

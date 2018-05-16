@@ -21,6 +21,9 @@ namespace ir
 class PHIOperationImplementation : public OperationImplementation
 {
 public:
+    explicit PHIOperationImplementation(const Type& type);
+
+public:
     virtual std::shared_ptr<ValueImplementation> clone() const;
 
 public:
@@ -44,6 +47,9 @@ public:
 
 private:
     BasicBlockVector _incomingBlocks;
+
+private:
+    Type _type;
 
 };
 

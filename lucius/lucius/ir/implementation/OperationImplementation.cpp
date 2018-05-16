@@ -239,7 +239,23 @@ std::string OperationImplementation::toString() const
 {
     std::stringstream stream;
 
-    stream << "%" << getId() << " = " << name() << " ";
+    stream << "%" << getId() << " = " << name() << " " << operandString();
+
+    return stream.str();
+}
+
+std::string OperationImplementation::toSummaryString() const
+{
+    std::stringstream stream;
+
+    stream << getType().toString() << " %" << getId();
+
+    return stream.str();
+}
+
+std::string OperationImplementation::operandString() const
+{
+    std::stringstream stream;
 
     auto operandIterator = getOperands().begin();
 
@@ -258,15 +274,6 @@ std::string OperationImplementation::toString() const
 
         stream << ", " << operand.getValue().toSummaryString();
     }
-
-    return stream.str();
-}
-
-std::string OperationImplementation::toSummaryString() const
-{
-    std::stringstream stream;
-
-    stream << getType().toString() << " %" << getId();
 
     return stream.str();
 }

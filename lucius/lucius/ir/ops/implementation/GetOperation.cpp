@@ -12,7 +12,12 @@
 #include <lucius/ir/interface/Use.h>
 #include <lucius/ir/interface/Shape.h>
 
+#include <lucius/ir/values/interface/ConstantInteger.h>
+
+#include <lucius/matrix/interface/Precision.h>
+
 #include <lucius/ir/types/interface/TensorType.h>
+#include <lucius/ir/types/interface/StructureType.h>
 
 #include <lucius/ir/implementation/OperationImplementation.h>
 
@@ -56,8 +61,45 @@ public:
 public:
     Type getType() const
     {
-        assertM(false, "Not implemented");
-        return Type();
+        auto operandType = getOperand(0).getValue().getType();
+
+        if(operandType.isTensor())
+        {
+            auto tensorType = type_cast<TensorType>(operandType);
+
+            if(tensorType.getPrecision() == matrix::SinglePrecision())
+            {
+                return Type(Type::FloatId);
+            }
+            else if(tensorType.getPrecision() == matrix::HalfPrecision())
+            {
+                return Type(Type::HalfId);
+            }
+
+            assert(tensorType.getPrecision() == matrix::DoublePrecision());
+
+            return Type(Type::DoubleId);
+        }
+        else
+        {
+            // TODO: handle more diverse types
+            assert(operandType.isStructure());
+
+            auto indexOperand = getOperand(1).getValue();
+
+            assert(indexOperand.isConstant());
+            assert(indexOperand.isInteger());
+
+            auto constantInteger = value_cast<ConstantInteger>(indexOperand);
+
+            size_t index = constantInteger.getValue();
+
+            auto structure = type_cast<StructureType>(operandType);
+
+            assert(index < structure.size());
+
+            return structure[index];
+        }
     }
 };
 

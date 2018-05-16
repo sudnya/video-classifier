@@ -11,6 +11,7 @@
 #include <lucius/lazy-ir/interface/LazyValue.h>
 
 #include <lucius/ir/interface/IRBuilder.h>
+#include <lucius/ir/interface/Value.h>
 
 #include <lucius/util/interface/debug.h>
 

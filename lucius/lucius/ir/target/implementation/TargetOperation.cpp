@@ -225,6 +225,11 @@ bool TargetOperation::isPHI() const
     return _implementation->isPHI();
 }
 
+BasicBlock TargetOperation::getBasicBlock() const
+{
+    return _implementation->getBasicBlock();
+}
+
 std::string TargetOperation::toString() const
 {
     return _implementation->toString();

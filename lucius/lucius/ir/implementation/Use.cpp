@@ -37,6 +37,13 @@ public:
         return Value(_value);
     }
 
+    void setValue(Value value)
+    {
+        getValue().removeUse(_valuePosition);
+
+        _value = value.getValueImplementation();
+    }
+
     void setValuePosition(iterator position)
     {
         _valuePosition = position;
@@ -146,6 +153,13 @@ Operation Use::getOperation() const
 Value Use::getValue() const
 {
     return _implementation->getValue();
+}
+
+void Use::setValue(Value value)
+{
+    _implementation->setValue(value);
+
+    getValue().addUse(*this);
 }
 
 void Use::setValuePosition(iterator position)

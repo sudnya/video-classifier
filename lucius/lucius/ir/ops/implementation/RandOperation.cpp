@@ -13,6 +13,8 @@
 #include <lucius/ir/interface/Value.h>
 
 #include <lucius/ir/types/interface/TensorType.h>
+#include <lucius/ir/types/interface/StructureType.h>
+#include <lucius/ir/types/interface/RandomStateType.h>
 
 #include <lucius/ir/implementation/OperationImplementation.h>
 
@@ -57,7 +59,7 @@ public:
 public:
     Type getType() const
     {
-        return _tensorType;
+        return StructureType({_tensorType, RandomStateType()});
     }
 
 private:

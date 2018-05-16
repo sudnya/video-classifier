@@ -1,7 +1,7 @@
-/*  \file   FreeTargetOperation.h
+/*  \file   GetOperation.h
     \author Gregory Diamos
     \date   April 4, 2017
-    \brief  The header file for the FreeTargetOperation class.
+    \brief  The header file for the GetOperation class.
 */
 
 #pragma once
@@ -11,21 +11,24 @@
 
 namespace lucius
 {
-
-namespace ir
+namespace machine
+{
+namespace generic
 {
 
 /*! \brief A class for representing an operation. */
-class FreeOperation : public TargetOperation
+class GetOperation : public ir::TargetOperation
 {
 public:
-    FreeOperation(TargetValue allocatedValue);
-    ~FreeOperation();
+    GetOperation();
+    ~GetOperation();
 
 };
 
-} // namespace ir
+} // namespace generic
+} // namespace machine
 } // namespace lucius
+
 
 
 

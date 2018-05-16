@@ -51,6 +51,7 @@ public:
 
 public:
     Value getValue() const;
+    void setValue(Value v);
 
     void setValuePosition(iterator position);
 

@@ -7,9 +7,6 @@
 // Lucius Includes
 #include <lucius/ir/target/interface/TargetValueData.h>
 
-#include <lucius/ir/target/interface/TensorData.h>
-#include <lucius/ir/target/interface/IntegerData.h>
-
 #include <lucius/ir/target/implementation/TargetValueDataImplementation.h>
 
 namespace lucius
@@ -20,18 +17,6 @@ namespace ir
 
 TargetValueData::TargetValueData(std::shared_ptr<TargetValueDataImplementation> implementation)
 : _implementation(implementation)
-{
-
-}
-
-TargetValueData::TargetValueData(TensorData data)
-: TargetValueData(data.getImplementation())
-{
-
-}
-
-TargetValueData::TargetValueData(IntegerData data)
-: TargetValueData(data.getImplementation())
 {
 
 }
@@ -49,6 +34,11 @@ std::shared_ptr<TargetValueDataImplementation> TargetValueData::getImplementatio
 void* TargetValueData::data() const
 {
     return _implementation->getData();
+}
+
+bool TargetValueData::isValid() const
+{
+    return static_cast<bool>(_implementation);
 }
 
 } // namespace ir

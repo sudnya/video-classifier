@@ -38,7 +38,24 @@ public:
 public:
     RandomStateImplementation(const RandomStateImplementation& state)
     {
+        _cpuEngine  = state._cpuEngine;
+        _cudaEngine = state._cudaEngine;
 
+        _seed   = state._seed;
+        _offset = state._offset;
+    }
+
+    RandomStateImplementation& operator=(const RandomStateImplementation& state)
+    {
+        if(this == &state)
+        {
+            return *this;
+        }
+
+        seed(state._seed);
+        seek(state._offset);
+
+        return *this;
     }
 
 
@@ -53,11 +70,47 @@ public:
         return _cudaEngine;
     }
 
+    void seed(size_t seed)
+    {
+        if(CurandLibrary::loaded())
+        {
+            CurandLibrary::curandSetPseudoRandomGeneratorSeed(getCudaEngine(), seed);
+        }
+        else
+        {
+            getCpuEngine().seed(seed);
+        }
+
+        _offset = 0;
+        _seed   = seed;
+    }
+
+    void seek(size_t offset)
+    {
+        if(CurandLibrary::loaded())
+        {
+            CurandLibrary::curandSetGeneratorOffset(getCudaEngine(), offset);
+        }
+        else
+        {
+            getCpuEngine().discard(offset);
+        }
+
+        _offset = offset;
+    }
+
+    void updateOffset(size_t offset)
+    {
+        _offset += offset;
+    }
+
 public:
     void swap(RandomStateImplementation& i)
     {
         std::swap(i._cpuEngine,  _cpuEngine);
         std::swap(i._cudaEngine, _cudaEngine);
+        std::swap(i._seed,       _seed);
+        std::swap(i._offset,     _offset);
     }
 
 private:
@@ -69,12 +122,19 @@ private:
         {
             CurandLibrary::curandCreateGenerator(&_cudaEngine,
                 CurandLibrary::CURAND_RNG_PSEUDO_DEFAULT);
+
+            _seed = 0;
+            _offset = 0;
         }
     }
 
 private:
-    std::default_random_engine       _cpuEngine;
+    std::default_random_engine _cpuEngine;
+
+private:
     CurandLibrary::curandGenerator_t _cudaEngine;
+    size_t _seed;
+    size_t _offset;
 
 };
 
@@ -98,6 +158,19 @@ RandomState::RandomState()
 
 }
 
+RandomState::RandomState(const RandomState& state)
+: RandomState()
+{
+    *this = state;
+}
+
+RandomState& RandomState::operator=(const RandomState& state)
+{
+    *_implementation = *state._implementation;
+
+    return *this;
+}
+
 RandomState::~RandomState()
 {
 
@@ -115,15 +188,7 @@ void swapDefaultRandomState(RandomState& state)
 
 void srand(size_t seed)
 {
-    if(CurandLibrary::loaded())
-    {
-        CurandLibrary::curandSetPseudoRandomGeneratorSeed(
-            detail::getRandomGeneratorState().getCudaEngine(), seed);
-    }
-    else
-    {
-        detail::getRandomGeneratorState().getCpuEngine().seed(seed);
-    }
+    detail::getRandomGeneratorState().seed(seed);
 }
 
 void rand(Matrix& result)
@@ -147,6 +212,8 @@ void rand(Matrix& result)
         {
             assertM(false, "Rand not implemented for this precision.");
         }
+
+        detail::getRandomGeneratorState().updateOffset(result.elements());
     }
     else
     {
@@ -197,6 +264,8 @@ void randn(Matrix& result)
         {
             assertM(false, "Rand not implemented for this precision.");
         }
+
+        detail::getRandomGeneratorState().updateOffset(result.elements());
     }
     else
     {

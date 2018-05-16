@@ -39,6 +39,16 @@ const Shape& ShapeList::front() const
     return _shapes.front();
 }
 
+Shape& ShapeList::operator[](size_t index)
+{
+    return _shapes[index];
+}
+
+const Shape& ShapeList::operator[](size_t index) const
+{
+    return _shapes[index];
+}
+
 } // namespace ir
 } // namespace lucius
 

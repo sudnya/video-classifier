@@ -9,10 +9,12 @@
 // Standard Library Includes
 #include <memory>
 #include <list>
+#include <map>
 
 // Forward Declarations
 namespace lucius { namespace ir { class Function;              } }
 namespace lucius { namespace ir { class Module;                } }
+namespace lucius { namespace ir { class Value;                 } }
 namespace lucius { namespace ir { class ProgramImplementation; } }
 namespace lucius { namespace ir { class Context;               } }
 
@@ -83,12 +85,24 @@ public:
     void clear();
 
 public:
+    using ValueMap = std::map<Value, Value>;
+
+public:
     /*! \brief Duplicate the module, but keep references to all existing variables. */
     Program cloneModuleAndTieVariables();
+
+    /*! \brief Duplicate the module, but keep references to all existing variables.
+
+        Record the mapping from old values to new values.
+    */
+    Program cloneModuleAndTieVariables(ValueMap& mappedValues);
 
 public:
     /*! \brief Create a string representation of the program for debugging. */
     std::string toString() const;
+
+public:
+    const std::string& name() const;
 
 public:
     Context& getContext();

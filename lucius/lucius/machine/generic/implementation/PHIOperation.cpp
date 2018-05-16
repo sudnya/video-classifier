@@ -34,6 +34,18 @@ namespace generic
 class PHIOperationImplementation : public ir::TargetOperationImplementation
 {
 public:
+    PHIOperationImplementation()
+    {
+        // intentionally blank
+    }
+
+    PHIOperationImplementation(const ir::Type& type)
+    : _type(type)
+    {
+
+    }
+
+public:
     /*! \brief Get the performance metrics for this operations. */
     virtual ir::PerformanceMetrics getPerformanceMetrics() const
     {
@@ -67,7 +79,7 @@ public:
 public:
     virtual ir::Type getType() const
     {
-        return getOperand(0).getValue().getType();
+        return _type;
     }
 
     using BasicBlockVector = PHIOperation::BasicBlockVector;
@@ -105,14 +117,27 @@ public:
         _incomingBlocks.push_back(incoming);
     }
 
+    void setType(const ir::Type& type)
+    {
+        _type = type;
+    }
 
 private:
     BasicBlockVector _incomingBlocks;
+
+private:
+    ir::Type _type;
 
 };
 
 PHIOperation::PHIOperation()
 : TargetOperation(std::make_shared<PHIOperationImplementation>())
+{
+
+}
+
+PHIOperation::PHIOperation(const ir::Type& type)
+: TargetOperation(std::make_shared<PHIOperationImplementation>(type))
 {
 
 }
@@ -141,6 +166,11 @@ void PHIOperation::addIncomingValue(const ir::TargetValue& v, const ir::BasicBlo
 void PHIOperation::addIncomingBasicBlock(const ir::BasicBlock& incoming)
 {
     getPHIImplementation()->addIncomingBasicBlock(incoming);
+}
+
+void PHIOperation::setType(const ir::Type& type)
+{
+    getPHIImplementation()->setType(type);
 }
 
 std::shared_ptr<PHIOperationImplementation> PHIOperation::getPHIImplementation() const

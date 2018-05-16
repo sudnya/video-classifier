@@ -36,7 +36,7 @@ namespace optimization
 {
 
 MemoryEfficientBackPropagationPass::MemoryEfficientBackPropagationPass()
-: Pass("MemoryEfficientBackPropagationPass")
+: FunctionPass("MemoryEfficientBackPropagationPass")
 {
     // intentionally blank
 }
@@ -859,7 +859,7 @@ static InsertionPoint getInsertionPoint(const BasicBlock& block)
 void MemoryEfficientBackPropagationPass::runOnFunction(ir::Function& function)
 {
     auto* memoryAnalysis = dynamic_cast<OperationMemoryAnalysis*>(
-        getAnalysis("OperationMemoryAnalysis"));
+        getAnalysisForFunction(function, "OperationMemoryAnalysis"));
 
     // get memory available for back prop
     double availableMemory = getAvailableMemoryForBackPropagation();

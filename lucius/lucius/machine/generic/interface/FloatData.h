@@ -11,12 +11,14 @@
 
 // Forward Declarations
 namespace lucius { namespace ir { class TargetValueDataImplementation; } }
-namespace lucius { namespace ir { class FloatDataImplementation;    } }
+
+namespace lucius { namespace machine { namespace generic { class FloatDataImplementation; } } }
 
 namespace lucius
 {
-
-namespace ir
+namespace machine
+{
+namespace generic
 {
 
 /*! \brief A class for representing a tensor value resource. */
@@ -25,20 +27,21 @@ class FloatData
 public:
     FloatData();
     FloatData(float value);
-    FloatData(std::shared_ptr<TargetValueDataImplementation> implementation);
+    FloatData(std::shared_ptr<ir::TargetValueDataImplementation> implementation);
 
 public:
     float getFloat() const;
 
 public:
-    std::shared_ptr<TargetValueDataImplementation> getImplementation() const;
+    std::shared_ptr<ir::TargetValueDataImplementation> getImplementation() const;
 
 private:
     std::shared_ptr<FloatDataImplementation> _implementation;
 
 };
 
-} // namespace ir
+} // namespace generic
+} // namespace machine
 } // namespace lucius
 
 

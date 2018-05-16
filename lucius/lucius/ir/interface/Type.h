@@ -36,6 +36,7 @@ public:
         ArrayId,        // Arrays
         PointerId,      // Pointers
         TensorId,       // Tensors
+        RandomId,       // Random State: TODO: replace this with an explicit lower level type
         BasicBlockId    // Basic Block
     };
 
@@ -67,8 +68,19 @@ public:
     /*! \brief Is the type a basic block. */
     bool isBasicBlock() const;
 
+    /*! \brief Is the type a structure. */
+    bool isStructure() const;
+
+    /*! \brief Is the type a random state. */
+    bool isRandomState() const;
+
+public:
     /*! \brief Get the number of bytes needed to represent the type. */
     size_t getBytes() const;
+
+public:
+    bool operator==(const Type& ) const;
+    bool operator!=(const Type& ) const;
 
 public:
     std::string toString() const;

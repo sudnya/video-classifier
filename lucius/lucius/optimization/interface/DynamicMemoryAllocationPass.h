@@ -15,7 +15,7 @@ namespace optimization
 {
 
 /*! \brief A class that schdules operations to minimize memory consumption. */
-class DynamicMemoryAllocationPass : public Pass
+class DynamicMemoryAllocationPass : public FunctionPass
 {
 public:
     DynamicMemoryAllocationPass();

@@ -15,7 +15,7 @@ namespace optimization
 {
 
 /*! \brief A class that prepares a lazily generated program for execution. */
-class LazyProgramCompleterPass : public Pass
+class LazyProgramCompleterPass : public FunctionPass
 {
 public:
     LazyProgramCompleterPass();

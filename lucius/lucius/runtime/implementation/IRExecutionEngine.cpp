@@ -11,6 +11,8 @@
 
 #include <lucius/ir/interface/Program.h>
 
+#include <lucius/util/interface/Any.h>
+
 namespace lucius
 {
 

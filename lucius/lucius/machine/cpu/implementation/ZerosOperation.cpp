@@ -7,6 +7,8 @@
 // Lucius Includes
 #include <lucius/machine/cpu/interface/ZerosOperation.h>
 
+#include <lucius/machine/generic/interface/DataAccessors.h>
+
 #include <lucius/ir/interface/BasicBlock.h>
 #include <lucius/ir/interface/Use.h>
 #include <lucius/ir/interface/Value.h>
@@ -53,7 +55,7 @@ public:
 public:
     virtual ir::BasicBlock execute()
     {
-        auto out = getOperandDataAsTensor(0);
+        auto out = generic::getDataAsTensor(getOperand(0));
 
         matrix::zeros(out);
 

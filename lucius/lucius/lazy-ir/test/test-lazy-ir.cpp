@@ -152,6 +152,50 @@ static bool testLoop()
 }
 
 /*
+    Test random matrix creation
+
+    a = randInit(0)
+    b = randInit(1)
+
+    assert a != b
+*/
+static bool testRandom()
+{
+    lucius::lazy::newThreadLocalContext();
+
+    LazyValue lazyA = lucius::lazy::createInitializer([]()
+    {
+        LazyValue randomState = lucius::lazy::srand(0);
+
+        return lucius::lazy::rand(randomState, {3, 2}, SinglePrecision());
+    });
+
+    LazyValue lazyB = lucius::lazy::createInitializer([]()
+    {
+        LazyValue randomState = lucius::lazy::srand(377);
+
+        return lucius::lazy::rand(randomState, {3, 2}, SinglePrecision());
+    });
+
+    Matrix firstRun  = lazyA.materialize();
+    Matrix secondRun = lazyB.materialize();
+
+    if(firstRun == secondRun)
+    {
+        lucius::util::log("test-lazy-ir") << " Lazy IR Random Initialization Test Failed:\n";
+        lucius::util::log("test-lazy-ir") << "  first run matrix " << firstRun.toString();
+        lucius::util::log("test-lazy-ir") << "  does match second run matrix "
+            << secondRun.toString();
+    }
+    else
+    {
+        lucius::util::log("test-lazy-ir") << " Lazy IR Random Initialization Test Passed\n";
+    }
+
+    return firstRun != secondRun;
+}
+
+/*
     Test matrix addition loop with an initializer
 
     a = randInit
@@ -189,7 +233,9 @@ static bool testLoopWithInitializer()
         return lucius::lazy::rand(randomState, {3, 2}, SinglePrecision());
     });
 
-    lucius::lazy::forLoop(2, [=]()
+    size_t iterations = 2;
+
+    lucius::lazy::forLoop(iterations, [=]()
     {
         lucius::lazy::copy(lazyA, lucius::lazy::applyBinary(lazyA, lazyB, lucius::lazy::Add()));
     });
@@ -211,6 +257,7 @@ static bool testLoopWithInitializer()
 
     return firstRun == secondRun;
 }
+
 /*
     Test matrix addition loop with an initializer and update
 
@@ -360,6 +407,7 @@ static bool runTests(bool listTests, const std::string& testFilter)
 
     engine.addTest("add", testAdd);
     engine.addTest("loop", testLoop);
+    engine.addTest("random", testRandom);
     engine.addTest("initializer loop", testLoopWithInitializer);
     engine.addTest("initializer and update loop", testLoopWithInitializerAndUpdate);
     engine.addTest("save load ", testSaveAndLoad);

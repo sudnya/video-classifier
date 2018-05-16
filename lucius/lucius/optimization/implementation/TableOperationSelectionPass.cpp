@@ -38,7 +38,7 @@ namespace optimization
 {
 
 TableOperationSelectionPass::TableOperationSelectionPass()
-: Pass("TableOperationSelectionPass")
+: FunctionPass("TableOperationSelectionPass")
 {
     // intetionally blank
 }
@@ -126,6 +126,8 @@ static void generateOperations(OperationList& targetOperations,
 
             auto sourcePHI = ir::value_cast<ir::PHIOperation>(operation);
             auto targetPHI = ir::value_cast<machine::generic::PHIOperation>(targetOperation);
+
+            targetPHI.setType(sourcePHI.getType());
 
             for(auto& block : sourcePHI.getIncomingBasicBlocks())
             {

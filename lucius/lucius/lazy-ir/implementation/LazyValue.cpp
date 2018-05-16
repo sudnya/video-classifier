@@ -15,8 +15,15 @@
 #include <lucius/ir/interface/IRBuilder.h>
 #include <lucius/ir/interface/InsertionPoint.h>
 #include <lucius/ir/interface/BasicBlock.h>
+#include <lucius/ir/interface/Variable.h>
+#include <lucius/ir/interface/Value.h>
+#include <lucius/ir/interface/Program.h>
+#include <lucius/ir/interface/Module.h>
 
 #include <lucius/matrix/interface/Matrix.h>
+
+#include <lucius/util/interface/Any.h>
+#include <lucius/util/interface/debug.h>
 
 namespace lucius
 {
@@ -24,7 +31,9 @@ namespace lucius
 namespace lazy
 {
 
-using ValueSet = std::set<ir::Value>;
+using Value = ir::Value;
+using Variable = ir::Variable;
+using ValueSet = std::set<Value>;
 
 class LazyValueImplementation
 {
@@ -37,14 +46,28 @@ public:
 public:
     void addDefinition(ir::Value value)
     {
-        assert(_definitions.empty() || !_definitions.begin()->isConstant());
+        assert(_definitions.empty() || !isConstant());
 
-        _definitions.insert(value);
+        // variables need explicit stores to represent definitions
+        // normal values are tracked in the definitions set
+        if(!_definitions.empty() && isVariable())
+        {
+            getBuilder().storeToVariable(Variable(getValue()), value);
+        }
+        else
+        {
+            _definitions.insert(value);
+        }
     }
 
 public:
     ir::Value getValueForRead()
     {
+        if(isVariable())
+        {
+            return getBuilder().loadFromVariable(Variable(getValue()));
+        }
+
         return getValue();
     }
 
@@ -58,6 +81,16 @@ public:
     const ValueSet& getDefinitions() const
     {
         return _definitions;
+    }
+
+    bool isVariable() const
+    {
+        return getValue().isVariable();
+    }
+
+    bool isConstant() const
+    {
+        return getValue().isConstant();
     }
 
 public:
@@ -93,6 +126,12 @@ LazyValue::LazyValue(ir::Value value)
     addDefinition(value);
 }
 
+LazyValue::LazyValue(ir::Variable variable)
+: LazyValue()
+{
+    addDefinition(variable);
+}
+
 matrix::Matrix LazyValue::materialize()
 {
     return materialize<matrix::Matrix>();
@@ -106,6 +145,11 @@ ir::Value LazyValue::getValueForRead()
 ir::Value LazyValue::getValue() const
 {
     return _implementation->getValue();
+}
+
+bool LazyValue::isVariable() const
+{
+    return _implementation->isVariable();
 }
 
 void LazyValue::addDefinition(ir::Value newDefinition)
@@ -125,19 +169,40 @@ bool LazyValue::operator<(const LazyValue& right) const
 
 void* LazyValue::_runProgram()
 {
-    convertProgramToSSA();
+    auto returnValue = _implementation->getValueForRead();
 
     auto& program = getBuilder().getProgram();
 
-    auto& engine = _implementation->buildEngine(program);
+    util::log("LazyValue") << " Cloning program.\n";
 
+    ValueMap mappedValues;
+
+    ir::Program augmentedProgram = program.cloneModuleAndTieVariables(mappedValues);
+
+    augmentedProgram.getModule().setName("JustInTimeCompiledModule");
+
+    if(util::isLogEnabled("LazyValue"))
+    {
+        util::log("LazyValue") << "  Cloned program:\n"
+            << augmentedProgram.toString();
+    }
+
+    auto& engine = _implementation->buildEngine(augmentedProgram);
+
+    engine.getOptions().addTargetIndependentOptimizationPass("ConvertLazyProgramToSSAPass",
+        getLazyValues(mappedValues));
     engine.getOptions().addTargetIndependentOptimizationPass("LazyProgramCompleterPass");
 
-    engine.saveValue(getValueForRead());
+    auto mappedReturnValueIterator = mappedValues.find(returnValue);
+    assert(mappedReturnValueIterator != mappedValues.end());
+
+    auto& mappedReturnValue = mappedReturnValueIterator->second;
+
+    engine.saveValue(mappedReturnValue);
 
     engine.run();
 
-    return engine.getValueContents(getValueForRead());
+    return engine.getValueContents(mappedReturnValue);
 }
 
 void LazyValue::_clearState()

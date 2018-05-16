@@ -9,6 +9,8 @@
 // Standard Library Includes
 #include <cstdint>
 #include <istream>
+#include <vector>
+#include <map>
 
 // Forward Declarations
 namespace lucius { namespace lazy { class Context;   } }
@@ -16,6 +18,7 @@ namespace lucius { namespace lazy { class LazyValue; } }
 
 namespace lucius { namespace ir { class IRBuilder;  } }
 namespace lucius { namespace ir { class BasicBlock; } }
+namespace lucius { namespace ir { class Value;      } }
 
 namespace lucius { namespace analysis { class Analysis; } }
 
@@ -42,15 +45,6 @@ void loadThreadLocalContext(std::istream& stream);
 /*! \brief Get the IR Builder. */
 ir::IRBuilder& getBuilder();
 
-/*! \brief Get the named analysis. */
-analysis::Analysis& getAnalysis(const std::string& name);
-
-/*! \brief Invalidate all analyses. */
-void invalidateAnalyses();
-
-/*! \brief Convert the IR for lazy programs to SSA form. */
-void convertProgramToSSA();
-
 /*! \brief Register a lazy value with the current context. */
 void registerLazyValue(const LazyValue& value);
 
@@ -71,6 +65,12 @@ size_t getHandle(LazyValue value);
 
 /*! \brief Find the value with the specified handle. */
 LazyValue lookupValueByHandle(size_t handle);
+
+using MergedValueVector = std::vector<std::vector<ir::Value>>;
+using ValueMap = std::map<ir::Value, ir::Value>;
+
+/*! \brief Get the set of all lazy values. */
+MergedValueVector getLazyValues(const ValueMap& mappedValues);
 
 }
 

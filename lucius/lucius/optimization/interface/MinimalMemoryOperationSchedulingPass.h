@@ -15,7 +15,7 @@ namespace optimization
 {
 
 /*! \brief A class that schdules operations to minimize memory consumption. */
-class MinimalMemoryOperationSchedulingPass: public Pass
+class MinimalMemoryOperationSchedulingPass: public FunctionPass
 {
 public:
     MinimalMemoryOperationSchedulingPass();

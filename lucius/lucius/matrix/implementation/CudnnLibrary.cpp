@@ -11,6 +11,7 @@
 #include <lucius/parallel/interface/cuda.h>
 
 #include <lucius/util/interface/Casts.h>
+#include <lucius/util/interface/debug.h>
 
 // Standard Library Includes
 #include <stdexcept>

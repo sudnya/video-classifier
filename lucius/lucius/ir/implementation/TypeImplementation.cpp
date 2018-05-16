@@ -70,6 +70,10 @@ std::string TypeImplementation::toString() const
     {
         return "void*";
     }
+    else if(getTypeId() == Type::RandomId)
+    {
+        return "random-state";
+    }
 
     assertM(false, "Not implemented.");
 

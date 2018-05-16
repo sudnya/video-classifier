@@ -18,6 +18,8 @@
 
 #include <lucius/util/interface/debug.h>
 
+#include <lucius/util/interface/PointerCasts.h>
+
 // Standard Library Includes
 #include <list>
 #include <map>
@@ -30,8 +32,9 @@ namespace optimization
 
 using Analysis = analysis::Analysis;
 using AnalysisFactory = analysis::AnalysisFactory;
-using PassList = std::list<std::unique_ptr<Pass>>;
-using AnalysisMap = std::map<std::string, std::unique_ptr<Analysis>>;
+using FunctionPassList = std::list<std::unique_ptr<FunctionPass>>;
+using ModulePassList = std::list<std::unique_ptr<ModulePass>>;
+using ProgramPassList = std::list<std::unique_ptr<ProgramPass>>;
 
 class PassManagerImplementation
 {
@@ -49,25 +52,10 @@ public:
         // TODO: group passes by shared analyses
 
         // Execute passes
-        for(auto& pass : _passes)
+        for(auto& pass : _functionPasses)
         {
-            auto requiredAnalyses = pass->getRequiredAnalyses();
+            _setupAnalysesForFunctionPass(f, *pass);
 
-            for(auto& analysisName : requiredAnalyses)
-            {
-                if(_analyses.count(analysisName) == 0)
-                {
-                    auto createdAnalysis = AnalysisFactory::create(analysisName);
-                    assert(createdAnalysis);
-
-                    auto newAnalysis = _analyses.emplace(std::make_pair(analysisName,
-                        std::move(createdAnalysis))).first;
-
-                    newAnalysis->second->runOnFunction(f);
-                }
-            }
-
-            // TODO: free no longer needed analyses
             pass->setManager(_manager);
 
             util::log("PassManager") << "Running pass " << pass->name()
@@ -78,15 +66,88 @@ public:
         _analyses.clear();
     }
 
+    void runOnModule(ir::Module& m)
+    {
+        // schedule passes
+        // TODO: group passes by shared analyses
+
+        // Execute passes
+        for(auto& pass : _modulePasses)
+        {
+            _setupAnalysesForModulePass(m, *pass);
+
+            pass->setManager(_manager);
+
+            util::log("PassManager") << "Running pass " << pass->name()
+                << " on module " << m.name() << "\n";
+            pass->runOnModule(m);
+        }
+
+        _analyses.clear();
+
+        for(auto& function : m)
+        {
+            runOnFunction(function);
+        }
+    }
+
+    void runOnProgram(ir::Program& p)
+    {
+        // schedule passes
+        // TODO: group passes by shared analyses
+
+        // Execute passes
+        for(auto& pass : _programPasses)
+        {
+            _setupAnalysesForProgramPass(p, *pass);
+
+            pass->setManager(_manager);
+
+            util::log("PassManager") << "Running pass " << pass->name()
+                << " on program " << p.name() << "\n";
+            pass->runOnProgram(p);
+        }
+
+        _analyses.clear();
+
+        runOnModule(p.getModule());
+    }
+
     void addPass(std::unique_ptr<Pass>&& pass)
     {
         assert(pass);
-        _passes.emplace_back(std::move(pass));
+
+        if(pass->isProgramPass())
+        {
+            _programPasses.emplace_back(util::unique_pointer_cast<ProgramPass>(std::move(pass)));
+        }
+        else if(pass->isModulePass())
+        {
+            _modulePasses.emplace_back(util::unique_pointer_cast<ModulePass>(std::move(pass)));
+        }
+        else if(pass->isFunctionPass())
+        {
+            _functionPasses.emplace_back(util::unique_pointer_cast<FunctionPass>(std::move(pass)));
+        }
     }
 
     Pass* getPass(const std::string& name)
     {
-        for(auto& pass : _passes)
+        for(auto& pass : _functionPasses)
+        {
+            if(pass->name() == name)
+            {
+                return pass.get();
+            }
+        }
+        for(auto& pass : _modulePasses)
+        {
+            if(pass->name() == name)
+            {
+                return pass.get();
+            }
+        }
+        for(auto& pass : _programPasses)
         {
             if(pass->name() == name)
             {
@@ -99,7 +160,21 @@ public:
 
     const Pass* getPass(const std::string& name) const
     {
-        for(auto& pass : _passes)
+        for(auto& pass : _functionPasses)
+        {
+            if(pass->name() == name)
+            {
+                return pass.get();
+            }
+        }
+        for(auto& pass : _modulePasses)
+        {
+            if(pass->name() == name)
+            {
+                return pass.get();
+            }
+        }
+        for(auto& pass : _programPasses)
         {
             if(pass->name() == name)
             {
@@ -110,11 +185,18 @@ public:
         return nullptr;
     }
 
-    Analysis* getAnalysis(const std::string& name)
+    Analysis* getAnalysisForFunction(const ir::Function& function, const std::string& name)
     {
-        auto newAnalysis = _analyses.find(name);
+        auto analyses = _analyses.find(function);
 
-        if(newAnalysis == _analyses.end())
+        if(analyses == _analyses.end())
+        {
+            return nullptr;
+        }
+
+        auto newAnalysis = analyses->second.find(name);
+
+        if(newAnalysis == analyses->second.end())
         {
             return nullptr;
         }
@@ -122,24 +204,78 @@ public:
         return newAnalysis->second.get();
     }
 
-    const Analysis* getAnalysis(const std::string& name) const
+    const Analysis* getAnalysisForFunction(const ir::Function& function,
+        const std::string& name) const
     {
-        auto newAnalysis = _analyses.find(name);
+        auto analyses = _analyses.find(function);
 
-        if(newAnalysis == _analyses.end())
+        if(analyses == _analyses.end())
+        {
+            return nullptr;
+        }
+
+        auto newAnalysis = analyses->second.find(name);
+
+        if(newAnalysis == analyses->second.end())
         {
             return nullptr;
         }
 
         return newAnalysis->second.get();
     }
+
+private:
+    void _setupAnalysesForFunctionPass(const ir::Function& function, const Pass& pass)
+    {
+        auto requiredAnalyses = pass.getRequiredAnalyses();
+
+        for(auto& analysisName : requiredAnalyses)
+        {
+            auto& analyses = _analyses[function];
+
+            if(analyses.count(analysisName) == 0)
+            {
+                auto createdAnalysis = AnalysisFactory::create(analysisName);
+                assert(createdAnalysis);
+
+                auto newAnalysis = analyses.emplace(std::make_pair(analysisName,
+                    std::move(createdAnalysis))).first;
+
+                newAnalysis->second->runOnFunction(function);
+            }
+        }
+
+        // TODO: free no longer needed analyses
+    }
+
+    void _setupAnalysesForModulePass(const ir::Module& m, const Pass& pass)
+    {
+        for(auto& function : m)
+        {
+            _setupAnalysesForFunctionPass(function, pass);
+        }
+    }
+
+    void _setupAnalysesForProgramPass(const ir::Program& p, const Pass& pass)
+    {
+        _setupAnalysesForModulePass(p.getModule(), pass);
+    }
+
 
 private:
     PassManager* _manager;
 
 private:
-    PassList _passes;
-    AnalysisMap _analyses;
+    FunctionPassList _functionPasses;
+    ModulePassList   _modulePasses;
+    ProgramPassList  _programPasses;
+
+private:
+    using AnalysisMap = std::map<std::string, std::unique_ptr<Analysis>>;
+    using FunctionAnalysisMap = std::map<ir::Function, AnalysisMap>;
+
+private:
+    FunctionAnalysisMap _analyses;
 
 };
 
@@ -161,15 +297,12 @@ void PassManager::runOnFunction(ir::Function& function)
 
 void PassManager::runOnModule(ir::Module& module)
 {
-    for(auto& function : module)
-    {
-        runOnFunction(function);
-    }
+    _implementation->runOnModule(module);
 }
 
 void PassManager::runOnProgram(ir::Program& program)
 {
-    runOnModule(program.getModule());
+    _implementation->runOnProgram(program);
 }
 
 void PassManager::addPass(std::unique_ptr<Pass>&& pass)
@@ -187,14 +320,15 @@ const Pass* PassManager::getPass(const std::string& name) const
     return _implementation->getPass(name);
 }
 
-Analysis* PassManager::getAnalysis(const std::string& name)
+const Analysis* PassManager::getAnalysisForFunction(const ir::Function& f,
+    const std::string& name) const
 {
-    return _implementation->getAnalysis(name);
+    return _implementation->getAnalysisForFunction(f, name);
 }
 
-const Analysis* PassManager::getAnalysis(const std::string& name) const
+Analysis* PassManager::getAnalysisForFunction(const ir::Function& f, const std::string& name)
 {
-    return _implementation->getAnalysis(name);
+    return _implementation->getAnalysisForFunction(f, name);
 }
 
 } // namespace optimization

@@ -8,6 +8,7 @@
 #include <lucius/audio/interface/LibavcodecLibrary.h>
 
 #include <lucius/util/interface/Casts.h>
+#include <lucius/util/interface/debug.h>
 #include <lucius/util/interface/string.h>
 
 // Standard Library Includes

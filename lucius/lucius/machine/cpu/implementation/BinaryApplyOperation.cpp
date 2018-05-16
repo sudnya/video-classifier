@@ -7,6 +7,9 @@
 // Lucius Includes
 #include <lucius/machine/cpu/interface/BinaryApplyOperation.h>
 
+#include <lucius/machine/generic/interface/IntegerData.h>
+#include <lucius/machine/generic/interface/DataAccessors.h>
+
 #include <lucius/ir/interface/BasicBlock.h>
 #include <lucius/ir/interface/Use.h>
 #include <lucius/ir/interface/Value.h>
@@ -18,7 +21,6 @@
 #include <lucius/ir/target/interface/PerformanceMetrics.h>
 #include <lucius/ir/target/interface/TargetValue.h>
 #include <lucius/ir/target/interface/TargetValueData.h>
-#include <lucius/ir/target/interface/IntegerData.h>
 
 #include <lucius/ir/target/implementation/TargetOperationImplementation.h>
 
@@ -61,24 +63,24 @@ public:
     {
         if(getType().isTensor())
         {
-            auto left  = getOperandDataAsTensor(0);
-            auto right = getOperandDataAsTensor(1);
+            auto left  = generic::getDataAsTensor(getOperand(0));
+            auto right = generic::getDataAsTensor(getOperand(1));
 
-            auto applyOperator = getOperandDataAsOperator(2);
+            auto applyOperator = generic::getDataAsOperator(getOperand(2));
 
-            auto out = getOperandDataAsTensor(3);
+            auto out = generic::getDataAsTensor(getOperand(3));
 
             matrix::apply(out, left, right, applyOperator.getStaticOperator());
         }
         else if(getType().isInteger())
         {
-            auto left  = matrix::Scalar(getOperandDataAsInteger(0));
-            auto right = matrix::Scalar(getOperandDataAsInteger(1));
+            auto left  = matrix::Scalar(generic::getDataAsInteger(getOperand(0)));
+            auto right = matrix::Scalar(generic::getDataAsInteger(getOperand(1)));
 
-            auto applyOperator = getOperandDataAsOperator(2);
+            auto applyOperator = generic::getDataAsOperator(getOperand(2));
 
             auto outValue = ir::value_cast<ir::TargetValue>(getOperand(3).getValue());
-            auto outData  = ir::data_cast<ir::IntegerData>(outValue.getData());
+            auto outData  = ir::data_cast<generic::IntegerData>(outValue.getData());
 
             matrix::Scalar result;
 

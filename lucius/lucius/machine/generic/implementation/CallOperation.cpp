@@ -7,6 +7,8 @@
 // Lucius Includes
 #include <lucius/machine/generic/interface/CallOperation.h>
 
+#include <lucius/machine/generic/interface/DataAccessors.h>
+
 #include <lucius/ir/interface/BasicBlock.h>
 #include <lucius/ir/interface/Use.h>
 #include <lucius/ir/interface/Value.h>
@@ -60,19 +62,19 @@ static void runExternalFunction(const ir::ExternalFunction& externalFunction,
 
         if(type.isInteger())
         {
-            auto data = value.getDataAsInteger();
+            auto data = getDataAsInteger(operand);
 
             arguments.push_back(util::ForeignFunctionArgument(data));
         }
         else if(type.isFloat())
         {
-            auto data = value.getDataAsFloat();
+            auto data = getDataAsFloat(operand);
 
             arguments.push_back(util::ForeignFunctionArgument(data));
         }
         else if(type.isTensor())
         {
-            auto data = value.getDataAsTensor();
+            auto data = getDataAsTensor(operand);
 
             tensorArguments.push_back(data);
 
@@ -80,7 +82,7 @@ static void runExternalFunction(const ir::ExternalFunction& externalFunction,
         }
         else if(type.isPointer())
         {
-            auto* data = value.getDataAsPointer();
+            auto* data = getDataAsPointer(operand);
 
             arguments.push_back(util::ForeignFunctionArgument(data));
         }

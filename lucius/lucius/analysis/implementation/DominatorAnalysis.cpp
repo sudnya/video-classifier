@@ -90,7 +90,8 @@ DominatorAnalysis::~DominatorAnalysis()
 
 void DominatorAnalysis::runOnFunction(const Function& function)
 {
-    util::log("DominatorAnalysis") << "Running on " << function.name() << "\n";
+    util::log("DominatorAnalysis") << "Running on " << function.name() << " {"
+        << function.id() << "}\n";
 
     _implementation->buildForwardDominatorTree(function);
 }

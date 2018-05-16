@@ -7,6 +7,8 @@
 // Lucius Includes
 #include <lucius/machine/generic/interface/BranchOperation.h>
 
+#include <lucius/machine/generic/interface/DataAccessors.h>
+
 #include <lucius/ir/interface/BasicBlock.h>
 #include <lucius/ir/interface/Use.h>
 #include <lucius/ir/interface/Value.h>
@@ -45,7 +47,7 @@ public:
     /*! \brief Execute the branch, using the condition to select the next block. */
     virtual ir::BasicBlock execute()
     {
-        auto condition = getOperandDataAsInteger(0);
+        auto condition = getDataAsInteger(getOperand(0));
 
         auto target      = ir::value_cast<ir::BasicBlock>(getOperand(1).getValue());
         auto fallthrough = ir::value_cast<ir::BasicBlock>(getOperand(2).getValue());

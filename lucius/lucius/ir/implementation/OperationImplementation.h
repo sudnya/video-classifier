@@ -102,6 +102,7 @@ public:
 public:
     virtual std::string toString() const;
     virtual std::string toSummaryString() const;
+    std::string operandString() const;
 
 private:
     std::weak_ptr<OperationImplementation> _this;

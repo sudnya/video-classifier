@@ -7,6 +7,9 @@
 // Lucius Includes
 #include <lucius/machine/cpu/interface/CopyOperation.h>
 
+#include <lucius/machine/generic/interface/IntegerData.h>
+#include <lucius/machine/generic/interface/DataAccessors.h>
+
 #include <lucius/ir/interface/BasicBlock.h>
 #include <lucius/ir/interface/Use.h>
 #include <lucius/ir/interface/Value.h>
@@ -16,7 +19,6 @@
 #include <lucius/ir/types/interface/TensorType.h>
 
 #include <lucius/ir/target/interface/PerformanceMetrics.h>
-#include <lucius/ir/target/interface/IntegerData.h>
 #include <lucius/ir/target/interface/TargetValue.h>
 #include <lucius/ir/target/interface/TargetValueData.h>
 
@@ -58,17 +60,17 @@ public:
     {
         if(getType().isTensor())
         {
-            auto out = getOperandDataAsTensor(1);
-            auto in  = getOperandDataAsTensor(0);
+            auto out = generic::getDataAsTensor(getOperand(1));
+            auto in  = generic::getDataAsTensor(getOperand(0));
 
             matrix::copy(out, in);
         }
         else if(getType().isInteger())
         {
-            size_t in = getOperandDataAsInteger(0);
+            size_t in = generic::getDataAsInteger(getOperand(0));
 
             auto outValue = ir::value_cast<ir::TargetValue>(getOperand(1).getValue());
-            auto outData  = ir::data_cast<ir::IntegerData>(outValue.getData());
+            auto outData  = ir::data_cast<generic::IntegerData>(outValue.getData());
 
             outData.setInteger(in);
         }

@@ -67,6 +67,8 @@ public:
 
     static void curandSetPseudoRandomGeneratorSeed(curandGenerator_t generator,
         unsigned long long seed);
+    static void curandSetGeneratorOffset(curandGenerator_t generator,
+        unsigned long long offset);
 
     static void curandGenerateUniform(curandGenerator_t generator,
         float *outputPtr, size_t num);
@@ -93,7 +95,9 @@ private:
         curandStatus_t (*curandDestroyGenerator)(curandGenerator_t generator);
 
         curandStatus_t (*curandSetPseudoRandomGeneratorSeed)(curandGenerator_t generator,
-            unsigned long long seet);
+            unsigned long long seed);
+        curandStatus_t (*curandSetGeneratorOffset)(curandGenerator_t generator,
+            unsigned long long offset);
 
         curandStatus_t (*curandGenerateUniform)(curandGenerator_t generator,
             float *outputPtr, size_t num);

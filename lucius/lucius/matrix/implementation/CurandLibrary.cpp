@@ -10,6 +10,7 @@
 #include <lucius/parallel/interface/cuda.h>
 
 #include <lucius/util/interface/Casts.h>
+#include <lucius/util/interface/debug.h>
 
 // System-Specific Includes
 #include <dlfcn.h>
@@ -68,6 +69,19 @@ void CurandLibrary::curandSetPseudoRandomGeneratorSeed(curandGenerator_t generat
     if(status != CURAND_STATUS_SUCCESS)
     {
         throw std::runtime_error("Cuda seed generator failed: " +
+            curandGetErrorString(status));
+    }
+}
+
+void CurandLibrary::curandSetGeneratorOffset(curandGenerator_t generator, unsigned long long offset)
+{
+    _check();
+
+    curandStatus_t status = (*_interface.curandSetGeneratorOffset)(generator, offset);
+
+    if(status != CURAND_STATUS_SUCCESS)
+    {
+        throw std::runtime_error("Cuda generator set offset failed: " +
             curandGetErrorString(status));
     }
 }
@@ -266,6 +280,7 @@ void CurandLibrary::Interface::load()
         DynLink(curandDestroyGenerator);
 
         DynLink(curandSetPseudoRandomGeneratorSeed);
+        DynLink(curandSetGeneratorOffset);
 
         DynLink(curandGenerateUniform);
         DynLink(curandGenerateNormal);

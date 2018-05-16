@@ -9,8 +9,10 @@
 
 #include <lucius/ir/interface/Value.h>
 #include <lucius/ir/interface/Type.h>
+#include <lucius/ir/interface/IRBuilder.h>
 
 #include <lucius/lazy-ir/interface/LazyValue.h>
+#include <lucius/lazy-ir/interface/LazyIr.h>
 
 #include <lucius/util/interface/debug.h>
 
@@ -28,7 +30,9 @@ LazyValue castToScalar(LazyValue input)
         return input;
     }
 
-    assertM(false, "Not implemented.");
+    auto& builder = getBuilder();
+
+    return LazyValue(builder.addGet(input.getValue(), getConstant(0).getValue()));
 }
 
 }

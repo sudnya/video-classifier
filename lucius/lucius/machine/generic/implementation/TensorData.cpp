@@ -5,7 +5,7 @@
 */
 
 // Lucius Includes
-#include <lucius/ir/target/interface/TensorData.h>
+#include <lucius/machine/generic/interface/TensorData.h>
 
 #include <lucius/ir/interface/Shape.h>
 
@@ -15,14 +15,15 @@
 
 namespace lucius
 {
-
-namespace ir
+namespace machine
+{
+namespace generic
 {
 
-class TensorDataImplementation : public TargetValueDataImplementation
+class TensorDataImplementation : public ir::TargetValueDataImplementation
 {
 public:
-    TensorDataImplementation(const Shape& shape, const matrix::Precision& precision)
+    TensorDataImplementation(const ir::Shape& shape, const matrix::Precision& precision)
     : _tensor(shape.getDimension(), precision)
     {
 
@@ -50,7 +51,7 @@ private:
 
 };
 
-TensorData::TensorData(const Shape& shape, const matrix::Precision& precision)
+TensorData::TensorData(const ir::Shape& shape, const matrix::Precision& precision)
 : TensorData(std::make_shared<TensorDataImplementation>(shape, precision))
 {
 
@@ -62,7 +63,7 @@ TensorData::TensorData()
 
 }
 
-TensorData::TensorData(std::shared_ptr<TargetValueDataImplementation> implementation)
+TensorData::TensorData(std::shared_ptr<ir::TargetValueDataImplementation> implementation)
 : _implementation(std::static_pointer_cast<TensorDataImplementation>(implementation))
 {
     assert(static_cast<bool>(std::dynamic_pointer_cast<TensorDataImplementation>(implementation)));
@@ -73,12 +74,13 @@ matrix::Matrix TensorData::getTensor() const
     return _implementation->getTensor();
 }
 
-std::shared_ptr<TargetValueDataImplementation> TensorData::getImplementation() const
+std::shared_ptr<ir::TargetValueDataImplementation> TensorData::getImplementation() const
 {
     return _implementation;
 }
 
-} // namespace ir
+} // namespace generic
+} // namespace machine
 } // namespace lucius
 
 

@@ -6,14 +6,14 @@
 
 #pragma once
 
-// Lucius Includes
-#include <lucius/ir/interface/Value.h>
-
 // Standard Library Includes
 #include <memory>
 #include <set>
 
 // Forward Declarations
+namespace lucius { namespace ir { class Value;    } }
+namespace lucius { namespace ir { class Variable; } }
+
 namespace lucius { namespace matrix { class Matrix; } }
 
 namespace lucius { namespace lazy { class LazyValueImplementation; } }
@@ -30,6 +30,7 @@ class LazyValue
 public:
     LazyValue();
     explicit LazyValue(ir::Value );
+    explicit LazyValue(ir::Variable );
 
 public:
     template <typename T>
@@ -40,6 +41,9 @@ public:
 public:
     ir::Value getValueForRead();
     ir::Value getValue() const;
+
+public:
+    bool isVariable() const;
 
 public:
     using ValueSet = std::set<ir::Value>;

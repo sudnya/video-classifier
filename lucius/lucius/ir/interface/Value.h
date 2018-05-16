@@ -19,6 +19,7 @@ namespace lucius { namespace ir { class Type;             } }
 namespace lucius { namespace ir { class BasicBlock;       } }
 namespace lucius { namespace ir { class Gradient;         } }
 namespace lucius { namespace ir { class Function;         } }
+namespace lucius { namespace ir { class Variable;         } }
 namespace lucius { namespace ir { class ExternalFunction; } }
 namespace lucius { namespace ir { class TargetValue;      } }
 namespace lucius { namespace ir { class TargetOperation;  } }
@@ -44,6 +45,7 @@ public:
     Value(ExternalFunction f);
     Value(TargetValue t);
     Value(TargetOperation t);
+    Value(Variable t);
     Value(std::shared_ptr<ValueImplementation>);
     ~Value();
 
@@ -55,6 +57,9 @@ public:
     Type getType() const;
 
 public:
+    /*! \brief Test if the value contains anything */
+    bool isValid() const;
+
     /*! \brief Test if the value is an operation. */
     bool isOperation() const;
 
@@ -94,6 +99,12 @@ public:
     /*! \brief Test if the value is a basic block. */
     bool isBasicBlock() const;
 
+    /*! \brief Test if the value is a random state. */
+    bool isRandomState() const;
+
+    /*! \brief Test if the value is a structure. */
+    bool isStructure() const;
+
 public:
     using UseList = std::list<Use>;
 
@@ -110,6 +121,9 @@ public:
 public:
     void bindToContext(Context* context);
     void bindToContextIfDifferent(Context* context);
+
+public:
+    Context& getContext();
 
 public:
     bool operator<(const Value& right) const;

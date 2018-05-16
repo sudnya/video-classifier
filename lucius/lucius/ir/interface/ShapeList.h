@@ -29,6 +29,10 @@ public:
           Shape& front();
     const Shape& front() const;
 
+public:
+          Shape& operator[](size_t index);
+    const Shape& operator[](size_t index) const;
+
 private:
     std::vector<Shape> _shapes;
 

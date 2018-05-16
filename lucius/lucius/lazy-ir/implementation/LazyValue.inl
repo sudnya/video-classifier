@@ -23,12 +23,12 @@ T LazyValue::materialize()
 {
     void* value = _runProgram();
 
-    T* result = reinterpret_cast<T*>(value);
-
     if(value == nullptr)
     {
         throw std::runtime_error("Could not get return value from IR execution engine.");
     }
+
+    T* result = reinterpret_cast<T*>(value);
 
     T resultValue = *result;
 

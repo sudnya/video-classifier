@@ -9,6 +9,10 @@
 // Standard Library Includes
 #include <string>
 #include <list>
+#include <tuple>
+
+// Lucius Includes
+namespace lucius { namespace util { class Any; } }
 
 namespace lucius
 {
@@ -21,15 +25,21 @@ class IRExecutionEngineOptions
 {
 public:
     void addTargetIndependentOptimizationPass(const std::string& passName);
+    void addTargetIndependentOptimizationPass(const std::string& passName, const util::Any&);
+    void addTargetDependentOptimizationPass(const std::string& passName);
 
 public:
-    using StringList = std::list<std::string>;
+    using PassDescriptor = std::tuple<std::string, util::Any>;
+
+    using PassList = std::list<PassDescriptor>;
 
 public:
-    const StringList& getTargetIndependentOptimizationPasses() const;
+    const PassList& getTargetIndependentOptimizationPasses() const;
+    const PassList& getTargetDependentOptimizationPasses() const;
 
 private:
-    StringList _targetIndependentOptimizationPasses;
+    PassList _targetIndependentOptimizationPasses;
+    PassList _targetDependentOptimizationPasses;
 
 };
 

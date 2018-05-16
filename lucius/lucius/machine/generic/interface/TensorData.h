@@ -11,16 +11,18 @@
 
 // Forward Declarations
 namespace lucius { namespace ir { class TargetValueDataImplementation; } }
-namespace lucius { namespace ir { class TensorDataImplementation;      } }
 namespace lucius { namespace ir { class Shape;                         } }
+
+namespace lucius { namespace machine { namespace generic { class TensorDataImplementation; } } }
 
 namespace lucius { namespace matrix { class Matrix;    } }
 namespace lucius { namespace matrix { class Precision; } }
 
 namespace lucius
 {
-
-namespace ir
+namespace machine
+{
+namespace generic
 {
 
 /*! \brief A class for representing a tensor value resource. */
@@ -28,21 +30,22 @@ class TensorData
 {
 public:
     TensorData();
-    TensorData(const Shape& shape, const matrix::Precision& precision);
-    TensorData(std::shared_ptr<TargetValueDataImplementation> implementation);
+    TensorData(const ir::Shape& shape, const matrix::Precision& precision);
+    TensorData(std::shared_ptr<ir::TargetValueDataImplementation> implementation);
 
 public:
     matrix::Matrix getTensor() const;
 
 public:
-    std::shared_ptr<TargetValueDataImplementation> getImplementation() const;
+    std::shared_ptr<ir::TargetValueDataImplementation> getImplementation() const;
 
 private:
     std::shared_ptr<TensorDataImplementation> _implementation;
 
 };
 
-} // namespace ir
+} // namespace generic
+} // namespace machine
 } // namespace lucius
 
 

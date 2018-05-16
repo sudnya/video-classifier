@@ -22,7 +22,7 @@ namespace optimization
 {
 
 LazyProgramCompleterPass::LazyProgramCompleterPass()
-: Pass("LazyProgramCompleterPass")
+: FunctionPass("LazyProgramCompleterPass")
 {
 
 }

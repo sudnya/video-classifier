@@ -57,7 +57,7 @@ public:
 public:
     void bindToContext(Context* context);
     void bindToContextIfDifferent(Context* context);
-    Context* getContext();
+    Context* getContext() const;
 
 public:
     virtual std::shared_ptr<ValueImplementation> clone() const = 0;
