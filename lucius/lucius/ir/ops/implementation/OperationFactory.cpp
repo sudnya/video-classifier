@@ -7,8 +7,8 @@
 // Lucius Includes
 #include <lucius/ir/ops/interface/OperationFactory.h>
 
-// Standard Library Includes
-#include <map>
+#include <lucius/ir/ops/interface/BroadcastOperation.h>
+#include <lucius/ir/ops/interface/SetOperation.h>
 
 namespace lucius
 {
@@ -16,48 +16,70 @@ namespace lucius
 namespace ir
 {
 
-class OperationFactoryImplementation
-{
-public:
-    Operation createBackPropagationOperation(const Operation& op)
-    {
-        auto backPropagationOp = _backPropagationOperations.find(op);
-
-        if(backPropagationOp == _backPropagationOperations.end())
-        {
-            throw std::runtime_error("There is no registered back propagation operation for '" +
-                op.name() + "'");
-        }
-
-        return backPropagationOp->second;;
-    }
-
-public:
-    void addBackPropagationOperation(const Operation& original, const Operation& back)
-    {
-        _backPropagationOperations.emplace(std::make_pair(original, back));
-    }
-
-private:
-    std::map<Operation, Operation> _backPropagationOperations;
-
-};
-
-static std::unique_ptr<OperationFactoryImplementation> implementation;
-
-static OperationFactoryImplementation& getImplementation()
-{
-    if(!implementation)
-    {
-        implementation = std::make_unique<OperationFactoryImplementation>();
-    }
-
-    return *implementation;
-}
+constexpr bool DoesntNeedSavedOutput = false;
 
 Operation OperationFactory::createBackPropagationOperation(const Operation& op)
 {
-    return getImplementation().createBackPropagationOperation(op);
+    if(op.name() == "reduce")
+    {
+        return BroadcastOperation();
+    }
+    else if(op.name() == "get")
+    {
+        return SetOperation();
+    }
+
+    throw std::runtime_error("TODO: add back propagation operation for '" + op.toString() + "'");
+}
+
+OperationFactory::BackPropagationOperandDescriptor
+    OperationFactory::getBackPropagationOperandDescriptor(const Operation& op)
+{
+    if(op.name() == "reduce")
+    {
+        return BackPropagationOperandDescriptor(DoesntNeedSavedOutput, {1, 2});
+    }
+    else if(op.name() == "get")
+    {
+        return BackPropagationOperandDescriptor(DoesntNeedSavedOutput, {1});
+    }
+
+    throw std::runtime_error("TODO: add back propagation operand descriptor for '" +
+        op.toString() + "'");
+}
+
+using BackPropagationOperandDescriptor = OperationFactory::BackPropagationOperandDescriptor;
+
+BackPropagationOperandDescriptor::BackPropagationOperandDescriptor(bool needsSavedOutput,
+    const IndexVector& savedIndices)
+: _needsSavedOutput(needsSavedOutput), _savedIndices(savedIndices)
+{
+
+}
+
+bool BackPropagationOperandDescriptor::needsSavedOutput() const
+{
+    return _needsSavedOutput;
+}
+
+BackPropagationOperandDescriptor::iterator BackPropagationOperandDescriptor::begin()
+{
+    return _savedIndices.begin();
+}
+
+BackPropagationOperandDescriptor::const_iterator BackPropagationOperandDescriptor::begin() const
+{
+    return _savedIndices.begin();
+}
+
+BackPropagationOperandDescriptor::iterator BackPropagationOperandDescriptor::end()
+{
+    return _savedIndices.end();
+}
+
+BackPropagationOperandDescriptor::const_iterator BackPropagationOperandDescriptor::end() const
+{
+    return _savedIndices.end();
 }
 
 } // namespace ir

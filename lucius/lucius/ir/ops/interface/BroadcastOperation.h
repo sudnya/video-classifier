@@ -20,6 +20,7 @@ class BroadcastOperation : public Operation
 {
 public:
     BroadcastOperation(Value left, Value right, Value dimensions, Value operation);
+    BroadcastOperation();
     ~BroadcastOperation();
 
 };

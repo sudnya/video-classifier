@@ -205,6 +205,11 @@ bool TargetValue::isStructure() const
     return getValue().isStructure();
 }
 
+bool TargetValue::isShape() const
+{
+    return getValue().isShape();
+}
+
 bool TargetValue::operator==(const TargetValue& v) const
 {
     return _implementation->getId() == v._implementation->getId();

@@ -59,6 +59,9 @@ public:
     /*! \brief Get the number of dimensions. */
     size_t size() const;
 
+    /*! \brief Is the shape empty? */
+    bool empty() const;
+
 public:
     /*! \brief Get the total number of elements, if known. */
     size_t elements() const;

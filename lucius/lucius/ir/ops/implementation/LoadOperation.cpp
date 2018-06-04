@@ -56,6 +56,12 @@ public:
         return getOperand(0).getValue().getType();
     }
 
+public:
+    virtual bool isLoad() const
+    {
+        return true;
+    }
+
 };
 
 LoadOperation::LoadOperation(Variable newValue)

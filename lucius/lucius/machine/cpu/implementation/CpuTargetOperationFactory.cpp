@@ -11,6 +11,7 @@
 #include <lucius/machine/generic/interface/ReturnOperation.h>
 #include <lucius/machine/generic/interface/BranchOperation.h>
 #include <lucius/machine/generic/interface/PHIOperation.h>
+#include <lucius/machine/generic/interface/GradientOperation.h>
 #include <lucius/machine/generic/interface/AllocationOperation.h>
 #include <lucius/machine/generic/interface/FreeOperation.h>
 #include <lucius/machine/generic/interface/GetOperation.h>
@@ -29,6 +30,7 @@
 #include <lucius/machine/cpu/interface/LessOperation.h>
 #include <lucius/machine/cpu/interface/SRandOperation.h>
 #include <lucius/machine/cpu/interface/RandOperation.h>
+#include <lucius/machine/cpu/interface/ReduceOperation.h>
 
 #include <lucius/ir/interface/Type.h>
 
@@ -87,6 +89,10 @@ ir::TargetOperation CpuTargetOperationFactory::create(const std::string& name) c
     {
         return generic::StoreOperation();
     }
+    else if(name == "generic-gradient")
+    {
+        return generic::GradientOperation();
+    }
     else if(name == "allocate")
     {
         return generic::AllocationOperation();
@@ -98,6 +104,10 @@ ir::TargetOperation CpuTargetOperationFactory::create(const std::string& name) c
     else if(name == "cpu-binary-apply")
     {
         return BinaryApplyOperation();
+    }
+    else if(name == "cpu-reduce")
+    {
+        return ReduceOperation();
     }
     else if(name == "cpu-zeros")
     {

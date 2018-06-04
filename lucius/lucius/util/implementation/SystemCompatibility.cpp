@@ -96,6 +96,13 @@ long long unsigned int getFreePhysicalMemory()
         length = sizeof(uint64_t);
         sysctl(mib, 2, &physical_memory, &length, NULL, 0);
         return physical_memory;
+        #elif 1
+        int mib [] = { CTL_HW, HW_MEMSIZE };
+        int64_t value = 0;
+        size_t length = sizeof(value);
+
+        sysctl(mib, 2, &value, &length, NULL, 0);
+        return value;
         #else
         return (100ULL * (1ULL << 20));
         #endif

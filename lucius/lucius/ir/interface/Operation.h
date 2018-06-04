@@ -119,6 +119,9 @@ public:
     /*! \brief Query whether or not the operation returns a void type */
     bool isVoid() const;
 
+    /*! \brief Query whether or not the operation is a load */
+    bool isLoad() const;
+
 public:
     Type getType() const;
 

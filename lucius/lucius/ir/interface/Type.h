@@ -36,6 +36,7 @@ public:
         ArrayId,        // Arrays
         PointerId,      // Pointers
         TensorId,       // Tensors
+        ShapeId,        // Shape
         RandomId,       // Random State: TODO: replace this with an explicit lower level type
         BasicBlockId    // Basic Block
     };
@@ -73,6 +74,9 @@ public:
 
     /*! \brief Is the type a random state. */
     bool isRandomState() const;
+
+    /*! \brief Is the type a random state. */
+    bool isShape() const;
 
 public:
     /*! \brief Get the number of bytes needed to represent the type. */

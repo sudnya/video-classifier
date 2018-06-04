@@ -13,6 +13,7 @@
 
 #include <lucius/ir/types/interface/TensorType.h>
 #include <lucius/ir/types/interface/StructureType.h>
+#include <lucius/ir/types/interface/ShapeType.h>
 
 #include <lucius/matrix/interface/Precision.h>
 
@@ -96,6 +97,11 @@ bool Type::isRandomState() const
     return _implementation->getTypeId() == RandomId;
 }
 
+bool Type::isShape() const
+{
+    return _implementation->getTypeId() == ShapeId;
+}
+
 size_t Type::getBytes() const
 {
     if(isVoid())
@@ -123,6 +129,12 @@ size_t Type::getBytes() const
     else if(isPointer())
     {
         return 8;
+    }
+    else if(isShape())
+    {
+        auto shapeType = type_cast<ShapeType>(*this);
+
+        return shapeType.getShape().size() * sizeof(size_t);
     }
     else if(isInteger())
     {

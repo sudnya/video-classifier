@@ -15,8 +15,10 @@
 #include <lucius/ir/interface/Value.h>
 #include <lucius/ir/interface/Function.h>
 #include <lucius/ir/interface/Shape.h>
+#include <lucius/ir/interface/ShapeUtilities.h>
 
 #include <lucius/ir/types/interface/TensorType.h>
+#include <lucius/ir/types/interface/ShapeType.h>
 
 #include <lucius/ir/target/interface/PerformanceMetrics.h>
 #include <lucius/ir/target/interface/TargetValue.h>
@@ -47,6 +49,8 @@ public:
     {
         auto outputTensorType = ir::type_cast<ir::TensorType>(getType());
 
+        auto valueSize = outputTensorType.getPrecision().size();
+
         auto inputType = getOperand(0).getValue().getType();
         auto inputTensorType = ir::type_cast<ir::TensorType>(inputType);
 
@@ -56,7 +60,7 @@ public:
         // size flops, two for each input element
         // one load for each input, one store for each output
         // 0 network ops
-        return ir::PerformanceMetrics(size, (inputSize + outputSize) * valueSize, 0.0);
+        return ir::PerformanceMetrics(inputSize, (inputSize + outputSize) * valueSize, 0.0);
     }
 
 public:
@@ -65,13 +69,13 @@ public:
         assert(getType().isTensor());
 
         auto input = generic::getDataAsTensor(getOperand(0));
-        auto shape = generic::getDataAsShape(getOperand(1));
+        auto shape = generic::getDataAsDimension(getOperand(1));
 
         auto applyOperator = generic::getDataAsOperator(getOperand(2));
 
         auto out = generic::getDataAsTensor(getOperand(3));
 
-        matrix::apply(out, left, right, applyOperator.getStaticOperator());
+        matrix::reduce(out, input, shape, applyOperator.getStaticOperator());
 
         return getParent();
     }
@@ -100,18 +104,18 @@ public:
         auto inputShape = inputTensorType.getShape();
 
         auto reduceType = getOperand(1).getValue().getType();
-        auto reduceShapeType = ir::type_cast<ir::ShapeType>();
+        auto reduceShapeType = ir::type_cast<ir::ShapeType>(reduceType);
 
         auto reduceShape = reduceShapeType.getShape();
 
-        Shape outputShape({1});
+        ir::Shape outputShape({1});
 
         if(!reduceShape.empty())
         {
             outputShape = removeElements(inputShape, reduceShape);
         }
 
-        return TensorType(outputShape, inputTensorType.getPrecision());
+        return ir::TensorType(outputShape, inputTensorType.getPrecision());
     }
 
 };

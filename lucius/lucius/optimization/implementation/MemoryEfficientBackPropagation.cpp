@@ -65,6 +65,7 @@ using ValueSets = std::vector<ValueSet>;
 using BasicBlockSet = std::set<BasicBlock>;
 using OperationSet = std::set<Operation>;
 using OperationMemoryAnalysis = analysis::OperationMemoryAnalysis;
+using OperationFactory = ir::OperationFactory;
 
 static ValueSet getGradientValues(const ir::BasicBlock& basicBlock)
 {
@@ -77,9 +78,7 @@ static ValueSet getGradientValues(const ir::BasicBlock& basicBlock)
             continue;
         }
 
-        auto gradientOperation = ir::value_cast<ComputeGradientOperation>(operation);
-
-        gradientValues.insert(gradientOperation);
+        gradientValues.insert(operation);
     }
 
     return gradientValues;
@@ -138,7 +137,14 @@ static OperationSet getOperationBackSlice(const ValueSet& gradientValues)
 
         for(auto predecessor : predecessors)
         {
+            // don't visit operations multiple times
             if(backSlice.count(predecessor) != 0)
+            {
+                continue;
+            }
+
+            // stop when we hit loads from variables
+            if(predecessor.isLoad())
             {
                 continue;
             }
@@ -156,6 +162,12 @@ static bool isReady(const Operation& operation, const OperationSet& finishedOper
 
     for(auto predecessor : predecessors)
     {
+        // skip loads
+        if(predecessor.isLoad())
+        {
+            continue;
+        }
+
         if(finishedOperations.count(predecessor) == 0)
         {
             return false;
@@ -173,6 +185,9 @@ static OperationSet getReadyOperationsInBackSlice(const OperationSet& backSlice)
     {
         if(isReady(operation, {}))
         {
+            util::log("MemoryEfficientBackPropagationPass") << "   added '"
+                << operation.toString() << "'.\n";
+
             readyOperations.insert(operation);
         }
     }
@@ -186,6 +201,9 @@ using OperationVectors = std::vector<OperationVector>;
 static OperationVectors partitionGraphIntoWavefronts(ir::Function& function,
     const ir::BasicBlock& basicBlock)
 {
+    util::log("MemoryEfficientBackPropagationPass") << " Partitioning back slice into "
+        "wave fronts.\n";
+
     OperationVectors wavefronts;
 
     auto gradientValues = getGradientValues(basicBlock);
@@ -196,19 +214,23 @@ static OperationVectors partitionGraphIntoWavefronts(ir::Function& function,
 
     OperationSet finishedOperations;
 
+    // TODO: Consider making this a serial traversal to expose a longer chain for partitioning
     while(!readyOperations.empty())
     {
+        util::log("MemoryEfficientBackPropagationPass") << "  new wave front "
+            << wavefronts.size() << ".\n";
+
         OperationSet nextReadyOperations;
 
         wavefronts.push_back(OperationVector(readyOperations.begin(), readyOperations.end()));
 
         finishedOperations.insert(readyOperations.begin(), readyOperations.end());
 
-        for(auto operation : readyOperations)
+        for(auto& operation : readyOperations)
         {
             auto successors = operation.getSuccessors();
 
-            for(auto successor : successors)
+            for(auto& successor : successors)
             {
                 if(!isReady(successor, finishedOperations))
                 {
@@ -221,7 +243,11 @@ static OperationVectors partitionGraphIntoWavefronts(ir::Function& function,
                     continue;
                 }
 
-                nextReadyOperations.insert(successor);
+                if(nextReadyOperations.insert(successor).second)
+                {
+                    util::log("MemoryEfficientBackPropagationPass") << "   added '"
+                        << successor.toString() << "'.\n";
+                }
             }
         }
 
@@ -300,27 +326,40 @@ static bool bisectSchedule(IntVector& currentSchedule, double& availableMemory,
 
     double requiredMemory = wavefrontMemoryUsage[midpoint];
 
-    if(requiredMemory < availableMemory)
+    if(availableMemory < requiredMemory)
     {
         return false;
     }
 
     availableMemory -= requiredMemory;
 
+    util::log("MemoryEfficientBackPropagationPass") << "   scheduled wavefront "
+        << midpoint << ", remaining memory is " << availableMemory << "\n";
+
     currentSchedule.push_back(midpoint);
 
     // recurse right
-    size_t rightRemainingWavefrontCount = remainingWavefrontCount - midpoint - 1;
+    bool rightIsFullyScheduled = true;
 
-    bool rightIsFullyScheduled = bisectSchedule(currentSchedule, availableMemory, midpoint + 1,
-        rightRemainingWavefrontCount, wavefrontMemoryUsage);
+    if(midpoint + 1 < remainingWavefrontCount)
+    {
+        size_t rightRemainingWavefrontCount = remainingWavefrontCount - midpoint - 1;
+
+        rightIsFullyScheduled = bisectSchedule(currentSchedule, availableMemory, midpoint + 1,
+            rightRemainingWavefrontCount, wavefrontMemoryUsage);
+    }
 
     if(!rightIsFullyScheduled)
     {
         return false;
     }
 
-    // recurse left
+    // recurse left if any exist
+    if(startingWavefront == midpoint)
+    {
+        return true;
+    }
+
     size_t leftRemainingWavefrontCount = midpoint - startingWavefront;
 
     bool leftIsFullyScheduled = bisectSchedule(currentSchedule, availableMemory,
@@ -329,7 +368,7 @@ static bool bisectSchedule(IntVector& currentSchedule, double& availableMemory,
     return leftIsFullyScheduled;
 }
 
-static void removeFinishedWavefronts(size_t remainingWavefronts,
+static void removeFinishedWavefronts(size_t& remainingWavefronts,
     const IntVector& currentSchedule)
 {
     IntSet wavefrontsInCurrentSchedule(currentSchedule.begin(), currentSchedule.end());
@@ -356,14 +395,21 @@ static ValueSets schedulePhases(const OperationVectors& wavefronts, double avail
 
     DoubleVector wavefrontMemoryUsage = getMemoryUsage(wavefronts, memoryAnalysis);
 
+    util::log("MemoryEfficientBackPropagationPass") << " Creating back propagation phases.\n";
+
     while(remainingWavefronts > 0)
     {
+        util::log("MemoryEfficientBackPropagationPass") << "  phase " << schedule.size() << "\n";
+
         double phaseAvailableMemory = availableMemory;
 
         IntVector currentSchedule;
 
         // schedule values in the last wavefront to ensure progress
         size_t lastWavefrontIndex = remainingWavefronts - 1;
+
+        util::log("MemoryEfficientBackPropagationPass") << "   scheduled wavefront "
+            << lastWavefrontIndex << ", remaining memory is " << availableMemory << "\n";
 
         currentSchedule.push_back(lastWavefrontIndex);
 
@@ -382,22 +428,36 @@ static ValueSets schedulePhases(const OperationVectors& wavefronts, double avail
     }
 
     // Return the set of values saved in each phase
+    util::log("MemoryEfficientBackPropagationPass") << " Finding values needed in each phase.\n";
     ValueSets values;
 
     for(auto& phase : schedule)
     {
+        util::log("MemoryEfficientBackPropagationPass") << "  For phase...\n";
         ValueSet valuesSavedThisPhase;
 
         for(auto& wavefrontId : phase)
         {
+            util::log("MemoryEfficientBackPropagationPass") << "   From wavefront "
+                << wavefrontId << "\n";
             auto& wavefront = wavefronts[wavefrontId];
 
             for(auto& operation : wavefront)
             {
+                util::log("MemoryEfficientBackPropagationPass") << "    From operation "
+                    << operation.toString() << "\n";
+
                 auto values = operation.getUsedValues();
 
                 for(auto& value : values)
                 {
+                    if(!value.isOperation())
+                    {
+                        continue;
+                    }
+
+                    util::log("MemoryEfficientBackPropagationPass") << "     value '"
+                        << value.toString() << "' is needed.\n";
                     valuesSavedThisPhase.insert(value);
                 }
             }
@@ -557,6 +617,9 @@ static void addRecomputeOperations(ValueMap& recomputedValues,
         auto value = *readyValuesToRecompute.begin();
         readyValuesToRecompute.erase(readyValuesToRecompute.begin());
 
+        util::log("MemoryEfficientBackPropagationPass") << "   recomputing '"
+            << value.toString() << "'.\n";
+
         auto operation = ir::value_cast<Operation>(value);
 
         auto block = operation.getParent();
@@ -609,29 +672,44 @@ static void saveValues(ValueMap& savedValues, const ValueMap& availableValues,
     savedValues = std::move(newSavedValues);
 }
 
-static ValueList getDirectlyConnectedValues(const Value& value)
-{
-    ValueList connectedValues;
-
-    // TODO
-    assertM(false, "Not implemented.");
-
-    return connectedValues;
-}
-
 static bool canGradientBeComputed(const Value& connectedValue, const ValueMap& savedValues,
     const ValueMap& gradientValues)
 {
-    // TODO
-    assertM(false, "Not implemented.");
+    auto operation = ir::value_cast<Operation>(connectedValue);
 
-    return false;
+    // it can be computed if all required operands are available
+    auto descriptor = OperationFactory::getBackPropagationOperandDescriptor(operation);
+
+    if(descriptor.needsSavedOutput())
+    {
+        if(savedValues.count(operation) == 0)
+        {
+            return false;
+        }
+    }
+
+    for(auto& savedOperandIndex : descriptor)
+    {
+        auto value = operation.getOperand(savedOperandIndex).getValue();
+
+        if(!value.isOperation())
+        {
+            continue;
+        }
+
+        if(savedValues.count(value) == 0)
+        {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 static void addConnectedValues(ValueSet& frontier, const Value& value,
     const ValueMap& gradientValues, const ValueMap& savedValues)
 {
-    auto connectedValues = getDirectlyConnectedValues(value);
+    auto connectedValues = getPredecessors(value);
 
     for(auto& connectedValue : connectedValues)
     {
@@ -644,6 +722,9 @@ static void addConnectedValues(ValueSet& frontier, const Value& value,
         {
             continue;
         }
+
+        util::log("MemoryEfficientBackPropagationPass") << "     added '"
+            << connectedValue.toString() << "'\n";
 
         frontier.insert(connectedValue);
     }
@@ -695,11 +776,50 @@ static void attachOperationToSubgraph(BasicBlockList& subgraph,
 }
 
 static ValueList setupBackPropagationOperands(const Operation& operation,
-    const ValueMap& gradientValues)
+    const ValueMap& savedValues, const ValueMap& gradientValues)
 {
-    assertM(false, "Not implemented.");
+    util::log("MemoryEfficientBackPropagationPass") << "       setting up operands\n";
+    auto descriptor = OperationFactory::getBackPropagationOperandDescriptor(operation);
 
-    return ValueList();
+    ValueList operands;
+
+    // 1) requested input operands
+    for(auto operandIndex : descriptor)
+    {
+        auto& operand = operation.getOperand(operandIndex);
+
+        if(operand.getValue().isOperation())
+        {
+            auto savedValue = savedValues.find(operand.getValue());
+
+            assert(savedValue == savedValues.end());
+
+            operands.push_back(savedValue->second);
+        }
+        else
+        {
+            operands.push_back(operand.getValue());
+        }
+    }
+
+    // 2) output operand if necessary
+    if(descriptor.needsSavedOutput())
+    {
+        auto savedOutputValue = savedValues.find(operation);
+
+        assert(savedOutputValue == savedValues.end());
+
+        operands.push_back(savedOutputValue->second);
+    }
+
+    // 3) output gradient
+    auto gradientValue = gradientValues.find(operation);
+
+    assert(gradientValue != gradientValues.end());
+
+    operands.push_back(gradientValue->second);
+
+    return operands;
 }
 
 static Value addGradientStepOperation(BasicBlockList& subgraph,
@@ -710,19 +830,25 @@ static Value addGradientStepOperation(BasicBlockList& subgraph,
 
     Value gradientValue;
 
+    util::log("MemoryEfficientBackPropagationPass") << "     adding gradient step "
+        "operations for uses\n";
+
     for(auto& use : uses)
     {
-        auto operation = use.getOperation();
+        auto operation = use.getOperation();//ir::value_cast<Operation>(use.getValue());
 
-        auto operands = setupBackPropagationOperands(operation, gradientValues);
+        util::log("MemoryEfficientBackPropagationPass") << "      for use in '" <<
+            operation.toString() << "'\n";
 
-        auto backPropOperation = ir::OperationFactory::createBackPropagationOperation(operation);
+        auto operands = setupBackPropagationOperands(operation, savedValues, gradientValues);
+
+        auto backPropOperation = OperationFactory::createBackPropagationOperation(operation);
 
         backPropOperation.setOperands(operands);
 
         attachOperationToSubgraph(subgraph, basicBlockMap, backPropOperation, originalBasicBlock);
 
-        if(gradientValue.isVoid())
+        if(!gradientValue.isValid())
         {
             gradientValue = backPropOperation;
         }
@@ -746,31 +872,35 @@ static void addBackpropagationOperations(ValueMap& gradientValues, const ValueMa
     BasicBlockList subgraph;
     BasicBlockMap  basicBlockMap;
 
-    // Initialize possible gradient values that could be computed
-    for(auto& valuePair : savedValues)
+    util::log("MemoryEfficientBackPropagationPass") << "    creating frontier of values "
+        "for which gradients can be computed\n";
+    // Initialize frontier with values that can be computed immediately (that have no dependencies)
+    for(auto& pair : gradientValues)
     {
-        auto originalValue = valuePair.first;
+        auto& gradientValue = pair.first;
 
-        addConnectedValues(frontier, originalValue, gradientValues, savedValues);
+        addConnectedValues(frontier, gradientValue, gradientValues, savedValues);
     }
 
+    util::log("MemoryEfficientBackPropagationPass") << "    adding compute gradient operations\n";
     // add operations to compute gradients that are ready
     while(!frontier.empty())
     {
         auto value = *frontier.begin();
         frontier.erase(frontier.begin());
 
-        if(!value.isOperation())
-        {
-            continue;
-        }
-
         auto operation = ir::value_cast<Operation>(value);
 
         auto basicBlock = operation.getParent();
 
+        util::log("MemoryEfficientBackPropagationPass") << "     for '" << value.toString()
+            << "'\n";
+
         auto gradient = addGradientStepOperation(subgraph, basicBlockMap, value,
             savedValues, gradientValues, basicBlock);
+
+        util::log("MemoryEfficientBackPropagationPass") << "      gradient is '"
+            << gradient.toString() << "'\n";
 
         gradientValues.emplace(value, gradient);
 
@@ -789,6 +919,9 @@ static void getBackSlice(ValueSet& valuesToRecompute,
         return;
     }
 
+    util::log("MemoryEfficientBackPropagationPass") << "   adding values to recompute in back "
+        "slice of '" << value.toString() << "'.\n";
+
     // add predecessors until saved values or available values are encountered
     ValueSet frontier;
 
@@ -796,12 +929,12 @@ static void getBackSlice(ValueSet& valuesToRecompute,
 
     while(!frontier.empty())
     {
-        auto next = frontier.begin();
+        auto next = *frontier.begin();
         frontier.erase(frontier.begin());
 
-        valuesToRecompute.insert(*next);
+        valuesToRecompute.insert(next);
 
-        auto predecessors = getPredecessors(*next);
+        auto predecessors = getPredecessors(next);
 
         for(auto& predecessor : predecessors)
         {
@@ -809,6 +942,9 @@ static void getBackSlice(ValueSet& valuesToRecompute,
             {
                 continue;
             }
+
+            util::log("MemoryEfficientBackPropagationPass") << "   added '"
+                << predecessor.toString() << "'.\n";
 
             frontier.insert(predecessor);
         }
@@ -818,11 +954,46 @@ static void getBackSlice(ValueSet& valuesToRecompute,
 static void generateOperations(ir::Function& function, const ValueSets& phases,
     InsertionPoint& insertionPoint)
 {
+    util::log("MemoryEfficientBackPropagationPass") << " initializing saved values.\n";
     ValueMap savedValues;
+
+    // in the first phase, all necessary values are saved
+    for(auto& value : phases.front())
+    {
+        util::log("MemoryEfficientBackPropagationPass") << "  adding saved value '"
+            << value.toString() << "' -> '" << value.toString() << "'\n";
+        savedValues.insert(std::make_pair(value, value));
+    }
+
+    util::log("MemoryEfficientBackPropagationPass") << " initializing gradient values.\n";
     ValueMap gradientValues;
 
-    for(auto& phase : phases)
+    for(auto& operation : insertionPoint.getBasicBlock())
     {
+        if(!operation.isGradientOperation())
+        {
+            continue;
+        }
+
+        auto gradientValue = operation.getOperand(1).getValue();
+
+        util::log("MemoryEfficientBackPropagationPass") << "  added gradient value '"
+            << gradientValue.toString() << "' -> '" << gradientValue.toString()
+            << "' from operation '" << operation.toString() << "'\n";
+
+        gradientValues.insert(std::make_pair(gradientValue, gradientValue));
+    }
+
+    util::log("MemoryEfficientBackPropagationPass") << " generating operations for "
+        << phases.size() << " phases.\n";
+
+    for(auto p = phases.begin(); p != phases.end(); ++p)
+    {
+        auto& phase = *p;
+
+        util::log("MemoryEfficientBackPropagationPass") << "  new phase "
+            << std::distance(phases.begin(), p) << "\n";
+
         ValueSet valuesToRecompute;
 
         for(auto value : phase)
@@ -830,12 +1001,15 @@ static void generateOperations(ir::Function& function, const ValueSets& phases,
             getBackSlice(valuesToRecompute, savedValues, value, function);
         }
 
+        util::log("MemoryEfficientBackPropagationPass") << "   adding recompute operations.\n";
         ValueMap recomputedValues;
 
         addRecomputeOperations(recomputedValues, valuesToRecompute, savedValues, insertionPoint);
 
+        util::log("MemoryEfficientBackPropagationPass") << "   saving recomputed values.\n";
         saveValues(savedValues, recomputedValues, phase);
 
+        util::log("MemoryEfficientBackPropagationPass") << "   adding back prop operations.\n";
         addBackpropagationOperations(gradientValues, savedValues, insertionPoint);
     }
 }
@@ -864,12 +1038,21 @@ void MemoryEfficientBackPropagationPass::runOnFunction(ir::Function& function)
     // get memory available for back prop
     double availableMemory = getAvailableMemoryForBackPropagation();
 
+    util::log("MemoryEfficientBackPropagationPass") << "For function: "
+        << function.toString() << "\n";
+
+    util::log("MemoryEfficientBackPropagationPass") << "Running on function  '"
+        << function.name() << "' with " << (availableMemory/1.0e9) << " (GB) available.\n";
+
     // 0. get basic blocks with gradient operations
     // TODO: be more intelligent than duplicating the code for each block
     auto gradientBasicBlocks = getBasicBlocksWithGradientOperations(function);
 
     for(auto& gradientBasicBlock : gradientBasicBlocks)
     {
+        util::log("MemoryEfficientBackPropagationPass") << " Running on basic block with "
+            "'" << gradientBasicBlock.name() << "' gradient operations.\n";
+
         // 1. partition the graph into wavefronts along the critical path
         auto wavefronts = partitionGraphIntoWavefronts(function, gradientBasicBlock);
 
@@ -879,6 +1062,10 @@ void MemoryEfficientBackPropagationPass::runOnFunction(ir::Function& function)
 
         availableMemory = std::max(0.0, availableMemory - workingSpace);
 
+        util::log("MemoryEfficientBackPropagationPass") << " Working space requirement is "
+            << (workingSpace/1.0e9) << " (GB), remaining memory for backprop is "
+            << (availableMemory/1.0e9) << " (GB).\n";
+
         // 3. divide the back propagation operation into phases
         auto phases = schedulePhases(wavefronts, availableMemory, memoryAnalysis);
 
@@ -887,6 +1074,9 @@ void MemoryEfficientBackPropagationPass::runOnFunction(ir::Function& function)
         // 4. generate operations for each phase
         generateOperations(function, phases, insertionPoint);
     }
+
+    util::log("MemoryEfficientBackPropagationPass") << " function is now '"
+        << function.toString() << "'.\n";
 }
 
 StringSet MemoryEfficientBackPropagationPass::getRequiredAnalyses() const

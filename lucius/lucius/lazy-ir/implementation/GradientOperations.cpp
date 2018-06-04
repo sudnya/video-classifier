@@ -10,7 +10,6 @@
 #include <lucius/lazy-ir/interface/LazyIr.h>
 
 #include <lucius/ir/interface/IRBuilder.h>
-#include <lucius/ir/interface/Gradient.h>
 #include <lucius/ir/interface/Variable.h>
 #include <lucius/ir/interface/Value.h>
 

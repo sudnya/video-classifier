@@ -18,12 +18,14 @@
 #include <lucius/ir/interface/Use.h>
 #include <lucius/ir/interface/Value.h>
 #include <lucius/ir/interface/Type.h>
+#include <lucius/ir/interface/Shape.h>
 
 #include <lucius/ir/values/interface/ConstantInteger.h>
 #include <lucius/ir/values/interface/ConstantFloat.h>
 #include <lucius/ir/values/interface/ConstantPointer.h>
 #include <lucius/ir/values/interface/ConstantOperator.h>
 #include <lucius/ir/values/interface/ConstantTensor.h>
+#include <lucius/ir/values/interface/ConstantShape.h>
 
 #include <lucius/ir/target/interface/TargetValue.h>
 #include <lucius/ir/target/interface/TargetValueData.h>
@@ -138,6 +140,21 @@ matrix::Matrix getDataAsTensor(const ir::Use& operand)
 
         return data.getTensor();
     }
+}
+
+matrix::Dimension getDataAsDimension(const ir::Use& operand)
+{
+    auto value = ir::value_cast<ir::TargetValue>(operand.getValue());
+
+    assert(value.isShape());
+
+    // TODO: Implement dynamic shapes
+    assert(value.isConstant());
+    auto constant = ir::value_cast<ir::ConstantShape>(value.getValue());
+
+    auto shape = constant.getContents();
+
+    return shape.getDimension();
 }
 
 ir::TargetValueData getDataAtIndex(const ir::Use& operand, size_t index)

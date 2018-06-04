@@ -143,6 +143,11 @@ bool ValueImplementation::isPHI() const
     return false;
 }
 
+bool ValueImplementation::isLoad() const
+{
+    return false;
+}
+
 } // namespace ir
 } // namespace lucius
 

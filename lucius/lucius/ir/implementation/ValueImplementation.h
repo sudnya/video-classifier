@@ -74,6 +74,7 @@ public:
     virtual bool isCall() const;
     virtual bool isReturn() const;
     virtual bool isPHI() const;
+    virtual bool isLoad() const;
 
 private:
     size_t _id;

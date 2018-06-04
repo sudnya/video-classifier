@@ -51,6 +51,10 @@ static bool isTypeMemoryUsageStatic(const ir::Type& type)
     {
         return true;
     }
+    else if(type.isShape())
+    {
+        return true;
+    }
     else if(type.isStructure())
     {
         auto structure = ir::type_cast<ir::StructureType>(type);

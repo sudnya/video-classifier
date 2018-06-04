@@ -50,6 +50,11 @@ BasicBlock FunctionImplementation::insert(const_iterator position, const BasicBl
 
 void FunctionImplementation::insert(const InsertionPoint& position, const BasicBlockList& blocks)
 {
+    if(blocks.empty())
+    {
+        return;
+    }
+
     assertM(position.getIterator() == position.getBasicBlock().begin(),
         "Splitting blocks not implemented.");
 

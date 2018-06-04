@@ -55,6 +55,11 @@ CpuTargetMachine::TableEntryVector CpuTargetMachine::getEntries() const
     );
 
     vector.push_back(
+        std::make_pair("gradient", TableEntry({TableOperationEntry("generic-gradient",
+            {TableOperandEntry(0, true), VariableInputOperandsEntry(0)})}))
+    );
+
+    vector.push_back(
         std::make_pair("get", TableEntry({TableOperationEntry("generic-get",
             {TableOperandEntry(0, true), TableOperandEntry(0), TableOperandEntry(1)})}))
     );
@@ -76,6 +81,12 @@ CpuTargetMachine::TableEntryVector CpuTargetMachine::getEntries() const
 
     vector.push_back(
         std::make_pair("binary-apply", TableEntry({TableOperationEntry("cpu-binary-apply",
+            {TableOperandEntry(0, true), TableOperandEntry(0), TableOperandEntry(1),
+             TableOperandEntry(2)})}))
+    );
+
+    vector.push_back(
+        std::make_pair("reduce", TableEntry({TableOperationEntry("cpu-reduce",
             {TableOperandEntry(0, true), TableOperandEntry(0), TableOperandEntry(1),
              TableOperandEntry(2)})}))
     );

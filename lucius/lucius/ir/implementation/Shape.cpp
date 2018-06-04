@@ -26,6 +26,11 @@ public:
     }
 
 public:
+    bool empty() const
+    {
+        return _dimensions.empty();
+    }
+
     size_t size() const
     {
         return _dimensions.size();
@@ -176,6 +181,11 @@ size_t Shape::operator[](size_t i) const
     return _implementation->get(i);
 }
 
+bool Shape::empty() const
+{
+    return _implementation->empty();
+}
+
 size_t Shape::size() const
 {
     return _implementation->size();
@@ -212,6 +222,8 @@ std::string Shape::toString() const
 
 matrix::Dimension Shape::getDimension() const
 {
+    assert(areAllDimensionsKnown());
+
     return _implementation->getDimension();
 }
 

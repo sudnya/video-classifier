@@ -17,7 +17,6 @@ namespace lucius { namespace ir { class Constant;         } }
 namespace lucius { namespace ir { class Context;          } }
 namespace lucius { namespace ir { class Type;             } }
 namespace lucius { namespace ir { class BasicBlock;       } }
-namespace lucius { namespace ir { class Gradient;         } }
 namespace lucius { namespace ir { class Function;         } }
 namespace lucius { namespace ir { class Variable;         } }
 namespace lucius { namespace ir { class ExternalFunction; } }
@@ -40,7 +39,6 @@ public:
     Value(Operation o);
     Value(Constant c);
     Value(BasicBlock b);
-    Value(Gradient g);
     Value(Function f);
     Value(ExternalFunction f);
     Value(TargetValue t);
@@ -104,6 +102,9 @@ public:
 
     /*! \brief Test if the value is a structure. */
     bool isStructure() const;
+
+    /*! \brief Test if the value is a shape. */
+    bool isShape() const;
 
 public:
     using UseList = std::list<Use>;

@@ -10,6 +10,8 @@
 #include <lucius/ir/interface/Shape.h>
 #include <lucius/ir/interface/Use.h>
 
+#include <lucius/ir/types/interface/ShapeType.h>
+
 #include <lucius/ir/implementation/ConstantImplementation.h>
 
 namespace lucius
@@ -58,7 +60,7 @@ public:
 public:
     Type getType() const
     {
-        return Type(Type::ArrayId);
+        return ShapeType(_shape);
     }
 
 private:

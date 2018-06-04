@@ -16,6 +16,7 @@
 #include <lucius/ir/ops/implementation/ComputeGradientOperationImplementation.h>
 
 #include <lucius/ir/target/implementation/TargetControlOperationImplementation.h>
+#include <lucius/ir/target/implementation/TargetComputeGradientOperationImplementation.h>
 
 #include <lucius/ir/implementation/OperationImplementation.h>
 
@@ -191,7 +192,7 @@ OperationList Operation::getPredecessors() const
                 continue;
             }
 
-            operations.push_back(Operation(use.getOperation()));
+            operations.push_back(value_cast<Operation>(use.getValue()));
         }
     }
 
@@ -260,7 +261,9 @@ bool Operation::isControlOperation() const
 bool Operation::isGradientOperation() const
 {
     return static_cast<bool>(std::dynamic_pointer_cast<ComputeGradientOperationImplementation>(
-        getValueImplementation()));
+            getValueImplementation())) ||
+        static_cast<bool>(std::dynamic_pointer_cast<TargetComputeGradientOperationImplementation>(
+            getValueImplementation()));
 }
 
 bool Operation::isPHI() const
@@ -281,6 +284,11 @@ bool Operation::isCall() const
 bool Operation::isVoid() const
 {
     return getType().isVoid();
+}
+
+bool Operation::isLoad() const
+{
+    return _implementation->isLoad();
 }
 
 bool Operation::isTargetOperation() const

@@ -15,7 +15,6 @@
 #include <lucius/ir/interface/Context.h>
 #include <lucius/ir/interface/Value.h>
 #include <lucius/ir/interface/Variable.h>
-#include <lucius/ir/interface/Gradient.h>
 #include <lucius/ir/interface/Shape.h>
 #include <lucius/ir/interface/InsertionPoint.h>
 

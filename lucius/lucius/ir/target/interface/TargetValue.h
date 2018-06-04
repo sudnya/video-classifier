@@ -78,6 +78,7 @@ public:
     bool isPointer() const;
     bool isRandomState() const;
     bool isStructure() const;
+    bool isShape() const;
 
 public:
     TargetValueData getData() const;

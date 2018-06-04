@@ -10,7 +10,6 @@
 #include <lucius/ir/interface/Constant.h>
 #include <lucius/ir/interface/Use.h>
 #include <lucius/ir/interface/BasicBlock.h>
-#include <lucius/ir/interface/Gradient.h>
 #include <lucius/ir/interface/Function.h>
 #include <lucius/ir/interface/Variable.h>
 #include <lucius/ir/interface/ExternalFunction.h>
@@ -51,12 +50,6 @@ Value::Value(Constant c)
 
 Value::Value(BasicBlock b)
 : _implementation(b.getValueImplementation())
-{
-
-}
-
-Value::Value(Gradient g)
-: _implementation(g.getValueImplementation())
 {
 
 }
@@ -187,6 +180,11 @@ bool Value::isRandomState() const
 bool Value::isStructure() const
 {
     return getType().isStructure();
+}
+
+bool Value::isShape() const
+{
+    return getType().isShape();
 }
 
 bool Value::isTargetValue() const
